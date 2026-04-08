@@ -48,7 +48,7 @@ class Contract extends Model
 
     public function approvals(): HasMany
     {
-        return $this->hasMany(ContractApproval::class)->orderBy('sequence');
+        return $this->hasMany(Approval::class);
     }
 
     public function histories(): HasMany
@@ -71,11 +71,6 @@ class Contract extends Model
         return $this->belongsTo(WorkflowStep::class);
     }
 
-    public function workflowApprovals(): HasMany
-    {
-        return $this->hasMany(Approval::class);
-    }
-
     public function currentVersionModel(): ?ContractVersion
     {
         return $this->versions()->where('version_no', $this->current_version)->first();
@@ -83,10 +78,7 @@ class Contract extends Model
 
     public function pendingApproval()
     {
-        if ($this->workflow_id) {
-            return $this->workflowApprovals()->where('status', 'pending')->first();
-        }
-        return $this->hasMany(ContractApproval::class)->where('status', 'pending')->first();
+        return $this->approvals()->where('status', 'pending')->first();
     }
 
     public function progressData(): array
@@ -98,7 +90,7 @@ class Contract extends Model
             // A step is done if all approvals for that step are 'approved'
             $doneCount = 0;
             foreach ($steps as $step) {
-                $approvals = $this->workflowApprovals()->where('workflow_step_id', $step->id)->get();
+                $approvals = $this->approvals()->where('workflow_step_id', $step->id)->get();
                 if ($approvals->isNotEmpty() && $approvals->every(fn($a) => $a->status === 'approved')) {
                     $doneCount++;
                 }
@@ -108,10 +100,6 @@ class Contract extends Model
             return ['done' => $doneCount, 'total' => $total, 'pct' => $pct];
         }
 
-        $sequences = $this->approvals->pluck('sequence')->unique();
-        $done = $sequences->filter(fn($s) => $this->approvals->where('sequence', $s)->where('status', 'approved')->count() > 0);
-        $total = $sequences->count();
-        $pct = $total > 0 ? round($done->count() / $total * 100) : 0;
-        return ['done' => $done->count(), 'total' => $total, 'pct' => $pct];
+        return ['done' => 0, 'total' => 0, 'pct' => 0];
     }
 }

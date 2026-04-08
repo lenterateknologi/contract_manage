@@ -90,7 +90,7 @@ class ContractWorkflowService
         ]);
 
         // Check if all approvals for current step are complete
-        $currentStepApprovals = $contract->workflowApprovals()
+        $currentStepApprovals = $contract->approvals()
             ->where('workflow_step_id', $approval->workflow_step_id)
             ->get();
 
@@ -169,7 +169,7 @@ class ContractWorkflowService
         }
 
         // Reject all other pending approvals for this step
-        $contract->workflowApprovals()
+        $contract->approvals()
             ->where('workflow_step_id', $approval->workflow_step_id)
             ->where('status', 'pending')
             ->get()
@@ -201,11 +201,11 @@ class ContractWorkflowService
      */
     public function getContractsAwaitingMyApproval(User $user): Collection
     {
-        return Contract::whereHas('workflowApprovals', function ($query) use ($user) {
+        return Contract::whereHas('approvals', function ($query) use ($user) {
             $query->where('user_id', $user->id)
                 ->where('status', 'pending');
         })
-            ->with('workflow', 'workflowStep', 'workflowApprovals')
+            ->with('workflow', 'workflowStep', 'approvals')
             ->get();
     }
 }

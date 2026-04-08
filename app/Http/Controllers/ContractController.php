@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Contract;
-use App\Models\ContractApproval;
 use App\Models\ContractHistory;
 use App\Models\ContractVersion;
 use App\Models\ContractAttachment;
@@ -27,7 +26,7 @@ class ContractController extends Controller
 
     public function index(): JsonResponse
     {
-        $contracts = Contract::with(['creator', 'versions.uploader', 'workflowApprovals.user', 'workflowApprovals.workflowStep', 'workflow.steps', 'histories.actor', 'messages.user', 'attachments.uploader', 'contractType'])
+        $contracts = Contract::with(['creator', 'versions.uploader', 'approvals.user', 'approvals.workflowStep', 'workflow.steps', 'histories.actor', 'messages.user', 'attachments.uploader', 'contractType'])
             ->orderByDesc('created_at')
             ->get()
             ->map(fn($c) => $this->formatContract($c));
@@ -45,8 +44,8 @@ class ContractController extends Controller
         $contract = Contract::with([
             'creator',
             'versions.uploader',
-            'workflowApprovals.user',
-            'workflowApprovals.workflowStep',
+            'approvals.user',
+            'approvals.workflowStep',
             'workflow.steps',
             'histories.actor',
             'messages.user',
@@ -529,7 +528,7 @@ class ContractController extends Controller
         $workflowSteps = $c->workflow->steps->sortBy('step');
 
         foreach ($workflowSteps as $step) {
-            $approvals = $c->workflowApprovals->where('workflow_step_id', $step->id);
+            $approvals = $c->approvals->where('workflow_step_id', $step->id);
 
             if ($approvals->isNotEmpty()) {
                 // If we have actual approval records for this step
