@@ -61,6 +61,29 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/contracts/{contractId}/messages',    [ContractMessageController::class, 'store']);
         Route::post('/contracts/{contractId}/messages/read', [ContractMessageController::class, 'markRead']);
     });
+
+    // ── Admin Panel ──
+    Route::middleware(['admin'])->prefix('admin')->group(function () {
+        Route::get('/users', [\App\Http\Controllers\AdminController::class, 'users'])->name('admin.users');
+        Route::post('/users', [\App\Http\Controllers\AdminController::class, 'storeUser'])->name('admin.users.store');
+        Route::put('/users/{user}', [\App\Http\Controllers\AdminController::class, 'updateUser'])->name('admin.users.update');
+        Route::delete('/users/{user}', [\App\Http\Controllers\AdminController::class, 'destroyUser'])->name('admin.users.destroy');
+
+        Route::get('/contract-types', [\App\Http\Controllers\AdminController::class, 'contractTypes'])->name('admin.contract-types');
+        Route::post('/contract-types', [\App\Http\Controllers\AdminController::class, 'storeContractType'])->name('admin.contract-types.store');
+        Route::put('/contract-types/{type}', [\App\Http\Controllers\AdminController::class, 'updateContractType'])->name('admin.contract-types.update');
+        Route::delete('/contract-types/{type}', [\App\Http\Controllers\AdminController::class, 'destroyContractType'])->name('admin.contract-types.destroy');
+
+        Route::get('/workflows', [\App\Http\Controllers\AdminController::class, 'workflows'])->name('admin.workflows');
+        Route::post('/workflows', [\App\Http\Controllers\AdminController::class, 'storeWorkflow'])->name('admin.workflows.store');
+        Route::put('/workflows/{workflow}', [\App\Http\Controllers\AdminController::class, 'updateWorkflow'])->name('admin.workflows.update');
+        Route::delete('/workflows/{workflow}', [\App\Http\Controllers\AdminController::class, 'destroyWorkflow'])->name('admin.workflows.destroy');
+
+        Route::get('/roles', [\App\Http\Controllers\AdminController::class, 'roles'])->name('admin.roles');
+        Route::post('/roles', [\App\Http\Controllers\AdminController::class, 'storeRole'])->name('admin.roles.store');
+        Route::put('/roles/{role}', [\App\Http\Controllers\AdminController::class, 'updateRole'])->name('admin.roles.update');
+        Route::delete('/roles/{role}', [\App\Http\Controllers\AdminController::class, 'destroyRole'])->name('admin.roles.destroy');
+    });
 });
 
 require __DIR__.'/settings.php';

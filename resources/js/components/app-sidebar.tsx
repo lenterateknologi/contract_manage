@@ -2,9 +2,9 @@ import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, FileText, Clock, FilePlus, FileEdit, History } from 'lucide-react';
+import { type NavItem, type SharedData } from '@/types';
+import { Link, usePage } from '@inertiajs/react';
+import { BookOpen, Folder, LayoutGrid, FileText, Clock, FilePlus, FileEdit, History, ShieldCheck, Users, Settings2, GitBranch } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const navGroups = [
@@ -36,20 +36,25 @@ const navGroups = [
     },
 ];
 
-const footerNavItems: NavItem[] = [
-    // {
-    //     title: 'Repository',
-    //     url: 'https://github.com/laravel/react-starter-kit',
-    //     icon: Folder,
-    // },
-    // {
-    //     title: 'Documentation',
-    //     url: 'https://laravel.com/docs/starter-kits',
-    //     icon: BookOpen,
-    // },
+const adminGroups = [
+    {
+        title: 'Data Master',
+        items: [
+            { title: 'Pengguna', url: '/admin/users', icon: Users },
+            { title: 'Role', url: '/admin/roles', icon: ShieldCheck },
+            { title: 'Tipe Kontrak', url: '/admin/contract-types', icon: Settings2 },
+            { title: 'Alur Kerja', url: '/admin/workflows', icon: GitBranch },
+        ],
+    },
 ];
 
+const footerNavItems: NavItem[] = [];
+
 export function AppSidebar() {
+    const { auth } = usePage<SharedData>().props;
+    const userRole = (auth.user as any)?.role;
+    const isAdmin = userRole === 'Admin';
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
@@ -66,6 +71,10 @@ export function AppSidebar() {
 
             <SidebarContent>
                 {navGroups.map((group) => (
+                    <NavMain key={group.title} title={group.title} items={group.items} />
+                ))}
+
+                {isAdmin && adminGroups.map((group) => (
                     <NavMain key={group.title} title={group.title} items={group.items} />
                 ))}
             </SidebarContent>

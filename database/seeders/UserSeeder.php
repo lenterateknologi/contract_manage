@@ -65,6 +65,15 @@ class UserSeeder extends Seeder
                 'bg_color'   => '#ffedd5',
                 'text_color' => '#9a3412',
             ],
+            [
+                'name'       => 'Super Admin',
+                'email'      => 'admin@example.com',
+                'password'   => Hash::make('password'),
+                'initials'   => 'SA',
+                'role'       => 'Admin',
+                'bg_color'   => '#fee2e2',
+                'text_color' => '#991b1b',
+            ],
         ];
 
         foreach ($users as $user) {
