@@ -68,6 +68,8 @@ class ContractWorkflowService
                 'role' => $step->role,
                 'job_title' => $approver->job_title ?? null,
                 'status' => 'pending',
+                'created_by' => auth()->id(),
+                'updated_by' => auth()->id(),
             ]);
         }
     }

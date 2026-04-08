@@ -27,7 +27,7 @@ class ContractController extends Controller
 
     public function index(): JsonResponse
     {
-        $contracts = Contract::with(['creator', 'versions.uploader', 'approvals.approver', 'histories.actor', 'messages.user', 'attachments.uploader', 'contractType'])
+        $contracts = Contract::with(['creator', 'versions.uploader', 'workflowApprovals.user', 'workflowApprovals.workflowStep', 'workflow.steps', 'histories.actor', 'messages.user', 'attachments.uploader', 'contractType'])
             ->orderByDesc('created_at')
             ->get()
             ->map(fn($c) => $this->formatContract($c));
@@ -42,12 +42,21 @@ class ContractController extends Controller
 
     public function show(string $id): JsonResponse
     {
-        $contract = Contract::with(['creator', 'versions.uploader', 'approvals.approver', 'histories.actor', 'messages.user', 'workflow', 'workflowStep', 'workflowApprovals.user'])
-        $contract = Contract::with(['creator', 'versions.uploader', 'approvals.approver', 'histories.actor', 'messages.user', 'contractType'])
-            ->findOrFail($id);
+        $contract = Contract::with([
+            'creator',
+            'versions.uploader',
+            'workflowApprovals.user',
+            'workflowApprovals.workflowStep',
+            'workflow.steps',
+            'histories.actor',
+            'messages.user',
+            'attachments.uploader',
+            'contractType'
+        ])->findOrFail($id);
 
         return response()->json($this->formatContract($contract));
     }
+
 
     public function send(Request $request, string $id): JsonResponse
     {
@@ -61,123 +70,82 @@ class ContractController extends Controller
             // Use workflow service to send for approval
             $contract = $this->workflowService->sendForApproval($contract);
 
-            $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'histories.actor', 'messages.user', 'workflow', 'workflowStep', 'workflowApprovals.user']);
+            $contract->load(['creator', 'versions.uploader', 'workflowApprovals.user', 'workflowApprovals.workflowStep', 'workflow.steps', 'histories.actor', 'messages.user', 'workflow', 'workflowStep']);
             return response()->json($this->formatContract($contract), 200);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }
     }
 
-    public function send(Request $request, string $id): JsonResponse
+    public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'title'         => 'required|string|max:255',
-            'description'   => 'nullable|string',
-            'contract_no'   => 'nullable|string',
+            'title'            => 'required|string|max:255',
+            'description'      => 'nullable|string',
+            'contract_no'      => 'nullable|string',
             'contract_date'    => 'nullable|date',
             'contract_type_id' => 'nullable|exists:contract_types,id',
             'f1_file'          => 'required|file|extensions:docx,doc,pdf|max:102400',
-            'changelog'     => 'nullable|string'
+            'changelog'        => 'nullable|string'
         ]);
 
-        $userId = Auth::id();
-        $contractTypeId = $validated['contract_type_id'] ?? null;
-        if ($contractTypeId === '') $contractTypeId = null;
+        return \DB::transaction(function () use ($validated, $request) {
+            $userId = Auth::id();
+            $contractTypeId = $validated['contract_type_id'] ?: null;
 
-        $contract = Contract::create([
-            'contract_no'   => $validated['contract_no'] ?? ('CTR-' . date('Y') . '-' . strtoupper(Str::random(5))),
-            'title'            => $validated['title'],
-            'description'      => $validated['description'] ?? '—',
-            'contract_date'    => $validated['contract_date'] ?? null,
-            'contract_type_id' => $contractTypeId,
-            'status'           => 'in_review',
-            'created_by'    => $userId,
-        ]);
+            $contract = Contract::create([
+                'contract_no'      => $validated['contract_no'] ?? ('CTR-' . date('Y') . '-' . strtoupper(Str::random(5))),
+                'title'            => $validated['title'],
+                'description'      => $validated['description'] ?? '—',
+                'contract_date'    => $validated['contract_date'] ?? null,
+                'contract_type_id' => $contractTypeId,
+                'status'           => 'draft',
+                'created_by'       => $userId,
+            ]);
 
-        // Store F1 as version 1
-        $f1 = $request->file('f1_file');
-        $fileName = $f1->getClientOriginalName();
-        $filePath = $f1->storeAs("contracts/{$contract->id}", "v1_f1_{$fileName}", 'local');
+            $f1 = $request->file('f1_file');
+            $fileName = $f1->getClientOriginalName();
+            $filePath = $f1->storeAs("contracts/{$contract->id}", "v1_f1_{$fileName}", 'local');
 
-        ContractVersion::create([
-            'contract_id'   => $contract->id,
-            'version_no'    => 1,
-            'document_type' => 'f1',
-            'file_name'     => $fileName,
-            'file_path'     => $filePath,
-            'change_log'    => $validated['changelog'] ?? 'Initial version (F1)',
-            'uploaded_by'   => $userId,
-            'is_final'      => false,
-            'file_hash'     => Str::random(32),
-        ]);
+            ContractVersion::create([
+                'contract_id'   => $contract->id,
+                'version_no'    => 1,
+                'document_type' => 'f1',
+                'file_name'     => $fileName,
+                'file_path'     => $filePath,
+                'change_log'    => $validated['changelog'] ?? 'Initial version (F1)',
+                'uploaded_by'   => $userId,
+                'is_final'      => false,
+                'file_hash'     => Str::random(32),
+            ]);
 
-        // Create default approval sequence (lookup users by role dynamically)
-        $roleSequence = [
-            ['role' => 'Legal',      'sequence' => 1, 'status' => 'pending'],
-            ['role' => 'Tax',        'sequence' => 2, 'status' => 'waiting'],
-            ['role' => 'Management', 'sequence' => 3, 'status' => 'waiting'],
-            ['role' => 'Direksi',    'sequence' => 4, 'status' => 'waiting'],
-        ];
-        foreach ($roleSequence as $rs) {
-            $approver = User::where('role', $rs['role'])->first();
-            if ($approver) {
-                ContractApproval::create([
-                    'contract_id' => $contract->id,
-                    'approver_id' => $approver->id,
-                    'role'        => $rs['role'],
-                    'sequence'    => $rs['sequence'],
-                    'status'      => $rs['status'],
-                ]);
-            }
-        }
+            ContractHistory::create(['contract_id' => $contract->id, 'action' => 'CONTRACT_CREATED', 'description' => 'Kontrak dibuat', 'actor_id' => $userId]);
+            ContractHistory::create(['contract_id' => $contract->id, 'action' => 'FILE_UPLOADED',    'description' => 'Upload v1',      'actor_id' => $userId]);
 
-        ContractHistory::create(['contract_id' => $contract->id, 'action' => 'CONTRACT_CREATED', 'description' => 'Kontrak dibuat', 'actor_id' => $userId]);
-        ContractHistory::create(['contract_id' => $contract->id, 'action' => 'FILE_UPLOADED',    'description' => 'Upload v1',      'actor_id' => $userId]);
+            $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'histories.actor', 'messages.user', 'contractType']);
 
-        $contract->load(['creator', 'versions', 'approvals.approver', 'histories.actor', 'messages.user']);
-
-        return response()->json($this->formatContract($contract), 201);
+            return response()->json($this->formatContract($contract), 201);
+        });
     }
 
     public function approve(Request $request, string $id): JsonResponse
     {
         $request->validate(['note' => 'nullable|string']);
 
-        $contract = Contract::with('approvals')->findOrFail($id);
-        $pending  = $contract->approvals()->where('status', 'pending')->first();
+        $contract = Contract::findOrFail($id);
+        
+        // Find the pending approval for the current user
+        $approval = \App\Models\Approval::where('contract_id', $id)
+            ->where('user_id', Auth::id())
+            ->where('status', 'pending')
+            ->first();
 
-        if (! $pending) {
-            return response()->json(['message' => 'No pending approval found.'], 422);
+        if (!$approval) {
+            return response()->json(['message' => 'No pending approval found for you.'], 422);
         }
 
-        $pending->update([
-            'status'      => 'approved',
-            'note'        => $request->note ?? 'Disetujui.',
-            'approved_at' => now()->toDateString(),
-        ]);
+        $contract = $this->workflowService->approveContract($contract, $approval, $request->note);
 
-        ContractHistory::create([
-            'contract_id' => $contract->id,
-            'action'      => 'APPROVAL_APPROVED',
-            'description' => "Disetujui oleh {$pending->role}",
-            'actor_id'    => Auth::id(),
-        ]);
-
-        // Advance next approver
-        $next = $contract->approvals()->where('sequence', $pending->sequence + 1)->where('status', 'waiting')->first();
-        if ($next) {
-            $next->update(['status' => 'pending']);
-        } else {
-            $contract->update(['status' => 'approved']);
-            ContractHistory::create([
-                'contract_id' => $contract->id,
-                'action'      => 'CONTRACT_APPROVED',
-                'description' => 'Semua approval selesai. Kontrak APPROVED.',
-                'actor_id'    => Auth::id(),
-            ]);
-        }
-
-        $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'histories.actor', 'messages.user']);
         return response()->json($this->formatContract($contract));
     }
 
@@ -185,29 +153,20 @@ class ContractController extends Controller
     {
         $request->validate(['reason' => 'required|string']);
 
-        $contract = Contract::with('approvals')->findOrFail($id);
-        $pending  = $contract->approvals()->where('status', 'pending')->first();
+        $contract = Contract::findOrFail($id);
+        
+        // Find the pending approval for the current user
+        $approval = \App\Models\Approval::where('contract_id', $id)
+            ->where('user_id', Auth::id())
+            ->where('status', 'pending')
+            ->first();
 
-        if (! $pending) {
-            return response()->json(['message' => 'No pending approval found.'], 422);
+        if (!$approval) {
+            return response()->json(['message' => 'No pending approval found for you.'], 422);
         }
 
-        $pending->update([
-            'status'      => 'rejected',
-            'note'        => $request->reason,
-            'approved_at' => now()->toDateString(),
-        ]);
+        $contract = $this->workflowService->rejectContract($contract, $approval, $request->reason);
 
-        $contract->update(['status' => 'revision']);
-
-        ContractHistory::create([
-            'contract_id' => $contract->id,
-            'action'      => 'APPROVAL_REJECTED',
-            'description' => "Ditolak oleh {$pending->role} – {$request->reason}",
-            'actor_id'    => Auth::id(),
-        ]);
-
-        $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'histories.actor', 'messages.user']);
         return response()->json($this->formatContract($contract));
     }
 
@@ -529,16 +488,9 @@ class ContractController extends Controller
                 'created_at' => $v->created_at->toDateString(),
                 'uploader'   => $this->formatUser($v->uploader),
             ])->sortByDesc('version_no')->values(),
-            'approvals'  => $c->approvals->map(fn($a) => [
-                'id'          => $a->id,
-                'approver_id' => $a->approver_id,
-                'role'        => $a->role,
-                'sequence'    => $a->sequence,
-                'status'      => $a->status,
-                'note'        => $a->note,
-                'approved_at' => $a->approved_at?->toDateString(),
-                'approver'    => $this->formatUser($a->approver),
-            ]),
+            'approvals'  => $this->mapApprovalTimeline($c),
+            'workflow_id'     => $c->workflow_id,
+            'workflow_step_id'=> $c->workflow_step_id,
             'histories' => $c->histories->map(fn($h) => [
                 'action'      => $h->action,
                 'description' => $h->description,
@@ -554,19 +506,6 @@ class ContractController extends Controller
                 'created_at' => $m->created_at->format('Y-m-d H:i'),
                 'user'       => $this->formatUser($m->user),
             ]),
-            'workflow_approvals' => $c->workflowApprovals ? $c->workflowApprovals->map(fn($a) => [
-                'id'            => $a->id,
-                'contract_id'   => $a->contract_id,
-                'workflow_step_id' => $a->workflow_step_id,
-                'user_id'       => $a->user_id,
-                'approver_name' => $a->approver_name,
-                'role'          => $a->role,
-                'job_title'     => $a->job_title,
-                'status'        => $a->status,
-                'comment'       => $a->comment,
-                'decided_at'    => $a->decided_at?->toDateTimeString(),
-                'user'          => $this->formatUser($a->user),
-            ]) : [],
             'attachments' => $c->attachments->map(fn($at) => [
                 'id'         => $at->id,
                 'label'      => $at->label,
@@ -577,6 +516,53 @@ class ContractController extends Controller
                 'uploader'   => $this->formatUser($at->uploader),
             ]),
         ];
+    }
+
+    private function mapApprovalTimeline($c)
+    {
+        // If no workflow assigned yet, return empty or default empty steps
+        if (!$c->workflow) {
+            return [];
+        }
+
+        $timeline = [];
+        $workflowSteps = $c->workflow->steps->sortBy('step');
+
+        foreach ($workflowSteps as $step) {
+            $approvals = $c->workflowApprovals->where('workflow_step_id', $step->id);
+
+            if ($approvals->isNotEmpty()) {
+                // If we have actual approval records for this step
+                foreach ($approvals as $a) {
+                    $timeline[] = [
+                        'id'            => $a->id,
+                        'user_id'       => $a->user_id,
+                        'approver_name' => $a->approver_name,
+                        'role'          => $a->role,
+                        'sequence'      => $step->step,
+                        'status'        => $a->status,
+                        'note'          => $a->comment,
+                        'approved_at'   => $a->decided_at?->toDateTimeString(),
+                        'approver'      => $this->formatUser($a->user),
+                    ];
+                }
+            } else {
+                // Future step placeholder
+                $timeline[] = [
+                    'id'            => 'step-' . $step->id,
+                    'user_id'       => null,
+                    'approver_name' => 'Pendataan ' . $step->role,
+                    'role'          => $step->role,
+                    'sequence'      => $step->step,
+                    'status'        => 'waiting',
+                    'note'          => null,
+                    'approved_at'   => null,
+                    'approver'      => ['name' => 'Approver ' . $step->role],
+                ];
+            }
+        }
+
+        return $timeline;
     }
 
     private function formatUser($user): ?array

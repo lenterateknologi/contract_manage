@@ -225,11 +225,13 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
     };
 
     const myPending = contracts.flatMap(c =>
-        c.approvals.filter(a => a.approver_id === meId && a.status === 'pending').map(a => ({ contract: c, approval: a }))
+        c.approvals.filter(a => a.user_id === meId && a.status === 'pending').map(a => ({ contract: c, approval: a }))
     );
 
-    const pendingApproval = selected?.approvals.find(a => a.status === 'pending');
-    const canApprove = selected?.status === 'in_review' && pendingApproval?.approver_id === meId;
+    const pendingApprovalForMe = selected?.approvals.find(a => a.status === 'pending' && a.user_id === meId);
+    const firstPending = selected?.approvals.find(a => a.status === 'pending');
+    const hasAnyPending = !!firstPending;
+    const canApprove = (selected?.status === 'in_review' || selected?.status === 'revision') && !!pendingApprovalForMe;
 
     const filtered = contracts.filter(c => {
         const q = search.toLowerCase();
@@ -238,7 +240,7 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
         let matchV = true;
         if (view === 'f1') matchV = c.versions.some(v => v.document_type === 'f1');
         if (view === 'f2') matchV = c.versions.some(v => v.document_type === 'f2');
-        if (view === 'pending') matchV = c.approvals.some(a => a.approver_id === meId && a.status === 'pending');
+        if (view === 'pending') matchV = c.approvals.some(a => a.user_id === meId && a.status === 'pending');
         return matchQ && matchS && matchV;
     });
 
@@ -608,14 +610,7 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
                             <span className="text-muted-foreground">{selected.contract_no}</span>
                         </nav>
 
-                        {/* Header */}
-                        <div className="flex items-start justify-between" style={{ marginBottom: 16 }}>
-                            <div>
-                                <h2 className="font-bold text-foreground" style={{ fontSize: 16 }}>{selected.title}</h2>
-                                <p className="text-muted-foreground" style={{ fontSize: 12, marginTop: 2 }}>{selected.contract_no} · {selected.status.replace('_', ' ').toUpperCase()}</p>
-                            </div>
 
-                        </div>
                         {/* Header */}
                         <div className="flex items-start justify-between" style={{ marginBottom: 16 }}>
                             <div>
@@ -913,7 +908,7 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
                                 </div>
 
                                 {/* Action Card — only shown if there's a pending approval */}
-                                {pendingApproval && (
+                                {hasAnyPending && (
                                     <div className="bg-card border border-border rounded-xl overflow-hidden">
                                         <div className="flex items-center gap-2 border-b border-border/50 font-semibold" style={{ padding: '12px 16px', fontSize: 13 }}>
                                             <i className="fa-solid fa-bolt text-muted-foreground" style={{ fontSize: 12 }} /> Aksi Approval
@@ -938,7 +933,7 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
                                                 </>
                                             ) : (
                                                 <p className="text-muted-foreground text-center" style={{ fontSize: 12, padding: '8px 0' }}>
-                                                    Menunggu approval dari <strong>{pendingApproval.approver?.name}</strong>
+                                                    Menunggu approval dari <strong>{firstPending?.approver?.name || firstPending?.approver_name}</strong>
                                                 </p>
                                             )}
                                         </div>

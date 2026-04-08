@@ -12,17 +12,19 @@ class Contract extends Model
 {
     use HasFactory, HasUuids;
     protected $fillable = [
-        'contract_no', 'title', 'description', 'created_by', 'contract_type',
-        'status', 'current_version', 'workflow_id', 'workflow_step_id',
         'contract_no',
         'title',
         'description',
         'contract_date',
+        'contract_type',
         'contract_type_id',
         'status',
         'created_by',
         'current_version',
+        'workflow_id',
+        'workflow_step_id',
     ];
+
 
     public function contractType()
     {
@@ -79,13 +81,33 @@ class Contract extends Model
         return $this->versions()->where('version_no', $this->current_version)->first();
     }
 
-    public function pendingApproval(): ?ContractApproval
+    public function pendingApproval()
     {
-        return $this->approvals()->where('status', 'pending')->first();
+        if ($this->workflow_id) {
+            return $this->workflowApprovals()->where('status', 'pending')->first();
+        }
+        return $this->hasMany(ContractApproval::class)->where('status', 'pending')->first();
     }
 
     public function progressData(): array
     {
+        if ($this->workflow_id) {
+            $steps = $this->workflow->steps ?? collect();
+            $total = $steps->count();
+            
+            // A step is done if all approvals for that step are 'approved'
+            $doneCount = 0;
+            foreach ($steps as $step) {
+                $approvals = $this->workflowApprovals()->where('workflow_step_id', $step->id)->get();
+                if ($approvals->isNotEmpty() && $approvals->every(fn($a) => $a->status === 'approved')) {
+                    $doneCount++;
+                }
+            }
+            
+            $pct = $total > 0 ? round(($doneCount / $total) * 100) : 0;
+            return ['done' => $doneCount, 'total' => $total, 'pct' => $pct];
+        }
+
         $sequences = $this->approvals->pluck('sequence')->unique();
         $done = $sequences->filter(fn($s) => $this->approvals->where('sequence', $s)->where('status', 'approved')->count() > 0);
         $total = $sequences->count();

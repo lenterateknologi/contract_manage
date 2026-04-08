@@ -24,7 +24,9 @@ export interface ContractVersion {
 
 export interface ContractApproval {
     id: string;
-    approver_id: string;
+    approver_id: string; // compatibility with old code
+    user_id: string | null;     // new system
+    approver_name: string | null;
     role: string;
     sequence: number;
     status: 'pending' | 'waiting' | 'approved' | 'rejected';

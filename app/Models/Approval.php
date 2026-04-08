@@ -17,6 +17,8 @@ class Approval extends Model
         'status',
         'comment',
         'decided_at',
+        'created_by',
+        'updated_by',
     ];
 
     protected $casts = [
@@ -44,6 +46,7 @@ class Approval extends Model
             'status' => 'approved',
             'comment' => $comment,
             'decided_at' => now(),
+            'updated_by' => auth()->id(),
         ]);
     }
 
@@ -53,6 +56,7 @@ class Approval extends Model
             'status' => 'rejected',
             'comment' => $comment,
             'decided_at' => now(),
+            'updated_by' => auth()->id(),
         ]);
     }
 }
