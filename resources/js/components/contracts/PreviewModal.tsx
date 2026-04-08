@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Contract, ContractVersion } from '@/types/contracts';
-
-declare const mammoth: any;
+import { renderAsync } from 'docx-preview';
 
 interface Props {
     open: boolean;
@@ -10,27 +9,17 @@ interface Props {
     versionNo: number | null;
 }
 
-function buildNoFileHtml(c: Contract, ver: ContractVersion): string {
-    return `
-    <div style="text-align:center;padding:60px 20px;color:#9ca3af;">
-      <i class="fa-solid fa-file-circle-xmark" style="font-size:48px;display:block;margin-bottom:16px;"></i>
-      <div style="font-size:16px;font-weight:500;color:#6b7280;margin-bottom:6px;">Tidak ada file yang diupload</div>
-      <div style="font-size:13px;">Dokumen <strong>${c.contract_no} v${ver.version_no}</strong> belum memiliki file .docx yang diupload.</div>
-    </div>`;
-}
-
 export default function PreviewModal({ open, onClose, contract, versionNo }: Props) {
     const [zoom, setZoom] = useState(100);
-    const [html, setHtml] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const containerRef = useRef<HTMLDivElement>(null);
 
     const ver = contract?.versions.find(v => v.version_no === versionNo);
 
     useEffect(() => {
         if (!open || !contract || !ver) return;
         setZoom(100);
-        setHtml('');
         setError('');
         setLoading(true);
 
@@ -39,38 +28,46 @@ export default function PreviewModal({ open, onClose, contract, versionNo }: Pro
         fetch(fileUrl, { credentials: 'same-origin' })
             .then(res => {
                 if (!res.ok) {
-                    setHtml(buildNoFileHtml(contract, ver));
+                    setError('File tidak tersedia untuk versi ini');
                     setLoading(false);
                     return null;
                 }
                 return res.arrayBuffer();
             })
             .then(arrayBuffer => {
-                if (!arrayBuffer) return;
-                if (typeof mammoth !== 'undefined') {
-                    mammoth.convertToHtml({ arrayBuffer })
-                        .then((result: { value: string }) => {
-                            setHtml(result.value);
-                            setLoading(false);
-                        })
-                        .catch(() => {
-                            setError('Gagal memproses dokumen .docx');
-                            setLoading(false);
-                        });
-                } else {
-                    setError('Library mammoth.js belum dimuat');
-                    setLoading(false);
-                }
+                if (!arrayBuffer || !containerRef.current) return;
+                // Clear previous content
+                containerRef.current.innerHTML = '';
+                // Render docx with high-fidelity formatting
+                renderAsync(arrayBuffer, containerRef.current, undefined, {
+                    className: 'docx-preview-wrapper',
+                    inWrapper: true,
+                    ignoreWidth: false,
+                    ignoreHeight: true,
+                    ignoreFonts: false,
+                    breakPages: true,
+                    ignoreLastRenderedPageBreak: true,
+                    experimental: true,
+                    trimXmlDeclaration: true,
+                    useBase64URL: true,
+                    renderHeaders: true,
+                    renderFooters: true,
+                    renderFootnotes: true,
+                    renderEndnotes: true,
+                })
+                    .then(() => setLoading(false))
+                    .catch(() => {
+                        setError('Gagal memproses dokumen .docx');
+                        setLoading(false);
+                    });
             })
             .catch(() => {
-                setHtml(buildNoFileHtml(contract, ver));
+                setError('Gagal memuat file');
                 setLoading(false);
             });
     }, [open, contract?.id, versionNo]);
 
     if (!open || !contract || !ver) return null;
-
-    const scale = zoom / 100;
 
     return (
         <div className="fixed inset-0 z-50 flex flex-col bg-white">
@@ -103,24 +100,76 @@ export default function PreviewModal({ open, onClose, contract, versionNo }: Pro
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-auto bg-gray-100 p-6">
-                {loading ? (
+            <div className="flex-1 overflow-auto bg-gray-100">
+                {loading && (
                     <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
                         <i className="fa-solid fa-spinner fa-spin text-3xl text-blue-400" />
                         <span className="text-[13px]">Memuat dokumen...</span>
                     </div>
-                ) : error ? (
+                )}
+                {error && !loading && (
                     <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
-                        <i className="fa-solid fa-triangle-exclamation text-3xl text-amber-400" />
+                        <i className="fa-solid fa-file-circle-xmark text-3xl text-gray-300" />
                         <span className="text-[13px] text-gray-500">{error}</span>
                     </div>
-                ) : (
-                    <div style={{ maxWidth: 780, margin: '0 auto', transform: `scale(${scale})`, transformOrigin: 'top center' }}>
-                        <div className="bg-white shadow-sm rounded-lg" style={{ padding: '56px 64px', lineHeight: 1.7, fontSize: 14, color: '#1f2937' }}
-                            dangerouslySetInnerHTML={{ __html: html }} />
-                    </div>
                 )}
+                <div
+                    ref={containerRef}
+                    className="docx-container"
+                    style={{
+                        display: loading || error ? 'none' : 'block',
+                        transform: `scale(${zoom / 100})`,
+                        transformOrigin: 'top center',
+                        padding: '24px 0',
+                    }}
+                />
             </div>
+
+            {/* Styling for docx-preview */}
+            <style>{`
+                .docx-container .docx-preview-wrapper {
+                    // background: transparent !important;
+                    padding: 0 !important;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                }
+                .docx-container .docx-preview-wrapper > section.docx {
+                    // background: white !important;
+                    // box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+                    border-radius: 4px;
+                    margin-bottom: 24px;
+                    min-width: 600px;
+                    max-width: 900px;
+                }
+                // /* Remove dark/white highlight artifacts */
+                // .docx-container span[style*="background-color: black"],
+                // .docx-container span[style*="background-color:#000"],
+                // .docx-container span[style*="background: black"],
+                // .docx-container span[style*="background:#000"] {
+                //     background-color: transparent !important;
+                //     background: transparent !important;
+                // }
+                // .docx-container span[style*="background-color: white"],
+                // .docx-container span[style*="background-color:#fff"],
+                // .docx-container span[style*="background-color:#FFF"],
+                // .docx-container span[style*="background: white"],
+                // .docx-container span[style*="background:#fff"],
+                // .docx-container span[style*="background:#FFF"] {
+                //     background-color: transparent !important;
+                //     background: transparent !important;
+                // }
+                /* Normalize text color on dark highlights */
+                .docx-container span[style*="color: white"],
+                .docx-container span[style*="color:#fff"],
+                .docx-container span[style*="color:#FFF"] {
+                    color: inherit !important;
+                }
+                /* Remove Word highlight marks */
+                .docx-container .docx-highlight {
+                    background: transparent !important;
+                }
+            `}</style>
         </div>
     );
 }

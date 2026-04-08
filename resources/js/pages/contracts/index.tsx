@@ -16,16 +16,16 @@ import ContractChat from '@/components/contracts/ContractChat';
 type View = 'dashboard' | 'contracts' | 'pending' | 'audit';
 
 // ─── Table header cell ───────────────────────────────────────────────
-function Th({ children }: { children: React.ReactNode }) {
+function Th({ children, style }: { children?: React.ReactNode; style?: React.CSSProperties }) {
     return (
-        <th style={{ padding: '9px 14px', textAlign: 'left', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.5px', color: '#9ca3af', borderBottom: '1px solid #e5e7eb', whiteSpace: 'nowrap' }}>
+        <th style={{ padding: '9px 14px', textAlign: 'left', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.5px', color: '#9ca3af', borderBottom: '1px solid #e5e7eb', whiteSpace: 'nowrap', ...style }}>
             {children}
         </th>
     );
 }
-function Td({ children, className }: { children: React.ReactNode; className?: string }) {
+function Td({ children, className, style }: { children?: React.ReactNode; className?: string; style?: React.CSSProperties }) {
     return (
-        <td style={{ padding: '11px 14px', fontSize: 12, borderBottom: '1px solid #f3f4f6', verticalAlign: 'middle' }} className={className}>
+        <td style={{ padding: '11px 14px', fontSize: 12, borderBottom: '1px solid #f3f4f6', verticalAlign: 'middle', ...style }} className={className}>
             {children}
         </td>
     );
@@ -189,8 +189,8 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected }
                     <div className="font-semibold uppercase tracking-wider text-gray-400 px-2 pb-1 pt-1" style={{ fontSize: 10 }}>Menu</div>
 
                     {([
-                        { id: 'dashboard', icon: 'fa-house', label: 'Dashboard' },
-                        { id: 'contracts', icon: 'fa-folder-open', label: 'Semua Kontrak' },
+                        { id: 'dashboard', icon: 'fa-house', label: 'Dashboard', badge: 0 },
+                        { id: 'contracts', icon: 'fa-folder-open', label: 'Semua Kontrak', badge: 0 },
                         { id: 'pending', icon: 'fa-regular fa-clock', label: 'Menunggu Approval', badge: myPending.length },
                     ] as const).map(item => (
                         <a key={item.id}
@@ -584,8 +584,8 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected }
                                     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
                                         <div className="flex border-b border-gray-200 px-4 pt-2 gap-1">
                                             {([
-                                                { id: 'versions', icon: 'fa-clock-rotate-left', label: 'Riwayat Versi' },
-                                                { id: 'audit', icon: 'fa-list-check', label: 'Audit Trail' },
+                                                { id: 'versions', icon: 'fa-clock-rotate-left', label: 'Riwayat Versi', badge: 0 },
+                                                { id: 'audit', icon: 'fa-list-check', label: 'Audit Trail', badge: 0 },
                                                 {
                                                     id: 'chat', icon: 'fa-comments', label: 'Diskusi',
                                                     badge: (selected.messages ?? []).filter(m => !m.read_by.includes(meId)).length
@@ -593,9 +593,9 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected }
                                             ] as const).map(tab => (
                                                 <button key={tab.id} onClick={() => setDetailTab(tab.id as any)} style={{
                                                     fontSize: 12, fontWeight: 500, padding: '8px 12px',
-                                                    borderBottom: detailTab === tab.id ? '2px solid #2563eb' : '2px solid transparent',
                                                     color: detailTab === tab.id ? '#2563eb' : '#6b7280',
-                                                    background: 'none', border: 'none', borderBottom: detailTab === tab.id ? '2px solid #2563eb' : '2px solid transparent',
+                                                    background: 'none', border: 'none',
+                                                    borderBottom: detailTab === tab.id ? '2px solid #2563eb' : '2px solid transparent',
                                                     cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, marginBottom: -1,
                                                     transition: 'color .15s',
                                                 }}>
