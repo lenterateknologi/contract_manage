@@ -32,6 +32,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/contracts/{id}/revision',            [ContractController::class, 'uploadRevision']);
         Route::get('/contracts/{id}/download',             [ContractController::class, 'download'])->name('contracts.download');
         Route::get('/contracts/{id}/file/{versionNo}',     [ContractController::class, 'fileContent'])->name('contracts.file-url');
+        Route::get('/contracts/{id}/pdf/{versionNo}',      [ContractController::class, 'pdfPreview'])->name('contracts.pdf-preview');
 
         Route::get('/contracts/{contractId}/messages',     [ContractMessageController::class, 'index']);
         Route::post('/contracts/{contractId}/messages',    [ContractMessageController::class, 'store']);

@@ -248,6 +248,53 @@ class ContractController extends Controller
         return response()->json(['message' => 'File not found.'], 404);
     }
 
+    public function pdfPreview(string $id, int $versionNo): mixed
+    {
+        $contract = Contract::findOrFail($id);
+        $version  = $contract->versions()->where('version_no', $versionNo)->firstOrFail();
+
+        if (! $version->file_path || ! Storage::disk('local')->exists($version->file_path)) {
+            return response()->json(['message' => 'Source file not found.'], 404);
+        }
+
+        $sourcePath = Storage::disk('local')->path($version->file_path);
+        $pdfDir     = Storage::disk('local')->path("contracts/{$id}/pdfs");
+        $pdfPath    = $pdfDir . '/' . pathinfo($version->file_path, PATHINFO_FILENAME) . '.pdf';
+
+        if (! file_exists($pdfDir)) {
+            mkdir($pdfDir, 0755, true);
+        }
+
+        if (! file_exists($pdfPath)) {
+            $soffice = '/Applications/LibreOffice.app/Contents/MacOS/soffice';
+            // Use a specific user installation dir to avoid common headless errors on macOS/Server
+            $userDir = "file://" . sys_get_temp_dir() . "/soffice_user_" . md5($id);
+            $command = "export HOME=/tmp && \"{$soffice}\" -env:UserInstallation={$userDir} --headless --convert-to pdf --outdir \"{$pdfDir}\" \"{$sourcePath}\" 2>&1";
+            $output = shell_exec($command);
+            
+            if (! file_exists($pdfPath)) {
+                \Log::error("PDF Generation Failed", [
+                    'command' => $command,
+                    'output' => $output
+                ]);
+                return response()->json([
+                    'message' => 'Failed to generate PDF.',
+                    'debug'   => $output,
+                    'path'    => $sourcePath
+                ], 500);
+            }
+        }
+
+        if (file_exists($pdfPath)) {
+            return response()->file($pdfPath, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="' . basename($pdfPath) . '"'
+            ]);
+        }
+
+        return response()->json(['message' => 'Failed to generate PDF.'], 500);
+    }
+
     // ── Format helper ──────────────────────────────────────────────────
     private function formatContract(Contract $c): array
     {
