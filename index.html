@@ -11,6 +11,7 @@
   <script src="https://cdn.jsdelivr.net/npm/diff@5.2.0/dist/diff.min.js"></script>
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           fontFamily: { sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'] },
@@ -40,6 +41,11 @@
       font-weight: 600;
     }
 
+    .dark .sidebar-link.active {
+      background: #1e293b;
+      color: #60a5fa;
+    }
+
     .step-line::before {
       content: '';
       position: absolute;
@@ -50,6 +56,10 @@
       background: #e5e7eb;
     }
 
+    .dark .step-line::before {
+      background: #334155;
+    }
+
     ::-webkit-scrollbar {
       width: 4px;
     }
@@ -57,6 +67,10 @@
     ::-webkit-scrollbar-thumb {
       background: #d1d5db;
       border-radius: 99px;
+    }
+
+    .dark ::-webkit-scrollbar-thumb {
+      background: #475569;
     }
 
     .upload-zone:hover {
@@ -306,56 +320,56 @@
   </style>
 </head>
 
-<body class="bg-gray-50 text-gray-900 font-sans text-sm">
+<body class="bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 font-sans text-sm">
   <div class="flex h-screen overflow-hidden">
 
     <!-- ══ Sidebar ══ -->
-    <aside class="w-[220px] flex-shrink-0 flex flex-col h-screen bg-white border-r border-gray-200">
+    <aside class="w-[220px] flex-shrink-0 flex flex-col h-screen bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700">
 
       <!-- Brand -->
-      <div class="flex items-center gap-2.5 px-4 py-3.5 border-b border-gray-200">
+      <div class="flex items-center gap-2.5 px-4 py-3.5 border-b border-gray-200 dark:border-slate-700">
         <div
           class="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-content-center text-white flex items-center justify-center text-xs flex-shrink-0">
           <i class="fa-solid fa-file-contract"></i>
         </div>
         <div>
-          <div class="font-bold text-[13px] text-gray-900">CMS</div>
-          <div class="text-[10px] text-gray-400">Contract Management</div>
+          <div class="font-bold text-[13px] text-gray-900 dark:text-slate-100">CMS</div>
+          <div class="text-[10px] text-gray-400 dark:text-slate-500">Contract Management</div>
         </div>
       </div>
 
       <!-- Nav -->
       <nav class="flex-1 overflow-y-auto px-2 py-3 space-y-0.5">
-        <div class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 px-2 pt-1 pb-1">Menu</div>
+        <div class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500 px-2 pt-1 pb-1">Menu</div>
 
-        <a class="sidebar-link active flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-[13px] font-medium text-gray-500 cursor-pointer hover:bg-gray-50 hover:text-gray-800 transition-colors"
+        <a class="sidebar-link active flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-[13px] font-medium text-gray-500 dark:text-slate-400 cursor-pointer hover:bg-gray-50 dark:bg-slate-800 hover:text-gray-800 dark:text-slate-200 transition-colors"
           onclick="navigate('dashboard')">
           <i class="fa-solid fa-house w-4 text-center text-[13px]"></i> Dashboard
         </a>
-        <a class="sidebar-link flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-[13px] font-medium text-gray-500 cursor-pointer hover:bg-gray-50 hover:text-gray-800 transition-colors"
+        <a class="sidebar-link flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-[13px] font-medium text-gray-500 dark:text-slate-400 cursor-pointer hover:bg-gray-50 dark:bg-slate-800 hover:text-gray-800 dark:text-slate-200 transition-colors"
           onclick="navigate('contracts')">
           <i class="fa-solid fa-folder-open w-4 text-center text-[13px]"></i> Semua Kontrak
         </a>
-        <a class="sidebar-link flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-[13px] font-medium text-gray-500 cursor-pointer hover:bg-gray-50 hover:text-gray-800 transition-colors"
+        <a class="sidebar-link flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-[13px] font-medium text-gray-500 dark:text-slate-400 cursor-pointer hover:bg-gray-50 dark:bg-slate-800 hover:text-gray-800 dark:text-slate-200 transition-colors"
           onclick="navigate('pending')">
           <i class="fa-regular fa-clock w-4 text-center text-[13px]"></i> Menunggu Approval
           <span class="ml-auto text-[10px] font-bold bg-red-500 text-white px-1.5 py-0.5 rounded-full">3</span>
         </a>
 
-        <div class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 px-2 pt-3 pb-1">Laporan</div>
-        <a class="sidebar-link flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-[13px] font-medium text-gray-500 cursor-pointer hover:bg-gray-50 hover:text-gray-800 transition-colors"
+        <div class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500 px-2 pt-3 pb-1">Laporan</div>
+        <a class="sidebar-link flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-[13px] font-medium text-gray-500 dark:text-slate-400 cursor-pointer hover:bg-gray-50 dark:bg-slate-800 hover:text-gray-800 dark:text-slate-200 transition-colors"
           onclick="navigate('audit')">
           <i class="fa-solid fa-chart-bar w-4 text-center text-[13px]"></i> Audit Trail
         </a>
       </nav>
 
       <!-- User -->
-      <div class="flex items-center gap-2 px-3 py-2.5 border-t border-gray-200">
+      <div class="flex items-center gap-2 px-3 py-2.5 border-t border-gray-200 dark:border-slate-700">
         <div class="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
           style="background:#dbeafe;color:#1d4ed8;">DR</div>
         <div class="min-w-0">
           <div class="text-[12px] font-semibold truncate">Dian Rahayu</div>
-          <div class="text-[10px] text-gray-400">Legal Manager</div>
+          <div class="text-[10px] text-gray-400 dark:text-slate-500">Legal Manager</div>
         </div>
       </div>
     </aside>
@@ -364,14 +378,14 @@
     <div class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
 
       <!-- Topbar -->
-      <div class="h-[52px] flex-shrink-0 flex items-center justify-between px-5 bg-white border-b border-gray-200">
-        <span class="text-[14px] font-semibold text-gray-900" id="page-title">Dashboard</span>
+      <div class="h-[52px] flex-shrink-0 flex items-center justify-between px-5 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700">
+        <span class="text-[14px] font-semibold text-gray-900 dark:text-slate-100" id="page-title">Dashboard</span>
         <div class="flex items-center gap-2">
           <div class="relative">
             <i
-              class="fa-solid fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]"></i>
+              class="fa-solid fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 text-[11px]"></i>
             <input type="text" placeholder="Cari kontrak..."
-              class="pl-7 pr-3 py-1.5 text-[12px] border border-gray-200 rounded-md outline-none focus:border-blue-500 w-52 placeholder-gray-400" />
+              class="pl-7 pr-3 py-1.5 text-[12px] border border-gray-200 dark:border-slate-700 rounded-md outline-none focus:border-blue-500 w-52 placeholder-gray-400" />
           </div>
           <button
             class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-medium rounded-md transition-colors"
@@ -389,59 +403,59 @@
 
           <!-- Stats -->
           <div class="grid grid-cols-4 gap-3 mb-5">
-            <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-3">
+            <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl p-4 flex items-center gap-3">
               <div
-                class="w-9 h-9 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 flex-shrink-0">
+                class="w-9 h-9 rounded-lg border border-gray-200 dark:border-slate-700 flex items-center justify-center text-gray-500 dark:text-slate-400 flex-shrink-0">
                 <i class="fa-solid fa-file-lines text-[14px]"></i>
               </div>
               <div>
-                <div class="text-[11px] font-medium text-gray-500">Total Kontrak</div>
+                <div class="text-[11px] font-medium text-gray-500 dark:text-slate-400">Total Kontrak</div>
                 <div class="text-[22px] font-bold leading-tight">24</div>
-                <div class="text-[10px] text-gray-400">+bulan ini</div>
+                <div class="text-[10px] text-gray-400 dark:text-slate-500">+bulan ini</div>
               </div>
             </div>
-            <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-3">
+            <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl p-4 flex items-center gap-3">
               <div
-                class="w-9 h-9 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 flex-shrink-0">
+                class="w-9 h-9 rounded-lg border border-gray-200 dark:border-slate-700 flex items-center justify-center text-gray-500 dark:text-slate-400 flex-shrink-0">
                 <i class="fa-regular fa-clock text-[14px]"></i>
               </div>
               <div>
-                <div class="text-[11px] font-medium text-gray-500">Menunggu Approval</div>
+                <div class="text-[11px] font-medium text-gray-500 dark:text-slate-400">Menunggu Approval</div>
                 <div class="text-[22px] font-bold leading-tight">7</div>
-                <div class="text-[10px] text-gray-400">3 perlu aksimu</div>
+                <div class="text-[10px] text-gray-400 dark:text-slate-500">3 perlu aksimu</div>
               </div>
             </div>
-            <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-3">
+            <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl p-4 flex items-center gap-3">
               <div
-                class="w-9 h-9 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 flex-shrink-0">
+                class="w-9 h-9 rounded-lg border border-gray-200 dark:border-slate-700 flex items-center justify-center text-gray-500 dark:text-slate-400 flex-shrink-0">
                 <i class="fa-solid fa-circle-check text-[14px]"></i>
               </div>
               <div>
-                <div class="text-[11px] font-medium text-gray-500">Disetujui</div>
+                <div class="text-[11px] font-medium text-gray-500 dark:text-slate-400">Disetujui</div>
                 <div class="text-[22px] font-bold leading-tight">15</div>
-                <div class="text-[10px] text-gray-400">62.5% approval rate</div>
+                <div class="text-[10px] text-gray-400 dark:text-slate-500">62.5% approval rate</div>
               </div>
             </div>
-            <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-3">
+            <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl p-4 flex items-center gap-3">
               <div
-                class="w-9 h-9 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 flex-shrink-0">
+                class="w-9 h-9 rounded-lg border border-gray-200 dark:border-slate-700 flex items-center justify-center text-gray-500 dark:text-slate-400 flex-shrink-0">
                 <i class="fa-solid fa-rotate text-[14px]"></i>
               </div>
               <div>
-                <div class="text-[11px] font-medium text-gray-500">Revisi</div>
+                <div class="text-[11px] font-medium text-gray-500 dark:text-slate-400">Revisi</div>
                 <div class="text-[22px] font-bold leading-tight">2</div>
-                <div class="text-[10px] text-gray-400">Perlu re-upload</div>
+                <div class="text-[10px] text-gray-400 dark:text-slate-500">Perlu re-upload</div>
               </div>
             </div>
           </div>
 
           <!-- Recent table -->
-          <div class="bg-white border border-gray-200 rounded-xl overflow-hidden mb-4">
-            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+          <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden mb-4">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-slate-800">
               <span class="text-[13px] font-semibold flex items-center gap-2">
-                <i class="fa-solid fa-list-ul text-gray-400 text-[12px]"></i> Kontrak Terbaru
+                <i class="fa-solid fa-list-ul text-gray-400 dark:text-slate-500 text-[12px]"></i> Kontrak Terbaru
               </span>
-              <button class="text-[12px] text-blue-600 hover:underline flex items-center gap-1"
+              <button class="text-[12px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
                 onclick="navigate('contracts')">
                 Lihat Semua <i class="fa-solid fa-arrow-right text-[10px]"></i>
               </button>
@@ -449,7 +463,7 @@
             <div class="overflow-x-auto">
               <table class="w-full">
                 <thead>
-                  <tr class="bg-gray-50">
+                  <tr class="bg-gray-50 dark:bg-slate-800">
                     <th class="th">No. Kontrak</th>
                     <th class="th">Judul</th>
                     <th class="th">Dibuat Oleh</th>
@@ -466,15 +480,15 @@
 
           <!-- Bottom row -->
           <div class="grid grid-cols-2 gap-4">
-            <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-              <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-100 text-[13px] font-semibold">
-                <i class="fa-solid fa-triangle-exclamation text-gray-400 text-[12px]"></i> Bottleneck Approval
+            <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden">
+              <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-100 dark:border-slate-800 text-[13px] font-semibold">
+                <i class="fa-solid fa-triangle-exclamation text-gray-400 dark:text-slate-500 text-[12px]"></i> Bottleneck Approval
               </div>
               <div class="p-4" id="bottleneck-list"></div>
             </div>
-            <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-              <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-100 text-[13px] font-semibold">
-                <i class="fa-solid fa-chart-pie text-gray-400 text-[12px]"></i> Status Overview
+            <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden">
+              <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-100 dark:border-slate-800 text-[13px] font-semibold">
+                <i class="fa-solid fa-chart-pie text-gray-400 dark:text-slate-500 text-[12px]"></i> Status Overview
               </div>
               <div class="p-4" id="status-overview"></div>
             </div>
@@ -483,14 +497,14 @@
 
         <!-- ── Contracts ── -->
         <div class="page" id="page-contracts">
-          <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+          <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-slate-800">
               <span class="text-[13px] font-semibold flex items-center gap-2">
-                <i class="fa-solid fa-folder-open text-gray-400 text-[12px]"></i> Semua Kontrak
+                <i class="fa-solid fa-folder-open text-gray-400 dark:text-slate-500 text-[12px]"></i> Semua Kontrak
               </span>
               <div class="flex gap-2">
                 <select
-                  class="text-[12px] border border-gray-200 rounded-md px-2 py-1.5 outline-none focus:border-blue-500 bg-white">
+                  class="text-[12px] border border-gray-200 dark:border-slate-700 rounded-md px-2 py-1.5 outline-none focus:border-blue-500 bg-white dark:bg-slate-900">
                   <option>Semua Status</option>
                   <option>Draft</option>
                   <option>In Review</option>
@@ -507,7 +521,7 @@
             <div class="overflow-x-auto">
               <table class="w-full">
                 <thead>
-                  <tr class="bg-gray-50">
+                  <tr class="bg-gray-50 dark:bg-slate-800">
                     <th class="th">No. Kontrak</th>
                     <th class="th">Judul</th>
                     <th class="th">Dibuat Oleh</th>
@@ -526,14 +540,14 @@
 
         <!-- ── Pending ── -->
         <div class="page" id="page-pending">
-          <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div class="px-4 py-3 border-b border-gray-100 text-[13px] font-semibold flex items-center gap-2">
-              <i class="fa-regular fa-clock text-gray-400 text-[12px]"></i> Menunggu Approval Saya
+          <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden">
+            <div class="px-4 py-3 border-b border-gray-100 dark:border-slate-800 text-[13px] font-semibold flex items-center gap-2">
+              <i class="fa-regular fa-clock text-gray-400 dark:text-slate-500 text-[12px]"></i> Menunggu Approval Saya
             </div>
             <div class="overflow-x-auto">
               <table class="w-full">
                 <thead>
-                  <tr class="bg-gray-50">
+                  <tr class="bg-gray-50 dark:bg-slate-800">
                     <th class="th">No. Kontrak</th>
                     <th class="th">Judul</th>
                     <th class="th">Role</th>
@@ -551,18 +565,18 @@
 
         <!-- ── Audit ── -->
         <div class="page" id="page-audit">
-          <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+          <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-slate-800">
               <span class="text-[13px] font-semibold flex items-center gap-2">
-                <i class="fa-solid fa-chart-bar text-gray-400 text-[12px]"></i> Audit Trail
+                <i class="fa-solid fa-chart-bar text-gray-400 dark:text-slate-500 text-[12px]"></i> Audit Trail
               </span>
               <div class="flex gap-2">
                 <input type="date"
-                  class="text-[12px] border border-gray-200 rounded-md px-2 py-1.5 outline-none focus:border-blue-500 w-36" />
+                  class="text-[12px] border border-gray-200 dark:border-slate-700 rounded-md px-2 py-1.5 outline-none focus:border-blue-500 w-36" />
                 <input type="date"
-                  class="text-[12px] border border-gray-200 rounded-md px-2 py-1.5 outline-none focus:border-blue-500 w-36" />
+                  class="text-[12px] border border-gray-200 dark:border-slate-700 rounded-md px-2 py-1.5 outline-none focus:border-blue-500 w-36" />
                 <button
-                  class="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 hover:bg-gray-50 text-[12px] font-medium rounded-md transition-colors">
+                  class="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 text-[12px] font-medium rounded-md transition-colors">
                   <i class="fa-solid fa-filter text-[11px]"></i> Filter
                 </button>
               </div>
@@ -570,7 +584,7 @@
             <div class="overflow-x-auto">
               <table class="w-full">
                 <thead>
-                  <tr class="bg-gray-50">
+                  <tr class="bg-gray-50 dark:bg-slate-800">
                     <th class="th">Waktu</th>
                     <th class="th">Kontrak</th>
                     <th class="th">Aksi</th>
@@ -588,26 +602,26 @@
         <div class="page" id="page-detail">
 
           <!-- Breadcrumb -->
-          <nav class="flex items-center gap-1.5 text-[11px] text-gray-400 mb-4">
-            <a class="text-blue-600 cursor-pointer hover:underline" onclick="navigate('contracts')">Kontrak</a>
+          <nav class="flex items-center gap-1.5 text-[11px] text-gray-400 dark:text-slate-500 mb-4">
+            <a class="text-blue-600 dark:text-blue-400 cursor-pointer hover:underline" onclick="navigate('contracts')">Kontrak</a>
             <i class="fa-solid fa-chevron-right text-[9px]"></i>
-            <span class="text-gray-600" id="detail-bc">Detail</span>
+            <span class="text-gray-600 dark:text-slate-400" id="detail-bc">Detail</span>
           </nav>
 
           <!-- Header -->
           <div class="flex items-start justify-between mb-4">
             <div>
-              <h2 class="text-[16px] font-bold text-gray-900" id="detail-title"></h2>
-              <p class="text-[11px] text-gray-400 mt-0.5" id="detail-sub"></p>
+              <h2 class="text-[16px] font-bold text-gray-900 dark:text-slate-100" id="detail-title"></h2>
+              <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5" id="detail-sub"></p>
             </div>
             <div class="flex gap-2">
               <button
-                class="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 hover:bg-gray-50 text-[12px] font-medium rounded-md transition-colors"
+                class="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 text-[12px] font-medium rounded-md transition-colors"
                 onclick="downloadFile()">
                 <i class="fa-solid fa-download text-[11px]"></i> Download
               </button>
               <button
-                class="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 hover:bg-gray-50 text-[12px] font-medium rounded-md transition-colors"
+                class="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 text-[12px] font-medium rounded-md transition-colors"
                 onclick="openModal('modal-upload')">
                 <i class="fa-solid fa-upload text-[11px]"></i> Upload Revisi
               </button>
@@ -621,28 +635,28 @@
             <div class="flex flex-col gap-4">
 
               <!-- Info -->
-              <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-100 text-[13px] font-semibold">
-                  <i class="fa-solid fa-circle-info text-gray-400 text-[12px]"></i> Informasi Kontrak
+              <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden">
+                <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-100 dark:border-slate-800 text-[13px] font-semibold">
+                  <i class="fa-solid fa-circle-info text-gray-400 dark:text-slate-500 text-[12px]"></i> Informasi Kontrak
                 </div>
                 <div class="p-4 grid grid-cols-2 gap-4" id="detail-info"></div>
               </div>
 
               <!-- Tabs -->
-              <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                <div class="flex border-b border-gray-200 px-4 pt-2 gap-1">
+              <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden">
+                <div class="flex border-b border-gray-200 dark:border-slate-700 px-4 pt-2 gap-1">
                   <button
-                    class="tab-btn active-tab text-[12px] font-medium px-3 py-2 border-b-2 border-blue-600 text-blue-600 -mb-px"
+                    class="tab-btn active-tab text-[12px] font-medium px-3 py-2 border-b-2 border-blue-600 text-blue-600 dark:text-blue-400 -mb-px"
                     onclick="switchDetailTab('dtab-versions', this)">
                     <i class="fa-solid fa-clock-rotate-left mr-1"></i> Riwayat Versi
                   </button>
                   <button
-                    class="tab-btn text-[12px] font-medium px-3 py-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700 -mb-px transition-colors"
+                    class="tab-btn text-[12px] font-medium px-3 py-2 border-b-2 border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:text-slate-300 -mb-px transition-colors"
                     onclick="switchDetailTab('dtab-audit', this)">
                     <i class="fa-solid fa-list-check mr-1"></i> Audit Trail
                   </button>
                   <button
-                    class="tab-btn text-[12px] font-medium px-3 py-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700 -mb-px transition-colors flex items-center gap-1.5"
+                    class="tab-btn text-[12px] font-medium px-3 py-2 border-b-2 border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:text-slate-300 -mb-px transition-colors flex items-center gap-1.5"
                     onclick="switchDetailTab('dtab-chat', this)">
                     <i class="fa-solid fa-comments mr-1"></i> Diskusi
                     <span id="dtab-chat-badge"
@@ -656,9 +670,9 @@
                   <div id="dtab-chat" class="hidden" style="height:340px;display:none;flex-direction:column;">
                     <div id="dtab-chat-messages" class="flex-1 overflow-y-auto chat-messages pb-2 pr-1"
                       style="height:270px;"></div>
-                    <div class="pt-3 border-t border-gray-100 flex gap-2 mt-auto">
+                    <div class="pt-3 border-t border-gray-100 dark:border-slate-800 flex gap-2 mt-auto">
                       <input id="dtab-chat-input" type="text" placeholder="Tulis pesan..."
-                        class="flex-1 text-[12px] border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-blue-500 placeholder-gray-300"
+                        class="flex-1 text-[12px] border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 outline-none focus:border-blue-500 placeholder-gray-300"
                         onkeydown="if(event.key==='Enter')sendContractMsg()" />
                       <button onclick="sendContractMsg()"
                         class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[12px] transition-colors flex items-center gap-1.5">
@@ -675,9 +689,9 @@
             <div class="flex flex-col gap-4">
 
               <!-- Approval flow -->
-              <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-100 text-[13px] font-semibold">
-                  <i class="fa-solid fa-arrow-right-arrow-left text-gray-400 text-[12px]"></i> Alur Approval
+              <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden">
+                <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-100 dark:border-slate-800 text-[13px] font-semibold">
+                  <i class="fa-solid fa-arrow-right-arrow-left text-gray-400 dark:text-slate-500 text-[12px]"></i> Alur Approval
                 </div>
                 <div class="p-4">
                   <div id="approval-steps"></div>
@@ -685,16 +699,16 @@
               </div>
 
               <!-- Action -->
-              <div class="bg-white border border-gray-200 rounded-xl overflow-hidden" id="action-card">
-                <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-100 text-[13px] font-semibold">
-                  <i class="fa-solid fa-bolt text-gray-400 text-[12px]"></i> Aksi Approval
+              <div class="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden" id="action-card">
+                <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-100 dark:border-slate-800 text-[13px] font-semibold">
+                  <i class="fa-solid fa-bolt text-gray-400 dark:text-slate-500 text-[12px]"></i> Aksi Approval
                 </div>
                 <div class="p-4">
-                  <p class="text-[12px] text-gray-500 mb-3">Kamu adalah approver berikutnya untuk kontrak ini.</p>
+                  <p class="text-[12px] text-gray-500 dark:text-slate-400 mb-3">Kamu adalah approver berikutnya untuk kontrak ini.</p>
                   <div class="mb-3">
-                    <label class="block text-[11px] font-semibold text-gray-500 mb-1">Catatan</label>
+                    <label class="block text-[11px] font-semibold text-gray-500 dark:text-slate-400 mb-1">Catatan</label>
                     <textarea id="approval-note" rows="3" placeholder="Tambahkan catatan..."
-                      class="w-full text-[12px] border border-gray-200 rounded-md px-3 py-2 outline-none focus:border-blue-500 resize-none placeholder-gray-300"></textarea>
+                      class="w-full text-[12px] border border-gray-200 dark:border-slate-700 rounded-md px-3 py-2 outline-none focus:border-blue-500 resize-none placeholder-gray-300"></textarea>
                   </div>
                   <div class="flex gap-2">
                     <button
@@ -722,53 +736,53 @@
 
   <!-- ══ Modal: Buat Kontrak ══ -->
   <div class="fixed inset-0 bg-black/40 z-50 hidden items-center justify-center" id="modal-create">
-    <div class="bg-white rounded-xl w-[460px] max-w-[95vw] shadow-xl modal-in">
-      <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+    <div class="bg-white dark:bg-slate-900 rounded-xl w-[460px] max-w-[95vw] shadow-xl modal-in">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-800">
         <h6 class="text-[14px] font-semibold flex items-center gap-2">
-          <i class="fa-solid fa-file-circle-plus text-gray-400 text-[13px]"></i> Buat Kontrak Baru
+          <i class="fa-solid fa-file-circle-plus text-gray-400 dark:text-slate-500 text-[13px]"></i> Buat Kontrak Baru
         </h6>
         <button
-          class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-700 text-[13px] transition-colors"
+          class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:text-slate-300 text-[13px] transition-colors"
           onclick="closeModal('modal-create')"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="p-5 space-y-4">
         <div>
-          <label class="block text-[11px] font-semibold text-gray-500 mb-1">Judul Kontrak *</label>
+          <label class="block text-[11px] font-semibold text-gray-500 dark:text-slate-400 mb-1">Judul Kontrak *</label>
           <input id="new-title" placeholder="Masukkan judul kontrak"
-            class="w-full text-[12px] border border-gray-200 rounded-md px-3 py-2 outline-none focus:border-blue-500 placeholder-gray-300" />
+            class="w-full text-[12px] border border-gray-200 dark:border-slate-700 rounded-md px-3 py-2 outline-none focus:border-blue-500 placeholder-gray-300" />
         </div>
         <div>
-          <label class="block text-[11px] font-semibold text-gray-500 mb-1">Deskripsi</label>
+          <label class="block text-[11px] font-semibold text-gray-500 dark:text-slate-400 mb-1">Deskripsi</label>
           <textarea id="new-desc" rows="2" placeholder="Deskripsi singkat..."
-            class="w-full text-[12px] border border-gray-200 rounded-md px-3 py-2 outline-none focus:border-blue-500 resize-none placeholder-gray-300"></textarea>
+            class="w-full text-[12px] border border-gray-200 dark:border-slate-700 rounded-md px-3 py-2 outline-none focus:border-blue-500 resize-none placeholder-gray-300"></textarea>
         </div>
         <div>
-          <label class="block text-[11px] font-semibold text-gray-500 mb-1">Upload File (.docx) *</label>
+          <label class="block text-[11px] font-semibold text-gray-500 dark:text-slate-400 mb-1">Upload File (.docx) *</label>
           <div
-            class="upload-zone border-2 border-dashed border-gray-300 rounded-lg py-6 text-center cursor-pointer bg-gray-50 transition-colors"
+            class="upload-zone border-2 border-dashed border-gray-300 rounded-lg py-6 text-center cursor-pointer bg-gray-50 dark:bg-slate-800 transition-colors"
             onclick="document.getElementById('file-input').click()">
-            <i class="fa-solid fa-cloud-arrow-up text-gray-400 text-2xl block mb-2"></i>
-            <p class="text-[12px] text-gray-500"><span class="text-blue-600 font-semibold">Klik untuk upload</span> atau
+            <i class="fa-solid fa-cloud-arrow-up text-gray-400 dark:text-slate-500 text-2xl block mb-2"></i>
+            <p class="text-[12px] text-gray-500 dark:text-slate-400"><span class="text-blue-600 dark:text-blue-400 font-semibold">Klik untuk upload</span> atau
               drag & drop</p>
-            <p class="text-[11px] text-gray-400 mt-0.5">Format .docx · Maks. 10 MB</p>
+            <p class="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">Format .docx · Maks. 10 MB</p>
           </div>
           <input type="file" id="file-input" accept=".docx" class="hidden"
             onchange="onFileChange(this,'file-preview','file-preview-name')" />
           <div id="file-preview"
-            class="hidden mt-2 flex items-center gap-2 text-[11px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3 py-2">
-            <i class="fa-solid fa-file-word text-blue-600"></i>
+            class="hidden mt-2 flex items-center gap-2 text-[11px] text-gray-600 dark:text-slate-400 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-md px-3 py-2">
+            <i class="fa-solid fa-file-word text-blue-600 dark:text-blue-400"></i>
             <span id="file-preview-name"></span>
           </div>
         </div>
         <div>
-          <label class="block text-[11px] font-semibold text-gray-500 mb-1">Changelog</label>
+          <label class="block text-[11px] font-semibold text-gray-500 dark:text-slate-400 mb-1">Changelog</label>
           <input id="new-changelog" placeholder="Contoh: Draft awal kontrak vendor"
-            class="w-full text-[12px] border border-gray-200 rounded-md px-3 py-2 outline-none focus:border-blue-500 placeholder-gray-300" />
+            class="w-full text-[12px] border border-gray-200 dark:border-slate-700 rounded-md px-3 py-2 outline-none focus:border-blue-500 placeholder-gray-300" />
         </div>
       </div>
-      <div class="flex justify-end gap-2 px-5 py-3 border-t border-gray-100">
+      <div class="flex justify-end gap-2 px-5 py-3 border-t border-gray-100 dark:border-slate-800">
         <button
-          class="px-3 py-1.5 text-[12px] font-medium border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
+          class="px-3 py-1.5 text-[12px] font-medium border border-gray-200 dark:border-slate-700 rounded-md hover:bg-gray-50 dark:bg-slate-800 transition-colors"
           onclick="closeModal('modal-create')">Batal</button>
         <button
           class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-medium rounded-md transition-colors"
@@ -781,42 +795,42 @@
 
   <!-- ══ Modal: Upload Revisi ══ -->
   <div class="fixed inset-0 bg-black/40 z-50 hidden items-center justify-center" id="modal-upload">
-    <div class="bg-white rounded-xl w-[460px] max-w-[95vw] shadow-xl modal-in">
-      <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+    <div class="bg-white dark:bg-slate-900 rounded-xl w-[460px] max-w-[95vw] shadow-xl modal-in">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-800">
         <h6 class="text-[14px] font-semibold flex items-center gap-2">
-          <i class="fa-solid fa-file-arrow-up text-gray-400 text-[13px]"></i> Upload Versi Baru
+          <i class="fa-solid fa-file-arrow-up text-gray-400 dark:text-slate-500 text-[13px]"></i> Upload Versi Baru
         </h6>
         <button
-          class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-700 text-[13px] transition-colors"
+          class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:text-slate-300 text-[13px] transition-colors"
           onclick="closeModal('modal-upload')"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="p-5 space-y-4">
         <div>
-          <label class="block text-[11px] font-semibold text-gray-500 mb-1">File Revisi (.docx) *</label>
+          <label class="block text-[11px] font-semibold text-gray-500 dark:text-slate-400 mb-1">File Revisi (.docx) *</label>
           <div
-            class="upload-zone border-2 border-dashed border-gray-300 rounded-lg py-6 text-center cursor-pointer bg-gray-50 transition-colors"
+            class="upload-zone border-2 border-dashed border-gray-300 rounded-lg py-6 text-center cursor-pointer bg-gray-50 dark:bg-slate-800 transition-colors"
             onclick="document.getElementById('rev-input').click()">
-            <i class="fa-regular fa-file-word text-gray-400 text-2xl block mb-2"></i>
-            <p class="text-[12px] text-gray-500"><span class="text-blue-600 font-semibold">Klik untuk upload</span> file
+            <i class="fa-regular fa-file-word text-gray-400 dark:text-slate-500 text-2xl block mb-2"></i>
+            <p class="text-[12px] text-gray-500 dark:text-slate-400"><span class="text-blue-600 dark:text-blue-400 font-semibold">Klik untuk upload</span> file
               revisi</p>
           </div>
           <input type="file" id="rev-input" accept=".docx" class="hidden"
             onchange="onFileChange(this,'rev-preview','rev-preview-name')" />
           <div id="rev-preview"
-            class="hidden mt-2 flex items-center gap-2 text-[11px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3 py-2">
-            <i class="fa-solid fa-file-word text-blue-600"></i>
+            class="hidden mt-2 flex items-center gap-2 text-[11px] text-gray-600 dark:text-slate-400 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-md px-3 py-2">
+            <i class="fa-solid fa-file-word text-blue-600 dark:text-blue-400"></i>
             <span id="rev-preview-name"></span>
           </div>
         </div>
         <div>
-          <label class="block text-[11px] font-semibold text-gray-500 mb-1">Changelog *</label>
+          <label class="block text-[11px] font-semibold text-gray-500 dark:text-slate-400 mb-1">Changelog *</label>
           <input id="rev-changelog" placeholder="Apa yang berubah pada versi ini?"
-            class="w-full text-[12px] border border-gray-200 rounded-md px-3 py-2 outline-none focus:border-blue-500 placeholder-gray-300" />
+            class="w-full text-[12px] border border-gray-200 dark:border-slate-700 rounded-md px-3 py-2 outline-none focus:border-blue-500 placeholder-gray-300" />
         </div>
       </div>
-      <div class="flex justify-end gap-2 px-5 py-3 border-t border-gray-100">
+      <div class="flex justify-end gap-2 px-5 py-3 border-t border-gray-100 dark:border-slate-800">
         <button
-          class="px-3 py-1.5 text-[12px] font-medium border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
+          class="px-3 py-1.5 text-[12px] font-medium border border-gray-200 dark:border-slate-700 rounded-md hover:bg-gray-50 dark:bg-slate-800 transition-colors"
           onclick="closeModal('modal-upload')">Batal</button>
         <button
           class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-medium rounded-md transition-colors"
@@ -829,24 +843,24 @@
 
   <!-- ══ Modal: Reject ══ -->
   <div class="fixed inset-0 bg-black/40 z-50 hidden items-center justify-center" id="modal-reject">
-    <div class="bg-white rounded-xl w-[400px] max-w-[95vw] shadow-xl modal-in">
-      <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+    <div class="bg-white dark:bg-slate-900 rounded-xl w-[400px] max-w-[95vw] shadow-xl modal-in">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-800">
         <h6 class="text-[14px] font-semibold text-red-600 flex items-center gap-2">
           <i class="fa-solid fa-circle-xmark text-[13px]"></i> Tolak Kontrak
         </h6>
         <button
-          class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-700 text-[13px] transition-colors"
+          class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:text-slate-300 text-[13px] transition-colors"
           onclick="closeModal('modal-reject')"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="p-5">
-        <p class="text-[12px] text-gray-500 mb-3">Berikan alasan penolakan agar initiator dapat melakukan revisi.</p>
-        <label class="block text-[11px] font-semibold text-gray-500 mb-1">Alasan Penolakan *</label>
+        <p class="text-[12px] text-gray-500 dark:text-slate-400 mb-3">Berikan alasan penolakan agar initiator dapat melakukan revisi.</p>
+        <label class="block text-[11px] font-semibold text-gray-500 dark:text-slate-400 mb-1">Alasan Penolakan *</label>
         <textarea id="reject-reason" rows="3" placeholder="Jelaskan alasan penolakan..."
-          class="w-full text-[12px] border border-gray-200 rounded-md px-3 py-2 outline-none focus:border-red-400 resize-none placeholder-gray-300"></textarea>
+          class="w-full text-[12px] border border-gray-200 dark:border-slate-700 rounded-md px-3 py-2 outline-none focus:border-red-400 resize-none placeholder-gray-300"></textarea>
       </div>
-      <div class="flex justify-end gap-2 px-5 py-3 border-t border-gray-100">
+      <div class="flex justify-end gap-2 px-5 py-3 border-t border-gray-100 dark:border-slate-800">
         <button
-          class="px-3 py-1.5 text-[12px] font-medium border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
+          class="px-3 py-1.5 text-[12px] font-medium border border-gray-200 dark:border-slate-700 rounded-md hover:bg-gray-50 dark:bg-slate-800 transition-colors"
           onclick="closeModal('modal-reject')">Batal</button>
         <button
           class="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-[12px] font-medium rounded-md transition-colors"
@@ -859,70 +873,70 @@
 
   <!-- ══ Modal: Preview Dokumen ══ -->
   <div class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4" id="modal-preview">
-    <div class="bg-white rounded-xl shadow-xl flex flex-col modal-in" style="width:780px;max-width:95vw;height:88vh;">
+    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-xl flex flex-col modal-in" style="width:780px;max-width:95vw;height:88vh;">
 
       <!-- Header -->
-      <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 flex-shrink-0">
+      <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-slate-800 flex-shrink-0">
         <div class="flex items-center gap-3 min-w-0">
           <div
-            class="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center flex-shrink-0">
+            class="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 flex items-center justify-center flex-shrink-0">
             <i class="fa-regular fa-file-word text-blue-500"></i>
           </div>
           <div class="min-w-0">
             <div class="text-[13px] font-semibold truncate" id="preview-filename">—</div>
-            <div class="text-[10px] text-gray-400" id="preview-meta">—</div>
+            <div class="text-[10px] text-gray-400 dark:text-slate-500" id="preview-meta">—</div>
           </div>
         </div>
         <button
-          class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400 text-[13px] transition-colors flex-shrink-0 ml-3"
+          class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-slate-500 text-[13px] transition-colors flex-shrink-0 ml-3"
           onclick="closeModal('modal-preview')">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
 
       <!-- Toolbar -->
-      <div class="flex items-center gap-2 px-5 py-2 border-b border-gray-100 bg-gray-50 flex-shrink-0">
-        <span class="text-[11px] text-gray-500 flex items-center gap-1.5">
+      <div class="flex items-center gap-2 px-5 py-2 border-b border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800 flex-shrink-0">
+        <span class="text-[11px] text-gray-500 dark:text-slate-400 flex items-center gap-1.5">
           <i class="fa-solid fa-circle-info text-blue-400"></i>
           Preview dokumen — konten dirender dari file .docx yang diupload
         </span>
         <div class="ml-auto flex gap-2">
           <button onclick="zoomPreview(-1)"
-            class="px-2.5 py-1 text-[11px] border border-gray-200 rounded hover:bg-white transition-colors">
+            class="px-2.5 py-1 text-[11px] border border-gray-200 dark:border-slate-700 rounded hover:bg-white dark:bg-slate-900 transition-colors">
             <i class="fa-solid fa-minus"></i>
           </button>
-          <span id="zoom-label" class="text-[11px] text-gray-500 px-1 self-center">100%</span>
+          <span id="zoom-label" class="text-[11px] text-gray-500 dark:text-slate-400 px-1 self-center">100%</span>
           <button onclick="zoomPreview(1)"
-            class="px-2.5 py-1 text-[11px] border border-gray-200 rounded hover:bg-white transition-colors">
+            class="px-2.5 py-1 text-[11px] border border-gray-200 dark:border-slate-700 rounded hover:bg-white dark:bg-slate-900 transition-colors">
             <i class="fa-solid fa-plus"></i>
           </button>
         </div>
       </div>
 
       <!-- Content -->
-      <div class="flex-1 overflow-auto bg-gray-100 p-6" id="preview-scroll-area">
+      <div class="flex-1 overflow-auto bg-gray-100 dark:bg-slate-800 p-6" id="preview-scroll-area">
         <!-- Loading state -->
-        <div id="preview-loading" class="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
+        <div id="preview-loading" class="flex flex-col items-center justify-center h-full text-gray-400 dark:text-slate-500 gap-3">
           <i class="fa-solid fa-spinner fa-spin text-3xl text-blue-400"></i>
           <span class="text-[13px]">Memuat dokumen...</span>
         </div>
         <!-- Error state -->
-        <div id="preview-error" class="hidden flex-col items-center justify-center h-full text-gray-400 gap-3">
+        <div id="preview-error" class="hidden flex-col items-center justify-center h-full text-gray-400 dark:text-slate-500 gap-3">
           <i class="fa-regular fa-file-excel text-4xl text-gray-300"></i>
           <div class="text-center">
-            <div class="text-[13px] font-medium text-gray-500 mb-1">File tidak tersedia untuk di-preview</div>
-            <div class="text-[12px] text-gray-400">File ini adalah data simulasi dan tidak memiliki konten
+            <div class="text-[13px] font-medium text-gray-500 dark:text-slate-400 mb-1">File tidak tersedia untuk di-preview</div>
+            <div class="text-[12px] text-gray-400 dark:text-slate-500">File ini adalah data simulasi dan tidak memiliki konten
               nyata.<br>Upload file .docx baru untuk melihat preview.</div>
           </div>
         </div>
         <!-- Demo state (mock data) -->
         <div id="preview-demo" class="hidden">
-          <div id="preview-demo-wrap" class="bg-white shadow-sm mx-auto rounded"
+          <div id="preview-demo-wrap" class="bg-white dark:bg-slate-900 shadow-sm mx-auto rounded"
             style="max-width:680px;padding:48px 56px;transform-origin:top center;"></div>
         </div>
         <!-- Real docx rendered -->
         <div id="preview-real" class="hidden">
-          <div id="preview-content" class="bg-white shadow-sm mx-auto rounded" style="max-width:680px;padding:48px 56px;transform-origin:top center;
+          <div id="preview-content" class="bg-white dark:bg-slate-900 shadow-sm mx-auto rounded" style="max-width:680px;padding:48px 56px;transform-origin:top center;
                     line-height:1.7;font-size:14px;color:#1f2937;"></div>
         </div>
       </div>
@@ -932,10 +946,10 @@
 
   <!-- ══ Modal: Compare Versi ══ -->
   <div class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4" id="modal-compare">
-    <div class="bg-white rounded-xl shadow-xl flex flex-col modal-in" style="width:1000px;max-width:96vw;height:90vh;">
+    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-xl flex flex-col modal-in" style="width:1000px;max-width:96vw;height:90vh;">
 
       <!-- Header -->
-      <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 flex-shrink-0">
+      <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-slate-800 flex-shrink-0">
         <div class="flex items-center gap-3">
           <div
             class="w-8 h-8 rounded-lg bg-violet-50 border border-violet-100 flex items-center justify-center flex-shrink-0">
@@ -943,50 +957,50 @@
           </div>
           <div>
             <div class="text-[13px] font-semibold" id="cmp-contract-title">Compare Versi</div>
-            <div class="text-[10px] text-gray-400" id="cmp-contract-no"></div>
+            <div class="text-[10px] text-gray-400 dark:text-slate-500" id="cmp-contract-no"></div>
           </div>
         </div>
         <button
-          class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400 text-[13px] transition-colors"
+          class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-slate-500 text-[13px] transition-colors"
           onclick="closeModal('modal-compare')">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
 
       <!-- Toolbar -->
-      <div class="flex items-center gap-3 px-5 py-2.5 border-b border-gray-100 bg-gray-50 flex-shrink-0 flex-wrap">
+      <div class="flex items-center gap-3 px-5 py-2.5 border-b border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800 flex-shrink-0 flex-wrap">
         <!-- Version selectors -->
         <div class="flex items-center gap-2">
-          <label class="text-[11px] font-semibold text-gray-500">Dari</label>
+          <label class="text-[11px] font-semibold text-gray-500 dark:text-slate-400">Dari</label>
           <select id="cmp-from"
-            class="text-[12px] border border-gray-200 rounded-md px-2 py-1.5 bg-white outline-none focus:border-violet-400"
+            class="text-[12px] border border-gray-200 dark:border-slate-700 rounded-md px-2 py-1.5 bg-white dark:bg-slate-900 outline-none focus:border-violet-400"
             onchange="runCompare()"></select>
         </div>
-        <i class="fa-solid fa-arrow-right text-gray-400 text-[12px]"></i>
+        <i class="fa-solid fa-arrow-right text-gray-400 dark:text-slate-500 text-[12px]"></i>
         <div class="flex items-center gap-2">
-          <label class="text-[11px] font-semibold text-gray-500">Ke</label>
+          <label class="text-[11px] font-semibold text-gray-500 dark:text-slate-400">Ke</label>
           <select id="cmp-to"
-            class="text-[12px] border border-gray-200 rounded-md px-2 py-1.5 bg-white outline-none focus:border-violet-400"
+            class="text-[12px] border border-gray-200 dark:border-slate-700 rounded-md px-2 py-1.5 bg-white dark:bg-slate-900 outline-none focus:border-violet-400"
             onchange="runCompare()"></select>
         </div>
 
         <!-- Mode toggle -->
-        <div class="flex items-center gap-1 ml-2 bg-white border border-gray-200 rounded-lg p-0.5">
+        <div class="flex items-center gap-1 ml-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg p-0.5">
           <button id="cmp-mode-side" onclick="setCmpMode('side')"
-            class="px-2.5 py-1 text-[11px] font-medium rounded-md bg-gray-100 text-gray-700 transition-colors">
+            class="px-2.5 py-1 text-[11px] font-medium rounded-md bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 transition-colors">
             <i class="fa-solid fa-columns mr-1"></i>Side by Side
           </button>
           <button id="cmp-mode-inline" onclick="setCmpMode('inline')"
-            class="px-2.5 py-1 text-[11px] font-medium rounded-md text-gray-400 transition-colors">
+            class="px-2.5 py-1 text-[11px] font-medium rounded-md text-gray-400 dark:text-slate-500 transition-colors">
             <i class="fa-solid fa-bars mr-1"></i>Inline
           </button>
         </div>
 
         <!-- Legend -->
-        <div class="flex items-center gap-3 ml-auto text-[11px] text-gray-500">
+        <div class="flex items-center gap-3 ml-auto text-[11px] text-gray-500 dark:text-slate-400">
           <span><span class="legend-dot bg-green-200 mr-1"></span>Ditambahkan</span>
           <span><span class="legend-dot bg-red-200 mr-1"></span>Dihapus</span>
-          <span class="font-medium text-gray-700" id="cmp-stat"></span>
+          <span class="font-medium text-gray-700 dark:text-slate-300" id="cmp-stat"></span>
         </div>
       </div>
 
@@ -994,14 +1008,14 @@
       <div class="flex-1 overflow-hidden flex flex-col">
 
         <!-- Loading -->
-        <div id="cmp-loading" class="flex-1 flex items-center justify-center text-gray-400 gap-3 hidden">
+        <div id="cmp-loading" class="flex-1 flex items-center justify-center text-gray-400 dark:text-slate-500 gap-3 hidden">
           <i class="fa-solid fa-spinner fa-spin text-2xl text-violet-400"></i>
           <span class="text-[13px]">Memproses perbandingan...</span>
         </div>
 
         <!-- Side by side -->
         <div id="cmp-side" class="flex-1 overflow-hidden flex" style="min-height:0;">
-          <div class="flex-1 flex flex-col min-w-0 border-r border-gray-200">
+          <div class="flex-1 flex flex-col min-w-0 border-r border-gray-200 dark:border-slate-700">
             <div class="px-4 py-2 bg-red-50 border-b border-red-100 flex items-center gap-2 flex-shrink-0">
               <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
               <span class="text-[11px] font-semibold text-red-700" id="cmp-left-label">v1 — sebelum</span>
@@ -1046,22 +1060,22 @@
 
   <!-- Chat panel -->
   <div id="chat-panel" class="hidden fixed bottom-20 right-5 z-[199] chat-panel" style="width:340px;">
-    <div class="bg-white rounded-xl shadow-xl border border-gray-200 flex flex-col overflow-hidden"
+    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-gray-200 dark:border-slate-700 flex flex-col overflow-hidden"
       style="height:480px;">
 
       <!-- Panel header -->
-      <div class="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100">
+      <div class="flex items-center justify-between px-4 py-3 bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800">
         <div class="flex items-center gap-2">
           <div id="chat-back-btn" class="hidden">
             <button onclick="showChatList()"
-              class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-500 text-[13px] mr-1 transition-colors">
+              class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 text-[13px] mr-1 transition-colors">
               <i class="fa-solid fa-arrow-left"></i>
             </button>
           </div>
           <span class="text-[13px] font-semibold" id="chat-panel-title">Diskusi Kontrak</span>
         </div>
         <button onclick="toggleChat()"
-          class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400 text-[13px] transition-colors">
+          class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-slate-500 text-[13px] transition-colors">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
@@ -1074,9 +1088,9 @@
       <!-- Message view -->
       <div id="chat-msg-view" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
         <div id="chat-msg-list" class="flex-1 overflow-y-auto px-4 py-3 chat-messages"></div>
-        <div class="px-3 pb-3 pt-2 border-t border-gray-100 flex gap-2">
+        <div class="px-3 pb-3 pt-2 border-t border-gray-100 dark:border-slate-800 flex gap-2">
           <input id="chat-global-input" type="text" placeholder="Tulis pesan..."
-            class="flex-1 text-[12px] border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-blue-500 placeholder-gray-300"
+            class="flex-1 text-[12px] border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 outline-none focus:border-blue-500 placeholder-gray-300"
             onkeydown="if(event.key==='Enter')sendGlobalMsg()" />
           <button onclick="sendGlobalMsg()"
             class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[12px] transition-colors">
@@ -1227,15 +1241,15 @@
     const SL = { draft: 'Draft', in_review: 'In Review', revision: 'Revision', approved: 'Approved', locked: 'Locked', archived: 'Archived' };
 
     const BADGE = {
-      draft: 'bg-gray-100 text-gray-600 border border-gray-200',
+      draft: 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 border border-gray-200 dark:border-slate-700',
       in_review: 'bg-amber-50 text-amber-800 border border-amber-200',
       revision: 'bg-red-50 text-red-800 border border-red-200',
       approved: 'bg-green-50 text-green-800 border border-green-200',
       locked: 'bg-violet-50 text-violet-800 border border-violet-200',
-      archived: 'bg-gray-100 text-gray-500 border border-gray-200',
+      archived: 'bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 border border-gray-200 dark:border-slate-700',
       pending: 'bg-amber-50 text-amber-800 border border-amber-200',
       rejected: 'bg-red-50 text-red-800 border border-red-200',
-      waiting: 'bg-gray-100 text-gray-500 border border-gray-200',
+      waiting: 'bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 border border-gray-200 dark:border-slate-700',
     };
 
     const AC = { CONTRACT_CREATED: '#8b5cf6', FILE_UPLOADED: '#2563eb', APPROVAL_APPROVED: '#16a34a', APPROVAL_REJECTED: '#dc2626', CONTRACT_APPROVED: '#16a34a' };
@@ -1259,9 +1273,9 @@
       const seqs = [...new Set(c.approvals.map(a => a.sequence))];
       const done = seqs.filter(s => c.approvals.some(a => a.sequence === s && a.status === 'approved')).length;
       const pct = Math.round(done / seqs.length * 100);
-      return `<div class="text-[10px] text-gray-400 mb-1">${done}/${seqs.length}</div>
+      return `<div class="text-[10px] text-gray-400 dark:text-slate-500 mb-1">${done}/${seqs.length}</div>
           <div class="h-1 bg-gray-200 rounded-full overflow-hidden w-20">
-            <div class="h-full bg-blue-500 rounded-full" style="width:${pct}%"></div>
+            <div class="h-full bg-blue-50 dark:bg-blue-900/200 rounded-full" style="width:${pct}%"></div>
           </div>`;
     }
 
@@ -1292,7 +1306,7 @@
           return `<div class="mb-3">
         <div class="flex justify-between mb-1">
           <span class="text-[12px] font-medium">${r}</span>
-          <span class="text-[11px] text-gray-400">${p} pending</span>
+          <span class="text-[11px] text-gray-400 dark:text-slate-500">${p} pending</span>
         </div>
         <div class="h-1 bg-gray-200 rounded-full overflow-hidden">
           <div class="h-full rounded-full" style="width:${p * 25}%;background:${p > 0 ? '#f59e0b' : '#16a34a'};"></div>
@@ -1303,7 +1317,7 @@
       document.getElementById('status-overview').innerHTML =
         ['draft', 'in_review', 'revision', 'approved'].map(s => {
           const n = contracts.filter(c => c.status === s).length;
-          return `<div class="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+          return `<div class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-slate-800 last:border-0">
         ${badge(s)} <span class="text-[18px] font-bold">${n}</span>
       </div>`;
         }).join('');
@@ -1317,10 +1331,10 @@
     function rowHtml(c, showProgress) {
       const usr = u(c.created_by);
       return `<tr onclick="navigate('detail',${c.id})">
-    <td class="td"><span class="font-mono text-[11px] text-blue-600">${c.contract_no}</span></td>
+    <td class="td"><span class="font-mono text-[11px] text-blue-600 dark:text-blue-400">${c.contract_no}</span></td>
     <td class="td">
       <div class="font-medium text-[12px]">${c.title}</div>
-      <div class="text-[10px] text-gray-400 mt-0.5">${c.description.substring(0, 55)}…</div>
+      <div class="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5">${c.description.substring(0, 55)}…</div>
     </td>
     <td class="td">
       <div class="flex items-center gap-1.5">
@@ -1328,11 +1342,11 @@
       </div>
     </td>
     <td class="td">${badge(c.status)}</td>
-    <td class="td"><span class="font-mono text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">v${c.current_version}</span></td>
+    <td class="td"><span class="font-mono text-[10px] bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 px-1.5 py-0.5 rounded">v${c.current_version}</span></td>
     ${showProgress ? `<td class="td">${progressHtml(c)}</td>` : ''}
-    <td class="td text-[11px] text-gray-400">${c.created_at}</td>
+    <td class="td text-[11px] text-gray-400 dark:text-slate-500">${c.created_at}</td>
     <td class="td">
-      <button class="px-2 py-1 text-[11px] border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
+      <button class="px-2 py-1 text-[11px] border border-gray-200 dark:border-slate-700 rounded-md hover:bg-gray-50 dark:bg-slate-800 transition-colors"
               onclick="event.stopPropagation();navigate('detail',${c.id})">
         <i class="fa-solid fa-eye"></i>
       </button>
@@ -1349,27 +1363,27 @@
       }));
       const el = document.getElementById('pending-table');
       if (!rows.length) {
-        el.innerHTML = `<tr><td colspan="7" class="text-center py-12 text-gray-400">
+        el.innerHTML = `<tr><td colspan="7" class="text-center py-12 text-gray-400 dark:text-slate-500">
       <i class="fa-solid fa-circle-check text-3xl block mb-2"></i>
-      <strong class="text-gray-500 block">Tidak ada approval pending</strong>
+      <strong class="text-gray-500 dark:text-slate-400 block">Tidak ada approval pending</strong>
       <span class="text-[12px]">Semua sudah ditangani.</span>
     </td></tr>`;
         return;
       }
       el.innerHTML = rows.map(({ c, a }) => `<tr onclick="navigate('detail',${c.id})">
-    <td class="td"><span class="font-mono text-[11px] text-blue-600">${c.contract_no}</span></td>
+    <td class="td"><span class="font-mono text-[11px] text-blue-600 dark:text-blue-400">${c.contract_no}</span></td>
     <td class="td font-medium">${c.title}</td>
-    <td class="td"><span class="font-mono text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">${a.role}</span></td>
-    <td class="td"><span class="font-mono text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">v${c.current_version}</span></td>
-    <td class="td text-[11px] text-gray-500">Seq ${a.sequence}</td>
-    <td class="td text-[11px] text-gray-400">${c.created_at}</td>
+    <td class="td"><span class="font-mono text-[10px] bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 px-1.5 py-0.5 rounded">${a.role}</span></td>
+    <td class="td"><span class="font-mono text-[10px] bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 px-1.5 py-0.5 rounded">v${c.current_version}</span></td>
+    <td class="td text-[11px] text-gray-500 dark:text-slate-400">Seq ${a.sequence}</td>
+    <td class="td text-[11px] text-gray-400 dark:text-slate-500">${c.created_at}</td>
     <td class="td">
       <div class="flex gap-1.5">
         <button class="flex items-center gap-1 px-2.5 py-1 bg-green-600 hover:bg-green-700 text-white text-[11px] font-medium rounded-md transition-colors"
                 onclick="event.stopPropagation();quickApprove(${c.id})">
           <i class="fa-solid fa-check text-[10px]"></i> Setuju
         </button>
-        <button class="px-2 py-1 text-[11px] border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
+        <button class="px-2 py-1 text-[11px] border border-gray-200 dark:border-slate-700 rounded-md hover:bg-gray-50 dark:bg-slate-800 transition-colors"
                 onclick="event.stopPropagation();navigate('detail',${c.id})">
           <i class="fa-solid fa-eye"></i>
         </button>
@@ -1386,9 +1400,9 @@
       document.getElementById('audit-table').innerHTML = all.map(h => {
         const usr = u(h.actor_id);
         return `<tr>
-      <td class="td text-[11px] text-gray-400 whitespace-nowrap">${h.created_at}</td>
-      <td class="td"><span class="font-mono text-[11px] text-blue-600">${h.contract.contract_no}</span></td>
-      <td class="td"><span class="font-mono text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">${h.action}</span></td>
+      <td class="td text-[11px] text-gray-400 dark:text-slate-500 whitespace-nowrap">${h.created_at}</td>
+      <td class="td"><span class="font-mono text-[11px] text-blue-600 dark:text-blue-400">${h.contract.contract_no}</span></td>
+      <td class="td"><span class="font-mono text-[10px] bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 px-1.5 py-0.5 rounded">${h.action}</span></td>
       <td class="td text-[12px]">${h.description}</td>
       <td class="td">
         <div class="flex items-center gap-1.5">${av(h.actor_id)} <span class="text-[11px]">${usr.name}</span></div>
@@ -1411,19 +1425,19 @@
       document.getElementById('detail-bc').textContent = c.contract_no;
 
       document.getElementById('detail-info').innerHTML = `
-    <div><div class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">No. Kontrak</div>
-      <span class="font-mono text-[11px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded">${c.contract_no}</span></div>
-    <div><div class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Status</div>
+    <div><div class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500 mb-1">No. Kontrak</div>
+      <span class="font-mono text-[11px] bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 px-2 py-0.5 rounded">${c.contract_no}</span></div>
+    <div><div class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500 mb-1">Status</div>
       ${badge(c.status)}</div>
-    <div><div class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Dibuat Oleh</div>
+    <div><div class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500 mb-1">Dibuat Oleh</div>
       <div class="flex items-center gap-1.5">${av(c.created_by)} <span class="text-[12px]">${usr.name}</span></div></div>
-    <div><div class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Versi Aktif</div>
-      <span class="font-mono text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">v${c.current_version}</span></div>
-    <div class="col-span-2"><div class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Deskripsi</div>
+    <div><div class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500 mb-1">Versi Aktif</div>
+      <span class="font-mono text-[10px] bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 px-1.5 py-0.5 rounded">v${c.current_version}</span></div>
+    <div class="col-span-2"><div class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500 mb-1">Deskripsi</div>
       <div class="text-[12px]">${c.description}</div></div>
-    <div><div class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Tgl Dibuat</div>
+    <div><div class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500 mb-1">Tgl Dibuat</div>
       <div class="text-[12px]">${c.created_at}</div></div>
-    <div><div class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Total Versi</div>
+    <div><div class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500 mb-1">Total Versi</div>
       <div class="text-[12px]">${c.versions.length} versi</div></div>
   `;
 
@@ -1432,12 +1446,12 @@
       c.approvals.forEach(a => { bySeq[a.sequence] = a; });
       const iconMap = { approved: 'fa-check', pending: 'fa-ellipsis', rejected: 'fa-xmark', waiting: 'fa-minus' };
       const dotCls = {
-        approved: 'bg-green-50 text-green-600 border-green-200',
-        pending: 'bg-amber-50 text-amber-600 border-amber-200',
-        rejected: 'bg-red-50 text-red-600 border-red-200',
-        waiting: 'bg-gray-50 text-gray-400 border-gray-200',
+        approved: 'bg-green-50 text-green-600 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-900/30',
+        pending: 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-900/30',
+        rejected: 'bg-red-50 text-red-600 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/30',
+        waiting: 'bg-gray-50 dark:bg-slate-800 text-gray-400 dark:text-slate-500 border-gray-200 dark:border-slate-700',
       };
-      const noteCls = { approved: 'border-l-green-400', rejected: 'border-l-red-400', pending: 'border-l-gray-200', waiting: 'border-l-gray-200' };
+      const noteCls = { approved: 'border-l-green-400 dark:border-l-green-600', rejected: 'border-l-red-400 dark:border-l-red-600', pending: 'border-l-gray-200', waiting: 'border-l-gray-200' };
 
       document.getElementById('approval-steps').innerHTML =
         Object.values(bySeq).sort((a, b) => a.sequence - b.sequence).map((a, i, arr) => {
@@ -1448,13 +1462,13 @@
         </div>
         <div class="flex-1 pt-0.5">
           <div class="text-[12px] font-semibold">${a.role}
-            <span class="text-[10px] font-normal text-gray-400">· Seq ${a.sequence}</span>
+            <span class="text-[10px] font-normal text-gray-400 dark:text-slate-500">· Seq ${a.sequence}</span>
           </div>
-          <div class="flex items-center gap-1.5 text-[11px] text-gray-500 mt-0.5">
+          <div class="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-slate-400 mt-0.5">
             ${av(a.approver_id)} ${au.name}
           </div>
-          ${a.note ? `<div class="text-[11px] text-gray-500 mt-1.5 px-2.5 py-1.5 bg-gray-50 rounded border-l-2 ${noteCls[a.status] || 'border-l-gray-200'}">${a.note}</div>` : ''}
-          <div class="text-[10px] text-gray-400 mt-1">
+          ${a.note ? `<div class="text-[11px] text-gray-500 dark:text-slate-400 mt-1.5 px-2.5 py-1.5 bg-gray-50 dark:bg-slate-800 rounded border-l-2 ${noteCls[a.status] || 'border-l-gray-200'}">${a.note}</div>` : ''}
+          <div class="text-[10px] text-gray-400 dark:text-slate-500 mt-1">
             ${a.approved_at ? a.approved_at : badge(a.status, a.status)}
           </div>
         </div>
@@ -1464,19 +1478,19 @@
       // Versions
       document.getElementById('dtab-versions').innerHTML =
         [...c.versions].reverse().map(v => `
-      <div class="flex items-center justify-between border rounded-lg px-3 py-2.5 ${v.version_no === c.current_version ? 'border-blue-300 bg-blue-50' : 'border-gray-200 hover:border-blue-200'} transition-colors">
+      <div class="flex items-center justify-between border rounded-lg px-3 py-2.5 ${v.version_no === c.current_version ? 'border-blue-300 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-slate-700 hover:border-blue-200'} transition-colors">
         <div>
           <div class="flex items-center gap-2 mb-1">
-            <span class="font-mono text-[12px] font-bold text-blue-600">v${v.version_no}</span>
+            <span class="font-mono text-[12px] font-bold text-blue-600 dark:text-blue-400">v${v.version_no}</span>
             ${v.is_final ? badge('approved', 'Final') : ''}
             ${v.version_no === c.current_version ? badge('in_review', 'Aktif') : ''}
           </div>
-          <div class="text-[10px] text-gray-400"><i class="fa-regular fa-file-word mr-1"></i>${v.file_name}</div>
-          <div class="text-[10px] text-gray-400"><i class="fa-solid fa-fingerprint mr-1"></i>${v.file_hash}</div>
-          <div class="text-[10px] text-gray-400">${v.change_log} · ${v.created_at}</div>
+          <div class="text-[10px] text-gray-400 dark:text-slate-500"><i class="fa-regular fa-file-word mr-1"></i>${v.file_name}</div>
+          <div class="text-[10px] text-gray-400 dark:text-slate-500"><i class="fa-solid fa-fingerprint mr-1"></i>${v.file_hash}</div>
+          <div class="text-[10px] text-gray-400 dark:text-slate-500">${v.change_log} · ${v.created_at}</div>
         </div>
         <div class="flex flex-col gap-1 ml-3 flex-shrink-0">
-          <button class="px-2 py-1 text-[11px] border border-gray-200 rounded-md hover:bg-gray-50 transition-colors flex items-center gap-1"
+          <button class="px-2 py-1 text-[11px] border border-gray-200 dark:border-slate-700 rounded-md hover:bg-gray-50 dark:bg-slate-800 transition-colors flex items-center gap-1"
                   onclick="previewDoc(${c.id}, ${v.version_no})">
             <i class="fa-solid fa-eye"></i> Preview
           </button>
@@ -1485,7 +1499,7 @@
                   onclick="openCompare(${c.id}, ${v.version_no})">
             <i class="fa-solid fa-code-compare"></i> Compare
           </button>` : ''}
-          <button class="px-2 py-1 text-[11px] border border-gray-200 rounded-md hover:bg-gray-50 transition-colors flex items-center gap-1"
+          <button class="px-2 py-1 text-[11px] border border-gray-200 dark:border-slate-700 rounded-md hover:bg-gray-50 dark:bg-slate-800 transition-colors flex items-center gap-1"
                   onclick="showToast('Mengunduh ${v.file_name}…')">
             <i class="fa-solid fa-download"></i> Unduh
           </button>
@@ -1496,14 +1510,14 @@
       document.getElementById('dtab-audit').innerHTML =
         [...c.histories].reverse().map(h => {
           const au = u(h.actor_id);
-          return `<div class="flex gap-2.5 py-2 border-b border-gray-100 last:border-0">
+          return `<div class="flex gap-2.5 py-2 border-b border-gray-100 dark:border-slate-800 last:border-0">
         <div class="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5" style="background:${AC[h.action] || '#9ca3af'};"></div>
         <div>
           <div class="text-[12px] font-medium">${h.description}</div>
-          <div class="flex items-center gap-1.5 text-[11px] text-gray-500 mt-0.5">
+          <div class="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-slate-400 mt-0.5">
             ${av(h.actor_id)} ${au.name} · ${au.role}
           </div>
-          <div class="text-[10px] text-gray-400 mt-0.5">${h.created_at}</div>
+          <div class="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5">${h.created_at}</div>
         </div>
       </div>`;
         }).join('');
@@ -1632,11 +1646,11 @@
     // ─── Tabs (detail) ─────────────────────────────────────────────────
     function switchDetailTab(panelId, el) {
       document.querySelectorAll('.tab-btn').forEach(b => {
-        b.classList.remove('border-blue-600', 'text-blue-600');
-        b.classList.add('border-transparent', 'text-gray-500');
+        b.classList.remove('border-blue-600', 'text-blue-600 dark:text-blue-400');
+        b.classList.add('border-transparent', 'text-gray-500 dark:text-slate-400');
       });
-      el.classList.add('border-blue-600', 'text-blue-600');
-      el.classList.remove('border-transparent', 'text-gray-500');
+      el.classList.add('border-blue-600', 'text-blue-600 dark:text-blue-400');
+      el.classList.remove('border-transparent', 'text-gray-500 dark:text-slate-400');
       ['dtab-versions', 'dtab-audit', 'dtab-chat'].forEach(id => {
         const el = document.getElementById(id);
         if (id === panelId) {
@@ -1684,7 +1698,7 @@
 
       el.innerHTML = msgs.length
         ? msgs.map(m => msgBubble(m, m.user_id === ME)).join('')
-        : `<div class="text-center text-gray-400 text-[12px] pt-8">
+        : `<div class="text-center text-gray-400 dark:text-slate-500 text-[12px] pt-8">
          <i class="fa-solid fa-comments text-2xl block mb-2"></i>Belum ada diskusi untuk kontrak ini.
        </div>`;
 
@@ -1716,18 +1730,18 @@
       const usr = u(m.user_id);
       if (isMe) {
         return `<div class="flex flex-col items-end gap-0.5">
-      <span class="text-[10px] text-gray-400 mr-1">${usr.name}</span>
+      <span class="text-[10px] text-gray-400 dark:text-slate-500 mr-1">${usr.name}</span>
       <div class="chat-bubble-me px-3 py-2 text-[12px] max-w-[85%]">${m.text}</div>
-      <span class="text-[10px] text-gray-400 mr-1">${m.time.split(' ')[1] || m.time}</span>
+      <span class="text-[10px] text-gray-400 dark:text-slate-500 mr-1">${m.time.split(' ')[1] || m.time}</span>
     </div>`;
       }
       return `<div class="flex items-end gap-2">
     <div class="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-[9px] font-bold"
          style="background:${usr.bg};color:${usr.color};">${usr.initials}</div>
     <div class="flex flex-col gap-0.5">
-      <span class="text-[10px] text-gray-400">${usr.name}</span>
+      <span class="text-[10px] text-gray-400 dark:text-slate-500">${usr.name}</span>
       <div class="chat-bubble-other px-3 py-2 text-[12px] max-w-[85%]">${m.text}</div>
-      <span class="text-[10px] text-gray-400">${m.time.split(' ')[1] || m.time}</span>
+      <span class="text-[10px] text-gray-400 dark:text-slate-500">${m.time.split(' ')[1] || m.time}</span>
     </div>
   </div>`;
     }
@@ -1762,19 +1776,19 @@
         const unread = msgs.filter(m => !m.read_by.includes(ME)).length;
         const last = msgs[msgs.length - 1];
         const lastUsr = last ? u(last.user_id) : null;
-        return `<div class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors" style="width:100%;box-sizing:border-box;overflow:hidden;"
+        return `<div class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:bg-slate-800 cursor-pointer border-b border-gray-100 dark:border-slate-800 last:border-0 transition-colors" style="width:100%;box-sizing:border-box;overflow:hidden;"
                  onclick="openChatThread(${c.id})">
-      <div class="w-9 h-9 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center flex-shrink-0">
+      <div class="w-9 h-9 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 flex items-center justify-center flex-shrink-0">
         <i class="fa-solid fa-file-lines text-blue-400 text-[13px]"></i>
       </div>
       <div class="flex-1 min-w-0">
         <div class="flex justify-between items-center">
-          <span class="text-[12px] font-semibold text-gray-800 truncate">${c.contract_no}</span>
-          ${last ? `<span class="text-[10px] text-gray-400 flex-shrink-0 ml-2">${last.time.split(' ')[1] || ''}</span>` : ''}
+          <span class="text-[12px] font-semibold text-gray-800 dark:text-slate-200 truncate">${c.contract_no}</span>
+          ${last ? `<span class="text-[10px] text-gray-400 dark:text-slate-500 flex-shrink-0 ml-2">${last.time.split(' ')[1] || ''}</span>` : ''}
         </div>
-        <div class="text-[11px] text-gray-400 truncate mt-0.5">${c.title}</div>
+        <div class="text-[11px] text-gray-400 dark:text-slate-500 truncate mt-0.5">${c.title}</div>
         ${last
-            ? `<div class="text-[11px] text-gray-500 truncate mt-0.5">
+            ? `<div class="text-[11px] text-gray-500 dark:text-slate-400 truncate mt-0.5">
                <span class="font-medium">${lastUsr.name.split(' ')[0]}:</span> ${last.text}
              </div>`
             : `<div class="text-[11px] text-gray-300 italic mt-0.5">Belum ada pesan</div>`}
@@ -1807,7 +1821,7 @@
       const el = document.getElementById('chat-msg-list');
       el.innerHTML = msgs.length
         ? msgs.map(m => msgBubble(m, m.user_id === ME)).join('')
-        : `<div class="text-center text-gray-400 text-[12px] pt-8">
+        : `<div class="text-center text-gray-400 dark:text-slate-500 text-[12px] pt-8">
          <i class="fa-solid fa-comments text-2xl block mb-2"></i>Belum ada pesan.
        </div>`;
       el.scrollTop = el.scrollHeight;
@@ -1866,17 +1880,17 @@
       if (mode === 'side') {
         side.style.display = 'flex';
         inline.style.display = 'none';
-        btnSide.classList.add('bg-gray-100', 'text-gray-700');
-        btnSide.classList.remove('text-gray-400');
-        btnInline.classList.remove('bg-gray-100', 'text-gray-700');
-        btnInline.classList.add('text-gray-400');
+        btnSide.classList.add('bg-gray-100 dark:bg-slate-800', 'text-gray-700 dark:text-slate-300');
+        btnSide.classList.remove('text-gray-400 dark:text-slate-500');
+        btnInline.classList.remove('bg-gray-100 dark:bg-slate-800', 'text-gray-700 dark:text-slate-300');
+        btnInline.classList.add('text-gray-400 dark:text-slate-500');
       } else {
         side.style.display = 'none';
         inline.style.display = 'block';
-        btnInline.classList.add('bg-gray-100', 'text-gray-700');
-        btnInline.classList.remove('text-gray-400');
-        btnSide.classList.remove('bg-gray-100', 'text-gray-700');
-        btnSide.classList.add('text-gray-400');
+        btnInline.classList.add('bg-gray-100 dark:bg-slate-800', 'text-gray-700 dark:text-slate-300');
+        btnInline.classList.remove('text-gray-400 dark:text-slate-500');
+        btnSide.classList.remove('bg-gray-100 dark:bg-slate-800', 'text-gray-700 dark:text-slate-300');
+        btnSide.classList.add('text-gray-400 dark:text-slate-500');
       }
       runCompare();
     }
@@ -2033,7 +2047,7 @@ Apabila terjadi perselisihan, para pihak sepakat untuk menyelesaikan secara musy
             html += `<div class="diff-line-add font-mono text-[12px]">
           <span class="mr-2 text-[10px] text-green-500 font-bold select-none">+</span>${escHtml(ln) || '&nbsp;'}</div>`;
           } else {
-            html += `<div class="diff-line-eq font-mono text-[12px] text-gray-400">
+            html += `<div class="diff-line-eq font-mono text-[12px] text-gray-400 dark:text-slate-500">
           <span class="mr-2 text-[10px] select-none">&nbsp;</span>${escHtml(ln) || '&nbsp;'}</div>`;
           }
         });
@@ -2079,7 +2093,7 @@ Apabila terjadi perselisihan, para pihak sepakat untuk menyelesaikan secara musy
           mammoth.convertToHtml({ arrayBuffer: e.target.result })
             .then(result => {
               document.getElementById('preview-content').innerHTML =
-                result.value || '<p class="text-gray-400 italic">Dokumen kosong atau tidak dapat dibaca.</p>';
+                result.value || '<p class="text-gray-400 dark:text-slate-500 italic">Dokumen kosong atau tidak dapat dibaca.</p>';
               applyZoom();
               show('preview-loading', 'none');
               show('preview-real', 'block');

@@ -11,12 +11,28 @@ Route::get('/', function () {
 
 Route::middleware(['auth'])->group(function () {
     Route::get('dashboard', function () {
-        return Inertia::render('contracts/index');
+        return Inertia::render('contracts/index', ['currentView' => 'dashboard']);
     })->name('dashboard');
 
     Route::get('contracts', function () {
-        return Inertia::render('contracts/index');
-    })->name('contracts.index');
+        return Inertia::render('contracts/index', ['currentView' => 'contracts']);
+    })->name('contracts');
+
+    Route::get('pending', function () {
+        return Inertia::render('contracts/index', ['currentView' => 'pending']);
+    })->name('pending');
+
+    Route::get('f1', function () {
+        return Inertia::render('contracts/index', ['currentView' => 'f1']);
+    })->name('f1');
+
+    Route::get('f2', function () {
+        return Inertia::render('contracts/index', ['currentView' => 'f2']);
+    })->name('f2');
+
+    Route::get('audit', function () {
+        return Inertia::render('contracts/index', ['currentView' => 'audit']);
+    })->name('audit');
 
     Route::get('contracts/{id}', function ($id) {
         return Inertia::render('contracts/show', ['contractId' => $id]);

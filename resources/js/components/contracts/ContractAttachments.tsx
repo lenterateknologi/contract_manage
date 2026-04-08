@@ -80,8 +80,8 @@ export default function ContractAttachments({ contract, onUpdated, showToast, on
 
             {CATEGORIES.map(cat => (
                 <div key={cat.id}>
-                    <h6 className="text-[12px] font-bold text-gray-900 mb-3 flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                    <h6 className="text-[12px] font-bold text-foreground mb-3 flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary" />
                         {cat.label}
                     </h6>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -90,19 +90,19 @@ export default function ContractAttachments({ contract, onUpdated, showToast, on
                             const isUp = uploading === label;
 
                             return (
-                                <div key={label} className={`flex items-center justify-between p-3 rounded-lg border transition-all ${at ? 'bg-blue-50/30 border-blue-100' : 'bg-white border-gray-100'}`}>
+                                <div key={label} className={`flex items-center justify-between p-3 rounded-lg border transition-all ${at ? 'bg-primary/5 border-primary/20 dark:bg-primary/10 dark:border-primary/20' : 'bg-card border-border'}`}>
                                     <div className="flex items-center gap-3 min-w-0">
-                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${at ? 'bg-blue-100 text-blue-600' : 'bg-gray-50 text-gray-400'}`}>
+                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${at ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
                                             <i className={at ? "fa-solid fa-file-circle-check" : "fa-regular fa-file"} />
                                         </div>
                                         <div className="min-w-0">
-                                            <div className="text-[12px] font-medium text-gray-700 truncate" title={label}>{label}</div>
+                                            <div className="text-[12px] font-medium text-foreground/80 truncate" title={label}>{label}</div>
                                             {at ? (
-                                                <div className="text-[10px] text-gray-400 truncate mt-0.5">
+                                                <div className="text-[10px] text-muted-foreground truncate mt-0.5">
                                                     {at.file_name} · {at.created_at}
                                                 </div>
                                             ) : (
-                                                <div className="text-[10px] text-gray-300 mt-0.5">Belum ada dokumen</div>
+                                                <div className="text-[10px] text-muted-foreground/50 mt-0.5">Belum ada dokumen</div>
                                             )}
                                         </div>
                                     </div>
@@ -110,13 +110,13 @@ export default function ContractAttachments({ contract, onUpdated, showToast, on
                                     <div className="flex items-center gap-1.25 ml-3 flex-shrink-0">
                                         {at ? (
                                             <>
-                                                <button onClick={() => onPreview(at)} className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-blue-50 text-blue-400 hover:text-blue-600 transition-colors" title="Preview">
+                                                <button onClick={() => onPreview(at)} className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-primary/10 text-primary/70 hover:text-primary transition-colors" title="Preview">
                                                     <i className="fa-solid fa-eye text-[11px]" />
                                                 </button>
-                                                {/* <a href={contractApi.attachmentDownloadUrl(contract.id, at.id)} download className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-blue-50 text-blue-400 hover:text-blue-600 transition-colors" title="Download">
+                                                <a href={contractApi.attachmentDownloadUrl(contract.id, at.id)} download className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-primary/10 text-primary/70 hover:text-primary transition-colors" title="Download">
                                                     <i className="fa-solid fa-download text-[11px]" />
-                                                </a> */}
-                                                <button onClick={() => handleDelete(at.id, label)} className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-red-50 text-red-400 hover:text-red-500 transition-colors" title="Delete">
+                                                </a>
+                                                <button onClick={() => handleDelete(at.id, label)} className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-destructive/10 text-destructive/70 hover:text-destructive transition-colors" title="Delete">
                                                     <i className="fa-solid fa-trash-can text-[11px]" />
                                                 </button>
                                             </>
@@ -124,7 +124,7 @@ export default function ContractAttachments({ contract, onUpdated, showToast, on
                                             <button
                                                 disabled={!!uploading}
                                                 onClick={() => { setActiveLabel(label); setActiveCat(cat.id); fileRef.current?.click(); }}
-                                                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-50 hover:bg-blue-600 text-gray-500 hover:text-white text-[10px] font-semibold rounded-md transition-all disabled:opacity-50"
+                                                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted hover:bg-primary text-muted-foreground hover:text-primary-foreground text-[10px] font-semibold rounded-md transition-all disabled:opacity-50"
                                             >
                                                 {isUp ? (
                                                     <i className="fa-solid fa-spinner fa-spin" />

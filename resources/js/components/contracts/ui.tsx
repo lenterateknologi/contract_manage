@@ -9,21 +9,21 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_CLS: Record<string, string> = {
-    draft: 'bg-gray-100 text-gray-600 border border-gray-200',
-    in_review: 'bg-amber-50 text-amber-800 border border-amber-200',
-    revision: 'bg-red-50 text-red-800 border border-red-200',
-    approved: 'bg-green-50 text-green-800 border border-green-200',
-    locked: 'bg-violet-50 text-violet-800 border border-violet-200',
-    archived: 'bg-gray-100 text-gray-500 border border-gray-200',
-    pending: 'bg-amber-50 text-amber-800 border border-amber-200',
-    rejected: 'bg-red-50 text-red-800 border border-red-200',
-    waiting: 'bg-gray-100 text-gray-500 border border-gray-200',
+    draft: 'bg-muted text-muted-foreground border border-border',
+    in_review: 'bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-900/30',
+    revision: 'bg-red-50 text-red-800 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/30',
+    approved: 'bg-green-50 text-green-800 border border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-900/30',
+    locked: 'bg-violet-50 text-violet-800 border border-violet-200 dark:bg-violet-900/20 dark:text-violet-400 dark:border-violet-900/30',
+    archived: 'bg-muted text-muted-foreground border border-border',
+    pending: 'bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-900/30',
+    rejected: 'bg-red-50 text-red-800 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/30',
+    waiting: 'bg-muted text-muted-foreground border border-border',
 };
 
 export function StatusBadge({ status, label }: { status: string; label?: string }) {
     const cls = STATUS_CLS[status] ?? STATUS_CLS.draft;
     return (
-        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${cls}`}>
+        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${cls}`}>
             {label ?? STATUS_LABEL[status] ?? status}
         </span>
     );
@@ -31,7 +31,7 @@ export function StatusBadge({ status, label }: { status: string; label?: string 
 
 // ─── Avatar ─────────────────────────────────────────────────────────
 export function Avatar({ user, size = 'sm' }: { user: UserProfile | null | undefined; size?: 'sm' | 'md' | 'lg' }) {
-    const sizeMap = { sm: 'w-5 h-5 text-[9px]', md: 'w-7 h-7 text-[11px]', lg: 'w-8 h-8 text-[12px]' };
+    const sizeMap = { sm: 'w-5 h-5 text-xs', md: 'w-7 h-7 text-xs', lg: 'w-8 h-8 text-xs' };
     if (!user) return null;
     return (
         <span
@@ -47,9 +47,9 @@ export function Avatar({ user, size = 'sm' }: { user: UserProfile | null | undef
 export function ProgressBar({ done, total, pct }: { done: number; total: number; pct: number }) {
     return (
         <div>
-            <div className="text-[10px] text-gray-400 mb-1">{done}/{total}</div>
-            <div className="h-1 bg-gray-200 rounded-full overflow-hidden w-20">
-                <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+            <div className="text-xs text-muted-foreground mb-1">{done}/{total}</div>
+            <div className="h-1 bg-muted rounded-full overflow-hidden w-20">
+                <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${pct}%` }} />
             </div>
         </div>
     );
@@ -57,9 +57,9 @@ export function ProgressBar({ done, total, pct }: { done: number; total: number;
 
 // ─── Action icon colors ──────────────────────────────────────────────
 export const ACTION_COLORS: Record<string, string> = {
-    CONTRACT_CREATED: '#8b5cf6',
-    FILE_UPLOADED: '#2563eb',
-    APPROVAL_APPROVED: '#16a34a',
-    APPROVAL_REJECTED: '#dc2626',
-    CONTRACT_APPROVED: '#16a34a',
+    CONTRACT_CREATED: 'var(--chart-1)',
+    FILE_UPLOADED: 'var(--chart-2)',
+    APPROVAL_APPROVED: 'var(--chart-3)',
+    APPROVAL_REJECTED: 'var(--destructive)',
+    CONTRACT_APPROVED: 'var(--chart-4)',
 };
