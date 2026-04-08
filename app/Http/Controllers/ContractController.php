@@ -35,11 +35,23 @@ class ContractController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $request->validate([
-            'title'     => 'required|string|max:255',
-            'changelog' => 'nullable|string',
-            'file'      => 'nullable|file|mimes:docx|max:10240',
-        ]);
+        try {
+            $request->validate([
+                'title'     => 'required|string|max:255',
+                'changelog' => 'nullable|string',
+                'file'      => 'nullable|file|extensions:docx,doc,pdf|max:102400',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error("Validation Failed on Store", [
+                'errors' => $e->errors(),
+                'file_info' => $request->hasFile('file') ? [
+                    'name' => $request->file('file')->getClientOriginalName(),
+                    'mime' => $request->file('file')->getMimeType(),
+                    'size' => $request->file('file')->getSize(),
+                ] : 'No file'
+            ]);
+            throw $e;
+        }
 
         $year     = date('Y');
         $count    = Contract::count() + 1;
@@ -175,10 +187,23 @@ class ContractController extends Controller
 
     public function uploadRevision(Request $request, string $id): JsonResponse
     {
-        $request->validate([
-            'changelog' => 'required|string',
-            'file'      => 'nullable|file|mimes:docx|max:10240',
-        ]);
+        try {
+            $request->validate([
+                'changelog' => 'required|string',
+                'file'      => 'nullable|file|extensions:docx,doc,pdf|max:102400',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error("Validation Failed on Revision", [
+                'contract_id' => $id,
+                'errors' => $e->errors(),
+                'file_info' => $request->hasFile('file') ? [
+                    'name' => $request->file('file')->getClientOriginalName(),
+                    'mime' => $request->file('file')->getMimeType(),
+                    'size' => $request->file('file')->getSize(),
+                ] : 'No file'
+            ]);
+            throw $e;
+        }
 
         $contract = Contract::with('versions')->findOrFail($id);
         $newVer   = $contract->current_version + 1;
@@ -246,6 +271,26 @@ class ContractController extends Controller
         }
 
         return response()->json(['message' => 'File not found.'], 404);
+    }
+
+    public function changeVersion(Request $request, string $id): JsonResponse
+    {
+        $request->validate(['version_no' => 'required|integer']);
+        
+        $contract = Contract::findOrFail($id);
+        $version  = $contract->versions()->where('version_no', $request->version_no)->firstOrFail();
+        
+        $contract->update(['current_version' => $request->version_no]);
+        
+        ContractHistory::create([
+            'contract_id' => $contract->id,
+            'action'      => 'VERSION_CHANGED',
+            'description' => "Versi aktif diubah ke v{$request->version_no}",
+            'actor_id'    => Auth::id(),
+        ]);
+        
+        $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'histories.actor', 'messages.user']);
+        return response()->json($this->formatContract($contract));
     }
 
     public function pdfPreview(string $id, int $versionNo): mixed
@@ -317,6 +362,7 @@ class ContractController extends Controller
                 'uploaded_by'=> $v->uploaded_by,
                 'is_final'   => (bool) $v->is_final,
                 'file_hash'  => $v->file_hash,
+                'has_file'   => (bool) $v->file_path,
                 'created_at' => $v->created_at->toDateString(),
                 'uploader'   => $this->formatUser($v->uploader),
             ])->sortByDesc('version_no')->values(),

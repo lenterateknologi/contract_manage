@@ -16,6 +16,8 @@ export const contractApi = {
         api.post(`/api/contracts/${id}/reject`, { reason }).then((r) => r.data),
     uploadRevision: (id: string, data: FormData): Promise<Contract> =>
         api.post(`/api/contracts/${id}/revision`, data).then((r) => r.data),
+    changeVersion: (id: string, versionNo: number): Promise<Contract> =>
+        api.post(`/api/contracts/${id}/version`, { version_no: versionNo }).then((r) => r.data),
     downloadUrl: (id: string) => `/api/contracts/${id}/download`,
     messages: {
         list: (contractId: string) => api.get(`/api/contracts/${contractId}/messages`).then((r) => r.data),

@@ -15,6 +15,7 @@ export interface ContractVersion {
     uploaded_by: string;
     is_final: boolean;
     file_hash: string;
+    has_file: boolean;
     created_at: string;
     uploader: UserProfile;
 }

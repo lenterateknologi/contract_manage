@@ -111,7 +111,11 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected }
             const c = await contractApi.create(fd);
             setContracts(prev => [c, ...prev]);
             showToast('Kontrak berhasil dibuat!', 'success');
-        } catch { showToast('Gagal membuat kontrak.', 'danger'); }
+        } catch (err: any) {
+            console.error(err);
+            const msg = err.response?.data?.message || 'Gagal membuat kontrak.';
+            showToast(msg, 'danger');
+        }
         finally { setLoading(false); }
     };
 
@@ -150,9 +154,15 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected }
 
     const handleRevision = async (fd: FormData) => {
         if (!selected) return;
-        const c = await contractApi.uploadRevision(selected.id, fd);
-        updateContract(c);
-        showToast('Versi baru berhasil diupload!', 'success');
+        try {
+            const c = await contractApi.uploadRevision(selected.id, fd);
+            updateContract(c);
+            showToast('Versi baru berhasil diupload!', 'success');
+        } catch (err: any) {
+            console.error(err);
+            const msg = err.response?.data?.message || 'Gagal upload revisi.';
+            showToast(msg, 'danger');
+        }
     };
 
     const handleQuickApprove = async (contractId: string) => {
@@ -161,6 +171,15 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected }
             updateContract(c);
             showToast('Berhasil disetujui', 'success');
         } catch { showToast('Gagal approve.', 'danger'); }
+    };
+
+    const handleChangeVersion = async (vno: number) => {
+        if (!selected) return;
+        try {
+            const c = await contractApi.changeVersion(selected.id, vno);
+            updateContract(c);
+            showToast(`Versi aktif diubah ke v${vno}`, 'success');
+        } catch { showToast('Gagal mengubah versi.', 'danger'); }
     };
 
     const navTo = (v: View) => { setView(v); closeDetail(); };
@@ -540,11 +559,9 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected }
                                     <button onClick={() => handleDownload(selected.id, selected.versions.find(v => v.version_no === selected.current_version)?.file_name)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid #e5e7eb', fontSize: 12, fontWeight: 500, borderRadius: 6, background: 'none', cursor: 'pointer', color: '#374151' }}>
                                         <i className="fa-solid fa-download" style={{ fontSize: 11 }} /> Download
                                     </button>
-                                    {['draft', 'revision'].includes(selected.status) && (
-                                        <button onClick={() => setRevOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid #e5e7eb', fontSize: 12, fontWeight: 500, borderRadius: 6, background: 'none', cursor: 'pointer', color: '#374151' }}>
-                                            <i className="fa-solid fa-upload" style={{ fontSize: 11 }} /> Upload Revisi
-                                        </button>
-                                    )}
+                                    <button onClick={() => setRevOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid #e5e7eb', fontSize: 12, fontWeight: 500, borderRadius: 6, background: 'none', cursor: 'pointer', color: '#374151' }}>
+                                        <i className="fa-solid fa-upload" style={{ fontSize: 11 }} /> Upload Revisi
+                                    </button>
                                 </div>
                             </div>
 
@@ -638,6 +655,11 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected }
                                                                 <a href={contractApi.downloadUrl(selected.id)} download style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px', fontSize: 11, border: '1px solid #e5e7eb', borderRadius: 6, background: 'none', cursor: 'pointer', textDecoration: 'none', color: '#374151' }}>
                                                                     <i className="fa-solid fa-download" /> Unduh
                                                                 </a>
+                                                                {/* {v.version_no !== selected.current_version && (
+                                                                    <button onClick={() => handleChangeVersion(v.version_no)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px', fontSize: 11, border: '1px solid #dcfce7', borderRadius: 6, background: '#f0fdf4', color: '#166534', cursor: 'pointer' }}>
+                                                                        <i className="fa-solid fa-check-double" /> Jadikan Aktif
+                                                                    </button>
+                                                                )} */}
                                                             </div>
                                                         </div>
                                                     ))}

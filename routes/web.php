@@ -30,6 +30,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/contracts/{id}/approve',             [ContractController::class, 'approve']);
         Route::post('/contracts/{id}/reject',              [ContractController::class, 'reject']);
         Route::post('/contracts/{id}/revision',            [ContractController::class, 'uploadRevision']);
+        Route::post('/contracts/{id}/version',             [ContractController::class, 'changeVersion']);
         Route::get('/contracts/{id}/download',             [ContractController::class, 'download'])->name('contracts.download');
         Route::get('/contracts/{id}/file/{versionNo}',     [ContractController::class, 'fileContent'])->name('contracts.file-url');
         Route::get('/contracts/{id}/pdf/{versionNo}',      [ContractController::class, 'pdfPreview'])->name('contracts.pdf-preview');

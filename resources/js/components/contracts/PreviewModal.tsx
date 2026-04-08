@@ -73,7 +73,20 @@ export default function PreviewModal({ open, onClose, contract, versionNo }: Pro
                     </div>
                 )}
 
-                {pdfUrl ? (
+                {!ver.has_file ? (
+                    <div className="flex flex-col items-center justify-center h-full text-gray-300 gap-4 max-w-sm mx-auto text-center px-6">
+                        <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center">
+                            <i className="fa-solid fa-file-circle-exclamation text-3xl text-amber-500" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-semibold mb-1">File Tidak Ditemukan</h3>
+                            <p className="text-gray-400 text-sm leading-relaxed">
+                                Kontrak ini berasal dari data dummy (seeder) yang tidak memiliki file fisik di disk.
+                                Silakan <b>Upload Kontrak Baru</b> untuk mencoba fitur PDF preview.
+                            </p>
+                        </div>
+                    </div>
+                ) : pdfUrl ? (
                     <iframe
                         src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=1&view=FitH&zoom=${zoom}`}
                         className="w-full h-full border-none"

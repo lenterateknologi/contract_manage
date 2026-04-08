@@ -62,7 +62,7 @@ export default function CreateContractModal({ open, onClose, onSubmit }: Props) 
                             <p className="text-[12px] text-gray-500"><span className="text-blue-600 font-semibold">Klik untuk upload</span> atau drag & drop</p>
                             <p className="text-[11px] text-gray-400 mt-0.5">Format .docx · Maks. 10 MB</p>
                         </div>
-                        <input ref={fileRef} type="file" accept=".docx" className="hidden" onChange={handleFile} />
+                        <input ref={fileRef} type="file" accept=".docx,.doc,.pdf" className="hidden" onChange={handleFile} />
                         {file && (
                             <div className="mt-2 flex items-center gap-2 text-[11px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3 py-2">
                                 <i className="fa-solid fa-file-word text-blue-600" />

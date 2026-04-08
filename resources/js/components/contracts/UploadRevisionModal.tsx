@@ -39,7 +39,7 @@ export default function UploadRevisionModal({ open, onClose, onSubmit }: Props) 
                             <i className="fa-regular fa-file-word text-gray-400 text-2xl block mb-2" />
                             <p className="text-[12px] text-gray-500"><span className="text-blue-600 font-semibold">Klik untuk upload</span> file revisi</p>
                         </div>
-                        <input ref={fileRef} type="file" accept=".docx" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+                        <input ref={fileRef} type="file" accept=".docx,.doc,.pdf" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
                         {file && (
                             <div className="mt-2 flex items-center gap-2 text-[11px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3 py-2">
                                 <i className="fa-solid fa-file-word text-blue-600" /> {file.name}
