@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
     // Contracts
-    Route::get('/contracts',                            [ContractController::class, 'index']);
+   /* Route::get('/contracts',                            [ContractController::class, 'index']);
     Route::post('/contracts',                           [ContractController::class, 'store']);
     Route::get('/contracts/{id}',                       [ContractController::class, 'show']);
     Route::post('/contracts/{id}/send',                 [ContractController::class, 'send']);
@@ -20,4 +20,5 @@ Route::middleware('auth')->group(function () {
     Route::get('/contracts/{contractId}/messages',      [ContractMessageController::class, 'index']);
     Route::post('/contracts/{contractId}/messages',     [ContractMessageController::class, 'store']);
     Route::post('/contracts/{contractId}/messages/read',[ContractMessageController::class, 'markRead']);
-});
+*/
+    });
