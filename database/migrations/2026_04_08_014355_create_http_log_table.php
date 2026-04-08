@@ -35,6 +35,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('t_http_log');
+        DB::connection('log')->statement('DROP TABLE IF EXISTS t_http_log CASCADE');
     }
 };

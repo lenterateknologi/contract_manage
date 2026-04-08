@@ -12,6 +12,8 @@ class Contract extends Model
 {
     use HasFactory, HasUuids;
     protected $fillable = [
+        'contract_no', 'title', 'description', 'created_by', 'contract_type',
+        'status', 'current_version', 'workflow_id', 'workflow_step_id',
         'contract_no',
         'title',
         'description',
@@ -55,6 +57,21 @@ class Contract extends Model
     public function messages(): HasMany
     {
         return $this->hasMany(ContractMessage::class)->orderBy('created_at');
+    }
+
+    public function workflow(): BelongsTo
+    {
+        return $this->belongsTo(Workflow::class);
+    }
+
+    public function workflowStep(): BelongsTo
+    {
+        return $this->belongsTo(WorkflowStep::class);
+    }
+
+    public function workflowApprovals(): HasMany
+    {
+        return $this->hasMany(Approval::class);
     }
 
     public function currentVersionModel(): ?ContractVersion

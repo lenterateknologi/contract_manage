@@ -9,6 +9,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/contracts',                            [ContractController::class, 'index']);
     Route::post('/contracts',                           [ContractController::class, 'store']);
     Route::get('/contracts/{id}',                       [ContractController::class, 'show']);
+    Route::post('/contracts/{id}/send',                 [ContractController::class, 'send']);
     Route::post('/contracts/{id}/approve',              [ContractController::class, 'approve']);
     Route::post('/contracts/{id}/reject',               [ContractController::class, 'reject']);
     Route::post('/contracts/{id}/revision',             [ContractController::class, 'uploadRevision']);

@@ -311,6 +311,15 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
         } catch { showToast('Gagal approve.', 'danger'); }
     };
 
+    const handleSendForApproval = async () => {
+        if (!selected) return;
+        try {
+            const c = await contractApi.send(selected.id);
+            updateContract(c);
+            showToast('Kontrak berhasil dikirim untuk approval!', 'success');
+        } catch { showToast('Gagal mengirim kontrak.', 'danger'); }
+    };
+
     const handleChangeVersion = async (vno: number) => {
         if (!selected) return;
         try {
@@ -606,6 +615,27 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
                                 <p className="text-muted-foreground" style={{ fontSize: 12, marginTop: 2 }}>{selected.contract_no} · {selected.status.replace('_', ' ').toUpperCase()}</p>
                             </div>
 
+                        </div>
+                        {/* Header */}
+                        <div className="flex items-start justify-between" style={{ marginBottom: 16 }}>
+                            <div>
+                                <h2 className="font-bold text-gray-900" style={{ fontSize: 16 }}>{selected.title}</h2>
+                                <p className="text-gray-400" style={{ fontSize: 11, marginTop: 2 }}>{selected.contract_no} · {selected.status.replace('_', ' ').toUpperCase()}</p>
+                            </div>
+                            <div className="flex gap-2">
+                                {selected.status === 'draft' && (
+                                    <button onClick={handleSendForApproval} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: '#2563eb', color: '#fff', fontSize: 12, fontWeight: 500, borderRadius: 6, border: 'none', cursor: 'pointer' }}
+                                        onMouseOver={e => (e.currentTarget.style.background = '#1d4ed8')} onMouseOut={e => (e.currentTarget.style.background = '#2563eb')}>
+                                        <i className="fa-solid fa-paper-plane" style={{ fontSize: 11 }} /> Kirim
+                                    </button>
+                                )}
+                                <button onClick={() => handleDownload(selected.id, selected.versions.find(v => v.version_no === selected.current_version)?.file_name)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid #e5e7eb', fontSize: 12, fontWeight: 500, borderRadius: 6, background: 'none', cursor: 'pointer', color: '#374151' }}>
+                                    <i className="fa-solid fa-download" style={{ fontSize: 11 }} /> Download
+                                </button>
+                                <button onClick={() => setRevOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid #e5e7eb', fontSize: 12, fontWeight: 500, borderRadius: 6, background: 'none', cursor: 'pointer', color: '#374151' }}>
+                                    <i className="fa-solid fa-upload" style={{ fontSize: 11 }} /> Upload Revisi
+                                </button>
+                            </div>
                         </div>
 
                         {/* Grid */}
