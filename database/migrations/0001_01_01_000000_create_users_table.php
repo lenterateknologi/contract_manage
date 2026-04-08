@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -42,8 +43,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
-        Schema::dropIfExists('password_reset_tokens');
-        Schema::dropIfExists('sessions');
+        Schema::disableForeignKeyConstraints();
+        DB::statement('DROP TABLE IF EXISTS sessions CASCADE');
+        DB::statement('DROP TABLE IF EXISTS password_reset_tokens CASCADE');
+        DB::statement('DROP TABLE IF EXISTS users CASCADE');
+        Schema::enableForeignKeyConstraints();
     }
 };

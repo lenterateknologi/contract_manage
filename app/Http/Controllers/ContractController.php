@@ -7,6 +7,7 @@ use App\Models\ContractApproval;
 use App\Models\ContractHistory;
 use App\Models\ContractVersion;
 use App\Models\User;
+use App\Services\ContractWorkflowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,6 +16,13 @@ use Illuminate\Support\Str;
 
 class ContractController extends Controller
 {
+    private ContractWorkflowService $workflowService;
+
+    public function __construct(ContractWorkflowService $workflowService)
+    {
+        $this->workflowService = $workflowService;
+    }
+
     public function index(): JsonResponse
     {
         $contracts = Contract::with(['creator', 'versions', 'approvals.approver', 'histories.actor', 'messages.user'])
@@ -27,10 +35,29 @@ class ContractController extends Controller
 
     public function show(string $id): JsonResponse
     {
-        $contract = Contract::with(['creator', 'versions.uploader', 'approvals.approver', 'histories.actor', 'messages.user'])
+        $contract = Contract::with(['creator', 'versions.uploader', 'approvals.approver', 'histories.actor', 'messages.user', 'workflow', 'workflowStep', 'workflowApprovals.user'])
             ->findOrFail($id);
 
         return response()->json($this->formatContract($contract));
+    }
+
+    public function send(Request $request, string $id): JsonResponse
+    {
+        try {
+            $contract = Contract::findOrFail($id);
+
+            if ($contract->status !== 'draft') {
+                return response()->json(['message' => 'Only draft contracts can be sent.'], 422);
+            }
+
+            // Use workflow service to send for approval
+            $contract = $this->workflowService->sendForApproval($contract);
+
+            $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'histories.actor', 'messages.user', 'workflow', 'workflowStep', 'workflowApprovals.user']);
+            return response()->json($this->formatContract($contract), 200);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
     }
 
     public function store(Request $request): JsonResponse
@@ -349,12 +376,26 @@ class ContractController extends Controller
             'contract_no'     => $c->contract_no,
             'title'           => $c->title,
             'description'     => $c->description,
+            'contract_type'   => $c->contract_type,
             'created_by'      => $c->created_by,
             'status'          => $c->status,
             'current_version' => $c->current_version,
             'created_at'      => $c->created_at->toDateString(),
             'creator'         => $this->formatUser($c->creator),
             'progress'        => $progress,
+            'workflow_id'     => $c->workflow_id,
+            'workflow_step_id'=> $c->workflow_step_id,
+            'workflow'        => $c->workflow ? [
+                'id' => $c->workflow->id,
+                'name' => $c->workflow->name,
+                'contract_type' => $c->workflow->contract_type,
+            ] : null,
+            'workflow_step'   => $c->workflowStep ? [
+                'id' => $c->workflowStep->id,
+                'step' => $c->workflowStep->step,
+                'role' => $c->workflowStep->role,
+                'description' => $c->workflowStep->description,
+            ] : null,
             'versions'        => $c->versions->map(fn($v) => [
                 'version_no' => $v->version_no,
                 'file_name'  => $v->file_name,
@@ -391,6 +432,19 @@ class ContractController extends Controller
                 'created_at' => $m->created_at->format('Y-m-d H:i'),
                 'user'       => $this->formatUser($m->user),
             ]),
+            'workflow_approvals' => $c->workflowApprovals ? $c->workflowApprovals->map(fn($a) => [
+                'id'            => $a->id,
+                'contract_id'   => $a->contract_id,
+                'workflow_step_id' => $a->workflow_step_id,
+                'user_id'       => $a->user_id,
+                'approver_name' => $a->approver_name,
+                'role'          => $a->role,
+                'job_title'     => $a->job_title,
+                'status'        => $a->status,
+                'comment'       => $a->comment,
+                'decided_at'    => $a->decided_at?->toDateTimeString(),
+                'user'          => $this->formatUser($a->user),
+            ]) : [],
         ];
     }
 

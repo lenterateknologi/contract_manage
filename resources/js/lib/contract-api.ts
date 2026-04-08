@@ -10,6 +10,8 @@ export const contractApi = {
     list: (): Promise<Contract[]> => api.get('/api/contracts').then((r) => r.data),
     get: (id: string): Promise<Contract> => api.get(`/api/contracts/${id}`).then((r) => r.data),
     create: (data: FormData): Promise<Contract> => api.post('/api/contracts', data).then((r) => r.data),
+    send: (id: string): Promise<Contract> =>
+        api.post(`/api/contracts/${id}/send`).then((r) => r.data),
     approve: (id: string, note: string): Promise<Contract> =>
         api.post(`/api/contracts/${id}/approve`, { note }).then((r) => r.data),
     reject: (id: string, reason: string): Promise<Contract> =>

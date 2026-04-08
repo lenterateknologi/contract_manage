@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -50,8 +51,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('jobs');
-        Schema::dropIfExists('job_batches');
-        Schema::dropIfExists('failed_jobs');
+        Schema::disableForeignKeyConstraints();
+        DB::statement('DROP TABLE IF EXISTS failed_jobs CASCADE');
+        DB::statement('DROP TABLE IF EXISTS job_batches CASCADE');
+        DB::statement('DROP TABLE IF EXISTS jobs CASCADE');
+        Schema::enableForeignKeyConstraints();
     }
 };
