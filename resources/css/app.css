@@ -156,3 +156,28 @@
         @apply bg-background text-foreground;
     }
 }
+
+/* Contract CMS Animations */
+@keyframes modal-in {
+    from { opacity: 0; transform: scale(0.96) translateY(-4px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes slide-up {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes toast-in {
+    from { opacity: 0; transform: translateX(12px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Document preview styles */
+.contract-doc h1, .contract-doc h2, .contract-doc h3 { color: #111827; font-weight: 700; margin-top: 1.25rem; margin-bottom: .5rem; }
+.contract-doc h1 { font-size: 1.25rem; }
+.contract-doc h2 { font-size: 1rem; }
+.contract-doc p  { color: #374151; margin-bottom: .75rem; line-height: 1.7; }
+.contract-doc table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: .8rem; }
+.contract-doc th, .contract-doc td { border: 1px solid #e5e7eb; padding: 6px 12px; text-align: left; }
+.contract-doc th { background: #f9fafb; font-weight: 600; }

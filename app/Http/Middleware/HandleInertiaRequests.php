@@ -43,7 +43,12 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
-                'user' => $request->user(),
+                'user' => $request->user() ? array_merge($request->user()->toArray(), [
+                    'initials'   => $request->user()->initials,
+                    'role'       => $request->user()->role,
+                    'bg_color'   => $request->user()->bg_color,
+                    'text_color' => $request->user()->text_color,
+                ]) : null,
             ],
         ]);
     }
