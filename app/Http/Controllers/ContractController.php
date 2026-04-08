@@ -236,17 +236,16 @@ class ContractController extends Controller
         return response()->json(['message' => 'File not found.'], 404);
     }
 
-    public function fileContent(string $id, int $versionNo): JsonResponse
+    public function fileContent(string $id, int $versionNo): mixed
     {
         $contract = Contract::findOrFail($id);
         $version  = $contract->versions()->where('version_no', $versionNo)->firstOrFail();
 
         if ($version->file_path && Storage::disk('local')->exists($version->file_path)) {
-            $url = route('contracts.file-url', ['id' => $id, 'versionNo' => $versionNo]);
-            return response()->json(['url' => $url, 'has_file' => true]);
+            return Storage::disk('local')->download($version->file_path, $version->file_name);
         }
 
-        return response()->json(['has_file' => false, 'file_name' => $version->file_name]);
+        return response()->json(['message' => 'File not found.'], 404);
     }
 
     // ── Format helper ──────────────────────────────────────────────────

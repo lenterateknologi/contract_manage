@@ -1,33 +1,61 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Contract, ContractVersion } from '@/types/contracts';
+import React, { useEffect, useState } from 'react';
+import { Contract } from '@/types/contracts';
+
+declare const mammoth: any;
 
 interface Props { open: boolean; onClose: () => void; contract: Contract | null; initialVersion: number | null; }
 
-function buildText(c: Contract, ver: ContractVersion): string {
-    const base = `KONTRAK: ${c.title}\nNo. Kontrak: ${c.contract_no}\nVersi: v${ver.version_no}\nTanggal: ${ver.created_at}\n\n1. PENDAHULUAN\nKontrak ini dibuat untuk mengatur hubungan kerja sama secara formal.\n\n2. RUANG LINGKUP\n${c.description}\n\n3. KEWAJIBAN PARA PIHAK\nPihak Pertama berkewajiban menyediakan layanan sesuai spesifikasi.\nPihak Kedua berkewajiban melakukan pembayaran sesuai jadwal.\n\n4. KETENTUAN PEMBAYARAN\nDown Payment: 30%\nTermin 1: 40%\nPelunasan: 30%\n\n5. JANGKA WAKTU\n12 (dua belas) bulan sejak penandatanganan.\n\n6. PENYELESAIAN SENGKETA\nMelalui Badan Arbitrase Nasional Indonesia (BANI).`;
-    if (ver.version_no === 1) return base;
-    return base.replace('12 (dua belas) bulan', '24 (dua puluh empat) bulan').replace('Down Payment: 30%', 'Down Payment: 20%').replace('Termin 1: 40%', 'Termin 1: 50%');
-}
-
 function esc(s: string) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+async function fetchVersionText(contractId: string, versionNo: number): Promise<string> {
+    try {
+        const res = await fetch(`/api/contracts/${contractId}/file/${versionNo}`, { credentials: 'same-origin' });
+        if (!res.ok) return `[File v${versionNo} tidak tersedia]`;
+        const buf = await res.arrayBuffer();
+        if (typeof mammoth !== 'undefined') {
+            const result = await mammoth.extractRawText({ arrayBuffer: buf });
+            return result.value;
+        }
+        return '[mammoth.js belum dimuat]';
+    } catch {
+        return `[Gagal memuat file v${versionNo}]`;
+    }
+}
 
 export default function CompareModal({ open, onClose, contract, initialVersion }: Props) {
     const [fromVer, setFromVer] = useState<number>(1);
     const [toVer, setToVer] = useState<number>(2);
     const [mode, setMode] = useState<'side' | 'inline'>('side');
+    const [fromText, setFromText] = useState('');
+    const [toText, setToText] = useState('');
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         if (!open || !contract || !initialVersion) return;
         const sorted = [...contract.versions].sort((a, b) => a.version_no - b.version_no);
         const idx = sorted.findIndex(v => v.version_no === initialVersion);
-        setFromVer(sorted[idx]?.version_no ?? sorted[0]?.version_no);
-        setToVer(sorted[idx < sorted.length - 1 ? idx + 1 : idx - 1]?.version_no ?? sorted[sorted.length - 1]?.version_no);
+        const from = sorted[idx]?.version_no ?? sorted[0]?.version_no;
+        const to = sorted[idx < sorted.length - 1 ? idx + 1 : idx - 1]?.version_no ?? sorted[sorted.length - 1]?.version_no;
+        setFromVer(from);
+        setToVer(to);
     }, [open, contract?.id, initialVersion]);
+
+    // Fetch text when versions change
+    useEffect(() => {
+        if (!open || !contract) return;
+        setLoading(true);
+        Promise.all([
+            fetchVersionText(contract.id, fromVer),
+            fetchVersionText(contract.id, toVer),
+        ]).then(([ft, tt]) => {
+            setFromText(ft);
+            setToText(tt);
+            setLoading(false);
+        });
+    }, [open, contract?.id, fromVer, toVer]);
 
     if (!open || !contract) return null;
 
-    const fromText = buildText(contract, contract.versions.find(v => v.version_no === fromVer)!);
-    const toText = buildText(contract, contract.versions.find(v => v.version_no === toVer)!);
     const oldLines = fromText.split('\n');
     const newLines = toText.split('\n');
 
@@ -94,7 +122,12 @@ export default function CompareModal({ open, onClose, contract, initialVersion }
                 </div>
                 {/* Diff area */}
                 <div className="flex-1 overflow-hidden flex" style={{ minHeight: 0 }}>
-                    {mode === 'side' ? (
+                    {loading ? (
+                        <div className="flex-1 flex flex-col items-center justify-center text-gray-400 gap-3">
+                            <i className="fa-solid fa-spinner fa-spin text-3xl text-blue-400" />
+                            <span className="text-[13px]">Memuat file untuk perbandingan...</span>
+                        </div>
+                    ) : mode === 'side' ? (
                         <>
                             <div className="flex-1 flex flex-col min-w-0 border-r border-gray-200">
                                 <div className="px-4 py-2 bg-red-50 border-b border-red-100 flex items-center gap-2 flex-shrink-0">

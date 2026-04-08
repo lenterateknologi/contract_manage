@@ -247,7 +247,7 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected }
             <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
 
                 {/* Topbar */}
-                <div className="flex-shrink-0 flex items-center justify-between bg-white border-b border-gray-200" style={{ height: 52, paddingLeft: 20, paddingRight: 20 }}>
+                <div className="flex-shrink-0 flex items-center justify-between bg-white border-b border-gray-200" style={{ paddingTop: 14, paddingBottom: 14, paddingLeft: 20, paddingRight: 20 }}>
                     <span className="font-semibold text-gray-900" style={{ fontSize: 14 }}>
                         {selected ? selected.contract_no : SL[view] ?? 'Dashboard'}
                     </span>
@@ -255,7 +255,7 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected }
                         <div className="relative">
                             <i className="fa-solid fa-magnifying-glass absolute text-gray-400" style={{ left: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 11 }} />
                             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari kontrak..."
-                                style={{ paddingLeft: 28, paddingRight: 12, paddingTop: 6, paddingBottom: 6, fontSize: 12, border: '1px solid #e5e7eb', borderRadius: 6, outline: 'none', width: 208 }}
+                                style={{ paddingLeft: 28, paddingRight: 12, paddingTop: 6, paddingBottom: 9, fontSize: 12, border: '1px solid #e5e7eb', borderRadius: 6, outline: 'none', width: 208 }}
                                 onFocus={e => (e.target as HTMLInputElement).style.borderColor = '#3b82f6'}
                                 onBlur={e => (e.target as HTMLInputElement).style.borderColor = '#e5e7eb'} />
                         </div>
