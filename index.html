@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -12,1020 +13,1314 @@
     tailwind.config = {
       theme: {
         extend: {
-          fontFamily: { sans: ['-apple-system','BlinkMacSystemFont','Segoe UI','Roboto','sans-serif'] },
+          fontFamily: { sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'] },
         }
       }
     }
   </script>
   <style>
     /* hanya untuk hal yang tidak bisa dihandle Tailwind pure */
-    html, body { height: 100%; overflow: hidden; }
+    html,
+    body {
+      height: 100%;
+      overflow: hidden;
+    }
 
-    .page        { display: none; }
-    .page.active { display: block; }
+    .page {
+      display: none;
+    }
 
-    .sidebar-link.active { background: #eff6ff; color: #2563eb; font-weight: 600; }
+    .page.active {
+      display: block;
+    }
+
+    .sidebar-link.active {
+      background: #eff6ff;
+      color: #2563eb;
+      font-weight: 600;
+    }
 
     .step-line::before {
       content: '';
       position: absolute;
-      left: 11px; top: 26px; bottom: 0;
+      left: 11px;
+      top: 26px;
+      bottom: 0;
       width: 1px;
       background: #e5e7eb;
     }
 
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 99px; }
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
 
-    .upload-zone:hover { border-color: #2563eb; background: #eff6ff; }
+    ::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+      border-radius: 99px;
+    }
+
+    .upload-zone:hover {
+      border-color: #2563eb;
+      background: #eff6ff;
+    }
 
     @keyframes toast-in {
-      from { opacity:0; transform: translateY(6px); }
-      to   { opacity:1; transform: none; }
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+
+      to {
+        opacity: 1;
+        transform: none;
+      }
     }
-    .toast-show { animation: toast-in .18s ease; }
+
+    .toast-show {
+      animation: toast-in .18s ease;
+    }
 
     @keyframes modal-in {
-      from { opacity:0; transform: scale(.97) translateY(8px); }
-      to   { opacity:1; transform: none; }
+      from {
+        opacity: 0;
+        transform: scale(.97) translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: none;
+      }
     }
-    .modal-in { animation: modal-in .18s ease; }
+
+    .modal-in {
+      animation: modal-in .18s ease;
+    }
 
     @keyframes slide-up {
-      from { opacity:0; transform: translateY(12px); }
-      to   { opacity:1; transform: none; }
-    }
-    .chat-panel { animation: slide-up .2s ease; }
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
 
-    .chat-bubble-me    { background:#2563eb; color:#fff; border-radius:14px 14px 4px 14px; }
-    .chat-bubble-other { background:#f3f4f6; color:#111827; border-radius:14px 14px 14px 4px; }
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    .chat-panel {
+      animation: slide-up .2s ease;
+    }
+
+    .chat-bubble-me {
+      background: #2563eb;
+      color: #fff;
+      border-radius: 14px 14px 4px 14px;
+    }
+
+    .chat-bubble-other {
+      background: #f3f4f6;
+      color: #111827;
+      border-radius: 14px 14px 14px 4px;
+    }
 
     /* Mammoth rendered docx styles */
-    #preview-content h1, #preview-demo-wrap h1 { font-size:20px; font-weight:700; margin:16px 0 8px; }
-    #preview-content h2, #preview-demo-wrap h2 { font-size:17px; font-weight:700; margin:14px 0 6px; }
-    #preview-content h3, #preview-demo-wrap h3 { font-size:15px; font-weight:600; margin:12px 0 4px; }
-    #preview-content p,  #preview-demo-wrap p  { margin:6px 0; }
-    #preview-content table, #preview-demo-wrap table { width:100%; border-collapse:collapse; margin:12px 0; }
-    #preview-content td, #preview-content th,
-    #preview-demo-wrap td, #preview-demo-wrap th { border:1px solid #d1d5db; padding:6px 10px; font-size:13px; }
-    #preview-content th, #preview-demo-wrap th { background:#f9fafb; font-weight:600; }
-    #preview-content strong, #preview-demo-wrap strong { font-weight:700; }
-    #preview-content em, #preview-demo-wrap em { font-style:italic; }
-    #preview-content ul, #preview-demo-wrap ul { list-style:disc; padding-left:20px; margin:6px 0; }
-    #preview-content ol, #preview-demo-wrap ol { list-style:decimal; padding-left:20px; margin:6px 0; }
+    #preview-content h1,
+    #preview-demo-wrap h1 {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 16px 0 8px;
+    }
+
+    #preview-content h2,
+    #preview-demo-wrap h2 {
+      font-size: 17px;
+      font-weight: 700;
+      margin: 14px 0 6px;
+    }
+
+    #preview-content h3,
+    #preview-demo-wrap h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin: 12px 0 4px;
+    }
+
+    #preview-content p,
+    #preview-demo-wrap p {
+      margin: 6px 0;
+    }
+
+    #preview-content table,
+    #preview-demo-wrap table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+    }
+
+    #preview-content td,
+    #preview-content th,
+    #preview-demo-wrap td,
+    #preview-demo-wrap th {
+      border: 1px solid #d1d5db;
+      padding: 6px 10px;
+      font-size: 13px;
+    }
+
+    #preview-content th,
+    #preview-demo-wrap th {
+      background: #f9fafb;
+      font-weight: 600;
+    }
+
+    #preview-content strong,
+    #preview-demo-wrap strong {
+      font-weight: 700;
+    }
+
+    #preview-content em,
+    #preview-demo-wrap em {
+      font-style: italic;
+    }
+
+    #preview-content ul,
+    #preview-demo-wrap ul {
+      list-style: disc;
+      padding-left: 20px;
+      margin: 6px 0;
+    }
+
+    #preview-content ol,
+    #preview-demo-wrap ol {
+      list-style: decimal;
+      padding-left: 20px;
+      margin: 6px 0;
+    }
 
     /* Compare diff */
-    .diff-add  { background:#dcfce7; color:#166534; text-decoration:none; border-radius:2px; padding:0 1px; }
-    .diff-del  { background:#fee2e2; color:#991b1b; text-decoration:line-through; border-radius:2px; padding:0 1px; }
-    .diff-pane { font-size:13px; line-height:1.8; color:#1f2937; }
-    .diff-pane h1  { font-size:18px; font-weight:700; margin:14px 0 6px; }
-    .diff-pane h2  { font-size:15px; font-weight:700; margin:12px 0 5px; border-bottom:1px solid #e5e7eb; padding-bottom:4px; }
-    .diff-pane p   { margin:5px 0; }
-    .diff-pane table { width:100%; border-collapse:collapse; margin:10px 0; font-size:12px; }
-    .diff-pane td, .diff-pane th { border:1px solid #d1d5db; padding:5px 9px; }
-    .diff-pane th  { background:#f9fafb; font-weight:600; }
+    .diff-add {
+      background: #dcfce7;
+      color: #166534;
+      text-decoration: none;
+      border-radius: 2px;
+      padding: 0 1px;
+    }
 
-    .diff-line-add { background:#f0fdf4; border-left:3px solid #16a34a; padding-left:10px; margin:1px 0; }
-    .diff-line-del { background:#fef2f2; border-left:3px solid #dc2626; padding-left:10px; margin:1px 0; text-decoration:line-through; color:#9ca3af; }
-    .diff-line-eq  { padding-left:13px; margin:1px 0; }
+    .diff-del {
+      background: #fee2e2;
+      color: #991b1b;
+      text-decoration: line-through;
+      border-radius: 2px;
+      padding: 0 1px;
+    }
 
-    .compare-pane  { min-width:0; overflow-y:auto; }
-    #cmp-left-content, #cmp-right-content { min-height:100%; }
+    .diff-pane {
+      font-size: 13px;
+      line-height: 1.8;
+      color: #1f2937;
+    }
 
-    .legend-dot { width:10px; height:10px; border-radius:2px; display:inline-block; }
+    .diff-pane h1 {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 14px 0 6px;
+    }
 
-    .chat-messages { display:flex; flex-direction:column; gap:10px; }
-    #chat-msg-list  { scrollbar-width: thin; }
+    .diff-pane h2 {
+      font-size: 15px;
+      font-weight: 700;
+      margin: 12px 0 5px;
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: 4px;
+    }
+
+    .diff-pane p {
+      margin: 5px 0;
+    }
+
+    .diff-pane table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0;
+      font-size: 12px;
+    }
+
+    .diff-pane td,
+    .diff-pane th {
+      border: 1px solid #d1d5db;
+      padding: 5px 9px;
+    }
+
+    .diff-pane th {
+      background: #f9fafb;
+      font-weight: 600;
+    }
+
+    .diff-line-add {
+      background: #f0fdf4;
+      border-left: 3px solid #16a34a;
+      padding-left: 10px;
+      margin: 1px 0;
+    }
+
+    .diff-line-del {
+      background: #fef2f2;
+      border-left: 3px solid #dc2626;
+      padding-left: 10px;
+      margin: 1px 0;
+      text-decoration: line-through;
+      color: #9ca3af;
+    }
+
+    .diff-line-eq {
+      padding-left: 13px;
+      margin: 1px 0;
+    }
+
+    .compare-pane {
+      min-width: 0;
+      overflow-y: auto;
+    }
+
+    #cmp-left-content,
+    #cmp-right-content {
+      min-height: 100%;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      display: inline-block;
+    }
+
+    .chat-messages {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    #chat-msg-list {
+      scrollbar-width: thin;
+    }
   </style>
 </head>
+
 <body class="bg-gray-50 text-gray-900 font-sans text-sm">
-<div class="flex h-screen overflow-hidden">
+  <div class="flex h-screen overflow-hidden">
 
-  <!-- ══ Sidebar ══ -->
-  <aside class="w-[220px] flex-shrink-0 flex flex-col h-screen bg-white border-r border-gray-200">
+    <!-- ══ Sidebar ══ -->
+    <aside class="w-[220px] flex-shrink-0 flex flex-col h-screen bg-white border-r border-gray-200">
 
-    <!-- Brand -->
-    <div class="flex items-center gap-2.5 px-4 py-3.5 border-b border-gray-200">
-      <div class="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-content-center text-white flex items-center justify-center text-xs flex-shrink-0">
-        <i class="fa-solid fa-file-contract"></i>
-      </div>
-      <div>
-        <div class="font-bold text-[13px] text-gray-900">CMS</div>
-        <div class="text-[10px] text-gray-400">Contract Management</div>
-      </div>
-    </div>
-
-    <!-- Nav -->
-    <nav class="flex-1 overflow-y-auto px-2 py-3 space-y-0.5">
-      <div class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 px-2 pt-1 pb-1">Menu</div>
-
-      <a class="sidebar-link active flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-[13px] font-medium text-gray-500 cursor-pointer hover:bg-gray-50 hover:text-gray-800 transition-colors"
-         onclick="navigate('dashboard')">
-        <i class="fa-solid fa-house w-4 text-center text-[13px]"></i> Dashboard
-      </a>
-      <a class="sidebar-link flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-[13px] font-medium text-gray-500 cursor-pointer hover:bg-gray-50 hover:text-gray-800 transition-colors"
-         onclick="navigate('contracts')">
-        <i class="fa-solid fa-folder-open w-4 text-center text-[13px]"></i> Semua Kontrak
-      </a>
-      <a class="sidebar-link flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-[13px] font-medium text-gray-500 cursor-pointer hover:bg-gray-50 hover:text-gray-800 transition-colors"
-         onclick="navigate('pending')">
-        <i class="fa-regular fa-clock w-4 text-center text-[13px]"></i> Menunggu Approval
-        <span class="ml-auto text-[10px] font-bold bg-red-500 text-white px-1.5 py-0.5 rounded-full">3</span>
-      </a>
-
-      <div class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 px-2 pt-3 pb-1">Laporan</div>
-      <a class="sidebar-link flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-[13px] font-medium text-gray-500 cursor-pointer hover:bg-gray-50 hover:text-gray-800 transition-colors"
-         onclick="navigate('audit')">
-        <i class="fa-solid fa-chart-bar w-4 text-center text-[13px]"></i> Audit Trail
-      </a>
-    </nav>
-
-    <!-- User -->
-    <div class="flex items-center gap-2 px-3 py-2.5 border-t border-gray-200">
-      <div class="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
-           style="background:#dbeafe;color:#1d4ed8;">DR</div>
-      <div class="min-w-0">
-        <div class="text-[12px] font-semibold truncate">Dian Rahayu</div>
-        <div class="text-[10px] text-gray-400">Legal Manager</div>
-      </div>
-    </div>
-  </aside>
-
-  <!-- ══ Main ══ -->
-  <div class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-
-    <!-- Topbar -->
-    <div class="h-[52px] flex-shrink-0 flex items-center justify-between px-5 bg-white border-b border-gray-200">
-      <span class="text-[14px] font-semibold text-gray-900" id="page-title">Dashboard</span>
-      <div class="flex items-center gap-2">
-        <div class="relative">
-          <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]"></i>
-          <input type="text" placeholder="Cari kontrak..."
-                 class="pl-7 pr-3 py-1.5 text-[12px] border border-gray-200 rounded-md outline-none focus:border-blue-500 w-52 placeholder-gray-400" />
+      <!-- Brand -->
+      <div class="flex items-center gap-2.5 px-4 py-3.5 border-b border-gray-200">
+        <div
+          class="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-content-center text-white flex items-center justify-center text-xs flex-shrink-0">
+          <i class="fa-solid fa-file-contract"></i>
         </div>
-        <button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-medium rounded-md transition-colors"
-                onclick="openModal('modal-create')">
-          <i class="fa-solid fa-plus text-[11px]"></i> Buat Kontrak
-        </button>
-      </div>
-    </div>
-
-    <!-- Page content -->
-    <div class="flex-1 overflow-y-auto p-5">
-
-      <!-- ── Dashboard ── -->
-      <div class="page active" id="page-dashboard">
-
-        <!-- Stats -->
-        <div class="grid grid-cols-4 gap-3 mb-5">
-          <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 flex-shrink-0">
-              <i class="fa-solid fa-file-lines text-[14px]"></i>
-            </div>
-            <div>
-              <div class="text-[11px] font-medium text-gray-500">Total Kontrak</div>
-              <div class="text-[22px] font-bold leading-tight">24</div>
-              <div class="text-[10px] text-gray-400">+3 bulan ini</div>
-            </div>
-          </div>
-          <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 flex-shrink-0">
-              <i class="fa-regular fa-clock text-[14px]"></i>
-            </div>
-            <div>
-              <div class="text-[11px] font-medium text-gray-500">Menunggu Approval</div>
-              <div class="text-[22px] font-bold leading-tight">7</div>
-              <div class="text-[10px] text-gray-400">3 perlu aksimu</div>
-            </div>
-          </div>
-          <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 flex-shrink-0">
-              <i class="fa-solid fa-circle-check text-[14px]"></i>
-            </div>
-            <div>
-              <div class="text-[11px] font-medium text-gray-500">Disetujui</div>
-              <div class="text-[22px] font-bold leading-tight">15</div>
-              <div class="text-[10px] text-gray-400">62.5% approval rate</div>
-            </div>
-          </div>
-          <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 flex-shrink-0">
-              <i class="fa-solid fa-rotate text-[14px]"></i>
-            </div>
-            <div>
-              <div class="text-[11px] font-medium text-gray-500">Revisi</div>
-              <div class="text-[22px] font-bold leading-tight">2</div>
-              <div class="text-[10px] text-gray-400">Perlu re-upload</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Recent table -->
-        <div class="bg-white border border-gray-200 rounded-xl overflow-hidden mb-4">
-          <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-            <span class="text-[13px] font-semibold flex items-center gap-2">
-              <i class="fa-solid fa-list-ul text-gray-400 text-[12px]"></i> Kontrak Terbaru
-            </span>
-            <button class="text-[12px] text-blue-600 hover:underline flex items-center gap-1"
-                    onclick="navigate('contracts')">
-              Lihat Semua <i class="fa-solid fa-arrow-right text-[10px]"></i>
-            </button>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full">
-              <thead><tr class="bg-gray-50">
-                <th class="th">No. Kontrak</th><th class="th">Judul</th><th class="th">Dibuat Oleh</th>
-                <th class="th">Status</th><th class="th">Versi</th><th class="th">Tgl Dibuat</th><th class="th"></th>
-              </tr></thead>
-              <tbody id="dashboard-table"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Bottom row -->
-        <div class="grid grid-cols-2 gap-4">
-          <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-100 text-[13px] font-semibold">
-              <i class="fa-solid fa-triangle-exclamation text-gray-400 text-[12px]"></i> Bottleneck Approval
-            </div>
-            <div class="p-4" id="bottleneck-list"></div>
-          </div>
-          <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-100 text-[13px] font-semibold">
-              <i class="fa-solid fa-chart-pie text-gray-400 text-[12px]"></i> Status Overview
-            </div>
-            <div class="p-4" id="status-overview"></div>
-          </div>
+        <div>
+          <div class="font-bold text-[13px] text-gray-900">CMS</div>
+          <div class="text-[10px] text-gray-400">Contract Management</div>
         </div>
       </div>
 
-      <!-- ── Contracts ── -->
-      <div class="page" id="page-contracts">
-        <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-            <span class="text-[13px] font-semibold flex items-center gap-2">
-              <i class="fa-solid fa-folder-open text-gray-400 text-[12px]"></i> Semua Kontrak
-            </span>
-            <div class="flex gap-2">
-              <select class="text-[12px] border border-gray-200 rounded-md px-2 py-1.5 outline-none focus:border-blue-500 bg-white">
-                <option>Semua Status</option><option>Draft</option><option>In Review</option>
-                <option>Revision</option><option>Approved</option>
-              </select>
-              <button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-medium rounded-md transition-colors"
-                      onclick="openModal('modal-create')">
-                <i class="fa-solid fa-plus text-[11px]"></i> Buat Kontrak
+      <!-- Nav -->
+      <nav class="flex-1 overflow-y-auto px-2 py-3 space-y-0.5">
+        <div class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 px-2 pt-1 pb-1">Menu</div>
+
+        <a class="sidebar-link active flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-[13px] font-medium text-gray-500 cursor-pointer hover:bg-gray-50 hover:text-gray-800 transition-colors"
+          onclick="navigate('dashboard')">
+          <i class="fa-solid fa-house w-4 text-center text-[13px]"></i> Dashboard
+        </a>
+        <a class="sidebar-link flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-[13px] font-medium text-gray-500 cursor-pointer hover:bg-gray-50 hover:text-gray-800 transition-colors"
+          onclick="navigate('contracts')">
+          <i class="fa-solid fa-folder-open w-4 text-center text-[13px]"></i> Semua Kontrak
+        </a>
+        <a class="sidebar-link flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-[13px] font-medium text-gray-500 cursor-pointer hover:bg-gray-50 hover:text-gray-800 transition-colors"
+          onclick="navigate('pending')">
+          <i class="fa-regular fa-clock w-4 text-center text-[13px]"></i> Menunggu Approval
+          <span class="ml-auto text-[10px] font-bold bg-red-500 text-white px-1.5 py-0.5 rounded-full">3</span>
+        </a>
+
+        <div class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 px-2 pt-3 pb-1">Laporan</div>
+        <a class="sidebar-link flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-[13px] font-medium text-gray-500 cursor-pointer hover:bg-gray-50 hover:text-gray-800 transition-colors"
+          onclick="navigate('audit')">
+          <i class="fa-solid fa-chart-bar w-4 text-center text-[13px]"></i> Audit Trail
+        </a>
+      </nav>
+
+      <!-- User -->
+      <div class="flex items-center gap-2 px-3 py-2.5 border-t border-gray-200">
+        <div class="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
+          style="background:#dbeafe;color:#1d4ed8;">DR</div>
+        <div class="min-w-0">
+          <div class="text-[12px] font-semibold truncate">Dian Rahayu</div>
+          <div class="text-[10px] text-gray-400">Legal Manager</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ══ Main ══ -->
+    <div class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+
+      <!-- Topbar -->
+      <div class="h-[52px] flex-shrink-0 flex items-center justify-between px-5 bg-white border-b border-gray-200">
+        <span class="text-[14px] font-semibold text-gray-900" id="page-title">Dashboard</span>
+        <div class="flex items-center gap-2">
+          <div class="relative">
+            <i
+              class="fa-solid fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]"></i>
+            <input type="text" placeholder="Cari kontrak..."
+              class="pl-7 pr-3 py-1.5 text-[12px] border border-gray-200 rounded-md outline-none focus:border-blue-500 w-52 placeholder-gray-400" />
+          </div>
+          <button
+            class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-medium rounded-md transition-colors"
+            onclick="openModal('modal-create')">
+            <i class="fa-solid fa-plus text-[11px]"></i> Buat Kontrak
+          </button>
+        </div>
+      </div>
+
+      <!-- Page content -->
+      <div class="flex-1 overflow-y-auto p-5">
+
+        <!-- ── Dashboard ── -->
+        <div class="page active" id="page-dashboard">
+
+          <!-- Stats -->
+          <div class="grid grid-cols-4 gap-3 mb-5">
+            <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-3">
+              <div
+                class="w-9 h-9 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 flex-shrink-0">
+                <i class="fa-solid fa-file-lines text-[14px]"></i>
+              </div>
+              <div>
+                <div class="text-[11px] font-medium text-gray-500">Total Kontrak</div>
+                <div class="text-[22px] font-bold leading-tight">24</div>
+                <div class="text-[10px] text-gray-400">+bulan ini</div>
+              </div>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-3">
+              <div
+                class="w-9 h-9 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 flex-shrink-0">
+                <i class="fa-regular fa-clock text-[14px]"></i>
+              </div>
+              <div>
+                <div class="text-[11px] font-medium text-gray-500">Menunggu Approval</div>
+                <div class="text-[22px] font-bold leading-tight">7</div>
+                <div class="text-[10px] text-gray-400">3 perlu aksimu</div>
+              </div>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-3">
+              <div
+                class="w-9 h-9 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 flex-shrink-0">
+                <i class="fa-solid fa-circle-check text-[14px]"></i>
+              </div>
+              <div>
+                <div class="text-[11px] font-medium text-gray-500">Disetujui</div>
+                <div class="text-[22px] font-bold leading-tight">15</div>
+                <div class="text-[10px] text-gray-400">62.5% approval rate</div>
+              </div>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-3">
+              <div
+                class="w-9 h-9 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 flex-shrink-0">
+                <i class="fa-solid fa-rotate text-[14px]"></i>
+              </div>
+              <div>
+                <div class="text-[11px] font-medium text-gray-500">Revisi</div>
+                <div class="text-[22px] font-bold leading-tight">2</div>
+                <div class="text-[10px] text-gray-400">Perlu re-upload</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent table -->
+          <div class="bg-white border border-gray-200 rounded-xl overflow-hidden mb-4">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+              <span class="text-[13px] font-semibold flex items-center gap-2">
+                <i class="fa-solid fa-list-ul text-gray-400 text-[12px]"></i> Kontrak Terbaru
+              </span>
+              <button class="text-[12px] text-blue-600 hover:underline flex items-center gap-1"
+                onclick="navigate('contracts')">
+                Lihat Semua <i class="fa-solid fa-arrow-right text-[10px]"></i>
               </button>
             </div>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full">
-              <thead><tr class="bg-gray-50">
-                <th class="th">No. Kontrak</th><th class="th">Judul</th><th class="th">Dibuat Oleh</th>
-                <th class="th">Status</th><th class="th">Versi</th><th class="th">Progress</th>
-                <th class="th">Tgl Dibuat</th><th class="th"></th>
-              </tr></thead>
-              <tbody id="contracts-table"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── Pending ── -->
-      <div class="page" id="page-pending">
-        <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <div class="px-4 py-3 border-b border-gray-100 text-[13px] font-semibold flex items-center gap-2">
-            <i class="fa-regular fa-clock text-gray-400 text-[12px]"></i> Menunggu Approval Saya
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full">
-              <thead><tr class="bg-gray-50">
-                <th class="th">No. Kontrak</th><th class="th">Judul</th><th class="th">Role</th>
-                <th class="th">Versi</th><th class="th">Sequence</th><th class="th">Tgl Dibuat</th><th class="th">Aksi</th>
-              </tr></thead>
-              <tbody id="pending-table"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── Audit ── -->
-      <div class="page" id="page-audit">
-        <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-            <span class="text-[13px] font-semibold flex items-center gap-2">
-              <i class="fa-solid fa-chart-bar text-gray-400 text-[12px]"></i> Audit Trail
-            </span>
-            <div class="flex gap-2">
-              <input type="date" class="text-[12px] border border-gray-200 rounded-md px-2 py-1.5 outline-none focus:border-blue-500 w-36" />
-              <input type="date" class="text-[12px] border border-gray-200 rounded-md px-2 py-1.5 outline-none focus:border-blue-500 w-36" />
-              <button class="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 hover:bg-gray-50 text-[12px] font-medium rounded-md transition-colors">
-                <i class="fa-solid fa-filter text-[11px]"></i> Filter
-              </button>
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead>
+                  <tr class="bg-gray-50">
+                    <th class="th">No. Kontrak</th>
+                    <th class="th">Judul</th>
+                    <th class="th">Dibuat Oleh</th>
+                    <th class="th">Status</th>
+                    <th class="th">Versi</th>
+                    <th class="th">Tgl Dibuat</th>
+                    <th class="th"></th>
+                  </tr>
+                </thead>
+                <tbody id="dashboard-table"></tbody>
+              </table>
             </div>
           </div>
-          <div class="overflow-x-auto">
-            <table class="w-full">
-              <thead><tr class="bg-gray-50">
-                <th class="th">Waktu</th><th class="th">Kontrak</th><th class="th">Aksi</th>
-                <th class="th">Deskripsi</th><th class="th">Aktor</th>
-              </tr></thead>
-              <tbody id="audit-table"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
 
-      <!-- ── Detail ── -->
-      <div class="page" id="page-detail">
-
-        <!-- Breadcrumb -->
-        <nav class="flex items-center gap-1.5 text-[11px] text-gray-400 mb-4">
-          <a class="text-blue-600 cursor-pointer hover:underline" onclick="navigate('contracts')">Kontrak</a>
-          <i class="fa-solid fa-chevron-right text-[9px]"></i>
-          <span class="text-gray-600" id="detail-bc">Detail</span>
-        </nav>
-
-        <!-- Header -->
-        <div class="flex items-start justify-between mb-4">
-          <div>
-            <h2 class="text-[16px] font-bold text-gray-900" id="detail-title"></h2>
-            <p class="text-[11px] text-gray-400 mt-0.5" id="detail-sub"></p>
-          </div>
-          <div class="flex gap-2">
-            <button class="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 hover:bg-gray-50 text-[12px] font-medium rounded-md transition-colors"
-                    onclick="downloadFile()">
-              <i class="fa-solid fa-download text-[11px]"></i> Download
-            </button>
-            <button class="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 hover:bg-gray-50 text-[12px] font-medium rounded-md transition-colors"
-                    onclick="openModal('modal-upload')">
-              <i class="fa-solid fa-upload text-[11px]"></i> Upload Revisi
-            </button>
-          </div>
-        </div>
-
-        <!-- Grid -->
-        <div class="grid grid-cols-[1fr_300px] gap-4">
-
-          <!-- Left col -->
-          <div class="flex flex-col gap-4">
-
-            <!-- Info -->
+          <!-- Bottom row -->
+          <div class="grid grid-cols-2 gap-4">
             <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
               <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-100 text-[13px] font-semibold">
-                <i class="fa-solid fa-circle-info text-gray-400 text-[12px]"></i> Informasi Kontrak
+                <i class="fa-solid fa-triangle-exclamation text-gray-400 text-[12px]"></i> Bottleneck Approval
               </div>
-              <div class="p-4 grid grid-cols-2 gap-4" id="detail-info"></div>
+              <div class="p-4" id="bottleneck-list"></div>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+              <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-100 text-[13px] font-semibold">
+                <i class="fa-solid fa-chart-pie text-gray-400 text-[12px]"></i> Status Overview
+              </div>
+              <div class="p-4" id="status-overview"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Contracts ── -->
+        <div class="page" id="page-contracts">
+          <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+              <span class="text-[13px] font-semibold flex items-center gap-2">
+                <i class="fa-solid fa-folder-open text-gray-400 text-[12px]"></i> Semua Kontrak
+              </span>
+              <div class="flex gap-2">
+                <select
+                  class="text-[12px] border border-gray-200 rounded-md px-2 py-1.5 outline-none focus:border-blue-500 bg-white">
+                  <option>Semua Status</option>
+                  <option>Draft</option>
+                  <option>In Review</option>
+                  <option>Revision</option>
+                  <option>Approved</option>
+                </select>
+                <button
+                  class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-medium rounded-md transition-colors"
+                  onclick="openModal('modal-create')">
+                  <i class="fa-solid fa-plus text-[11px]"></i> Buat Kontrak
+                </button>
+              </div>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead>
+                  <tr class="bg-gray-50">
+                    <th class="th">No. Kontrak</th>
+                    <th class="th">Judul</th>
+                    <th class="th">Dibuat Oleh</th>
+                    <th class="th">Status</th>
+                    <th class="th">Versi</th>
+                    <th class="th">Progress</th>
+                    <th class="th">Tgl Dibuat</th>
+                    <th class="th"></th>
+                  </tr>
+                </thead>
+                <tbody id="contracts-table"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Pending ── -->
+        <div class="page" id="page-pending">
+          <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <div class="px-4 py-3 border-b border-gray-100 text-[13px] font-semibold flex items-center gap-2">
+              <i class="fa-regular fa-clock text-gray-400 text-[12px]"></i> Menunggu Approval Saya
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead>
+                  <tr class="bg-gray-50">
+                    <th class="th">No. Kontrak</th>
+                    <th class="th">Judul</th>
+                    <th class="th">Role</th>
+                    <th class="th">Versi</th>
+                    <th class="th">Sequence</th>
+                    <th class="th">Tgl Dibuat</th>
+                    <th class="th">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="pending-table"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Audit ── -->
+        <div class="page" id="page-audit">
+          <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+              <span class="text-[13px] font-semibold flex items-center gap-2">
+                <i class="fa-solid fa-chart-bar text-gray-400 text-[12px]"></i> Audit Trail
+              </span>
+              <div class="flex gap-2">
+                <input type="date"
+                  class="text-[12px] border border-gray-200 rounded-md px-2 py-1.5 outline-none focus:border-blue-500 w-36" />
+                <input type="date"
+                  class="text-[12px] border border-gray-200 rounded-md px-2 py-1.5 outline-none focus:border-blue-500 w-36" />
+                <button
+                  class="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 hover:bg-gray-50 text-[12px] font-medium rounded-md transition-colors">
+                  <i class="fa-solid fa-filter text-[11px]"></i> Filter
+                </button>
+              </div>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead>
+                  <tr class="bg-gray-50">
+                    <th class="th">Waktu</th>
+                    <th class="th">Kontrak</th>
+                    <th class="th">Aksi</th>
+                    <th class="th">Deskripsi</th>
+                    <th class="th">Aktor</th>
+                  </tr>
+                </thead>
+                <tbody id="audit-table"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Detail ── -->
+        <div class="page" id="page-detail">
+
+          <!-- Breadcrumb -->
+          <nav class="flex items-center gap-1.5 text-[11px] text-gray-400 mb-4">
+            <a class="text-blue-600 cursor-pointer hover:underline" onclick="navigate('contracts')">Kontrak</a>
+            <i class="fa-solid fa-chevron-right text-[9px]"></i>
+            <span class="text-gray-600" id="detail-bc">Detail</span>
+          </nav>
+
+          <!-- Header -->
+          <div class="flex items-start justify-between mb-4">
+            <div>
+              <h2 class="text-[16px] font-bold text-gray-900" id="detail-title"></h2>
+              <p class="text-[11px] text-gray-400 mt-0.5" id="detail-sub"></p>
+            </div>
+            <div class="flex gap-2">
+              <button
+                class="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 hover:bg-gray-50 text-[12px] font-medium rounded-md transition-colors"
+                onclick="downloadFile()">
+                <i class="fa-solid fa-download text-[11px]"></i> Download
+              </button>
+              <button
+                class="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 hover:bg-gray-50 text-[12px] font-medium rounded-md transition-colors"
+                onclick="openModal('modal-upload')">
+                <i class="fa-solid fa-upload text-[11px]"></i> Upload Revisi
+              </button>
+            </div>
+          </div>
+
+          <!-- Grid -->
+          <div class="grid grid-cols-[1fr_300px] gap-4">
+
+            <!-- Left col -->
+            <div class="flex flex-col gap-4">
+
+              <!-- Info -->
+              <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-100 text-[13px] font-semibold">
+                  <i class="fa-solid fa-circle-info text-gray-400 text-[12px]"></i> Informasi Kontrak
+                </div>
+                <div class="p-4 grid grid-cols-2 gap-4" id="detail-info"></div>
+              </div>
+
+              <!-- Tabs -->
+              <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                <div class="flex border-b border-gray-200 px-4 pt-2 gap-1">
+                  <button
+                    class="tab-btn active-tab text-[12px] font-medium px-3 py-2 border-b-2 border-blue-600 text-blue-600 -mb-px"
+                    onclick="switchDetailTab('dtab-versions', this)">
+                    <i class="fa-solid fa-clock-rotate-left mr-1"></i> Riwayat Versi
+                  </button>
+                  <button
+                    class="tab-btn text-[12px] font-medium px-3 py-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700 -mb-px transition-colors"
+                    onclick="switchDetailTab('dtab-audit', this)">
+                    <i class="fa-solid fa-list-check mr-1"></i> Audit Trail
+                  </button>
+                  <button
+                    class="tab-btn text-[12px] font-medium px-3 py-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700 -mb-px transition-colors flex items-center gap-1.5"
+                    onclick="switchDetailTab('dtab-chat', this)">
+                    <i class="fa-solid fa-comments mr-1"></i> Diskusi
+                    <span id="dtab-chat-badge"
+                      class="hidden text-[10px] font-bold bg-blue-600 text-white px-1.5 py-0.5 rounded-full leading-none"></span>
+                  </button>
+                </div>
+                <div class="p-4">
+                  <div id="dtab-versions" class="flex flex-col gap-2"
+                    style="display:flex;flex-direction:column;gap:8px;"></div>
+                  <div id="dtab-audit" style="display:none;"></div>
+                  <div id="dtab-chat" class="hidden" style="height:340px;display:none;flex-direction:column;">
+                    <div id="dtab-chat-messages" class="flex-1 overflow-y-auto chat-messages pb-2 pr-1"
+                      style="height:270px;"></div>
+                    <div class="pt-3 border-t border-gray-100 flex gap-2 mt-auto">
+                      <input id="dtab-chat-input" type="text" placeholder="Tulis pesan..."
+                        class="flex-1 text-[12px] border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-blue-500 placeholder-gray-300"
+                        onkeydown="if(event.key==='Enter')sendContractMsg()" />
+                      <button onclick="sendContractMsg()"
+                        class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[12px] transition-colors flex items-center gap-1.5">
+                        <i class="fa-solid fa-paper-plane text-[11px]"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             </div>
 
-            <!-- Tabs -->
-            <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-              <div class="flex border-b border-gray-200 px-4 pt-2 gap-1">
-                <button class="tab-btn active-tab text-[12px] font-medium px-3 py-2 border-b-2 border-blue-600 text-blue-600 -mb-px"
-                        onclick="switchDetailTab('dtab-versions', this)">
-                  <i class="fa-solid fa-clock-rotate-left mr-1"></i> Riwayat Versi
-                </button>
-                <button class="tab-btn text-[12px] font-medium px-3 py-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700 -mb-px transition-colors"
-                        onclick="switchDetailTab('dtab-audit', this)">
-                  <i class="fa-solid fa-list-check mr-1"></i> Audit Trail
-                </button>
-                <button class="tab-btn text-[12px] font-medium px-3 py-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700 -mb-px transition-colors flex items-center gap-1.5"
-                        onclick="switchDetailTab('dtab-chat', this)">
-                  <i class="fa-solid fa-comments mr-1"></i> Diskusi
-                  <span id="dtab-chat-badge" class="hidden text-[10px] font-bold bg-blue-600 text-white px-1.5 py-0.5 rounded-full leading-none"></span>
-                </button>
+            <!-- Right col -->
+            <div class="flex flex-col gap-4">
+
+              <!-- Approval flow -->
+              <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-100 text-[13px] font-semibold">
+                  <i class="fa-solid fa-arrow-right-arrow-left text-gray-400 text-[12px]"></i> Alur Approval
+                </div>
+                <div class="p-4">
+                  <div id="approval-steps"></div>
+                </div>
               </div>
-              <div class="p-4">
-                <div id="dtab-versions" class="flex flex-col gap-2" style="display:flex;flex-direction:column;gap:8px;"></div>
-                <div id="dtab-audit" style="display:none;"></div>
-                <div id="dtab-chat" class="hidden" style="height:340px;display:none;flex-direction:column;">
-                  <div id="dtab-chat-messages" class="flex-1 overflow-y-auto chat-messages pb-2 pr-1" style="height:270px;"></div>
-                  <div class="pt-3 border-t border-gray-100 flex gap-2 mt-auto">
-                    <input id="dtab-chat-input" type="text" placeholder="Tulis pesan..."
-                           class="flex-1 text-[12px] border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-blue-500 placeholder-gray-300"
-                           onkeydown="if(event.key==='Enter')sendContractMsg()" />
-                    <button onclick="sendContractMsg()"
-                            class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[12px] transition-colors flex items-center gap-1.5">
-                      <i class="fa-solid fa-paper-plane text-[11px]"></i>
+
+              <!-- Action -->
+              <div class="bg-white border border-gray-200 rounded-xl overflow-hidden" id="action-card">
+                <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-100 text-[13px] font-semibold">
+                  <i class="fa-solid fa-bolt text-gray-400 text-[12px]"></i> Aksi Approval
+                </div>
+                <div class="p-4">
+                  <p class="text-[12px] text-gray-500 mb-3">Kamu adalah approver berikutnya untuk kontrak ini.</p>
+                  <div class="mb-3">
+                    <label class="block text-[11px] font-semibold text-gray-500 mb-1">Catatan</label>
+                    <textarea id="approval-note" rows="3" placeholder="Tambahkan catatan..."
+                      class="w-full text-[12px] border border-gray-200 rounded-md px-3 py-2 outline-none focus:border-blue-500 resize-none placeholder-gray-300"></textarea>
+                  </div>
+                  <div class="flex gap-2">
+                    <button
+                      class="flex-1 flex items-center justify-center gap-1.5 py-2 bg-green-600 hover:bg-green-700 text-white text-[12px] font-medium rounded-md transition-colors"
+                      onclick="doApprove()">
+                      <i class="fa-solid fa-check text-[11px]"></i> Setujui
+                    </button>
+                    <button
+                      class="flex-1 flex items-center justify-center gap-1.5 py-2 bg-red-600 hover:bg-red-700 text-white text-[12px] font-medium rounded-md transition-colors"
+                      onclick="openModal('modal-reject')">
+                      <i class="fa-solid fa-xmark text-[11px]"></i> Tolak
                     </button>
                   </div>
                 </div>
               </div>
+
             </div>
-
-          </div>
-
-          <!-- Right col -->
-          <div class="flex flex-col gap-4">
-
-            <!-- Approval flow -->
-            <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-              <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-100 text-[13px] font-semibold">
-                <i class="fa-solid fa-arrow-right-arrow-left text-gray-400 text-[12px]"></i> Alur Approval
-              </div>
-              <div class="p-4">
-                <div id="approval-steps"></div>
-              </div>
-            </div>
-
-            <!-- Action -->
-            <div class="bg-white border border-gray-200 rounded-xl overflow-hidden" id="action-card">
-              <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-100 text-[13px] font-semibold">
-                <i class="fa-solid fa-bolt text-gray-400 text-[12px]"></i> Aksi Approval
-              </div>
-              <div class="p-4">
-                <p class="text-[12px] text-gray-500 mb-3">Kamu adalah approver berikutnya untuk kontrak ini.</p>
-                <div class="mb-3">
-                  <label class="block text-[11px] font-semibold text-gray-500 mb-1">Catatan</label>
-                  <textarea id="approval-note" rows="3" placeholder="Tambahkan catatan..."
-                            class="w-full text-[12px] border border-gray-200 rounded-md px-3 py-2 outline-none focus:border-blue-500 resize-none placeholder-gray-300"></textarea>
-                </div>
-                <div class="flex gap-2">
-                  <button class="flex-1 flex items-center justify-center gap-1.5 py-2 bg-green-600 hover:bg-green-700 text-white text-[12px] font-medium rounded-md transition-colors"
-                          onclick="doApprove()">
-                    <i class="fa-solid fa-check text-[11px]"></i> Setujui
-                  </button>
-                  <button class="flex-1 flex items-center justify-center gap-1.5 py-2 bg-red-600 hover:bg-red-700 text-white text-[12px] font-medium rounded-md transition-colors"
-                          onclick="openModal('modal-reject')">
-                    <i class="fa-solid fa-xmark text-[11px]"></i> Tolak
-                  </button>
-                </div>
-              </div>
-            </div>
-
           </div>
         </div>
-      </div>
-      <!-- end detail -->
+        <!-- end detail -->
 
+      </div>
     </div>
   </div>
-</div>
 
-<!-- ══ Modal: Buat Kontrak ══ -->
-<div class="fixed inset-0 bg-black/40 z-50 hidden items-center justify-center" id="modal-create">
-  <div class="bg-white rounded-xl w-[460px] max-w-[95vw] shadow-xl modal-in">
-    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-      <h6 class="text-[14px] font-semibold flex items-center gap-2">
-        <i class="fa-solid fa-file-circle-plus text-gray-400 text-[13px]"></i> Buat Kontrak Baru
-      </h6>
-      <button class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-700 text-[13px] transition-colors"
-              onclick="closeModal('modal-create')"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    <div class="p-5 space-y-4">
-      <div>
-        <label class="block text-[11px] font-semibold text-gray-500 mb-1">Judul Kontrak *</label>
-        <input id="new-title" placeholder="Masukkan judul kontrak"
-               class="w-full text-[12px] border border-gray-200 rounded-md px-3 py-2 outline-none focus:border-blue-500 placeholder-gray-300" />
+  <!-- ══ Modal: Buat Kontrak ══ -->
+  <div class="fixed inset-0 bg-black/40 z-50 hidden items-center justify-center" id="modal-create">
+    <div class="bg-white rounded-xl w-[460px] max-w-[95vw] shadow-xl modal-in">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <h6 class="text-[14px] font-semibold flex items-center gap-2">
+          <i class="fa-solid fa-file-circle-plus text-gray-400 text-[13px]"></i> Buat Kontrak Baru
+        </h6>
+        <button
+          class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-700 text-[13px] transition-colors"
+          onclick="closeModal('modal-create')"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <div>
-        <label class="block text-[11px] font-semibold text-gray-500 mb-1">Deskripsi</label>
-        <textarea id="new-desc" rows="2" placeholder="Deskripsi singkat..."
-                  class="w-full text-[12px] border border-gray-200 rounded-md px-3 py-2 outline-none focus:border-blue-500 resize-none placeholder-gray-300"></textarea>
-      </div>
-      <div>
-        <label class="block text-[11px] font-semibold text-gray-500 mb-1">Upload File (.docx) *</label>
-        <div class="upload-zone border-2 border-dashed border-gray-300 rounded-lg py-6 text-center cursor-pointer bg-gray-50 transition-colors"
-             onclick="document.getElementById('file-input').click()">
-          <i class="fa-solid fa-cloud-arrow-up text-gray-400 text-2xl block mb-2"></i>
-          <p class="text-[12px] text-gray-500"><span class="text-blue-600 font-semibold">Klik untuk upload</span> atau drag & drop</p>
-          <p class="text-[11px] text-gray-400 mt-0.5">Format .docx · Maks. 10 MB</p>
-        </div>
-        <input type="file" id="file-input" accept=".docx" class="hidden"
-               onchange="onFileChange(this,'file-preview','file-preview-name')" />
-        <div id="file-preview" class="hidden mt-2 flex items-center gap-2 text-[11px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3 py-2">
-          <i class="fa-solid fa-file-word text-blue-600"></i>
-          <span id="file-preview-name"></span>
-        </div>
-      </div>
-      <div>
-        <label class="block text-[11px] font-semibold text-gray-500 mb-1">Changelog</label>
-        <input id="new-changelog" placeholder="Contoh: Draft awal kontrak vendor"
-               class="w-full text-[12px] border border-gray-200 rounded-md px-3 py-2 outline-none focus:border-blue-500 placeholder-gray-300" />
-      </div>
-    </div>
-    <div class="flex justify-end gap-2 px-5 py-3 border-t border-gray-100">
-      <button class="px-3 py-1.5 text-[12px] font-medium border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
-              onclick="closeModal('modal-create')">Batal</button>
-      <button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-medium rounded-md transition-colors"
-              onclick="createContract()">
-        <i class="fa-solid fa-paper-plane text-[11px]"></i> Buat & Submit
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ Modal: Upload Revisi ══ -->
-<div class="fixed inset-0 bg-black/40 z-50 hidden items-center justify-center" id="modal-upload">
-  <div class="bg-white rounded-xl w-[460px] max-w-[95vw] shadow-xl modal-in">
-    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-      <h6 class="text-[14px] font-semibold flex items-center gap-2">
-        <i class="fa-solid fa-file-arrow-up text-gray-400 text-[13px]"></i> Upload Versi Baru
-      </h6>
-      <button class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-700 text-[13px] transition-colors"
-              onclick="closeModal('modal-upload')"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    <div class="p-5 space-y-4">
-      <div>
-        <label class="block text-[11px] font-semibold text-gray-500 mb-1">File Revisi (.docx) *</label>
-        <div class="upload-zone border-2 border-dashed border-gray-300 rounded-lg py-6 text-center cursor-pointer bg-gray-50 transition-colors"
-             onclick="document.getElementById('rev-input').click()">
-          <i class="fa-regular fa-file-word text-gray-400 text-2xl block mb-2"></i>
-          <p class="text-[12px] text-gray-500"><span class="text-blue-600 font-semibold">Klik untuk upload</span> file revisi</p>
-        </div>
-        <input type="file" id="rev-input" accept=".docx" class="hidden"
-               onchange="onFileChange(this,'rev-preview','rev-preview-name')" />
-        <div id="rev-preview" class="hidden mt-2 flex items-center gap-2 text-[11px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3 py-2">
-          <i class="fa-solid fa-file-word text-blue-600"></i>
-          <span id="rev-preview-name"></span>
-        </div>
-      </div>
-      <div>
-        <label class="block text-[11px] font-semibold text-gray-500 mb-1">Changelog *</label>
-        <input id="rev-changelog" placeholder="Apa yang berubah pada versi ini?"
-               class="w-full text-[12px] border border-gray-200 rounded-md px-3 py-2 outline-none focus:border-blue-500 placeholder-gray-300" />
-      </div>
-    </div>
-    <div class="flex justify-end gap-2 px-5 py-3 border-t border-gray-100">
-      <button class="px-3 py-1.5 text-[12px] font-medium border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
-              onclick="closeModal('modal-upload')">Batal</button>
-      <button class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-medium rounded-md transition-colors"
-              onclick="uploadRevision()">
-        <i class="fa-solid fa-upload text-[11px]"></i> Upload
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ Modal: Reject ══ -->
-<div class="fixed inset-0 bg-black/40 z-50 hidden items-center justify-center" id="modal-reject">
-  <div class="bg-white rounded-xl w-[400px] max-w-[95vw] shadow-xl modal-in">
-    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-      <h6 class="text-[14px] font-semibold text-red-600 flex items-center gap-2">
-        <i class="fa-solid fa-circle-xmark text-[13px]"></i> Tolak Kontrak
-      </h6>
-      <button class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-700 text-[13px] transition-colors"
-              onclick="closeModal('modal-reject')"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    <div class="p-5">
-      <p class="text-[12px] text-gray-500 mb-3">Berikan alasan penolakan agar initiator dapat melakukan revisi.</p>
-      <label class="block text-[11px] font-semibold text-gray-500 mb-1">Alasan Penolakan *</label>
-      <textarea id="reject-reason" rows="3" placeholder="Jelaskan alasan penolakan..."
-                class="w-full text-[12px] border border-gray-200 rounded-md px-3 py-2 outline-none focus:border-red-400 resize-none placeholder-gray-300"></textarea>
-    </div>
-    <div class="flex justify-end gap-2 px-5 py-3 border-t border-gray-100">
-      <button class="px-3 py-1.5 text-[12px] font-medium border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
-              onclick="closeModal('modal-reject')">Batal</button>
-      <button class="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-[12px] font-medium rounded-md transition-colors"
-              onclick="doReject()">
-        <i class="fa-solid fa-xmark text-[11px]"></i> Konfirmasi Tolak
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ Modal: Preview Dokumen ══ -->
-<div class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4" id="modal-preview">
-  <div class="bg-white rounded-xl shadow-xl flex flex-col modal-in" style="width:780px;max-width:95vw;height:88vh;">
-
-    <!-- Header -->
-    <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 flex-shrink-0">
-      <div class="flex items-center gap-3 min-w-0">
-        <div class="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center flex-shrink-0">
-          <i class="fa-regular fa-file-word text-blue-500"></i>
-        </div>
-        <div class="min-w-0">
-          <div class="text-[13px] font-semibold truncate" id="preview-filename">—</div>
-          <div class="text-[10px] text-gray-400" id="preview-meta">—</div>
-        </div>
-      </div>
-      <button class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400 text-[13px] transition-colors flex-shrink-0 ml-3"
-              onclick="closeModal('modal-preview')">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-    </div>
-
-    <!-- Toolbar -->
-    <div class="flex items-center gap-2 px-5 py-2 border-b border-gray-100 bg-gray-50 flex-shrink-0">
-      <span class="text-[11px] text-gray-500 flex items-center gap-1.5">
-        <i class="fa-solid fa-circle-info text-blue-400"></i>
-        Preview dokumen — konten dirender dari file .docx yang diupload
-      </span>
-      <div class="ml-auto flex gap-2">
-        <button onclick="zoomPreview(-1)"
-                class="px-2.5 py-1 text-[11px] border border-gray-200 rounded hover:bg-white transition-colors">
-          <i class="fa-solid fa-minus"></i>
-        </button>
-        <span id="zoom-label" class="text-[11px] text-gray-500 px-1 self-center">100%</span>
-        <button onclick="zoomPreview(1)"
-                class="px-2.5 py-1 text-[11px] border border-gray-200 rounded hover:bg-white transition-colors">
-          <i class="fa-solid fa-plus"></i>
-        </button>
-      </div>
-    </div>
-
-    <!-- Content -->
-    <div class="flex-1 overflow-auto bg-gray-100 p-6" id="preview-scroll-area">
-      <!-- Loading state -->
-      <div id="preview-loading" class="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
-        <i class="fa-solid fa-spinner fa-spin text-3xl text-blue-400"></i>
-        <span class="text-[13px]">Memuat dokumen...</span>
-      </div>
-      <!-- Error state -->
-      <div id="preview-error" class="hidden flex-col items-center justify-center h-full text-gray-400 gap-3">
-        <i class="fa-regular fa-file-excel text-4xl text-gray-300"></i>
-        <div class="text-center">
-          <div class="text-[13px] font-medium text-gray-500 mb-1">File tidak tersedia untuk di-preview</div>
-          <div class="text-[12px] text-gray-400">File ini adalah data simulasi dan tidak memiliki konten nyata.<br>Upload file .docx baru untuk melihat preview.</div>
-        </div>
-      </div>
-      <!-- Demo state (mock data) -->
-      <div id="preview-demo" class="hidden">
-        <div id="preview-demo-wrap" class="bg-white shadow-sm mx-auto rounded" style="max-width:680px;padding:48px 56px;transform-origin:top center;"></div>
-      </div>
-      <!-- Real docx rendered -->
-      <div id="preview-real" class="hidden">
-        <div id="preview-content"
-             class="bg-white shadow-sm mx-auto rounded"
-             style="max-width:680px;padding:48px 56px;transform-origin:top center;
-                    line-height:1.7;font-size:14px;color:#1f2937;"></div>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<!-- ══ Modal: Compare Versi ══ -->
-<div class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4" id="modal-compare">
-  <div class="bg-white rounded-xl shadow-xl flex flex-col modal-in" style="width:1000px;max-width:96vw;height:90vh;">
-
-    <!-- Header -->
-    <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 flex-shrink-0">
-      <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-lg bg-violet-50 border border-violet-100 flex items-center justify-center flex-shrink-0">
-          <i class="fa-solid fa-code-compare text-violet-500"></i>
+      <div class="p-5 space-y-4">
+        <div>
+          <label class="block text-[11px] font-semibold text-gray-500 mb-1">Judul Kontrak *</label>
+          <input id="new-title" placeholder="Masukkan judul kontrak"
+            class="w-full text-[12px] border border-gray-200 rounded-md px-3 py-2 outline-none focus:border-blue-500 placeholder-gray-300" />
         </div>
         <div>
-          <div class="text-[13px] font-semibold" id="cmp-contract-title">Compare Versi</div>
-          <div class="text-[10px] text-gray-400" id="cmp-contract-no"></div>
+          <label class="block text-[11px] font-semibold text-gray-500 mb-1">Deskripsi</label>
+          <textarea id="new-desc" rows="2" placeholder="Deskripsi singkat..."
+            class="w-full text-[12px] border border-gray-200 rounded-md px-3 py-2 outline-none focus:border-blue-500 resize-none placeholder-gray-300"></textarea>
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-gray-500 mb-1">Upload File (.docx) *</label>
+          <div
+            class="upload-zone border-2 border-dashed border-gray-300 rounded-lg py-6 text-center cursor-pointer bg-gray-50 transition-colors"
+            onclick="document.getElementById('file-input').click()">
+            <i class="fa-solid fa-cloud-arrow-up text-gray-400 text-2xl block mb-2"></i>
+            <p class="text-[12px] text-gray-500"><span class="text-blue-600 font-semibold">Klik untuk upload</span> atau
+              drag & drop</p>
+            <p class="text-[11px] text-gray-400 mt-0.5">Format .docx · Maks. 10 MB</p>
+          </div>
+          <input type="file" id="file-input" accept=".docx" class="hidden"
+            onchange="onFileChange(this,'file-preview','file-preview-name')" />
+          <div id="file-preview"
+            class="hidden mt-2 flex items-center gap-2 text-[11px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3 py-2">
+            <i class="fa-solid fa-file-word text-blue-600"></i>
+            <span id="file-preview-name"></span>
+          </div>
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-gray-500 mb-1">Changelog</label>
+          <input id="new-changelog" placeholder="Contoh: Draft awal kontrak vendor"
+            class="w-full text-[12px] border border-gray-200 rounded-md px-3 py-2 outline-none focus:border-blue-500 placeholder-gray-300" />
         </div>
       </div>
-      <button class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400 text-[13px] transition-colors"
-              onclick="closeModal('modal-compare')">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-    </div>
-
-    <!-- Toolbar -->
-    <div class="flex items-center gap-3 px-5 py-2.5 border-b border-gray-100 bg-gray-50 flex-shrink-0 flex-wrap">
-      <!-- Version selectors -->
-      <div class="flex items-center gap-2">
-        <label class="text-[11px] font-semibold text-gray-500">Dari</label>
-        <select id="cmp-from" class="text-[12px] border border-gray-200 rounded-md px-2 py-1.5 bg-white outline-none focus:border-violet-400"
-                onchange="runCompare()"></select>
-      </div>
-      <i class="fa-solid fa-arrow-right text-gray-400 text-[12px]"></i>
-      <div class="flex items-center gap-2">
-        <label class="text-[11px] font-semibold text-gray-500">Ke</label>
-        <select id="cmp-to" class="text-[12px] border border-gray-200 rounded-md px-2 py-1.5 bg-white outline-none focus:border-violet-400"
-                onchange="runCompare()"></select>
-      </div>
-
-      <!-- Mode toggle -->
-      <div class="flex items-center gap-1 ml-2 bg-white border border-gray-200 rounded-lg p-0.5">
-        <button id="cmp-mode-side" onclick="setCmpMode('side')"
-                class="px-2.5 py-1 text-[11px] font-medium rounded-md bg-gray-100 text-gray-700 transition-colors">
-          <i class="fa-solid fa-columns mr-1"></i>Side by Side
+      <div class="flex justify-end gap-2 px-5 py-3 border-t border-gray-100">
+        <button
+          class="px-3 py-1.5 text-[12px] font-medium border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
+          onclick="closeModal('modal-create')">Batal</button>
+        <button
+          class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-medium rounded-md transition-colors"
+          onclick="createContract()">
+          <i class="fa-solid fa-paper-plane text-[11px]"></i> Buat & Submit
         </button>
-        <button id="cmp-mode-inline" onclick="setCmpMode('inline')"
-                class="px-2.5 py-1 text-[11px] font-medium rounded-md text-gray-400 transition-colors">
-          <i class="fa-solid fa-bars mr-1"></i>Inline
-        </button>
       </div>
-
-      <!-- Legend -->
-      <div class="flex items-center gap-3 ml-auto text-[11px] text-gray-500">
-        <span><span class="legend-dot bg-green-200 mr-1"></span>Ditambahkan</span>
-        <span><span class="legend-dot bg-red-200 mr-1"></span>Dihapus</span>
-        <span class="font-medium text-gray-700" id="cmp-stat"></span>
-      </div>
-    </div>
-
-    <!-- Compare area -->
-    <div class="flex-1 overflow-hidden flex flex-col">
-
-      <!-- Loading -->
-      <div id="cmp-loading" class="flex-1 flex items-center justify-center text-gray-400 gap-3 hidden">
-        <i class="fa-solid fa-spinner fa-spin text-2xl text-violet-400"></i>
-        <span class="text-[13px]">Memproses perbandingan...</span>
-      </div>
-
-      <!-- Side by side -->
-      <div id="cmp-side" class="flex-1 overflow-hidden flex" style="min-height:0;">
-        <div class="flex-1 flex flex-col min-w-0 border-r border-gray-200">
-          <div class="px-4 py-2 bg-red-50 border-b border-red-100 flex items-center gap-2 flex-shrink-0">
-            <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
-            <span class="text-[11px] font-semibold text-red-700" id="cmp-left-label">v1 — sebelum</span>
-          </div>
-          <div class="flex-1 overflow-auto p-5 diff-pane compare-pane">
-            <div id="cmp-left-content"></div>
-          </div>
-        </div>
-        <div class="flex-1 flex flex-col min-w-0">
-          <div class="px-4 py-2 bg-green-50 border-b border-green-100 flex items-center gap-2 flex-shrink-0">
-            <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
-            <span class="text-[11px] font-semibold text-green-700" id="cmp-right-label">v2 — sesudah</span>
-          </div>
-          <div class="flex-1 overflow-auto p-5 diff-pane compare-pane">
-            <div id="cmp-right-content"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Inline -->
-      <div id="cmp-inline" class="flex-1 overflow-auto p-5 diff-pane hidden">
-        <div id="cmp-inline-content"></div>
-      </div>
-
     </div>
   </div>
-</div>
 
-<!-- Toast -->
-<div id="toast" class="fixed bottom-5 right-24 z-[100] hidden items-center gap-2 px-4 py-2.5 rounded-lg text-white text-[12px] font-medium shadow-xl toast-show"></div>
+  <!-- ══ Modal: Upload Revisi ══ -->
+  <div class="fixed inset-0 bg-black/40 z-50 hidden items-center justify-center" id="modal-upload">
+    <div class="bg-white rounded-xl w-[460px] max-w-[95vw] shadow-xl modal-in">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <h6 class="text-[14px] font-semibold flex items-center gap-2">
+          <i class="fa-solid fa-file-arrow-up text-gray-400 text-[13px]"></i> Upload Versi Baru
+        </h6>
+        <button
+          class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-700 text-[13px] transition-colors"
+          onclick="closeModal('modal-upload')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="p-5 space-y-4">
+        <div>
+          <label class="block text-[11px] font-semibold text-gray-500 mb-1">File Revisi (.docx) *</label>
+          <div
+            class="upload-zone border-2 border-dashed border-gray-300 rounded-lg py-6 text-center cursor-pointer bg-gray-50 transition-colors"
+            onclick="document.getElementById('rev-input').click()">
+            <i class="fa-regular fa-file-word text-gray-400 text-2xl block mb-2"></i>
+            <p class="text-[12px] text-gray-500"><span class="text-blue-600 font-semibold">Klik untuk upload</span> file
+              revisi</p>
+          </div>
+          <input type="file" id="rev-input" accept=".docx" class="hidden"
+            onchange="onFileChange(this,'rev-preview','rev-preview-name')" />
+          <div id="rev-preview"
+            class="hidden mt-2 flex items-center gap-2 text-[11px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3 py-2">
+            <i class="fa-solid fa-file-word text-blue-600"></i>
+            <span id="rev-preview-name"></span>
+          </div>
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-gray-500 mb-1">Changelog *</label>
+          <input id="rev-changelog" placeholder="Apa yang berubah pada versi ini?"
+            class="w-full text-[12px] border border-gray-200 rounded-md px-3 py-2 outline-none focus:border-blue-500 placeholder-gray-300" />
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 px-5 py-3 border-t border-gray-100">
+        <button
+          class="px-3 py-1.5 text-[12px] font-medium border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
+          onclick="closeModal('modal-upload')">Batal</button>
+        <button
+          class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-medium rounded-md transition-colors"
+          onclick="uploadRevision()">
+          <i class="fa-solid fa-upload text-[11px]"></i> Upload
+        </button>
+      </div>
+    </div>
+  </div>
 
-<!-- ══ Floating Chat ══ -->
-<!-- Trigger button -->
-<button id="chat-fab" onclick="toggleChat()"
-        class="fixed bottom-5 right-5 z-[200] w-12 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all">
-  <i class="fa-solid fa-comments text-[18px]" id="chat-fab-icon"></i>
-  <span id="chat-fab-badge"
-        class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">4</span>
-</button>
+  <!-- ══ Modal: Reject ══ -->
+  <div class="fixed inset-0 bg-black/40 z-50 hidden items-center justify-center" id="modal-reject">
+    <div class="bg-white rounded-xl w-[400px] max-w-[95vw] shadow-xl modal-in">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <h6 class="text-[14px] font-semibold text-red-600 flex items-center gap-2">
+          <i class="fa-solid fa-circle-xmark text-[13px]"></i> Tolak Kontrak
+        </h6>
+        <button
+          class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-700 text-[13px] transition-colors"
+          onclick="closeModal('modal-reject')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="p-5">
+        <p class="text-[12px] text-gray-500 mb-3">Berikan alasan penolakan agar initiator dapat melakukan revisi.</p>
+        <label class="block text-[11px] font-semibold text-gray-500 mb-1">Alasan Penolakan *</label>
+        <textarea id="reject-reason" rows="3" placeholder="Jelaskan alasan penolakan..."
+          class="w-full text-[12px] border border-gray-200 rounded-md px-3 py-2 outline-none focus:border-red-400 resize-none placeholder-gray-300"></textarea>
+      </div>
+      <div class="flex justify-end gap-2 px-5 py-3 border-t border-gray-100">
+        <button
+          class="px-3 py-1.5 text-[12px] font-medium border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
+          onclick="closeModal('modal-reject')">Batal</button>
+        <button
+          class="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-[12px] font-medium rounded-md transition-colors"
+          onclick="doReject()">
+          <i class="fa-solid fa-xmark text-[11px]"></i> Konfirmasi Tolak
+        </button>
+      </div>
+    </div>
+  </div>
 
-<!-- Chat panel -->
-<div id="chat-panel" class="hidden fixed bottom-20 right-5 z-[199] chat-panel"
-     style="width:340px;">
-  <div class="bg-white rounded-xl shadow-xl border border-gray-200 flex flex-col overflow-hidden" style="height:480px;">
+  <!-- ══ Modal: Preview Dokumen ══ -->
+  <div class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4" id="modal-preview">
+    <div class="bg-white rounded-xl shadow-xl flex flex-col modal-in" style="width:780px;max-width:95vw;height:88vh;">
 
-    <!-- Panel header -->
-    <div class="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100">
-      <div class="flex items-center gap-2">
-        <div id="chat-back-btn" class="hidden">
-          <button onclick="showChatList()"
-                  class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-500 text-[13px] mr-1 transition-colors">
-            <i class="fa-solid fa-arrow-left"></i>
+      <!-- Header -->
+      <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 flex-shrink-0">
+        <div class="flex items-center gap-3 min-w-0">
+          <div
+            class="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center flex-shrink-0">
+            <i class="fa-regular fa-file-word text-blue-500"></i>
+          </div>
+          <div class="min-w-0">
+            <div class="text-[13px] font-semibold truncate" id="preview-filename">—</div>
+            <div class="text-[10px] text-gray-400" id="preview-meta">—</div>
+          </div>
+        </div>
+        <button
+          class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400 text-[13px] transition-colors flex-shrink-0 ml-3"
+          onclick="closeModal('modal-preview')">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="flex items-center gap-2 px-5 py-2 border-b border-gray-100 bg-gray-50 flex-shrink-0">
+        <span class="text-[11px] text-gray-500 flex items-center gap-1.5">
+          <i class="fa-solid fa-circle-info text-blue-400"></i>
+          Preview dokumen — konten dirender dari file .docx yang diupload
+        </span>
+        <div class="ml-auto flex gap-2">
+          <button onclick="zoomPreview(-1)"
+            class="px-2.5 py-1 text-[11px] border border-gray-200 rounded hover:bg-white transition-colors">
+            <i class="fa-solid fa-minus"></i>
+          </button>
+          <span id="zoom-label" class="text-[11px] text-gray-500 px-1 self-center">100%</span>
+          <button onclick="zoomPreview(1)"
+            class="px-2.5 py-1 text-[11px] border border-gray-200 rounded hover:bg-white transition-colors">
+            <i class="fa-solid fa-plus"></i>
           </button>
         </div>
-        <span class="text-[13px] font-semibold" id="chat-panel-title">Diskusi Kontrak</span>
       </div>
-      <button onclick="toggleChat()"
-              class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400 text-[13px] transition-colors">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-    </div>
 
-    <!-- List view -->
-    <div id="chat-list-view" style="display:none;flex:1;overflow-y:auto;overflow-x:hidden;">
-      <div id="chat-thread-list" style="width:100%;"></div>
-    </div>
+      <!-- Content -->
+      <div class="flex-1 overflow-auto bg-gray-100 p-6" id="preview-scroll-area">
+        <!-- Loading state -->
+        <div id="preview-loading" class="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
+          <i class="fa-solid fa-spinner fa-spin text-3xl text-blue-400"></i>
+          <span class="text-[13px]">Memuat dokumen...</span>
+        </div>
+        <!-- Error state -->
+        <div id="preview-error" class="hidden flex-col items-center justify-center h-full text-gray-400 gap-3">
+          <i class="fa-regular fa-file-excel text-4xl text-gray-300"></i>
+          <div class="text-center">
+            <div class="text-[13px] font-medium text-gray-500 mb-1">File tidak tersedia untuk di-preview</div>
+            <div class="text-[12px] text-gray-400">File ini adalah data simulasi dan tidak memiliki konten
+              nyata.<br>Upload file .docx baru untuk melihat preview.</div>
+          </div>
+        </div>
+        <!-- Demo state (mock data) -->
+        <div id="preview-demo" class="hidden">
+          <div id="preview-demo-wrap" class="bg-white shadow-sm mx-auto rounded"
+            style="max-width:680px;padding:48px 56px;transform-origin:top center;"></div>
+        </div>
+        <!-- Real docx rendered -->
+        <div id="preview-real" class="hidden">
+          <div id="preview-content" class="bg-white shadow-sm mx-auto rounded" style="max-width:680px;padding:48px 56px;transform-origin:top center;
+                    line-height:1.7;font-size:14px;color:#1f2937;"></div>
+        </div>
+      </div>
 
-    <!-- Message view -->
-    <div id="chat-msg-view" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
-      <div id="chat-msg-list" class="flex-1 overflow-y-auto px-4 py-3 chat-messages"></div>
-      <div class="px-3 pb-3 pt-2 border-t border-gray-100 flex gap-2">
-        <input id="chat-global-input" type="text" placeholder="Tulis pesan..."
-               class="flex-1 text-[12px] border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-blue-500 placeholder-gray-300"
-               onkeydown="if(event.key==='Enter')sendGlobalMsg()" />
-        <button onclick="sendGlobalMsg()"
-                class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[12px] transition-colors">
-          <i class="fa-solid fa-paper-plane text-[11px]"></i>
+    </div>
+  </div>
+
+  <!-- ══ Modal: Compare Versi ══ -->
+  <div class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4" id="modal-compare">
+    <div class="bg-white rounded-xl shadow-xl flex flex-col modal-in" style="width:1000px;max-width:96vw;height:90vh;">
+
+      <!-- Header -->
+      <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 flex-shrink-0">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-8 h-8 rounded-lg bg-violet-50 border border-violet-100 flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-code-compare text-violet-500"></i>
+          </div>
+          <div>
+            <div class="text-[13px] font-semibold" id="cmp-contract-title">Compare Versi</div>
+            <div class="text-[10px] text-gray-400" id="cmp-contract-no"></div>
+          </div>
+        </div>
+        <button
+          class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400 text-[13px] transition-colors"
+          onclick="closeModal('modal-compare')">
+          <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
+
+      <!-- Toolbar -->
+      <div class="flex items-center gap-3 px-5 py-2.5 border-b border-gray-100 bg-gray-50 flex-shrink-0 flex-wrap">
+        <!-- Version selectors -->
+        <div class="flex items-center gap-2">
+          <label class="text-[11px] font-semibold text-gray-500">Dari</label>
+          <select id="cmp-from"
+            class="text-[12px] border border-gray-200 rounded-md px-2 py-1.5 bg-white outline-none focus:border-violet-400"
+            onchange="runCompare()"></select>
+        </div>
+        <i class="fa-solid fa-arrow-right text-gray-400 text-[12px]"></i>
+        <div class="flex items-center gap-2">
+          <label class="text-[11px] font-semibold text-gray-500">Ke</label>
+          <select id="cmp-to"
+            class="text-[12px] border border-gray-200 rounded-md px-2 py-1.5 bg-white outline-none focus:border-violet-400"
+            onchange="runCompare()"></select>
+        </div>
+
+        <!-- Mode toggle -->
+        <div class="flex items-center gap-1 ml-2 bg-white border border-gray-200 rounded-lg p-0.5">
+          <button id="cmp-mode-side" onclick="setCmpMode('side')"
+            class="px-2.5 py-1 text-[11px] font-medium rounded-md bg-gray-100 text-gray-700 transition-colors">
+            <i class="fa-solid fa-columns mr-1"></i>Side by Side
+          </button>
+          <button id="cmp-mode-inline" onclick="setCmpMode('inline')"
+            class="px-2.5 py-1 text-[11px] font-medium rounded-md text-gray-400 transition-colors">
+            <i class="fa-solid fa-bars mr-1"></i>Inline
+          </button>
+        </div>
+
+        <!-- Legend -->
+        <div class="flex items-center gap-3 ml-auto text-[11px] text-gray-500">
+          <span><span class="legend-dot bg-green-200 mr-1"></span>Ditambahkan</span>
+          <span><span class="legend-dot bg-red-200 mr-1"></span>Dihapus</span>
+          <span class="font-medium text-gray-700" id="cmp-stat"></span>
+        </div>
+      </div>
+
+      <!-- Compare area -->
+      <div class="flex-1 overflow-hidden flex flex-col">
+
+        <!-- Loading -->
+        <div id="cmp-loading" class="flex-1 flex items-center justify-center text-gray-400 gap-3 hidden">
+          <i class="fa-solid fa-spinner fa-spin text-2xl text-violet-400"></i>
+          <span class="text-[13px]">Memproses perbandingan...</span>
+        </div>
+
+        <!-- Side by side -->
+        <div id="cmp-side" class="flex-1 overflow-hidden flex" style="min-height:0;">
+          <div class="flex-1 flex flex-col min-w-0 border-r border-gray-200">
+            <div class="px-4 py-2 bg-red-50 border-b border-red-100 flex items-center gap-2 flex-shrink-0">
+              <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+              <span class="text-[11px] font-semibold text-red-700" id="cmp-left-label">v1 — sebelum</span>
+            </div>
+            <div class="flex-1 overflow-auto p-5 diff-pane compare-pane">
+              <div id="cmp-left-content"></div>
+            </div>
+          </div>
+          <div class="flex-1 flex flex-col min-w-0">
+            <div class="px-4 py-2 bg-green-50 border-b border-green-100 flex items-center gap-2 flex-shrink-0">
+              <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+              <span class="text-[11px] font-semibold text-green-700" id="cmp-right-label">v2 — sesudah</span>
+            </div>
+            <div class="flex-1 overflow-auto p-5 diff-pane compare-pane">
+              <div id="cmp-right-content"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Inline -->
+        <div id="cmp-inline" class="flex-1 overflow-auto p-5 diff-pane hidden">
+          <div id="cmp-inline-content"></div>
+        </div>
+
+      </div>
     </div>
-
   </div>
-</div>
 
-<!-- Tailwind table helper (applied via JS since can't use @apply in CDN easily) -->
-<style>
-  .th {
-    padding: 9px 14px;
-    text-align: left;
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .5px;
-    color: #9ca3af;
-    border-bottom: 1px solid #e5e7eb;
-    white-space: nowrap;
-  }
-  .td { padding: 11px 14px; font-size: 12px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
-  tbody tr:hover { background: #f9fafb; cursor: pointer; }
-  tbody tr:last-child td { border-bottom: none; }
-</style>
+  <!-- Toast -->
+  <div id="toast"
+    class="fixed bottom-5 right-24 z-[100] hidden items-center gap-2 px-4 py-2.5 rounded-lg text-white text-[12px] font-medium shadow-xl toast-show">
+  </div>
 
-<script>
-// ─── Data ──────────────────────────────────────────────────────────
-const users = [
-  { id:1, name:'Ahmad Fauzi',  role:'Initiator',  initials:'AF', bg:'#ede9fe', color:'#5b21b6' },
-  { id:2, name:'Budi Santoso', role:'Legal',       initials:'BS', bg:'#e0f2fe', color:'#0369a1' },
-  { id:3, name:'Citra Dewi',   role:'Tax',         initials:'CD', bg:'#fef9c3', color:'#854d0e' },
-  { id:4, name:'Dian Rahayu',  role:'Management',  initials:'DR', bg:'#dbeafe', color:'#1d4ed8' },
-  { id:5, name:'Eko Prasetyo', role:'Direksi',     initials:'EP', bg:'#dcfce7', color:'#166534' },
-];
+  <!-- ══ Floating Chat ══ -->
+  <!-- Trigger button -->
+  <button id="chat-fab" onclick="toggleChat()"
+    class="fixed bottom-5 right-5 z-[200] w-12 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all">
+    <i class="fa-solid fa-comments text-[18px]" id="chat-fab-icon"></i>
+    <span id="chat-fab-badge"
+      class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">4</span>
+  </button>
 
-const contracts = [
-  {
-    id:1, contract_no:'CTR-2025-001',
-    title:'Kontrak Vendor IT Infrastructure',
-    description:'Pengadaan perangkat server dan jaringan untuk pusat data perusahaan.',
-    created_by:1, status:'in_review', current_version:2, created_at:'2025-03-01',
-    versions:[
-      { version_no:1, file_name:'CTR-2025-001_v1_initial.docx',  change_log:'Draft awal kontrak',        uploaded_by:1, is_final:false, created_at:'2025-03-01', file_hash:'a1b2c3d4e5f6...' },
-      { version_no:2, file_name:'CTR-2025-001_v2_revision.docx', change_log:'Revisi klausul pembayaran', uploaded_by:1, is_final:false, created_at:'2025-03-05', file_hash:'f6e5d4c3b2a1...' },
-    ],
-    approvals:[
-      { id:1, approver_id:2, role:'Legal',      sequence:1, status:'approved', note:'Klausul hukum sudah sesuai.', approved_at:'2025-03-03' },
-      { id:2, approver_id:3, role:'Tax',        sequence:2, status:'pending',  note:'', approved_at:null },
-      { id:3, approver_id:4, role:'Management', sequence:3, status:'waiting',  note:'', approved_at:null },
-      { id:4, approver_id:5, role:'Direksi',    sequence:4, status:'waiting',  note:'', approved_at:null },
-    ],
-    histories:[
-      { action:'CONTRACT_CREATED',  description:'Kontrak dibuat',       actor_id:1, created_at:'2025-03-01 09:00' },
-      { action:'FILE_UPLOADED',     description:'Upload versi v1',      actor_id:1, created_at:'2025-03-01 09:05' },
-      { action:'APPROVAL_APPROVED', description:'Disetujui oleh Legal', actor_id:2, created_at:'2025-03-03 14:30' },
-      { action:'FILE_UPLOADED',     description:'Upload revisi v2',     actor_id:1, created_at:'2025-03-05 10:00' },
-    ]
-  },
-  {
-    id:2, contract_no:'CTR-2025-002',
-    title:'MoU Kerjasama Pemasaran Regional',
-    description:'Nota kesepahaman untuk ekspansi pasar wilayah Jawa Timur.',
-    created_by:1, status:'approved', current_version:3, created_at:'2025-02-15',
-    versions:[
-      { version_no:1, file_name:'CTR-2025-002_v1_initial.docx',  change_log:'Draft awal',            uploaded_by:1, is_final:false, created_at:'2025-02-15', file_hash:'aa112233...' },
-      { version_no:2, file_name:'CTR-2025-002_v2_revision.docx', change_log:'Revisi term kerjasama', uploaded_by:1, is_final:false, created_at:'2025-02-20', file_hash:'bb223344...' },
-      { version_no:3, file_name:'CTR-2025-002_v3_final.docx',    change_log:'Final setelah revisi',  uploaded_by:1, is_final:true,  created_at:'2025-02-25', file_hash:'cc334455...' },
-    ],
-    approvals:[
-      { id:5, approver_id:2, role:'Legal',      sequence:1, status:'approved', note:'OK.', approved_at:'2025-02-18' },
-      { id:6, approver_id:3, role:'Tax',        sequence:2, status:'rejected', note:'Perlu revisi klausul pajak PPN.', approved_at:'2025-02-21' },
-      { id:7, approver_id:3, role:'Tax',        sequence:2, status:'approved', note:'Sudah diperbaiki.', approved_at:'2025-02-26' },
-      { id:8, approver_id:4, role:'Management', sequence:3, status:'approved', note:'Setuju.', approved_at:'2025-02-27' },
-      { id:9, approver_id:5, role:'Direksi',    sequence:4, status:'approved', note:'Approved.', approved_at:'2025-02-28' },
-    ],
-    histories:[
-      { action:'CONTRACT_CREATED',  description:'Kontrak dibuat',           actor_id:1, created_at:'2025-02-15 10:00' },
-      { action:'FILE_UPLOADED',     description:'Upload v1',                actor_id:1, created_at:'2025-02-15 10:10' },
-      { action:'APPROVAL_APPROVED', description:'Disetujui Legal',          actor_id:2, created_at:'2025-02-18 15:00' },
-      { action:'APPROVAL_REJECTED', description:'Ditolak Tax – revisi PPN', actor_id:3, created_at:'2025-02-21 09:00' },
-      { action:'FILE_UPLOADED',     description:'Upload revisi v2',         actor_id:1, created_at:'2025-02-20 11:00' },
-      { action:'FILE_UPLOADED',     description:'Upload final v3',          actor_id:1, created_at:'2025-02-25 14:00' },
-      { action:'APPROVAL_APPROVED', description:'Disetujui Tax',            actor_id:3, created_at:'2025-02-26 10:00' },
-      { action:'APPROVAL_APPROVED', description:'Disetujui Management',     actor_id:4, created_at:'2025-02-27 11:00' },
-      { action:'APPROVAL_APPROVED', description:'Disetujui Direksi',        actor_id:5, created_at:'2025-02-28 14:00' },
-      { action:'CONTRACT_APPROVED', description:'Kontrak final APPROVED',   actor_id:5, created_at:'2025-02-28 14:01' },
-    ]
-  },
-  {
-    id:3, contract_no:'CTR-2025-003',
-    title:'Perjanjian Sewa Gudang Logistik',
-    description:'Kontrak sewa gudang untuk keperluan distribusi produk wilayah Barat.',
-    created_by:1, status:'revision', current_version:1, created_at:'2025-03-10',
-    versions:[
-      { version_no:1, file_name:'CTR-2025-003_v1_initial.docx', change_log:'Draft awal', uploaded_by:1, is_final:false, created_at:'2025-03-10', file_hash:'dd445566...' },
-    ],
-    approvals:[
-      { id:10, approver_id:2, role:'Legal',      sequence:1, status:'rejected', note:'Durasi sewa tidak sesuai ketentuan internal. Maks. 2 tahun.', approved_at:'2025-03-12' },
-      { id:11, approver_id:3, role:'Tax',        sequence:2, status:'waiting',  note:'', approved_at:null },
-      { id:12, approver_id:4, role:'Management', sequence:3, status:'waiting',  note:'', approved_at:null },
-      { id:13, approver_id:5, role:'Direksi',    sequence:4, status:'waiting',  note:'', approved_at:null },
-    ],
-    histories:[
-      { action:'CONTRACT_CREATED',  description:'Kontrak dibuat',         actor_id:1, created_at:'2025-03-10 08:30' },
-      { action:'FILE_UPLOADED',     description:'Upload v1',              actor_id:1, created_at:'2025-03-10 08:35' },
-      { action:'APPROVAL_REJECTED', description:'Ditolak Legal – durasi', actor_id:2, created_at:'2025-03-12 11:00' },
-    ]
-  },
-  {
-    id:4, contract_no:'CTR-2025-004',
-    title:'Kontrak Lisensi Software ERP',
-    description:'Lisensi tahunan sistem ERP untuk modul finance dan HR.',
-    created_by:1, status:'draft', current_version:1, created_at:'2025-03-14',
-    versions:[
-      { version_no:1, file_name:'CTR-2025-004_v1_initial.docx', change_log:'Draft awal', uploaded_by:1, is_final:false, created_at:'2025-03-14', file_hash:'ee556677...' },
-    ],
-    approvals:[
-      { id:14, approver_id:2, role:'Legal',      sequence:1, status:'pending', note:'', approved_at:null },
-      { id:15, approver_id:3, role:'Tax',        sequence:2, status:'waiting', note:'', approved_at:null },
-      { id:16, approver_id:4, role:'Management', sequence:3, status:'waiting', note:'', approved_at:null },
-      { id:17, approver_id:5, role:'Direksi',    sequence:4, status:'waiting', note:'', approved_at:null },
-    ],
-    histories:[
-      { action:'CONTRACT_CREATED', description:'Kontrak dibuat', actor_id:1, created_at:'2025-03-14 13:00' },
-      { action:'FILE_UPLOADED',    description:'Upload v1',      actor_id:1, created_at:'2025-03-14 13:05' },
-    ]
-  },
-];
+  <!-- Chat panel -->
+  <div id="chat-panel" class="hidden fixed bottom-20 right-5 z-[199] chat-panel" style="width:340px;">
+    <div class="bg-white rounded-xl shadow-xl border border-gray-200 flex flex-col overflow-hidden"
+      style="height:480px;">
 
-// ─── Helpers ───────────────────────────────────────────────────────
-const SL = { draft:'Draft', in_review:'In Review', revision:'Revision', approved:'Approved', locked:'Locked', archived:'Archived' };
+      <!-- Panel header -->
+      <div class="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100">
+        <div class="flex items-center gap-2">
+          <div id="chat-back-btn" class="hidden">
+            <button onclick="showChatList()"
+              class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-500 text-[13px] mr-1 transition-colors">
+              <i class="fa-solid fa-arrow-left"></i>
+            </button>
+          </div>
+          <span class="text-[13px] font-semibold" id="chat-panel-title">Diskusi Kontrak</span>
+        </div>
+        <button onclick="toggleChat()"
+          class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400 text-[13px] transition-colors">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
 
-const BADGE = {
-  draft:    'bg-gray-100 text-gray-600 border border-gray-200',
-  in_review:'bg-amber-50 text-amber-800 border border-amber-200',
-  revision: 'bg-red-50 text-red-800 border border-red-200',
-  approved: 'bg-green-50 text-green-800 border border-green-200',
-  locked:   'bg-violet-50 text-violet-800 border border-violet-200',
-  archived: 'bg-gray-100 text-gray-500 border border-gray-200',
-  pending:  'bg-amber-50 text-amber-800 border border-amber-200',
-  rejected: 'bg-red-50 text-red-800 border border-red-200',
-  waiting:  'bg-gray-100 text-gray-500 border border-gray-200',
-};
+      <!-- List view -->
+      <div id="chat-list-view" style="display:none;flex:1;overflow-y:auto;overflow-x:hidden;">
+        <div id="chat-thread-list" style="width:100%;"></div>
+      </div>
 
-const AC = { CONTRACT_CREATED:'#8b5cf6', FILE_UPLOADED:'#2563eb', APPROVAL_APPROVED:'#16a34a', APPROVAL_REJECTED:'#dc2626', CONTRACT_APPROVED:'#16a34a' };
+      <!-- Message view -->
+      <div id="chat-msg-view" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+        <div id="chat-msg-list" class="flex-1 overflow-y-auto px-4 py-3 chat-messages"></div>
+        <div class="px-3 pb-3 pt-2 border-t border-gray-100 flex gap-2">
+          <input id="chat-global-input" type="text" placeholder="Tulis pesan..."
+            class="flex-1 text-[12px] border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-blue-500 placeholder-gray-300"
+            onkeydown="if(event.key==='Enter')sendGlobalMsg()" />
+          <button onclick="sendGlobalMsg()"
+            class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[12px] transition-colors">
+            <i class="fa-solid fa-paper-plane text-[11px]"></i>
+          </button>
+        </div>
+      </div>
 
-function u(id)   { return users.find(x => x.id === id) || { name:'—', initials:'?', bg:'#f3f4f6', color:'#6b7280' }; }
-function now()   { return new Date().toLocaleString('id-ID'); }
-function rHash() { return Math.random().toString(36).substring(2,14)+'...'; }
+    </div>
+  </div>
 
-function av(uid, size = 'w-5 h-5 text-[9px]') {
-  const usr = u(uid);
-  return `<span class="inline-flex items-center justify-center rounded-full font-bold flex-shrink-0 ${size}"
+  <!-- Tailwind table helper (applied via JS since can't use @apply in CDN easily) -->
+  <style>
+    .th {
+      padding: 9px 14px;
+      text-align: left;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: #9ca3af;
+      border-bottom: 1px solid #e5e7eb;
+      white-space: nowrap;
+    }
+
+    .td {
+      padding: 11px 14px;
+      font-size: 12px;
+      border-bottom: 1px solid #f3f4f6;
+      vertical-align: middle;
+    }
+
+    tbody tr:hover {
+      background: #f9fafb;
+      cursor: pointer;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+  </style>
+
+  <script>
+    // ─── Data ──────────────────────────────────────────────────────────
+    const users = [
+      { id: 1, name: 'Ahmad Fauzi', role: 'Initiator', initials: 'AF', bg: '#ede9fe', color: '#5b21b6' },
+      { id: 2, name: 'Budi Santoso', role: 'Legal', initials: 'BS', bg: '#e0f2fe', color: '#0369a1' },
+      { id: 3, name: 'Citra Dewi', role: 'Tax', initials: 'CD', bg: '#fef9c3', color: '#854d0e' },
+      { id: 4, name: 'Dian Rahayu', role: 'Management', initials: 'DR', bg: '#dbeafe', color: '#1d4ed8' },
+      { id: 5, name: 'Eko Prasetyo', role: 'Direksi', initials: 'EP', bg: '#dcfce7', color: '#166534' },
+    ];
+
+    const contracts = [
+      {
+        id: 1, contract_no: 'CTR-2025-001',
+        title: 'Kontrak Vendor IT Infrastructure',
+        description: 'Pengadaan perangkat server dan jaringan untuk pusat data perusahaan.',
+        created_by: 1, status: 'in_review', current_version: 2, created_at: '2025-03-01',
+        versions: [
+          { version_no: 1, file_name: 'CTR-2025-001_v1_initial.docx', change_log: 'Draft awal kontrak', uploaded_by: 1, is_final: false, created_at: '2025-03-01', file_hash: 'a1b2c3d4e5f6...' },
+          { version_no: 2, file_name: 'CTR-2025-001_v2_revision.docx', change_log: 'Revisi klausul pembayaran', uploaded_by: 1, is_final: false, created_at: '2025-03-05', file_hash: 'f6e5d4c3b2a1...' },
+        ],
+        approvals: [
+          { id: 1, approver_id: 2, role: 'Legal', sequence: 1, status: 'approved', note: 'Klausul hukum sudah sesuai.', approved_at: '2025-03-03' },
+          { id: 2, approver_id: 3, role: 'Tax', sequence: 2, status: 'pending', note: '', approved_at: null },
+          { id: 3, approver_id: 4, role: 'Management', sequence: 3, status: 'waiting', note: '', approved_at: null },
+          { id: 4, approver_id: 5, role: 'Direksi', sequence: 4, status: 'waiting', note: '', approved_at: null },
+        ],
+        histories: [
+          { action: 'CONTRACT_CREATED', description: 'Kontrak dibuat', actor_id: 1, created_at: '2025-03-01 09:00' },
+          { action: 'FILE_UPLOADED', description: 'Upload versi v1', actor_id: 1, created_at: '2025-03-01 09:05' },
+          { action: 'APPROVAL_APPROVED', description: 'Disetujui oleh Legal', actor_id: 2, created_at: '2025-03-03 14:30' },
+          { action: 'FILE_UPLOADED', description: 'Upload revisi v2', actor_id: 1, created_at: '2025-03-05 10:00' },
+        ]
+      },
+      {
+        id: 2, contract_no: 'CTR-2025-002',
+        title: 'MoU Kerjasama Pemasaran Regional',
+        description: 'Nota kesepahaman untuk ekspansi pasar wilayah Jawa Timur.',
+        created_by: 1, status: 'approved', current_version: 3, created_at: '2025-02-15',
+        versions: [
+          { version_no: 1, file_name: 'CTR-2025-002_v1_initial.docx', change_log: 'Draft awal', uploaded_by: 1, is_final: false, created_at: '2025-02-15', file_hash: 'aa112233...' },
+          { version_no: 2, file_name: 'CTR-2025-002_v2_revision.docx', change_log: 'Revisi term kerjasama', uploaded_by: 1, is_final: false, created_at: '2025-02-20', file_hash: 'bb223344...' },
+          { version_no: 3, file_name: 'CTR-2025-002_v3_final.docx', change_log: 'Final setelah revisi', uploaded_by: 1, is_final: true, created_at: '2025-02-25', file_hash: 'cc334455...' },
+        ],
+        approvals: [
+          { id: 5, approver_id: 2, role: 'Legal', sequence: 1, status: 'approved', note: 'OK.', approved_at: '2025-02-18' },
+          { id: 6, approver_id: 3, role: 'Tax', sequence: 2, status: 'rejected', note: 'Perlu revisi klausul pajak PPN.', approved_at: '2025-02-21' },
+          { id: 7, approver_id: 3, role: 'Tax', sequence: 2, status: 'approved', note: 'Sudah diperbaiki.', approved_at: '2025-02-26' },
+          { id: 8, approver_id: 4, role: 'Management', sequence: 3, status: 'approved', note: 'Setuju.', approved_at: '2025-02-27' },
+          { id: 9, approver_id: 5, role: 'Direksi', sequence: 4, status: 'approved', note: 'Approved.', approved_at: '2025-02-28' },
+        ],
+        histories: [
+          { action: 'CONTRACT_CREATED', description: 'Kontrak dibuat', actor_id: 1, created_at: '2025-02-15 10:00' },
+          { action: 'FILE_UPLOADED', description: 'Upload v1', actor_id: 1, created_at: '2025-02-15 10:10' },
+          { action: 'APPROVAL_APPROVED', description: 'Disetujui Legal', actor_id: 2, created_at: '2025-02-18 15:00' },
+          { action: 'APPROVAL_REJECTED', description: 'Ditolak Tax – revisi PPN', actor_id: 3, created_at: '2025-02-21 09:00' },
+          { action: 'FILE_UPLOADED', description: 'Upload revisi v2', actor_id: 1, created_at: '2025-02-20 11:00' },
+          { action: 'FILE_UPLOADED', description: 'Upload final v3', actor_id: 1, created_at: '2025-02-25 14:00' },
+          { action: 'APPROVAL_APPROVED', description: 'Disetujui Tax', actor_id: 3, created_at: '2025-02-26 10:00' },
+          { action: 'APPROVAL_APPROVED', description: 'Disetujui Management', actor_id: 4, created_at: '2025-02-27 11:00' },
+          { action: 'APPROVAL_APPROVED', description: 'Disetujui Direksi', actor_id: 5, created_at: '2025-02-28 14:00' },
+          { action: 'CONTRACT_APPROVED', description: 'Kontrak final APPROVED', actor_id: 5, created_at: '2025-02-28 14:01' },
+        ]
+      },
+      {
+        id: 3, contract_no: 'CTR-2025-003',
+        title: 'Perjanjian Sewa Gudang Logistik',
+        description: 'Kontrak sewa gudang untuk keperluan distribusi produk wilayah Barat.',
+        created_by: 1, status: 'revision', current_version: 1, created_at: '2025-03-10',
+        versions: [
+          { version_no: 1, file_name: 'CTR-2025-003_v1_initial.docx', change_log: 'Draft awal', uploaded_by: 1, is_final: false, created_at: '2025-03-10', file_hash: 'dd445566...' },
+        ],
+        approvals: [
+          { id: 10, approver_id: 2, role: 'Legal', sequence: 1, status: 'rejected', note: 'Durasi sewa tidak sesuai ketentuan internal. Maks. 2 tahun.', approved_at: '2025-03-12' },
+          { id: 11, approver_id: 3, role: 'Tax', sequence: 2, status: 'waiting', note: '', approved_at: null },
+          { id: 12, approver_id: 4, role: 'Management', sequence: 3, status: 'waiting', note: '', approved_at: null },
+          { id: 13, approver_id: 5, role: 'Direksi', sequence: 4, status: 'waiting', note: '', approved_at: null },
+        ],
+        histories: [
+          { action: 'CONTRACT_CREATED', description: 'Kontrak dibuat', actor_id: 1, created_at: '2025-03-10 08:30' },
+          { action: 'FILE_UPLOADED', description: 'Upload v1', actor_id: 1, created_at: '2025-03-10 08:35' },
+          { action: 'APPROVAL_REJECTED', description: 'Ditolak Legal – durasi', actor_id: 2, created_at: '2025-03-12 11:00' },
+        ]
+      },
+      {
+        id: 4, contract_no: 'CTR-2025-004',
+        title: 'Kontrak Lisensi Software ERP',
+        description: 'Lisensi tahunan sistem ERP untuk modul finance dan HR.',
+        created_by: 1, status: 'draft', current_version: 1, created_at: '2025-03-14',
+        versions: [
+          { version_no: 1, file_name: 'CTR-2025-004_v1_initial.docx', change_log: 'Draft awal', uploaded_by: 1, is_final: false, created_at: '2025-03-14', file_hash: 'ee556677...' },
+        ],
+        approvals: [
+          { id: 14, approver_id: 2, role: 'Legal', sequence: 1, status: 'pending', note: '', approved_at: null },
+          { id: 15, approver_id: 3, role: 'Tax', sequence: 2, status: 'waiting', note: '', approved_at: null },
+          { id: 16, approver_id: 4, role: 'Management', sequence: 3, status: 'waiting', note: '', approved_at: null },
+          { id: 17, approver_id: 5, role: 'Direksi', sequence: 4, status: 'waiting', note: '', approved_at: null },
+        ],
+        histories: [
+          { action: 'CONTRACT_CREATED', description: 'Kontrak dibuat', actor_id: 1, created_at: '2025-03-14 13:00' },
+          { action: 'FILE_UPLOADED', description: 'Upload v1', actor_id: 1, created_at: '2025-03-14 13:05' },
+        ]
+      },
+    ];
+
+    // ─── Helpers ───────────────────────────────────────────────────────
+    const SL = { draft: 'Draft', in_review: 'In Review', revision: 'Revision', approved: 'Approved', locked: 'Locked', archived: 'Archived' };
+
+    const BADGE = {
+      draft: 'bg-gray-100 text-gray-600 border border-gray-200',
+      in_review: 'bg-amber-50 text-amber-800 border border-amber-200',
+      revision: 'bg-red-50 text-red-800 border border-red-200',
+      approved: 'bg-green-50 text-green-800 border border-green-200',
+      locked: 'bg-violet-50 text-violet-800 border border-violet-200',
+      archived: 'bg-gray-100 text-gray-500 border border-gray-200',
+      pending: 'bg-amber-50 text-amber-800 border border-amber-200',
+      rejected: 'bg-red-50 text-red-800 border border-red-200',
+      waiting: 'bg-gray-100 text-gray-500 border border-gray-200',
+    };
+
+    const AC = { CONTRACT_CREATED: '#8b5cf6', FILE_UPLOADED: '#2563eb', APPROVAL_APPROVED: '#16a34a', APPROVAL_REJECTED: '#dc2626', CONTRACT_APPROVED: '#16a34a' };
+
+    function u(id) { return users.find(x => x.id === id) || { name: '—', initials: '?', bg: '#f3f4f6', color: '#6b7280' }; }
+    function now() { return new Date().toLocaleString('id-ID'); }
+    function rHash() { return Math.random().toString(36).substring(2, 14) + '...'; }
+
+    function av(uid, size = 'w-5 h-5 text-[9px]') {
+      const usr = u(uid);
+      return `<span class="inline-flex items-center justify-center rounded-full font-bold flex-shrink-0 ${size}"
                style="background:${usr.bg};color:${usr.color};">${usr.initials}</span>`;
-}
+    }
 
-function badge(status, label) {
-  const cls = BADGE[status] || BADGE.draft;
-  return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${cls}">${label || SL[status] || status}</span>`;
-}
+    function badge(status, label) {
+      const cls = BADGE[status] || BADGE.draft;
+      return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${cls}">${label || SL[status] || status}</span>`;
+    }
 
-function progressHtml(c) {
-  const seqs = [...new Set(c.approvals.map(a => a.sequence))];
-  const done = seqs.filter(s => c.approvals.some(a => a.sequence === s && a.status === 'approved')).length;
-  const pct  = Math.round(done / seqs.length * 100);
-  return `<div class="text-[10px] text-gray-400 mb-1">${done}/${seqs.length}</div>
+    function progressHtml(c) {
+      const seqs = [...new Set(c.approvals.map(a => a.sequence))];
+      const done = seqs.filter(s => c.approvals.some(a => a.sequence === s && a.status === 'approved')).length;
+      const pct = Math.round(done / seqs.length * 100);
+      return `<div class="text-[10px] text-gray-400 mb-1">${done}/${seqs.length}</div>
           <div class="h-1 bg-gray-200 rounded-full overflow-hidden w-20">
             <div class="h-full bg-blue-500 rounded-full" style="width:${pct}%"></div>
           </div>`;
-}
+    }
 
-// ─── Navigate ──────────────────────────────────────────────────────
-const PT = { dashboard:'Dashboard', contracts:'Semua Kontrak', pending:'Menunggu Approval', audit:'Audit Trail', detail:'Detail Kontrak' };
+    // ─── Navigate ──────────────────────────────────────────────────────
+    const PT = { dashboard: 'Dashboard', contracts: 'Semua Kontrak', pending: 'Menunggu Approval', audit: 'Audit Trail', detail: 'Detail Kontrak' };
 
-function navigate(page, id) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
-  document.getElementById('page-' + page).classList.add('active');
-  document.getElementById('page-title').textContent = PT[page] || page;
-  const lnk = document.querySelector(`.sidebar-link[onclick*="'${page}'"]`);
-  if (lnk) lnk.classList.add('active');
-  if (page === 'dashboard') renderDashboard();
-  if (page === 'contracts') renderContracts();
-  if (page === 'pending')   renderPending();
-  if (page === 'audit')     renderAudit();
-  if (page === 'detail' && id) renderDetail(id);
-}
+    function navigate(page, id) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+      document.getElementById('page-' + page).classList.add('active');
+      document.getElementById('page-title').textContent = PT[page] || page;
+      const lnk = document.querySelector(`.sidebar-link[onclick*="'${page}'"]`);
+      if (lnk) lnk.classList.add('active');
+      if (page === 'dashboard') renderDashboard();
+      if (page === 'contracts') renderContracts();
+      if (page === 'pending') renderPending();
+      if (page === 'audit') renderAudit();
+      if (page === 'detail' && id) renderDetail(id);
+    }
 
-// ─── Dashboard ─────────────────────────────────────────────────────
-function renderDashboard() {
-  document.getElementById('dashboard-table').innerHTML = contracts.slice(0,4).map(c => rowHtml(c, false)).join('');
+    // ─── Dashboard ─────────────────────────────────────────────────────
+    function renderDashboard() {
+      document.getElementById('dashboard-table').innerHTML = contracts.slice(0, 4).map(c => rowHtml(c, false)).join('');
 
-  document.getElementById('bottleneck-list').innerHTML =
-    ['Legal','Tax','Management','Direksi'].map(r => {
-      const p = contracts.filter(c => c.approvals.some(a => a.role === r && a.status === 'pending')).length;
-      return `<div class="mb-3">
+      document.getElementById('bottleneck-list').innerHTML =
+        ['Legal', 'Tax', 'Management', 'Direksi'].map(r => {
+          const p = contracts.filter(c => c.approvals.some(a => a.role === r && a.status === 'pending')).length;
+          return `<div class="mb-3">
         <div class="flex justify-between mb-1">
           <span class="text-[12px] font-medium">${r}</span>
           <span class="text-[11px] text-gray-400">${p} pending</span>
         </div>
         <div class="h-1 bg-gray-200 rounded-full overflow-hidden">
-          <div class="h-full rounded-full" style="width:${p*25}%;background:${p>0?'#f59e0b':'#16a34a'};"></div>
+          <div class="h-full rounded-full" style="width:${p * 25}%;background:${p > 0 ? '#f59e0b' : '#16a34a'};"></div>
         </div>
       </div>`;
-    }).join('');
+        }).join('');
 
-  document.getElementById('status-overview').innerHTML =
-    ['draft','in_review','revision','approved'].map(s => {
-      const n = contracts.filter(c => c.status === s).length;
-      return `<div class="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+      document.getElementById('status-overview').innerHTML =
+        ['draft', 'in_review', 'revision', 'approved'].map(s => {
+          const n = contracts.filter(c => c.status === s).length;
+          return `<div class="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
         ${badge(s)} <span class="text-[18px] font-bold">${n}</span>
       </div>`;
-    }).join('');
-}
+        }).join('');
+    }
 
-// ─── Contracts ─────────────────────────────────────────────────────
-function renderContracts() {
-  document.getElementById('contracts-table').innerHTML = contracts.map(c => rowHtml(c, true)).join('');
-}
+    // ─── Contracts ─────────────────────────────────────────────────────
+    function renderContracts() {
+      document.getElementById('contracts-table').innerHTML = contracts.map(c => rowHtml(c, true)).join('');
+    }
 
-function rowHtml(c, showProgress) {
-  const usr = u(c.created_by);
-  return `<tr onclick="navigate('detail',${c.id})">
+    function rowHtml(c, showProgress) {
+      const usr = u(c.created_by);
+      return `<tr onclick="navigate('detail',${c.id})">
     <td class="td"><span class="font-mono text-[11px] text-blue-600">${c.contract_no}</span></td>
     <td class="td">
       <div class="font-medium text-[12px]">${c.title}</div>
-      <div class="text-[10px] text-gray-400 mt-0.5">${c.description.substring(0,55)}…</div>
+      <div class="text-[10px] text-gray-400 mt-0.5">${c.description.substring(0, 55)}…</div>
     </td>
     <td class="td">
       <div class="flex items-center gap-1.5">
@@ -1043,25 +1338,25 @@ function rowHtml(c, showProgress) {
       </button>
     </td>
   </tr>`;
-}
+    }
 
-// ─── Pending ───────────────────────────────────────────────────────
-function renderPending() {
-  const ME = 4;
-  const rows = [];
-  contracts.forEach(c => c.approvals.forEach(a => {
-    if (a.approver_id === ME && a.status === 'pending') rows.push({ c, a });
-  }));
-  const el = document.getElementById('pending-table');
-  if (!rows.length) {
-    el.innerHTML = `<tr><td colspan="7" class="text-center py-12 text-gray-400">
+    // ─── Pending ───────────────────────────────────────────────────────
+    function renderPending() {
+      const ME = 4;
+      const rows = [];
+      contracts.forEach(c => c.approvals.forEach(a => {
+        if (a.approver_id === ME && a.status === 'pending') rows.push({ c, a });
+      }));
+      const el = document.getElementById('pending-table');
+      if (!rows.length) {
+        el.innerHTML = `<tr><td colspan="7" class="text-center py-12 text-gray-400">
       <i class="fa-solid fa-circle-check text-3xl block mb-2"></i>
       <strong class="text-gray-500 block">Tidak ada approval pending</strong>
       <span class="text-[12px]">Semua sudah ditangani.</span>
     </td></tr>`;
-    return;
-  }
-  el.innerHTML = rows.map(({ c, a }) => `<tr onclick="navigate('detail',${c.id})">
+        return;
+      }
+      el.innerHTML = rows.map(({ c, a }) => `<tr onclick="navigate('detail',${c.id})">
     <td class="td"><span class="font-mono text-[11px] text-blue-600">${c.contract_no}</span></td>
     <td class="td font-medium">${c.title}</td>
     <td class="td"><span class="font-mono text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">${a.role}</span></td>
@@ -1081,16 +1376,16 @@ function renderPending() {
       </div>
     </td>
   </tr>`).join('');
-}
+    }
 
-// ─── Audit ─────────────────────────────────────────────────────────
-function renderAudit() {
-  const all = [];
-  contracts.forEach(c => c.histories.forEach(h => all.push({ ...h, contract:c })));
-  all.sort((a,b) => b.created_at.localeCompare(a.created_at));
-  document.getElementById('audit-table').innerHTML = all.map(h => {
-    const usr = u(h.actor_id);
-    return `<tr>
+    // ─── Audit ─────────────────────────────────────────────────────────
+    function renderAudit() {
+      const all = [];
+      contracts.forEach(c => c.histories.forEach(h => all.push({ ...h, contract: c })));
+      all.sort((a, b) => b.created_at.localeCompare(a.created_at));
+      document.getElementById('audit-table').innerHTML = all.map(h => {
+        const usr = u(h.actor_id);
+        return `<tr>
       <td class="td text-[11px] text-gray-400 whitespace-nowrap">${h.created_at}</td>
       <td class="td"><span class="font-mono text-[11px] text-blue-600">${h.contract.contract_no}</span></td>
       <td class="td"><span class="font-mono text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">${h.action}</span></td>
@@ -1099,23 +1394,23 @@ function renderAudit() {
         <div class="flex items-center gap-1.5">${av(h.actor_id)} <span class="text-[11px]">${usr.name}</span></div>
       </td>
     </tr>`;
-  }).join('');
-}
+      }).join('');
+    }
 
-// ─── Detail ────────────────────────────────────────────────────────
-let currentId = null;
+    // ─── Detail ────────────────────────────────────────────────────────
+    let currentId = null;
 
-function renderDetail(id) {
-  const c = contracts.find(x => x.id === id);
-  if (!c) return;
-  currentId = id;
-  const usr = u(c.created_by);
+    function renderDetail(id) {
+      const c = contracts.find(x => x.id === id);
+      if (!c) return;
+      currentId = id;
+      const usr = u(c.created_by);
 
-  document.getElementById('detail-title').textContent = c.title;
-  document.getElementById('detail-sub').textContent   = `${c.contract_no}  ·  ${SL[c.status]}`;
-  document.getElementById('detail-bc').textContent    = c.contract_no;
+      document.getElementById('detail-title').textContent = c.title;
+      document.getElementById('detail-sub').textContent = `${c.contract_no}  ·  ${SL[c.status]}`;
+      document.getElementById('detail-bc').textContent = c.contract_no;
 
-  document.getElementById('detail-info').innerHTML = `
+      document.getElementById('detail-info').innerHTML = `
     <div><div class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">No. Kontrak</div>
       <span class="font-mono text-[11px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded">${c.contract_no}</span></div>
     <div><div class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">Status</div>
@@ -1132,24 +1427,24 @@ function renderDetail(id) {
       <div class="text-[12px]">${c.versions.length} versi</div></div>
   `;
 
-  // Approval steps
-  const bySeq = {};
-  c.approvals.forEach(a => { bySeq[a.sequence] = a; });
-  const iconMap = { approved:'fa-check', pending:'fa-ellipsis', rejected:'fa-xmark', waiting:'fa-minus' };
-  const dotCls  = {
-    approved: 'bg-green-50 text-green-600 border-green-200',
-    pending:  'bg-amber-50 text-amber-600 border-amber-200',
-    rejected: 'bg-red-50 text-red-600 border-red-200',
-    waiting:  'bg-gray-50 text-gray-400 border-gray-200',
-  };
-  const noteCls = { approved:'border-l-green-400', rejected:'border-l-red-400', pending:'border-l-gray-200', waiting:'border-l-gray-200' };
+      // Approval steps
+      const bySeq = {};
+      c.approvals.forEach(a => { bySeq[a.sequence] = a; });
+      const iconMap = { approved: 'fa-check', pending: 'fa-ellipsis', rejected: 'fa-xmark', waiting: 'fa-minus' };
+      const dotCls = {
+        approved: 'bg-green-50 text-green-600 border-green-200',
+        pending: 'bg-amber-50 text-amber-600 border-amber-200',
+        rejected: 'bg-red-50 text-red-600 border-red-200',
+        waiting: 'bg-gray-50 text-gray-400 border-gray-200',
+      };
+      const noteCls = { approved: 'border-l-green-400', rejected: 'border-l-red-400', pending: 'border-l-gray-200', waiting: 'border-l-gray-200' };
 
-  document.getElementById('approval-steps').innerHTML =
-    Object.values(bySeq).sort((a,b) => a.sequence - b.sequence).map((a, i, arr) => {
-      const au  = u(a.approver_id);
-      return `<div class="flex gap-2.5 ${i < arr.length-1 ? 'pb-4 relative step-line' : ''}">
-        <div class="w-6 h-6 rounded-full flex items-center justify-center border flex-shrink-0 relative z-10 ${dotCls[a.status]||dotCls.waiting}">
-          <i class="fa-solid ${iconMap[a.status]||'fa-minus'}" style="font-size:8px;"></i>
+      document.getElementById('approval-steps').innerHTML =
+        Object.values(bySeq).sort((a, b) => a.sequence - b.sequence).map((a, i, arr) => {
+          const au = u(a.approver_id);
+          return `<div class="flex gap-2.5 ${i < arr.length - 1 ? 'pb-4 relative step-line' : ''}">
+        <div class="w-6 h-6 rounded-full flex items-center justify-center border flex-shrink-0 relative z-10 ${dotCls[a.status] || dotCls.waiting}">
+          <i class="fa-solid ${iconMap[a.status] || 'fa-minus'}" style="font-size:8px;"></i>
         </div>
         <div class="flex-1 pt-0.5">
           <div class="text-[12px] font-semibold">${a.role}
@@ -1158,23 +1453,23 @@ function renderDetail(id) {
           <div class="flex items-center gap-1.5 text-[11px] text-gray-500 mt-0.5">
             ${av(a.approver_id)} ${au.name}
           </div>
-          ${a.note ? `<div class="text-[11px] text-gray-500 mt-1.5 px-2.5 py-1.5 bg-gray-50 rounded border-l-2 ${noteCls[a.status]||'border-l-gray-200'}">${a.note}</div>` : ''}
+          ${a.note ? `<div class="text-[11px] text-gray-500 mt-1.5 px-2.5 py-1.5 bg-gray-50 rounded border-l-2 ${noteCls[a.status] || 'border-l-gray-200'}">${a.note}</div>` : ''}
           <div class="text-[10px] text-gray-400 mt-1">
             ${a.approved_at ? a.approved_at : badge(a.status, a.status)}
           </div>
         </div>
       </div>`;
-    }).join('');
+        }).join('');
 
-  // Versions
-  document.getElementById('dtab-versions').innerHTML =
-    [...c.versions].reverse().map(v => `
+      // Versions
+      document.getElementById('dtab-versions').innerHTML =
+        [...c.versions].reverse().map(v => `
       <div class="flex items-center justify-between border rounded-lg px-3 py-2.5 ${v.version_no === c.current_version ? 'border-blue-300 bg-blue-50' : 'border-gray-200 hover:border-blue-200'} transition-colors">
         <div>
           <div class="flex items-center gap-2 mb-1">
             <span class="font-mono text-[12px] font-bold text-blue-600">v${v.version_no}</span>
-            ${v.is_final  ? badge('approved','Final') : ''}
-            ${v.version_no === c.current_version ? badge('in_review','Aktif') : ''}
+            ${v.is_final ? badge('approved', 'Final') : ''}
+            ${v.version_no === c.current_version ? badge('in_review', 'Aktif') : ''}
           </div>
           <div class="text-[10px] text-gray-400"><i class="fa-regular fa-file-word mr-1"></i>${v.file_name}</div>
           <div class="text-[10px] text-gray-400"><i class="fa-solid fa-fingerprint mr-1"></i>${v.file_hash}</div>
@@ -1197,12 +1492,12 @@ function renderDetail(id) {
         </div>
       </div>`).join('');
 
-  // Audit trail detail
-  document.getElementById('dtab-audit').innerHTML =
-    [...c.histories].reverse().map(h => {
-      const au = u(h.actor_id);
-      return `<div class="flex gap-2.5 py-2 border-b border-gray-100 last:border-0">
-        <div class="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5" style="background:${AC[h.action]||'#9ca3af'};"></div>
+      // Audit trail detail
+      document.getElementById('dtab-audit').innerHTML =
+        [...c.histories].reverse().map(h => {
+          const au = u(h.actor_id);
+          return `<div class="flex gap-2.5 py-2 border-b border-gray-100 last:border-0">
+        <div class="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5" style="background:${AC[h.action] || '#9ca3af'};"></div>
         <div>
           <div class="text-[12px] font-medium">${h.description}</div>
           <div class="flex items-center gap-1.5 text-[11px] text-gray-500 mt-0.5">
@@ -1211,222 +1506,222 @@ function renderDetail(id) {
           <div class="text-[10px] text-gray-400 mt-0.5">${h.created_at}</div>
         </div>
       </div>`;
-    }).join('');
+        }).join('');
 
-  document.getElementById('action-card').style.display =
-    c.approvals.some(a => a.status === 'pending') ? 'block' : 'none';
-}
-
-// ─── Actions ───────────────────────────────────────────────────────
-function doApprove() {
-  const c = contracts.find(x => x.id === currentId);
-  const p = c.approvals.find(a => a.status === 'pending');
-  if (!p) return;
-  p.status = 'approved';
-  p.note   = document.getElementById('approval-note').value || 'Disetujui.';
-  p.approved_at = new Date().toISOString().split('T')[0];
-  c.histories.push({ action:'APPROVAL_APPROVED', description:`Disetujui oleh ${p.role}`, actor_id:p.approver_id, created_at:now() });
-  const next = c.approvals.find(a => a.sequence === p.sequence + 1 && a.status === 'waiting');
-  if (next) { next.status = 'pending'; }
-  else {
-    c.status = 'approved';
-    c.histories.push({ action:'CONTRACT_APPROVED', description:'Semua approval selesai. Kontrak APPROVED.', actor_id:p.approver_id, created_at:now() });
-  }
-  document.getElementById('approval-note').value = '';
-  renderDetail(currentId);
-  showToast('Kontrak berhasil disetujui', 'success');
-}
-
-function doReject() {
-  const reason = document.getElementById('reject-reason').value.trim();
-  if (!reason) { showToast('Alasan penolakan wajib diisi', 'danger'); return; }
-  const c = contracts.find(x => x.id === currentId);
-  const p = c.approvals.find(a => a.status === 'pending');
-  if (!p) return;
-  p.status = 'rejected'; p.note = reason;
-  p.approved_at = new Date().toISOString().split('T')[0];
-  c.status = 'revision';
-  c.histories.push({ action:'APPROVAL_REJECTED', description:`Ditolak oleh ${p.role} – ${reason}`, actor_id:p.approver_id, created_at:now() });
-  document.getElementById('reject-reason').value = '';
-  closeModal('modal-reject');
-  renderDetail(currentId);
-  showToast('Kontrak ditolak, perlu revisi', 'danger');
-}
-
-function quickApprove(contractId) {
-  const c = contracts.find(x => x.id === contractId);
-  const p = c.approvals.find(a => a.status === 'pending' && a.approver_id === 4);
-  if (!p) return;
-  p.status = 'approved'; p.note = 'Disetujui.'; p.approved_at = new Date().toISOString().split('T')[0];
-  c.histories.push({ action:'APPROVAL_APPROVED', description:'Disetujui Management', actor_id:4, created_at:now() });
-  const next = c.approvals.find(a => a.sequence === p.sequence + 1 && a.status === 'waiting');
-  if (next) next.status = 'pending';
-  renderPending();
-  showToast('Berhasil disetujui', 'success');
-}
-
-// ─── File Store ────────────────────────────────────────────────────
-// key: `${contractId}_v${versionNo}` → File object
-const fileStore = {};
-
-function createContract() {
-  const title = document.getElementById('new-title').value.trim();
-  if (!title) { showToast('Judul kontrak wajib diisi', 'danger'); return; }
-  const newId = contracts.length + 1;
-  const no = `CTR-2025-00${newId}`;
-  const fileInput = document.getElementById('file-input');
-  if (fileInput.files[0]) fileStore[`${newId}_v1`] = fileInput.files[0];
-  contracts.push({
-    id:newId, contract_no:no,
-    title,
-    description: document.getElementById('new-desc').value.trim() || '—',
-    created_by:1, status:'draft', current_version:1,
-    created_at: new Date().toISOString().split('T')[0],
-    versions:[{ version_no:1, file_name:`${no}_v1_initial.docx`, change_log:document.getElementById('new-changelog').value||'Draft awal', uploaded_by:1, is_final:false, created_at:new Date().toISOString().split('T')[0], file_hash:rHash() }],
-    approvals:[
-      { id:200+newId*4,   approver_id:2, role:'Legal',      sequence:1, status:'pending', note:'', approved_at:null },
-      { id:200+newId*4+1, approver_id:3, role:'Tax',        sequence:2, status:'waiting', note:'', approved_at:null },
-      { id:200+newId*4+2, approver_id:4, role:'Management', sequence:3, status:'waiting', note:'', approved_at:null },
-      { id:200+newId*4+3, approver_id:5, role:'Direksi',    sequence:4, status:'waiting', note:'', approved_at:null },
-    ],
-    histories:[
-      { action:'CONTRACT_CREATED', description:'Kontrak dibuat', actor_id:1, created_at:now() },
-      { action:'FILE_UPLOADED',    description:'Upload v1',      actor_id:1, created_at:now() },
-    ]
-  });
-  ['new-title','new-desc','new-changelog'].forEach(id => document.getElementById(id).value='');
-  document.getElementById('file-preview').classList.add('hidden');
-  closeModal('modal-create');
-  navigate('contracts');
-  showToast('Kontrak berhasil dibuat', 'success');
-}
-
-function uploadRevision() {
-  const changelog = document.getElementById('rev-changelog').value.trim();
-  if (!changelog) { showToast('Changelog wajib diisi', 'danger'); return; }
-  const c = contracts.find(x => x.id === currentId);
-  const nv = c.current_version + 1;
-  const revInput = document.getElementById('rev-input');
-  if (revInput.files[0]) fileStore[`${currentId}_v${nv}`] = revInput.files[0];
-  c.versions.push({ version_no:nv, file_name:`${c.contract_no}_v${nv}_revision.docx`, change_log:changelog, uploaded_by:1, is_final:false, created_at:new Date().toISOString().split('T')[0], file_hash:rHash() });
-  c.current_version = nv; c.status = 'in_review';
-  c.approvals.forEach((a,i) => { a.status = i===0?'pending':'waiting'; a.note=''; a.approved_at=null; });
-  c.histories.push({ action:'FILE_UPLOADED', description:`Upload revisi v${nv}`, actor_id:1, created_at:now() });
-  document.getElementById('rev-changelog').value = '';
-  document.getElementById('rev-preview').classList.add('hidden');
-  closeModal('modal-upload');
-  renderDetail(currentId);
-  showToast(`Versi v${nv} berhasil diupload`, 'success');
-}
-
-function downloadFile() {
-  const c = contracts.find(x => x.id === currentId);
-  const v = c.versions.find(v => v.version_no === c.current_version);
-  showToast(`Mengunduh ${v.file_name}…`);
-}
-
-function onFileChange(input, previewId, nameId) {
-  if (!input.files.length) return;
-  const f = input.files[0];
-  document.getElementById(nameId).textContent = `${f.name}  (${(f.size/1024).toFixed(1)} KB)`;
-  const el = document.getElementById(previewId);
-  el.classList.remove('hidden');
-  el.style.display = 'flex';
-}
-
-// ─── Tabs (detail) ─────────────────────────────────────────────────
-function switchDetailTab(panelId, el) {
-  document.querySelectorAll('.tab-btn').forEach(b => {
-    b.classList.remove('border-blue-600','text-blue-600');
-    b.classList.add('border-transparent','text-gray-500');
-  });
-  el.classList.add('border-blue-600','text-blue-600');
-  el.classList.remove('border-transparent','text-gray-500');
-  ['dtab-versions','dtab-audit','dtab-chat'].forEach(id => {
-    const el = document.getElementById(id);
-    if (id === panelId) {
-      el.style.display = id === 'dtab-chat' ? 'flex' : 'block';
-    } else {
-      el.style.display = 'none';
+      document.getElementById('action-card').style.display =
+        c.approvals.some(a => a.status === 'pending') ? 'block' : 'none';
     }
-  });
-  if (panelId === 'dtab-chat') renderContractChat(currentId);
-}
 
-// ─── Chat Data ─────────────────────────────────────────────────────
-const chatData = {
-  1: [
-    { id:1, user_id:2, text:'Pasal 5 soal SLA perlu diperjelas. Saat ini masih ambigu antara business day dan calendar day.', time:'2025-03-02 10:15', read_by:[1,2] },
-    { id:2, user_id:1, text:'Noted, akan saya revisi. Maksudnya business day ya pak?', time:'2025-03-02 10:32', read_by:[1,2] },
-    { id:3, user_id:2, text:'Betul, business day. Tolong tambahkan juga definisinya di klausul awal.', time:'2025-03-02 10:45', read_by:[1,2] },
-    { id:4, user_id:1, text:'Sudah diupdate di v2, silakan dicek kembali.', time:'2025-03-05 09:10', read_by:[1] },
-  ],
-  2: [
-    { id:5, user_id:3, text:'Perlu klarifikasi soal PPN 11% di pasal 8. Apakah sudah termasuk dalam harga kontrak?', time:'2025-02-19 14:00', read_by:[1,2,3] },
-    { id:6, user_id:1, text:'Belum termasuk pak, akan ditambahkan klausul pajak terpisah.', time:'2025-02-19 14:30', read_by:[1,2,3] },
-    { id:7, user_id:4, text:'Oke, jika sudah lengkap silakan ajukan ke saya untuk approval management.', time:'2025-02-19 15:00', read_by:[1,2,3,4] },
-    { id:8, user_id:3, text:'V3 sudah sesuai, saya approve.', time:'2025-02-26 10:00', read_by:[1,2,3,4] },
-  ],
-  3: [
-    { id:9, user_id:2, text:'Durasi sewa 5 tahun melebihi ketentuan internal. Maksimal 2 tahun atau perlu persetujuan BOD.', time:'2025-03-12 11:05', read_by:[1,2] },
-    { id:10, user_id:1, text:'Baik pak, akan saya revisi menjadi 2 tahun dengan opsi perpanjangan.', time:'2025-03-12 13:00', read_by:[1] },
-  ],
-  4: [
-    { id:11, user_id:2, text:'Draft sudah diterima, sedang saya review klausul lisensi dan maintenance.', time:'2025-03-14 14:00', read_by:[2] },
-  ],
-};
+    // ─── Actions ───────────────────────────────────────────────────────
+    function doApprove() {
+      const c = contracts.find(x => x.id === currentId);
+      const p = c.approvals.find(a => a.status === 'pending');
+      if (!p) return;
+      p.status = 'approved';
+      p.note = document.getElementById('approval-note').value || 'Disetujui.';
+      p.approved_at = new Date().toISOString().split('T')[0];
+      c.histories.push({ action: 'APPROVAL_APPROVED', description: `Disetujui oleh ${p.role}`, actor_id: p.approver_id, created_at: now() });
+      const next = c.approvals.find(a => a.sequence === p.sequence + 1 && a.status === 'waiting');
+      if (next) { next.status = 'pending'; }
+      else {
+        c.status = 'approved';
+        c.histories.push({ action: 'CONTRACT_APPROVED', description: 'Semua approval selesai. Kontrak APPROVED.', actor_id: p.approver_id, created_at: now() });
+      }
+      document.getElementById('approval-note').value = '';
+      renderDetail(currentId);
+      showToast('Kontrak berhasil disetujui', 'success');
+    }
 
-// current user = id 4 (Dian / Management) — simulasi
-const ME = 4;
-let activeChatContractId = null;
+    function doReject() {
+      const reason = document.getElementById('reject-reason').value.trim();
+      if (!reason) { showToast('Alasan penolakan wajib diisi', 'danger'); return; }
+      const c = contracts.find(x => x.id === currentId);
+      const p = c.approvals.find(a => a.status === 'pending');
+      if (!p) return;
+      p.status = 'rejected'; p.note = reason;
+      p.approved_at = new Date().toISOString().split('T')[0];
+      c.status = 'revision';
+      c.histories.push({ action: 'APPROVAL_REJECTED', description: `Ditolak oleh ${p.role} – ${reason}`, actor_id: p.approver_id, created_at: now() });
+      document.getElementById('reject-reason').value = '';
+      closeModal('modal-reject');
+      renderDetail(currentId);
+      showToast('Kontrak ditolak, perlu revisi', 'danger');
+    }
 
-// ─── Contract Chat (Tab Detail) ────────────────────────────────────
-function renderContractChat(contractId) {
-  if (!contractId) return;
-  const msgs = chatData[contractId] || [];
-  const c    = contracts.find(x => x.id === contractId);
-  const el   = document.getElementById('dtab-chat-messages');
+    function quickApprove(contractId) {
+      const c = contracts.find(x => x.id === contractId);
+      const p = c.approvals.find(a => a.status === 'pending' && a.approver_id === 4);
+      if (!p) return;
+      p.status = 'approved'; p.note = 'Disetujui.'; p.approved_at = new Date().toISOString().split('T')[0];
+      c.histories.push({ action: 'APPROVAL_APPROVED', description: 'Disetujui Management', actor_id: 4, created_at: now() });
+      const next = c.approvals.find(a => a.sequence === p.sequence + 1 && a.status === 'waiting');
+      if (next) next.status = 'pending';
+      renderPending();
+      showToast('Berhasil disetujui', 'success');
+    }
 
-  el.innerHTML = msgs.length
-    ? msgs.map(m => msgBubble(m, m.user_id === ME)).join('')
-    : `<div class="text-center text-gray-400 text-[12px] pt-8">
+    // ─── File Store ────────────────────────────────────────────────────
+    // key: `${contractId}_v${versionNo}` → File object
+    const fileStore = {};
+
+    function createContract() {
+      const title = document.getElementById('new-title').value.trim();
+      if (!title) { showToast('Judul kontrak wajib diisi', 'danger'); return; }
+      const newId = contracts.length + 1;
+      const no = `CTR-2025-00${newId}`;
+      const fileInput = document.getElementById('file-input');
+      if (fileInput.files[0]) fileStore[`${newId}_v1`] = fileInput.files[0];
+      contracts.push({
+        id: newId, contract_no: no,
+        title,
+        description: document.getElementById('new-desc').value.trim() || '—',
+        created_by: 1, status: 'draft', current_version: 1,
+        created_at: new Date().toISOString().split('T')[0],
+        versions: [{ version_no: 1, file_name: `${no}_v1_initial.docx`, change_log: document.getElementById('new-changelog').value || 'Draft awal', uploaded_by: 1, is_final: false, created_at: new Date().toISOString().split('T')[0], file_hash: rHash() }],
+        approvals: [
+          { id: 200 + newId * 4, approver_id: 2, role: 'Legal', sequence: 1, status: 'pending', note: '', approved_at: null },
+          { id: 200 + newId * 4 + 1, approver_id: 3, role: 'Tax', sequence: 2, status: 'waiting', note: '', approved_at: null },
+          { id: 200 + newId * 4 + 2, approver_id: 4, role: 'Management', sequence: 3, status: 'waiting', note: '', approved_at: null },
+          { id: 200 + newId * 4 + 3, approver_id: 5, role: 'Direksi', sequence: 4, status: 'waiting', note: '', approved_at: null },
+        ],
+        histories: [
+          { action: 'CONTRACT_CREATED', description: 'Kontrak dibuat', actor_id: 1, created_at: now() },
+          { action: 'FILE_UPLOADED', description: 'Upload v1', actor_id: 1, created_at: now() },
+        ]
+      });
+      ['new-title', 'new-desc', 'new-changelog'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('file-preview').classList.add('hidden');
+      closeModal('modal-create');
+      navigate('contracts');
+      showToast('Kontrak berhasil dibuat', 'success');
+    }
+
+    function uploadRevision() {
+      const changelog = document.getElementById('rev-changelog').value.trim();
+      if (!changelog) { showToast('Changelog wajib diisi', 'danger'); return; }
+      const c = contracts.find(x => x.id === currentId);
+      const nv = c.current_version + 1;
+      const revInput = document.getElementById('rev-input');
+      if (revInput.files[0]) fileStore[`${currentId}_v${nv}`] = revInput.files[0];
+      c.versions.push({ version_no: nv, file_name: `${c.contract_no}_v${nv}_revision.docx`, change_log: changelog, uploaded_by: 1, is_final: false, created_at: new Date().toISOString().split('T')[0], file_hash: rHash() });
+      c.current_version = nv; c.status = 'in_review';
+      c.approvals.forEach((a, i) => { a.status = i === 0 ? 'pending' : 'waiting'; a.note = ''; a.approved_at = null; });
+      c.histories.push({ action: 'FILE_UPLOADED', description: `Upload revisi v${nv}`, actor_id: 1, created_at: now() });
+      document.getElementById('rev-changelog').value = '';
+      document.getElementById('rev-preview').classList.add('hidden');
+      closeModal('modal-upload');
+      renderDetail(currentId);
+      showToast(`Versi v${nv} berhasil diupload`, 'success');
+    }
+
+    function downloadFile() {
+      const c = contracts.find(x => x.id === currentId);
+      const v = c.versions.find(v => v.version_no === c.current_version);
+      showToast(`Mengunduh ${v.file_name}…`);
+    }
+
+    function onFileChange(input, previewId, nameId) {
+      if (!input.files.length) return;
+      const f = input.files[0];
+      document.getElementById(nameId).textContent = `${f.name}  (${(f.size / 1024).toFixed(1)} KB)`;
+      const el = document.getElementById(previewId);
+      el.classList.remove('hidden');
+      el.style.display = 'flex';
+    }
+
+    // ─── Tabs (detail) ─────────────────────────────────────────────────
+    function switchDetailTab(panelId, el) {
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('border-blue-600', 'text-blue-600');
+        b.classList.add('border-transparent', 'text-gray-500');
+      });
+      el.classList.add('border-blue-600', 'text-blue-600');
+      el.classList.remove('border-transparent', 'text-gray-500');
+      ['dtab-versions', 'dtab-audit', 'dtab-chat'].forEach(id => {
+        const el = document.getElementById(id);
+        if (id === panelId) {
+          el.style.display = id === 'dtab-chat' ? 'flex' : 'block';
+        } else {
+          el.style.display = 'none';
+        }
+      });
+      if (panelId === 'dtab-chat') renderContractChat(currentId);
+    }
+
+    // ─── Chat Data ─────────────────────────────────────────────────────
+    const chatData = {
+      1: [
+        { id: 1, user_id: 2, text: 'Pasal 5 soal SLA perlu diperjelas. Saat ini masih ambigu antara business day dan calendar day.', time: '2025-03-02 10:15', read_by: [1, 2] },
+        { id: 2, user_id: 1, text: 'Noted, akan saya revisi. Maksudnya business day ya pak?', time: '2025-03-02 10:32', read_by: [1, 2] },
+        { id: 3, user_id: 2, text: 'Betul, business day. Tolong tambahkan juga definisinya di klausul awal.', time: '2025-03-02 10:45', read_by: [1, 2] },
+        { id: 4, user_id: 1, text: 'Sudah diupdate di v2, silakan dicek kembali.', time: '2025-03-05 09:10', read_by: [1] },
+      ],
+      2: [
+        { id: 5, user_id: 3, text: 'Perlu klarifikasi soal PPN 11% di pasal 8. Apakah sudah termasuk dalam harga kontrak?', time: '2025-02-19 14:00', read_by: [1, 2, 3] },
+        { id: 6, user_id: 1, text: 'Belum termasuk pak, akan ditambahkan klausul pajak terpisah.', time: '2025-02-19 14:30', read_by: [1, 2, 3] },
+        { id: 7, user_id: 4, text: 'Oke, jika sudah lengkap silakan ajukan ke saya untuk approval management.', time: '2025-02-19 15:00', read_by: [1, 2, 3, 4] },
+        { id: 8, user_id: 3, text: 'V3 sudah sesuai, saya approve.', time: '2025-02-26 10:00', read_by: [1, 2, 3, 4] },
+      ],
+      3: [
+        { id: 9, user_id: 2, text: 'Durasi sewa 5 tahun melebihi ketentuan internal. Maksimal 2 tahun atau perlu persetujuan BOD.', time: '2025-03-12 11:05', read_by: [1, 2] },
+        { id: 10, user_id: 1, text: 'Baik pak, akan saya revisi menjadi 2 tahun dengan opsi perpanjangan.', time: '2025-03-12 13:00', read_by: [1] },
+      ],
+      4: [
+        { id: 11, user_id: 2, text: 'Draft sudah diterima, sedang saya review klausul lisensi dan maintenance.', time: '2025-03-14 14:00', read_by: [2] },
+      ],
+    };
+
+    // current user = id 4 (Dian / Management) — simulasi
+    const ME = 4;
+    let activeChatContractId = null;
+
+    // ─── Contract Chat (Tab Detail) ────────────────────────────────────
+    function renderContractChat(contractId) {
+      if (!contractId) return;
+      const msgs = chatData[contractId] || [];
+      const c = contracts.find(x => x.id === contractId);
+      const el = document.getElementById('dtab-chat-messages');
+
+      el.innerHTML = msgs.length
+        ? msgs.map(m => msgBubble(m, m.user_id === ME)).join('')
+        : `<div class="text-center text-gray-400 text-[12px] pt-8">
          <i class="fa-solid fa-comments text-2xl block mb-2"></i>Belum ada diskusi untuk kontrak ini.
        </div>`;
 
-  el.scrollTop = el.scrollHeight;
+      el.scrollTop = el.scrollHeight;
 
-  // update unread badge on tab
-  const unread = msgs.filter(m => !m.read_by.includes(ME)).length;
-  const badge  = document.getElementById('dtab-chat-badge');
-  badge.textContent = unread;
-  badge.classList.toggle('hidden', unread === 0);
-}
+      // update unread badge on tab
+      const unread = msgs.filter(m => !m.read_by.includes(ME)).length;
+      const badge = document.getElementById('dtab-chat-badge');
+      badge.textContent = unread;
+      badge.classList.toggle('hidden', unread === 0);
+    }
 
-function sendContractMsg() {
-  const input = document.getElementById('dtab-chat-input');
-  const text  = input.value.trim();
-  if (!text || !currentId) return;
-  if (!chatData[currentId]) chatData[currentId] = [];
-  const newMsg = {
-    id: Date.now(), user_id: ME,
-    text, time: now(), read_by: [ME],
-  };
-  chatData[currentId].push(newMsg);
-  input.value = '';
-  renderContractChat(currentId);
-  updateFabBadge();
-}
+    function sendContractMsg() {
+      const input = document.getElementById('dtab-chat-input');
+      const text = input.value.trim();
+      if (!text || !currentId) return;
+      if (!chatData[currentId]) chatData[currentId] = [];
+      const newMsg = {
+        id: Date.now(), user_id: ME,
+        text, time: now(), read_by: [ME],
+      };
+      chatData[currentId].push(newMsg);
+      input.value = '';
+      renderContractChat(currentId);
+      updateFabBadge();
+    }
 
-function msgBubble(m, isMe) {
-  const usr = u(m.user_id);
-  if (isMe) {
-    return `<div class="flex flex-col items-end gap-0.5">
+    function msgBubble(m, isMe) {
+      const usr = u(m.user_id);
+      if (isMe) {
+        return `<div class="flex flex-col items-end gap-0.5">
       <span class="text-[10px] text-gray-400 mr-1">${usr.name}</span>
       <div class="chat-bubble-me px-3 py-2 text-[12px] max-w-[85%]">${m.text}</div>
       <span class="text-[10px] text-gray-400 mr-1">${m.time.split(' ')[1] || m.time}</span>
     </div>`;
-  }
-  return `<div class="flex items-end gap-2">
+      }
+      return `<div class="flex items-end gap-2">
     <div class="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-[9px] font-bold"
          style="background:${usr.bg};color:${usr.color};">${usr.initials}</div>
     <div class="flex flex-col gap-0.5">
@@ -1435,39 +1730,39 @@ function msgBubble(m, isMe) {
       <span class="text-[10px] text-gray-400">${m.time.split(' ')[1] || m.time}</span>
     </div>
   </div>`;
-}
+    }
 
-// ─── Floating Chat Widget ───────────────────────────────────────────
-let chatOpen = false;
+    // ─── Floating Chat Widget ───────────────────────────────────────────
+    let chatOpen = false;
 
-function toggleChat() {
-  chatOpen = !chatOpen;
-  const panel = document.getElementById('chat-panel');
-  const icon  = document.getElementById('chat-fab-icon');
-  panel.classList.toggle('hidden', !chatOpen);
-  icon.className = chatOpen
-    ? 'fa-solid fa-xmark text-[18px]'
-    : 'fa-solid fa-comments text-[18px]';
-  if (chatOpen) showChatList();
-}
+    function toggleChat() {
+      chatOpen = !chatOpen;
+      const panel = document.getElementById('chat-panel');
+      const icon = document.getElementById('chat-fab-icon');
+      panel.classList.toggle('hidden', !chatOpen);
+      icon.className = chatOpen
+        ? 'fa-solid fa-xmark text-[18px]'
+        : 'fa-solid fa-comments text-[18px]';
+      if (chatOpen) showChatList();
+    }
 
-function showChatList() {
-  activeChatContractId = null;
-  document.getElementById('chat-list-view').style.display = 'flex';
-  document.getElementById('chat-msg-view').style.display  = 'none';
-  document.getElementById('chat-back-btn').style.display  = 'none';
-  document.getElementById('chat-panel-title').textContent = 'Diskusi Kontrak';
-  renderChatThreadList();
-}
+    function showChatList() {
+      activeChatContractId = null;
+      document.getElementById('chat-list-view').style.display = 'flex';
+      document.getElementById('chat-msg-view').style.display = 'none';
+      document.getElementById('chat-back-btn').style.display = 'none';
+      document.getElementById('chat-panel-title').textContent = 'Diskusi Kontrak';
+      renderChatThreadList();
+    }
 
-function renderChatThreadList() {
-  const el = document.getElementById('chat-thread-list');
-  el.innerHTML = contracts.map(c => {
-    const msgs   = chatData[c.id] || [];
-    const unread = msgs.filter(m => !m.read_by.includes(ME)).length;
-    const last   = msgs[msgs.length - 1];
-    const lastUsr= last ? u(last.user_id) : null;
-    return `<div class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors" style="width:100%;box-sizing:border-box;overflow:hidden;"
+    function renderChatThreadList() {
+      const el = document.getElementById('chat-thread-list');
+      el.innerHTML = contracts.map(c => {
+        const msgs = chatData[c.id] || [];
+        const unread = msgs.filter(m => !m.read_by.includes(ME)).length;
+        const last = msgs[msgs.length - 1];
+        const lastUsr = last ? u(last.user_id) : null;
+        return `<div class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors" style="width:100%;box-sizing:border-box;overflow:hidden;"
                  onclick="openChatThread(${c.id})">
       <div class="w-9 h-9 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center flex-shrink-0">
         <i class="fa-solid fa-file-lines text-blue-400 text-[13px]"></i>
@@ -1475,154 +1770,154 @@ function renderChatThreadList() {
       <div class="flex-1 min-w-0">
         <div class="flex justify-between items-center">
           <span class="text-[12px] font-semibold text-gray-800 truncate">${c.contract_no}</span>
-          ${last ? `<span class="text-[10px] text-gray-400 flex-shrink-0 ml-2">${last.time.split(' ')[1]||''}</span>` : ''}
+          ${last ? `<span class="text-[10px] text-gray-400 flex-shrink-0 ml-2">${last.time.split(' ')[1] || ''}</span>` : ''}
         </div>
         <div class="text-[11px] text-gray-400 truncate mt-0.5">${c.title}</div>
         ${last
-          ? `<div class="text-[11px] text-gray-500 truncate mt-0.5">
+            ? `<div class="text-[11px] text-gray-500 truncate mt-0.5">
                <span class="font-medium">${lastUsr.name.split(' ')[0]}:</span> ${last.text}
              </div>`
-          : `<div class="text-[11px] text-gray-300 italic mt-0.5">Belum ada pesan</div>`}
+            : `<div class="text-[11px] text-gray-300 italic mt-0.5">Belum ada pesan</div>`}
       </div>
       ${unread > 0
-        ? `<span class="w-5 h-5 bg-blue-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center flex-shrink-0">${unread}</span>`
-        : ''}
+            ? `<span class="w-5 h-5 bg-blue-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center flex-shrink-0">${unread}</span>`
+            : ''}
     </div>`;
-  }).join('');
-}
+      }).join('');
+    }
 
-function openChatThread(contractId) {
-  activeChatContractId = contractId;
-  const c = contracts.find(x => x.id === contractId);
-  document.getElementById('chat-list-view').style.display = 'none';
-  document.getElementById('chat-msg-view').style.display  = 'flex';
-  document.getElementById('chat-back-btn').style.display  = 'block';
-  document.getElementById('chat-panel-title').textContent = c.contract_no;
-  renderGlobalChatMsgs(contractId);
+    function openChatThread(contractId) {
+      activeChatContractId = contractId;
+      const c = contracts.find(x => x.id === contractId);
+      document.getElementById('chat-list-view').style.display = 'none';
+      document.getElementById('chat-msg-view').style.display = 'flex';
+      document.getElementById('chat-back-btn').style.display = 'block';
+      document.getElementById('chat-panel-title').textContent = c.contract_no;
+      renderGlobalChatMsgs(contractId);
 
-  // mark all as read
-  (chatData[contractId] || []).forEach(m => {
-    if (!m.read_by.includes(ME)) m.read_by.push(ME);
-  });
-  updateFabBadge();
-}
+      // mark all as read
+      (chatData[contractId] || []).forEach(m => {
+        if (!m.read_by.includes(ME)) m.read_by.push(ME);
+      });
+      updateFabBadge();
+    }
 
-function renderGlobalChatMsgs(contractId) {
-  const msgs = chatData[contractId] || [];
-  const el   = document.getElementById('chat-msg-list');
-  el.innerHTML = msgs.length
-    ? msgs.map(m => msgBubble(m, m.user_id === ME)).join('')
-    : `<div class="text-center text-gray-400 text-[12px] pt-8">
+    function renderGlobalChatMsgs(contractId) {
+      const msgs = chatData[contractId] || [];
+      const el = document.getElementById('chat-msg-list');
+      el.innerHTML = msgs.length
+        ? msgs.map(m => msgBubble(m, m.user_id === ME)).join('')
+        : `<div class="text-center text-gray-400 text-[12px] pt-8">
          <i class="fa-solid fa-comments text-2xl block mb-2"></i>Belum ada pesan.
        </div>`;
-  el.scrollTop = el.scrollHeight;
-}
+      el.scrollTop = el.scrollHeight;
+    }
 
-function sendGlobalMsg() {
-  const input = document.getElementById('chat-global-input');
-  const text  = input.value.trim();
-  if (!text || !activeChatContractId) return;
-  if (!chatData[activeChatContractId]) chatData[activeChatContractId] = [];
-  chatData[activeChatContractId].push({
-    id: Date.now(), user_id: ME,
-    text, time: now(), read_by: [ME],
-  });
-  input.value = '';
-  renderGlobalChatMsgs(activeChatContractId);
-  updateFabBadge();
-}
+    function sendGlobalMsg() {
+      const input = document.getElementById('chat-global-input');
+      const text = input.value.trim();
+      if (!text || !activeChatContractId) return;
+      if (!chatData[activeChatContractId]) chatData[activeChatContractId] = [];
+      chatData[activeChatContractId].push({
+        id: Date.now(), user_id: ME,
+        text, time: now(), read_by: [ME],
+      });
+      input.value = '';
+      renderGlobalChatMsgs(activeChatContractId);
+      updateFabBadge();
+    }
 
-// ─── Compare Versions ──────────────────────────────────────────────
-let cmpContractId  = null;
-let cmpMode        = 'side';
+    // ─── Compare Versions ──────────────────────────────────────────────
+    let cmpContractId = null;
+    let cmpMode = 'side';
 
-function openCompare(contractId, fromVersion) {
-  cmpContractId = contractId;
-  const c = contracts.find(x => x.id === contractId);
-  document.getElementById('cmp-contract-title').textContent = c.title;
-  document.getElementById('cmp-contract-no').textContent    = c.contract_no;
+    function openCompare(contractId, fromVersion) {
+      cmpContractId = contractId;
+      const c = contracts.find(x => x.id === contractId);
+      document.getElementById('cmp-contract-title').textContent = c.title;
+      document.getElementById('cmp-contract-no').textContent = c.contract_no;
 
-  // Populate version dropdowns
-  const opts = c.versions.map(v =>
-    `<option value="${v.version_no}">v${v.version_no} — ${v.change_log}</option>`
-  ).join('');
-  document.getElementById('cmp-from').innerHTML = opts;
-  document.getElementById('cmp-to').innerHTML   = opts;
+      // Populate version dropdowns
+      const opts = c.versions.map(v =>
+        `<option value="${v.version_no}">v${v.version_no} — ${v.change_log}</option>`
+      ).join('');
+      document.getElementById('cmp-from').innerHTML = opts;
+      document.getElementById('cmp-to').innerHTML = opts;
 
-  // Default: fromVersion vs next (or latest)
-  const sorted = [...c.versions].sort((a,b) => a.version_no - b.version_no);
-  const fromIdx = sorted.findIndex(v => v.version_no === fromVersion);
-  const toIdx   = fromIdx < sorted.length - 1 ? fromIdx + 1 : fromIdx - 1;
-  document.getElementById('cmp-from').value = sorted[fromIdx >= 0 ? fromIdx : 0].version_no;
-  document.getElementById('cmp-to').value   = sorted[toIdx   >= 0 ? toIdx   : sorted.length-1].version_no;
+      // Default: fromVersion vs next (or latest)
+      const sorted = [...c.versions].sort((a, b) => a.version_no - b.version_no);
+      const fromIdx = sorted.findIndex(v => v.version_no === fromVersion);
+      const toIdx = fromIdx < sorted.length - 1 ? fromIdx + 1 : fromIdx - 1;
+      document.getElementById('cmp-from').value = sorted[fromIdx >= 0 ? fromIdx : 0].version_no;
+      document.getElementById('cmp-to').value = sorted[toIdx >= 0 ? toIdx : sorted.length - 1].version_no;
 
-  setCmpMode('side');
-  openModal('modal-compare');
-  runCompare();
-}
+      setCmpMode('side');
+      openModal('modal-compare');
+      runCompare();
+    }
 
-function setCmpMode(mode) {
-  cmpMode = mode;
-  const side   = document.getElementById('cmp-side');
-  const inline = document.getElementById('cmp-inline');
-  const btnSide   = document.getElementById('cmp-mode-side');
-  const btnInline = document.getElementById('cmp-mode-inline');
+    function setCmpMode(mode) {
+      cmpMode = mode;
+      const side = document.getElementById('cmp-side');
+      const inline = document.getElementById('cmp-inline');
+      const btnSide = document.getElementById('cmp-mode-side');
+      const btnInline = document.getElementById('cmp-mode-inline');
 
-  if (mode === 'side') {
-    side.style.display   = 'flex';
-    inline.style.display = 'none';
-    btnSide.classList.add('bg-gray-100','text-gray-700');
-    btnSide.classList.remove('text-gray-400');
-    btnInline.classList.remove('bg-gray-100','text-gray-700');
-    btnInline.classList.add('text-gray-400');
-  } else {
-    side.style.display   = 'none';
-    inline.style.display = 'block';
-    btnInline.classList.add('bg-gray-100','text-gray-700');
-    btnInline.classList.remove('text-gray-400');
-    btnSide.classList.remove('bg-gray-100','text-gray-700');
-    btnSide.classList.add('text-gray-400');
-  }
-  runCompare();
-}
+      if (mode === 'side') {
+        side.style.display = 'flex';
+        inline.style.display = 'none';
+        btnSide.classList.add('bg-gray-100', 'text-gray-700');
+        btnSide.classList.remove('text-gray-400');
+        btnInline.classList.remove('bg-gray-100', 'text-gray-700');
+        btnInline.classList.add('text-gray-400');
+      } else {
+        side.style.display = 'none';
+        inline.style.display = 'block';
+        btnInline.classList.add('bg-gray-100', 'text-gray-700');
+        btnInline.classList.remove('text-gray-400');
+        btnSide.classList.remove('bg-gray-100', 'text-gray-700');
+        btnSide.classList.add('text-gray-400');
+      }
+      runCompare();
+    }
 
-async function runCompare() {
-  const fromVer = parseInt(document.getElementById('cmp-from').value);
-  const toVer   = parseInt(document.getElementById('cmp-to').value);
+    async function runCompare() {
+      const fromVer = parseInt(document.getElementById('cmp-from').value);
+      const toVer = parseInt(document.getElementById('cmp-to').value);
 
-  const fromLabel = `v${fromVer}`;
-  const toLabel   = `v${toVer}`;
-  document.getElementById('cmp-left-label').textContent  = `${fromLabel} — sebelum`;
-  document.getElementById('cmp-right-label').textContent = `${toLabel} — sesudah`;
-  document.getElementById('cmp-loading').style.display   = 'none';
+      const fromLabel = `v${fromVer}`;
+      const toLabel = `v${toVer}`;
+      document.getElementById('cmp-left-label').textContent = `${fromLabel} — sebelum`;
+      document.getElementById('cmp-right-label').textContent = `${toLabel} — sesudah`;
+      document.getElementById('cmp-loading').style.display = 'none';
 
-  const [oldText, newText] = await Promise.all([
-    extractDocText(cmpContractId, fromVer),
-    extractDocText(cmpContractId, toVer),
-  ]);
+      const [oldText, newText] = await Promise.all([
+        extractDocText(cmpContractId, fromVer),
+        extractDocText(cmpContractId, toVer),
+      ]);
 
-  renderCompare(oldText, newText);
-}
+      renderCompare(oldText, newText);
+    }
 
-async function extractDocText(contractId, versionNo) {
-  const key  = `${contractId}_v${versionNo}`;
-  const file = fileStore[key];
-  if (file) {
-    try {
-      const buf    = await file.arrayBuffer();
-      const result = await mammoth.extractRawText({ arrayBuffer: buf });
-      return result.value || '';
-    } catch { /* fall through to demo */ }
-  }
-  // Generate deterministic demo text from contract + version data
-  const c   = contracts.find(x => x.id === contractId);
-  const ver = c.versions.find(v => v.version_no === versionNo);
-  return buildDemoText(c, ver);
-}
+    async function extractDocText(contractId, versionNo) {
+      const key = `${contractId}_v${versionNo}`;
+      const file = fileStore[key];
+      if (file) {
+        try {
+          const buf = await file.arrayBuffer();
+          const result = await mammoth.extractRawText({ arrayBuffer: buf });
+          return result.value || '';
+        } catch { /* fall through to demo */ }
+      }
+      // Generate deterministic demo text from contract + version data
+      const c = contracts.find(x => x.id === contractId);
+      const ver = c.versions.find(v => v.version_no === versionNo);
+      return buildDemoText(c, ver);
+    }
 
-function buildDemoText(c, ver) {
-  const creator = u(c.created_by);
-  const base = `KONTRAK: ${c.title}
+    function buildDemoText(c, ver) {
+      const creator = u(c.created_by);
+      const base = `KONTRAK: ${c.title}
 No. Kontrak: ${c.contract_no}
 Versi: v${ver.version_no}
 Tanggal: ${ver.created_at}
@@ -1651,182 +1946,182 @@ Kontrak ini berlaku selama 12 (dua belas) bulan terhitung sejak tanggal penandat
 6. PENYELESAIAN SENGKETA
 Apabila terjadi perselisihan, para pihak sepakat untuk menyelesaikan secara musyawarah mufakat. Jika tidak tercapai mufakat dalam 30 hari kalender, penyelesaian dilakukan melalui Badan Arbitrase Nasional Indonesia (BANI).`;
 
-  // Simulate version differences — each version has small mutations
-  if (ver.version_no === 1) return base;
-  if (ver.version_no === 2) return base
-    .replace('12 (dua belas) bulan', '24 (dua puluh empat) bulan')
-    .replace('30 hari kalender', '14 hari kalender')
-    .replace('Down Payment: 30%', 'Down Payment: 20%')
-    .replace('Termin 1: 40%', 'Termin 1: 50%')
-    .replace('dapat diperpanjang atas kesepakatan kedua belah pihak dengan addendum tertulis.',
-             'dapat diperpanjang atas kesepakatan kedua belah pihak dengan addendum tertulis yang disetujui oleh Direksi.');
-  if (ver.version_no === 3) return base
-    .replace('12 (dua belas) bulan', '24 (dua puluh empat) bulan')
-    .replace('30 hari kalender', '14 hari kalender')
-    .replace('Down Payment: 30%', 'Down Payment: 20%')
-    .replace('Termin 1: 40%', 'Termin 1: 50%')
-    .replace('Pelunasan: 30%', 'Pelunasan: 30% setelah audit internal selesai')
-    .replace('dapat diperpanjang atas kesepakatan kedua belah pihak dengan addendum tertulis.',
-             'dapat diperpanjang atas kesepakatan kedua belah pihak dengan addendum tertulis yang disetujui oleh Direksi.')
-    .replace('Badan Arbitrase Nasional Indonesia (BANI).', 'Pengadilan Negeri Jakarta Selatan sesuai hukum yang berlaku di Republik Indonesia.');
-  return base;
-}
+      // Simulate version differences — each version has small mutations
+      if (ver.version_no === 1) return base;
+      if (ver.version_no === 2) return base
+        .replace('12 (dua belas) bulan', '24 (dua puluh empat) bulan')
+        .replace('30 hari kalender', '14 hari kalender')
+        .replace('Down Payment: 30%', 'Down Payment: 20%')
+        .replace('Termin 1: 40%', 'Termin 1: 50%')
+        .replace('dapat diperpanjang atas kesepakatan kedua belah pihak dengan addendum tertulis.',
+          'dapat diperpanjang atas kesepakatan kedua belah pihak dengan addendum tertulis yang disetujui oleh Direksi.');
+      if (ver.version_no === 3) return base
+        .replace('12 (dua belas) bulan', '24 (dua puluh empat) bulan')
+        .replace('30 hari kalender', '14 hari kalender')
+        .replace('Down Payment: 30%', 'Down Payment: 20%')
+        .replace('Termin 1: 40%', 'Termin 1: 50%')
+        .replace('Pelunasan: 30%', 'Pelunasan: 30% setelah audit internal selesai')
+        .replace('dapat diperpanjang atas kesepakatan kedua belah pihak dengan addendum tertulis.',
+          'dapat diperpanjang atas kesepakatan kedua belah pihak dengan addendum tertulis yang disetujui oleh Direksi.')
+        .replace('Badan Arbitrase Nasional Indonesia (BANI).', 'Pengadilan Negeri Jakarta Selatan sesuai hukum yang berlaku di Republik Indonesia.');
+      return base;
+    }
 
-function renderCompare(oldText, newText) {
-  const oldLines = oldText.split('\n');
-  const newLines = newText.split('\n');
+    function renderCompare(oldText, newText) {
+      const oldLines = oldText.split('\n');
+      const newLines = newText.split('\n');
 
-  const diff = Diff.diffLines(oldText, newText);
+      const diff = Diff.diffLines(oldText, newText);
 
-  // Count stats
-  let added = 0, removed = 0;
-  diff.forEach(p => {
-    if (p.added)   added   += p.count;
-    if (p.removed) removed += p.count;
-  });
-  document.getElementById('cmp-stat').textContent =
-    `+${added} baris  −${removed} baris`;
+      // Count stats
+      let added = 0, removed = 0;
+      diff.forEach(p => {
+        if (p.added) added += p.count;
+        if (p.removed) removed += p.count;
+      });
+      document.getElementById('cmp-stat').textContent =
+        `+${added} baris  −${removed} baris`;
 
-  if (cmpMode === 'side') {
-    renderSide(oldLines, newLines, diff);
-  } else {
-    renderInline(diff);
-  }
-}
+      if (cmpMode === 'side') {
+        renderSide(oldLines, newLines, diff);
+      } else {
+        renderInline(diff);
+      }
+    }
 
-function renderSide(oldLines, newLines, diff) {
-  // Build per-line mapping
-  let leftHtml = '', rightHtml = '';
-  let li = 0, ri = 0;
+    function renderSide(oldLines, newLines, diff) {
+      // Build per-line mapping
+      let leftHtml = '', rightHtml = '';
+      let li = 0, ri = 0;
 
-  diff.forEach(part => {
-    const lines = part.value.replace(/\n$/, '').split('\n');
-    if (part.removed) {
-      lines.forEach(ln => {
-        leftHtml += `<div class="diff-line-del font-mono text-[12px]">
+      diff.forEach(part => {
+        const lines = part.value.replace(/\n$/, '').split('\n');
+        if (part.removed) {
+          lines.forEach(ln => {
+            leftHtml += `<div class="diff-line-del font-mono text-[12px]">
           <span class="select-none text-gray-300 mr-3 text-[10px]">${++li}</span>${escHtml(ln) || '&nbsp;'}</div>`;
-      });
-    } else if (part.added) {
-      lines.forEach(ln => {
-        rightHtml += `<div class="diff-line-add font-mono text-[12px]">
+          });
+        } else if (part.added) {
+          lines.forEach(ln => {
+            rightHtml += `<div class="diff-line-add font-mono text-[12px]">
           <span class="select-none text-gray-300 mr-3 text-[10px]">${++ri}</span>${escHtml(ln) || '&nbsp;'}</div>`;
-      });
-    } else {
-      lines.forEach(ln => {
-        const safe = escHtml(ln) || '&nbsp;';
-        leftHtml  += `<div class="diff-line-eq font-mono text-[12px]">
+          });
+        } else {
+          lines.forEach(ln => {
+            const safe = escHtml(ln) || '&nbsp;';
+            leftHtml += `<div class="diff-line-eq font-mono text-[12px]">
           <span class="select-none text-gray-300 mr-3 text-[10px]">${++li}</span>${safe}</div>`;
-        rightHtml += `<div class="diff-line-eq font-mono text-[12px]">
+            rightHtml += `<div class="diff-line-eq font-mono text-[12px]">
           <span class="select-none text-gray-300 mr-3 text-[10px]">${++ri}</span>${safe}</div>`;
+          });
+        }
+      });
+
+      document.getElementById('cmp-left-content').innerHTML = leftHtml || '<span class="text-gray-300 text-[12px]">— kosong —</span>';
+      document.getElementById('cmp-right-content').innerHTML = rightHtml || '<span class="text-gray-300 text-[12px]">— kosong —</span>';
+    }
+
+    function renderInline(diff) {
+      let html = '';
+      diff.forEach(part => {
+        const lines = part.value.replace(/\n$/, '').split('\n');
+        lines.forEach(ln => {
+          if (part.removed) {
+            html += `<div class="diff-line-del font-mono text-[12px]">
+          <span class="mr-2 text-[10px] text-red-300 font-bold select-none">−</span>${escHtml(ln) || '&nbsp;'}</div>`;
+          } else if (part.added) {
+            html += `<div class="diff-line-add font-mono text-[12px]">
+          <span class="mr-2 text-[10px] text-green-500 font-bold select-none">+</span>${escHtml(ln) || '&nbsp;'}</div>`;
+          } else {
+            html += `<div class="diff-line-eq font-mono text-[12px] text-gray-400">
+          <span class="mr-2 text-[10px] select-none">&nbsp;</span>${escHtml(ln) || '&nbsp;'}</div>`;
+          }
+        });
+      });
+      document.getElementById('cmp-inline-content').innerHTML = html || '<span class="text-gray-300 text-[12px]">Tidak ada perbedaan</span>';
+    }
+
+    function escHtml(s) {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    // ─── Document Preview ───────────────────────────────────────────────
+    let previewZoom = 100;
+
+    function previewDoc(contractId, versionNo) {
+      const c = contracts.find(x => x.id === contractId);
+      const ver = c.versions.find(v => v.version_no === versionNo);
+      if (!ver) return;
+
+      previewZoom = 100;
+      document.getElementById('zoom-label').textContent = '100%';
+      document.getElementById('preview-filename').textContent = ver.file_name;
+      document.getElementById('preview-meta').textContent =
+        `v${ver.version_no}  ·  ${ver.change_log}  ·  ${ver.created_at}`;
+
+      // reset states
+      ['preview-loading', 'preview-error', 'preview-demo', 'preview-real'].forEach(id => {
+        const el = document.getElementById(id);
+        el.style.display = 'none';
+        el.classList.add('hidden');
+      });
+
+      openModal('modal-preview');
+
+      const fileKey = `${contractId}_v${versionNo}`;
+      const realFile = fileStore[fileKey];
+
+      if (realFile) {
+        // real uploaded file → use mammoth
+        show('preview-loading', 'flex');
+        const reader = new FileReader();
+        reader.onload = e => {
+          mammoth.convertToHtml({ arrayBuffer: e.target.result })
+            .then(result => {
+              document.getElementById('preview-content').innerHTML =
+                result.value || '<p class="text-gray-400 italic">Dokumen kosong atau tidak dapat dibaca.</p>';
+              applyZoom();
+              show('preview-loading', 'none');
+              show('preview-real', 'block');
+            })
+            .catch(() => {
+              show('preview-loading', 'none');
+              show('preview-error', 'flex');
+            });
+        };
+        reader.onerror = () => { show('preview-loading', 'none'); show('preview-error', 'flex'); };
+        reader.readAsArrayBuffer(realFile);
+      } else {
+        // mock data → render demo content
+        show('preview-demo', 'block');
+        document.getElementById('preview-demo-wrap').innerHTML = buildDemoDoc(c, ver);
+        applyZoom();
+      }
+    }
+
+    function show(id, displayVal) {
+      const el = document.getElementById(id);
+      el.style.display = displayVal;
+      el.classList.toggle('hidden', displayVal === 'none');
+    }
+
+    function applyZoom() {
+      const scale = previewZoom / 100;
+      ['preview-content', 'preview-demo-wrap'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.transform = `scale(${scale})`;
       });
     }
-  });
 
-  document.getElementById('cmp-left-content').innerHTML  = leftHtml  || '<span class="text-gray-300 text-[12px]">— kosong —</span>';
-  document.getElementById('cmp-right-content').innerHTML = rightHtml || '<span class="text-gray-300 text-[12px]">— kosong —</span>';
-}
+    function zoomPreview(dir) {
+      previewZoom = Math.min(150, Math.max(50, previewZoom + dir * 10));
+      document.getElementById('zoom-label').textContent = previewZoom + '%';
+      applyZoom();
+    }
 
-function renderInline(diff) {
-  let html = '';
-  diff.forEach(part => {
-    const lines = part.value.replace(/\n$/, '').split('\n');
-    lines.forEach(ln => {
-      if (part.removed) {
-        html += `<div class="diff-line-del font-mono text-[12px]">
-          <span class="mr-2 text-[10px] text-red-300 font-bold select-none">−</span>${escHtml(ln) || '&nbsp;'}</div>`;
-      } else if (part.added) {
-        html += `<div class="diff-line-add font-mono text-[12px]">
-          <span class="mr-2 text-[10px] text-green-500 font-bold select-none">+</span>${escHtml(ln) || '&nbsp;'}</div>`;
-      } else {
-        html += `<div class="diff-line-eq font-mono text-[12px] text-gray-400">
-          <span class="mr-2 text-[10px] select-none">&nbsp;</span>${escHtml(ln) || '&nbsp;'}</div>`;
-      }
-    });
-  });
-  document.getElementById('cmp-inline-content').innerHTML = html || '<span class="text-gray-300 text-[12px]">Tidak ada perbedaan</span>';
-}
-
-function escHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-// ─── Document Preview ───────────────────────────────────────────────
-let previewZoom = 100;
-
-function previewDoc(contractId, versionNo) {
-  const c   = contracts.find(x => x.id === contractId);
-  const ver = c.versions.find(v => v.version_no === versionNo);
-  if (!ver) return;
-
-  previewZoom = 100;
-  document.getElementById('zoom-label').textContent = '100%';
-  document.getElementById('preview-filename').textContent = ver.file_name;
-  document.getElementById('preview-meta').textContent =
-    `v${ver.version_no}  ·  ${ver.change_log}  ·  ${ver.created_at}`;
-
-  // reset states
-  ['preview-loading','preview-error','preview-demo','preview-real'].forEach(id => {
-    const el = document.getElementById(id);
-    el.style.display = 'none';
-    el.classList.add('hidden');
-  });
-
-  openModal('modal-preview');
-
-  const fileKey  = `${contractId}_v${versionNo}`;
-  const realFile = fileStore[fileKey];
-
-  if (realFile) {
-    // real uploaded file → use mammoth
-    show('preview-loading', 'flex');
-    const reader = new FileReader();
-    reader.onload = e => {
-      mammoth.convertToHtml({ arrayBuffer: e.target.result })
-        .then(result => {
-          document.getElementById('preview-content').innerHTML =
-            result.value || '<p class="text-gray-400 italic">Dokumen kosong atau tidak dapat dibaca.</p>';
-          applyZoom();
-          show('preview-loading', 'none');
-          show('preview-real', 'block');
-        })
-        .catch(() => {
-          show('preview-loading', 'none');
-          show('preview-error', 'flex');
-        });
-    };
-    reader.onerror = () => { show('preview-loading','none'); show('preview-error','flex'); };
-    reader.readAsArrayBuffer(realFile);
-  } else {
-    // mock data → render demo content
-    show('preview-demo', 'block');
-    document.getElementById('preview-demo-wrap').innerHTML = buildDemoDoc(c, ver);
-    applyZoom();
-  }
-}
-
-function show(id, displayVal) {
-  const el = document.getElementById(id);
-  el.style.display = displayVal;
-  el.classList.toggle('hidden', displayVal === 'none');
-}
-
-function applyZoom() {
-  const scale = previewZoom / 100;
-  ['preview-content','preview-demo-wrap'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.transform = `scale(${scale})`;
-  });
-}
-
-function zoomPreview(dir) {
-  previewZoom = Math.min(150, Math.max(50, previewZoom + dir * 10));
-  document.getElementById('zoom-label').textContent = previewZoom + '%';
-  applyZoom();
-}
-
-function buildDemoDoc(c, ver) {
-  const creator = u(c.created_by);
-  return `
+    function buildDemoDoc(c, ver) {
+      const creator = u(c.created_by);
+      return `
     <div style="text-align:center;margin-bottom:32px;padding-bottom:20px;border-bottom:2px solid #e5e7eb;">
       <div style="font-size:11px;color:#6b7280;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Dokumen Kontrak</div>
       <h1 style="font-size:20px;font-weight:700;color:#111827;margin:0 0 6px;">${c.title}</h1>
@@ -1836,7 +2131,7 @@ function buildDemoDoc(c, ver) {
     <table style="width:100%;margin-bottom:24px;font-size:12px;">
       <tr><td style="padding:4px 0;color:#6b7280;width:140px;">Dibuat Oleh</td><td style="font-weight:500;">: ${creator.name}</td></tr>
       <tr><td style="padding:4px 0;color:#6b7280;">Tanggal</td><td style="font-weight:500;">: ${c.created_at}</td></tr>
-      <tr><td style="padding:4px 0;color:#6b7280;">Status</td><td style="font-weight:500;">: ${c.status.replace('_',' ').toUpperCase()}</td></tr>
+      <tr><td style="padding:4px 0;color:#6b7280;">Status</td><td style="font-weight:500;">: ${c.status.replace('_', ' ').toUpperCase()}</td></tr>
       <tr><td style="padding:4px 0;color:#6b7280;">Changelog</td><td style="font-weight:500;">: ${ver.change_log}</td></tr>
     </table>
 
@@ -1878,49 +2173,50 @@ function buildDemoDoc(c, ver) {
       </div>
     </div>
   `;
-}
+    }
 
-function updateFabBadge() {
-  const total = Object.values(chatData)
-    .flatMap(msgs => msgs)
-    .filter(m => !m.read_by.includes(ME)).length;
-  const badge = document.getElementById('chat-fab-badge');
-  badge.textContent = total;
-  badge.classList.toggle('hidden', total === 0);
-}
+    function updateFabBadge() {
+      const total = Object.values(chatData)
+        .flatMap(msgs => msgs)
+        .filter(m => !m.read_by.includes(ME)).length;
+      const badge = document.getElementById('chat-fab-badge');
+      badge.textContent = total;
+      badge.classList.toggle('hidden', total === 0);
+    }
 
-// ─── Modal ─────────────────────────────────────────────────────────
-function openModal(id) {
-  const el = document.getElementById(id);
-  el.classList.remove('hidden');
-  el.classList.add('flex');
-}
+    // ─── Modal ─────────────────────────────────────────────────────────
+    function openModal(id) {
+      const el = document.getElementById(id);
+      el.classList.remove('hidden');
+      el.classList.add('flex');
+    }
 
-function closeModal(id) {
-  const el = document.getElementById(id);
-  el.classList.add('hidden');
-  el.classList.remove('flex');
-}
+    function closeModal(id) {
+      const el = document.getElementById(id);
+      el.classList.add('hidden');
+      el.classList.remove('flex');
+    }
 
-document.querySelectorAll('[id^="modal-"]').forEach(m => {
-  m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); });
-});
+    document.querySelectorAll('[id^="modal-"]').forEach(m => {
+      m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); });
+    });
 
-// ─── Toast ─────────────────────────────────────────────────────────
-let _tt;
-function showToast(msg, type = '') {
-  const t = document.getElementById('toast');
-  const icon = type === 'success' ? 'fa-circle-check' : type === 'danger' ? 'fa-circle-xmark' : 'fa-circle-info';
-  const bg   = type === 'success' ? 'bg-green-600' : type === 'danger' ? 'bg-red-600' : 'bg-gray-800';
-  t.innerHTML = `<i class="fa-solid ${icon} text-[13px]"></i> ${msg}`;
-  t.className = `fixed bottom-5 right-5 z-[100] flex items-center gap-2 px-4 py-2.5 rounded-lg text-white text-[12px] font-medium shadow-xl toast-show ${bg}`;
-  clearTimeout(_tt);
-  _tt = setTimeout(() => t.classList.add('hidden'), 3000);
-}
+    // ─── Toast ─────────────────────────────────────────────────────────
+    let _tt;
+    function showToast(msg, type = '') {
+      const t = document.getElementById('toast');
+      const icon = type === 'success' ? 'fa-circle-check' : type === 'danger' ? 'fa-circle-xmark' : 'fa-circle-info';
+      const bg = type === 'success' ? 'bg-green-600' : type === 'danger' ? 'bg-red-600' : 'bg-gray-800';
+      t.innerHTML = `<i class="fa-solid ${icon} text-[13px]"></i> ${msg}`;
+      t.className = `fixed bottom-5 right-5 z-[100] flex items-center gap-2 px-4 py-2.5 rounded-lg text-white text-[12px] font-medium shadow-xl toast-show ${bg}`;
+      clearTimeout(_tt);
+      _tt = setTimeout(() => t.classList.add('hidden'), 3000);
+    }
 
-// ─── Init ──────────────────────────────────────────────────────────
-navigate('dashboard');
-updateFabBadge();
-</script>
+    // ─── Init ──────────────────────────────────────────────────────────
+    navigate('dashboard');
+    updateFabBadge();
+  </script>
 </body>
+
 </html>

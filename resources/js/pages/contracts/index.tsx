@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
-import { Contract } from '@/types/contracts';
+import { Contract, ContractType } from '@/types/contracts';
 import { contractApi } from '@/lib/contract-api';
 import { ToastProvider, useToast } from '@/components/contracts/Toast';
 import { Avatar, StatusBadge } from '@/components/contracts/ui';
@@ -12,8 +12,9 @@ import UploadRevisionModal from '@/components/contracts/UploadRevisionModal';
 import RejectModal from '@/components/contracts/RejectModal';
 import ApprovalSteps from '@/components/contracts/ApprovalSteps';
 import ContractChat from '@/components/contracts/ContractChat';
+import ContractAttachments from '@/components/contracts/ContractAttachments';
 
-type View = 'dashboard' | 'contracts' | 'pending' | 'audit';
+type View = 'dashboard' | 'contracts' | 'pending' | 'audit' | 'f1' | 'f2';
 
 // ─── Table header cell ───────────────────────────────────────────────
 function Th({ children, style }: { children?: React.ReactNode; style?: React.CSSProperties }) {
@@ -45,17 +46,18 @@ function ProgressCell({ c }: { c: Contract }) {
 }
 
 // ─── Main Page ──────────────────────────────────────────────────────
-function ContractPage({ contracts, setContracts, meId, meUser, initialSelected }: {
+function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, types }: {
     contracts: Contract[];
     setContracts: React.Dispatch<React.SetStateAction<Contract[]>>;
     meId: string;
     meUser: any;
     initialSelected?: Contract | null;
+    types: ContractType[];
 }) {
     const { showToast } = useToast();
     const [view, setView] = useState<View>('dashboard');
     const [selected, setSelected] = useState<Contract | null>(initialSelected ?? null);
-    const [detailTab, setDetailTab] = useState<'versions' | 'audit' | 'chat'>('versions');
+    const [detailTab, setDetailTab] = useState<'f1' | 'f2' | 'attachments' | 'audit' | 'chat'>('f1');
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [approvalNote, setApprovalNote] = useState('');
@@ -64,11 +66,17 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected }
     // Modals
     const [createOpen, setCreateOpen] = useState(false);
     const [revOpen, setRevOpen] = useState(false);
+    const [revType, setRevType] = useState<'contract' | 'f1' | 'f2'>('f1');
     const [rejectOpen, setRejectOpen] = useState(false);
+
     const [previewOpen, setPreviewOpen] = useState(false);
-    const [previewVer, setPreviewVer] = useState<number | null>(null);
+    const [previewTitle, setPreviewTitle] = useState('');
+    const [previewUrl, setPreviewUrl] = useState('');
+    const [previewHasFile, setPreviewHasFile] = useState(false);
+
     const [compareOpen, setCompareOpen] = useState(false);
     const [compareVer, setCompareVer] = useState<number | null>(null);
+    const [compareType, setCompareType] = useState<'contract' | 'f1' | 'f2'>('contract');
 
     useEffect(() => {
         if (initialSelected) { setSelected(initialSelected); }
@@ -79,8 +87,8 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected }
         if (selected?.id === c.id) setSelected(c);
     }, [selected?.id, setContracts]);
 
-    const openDetail = (c: Contract) => { setSelected(c); setDetailTab('versions'); setApprovalNote(''); };
-    const closeDetail = () => { setSelected(null); setDetailTab('versions'); };
+    const openDetail = (c: Contract) => { setSelected(c); setDetailTab('f1'); setApprovalNote(''); };
+    const closeDetail = () => { setSelected(null); setDetailTab('f1'); };
 
     // Computed
     const stats = {
@@ -101,7 +109,11 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected }
         const q = search.toLowerCase();
         const matchQ = !q || c.title.toLowerCase().includes(q) || c.contract_no.toLowerCase().includes(q);
         const matchS = statusFilter === 'all' || c.status === statusFilter;
-        return matchQ && matchS;
+        let matchV = true;
+        if (view === 'f1') matchV = c.versions.some(v => v.document_type === 'f1');
+        if (view === 'f2') matchV = c.versions.some(v => v.document_type === 'f2');
+        if (view === 'pending') matchV = c.approvals.some(a => a.approver_id === meId && a.status === 'pending');
+        return matchQ && matchS && matchV;
     });
 
     // Handlers
@@ -184,7 +196,7 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected }
 
     const navTo = (v: View) => { setView(v); closeDetail(); };
 
-    const SL: Record<string, string> = { dashboard: 'Dashboard', contracts: 'Semua Kontrak', pending: 'Menunggu Approval', audit: 'Audit Trail' };
+    const SL: Record<string, string> = { dashboard: 'Dashboard', contracts: 'Semua Kontrak', pending: 'Menunggu Approval', audit: 'Audit Trail', f1: 'Form F1', f2: 'Form F2' };
 
     return (
         <div className="flex h-screen overflow-hidden bg-gray-50 text-gray-900" style={{ fontSize: 14 }}>
@@ -210,6 +222,8 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected }
                     {([
                         { id: 'dashboard', icon: 'fa-house', label: 'Dashboard', badge: 0 },
                         { id: 'contracts', icon: 'fa-folder-open', label: 'Semua Kontrak', badge: 0 },
+                        { id: 'f1', icon: 'fa-file-lines', label: 'Form F1', badge: 0 },
+                        { id: 'f2', icon: 'fa-file-shield', label: 'Form F2', badge: 0 },
                         { id: 'pending', icon: 'fa-regular fa-clock', label: 'Menunggu Approval', badge: myPending.length },
                     ] as const).map(item => (
                         <a key={item.id}
@@ -268,7 +282,7 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected }
                 {/* Topbar */}
                 <div className="flex-shrink-0 flex items-center justify-between bg-white border-b border-gray-200" style={{ paddingTop: 14, paddingBottom: 14, paddingLeft: 20, paddingRight: 20 }}>
                     <span className="font-semibold text-gray-900" style={{ fontSize: 14 }}>
-                        {selected ? selected.contract_no : SL[view] ?? 'Dashboard'}
+                        {selected ? selected.contract_no : (SL as any)[view] ?? 'Dashboard'}
                     </span>
                     <div className="flex items-center gap-2">
                         <div className="relative">
@@ -294,7 +308,7 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected }
                             {/* Stats */}
                             <div className="grid grid-cols-4 gap-3 mb-5">
                                 {[
-                                    { icon: 'fa-file-lines', label: 'Total Kontrak', value: stats.total, sub: '+3 bulan ini' },
+                                    { icon: 'fa-file-lines', label: 'Total Kontrak', value: stats.total, sub: '+ bulan ini' },
                                     { icon: 'fa-regular fa-clock', label: 'Menunggu Approval', value: stats.pending, sub: `${myPending.length} perlu aksimu` },
                                     { icon: 'fa-circle-check', label: 'Disetujui', value: stats.approved, sub: `${stats.total ? Math.round(stats.approved / stats.total * 100) : 0}% approval rate` },
                                     { icon: 'fa-rotate', label: 'Revisi', value: stats.revision, sub: 'Perlu re-upload' },
@@ -397,11 +411,11 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected }
                     )}
 
                     {/* ── Contracts ── */}
-                    {view === 'contracts' && !selected && (
+                    {(view === 'contracts' || view === 'f1' || view === 'f2') && !selected && (
                         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
                             <div className="flex items-center justify-between border-b border-gray-100" style={{ padding: '12px 16px' }}>
                                 <span className="font-semibold flex items-center gap-2" style={{ fontSize: 13 }}>
-                                    <i className="fa-solid fa-folder-open text-gray-400" style={{ fontSize: 12 }} /> Semua Kontrak
+                                    <i className={`fa-solid ${view === 'f1' ? 'fa-file-lines' : (view === 'f2' ? 'fa-file-shield' : 'fa-folder-open')} text-gray-400`} style={{ fontSize: 12 }} /> {(SL as any)[view]}
                                 </span>
                                 <div className="flex gap-2">
                                     <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ fontSize: 12, border: '1px solid #e5e7eb', borderRadius: 6, padding: '6px 8px', outline: 'none', background: '#fff' }}>
@@ -420,8 +434,7 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected }
                             <div style={{ overflowX: 'auto' }}>
                                 <table style={{ width: '100%' }}>
                                     <thead><tr style={{ background: '#f9fafb' }}>
-                                        <Th>No. Kontrak</Th><Th>Judul</Th><Th>Dibuat Oleh</Th>
-                                        <Th>Status</Th><Th>Versi</Th><Th>Progress</Th><Th>Tgl Dibuat</Th><Th></Th>
+                                        <Th>No. Kontrak</Th><Th>Judul</Th><Th>Tgl Kontrak</Th><Th>Tipe</Th><Th>Status</Th><Th>Versi</Th><Th>Progress</Th><Th></Th>
                                     </tr></thead>
                                     <tbody>
                                         {filtered.map(c => (
@@ -431,13 +444,13 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected }
                                                 <Td><span className="font-mono text-blue-600" style={{ fontSize: 11 }}>{c.contract_no}</span></Td>
                                                 <Td>
                                                     <div className="font-medium" style={{ fontSize: 12 }}>{c.title}</div>
-                                                    <div className="text-gray-400" style={{ fontSize: 10, marginTop: 2 }}>{c.description.substring(0, 55)}…</div>
+                                                    <div className="text-gray-400" style={{ fontSize: 10, marginTop: 2 }}>{c.creator?.name} · {c.created_at}</div>
                                                 </Td>
-                                                <Td><div className="flex items-center gap-1.5"><Avatar user={c.creator} size="sm" /><span style={{ fontSize: 11 }}>{c.creator?.name}</span></div></Td>
+                                                <Td><span className="text-gray-500 font-medium" style={{ fontSize: 11 }}>{c.contract_date || '—'}</span></Td>
+                                                <Td><span className="px-2 py-0.5 bg-gray-100 rounded text-gray-600" style={{ fontSize: 10 }}>{c.contract_type || '—'}</span></Td>
                                                 <Td><StatusBadge status={c.status} /></Td>
                                                 <Td><span className="font-mono bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded" style={{ fontSize: 10 }}>v{c.current_version}</span></Td>
                                                 <Td><ProgressCell c={c} /></Td>
-                                                <Td><span className="text-gray-400" style={{ fontSize: 11 }}>{c.created_at}</span></Td>
                                                 <Td>
                                                     <button onClick={e => { e.stopPropagation(); openDetail(c); }} style={{ padding: '4px 8px', fontSize: 11, border: '1px solid #e5e7eb', borderRadius: 6, background: 'none', cursor: 'pointer' }}>
                                                         <i className="fa-solid fa-eye" />
@@ -555,14 +568,7 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected }
                                     <h2 className="font-bold text-gray-900" style={{ fontSize: 16 }}>{selected.title}</h2>
                                     <p className="text-gray-400" style={{ fontSize: 11, marginTop: 2 }}>{selected.contract_no} · {selected.status.replace('_', ' ').toUpperCase()}</p>
                                 </div>
-                                <div className="flex gap-2">
-                                    <button onClick={() => handleDownload(selected.id, selected.versions.find(v => v.version_no === selected.current_version)?.file_name)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid #e5e7eb', fontSize: 12, fontWeight: 500, borderRadius: 6, background: 'none', cursor: 'pointer', color: '#374151' }}>
-                                        <i className="fa-solid fa-download" style={{ fontSize: 11 }} /> Download
-                                    </button>
-                                    <button onClick={() => setRevOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid #e5e7eb', fontSize: 12, fontWeight: 500, borderRadius: 6, background: 'none', cursor: 'pointer', color: '#374151' }}>
-                                        <i className="fa-solid fa-upload" style={{ fontSize: 11 }} /> Upload Revisi
-                                    </button>
-                                </div>
+
                             </div>
 
                             {/* Grid */}
@@ -580,9 +586,45 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected }
                                             {[
                                                 { k: 'No. Kontrak', v: <span className="font-mono bg-gray-100 text-gray-700 px-2 py-0.5 rounded" style={{ fontSize: 11 }}>{selected.contract_no}</span> },
                                                 { k: 'Status', v: <StatusBadge status={selected.status} /> },
+                                                 { k: 'Tipe Kontrak', v: <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider text-[9px] border border-blue-100">{selected.contract_type}</span> },
                                                 { k: 'Dibuat Oleh', v: <div className="flex items-center gap-1.5"><Avatar user={selected.creator} size="sm" /><span style={{ fontSize: 12 }}>{selected.creator?.name}</span></div> },
-                                                { k: 'Versi Aktif', v: <span className="font-mono bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded" style={{ fontSize: 10 }}>v{selected.current_version}</span> },
                                                 { k: 'Tgl Dibuat', v: <span style={{ fontSize: 12 }}>{selected.created_at}</span> },
+                                                {
+                                                    k: 'Dokumen F1', v: (() => {
+                                                        const v = selected.versions.find(x => x.document_type === 'f1' && x.version_no === selected.current_version);
+                                                        return v ? (
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="flex flex-col"><span className="font-mono font-bold text-blue-600" style={{ fontSize: 10 }}>v{v.version_no}</span><span className="text-gray-500 truncate max-w-[140px]" style={{ fontSize: 10 }} title={v.file_name}>{v.file_name}</span></div>
+                                                                <div className="flex gap-1">
+                                                                    <button onClick={() => { setPreviewTitle('F1 - v' + v.version_no); setPreviewUrl(contractApi.pdfPreviewUrl(selected.id, v.version_no, 'f1')); setPreviewHasFile(v.has_file); setPreviewOpen(true); }} className="w-5 h-5 flex items-center justify-center rounded bg-gray-50 border border-gray-100 text-gray-400 hover:text-blue-600 hover:bg-white transition-all shadow-sm">
+                                                                        <i className="fa-solid fa-eye" style={{ fontSize: 8 }} />
+                                                                    </button>
+                                                                    <a href={contractApi.downloadUrl(selected.id, 'f1', v.version_no)} download className="w-5 h-5 flex items-center justify-center rounded bg-gray-50 border border-gray-100 text-gray-400 hover:text-blue-600 hover:bg-white transition-all shadow-sm">
+                                                                        <i className="fa-solid fa-download" style={{ fontSize: 8 }} />
+                                                                    </a>
+                                                                </div>
+                                                            </div>
+                                                        ) : <span className="text-gray-400 italic" style={{ fontSize: 11 }}>-</span>;
+                                                    })()
+                                                },
+                                                {
+                                                    k: 'Dokumen F2', v: (() => {
+                                                        const v = selected.versions.filter(x => x.document_type === 'f2').sort((a, b) => b.version_no - a.version_no)[0];
+                                                        return v ? (
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="flex flex-col"><span className="font-mono font-bold text-cyan-600" style={{ fontSize: 10 }}>v{v.version_no}</span><span className="text-gray-500 truncate max-w-[140px]" style={{ fontSize: 10 }} title={v.file_name}>{v.file_name}</span></div>
+                                                                <div className="flex gap-1">
+                                                                    <button onClick={() => { setPreviewTitle('F2 - v' + v.version_no); setPreviewUrl(contractApi.pdfPreviewUrl(selected.id, v.version_no, 'f2')); setPreviewHasFile(v.has_file); setPreviewOpen(true); }} className="w-5 h-5 flex items-center justify-center rounded bg-gray-50 border border-gray-100 text-gray-400 hover:text-cyan-600 hover:bg-white transition-all shadow-sm">
+                                                                        <i className="fa-solid fa-eye" style={{ fontSize: 8 }} />
+                                                                    </button>
+                                                                    <a href={contractApi.downloadUrl(selected.id, 'f2', v.version_no)} download className="w-5 h-5 flex items-center justify-center rounded bg-gray-50 border border-gray-100 text-gray-400 hover:text-cyan-600 hover:bg-white transition-all shadow-sm">
+                                                                        <i className="fa-solid fa-download" style={{ fontSize: 8 }} />
+                                                                    </a>
+                                                                </div>
+                                                            </div>
+                                                        ) : <span className="text-gray-400 italic" style={{ fontSize: 11 }}>-</span>;
+                                                    })()
+                                                },
                                                 { k: 'Total Versi', v: <span style={{ fontSize: 12 }}>{selected.versions.length} versi</span> },
                                             ].map(({ k, v }) => (
                                                 <div key={k}>
@@ -601,7 +643,9 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected }
                                     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
                                         <div className="flex border-b border-gray-200 px-4 pt-2 gap-1">
                                             {([
-                                                { id: 'versions', icon: 'fa-clock-rotate-left', label: 'Riwayat Versi', badge: 0 },
+                                                { id: 'f1', icon: 'fa-file-lines', label: 'F1', badge: 0 },
+                                                { id: 'f2', icon: 'fa-file-shield', label: 'F2', badge: 0 },
+                                                { id: 'attachments', icon: 'fa-paperclip', label: 'Lampiran', badge: selected.attachments?.length ?? 0 },
                                                 { id: 'audit', icon: 'fa-list-check', label: 'Audit Trail', badge: 0 },
                                                 {
                                                     id: 'chat', icon: 'fa-comments', label: 'Diskusi',
@@ -623,47 +667,140 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected }
                                         </div>
                                         <div style={{ padding: 16 }}>
 
-                                            {/* Versions tab */}
-                                            {detailTab === 'versions' && (
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                                    {[...selected.versions].reverse().map(v => (
-                                                        <div key={v.version_no} style={{
-                                                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                                            border: v.version_no === selected.current_version ? '1px solid #93c5fd' : '1px solid #e5e7eb',
-                                                            background: v.version_no === selected.current_version ? '#eff6ff' : '#fff',
-                                                            borderRadius: 8, padding: '10px 12px', transition: 'border-color .15s',
-                                                        }}>
-                                                            <div>
-                                                                <div className="flex items-center gap-2" style={{ marginBottom: 4 }}>
-                                                                    <span className="font-mono font-bold text-blue-600" style={{ fontSize: 12 }}>v{v.version_no}</span>
-                                                                    {v.is_final && <StatusBadge status="approved" label="Final" />}
-                                                                    {v.version_no === selected.current_version && <StatusBadge status="in_review" label="Aktif" />}
+                                            {/* F1 Tab */}
+                                            {detailTab === 'f1' && (
+                                                <div className="flex flex-col gap-4">
+                                                    <div className="flex items-center justify-between">
+                                                        <h4 className="font-bold text-gray-900" style={{ fontSize: 13 }}>Riwayat Dokumen F1</h4>
+                                                        <button onClick={() => { setRevType('f1'); setRevOpen(true); }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', background: '#2563eb', color: '#fff', fontSize: 11, fontWeight: 600, borderRadius: 6, border: 'none', cursor: 'pointer' }}>
+                                                            <i className="fa-solid fa-plus" /> Upload Revisi F1
+                                                        </button>
+                                                    </div>
+                                                    <div className="space-y-3">
+                                                        {selected.versions.filter(v => v.document_type === 'f1').sort((a, b) => b.version_no - a.version_no).map(v => (
+                                                            <div key={v.id} style={{
+                                                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                                                border: v.version_no === selected.current_version ? '1px solid #93c5fd' : '1px solid #f3f4f6',
+                                                                background: v.version_no === selected.current_version ? '#eff6ff' : '#fff',
+                                                                borderRadius: 8, padding: '10px 12px'
+                                                            }}>
+                                                                <div className="min-w-0">
+                                                                    <div className="flex items-center gap-2 mb-1">
+                                                                        <span className="font-mono font-bold text-blue-600 text-[11px]">v{v.version_no}</span>
+                                                                        {v.is_final && <StatusBadge status="approved" label="Final" />}
+                                                                        {v.version_no === selected.current_version && (
+                                                                            <span className="bg-green-50 text-green-600 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider" style={{ fontSize: 9 }}>Aktif</span>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="text-[11px] font-medium text-gray-700 truncate" title={v.file_name}>
+                                                                        <i className="fa-regular fa-file-word mr-1.5 text-blue-400" />
+                                                                        {v.file_name}
+                                                                    </div>
+                                                                    <div className="text-[10px] text-gray-400 mt-0.5">{v.change_log} · {v.created_at} · {v.uploader?.name}</div>
                                                                 </div>
-                                                                <div className="text-gray-400" style={{ fontSize: 10 }}><i className="fa-regular fa-file-word mr-1" />{v.file_name}</div>
-                                                                <div className="text-gray-400" style={{ fontSize: 10 }}><i className="fa-solid fa-fingerprint mr-1" />{v.file_hash}</div>
-                                                                <div className="text-gray-400" style={{ fontSize: 10 }}>{v.change_log} · {v.created_at}</div>
-                                                            </div>
-                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginLeft: 12, flexShrink: 0 }}>
-                                                                <button onClick={() => { setPreviewVer(v.version_no); setPreviewOpen(true); }} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px', fontSize: 11, border: '1px solid #e5e7eb', borderRadius: 6, background: 'none', cursor: 'pointer' }}>
-                                                                    <i className="fa-solid fa-eye" /> Preview
-                                                                </button>
-                                                                {selected.versions.length > 1 && (
-                                                                    <button onClick={() => { setCompareVer(v.version_no); setCompareOpen(true); }} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px', fontSize: 11, border: '1px solid #ddd6fe', borderRadius: 6, background: '#f5f3ff', color: '#7c3aed', cursor: 'pointer' }}>
-                                                                        <i className="fa-solid fa-code-compare" /> Compare
+                                                                <div className="flex items-center gap-1.5 ml-4 flex-shrink-0">
+                                                                    <button onClick={() => {
+                                                                        setPreviewTitle(`F1 - v${v.version_no}`);
+                                                                        setPreviewUrl(contractApi.pdfPreviewUrl(selected.id, v.version_no, 'f1'));
+                                                                        setPreviewHasFile(v.has_file);
+                                                                        setPreviewOpen(true);
+                                                                    }} className="px-2.5 py-1.5 text-[10px] font-semibold border border-gray-200 rounded-md hover:bg-gray-50 transition-all flex items-center gap-1.5">
+                                                                        <i className="fa-solid fa-eye" /> Preview
                                                                     </button>
-                                                                )}
-                                                                <a href={contractApi.downloadUrl(selected.id)} download style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px', fontSize: 11, border: '1px solid #e5e7eb', borderRadius: 6, background: 'none', cursor: 'pointer', textDecoration: 'none', color: '#374151' }}>
-                                                                    <i className="fa-solid fa-download" /> Unduh
-                                                                </a>
-                                                                {/* {v.version_no !== selected.current_version && (
-                                                                    <button onClick={() => handleChangeVersion(v.version_no)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px', fontSize: 11, border: '1px solid #dcfce7', borderRadius: 6, background: '#f0fdf4', color: '#166534', cursor: 'pointer' }}>
-                                                                        <i className="fa-solid fa-check-double" /> Jadikan Aktif
+                                                                    <button onClick={() => {
+                                                                        setCompareVer(v.version_no);
+                                                                        setCompareType('f1');
+                                                                        setCompareOpen(true);
+                                                                    }} className="px-2.5 py-1.5 text-[10px] font-semibold border border-blue-100 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-all flex items-center gap-1.5">
+                                                                        <i className="fa-solid fa-shuffle" /> Diff
                                                                     </button>
-                                                                )} */}
+                                                                    <a href={contractApi.downloadUrl(selected.id, 'f1', v.version_no)} download className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded-md hover:bg-gray-50 transition-all text-gray-500">
+                                                                        <i className="fa-solid fa-download text-[11px]" />
+                                                                    </a>
+                                                                    {v.version_no !== selected.current_version && (
+                                                                        <button onClick={() => handleChangeVersion(v.version_no)} className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded-md hover:bg-green-50 hover:text-green-600 transition-all text-gray-400" title="Jadikan versi aktif">
+                                                                            <i className="fa-solid fa-circle-check text-[11px]" />
+                                                                        </button>
+                                                                    )}
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    ))}
+                                                        ))}
+                                                        {selected.versions.filter(v => v.document_type === 'f1').length === 0 && (
+                                                            <div className="text-center py-8 text-gray-400" style={{ fontSize: 12 }}>Belum ada dokumen F1.</div>
+                                                        )}
+                                                    </div>
                                                 </div>
+                                            )}
+
+                                            {/* F2 Tab */}
+                                            {detailTab === 'f2' && (
+                                                <div className="flex flex-col gap-4">
+                                                    <div className="flex items-center justify-between">
+                                                        <h4 className="font-bold text-gray-900" style={{ fontSize: 13 }}>Riwayat Dokumen F2</h4>
+                                                        <button onClick={() => { setRevType('f2'); setRevOpen(true); }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', background: '#0891b2', color: '#fff', fontSize: 11, fontWeight: 600, borderRadius: 6, border: 'none', cursor: 'pointer' }}>
+                                                            <i className="fa-solid fa-plus" /> Upload Revisi F2
+                                                        </button>
+                                                    </div>
+                                                    <div className="space-y-3">
+                                                        {selected.versions.filter(v => v.document_type === 'f2').sort((a, b) => b.version_no - a.version_no).map(v => (
+                                                            <div key={v.id} style={{
+                                                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                                                border: '1px solid #f3f4f6',
+                                                                background: '#fff',
+                                                                borderRadius: 8, padding: '10px 12px'
+                                                            }}>
+                                                                <div className="min-w-0">
+                                                                    <div className="flex items-center gap-2 mb-1">
+                                                                        <span className="font-mono font-bold text-cyan-600 text-[11px]">v{v.version_no}</span>
+                                                                    </div>
+                                                                    <div className="text-[11px] font-medium text-gray-700 truncate" title={v.file_name}>
+                                                                        <i className="fa-regular fa-file-word mr-1.5 text-cyan-400" />
+                                                                        {v.file_name}
+                                                                    </div>
+                                                                    <div className="text-[10px] text-gray-400 mt-0.5">{v.change_log} · {v.created_at} · {v.uploader?.name}</div>
+                                                                </div>
+                                                                <div className="flex items-center gap-1.5 ml-4 flex-shrink-0">
+                                                                    <button onClick={() => {
+                                                                        setPreviewTitle(`F2 - v${v.version_no}`);
+                                                                        setPreviewUrl(contractApi.pdfPreviewUrl(selected.id, v.version_no, 'f2'));
+                                                                        setPreviewHasFile(v.has_file);
+                                                                        setPreviewOpen(true);
+                                                                    }} className="px-2.5 py-1.5 text-[10px] font-semibold border border-gray-200 rounded-md hover:bg-gray-50 transition-all flex items-center gap-1.5">
+                                                                        <i className="fa-solid fa-eye" /> Preview
+                                                                    </button>
+                                                                    <button onClick={() => {
+                                                                        setCompareVer(v.version_no);
+                                                                        setCompareType('f2');
+                                                                        setCompareOpen(true);
+                                                                    }} className="px-2.5 py-1.5 text-[10px] font-semibold border border-cyan-100 bg-cyan-50 text-cyan-600 rounded-md hover:bg-cyan-100 transition-all flex items-center gap-1.5">
+                                                                        <i className="fa-solid fa-shuffle" /> Diff
+                                                                    </button>
+                                                                    <a href={contractApi.downloadUrl(selected.id, 'f2', v.version_no)} download className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded-md hover:bg-gray-50 transition-all text-gray-500">
+                                                                        <i className="fa-solid fa-download text-[11px]" />
+                                                                    </a>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                        {selected.versions.filter(v => v.document_type === 'f2').length === 0 && (
+                                                            <div className="text-center py-8 text-gray-400" style={{ fontSize: 12 }}>Belum ada dokumen F2.</div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Lampiran tab */}
+                                            {detailTab === 'attachments' && (
+                                                <ContractAttachments
+                                                    contract={selected}
+                                                    onUpdated={updateContract}
+                                                    showToast={showToast}
+                                                    onPreview={(at) => {
+                                                        setPreviewTitle(at.label);
+                                                        setPreviewUrl(contractApi.attachmentPdfPreviewUrl(selected.id, at.id));
+                                                        setPreviewHasFile(true);
+                                                        setPreviewOpen(true);
+                                                    }}
+                                                />
                                             )}
 
                                             {/* Audit tab */}
@@ -748,11 +885,24 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected }
             </div>
 
             {/* ── Modals ── */}
-            <CreateContractModal open={createOpen} onClose={() => setCreateOpen(false)} onSubmit={handleCreate} />
-            <UploadRevisionModal open={revOpen} onClose={() => setRevOpen(false)} onSubmit={handleRevision} />
+            <CreateContractModal open={createOpen} onClose={() => setCreateOpen(false)} onSubmit={handleCreate} types={types} />
+            <UploadRevisionModal open={revOpen} onClose={() => setRevOpen(false)} onSubmit={handleRevision} initialType={revType} />
             <RejectModal open={rejectOpen} onClose={() => setRejectOpen(false)} onSubmit={handleReject} />
-            <PreviewModal open={previewOpen} onClose={() => setPreviewOpen(false)} contract={selected} versionNo={previewVer} />
-            <CompareModal open={compareOpen} onClose={() => setCompareOpen(false)} contract={selected} initialVersion={compareVer} />
+            <PreviewModal
+                open={previewOpen}
+                onClose={() => setPreviewOpen(false)}
+                title={previewTitle}
+                url={previewUrl}
+                hasFile={previewHasFile}
+            />
+
+            <CompareModal
+                open={compareOpen}
+                onClose={() => setCompareOpen(false)}
+                contract={selected}
+                initialVersion={compareVer}
+                type={compareType}
+            />
 
             {/* ── Floating Chat ── */}
             <FloatingChat contracts={contracts} meId={meId} onContractUpdated={updateContract} />
@@ -766,14 +916,16 @@ export default function ContractsIndex() {
     const meId = auth?.user?.id ?? '';
     const meUser = auth?.user ?? null;
     const [contracts, setContracts] = useState<Contract[]>([]);
+    const [types, setTypes] = useState<ContractType[]>([]);
     const [bootLoading, setBootLoading] = useState(true);
     const [initialSelected, setInitialSelected] = useState<Contract | null>(null);
 
     useEffect(() => {
-        contractApi.list().then(data => {
-            setContracts(data);
+        Promise.all([contractApi.list(), contractApi.getTypes()]).then(([cData, tData]) => {
+            setContracts(cData);
+            setTypes(tData);
             if (initialId) {
-                setInitialSelected(data.find(c => c.id === initialId) ?? null);
+                setInitialSelected(cData.find((c: Contract) => c.id === initialId) ?? null);
             }
             setBootLoading(false);
         }).catch(() => setBootLoading(false));
@@ -789,7 +941,7 @@ export default function ContractsIndex() {
                         <span style={{ fontSize: 14 }}>Memuat data kontrak...</span>
                     </div>
                 ) : (
-                    <ContractPage contracts={contracts} setContracts={setContracts} meId={meId} meUser={meUser} initialSelected={initialSelected} />
+                    <ContractPage contracts={contracts} setContracts={setContracts} meId={meId} meUser={meUser} initialSelected={initialSelected} types={types} />
                 )}
             </ToastProvider>
         </>

@@ -25,15 +25,20 @@ Route::middleware(['auth'])->group(function () {
     // ── Contract API (under web middleware so session auth works) ──
     Route::prefix('api')->group(function () {
         Route::get('/contracts',                            [ContractController::class, 'index']);
+        Route::get('/contract-types',                       [ContractController::class, 'getTypes']);
         Route::post('/contracts',                          [ContractController::class, 'store']);
         Route::get('/contracts/{id}',                      [ContractController::class, 'show']);
         Route::post('/contracts/{id}/approve',             [ContractController::class, 'approve']);
         Route::post('/contracts/{id}/reject',              [ContractController::class, 'reject']);
         Route::post('/contracts/{id}/revision',            [ContractController::class, 'uploadRevision']);
         Route::post('/contracts/{id}/version',             [ContractController::class, 'changeVersion']);
+        Route::post('/contracts/{id}/attachments',         [ContractController::class, 'uploadAttachment']);
+        Route::delete('/contracts/{id}/attachments/{atId}', [ContractController::class, 'deleteAttachment']);
         Route::get('/contracts/{id}/download',             [ContractController::class, 'download'])->name('contracts.download');
         Route::get('/contracts/{id}/file/{versionNo}',     [ContractController::class, 'fileContent'])->name('contracts.file-url');
+        Route::get('/contracts/{id}/attachment/{atId}',    [ContractController::class, 'attachmentFile'])->name('contracts.attachment-file');
         Route::get('/contracts/{id}/pdf/{versionNo}',      [ContractController::class, 'pdfPreview'])->name('contracts.pdf-preview');
+        Route::get('/contracts/{id}/attachment-pdf/{atId}', [ContractController::class, 'attachmentPdfPreview'])->name('contracts.attachment-pdf-preview');
 
         Route::get('/contracts/{contractId}/messages',     [ContractMessageController::class, 'index']);
         Route::post('/contracts/{contractId}/messages',    [ContractMessageController::class, 'store']);

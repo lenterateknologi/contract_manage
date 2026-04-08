@@ -3,14 +3,14 @@ import { Contract } from '@/types/contracts';
 
 declare const mammoth: any;
 
-interface Props { open: boolean; onClose: () => void; contract: Contract | null; initialVersion: number | null; }
+interface Props { open: boolean; onClose: () => void; contract: Contract | null; initialVersion: number | null; type: 'contract' | 'f1' | 'f2'; }
 
 function esc(s: string) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
-async function fetchVersionText(contractId: string, versionNo: number): Promise<string> {
+async function fetchVersionText(contractId: string, versionNo: number, type: string): Promise<string> {
     try {
-        const res = await fetch(`/api/contracts/${contractId}/file/${versionNo}`, { credentials: 'same-origin' });
-        if (!res.ok) return `[File v${versionNo} tidak tersedia]`;
+        const res = await fetch(`/api/contracts/${contractId}/file/${versionNo}?type=${type}`, { credentials: 'same-origin' });
+        if (!res.ok) return `[File v${versionNo} (${type}) tidak tersedia]`;
         const buf = await res.arrayBuffer();
         if (typeof mammoth !== 'undefined') {
             const result = await mammoth.extractRawText({ arrayBuffer: buf });
@@ -22,7 +22,7 @@ async function fetchVersionText(contractId: string, versionNo: number): Promise<
     }
 }
 
-export default function CompareModal({ open, onClose, contract, initialVersion }: Props) {
+export default function CompareModal({ open, onClose, contract, initialVersion, type }: Props) {
     const [fromVer, setFromVer] = useState<number>(1);
     const [toVer, setToVer] = useState<number>(2);
     const [mode, setMode] = useState<'side' | 'inline'>('side');
@@ -30,36 +30,43 @@ export default function CompareModal({ open, onClose, contract, initialVersion }
     const [toText, setToText] = useState('');
     const [loading, setLoading] = useState(false);
 
+    const filteredVersions = contract?.versions.filter(v => v.document_type === type) || [];
+
     useEffect(() => {
         if (!open || !contract || !initialVersion) return;
-        const sorted = [...contract.versions].sort((a, b) => a.version_no - b.version_no);
+        const sorted = [...filteredVersions].sort((a, b) => a.version_no - b.version_no);
         const idx = sorted.findIndex(v => v.version_no === initialVersion);
-        const from = sorted[idx]?.version_no ?? sorted[0]?.version_no;
-        const to = sorted[idx < sorted.length - 1 ? idx + 1 : idx - 1]?.version_no ?? sorted[sorted.length - 1]?.version_no;
-        setFromVer(from);
-        setToVer(to);
-    }, [open, contract?.id, initialVersion]);
+
+        if (idx === -1) {
+            setFromVer(sorted[0]?.version_no || 1);
+            setToVer(sorted[1]?.version_no || sorted[0]?.version_no || 1);
+        } else {
+            const from = sorted[idx]?.version_no ?? sorted[0]?.version_no;
+            const to = sorted[idx < sorted.length - 1 ? idx + 1 : idx - 1]?.version_no ?? sorted[sorted.length - 1]?.version_no;
+            setFromVer(from);
+            setToVer(to);
+        }
+    }, [open, contract?.id, initialVersion, type]);
 
     // Fetch text when versions change
     useEffect(() => {
         if (!open || !contract) return;
         setLoading(true);
         Promise.all([
-            fetchVersionText(contract.id, fromVer),
-            fetchVersionText(contract.id, toVer),
+            fetchVersionText(contract.id, fromVer, type),
+            fetchVersionText(contract.id, toVer, type),
         ]).then(([ft, tt]) => {
             setFromText(ft);
             setToText(tt);
             setLoading(false);
         });
-    }, [open, contract?.id, fromVer, toVer]);
+    }, [open, contract?.id, fromVer, toVer, type]);
 
     if (!open || !contract) return null;
 
     const oldLines = fromText.split('\n');
     const newLines = toText.split('\n');
 
-    // Simple line diff
     const maxLen = Math.max(oldLines.length, newLines.length);
     let added = 0, removed = 0;
     const diffLines = Array.from({ length: maxLen }, (_, i) => {
@@ -73,7 +80,7 @@ export default function CompareModal({ open, onClose, contract, initialVersion }
     });
 
     return (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
             <div className="bg-white rounded-xl shadow-xl flex flex-col" style={{ width: 1000, maxWidth: '96vw', height: '90vh', animation: 'modal-in .18s ease' }}>
                 <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 flex-shrink-0">
                     <div className="flex items-center gap-3">
@@ -81,7 +88,7 @@ export default function CompareModal({ open, onClose, contract, initialVersion }
                             <i className="fa-solid fa-code-compare text-violet-500" />
                         </div>
                         <div>
-                            <div className="text-[13px] font-semibold">{contract.title}</div>
+                            <div className="text-[13px] font-semibold">{contract.title} ({type.toUpperCase()})</div>
                             <div className="text-[10px] text-gray-400">{contract.contract_no}</div>
                         </div>
                     </div>
@@ -89,84 +96,82 @@ export default function CompareModal({ open, onClose, contract, initialVersion }
                         <i className="fa-solid fa-xmark" />
                     </button>
                 </div>
-                {/* Toolbar */}
+
                 <div className="flex items-center gap-3 px-5 py-2.5 border-b border-gray-100 bg-gray-50 flex-shrink-0 flex-wrap">
                     <div className="flex items-center gap-2">
                         <label className="text-[11px] font-semibold text-gray-500">Dari</label>
-                        <select value={fromVer} onChange={e => setFromVer(+e.target.value)}
-                            className="text-[12px] border border-gray-200 rounded-md px-2 py-1.5 bg-white outline-none">
-                            {contract.versions.map(v => <option key={v.version_no} value={v.version_no}>v{v.version_no} — {v.change_log}</option>)}
+                        <select value={fromVer} onChange={e => setFromVer(+e.target.value)} className="text-[12px] border border-gray-200 rounded-md px-2 py-1.5 bg-white outline-none">
+                            {filteredVersions.map(v => <option key={v.id} value={v.version_no}>v{v.version_no} — {v.change_log}</option>)}
                         </select>
                     </div>
                     <i className="fa-solid fa-arrow-right text-gray-400 text-[12px]" />
                     <div className="flex items-center gap-2">
                         <label className="text-[11px] font-semibold text-gray-500">Ke</label>
-                        <select value={toVer} onChange={e => setToVer(+e.target.value)}
-                            className="text-[12px] border border-gray-200 rounded-md px-2 py-1.5 bg-white outline-none">
-                            {contract.versions.map(v => <option key={v.version_no} value={v.version_no}>v{v.version_no} — {v.change_log}</option>)}
+                        <select value={toVer} onChange={e => setToVer(+e.target.value)} className="text-[12px] border border-gray-200 rounded-md px-2 py-1.5 bg-white outline-none">
+                            {filteredVersions.map(v => <option key={v.id} value={v.version_no}>v{v.version_no} — {v.change_log}</option>)}
                         </select>
                     </div>
                     <div className="flex items-center gap-1 ml-2 bg-white border border-gray-200 rounded-lg p-0.5">
                         {(['side', 'inline'] as const).map(m => (
-                            <button key={m} onClick={() => setMode(m)}
-                                className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors ${mode === m ? 'bg-gray-100 text-gray-700' : 'text-gray-400'}`}>
-                                {m === 'side' ? <><i className="fa-solid fa-columns mr-1" />Side by Side</> : <><i className="fa-solid fa-bars mr-1" />Inline</>}
+                            <button key={m} onClick={() => setMode(m)} className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors ${mode === m ? 'bg-gray-100 text-gray-700' : 'text-gray-400'}`}>
+                                {m === 'side' ? <><i className="fa-solid fa-columns mr-1" />Side</> : <><i className="fa-solid fa-bars mr-1" />Inline</>}
                             </button>
                         ))}
                     </div>
                     <div className="flex items-center gap-3 ml-auto text-[11px] text-gray-500">
-                        <span><span className="inline-block w-2.5 h-2.5 rounded-sm bg-green-200 mr-1" />Ditambahkan</span>
-                        <span><span className="inline-block w-2.5 h-2.5 rounded-sm bg-red-200 mr-1" />Dihapus</span>
-                        <span className="font-medium text-gray-700">+{added} −{removed}</span>
+                        <span><span className="inline-block w-2.5 h-2.5 rounded-sm bg-green-200 mr-1" />+{added}</span>
+                        <span><span className="inline-block w-2.5 h-2.5 rounded-sm bg-red-200 mr-1" />−{removed}</span>
                     </div>
                 </div>
-                {/* Diff area */}
+
                 <div className="flex-1 overflow-hidden flex" style={{ minHeight: 0 }}>
                     {loading ? (
                         <div className="flex-1 flex flex-col items-center justify-center text-gray-400 gap-3">
                             <i className="fa-solid fa-spinner fa-spin text-3xl text-blue-400" />
-                            <span className="text-[13px]">Memuat file untuk perbandingan...</span>
+                            <span className="text-[13px]">Memuat file...</span>
                         </div>
                     ) : mode === 'side' ? (
                         <>
                             <div className="flex-1 flex flex-col min-w-0 border-r border-gray-200">
                                 <div className="px-4 py-2 bg-red-50 border-b border-red-100 flex items-center gap-2 flex-shrink-0">
                                     <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
-                                    <span className="text-[11px] font-semibold text-red-700">v{fromVer} — sebelum</span>
+                                    <span className="text-[11px] font-semibold text-red-700">v{fromVer} — Sblm</span>
                                 </div>
-                                <div className="flex-1 overflow-auto p-4 font-mono text-[12px]" style={{ lineHeight: 1.8 }}>
+                                <div className="flex-1 overflow-auto p-4 font-mono text-[11px] whitespace-pre-wrap leading-relaxed">
                                     {diffLines.map((l, i) => (
-                                        <div key={i} className={l.type === 'del' || l.type === 'chg' ? 'bg-red-50 border-l-2 border-red-400 pl-2 my-px line-through text-gray-400' : l.type === 'eq' ? 'pl-3 my-px' : 'pl-3 my-px opacity-0 select-none'}
-                                            dangerouslySetInnerHTML={{ __html: `<span class="text-[10px] text-gray-300 mr-3">${i + 1}</span>${esc(l.old || '\u00a0')}` }} />
+                                        <div key={i} className={l.type === 'del' || l.type === 'chg' ? 'bg-red-50 text-red-700 px-1 rounded' : l.type === 'eq' ? 'text-gray-400 opacity-50 px-1' : 'px-1 opacity-0'}>
+                                            {l.old || '\u00a0'}
+                                        </div>
                                     ))}
                                 </div>
                             </div>
                             <div className="flex-1 flex flex-col min-w-0">
                                 <div className="px-4 py-2 bg-green-50 border-b border-green-100 flex items-center gap-2 flex-shrink-0">
                                     <span className="w-2.5 h-2.5 rounded-full bg-green-400" />
-                                    <span className="text-[11px] font-semibold text-green-700">v{toVer} — sesudah</span>
+                                    <span className="text-[11px] font-semibold text-green-700">v{toVer} — Ssdh</span>
                                 </div>
-                                <div className="flex-1 overflow-auto p-4 font-mono text-[12px]" style={{ lineHeight: 1.8 }}>
+                                <div className="flex-1 overflow-auto p-4 font-mono text-[11px] whitespace-pre-wrap leading-relaxed">
                                     {diffLines.map((l, i) => (
-                                        <div key={i} className={l.type === 'add' || l.type === 'chg' ? 'bg-green-50 border-l-2 border-green-400 pl-2 my-px' : l.type === 'eq' ? 'pl-3 my-px' : 'pl-3 my-px opacity-0 select-none'}
-                                            dangerouslySetInnerHTML={{ __html: `<span class="text-[10px] text-gray-300 mr-3">${i + 1}</span>${esc(l.nw || '\u00a0')}` }} />
+                                        <div key={i} className={l.type === 'add' || l.type === 'chg' ? 'bg-green-50 text-green-700 px-1 rounded' : l.type === 'eq' ? 'text-gray-400 opacity-50 px-1' : 'px-1 opacity-0'}>
+                                            {l.nw || '\u00a0'}
+                                        </div>
                                     ))}
                                 </div>
                             </div>
                         </>
                     ) : (
-                        <div className="flex-1 overflow-auto p-5 font-mono text-[12px]" style={{ lineHeight: 1.8 }}>
+                        <div className="flex-1 overflow-auto p-5 font-mono text-[12px] whitespace-pre-wrap leading-relaxed">
                             {diffLines.map((l, i) => l.type === 'chg' ? (
                                 <React.Fragment key={i}>
-                                    <div className="bg-red-50 border-l-2 border-red-400 pl-2 my-px line-through text-gray-400"><span className="mr-2 text-[10px] text-red-300 font-bold select-none">−</span>{esc(l.old)}</div>
-                                    <div className="bg-green-50 border-l-2 border-green-400 pl-2 my-px"><span className="mr-2 text-[10px] text-green-500 font-bold select-none">+</span>{esc(l.nw)}</div>
+                                    <div className="bg-red-50 text-red-700 decoration-red-300 line-through px-2 py-0.5 rounded mb-0.5">− {l.old}</div>
+                                    <div className="bg-green-50 text-green-700 px-2 py-0.5 rounded mb-1">+ {l.nw}</div>
                                 </React.Fragment>
                             ) : l.type === 'del' ? (
-                                <div key={i} className="bg-red-50 border-l-2 border-red-400 pl-2 my-px line-through text-gray-400"><span className="mr-2 text-[10px] text-red-300 font-bold select-none">−</span>{esc(l.old)}</div>
+                                <div key={i} className="bg-red-50 text-red-700 decoration-red-300 line-through px-2 py-0.5 rounded mb-1">− {l.old}</div>
                             ) : l.type === 'add' ? (
-                                <div key={i} className="bg-green-50 border-l-2 border-green-400 pl-2 my-px"><span className="mr-2 text-[10px] text-green-500 font-bold select-none">+</span>{esc(l.nw)}</div>
+                                <div key={i} className="bg-green-50 text-green-700 px-2 py-0.5 rounded mb-1">+ {l.nw}</div>
                             ) : (
-                                <div key={i} className="pl-4 my-px text-gray-400">{esc(l.old || '\u00a0')}</div>
+                                <div key={i} className="px-2 py-px text-gray-400 opacity-60">{l.old}</div>
                             ))}
                         </div>
                     )}

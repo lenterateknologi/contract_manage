@@ -6,23 +6,18 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class ContractVersion extends Model
+class ContractAttachment extends Model
 {
     use HasUuids;
+
     protected $fillable = [
         'contract_id',
-        'document_type',
-        'version_no',
+        'label',
+        'category',
         'file_name',
         'file_path',
-        'change_log',
+        'file_type',
         'uploaded_by',
-        'is_final',
-        'file_hash',
-    ];
-
-    protected $casts = [
-        'is_final' => 'boolean',
     ];
 
     public function contract(): BelongsTo

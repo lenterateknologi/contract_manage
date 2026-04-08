@@ -9,6 +9,8 @@ export interface UserProfile {
 }
 
 export interface ContractVersion {
+    id: string;
+    document_type: 'contract' | 'f1' | 'f2';
     version_no: number;
     file_name: string;
     change_log: string;
@@ -17,7 +19,7 @@ export interface ContractVersion {
     file_hash: string;
     has_file: boolean;
     created_at: string;
-    uploader: UserProfile;
+    uploader?: UserProfile;
 }
 
 export interface ContractApproval {
@@ -54,21 +56,45 @@ export interface ContractProgress {
     pct: number;
 }
 
+export interface ContractAttachment {
+    id: string;
+    label: string;
+    category: string;
+    file_name: string;
+    file_type: string;
+    created_at: string;
+    uploader?: UserProfile;
+}
+
+export interface ContractType {
+    id: string;
+    name: string;
+    description?: string;
+}
+
 export interface Contract {
     id: string;
     contract_no: string;
     title: string;
     description: string;
+    contract_date: string | null;
+    contract_type: string | null;
+    contract_type_id?: string;
     created_by: string;
-    status: 'draft' | 'in_review' | 'revision' | 'approved' | 'locked' | 'archived';
+    status: ContractStatus;
     current_version: number;
     created_at: string;
     creator: UserProfile;
-    progress: ContractProgress;
+    progress: {
+        done: number;
+        total: number;
+        pct: number;
+    };
     versions: ContractVersion[];
     approvals: ContractApproval[];
     histories: ContractHistory[];
-    messages: ContractMessage[];
+    messages?: ContractMessage[];
+    attachments?: ContractAttachment[];
 }
 
-export type ContractStatus = Contract['status'];
+export type ContractStatus = 'draft' | 'in_review' | 'revision' | 'approved' | 'locked' | 'archived';

@@ -1,50 +1,78 @@
 import React, { useRef, useState } from 'react';
 
-interface Props { open: boolean; onClose: () => void; onSubmit: (data: FormData) => Promise<void>; }
+interface Props {
+    open: boolean;
+    onClose: () => void;
+    onSubmit: (data: FormData) => Promise<void>;
+    initialType?: 'contract' | 'f1' | 'f2';
+}
 
-export default function UploadRevisionModal({ open, onClose, onSubmit }: Props) {
+export default function UploadRevisionModal({ open, onClose, onSubmit, initialType }: Props) {
     const [changelog, setChangelog] = useState('');
     const [file, setFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
     const fileRef = useRef<HTMLInputElement>(null);
 
+    const [type, setType] = useState<'f1' | 'f2'>(initialType && initialType !== 'contract' ? initialType : 'f1');
+
+    React.useEffect(() => {
+        if (open && initialType && initialType !== 'contract') setType(initialType);
+    }, [open, initialType]);
+
     if (!open) return null;
 
+    const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFile(e.target.files?.[0] ?? null);
+    };
+
     const handleSubmit = async () => {
-        if (!changelog.trim()) return;
+        if (!file || !changelog.trim()) return;
         const fd = new FormData();
+        fd.append('file', file);
         fd.append('changelog', changelog);
-        if (file) fd.append('file', file);
+        fd.append('document_type', type);
         setLoading(true);
-        try { await onSubmit(fd); onClose(); setChangelog(''); setFile(null); }
+        try { await onSubmit(fd); onClose(); setFile(null); setChangelog(''); }
         finally { setLoading(false); }
     };
 
     return (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" onClick={(e) => e.target === e.currentTarget && onClose()}>
-            <div className="bg-white rounded-xl w-[460px] max-w-[95vw] shadow-xl" style={{ animation: 'modal-in .18s ease' }}>
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
+            <div className="bg-white rounded-xl w-[440px] max-w-full shadow-xl overflow-hidden" style={{ animation: 'modal-in .18s ease' }}>
                 <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                    <h6 className="text-[14px] font-semibold flex items-center gap-2">
-                        <i className="fa-solid fa-file-arrow-up text-gray-400 text-[13px]" /> Upload Versi Baru
-                    </h6>
+                    <div className="flex flex-col">
+                        <h6 className="text-[14px] font-semibold flex items-center gap-2">
+                            <i className="fa-solid fa-file-arrow-up text-gray-400 text-[13px]" /> Upload Revisi {type === 'f1' ? 'Form F1' : 'Form F2'}
+                        </h6>
+                    </div>
                     <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400 text-[13px]">
                         <i className="fa-solid fa-xmark" />
                     </button>
                 </div>
+
                 <div className="p-5 space-y-4">
                     <div>
-                        <label className="block text-[11px] font-semibold text-gray-500 mb-1">File Revisi (.docx)</label>
-                        <div onClick={() => fileRef.current?.click()}
-                            className="border-2 border-dashed border-gray-300 rounded-lg py-6 text-center cursor-pointer bg-gray-50 hover:border-blue-500 hover:bg-blue-50 transition-colors">
-                            <i className="fa-regular fa-file-word text-gray-400 text-2xl block mb-2" />
-                            <p className="text-[12px] text-gray-500"><span className="text-blue-600 font-semibold">Klik untuk upload</span> file revisi</p>
+                        <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Jenis Dokumen</label>
+                        <div className="flex gap-2 p-1 bg-gray-50 rounded-lg border border-gray-200">
+                            {(['f1', 'f2'] as const).map(t => (
+                                <button key={t} onClick={() => setType(t)} className={`flex-1 py-1.5 text-[11px] font-medium rounded-md transition-all ${type === t ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                                    {t === 'f1' ? 'F1 (Utama)' : 'F2'}
+                                </button>
+                            ))}
                         </div>
-                        <input ref={fileRef} type="file" accept=".docx,.doc,.pdf" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-                        {file && (
-                            <div className="mt-2 flex items-center gap-2 text-[11px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3 py-2">
-                                <i className="fa-solid fa-file-word text-blue-600" /> {file.name}
+                    </div>
+
+                    <div>
+                        <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Pilih File Baru</label>
+                        <div className="relative group">
+                            <input type="file" accept=".docx,.doc,.pdf" onChange={handleFile} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                            <div className={`p-6 border-2 border-dashed rounded-xl transition-all flex flex-col items-center justify-center gap-2 ${file ? 'border-blue-300 bg-blue-50/50' : 'border-gray-200 group-hover:border-gray-300 bg-gray-50/50'}`}>
+                                <i className={`fa-solid ${file ? 'fa-file-circle-check text-blue-500' : 'fa-cloud-arrow-up text-gray-400'} text-2xl`} />
+                                <div className="text-[11px] font-medium text-gray-600 truncate max-w-full px-4">
+                                    {file ? file.name : 'Mendukung .docx, .doc, .pdf'}
+                                </div>
                             </div>
-                        )}
+                        </div>
                     </div>
                     <div>
                         <label className="block text-[11px] font-semibold text-gray-500 mb-1">Changelog *</label>

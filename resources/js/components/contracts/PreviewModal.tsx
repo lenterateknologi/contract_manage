@@ -1,41 +1,31 @@
 import React, { useEffect, useState } from 'react';
-import { Contract, ContractVersion } from '@/types/contracts';
+import { contractApi } from '@/lib/contract-api';
 
 interface Props {
     open: boolean;
     onClose: () => void;
-    contract: Contract | null;
-    versionNo: number | null;
+    title: string;
+    url: string;
+    hasFile: boolean;
 }
 
-export default function PreviewModal({ open, onClose, contract, versionNo }: Props) {
+export default function PreviewModal({ open, onClose, title, url, hasFile }: Props) {
     const [zoom, setZoom] = useState(100);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-
-    const ver = contract?.versions.find(v => v.version_no === versionNo);
-
-    // Endpoint for PDF preview
-    const pdfUrl = (contract && ver)
-        ? `/api/contracts/${contract.id}/pdf/${ver.version_no}`
-        : '';
 
     useEffect(() => {
-        if (!open || !contract || !ver) return;
+        if (!open) return;
         setZoom(100);
-        setError('');
         setLoading(true);
-
-        // We can't easily "fetch" to verify because it's an iframe, 
-        // but we'll set a timeout or just wait for the iframe to load.
-        const timer = setTimeout(() => setLoading(false), 1500);
+        // Timeout as fallback for iframe load
+        const timer = setTimeout(() => setLoading(false), 2000);
         return () => clearTimeout(timer);
-    }, [open, contract?.id, versionNo]);
+    }, [open, url]);
 
-    if (!open || !contract || !ver) return null;
+    if (!open) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex flex-col bg-[#525659]">
+        <div className="fixed inset-0 z-[60] flex flex-col bg-[#525659]">
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-3 border-b border-gray-800 flex-shrink-0 bg-[#323639] text-white shadow-lg">
                 <div className="flex items-center gap-3 min-w-0">
@@ -43,12 +33,12 @@ export default function PreviewModal({ open, onClose, contract, versionNo }: Pro
                         className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-300 transition-colors flex-shrink-0">
                         <i className="fa-solid fa-arrow-left text-[13px]" />
                     </button>
-                    <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center flex-shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-red-500/20 border border-red-500/30 flex items-center justify-center flex-shrink-0">
                         <i className="fa-regular fa-file-pdf text-red-500" />
                     </div>
                     <div className="min-w-0">
-                        <div className="text-[13px] font-semibold truncate">{ver.file_name}</div>
-                        <div className="text-[10px] text-gray-400 uppercase tracking-wider">v{ver.version_no} · Adobe PDF Render</div>
+                        <div className="text-[13px] font-semibold truncate" title={title}>{title}</div>
+                        <div className="text-[10px] text-gray-400 uppercase tracking-wider">Adobe PDF Render v2.0</div>
                     </div>
                 </div>
                 <div className="flex items-center gap-4">
@@ -64,7 +54,7 @@ export default function PreviewModal({ open, onClose, contract, versionNo }: Pro
                 </div>
             </div>
 
-            {/* Content - PDF Iframe Viewer */}
+            {/* Content */}
             <div className="flex-1 overflow-hidden relative">
                 {loading && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#525659] z-10 text-gray-300 gap-3">
@@ -73,7 +63,7 @@ export default function PreviewModal({ open, onClose, contract, versionNo }: Pro
                     </div>
                 )}
 
-                {!ver.has_file ? (
+                {!hasFile ? (
                     <div className="flex flex-col items-center justify-center h-full text-gray-300 gap-4 max-w-sm mx-auto text-center px-6">
                         <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center">
                             <i className="fa-solid fa-file-circle-exclamation text-3xl text-amber-500" />
@@ -81,14 +71,14 @@ export default function PreviewModal({ open, onClose, contract, versionNo }: Pro
                         <div>
                             <h3 className="text-lg font-semibold mb-1">File Tidak Ditemukan</h3>
                             <p className="text-gray-400 text-sm leading-relaxed">
-                                Kontrak ini berasal dari data dummy (seeder) yang tidak memiliki file fisik di disk.
-                                Silakan <b>Upload Kontrak Baru</b> untuk mencoba fitur PDF preview.
+                                Dokumen ini mungkin berasal dari data dummy (seeder) yang tidak memiliki file fisik di disk.
+                                Silakan <b>Upload Dokumen Baru</b> untuk mencoba fitur PDF preview.
                             </p>
                         </div>
                     </div>
-                ) : pdfUrl ? (
+                ) : url ? (
                     <iframe
-                        src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=1&view=FitH&zoom=${zoom}`}
+                        src={`${url}#toolbar=0&navpanes=0&scrollbar=1&view=FitH&zoom=${zoom}`}
                         className="w-full h-full border-none"
                         title="PDF Preview"
                         onLoad={() => setLoading(false)}
@@ -100,14 +90,6 @@ export default function PreviewModal({ open, onClose, contract, versionNo }: Pro
                     </div>
                 )}
             </div>
-
-            <style>{`
-                /* Simple CSS for the Zoom effect if needed outside of PDF params */
-                .pdf-scale {
-                    transform: scale(${zoom / 100});
-                    transform-origin: top center;
-                }
-            `}</style>
         </div>
     );
 }

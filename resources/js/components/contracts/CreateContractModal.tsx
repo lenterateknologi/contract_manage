@@ -1,86 +1,136 @@
 import React, { useRef, useState } from 'react';
 
+import { ContractType } from '@/types/contracts';
+
 interface Props {
     open: boolean;
     onClose: () => void;
     onSubmit: (data: FormData) => Promise<void>;
+    types: ContractType[];
 }
 
-export default function CreateContractModal({ open, onClose, onSubmit }: Props) {
+export default function CreateContractModal({ open, onClose, onSubmit, types }: Props) {
     const [title, setTitle] = useState('');
     const [desc, setDesc] = useState('');
+    const [contractDate, setContractDate] = useState('');
+    const [contractTypeId, setContractTypeId] = useState('');
     const [changelog, setChangelog] = useState('');
-    const [file, setFile] = useState<File | null>(null);
+    const [f1File, setF1File] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
-    const fileRef = useRef<HTMLInputElement>(null);
+    const [errors, setErrors] = useState<Record<string, string>>({});
 
     if (!open) return null;
 
-    const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFile(e.target.files?.[0] ?? null);
-    };
-
     const handleSubmit = async () => {
-        if (!title.trim()) return;
+        setErrors({});
+        if (!title.trim()) { setErrors(prev => ({ ...prev, title: 'Judul harus diisi' })); return; }
+        if (!f1File) { setErrors(prev => ({ ...prev, f1_file: 'Form F1 (Dokumen Utama) wajib diupload' })); return; }
+
         const fd = new FormData();
         fd.append('title', title);
         fd.append('description', desc);
+        fd.append('contract_date', contractDate);
+        if (contractTypeId) fd.append('contract_type_id', contractTypeId);
         fd.append('changelog', changelog);
-        if (file) fd.append('file', file);
+        fd.append('f1_file', f1File);
+
         setLoading(true);
-        try { await onSubmit(fd); onClose(); setTitle(''); setDesc(''); setChangelog(''); setFile(null); }
-        finally { setLoading(false); }
+        try {
+            await onSubmit(fd);
+            onClose();
+            setTitle(''); setDesc(''); setContractDate(''); setContractTypeId(''); setChangelog(''); setF1File(null);
+        } catch (err: any) {
+            if (err.response?.data?.errors) setErrors(err.response.data.errors);
+            else setErrors({ general: 'Gagal membuat kontrak.' });
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" onClick={(e) => e.target === e.currentTarget && onClose()}>
-            <div className="bg-white rounded-xl w-[460px] max-w-[95vw] shadow-xl" style={{ animation: 'modal-in .18s ease' }}>
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
+            <div className="bg-white rounded-xl w-[520px] max-w-full shadow-xl overflow-hidden" style={{ animation: 'modal-in .18s ease' }}>
                 <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                     <h6 className="text-[14px] font-semibold flex items-center gap-2">
                         <i className="fa-solid fa-file-circle-plus text-gray-400 text-[13px]" /> Buat Kontrak Baru
                     </h6>
-                    <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400 text-[13px]">
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
                         <i className="fa-solid fa-xmark" />
                     </button>
                 </div>
-                <div className="p-5 space-y-4">
+
+                <div className="p-5 space-y-4 max-h-[80vh] overflow-y-auto">
                     <div>
-                        <label className="block text-[11px] font-semibold text-gray-500 mb-1">Judul Kontrak *</label>
+                        <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Judul Kontrak</label>
                         <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Masukkan judul kontrak"
                             className="w-full text-[12px] border border-gray-200 rounded-md px-3 py-2 outline-none focus:border-blue-500 placeholder-gray-300" />
+                        {errors.title && <div className="text-red-500 text-[10px] mt-1">{errors.title}</div>}
                     </div>
-                    <div>
-                        <label className="block text-[11px] font-semibold text-gray-500 mb-1">Deskripsi</label>
-                        <textarea value={desc} onChange={e => setDesc(e.target.value)} rows={2} placeholder="Deskripsi singkat..."
-                            className="w-full text-[12px] border border-gray-200 rounded-md px-3 py-2 outline-none focus:border-blue-500 resize-none placeholder-gray-300" />
-                    </div>
-                    <div>
-                        <label className="block text-[11px] font-semibold text-gray-500 mb-1">Upload File (.docx)</label>
-                        <div onClick={() => fileRef.current?.click()}
-                            className="border-2 border-dashed border-gray-300 rounded-lg py-6 text-center cursor-pointer bg-gray-50 hover:border-blue-500 hover:bg-blue-50 transition-colors">
-                            <i className="fa-solid fa-cloud-arrow-up text-gray-400 text-2xl block mb-2" />
-                            <p className="text-[12px] text-gray-500"><span className="text-blue-600 font-semibold">Klik untuk upload</span> atau drag & drop</p>
-                            <p className="text-[11px] text-gray-400 mt-0.5">Format .docx · Maks. 10 MB</p>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Tanggal Kontrak</label>
+                            <input type="date" value={contractDate} onChange={e => setContractDate(e.target.value)}
+                                className="w-full text-[12px] border border-gray-200 rounded-md px-3 py-2 outline-none focus:border-blue-500" />
                         </div>
-                        <input ref={fileRef} type="file" accept=".docx,.doc,.pdf" className="hidden" onChange={handleFile} />
-                        {file && (
-                            <div className="mt-2 flex items-center gap-2 text-[11px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3 py-2">
-                                <i className="fa-solid fa-file-word text-blue-600" />
-                                {file.name} ({(file.size / 1024).toFixed(1)} KB)
-                            </div>
-                        )}
+                        <div>
+                            <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Tipe Perjanjian</label>
+                            <select value={contractTypeId} onChange={e => setContractTypeId(e.target.value)}
+                                className="w-full text-[12px] border border-gray-200 rounded-md px-3 py-2 outline-none focus:border-blue-500 bg-white">
+                                <option value="">Pilih Tipe...</option>
+                                {types.map(t => (
+                                    <option key={t.id} value={t.id}>{t.name}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
+
                     <div>
-                        <label className="block text-[11px] font-semibold text-gray-500 mb-1">Changelog</label>
-                        <input value={changelog} onChange={e => setChangelog(e.target.value)} placeholder="Contoh: Draft awal kontrak vendor"
+                        <div className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Form F1 (Dokumen Utama)</div>
+                        <div className="relative group">
+                            <input
+                                type="file"
+                                accept=".docx,.doc,.pdf"
+                                onChange={(e) => setF1File(e.target.files?.[0] || null)}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                            />
+                            <div className={`p-6 border-2 border-dashed rounded-xl transition-all flex flex-col items-center justify-center gap-2 ${f1File ? 'border-blue-300 bg-blue-50/50' : 'border-gray-200 group-hover:border-gray-300 bg-gray-50/50'}`}>
+                                <i className={`fa-solid ${f1File ? 'fa-file-circle-check text-blue-500' : 'fa-file-signature text-gray-400'} text-2xl`} />
+                                <div className="text-[11px] font-medium text-gray-600 truncate max-w-full px-2">
+                                    {f1File ? f1File.name : 'Pilih file Form F1'}
+                                </div>
+                            </div>
+                        </div>
+                        {errors.f1_file && <div className="text-red-500 text-[10px] mt-1">{errors.f1_file}</div>}
+                    </div>
+
+                    <div>
+                        <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Deskripsi</label>
+                        <textarea value={desc} onChange={e => setDesc(e.target.value)} rows={2} placeholder="Deskripsi singkat..."
                             className="w-full text-[12px] border border-gray-200 rounded-md px-3 py-2 outline-none focus:border-blue-500 placeholder-gray-300" />
                     </div>
+
+                    <div>
+                        <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Keterangan Awal (Changelog)</label>
+                        <input value={changelog} onChange={e => setChangelog(e.target.value)} placeholder="Contoh: Draft awal"
+                            className="w-full text-[12px] border border-gray-200 rounded-md px-3 py-2 outline-none focus:border-blue-500 placeholder-gray-300" />
+                    </div>
+
+                    {errors.general && (
+                        <div className="p-3 bg-red-50 border border-red-100 rounded-md text-red-600 text-[11px]">
+                            <i className="fa-solid fa-circle-exclamation mr-2" />
+                            {errors.general}
+                        </div>
+                    )}
                 </div>
-                <div className="flex justify-end gap-2 px-5 py-3 border-t border-gray-100">
-                    <button onClick={onClose} className="px-3 py-1.5 text-[12px] font-medium border border-gray-200 rounded-md hover:bg-gray-50">Batal</button>
-                    <button onClick={handleSubmit} disabled={loading || !title.trim()}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[12px] font-medium rounded-md transition-colors disabled:opacity-50">
-                        <i className="fa-solid fa-paper-plane text-[11px]" /> {loading ? 'Menyimpan...' : 'Buat & Submit'}
+
+                <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-gray-100">
+                    <button onClick={onClose} className="px-5 py-2 text-[12px] font-medium text-gray-500 hover:text-gray-700 transition-colors">
+                        Batal
+                    </button>
+                    <button onClick={handleSubmit} disabled={loading} className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-[12px] font-semibold rounded-lg transition-all shadow-lg shadow-blue-200">
+                        {loading ? <i className="fa-solid fa-spinner fa-spin mr-2" /> : <i className="fa-solid fa-check mr-2" />}
+                        Buat Kontrak
                     </button>
                 </div>
             </div>
