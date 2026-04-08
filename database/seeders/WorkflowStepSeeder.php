@@ -21,10 +21,11 @@ class WorkflowStepSeeder extends Seeder
             // Define steps for each workflow type
             $steps = match ($workflow->contract_type) {
                 'Service Agreement' => [
-                    ['role' => 'Legal', 'step' => 1, 'description' => 'Legal Review'],
-                    ['role' => 'Tax', 'step' => 2, 'description' => 'Tax Review'],
+                    ['role' => 'Tax', 'step' => 1, 'description' => 'Tax Review'],
+                    ['role' => 'Legal', 'step' => 2, 'description' => 'Legal Review'],
                     ['role' => 'Management', 'step' => 3, 'description' => 'Management Approval'],
                     ['role' => 'Direksi', 'step' => 4, 'description' => 'Director Approval'],
+                    ['role' => 'Vendor', 'step' => 5, 'description' => 'Vendor Approval'],
                 ],
                 'Non-Disclosure Agreement' => [
                     ['role' => 'Legal', 'step' => 1, 'description' => 'Legal Review'],

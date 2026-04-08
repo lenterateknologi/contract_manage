@@ -141,22 +141,44 @@ class ContractWorkflowService
         // Mark approval as rejected
         $approval->reject($reason);
 
-        // Reset contract to draft status
-        $contract->update([
-            'status' => 'revision',
-            'workflow_step_id' => null,
-        ]);
+        $currentStep = $approval->workflowStep;
+        $workflow = $contract->workflow;
+        
+        // Find Legal step in this workflow
+        $legalStep = $workflow->steps()->where('role', 'Legal')->first();
+
+        // Determine target
+        if ($currentStep->role === 'Legal' || $currentStep->step === 1 || !$legalStep) {
+            // If Legal rejects, or Step 1 rejects, or no Legal step exists: Return to Initiator
+            $contract->update([
+                'status' => 'revision',
+                'workflow_step_id' => null,
+            ]);
+            $description = "Rejected by {$approval->approver_name} ({$approval->role}): {$reason}. Sent back to Initiator.";
+        } else {
+            // Management/Direksi/Vendor rejects: Return to Legal
+            $contract->update([
+                'status' => 'in_review',
+                'workflow_step_id' => $legalStep->id,
+            ]);
+            
+            // Create fresh approvals for Legal
+            $this->createApprovalForStep($contract, $legalStep);
+            
+            $description = "Rejected by {$approval->approver_name} ({$approval->role}): {$reason}. Sent back to Legal for re-review.";
+        }
 
         // Reject all other pending approvals for this step
         $contract->workflowApprovals()
             ->where('workflow_step_id', $approval->workflow_step_id)
             ->where('status', 'pending')
+            ->get()
             ->each(fn($a) => $a->reject('Rejected by ' . $approval->approver_name));
 
         // Log the action
         $contract->histories()->create([
             'action' => 'APPROVAL_REJECTED',
-            'description' => "Rejected by {$approval->approver_name} ({$approval->role}): {$reason}",
+            'description' => $description,
             'actor_id' => auth()->id(),
         ]);
 
