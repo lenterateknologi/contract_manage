@@ -566,7 +566,7 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
                             <table style={{ width: '100%' }}>
                                 <thead><tr style={{ background: 'var(--muted)' }}>
                                     <Th>No. Kontrak</Th><Th>Judul</Th><Th>Role</Th>
-                                    <Th>Versi</Th><Th>Sequence</Th><Th>Tgl Dibuat</Th><Th>Aksi</Th>
+                                    <Th>Versi</Th><Th>Sequence</Th><Th>Tgl Dibuat</Th>
                                 </tr></thead>
                                 <tbody>
                                     {myPending.length === 0 ? (
@@ -585,7 +585,7 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
                                             <Td><span className="font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded" style={{ fontSize: 12 }}>v{c.current_version}</span></Td>
                                             <Td className="text-muted-foreground" style={{ fontSize: 12 }}>Seq {a.sequence}</Td>
                                             <Td><span className="text-muted-foreground" style={{ fontSize: 12 }}>{c.created_at}</span></Td>
-                                            <Td>
+                                            {/* <Td>
                                                 <div className="flex gap-1.5">
                                                     <button onClick={e => { e.stopPropagation(); handleQuickApprove(c.id); }} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', background: 'var(--primary)', color: 'var(--primary-foreground)', fontSize: 12, fontWeight: 500, borderRadius: 6, border: 'none', cursor: 'pointer' }}>
                                                         <i className="fa-solid fa-check" style={{ fontSize: 12 }} /> Setuju
@@ -594,7 +594,7 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
                                                         <i className="fa-solid fa-eye" />
                                                     </button>
                                                 </div>
-                                            </Td>
+                                            </Td> */}
                                         </tr>
                                     ))}
                                 </tbody>
