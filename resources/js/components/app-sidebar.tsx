@@ -28,12 +28,6 @@ const navGroups = [
             { title: 'Form F2', url: '/f2', icon: FileEdit },
         ],
     },
-    {
-        title: 'Laporan',
-        items: [
-            { title: 'Audit Trail', url: '/audit', icon: History },
-        ],
-    },
 ];
 
 const adminGroups = [
@@ -44,6 +38,7 @@ const adminGroups = [
             { title: 'Role', url: '/admin/roles', icon: ShieldCheck },
             { title: 'Tipe Kontrak', url: '/admin/contract-types', icon: Settings2 },
             { title: 'Alur Kerja', url: '/admin/workflows', icon: GitBranch },
+            { title: 'Audit Trail', url: '/audit', icon: History },
         ],
     },
 ];
