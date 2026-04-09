@@ -6,8 +6,14 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-    return Inertia::render('welcome');
+    return Inertia::render('auth/login');
 })->name('home');
+
+// Email testing (only in non-production environments)
+if (!app()->environment('production')) {
+    Route::get('/email-test', [\App\Http\Controllers\EmailTestController::class, 'index'])->name('email-test');
+    Route::post('/email-test/send', [\App\Http\Controllers\EmailTestController::class, 'sendTestEmail'])->name('email-test.send');
+}
 
 Route::middleware(['auth'])->group(function () {
     Route::get('dashboard', function () {
@@ -62,6 +68,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/contracts/{contractId}/messages/read', [ContractMessageController::class, 'markRead']);
     });
 
+    
+
     // ── Admin Panel ──
     Route::middleware(['admin'])->prefix('admin')->group(function () {
         Route::get('/users', [\App\Http\Controllers\AdminController::class, 'users'])->name('admin.users');
@@ -83,6 +91,9 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/roles', [\App\Http\Controllers\AdminController::class, 'storeRole'])->name('admin.roles.store');
         Route::put('/roles/{role}', [\App\Http\Controllers\AdminController::class, 'updateRole'])->name('admin.roles.update');
         Route::delete('/roles/{role}', [\App\Http\Controllers\AdminController::class, 'destroyRole'])->name('admin.roles.destroy');
+
+        // Email testing
+        Route::post('/test-email', [\App\Http\Controllers\EmailTestController::class, 'sendTestEmail'])->name('admin.test-email');
     });
 });
 
