@@ -9,6 +9,7 @@ use App\Models\ContractAttachment;
 use App\Models\User;
 use App\Services\ContractWorkflowService;
 use App\Models\ContractType;
+use App\Models\Workflow;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -55,6 +56,20 @@ class ContractController extends Controller
 
         return response()->json($this->formatContract($contract));
     }
+    public function getWorkflows(): JsonResponse
+    {
+        return response()->json(Workflow::where('is_template', true)->get());
+    }
+
+    public function getUsers(): JsonResponse
+    {
+        return response()->json(User::orderBy('name')->get());
+    }
+
+    public function getRoles(): JsonResponse
+    {
+        return response()->json(\App\Models\Role::orderBy('name')->get());
+    }
 
 
     public function send(Request $request, string $id): JsonResponse
@@ -66,10 +81,13 @@ class ContractController extends Controller
                 return response()->json(['message' => 'Only draft contracts can be sent.'], 422);
             }
 
-            // Use workflow service to send for approval
-            $contract = $this->workflowService->sendForApproval($contract);
+            $workflowId = $request->input('workflow_id');
+            $customSteps = $request->input('custom_steps');
 
-            $contract->load(['creator', 'versions.uploader', 'workflowApprovals.user', 'workflowApprovals.workflowStep', 'workflow.steps', 'histories.actor', 'messages.user', 'workflow', 'workflowStep']);
+            // Use workflow service to send for approval
+            $contract = $this->workflowService->sendForApproval($contract, $workflowId, $customSteps);
+
+            $contract->load(['creator', 'versions.uploader', 'approvals.user', 'approvals.workflowStep', 'workflow.steps', 'histories.actor', 'messages.user', 'workflow', 'workflowStep']);
             return response()->json($this->formatContract($contract), 200);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 422);
@@ -124,6 +142,53 @@ class ContractController extends Controller
             $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'histories.actor', 'messages.user', 'contractType']);
 
             return response()->json($this->formatContract($contract), 201);
+        });
+    }
+
+    public function update(Request $request, string $id): JsonResponse
+    {
+        $contract = Contract::findOrFail($id);
+
+        if ($contract->status !== 'draft') {
+            return response()->json(['message' => 'Hanya kontrak berstatus draft yang dapat diedit.'], 422);
+        }
+
+        $validated = $request->validate([
+            'title'            => 'required|string|max:255',
+            'description'      => 'nullable|string',
+            'contract_no'      => 'nullable|string',
+            'contract_date'    => 'nullable|date',
+            'contract_type_id' => 'nullable|exists:contract_types,id',
+        ]);
+
+        $contract->update($validated);
+
+        ContractHistory::create([
+            'contract_id' => $contract->id,
+            'action'      => 'CONTRACT_UPDATED',
+            'description' => 'Informasi kontrak diperbarui',
+            'actor_id'    => Auth::id(),
+        ]);
+
+        return response()->json($this->formatContract($contract->fresh()));
+    }
+
+    public function destroy(string $id): JsonResponse
+    {
+        $contract = Contract::findOrFail($id);
+
+        if ($contract->status !== 'draft') {
+            return response()->json(['message' => 'Hanya kontrak berstatus draft yang dapat dihapus.'], 422);
+        }
+
+        return \DB::transaction(function () use ($contract) {
+            // Delete from storage
+            Storage::disk('local')->deleteDirectory("contracts/{$contract->id}");
+
+            // Other relations are deleted by database cascade
+            $contract->delete();
+
+            return response()->json(['message' => 'Kontrak berhasil dihapus.']);
         });
     }
 

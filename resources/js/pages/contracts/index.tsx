@@ -10,6 +10,7 @@ import PreviewModal from '@/components/contracts/PreviewModal';
 import CompareModal from '@/components/contracts/CompareModal';
 import UploadRevisionModal from '@/components/contracts/UploadRevisionModal';
 import RejectModal from '@/components/contracts/RejectModal';
+import SendApprovalModal from '@/components/contracts/SendApprovalModal';
 import ApprovalSteps from '@/components/contracts/ApprovalSteps';
 import ContractChat from '@/components/contracts/ContractChat';
 import ContractAttachments from '@/components/contracts/ContractAttachments';
@@ -193,6 +194,7 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
     const [revOpen, setRevOpen] = useState(false);
     const [revType, setRevType] = useState<'contract' | 'f1' | 'f2'>('f1');
     const [rejectOpen, setRejectOpen] = useState(false);
+    const [sendOpen, setSendOpen] = useState(false);
 
     const [previewOpen, setPreviewOpen] = useState(false);
     const [previewTitle, setPreviewTitle] = useState('');
@@ -202,6 +204,10 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
     const [compareOpen, setCompareOpen] = useState(false);
     const [compareVer, setCompareVer] = useState<number | null>(null);
     const [compareType, setCompareType] = useState<'contract' | 'f1' | 'f2'>('contract');
+
+    const [editOpen, setEditOpen] = useState(false);
+    const [deleteOpen, setDeleteOpen] = useState(false);
+    const [processing, setProcessing] = useState(false);
 
     useEffect(() => {
         if (initialSelected) { setSelected(initialSelected); }
@@ -315,11 +321,46 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
 
     const handleSendForApproval = async () => {
         if (!selected) return;
+        setSendOpen(true);
+    };
+
+    const handleUpdate = async (data: any) => {
+        if (!selected) return;
+        setProcessing(true);
         try {
-            const c = await contractApi.send(selected.id);
+            const c = await contractApi.update(selected.id, data);
+            updateContract(c);
+            setEditOpen(false);
+            showToast('Informasi kontrak diperbarui.', 'success');
+        } catch { showToast('Gagal memperbarui kontrak.', 'danger'); }
+        finally { setProcessing(false); }
+    };
+
+    const handleDelete = async () => {
+        if (!selected) return;
+        setProcessing(true);
+        try {
+            await contractApi.delete(selected.id);
+            const newContracts = contracts.filter(x => x.id !== selected.id);
+            setContracts(newContracts);
+            setSelected(null);
+            setDeleteOpen(false);
+            showToast('Kontrak berhasil dihapus.', 'success');
+        } catch { showToast('Gagal menghapus kontrak.', 'danger'); }
+        finally { setProcessing(false); }
+    };
+
+    const handleSendSubmit = async (data: any) => {
+        if (!selected) return;
+        try {
+            const c = await contractApi.send(selected.id, data);
             updateContract(c);
             showToast('Kontrak berhasil dikirim untuk approval!', 'success');
-        } catch { showToast('Gagal mengirim kontrak.', 'danger'); }
+        } catch (err: any) {
+            console.error(err);
+            const msg = err.response?.data?.message || 'Gagal mengirim kontrak.';
+            showToast(msg, 'danger');
+        }
     };
 
     const handleChangeVersion = async (vno: number) => {
@@ -619,10 +660,18 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
                             </div>
                             <div className="flex gap-2">
                                 {selected.status === 'draft' && (
-                                    <button onClick={handleSendForApproval} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: '#2563eb', color: '#fff', fontSize: 12, fontWeight: 500, borderRadius: 6, border: 'none', cursor: 'pointer' }}
-                                        onMouseOver={e => (e.currentTarget.style.background = '#1d4ed8')} onMouseOut={e => (e.currentTarget.style.background = '#2563eb')}>
-                                        <i className="fa-solid fa-paper-plane" style={{ fontSize: 11 }} /> Kirim
-                                    </button>
+                                    <>
+                                        <button onClick={() => setEditOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid #e5e7eb', fontSize: 12, fontWeight: 500, borderRadius: 6, background: 'none', cursor: 'pointer', color: '#374151' }}>
+                                            <i className="fa-solid fa-pen-to-square" style={{ fontSize: 11 }} /> Edit
+                                        </button>
+                                        <button onClick={() => setDeleteOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: 'var(--destructive)', color: 'var(--destructive-foreground)', fontSize: 12, fontWeight: 500, borderRadius: 6, border: 'none', cursor: 'pointer' }}>
+                                            <i className="fa-solid fa-trash-can" style={{ fontSize: 11 }} /> Hapus
+                                        </button>
+                                        <button onClick={handleSendForApproval} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: '#2563eb', color: '#fff', fontSize: 12, fontWeight: 500, borderRadius: 6, border: 'none', cursor: 'pointer' }}
+                                            onMouseOver={e => ((e.currentTarget as any).style.background = '#1d4ed8')} onMouseOut={e => ((e.currentTarget as any).style.background = '#2563eb')}>
+                                            <i className="fa-solid fa-paper-plane" style={{ fontSize: 11 }} /> Kirim
+                                        </button>
+                                    </>
                                 )}
                                 <button onClick={() => handleDownload(selected.id, selected.versions.find(v => v.version_no === selected.current_version)?.file_name)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid #e5e7eb', fontSize: 12, fontWeight: 500, borderRadius: 6, background: 'none', cursor: 'pointer', color: '#374151' }}>
                                     <i className="fa-solid fa-download" style={{ fontSize: 11 }} /> Download
@@ -949,6 +998,9 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
             <CreateContractModal open={createOpen} onClose={() => setCreateOpen(false)} onSubmit={handleCreate} types={types} />
             <UploadRevisionModal open={revOpen} onClose={() => setRevOpen(false)} onSubmit={handleRevision} initialType={revType} />
             <RejectModal open={rejectOpen} onClose={() => setRejectOpen(false)} onSubmit={handleReject} />
+            <SendApprovalModal open={sendOpen} onClose={() => setSendOpen(false)} onSubmit={handleSendSubmit} contractType={selected?.contract_type || undefined} />
+            <EditContractModal open={editOpen} onClose={() => setEditOpen(false)} onSubmit={handleUpdate} contract={selected} types={types} processing={processing} />
+            <DeleteConfirmModal open={deleteOpen} onClose={() => setDeleteOpen(false)} onConfirm={handleDelete} processing={processing} />
             <PreviewModal
                 open={previewOpen}
                 onClose={() => setPreviewOpen(false)}
@@ -969,6 +1021,112 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
             <FloatingChat contracts={contracts} meId={meId} onContractUpdated={updateContract} />
 
         </AppLayout>
+    );
+}
+
+function EditContractModal({ open, onClose, onSubmit, contract, types, processing }: {
+    open: boolean;
+    onClose: () => void;
+    onSubmit: (data: any) => void;
+    contract: Contract | null;
+    types: ContractType[];
+    processing: boolean;
+}) {
+    const [title, setTitle] = useState('');
+    const [contractNo, setContractNo] = useState('');
+    const [description, setDescription] = useState('');
+    const [date, setDate] = useState('');
+    const [typeId, setTypeId] = useState('');
+
+    useEffect(() => {
+        if (open && contract) {
+            setTitle(contract.title);
+            setContractNo(contract.contract_no);
+            setDescription(contract.description || '');
+            setDate(contract.contract_date || '');
+            const t = types.find(x => x.name === contract.contract_type);
+            setTypeId(t ? String(t.id) : '');
+        }
+    }, [open, contract, types]);
+
+    if (!open) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="bg-card border border-border w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden scale-in-center">
+                <div className="flex items-center justify-between border-b border-border/50" style={{ padding: '16px 20px' }}>
+                    <h3 className="font-bold text-gray-900" style={{ fontSize: 16 }}>Edit Informasi Kontrak</h3>
+                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors text-muted-foreground"><i className="fa-solid fa-xmark" /></button>
+                </div>
+                <div style={{ padding: 20 }}>
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">Judul Kontrak</label>
+                            <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Contoh: Perjanjian Kerjasama Jasa IT"
+                                className="w-full bg-muted/30 border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary/50 transition-all font-medium" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">No. Kontrak</label>
+                                <input value={contractNo} onChange={e => setContractNo(e.target.value)} placeholder="CTR/2026/..."
+                                    className="w-full bg-muted/30 border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary/50 transition-all font-mono" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">Tanggal</label>
+                                <input type="date" value={date} onChange={e => setDate(e.target.value)}
+                                    className="w-full bg-muted/30 border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary/50 transition-all" />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">Tipe Kontrak</label>
+                            <select value={typeId} onChange={e => setTypeId(e.target.value)}
+                                className="w-full bg-muted/30 border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary/50 transition-all">
+                                <option value="">Pilih Tipe</option>
+                                {types.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">Deskripsi</label>
+                            <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} placeholder="Penjelasan singkat kontrak..."
+                                className="w-full bg-muted/30 border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary/50 transition-all resize-none" />
+                        </div>
+                    </div>
+                    <div className="flex gap-3 mt-8">
+                        <button onClick={onClose} className="flex-1 py-2.5 border border-border text-sm font-bold rounded-xl hover:bg-muted transition-all">Batal</button>
+                        <button onClick={() => onSubmit({ title, contract_no: contractNo, description, contract_date: date, contract_type_id: typeId })}
+                            disabled={processing || !title}
+                            className="flex-1 py-2.5 bg-primary text-primary-foreground text-sm font-bold rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all active:scale-95 disabled:opacity-50">
+                            {processing ? <i className="fa-solid fa-spinner fa-spin mr-2" /> : <i className="fa-solid fa-save mr-2" />}
+                            Simpan Perubahan
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function DeleteConfirmModal({ open, onClose, onConfirm, processing }: { open: boolean, onClose: () => void, onConfirm: () => void, processing: boolean }) {
+    if (!open) return null;
+    return (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="bg-card border border-border w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden scale-in-center">
+                <div style={{ padding: '32px 24px', textAlign: 'center' }}>
+                    <div className="w-16 h-16 bg-destructive/10 text-destructive rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i className="fa-solid fa-trash-can" style={{ fontSize: 24 }} />
+                    </div>
+                    <h3 className="font-bold text-gray-900 mb-2" style={{ fontSize: 18 }}>Hapus Kontrak?</h3>
+                    <p className="text-muted-foreground text-sm leading-relaxed">Seluruh data dokumen, riwayat, dan chat terkait kontrak ini akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan.</p>
+                </div>
+                <div className="flex border-t border-border">
+                    <button onClick={onClose} className="flex-1 py-4 text-sm font-bold text-muted-foreground hover:bg-muted transition-colors border-r border-border">Batal</button>
+                    <button onClick={onConfirm} disabled={processing} className="flex-1 py-4 text-sm font-bold text-destructive hover:bg-destructive/5 transition-colors">
+                        {processing ? <i className="fa-solid fa-spinner fa-spin mr-2" /> : null}
+                        Ya, Hapus
+                    </button>
+                </div>
+            </div>
+        </div>
     );
 }
 

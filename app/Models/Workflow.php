@@ -12,6 +12,9 @@ class Workflow extends Model
         'name',
         'description',
         'is_default',
+        'is_template',
+        'created_by',
+        'updated_by',
     ];
 
     protected $casts = [

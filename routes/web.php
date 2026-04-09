@@ -43,7 +43,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/contracts',                            [ContractController::class, 'index']);
         Route::get('/contract-types',                       [ContractController::class, 'getTypes']);
         Route::post('/contracts',                          [ContractController::class, 'store']);
+        Route::get('/contracts/workflows',                 [ContractController::class, 'getWorkflows']);
+        Route::get('/contracts/users',                     [ContractController::class, 'getUsers']);
+        Route::get('/contracts/roles',                     [ContractController::class, 'getRoles']);
         Route::get('/contracts/{id}',                      [ContractController::class, 'show']);
+        Route::patch('/contracts/{id}',                    [ContractController::class, 'update']);
+        Route::delete('/contracts/{id}',                   [ContractController::class, 'destroy']);
         Route::post('/contracts/{id}/send',                [ContractController::class, 'send']);
         Route::post('/contracts/{id}/approve',             [ContractController::class, 'approve']);
         Route::post('/contracts/{id}/reject',              [ContractController::class, 'reject']);
@@ -64,6 +69,11 @@ Route::middleware(['auth'])->group(function () {
 
     // ── Admin Panel ──
     Route::middleware(['admin'])->prefix('admin')->group(function () {
+        Route::get('/contracts', [\App\Http\Controllers\ContractController::class, 'index'])->name('contracts.index');
+        Route::get('/contracts/workflows', [\App\Http\Controllers\ContractController::class, 'getWorkflows'])->name('contracts.workflows');
+        Route::get('/contracts/users', [\App\Http\Controllers\ContractController::class, 'getUsers'])->name('contracts.users');
+        Route::post('/contracts', [\App\Http\Controllers\ContractController::class, 'store'])->name('contracts.store');
+
         Route::get('/users', [\App\Http\Controllers\AdminController::class, 'users'])->name('admin.users');
         Route::post('/users', [\App\Http\Controllers\AdminController::class, 'storeUser'])->name('admin.users.store');
         Route::put('/users/{user}', [\App\Http\Controllers\AdminController::class, 'updateUser'])->name('admin.users.update');
@@ -78,6 +88,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/workflows', [\App\Http\Controllers\AdminController::class, 'storeWorkflow'])->name('admin.workflows.store');
         Route::put('/workflows/{workflow}', [\App\Http\Controllers\AdminController::class, 'updateWorkflow'])->name('admin.workflows.update');
         Route::delete('/workflows/{workflow}', [\App\Http\Controllers\AdminController::class, 'destroyWorkflow'])->name('admin.workflows.destroy');
+
 
         Route::get('/roles', [\App\Http\Controllers\AdminController::class, 'roles'])->name('admin.roles');
         Route::post('/roles', [\App\Http\Controllers\AdminController::class, 'storeRole'])->name('admin.roles.store');

@@ -10,9 +10,12 @@ class WorkflowStep extends Model
 {
     protected $fillable = [
         'workflow_id',
+        'user_id',
         'role',
         'step',
         'description',
+        'created_by',
+        'updated_by',
     ];
 
     protected $casts = [
@@ -22,6 +25,11 @@ class WorkflowStep extends Model
     public function workflow(): BelongsTo
     {
         return $this->belongsTo(Workflow::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function approvals(): HasMany
