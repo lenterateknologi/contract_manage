@@ -1,4 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import axios from 'axios';
+import { cn } from '@/lib/utils';
 import { Head, router, usePage, useForm } from '@inertiajs/react';
 import { Contract, ContractType } from '@/types/contracts';
 import { contractApi } from '@/lib/contract-api';
@@ -38,10 +40,135 @@ function Td({ children, className, style }: { children?: React.ReactNode; classN
 function ProgressCell({ c }: { c: Contract }) {
     const { done, total, pct } = c.progress;
     return (
-        <div style={{ padding: '0 8px', minWidth: 80 }}>
+        <div style={{ padding: '0 12px', minWidth: 80 }}>
             <div style={{ fontSize: 11, color: 'var(--muted-foreground)', marginBottom: 4 }}>{done}/{total}</div>
             <div style={{ height: 4, background: 'var(--muted)', borderRadius: 99, overflow: 'hidden', width: '100%' }}>
                 <div style={{ height: '100%', background: 'var(--primary)', borderRadius: 99, width: `${pct}%` }} />
+            </div>
+        </div>
+    );
+}
+
+
+
+function DashboardMetrics({ metrics }: { metrics: any }) {
+    if (!metrics) return null;
+    const { metrics: m, monthlyTrend } = metrics;
+
+    // Dynamic Y-axis scale calculation
+    const allCounts = Array.isArray(monthlyTrend) ? monthlyTrend.flatMap((mo: any) => mo.types.map((ti: any) => ti.count)) : [0];
+    const rawMax = Math.max(...allCounts, 5);
+    const yMax = Math.ceil(rawMax / 5) * 5 || 5;
+    const steps = 5;
+    const yLabels = Array.from({ length: steps + 1 }, (_, i) => Math.round(yMax - (i * (yMax / steps))));
+
+    return (
+        <div className="space-y-6 mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
+            {/* Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <MetricCard title="Rata-rata SLA" value={`${m.avgCycleTime} Hari`} icon="fa-clock" color="blue" />
+                <MetricCard title="Total Kontrak" value={String(m.totalContracts)} icon="fa-file-signature" color="green" />
+                <MetricCard title="Approval Pending" value={String(m.pendingApprovals)} icon="fa-triangle-exclamation" color="amber" />
+                <MetricCard title="Approved (Bulan Ini)" value={String(m.approvedThisMonth)} icon="fa-calendar-check" color="purple" />
+            </div>
+
+            {/* Growth Chart */}
+            <div className="bg-card border border-border rounded-xl overflow-hidden flex flex-col">
+                <div className="px-5 py-4 border-b border-border font-semibold flex items-center justify-between shadow-sm bg-muted/20">
+                    <div className="flex items-center gap-2">
+                        <i className="fa-solid fa-chart-line text-muted-foreground mr-1" />
+                        <span style={{ fontSize: 13 }}>Tren Pertumbuhan Kontrak</span>
+                    </div>
+                </div>
+                <div className="p-6 flex flex-col justify-end min-h-[380px]">
+                    <div className="flex gap-2 h-[220px] relative items-end">
+                        {/* Dynamic Y-Axis Labels */}
+                        <div className="flex flex-col justify-between h-full pb-6 pr-2 text-[10px] font-bold text-muted-foreground/60 select-none border-r border-border/50 min-w-[24px]">
+                            {yLabels.map((v) => (
+                                <span key={v} className="flex items-center justify-end h-0">{v}</span>
+                            ))}
+                        </div>
+
+                        {/* Chart Area with Rules */}
+                        <div className="flex-1 relative h-full flex items-end justify-between px-4 pb-6">
+                            {/* Horizontal Grid Lines (Rules) */}
+                            <div className="absolute inset-x-0 top-0 bottom-6 flex flex-col justify-between pointer-events-none">
+                                {yLabels.map((_, i) => (
+                                    <div key={i} className="w-full border-t border-muted-foreground/10 border-dashed first:border-solid last:border-solid last:border-muted-foreground/20" />
+                                ))}
+                            </div>
+
+                            {/* Data Points (Bars) */}
+                            {Array.isArray(monthlyTrend) && monthlyTrend.map((mo: any) => {
+                                return (
+                                    <div key={mo.month} className="flex-1 flex flex-col items-center gap-2 group h-full justify-end relative z-10">
+                                        <div className="relative w-full flex items-end justify-center gap-1 h-full">
+                                            {mo.types.map((t: any, idx: number) => {
+                                                const typePct = (t.count / yMax) * 100;
+                                                return (
+                                                    <div 
+                                                        key={t.name}
+                                                        className={cn(
+                                                            "w-full max-w-[8px] rounded-t-sm transition-all duration-500 ease-out hover:brightness-110 cursor-help",
+                                                            idx === 0 ? "bg-primary" : 
+                                                            idx === 1 ? "bg-blue-500" : 
+                                                            idx === 2 ? "bg-purple-500" : "bg-amber-500"
+                                                        )}
+                                                        style={{ height: `${typePct}%`, minHeight: t.count > 0 ? 2 : 0 }}
+                                                        title={`${t.name}: ${t.count}`}
+                                                    />
+                                                );
+                                            })}
+                                            <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground px-2 py-1 rounded text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-md border border-border z-10">
+                                                {mo.total} Kontrak
+                                            </div>
+                                        </div>
+                                        <div className="absolute -bottom-6 flex flex-col items-center">
+                                            <span className="text-[10px] font-bold text-muted-foreground mt-1 whitespace-nowrap">{mo.month}</span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                    
+                    {/* Legend */}
+                    <div className="mt-8 flex flex-wrap gap-4 px-4 justify-center">
+                        {Array.from(new Set(monthlyTrend?.flatMap((m: any) => m.types.map((t: any) => t.name)) || [])).map((name: any, idx) => (
+                            <div key={name} className="flex items-center gap-2">
+                                <div className={cn(
+                                    "h-2 w-2 rounded-full",
+                                    idx === 0 ? "bg-primary" : 
+                                    idx === 1 ? "bg-blue-500" : 
+                                    idx === 2 ? "bg-purple-500" : "bg-amber-500"
+                                )} />
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase">{name}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function MetricCard({ title, value, icon, color }: { title: string; value: string; icon: string; color: string }) {
+    const bgMap = {
+        blue: 'bg-blue-500/10 text-blue-600',
+        green: 'bg-green-500/10 text-green-600',
+        amber: 'bg-amber-500/10 text-amber-600',
+        purple: 'bg-purple-500/10 text-purple-600'
+    } as any;
+    return (
+        <div className="bg-card border border-border rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+            <div className="flex items-start justify-between relative z-10">
+                <div className="space-y-1">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{title}</p>
+                    <p className="text-2xl font-black text-gray-900 leading-tight">{value}</p>
+                </div>
+                <div className={cn("h-10 w-10 flex items-center justify-center rounded-lg border border-border/10", bgMap[color])}>
+                    <i className={cn("fa-solid", icon)} style={{ fontSize: 16 }} />
+                </div>
             </div>
         </div>
     );
@@ -162,7 +289,7 @@ function ProfileView({ meUser, showToast }: { meUser: any; showToast: any }) {
 
 
 // ─── Main Page ──────────────────────────────────────────────────────
-function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, types, currentView }: {
+function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, types, currentView, metrics }: {
     contracts: Contract[];
     setContracts: React.Dispatch<React.SetStateAction<Contract[]>>;
     meId: string;
@@ -170,6 +297,7 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
     initialSelected?: Contract | null;
     types: ContractType[];
     currentView: View;
+    metrics: any;
 }) {
     const { showToast } = useToast();
     const [view, setView] = useState<View>(currentView);
@@ -395,7 +523,7 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
     ];
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <>
             <Head title={SL[view]} />
 
             <div className="flex flex-1 flex-col gap-4 p-4">
@@ -408,26 +536,8 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
                 {/* ── Dashboard ── */}
                 {view === 'dashboard' && !selected && (
                     <div>
-                        {/* Stats */}
-                        <div className="grid grid-cols-4 gap-3 mb-5">
-                            {[
-                                { icon: 'fa-file-lines', label: 'Total Kontrak', value: stats.total, sub: `+ ${stats.monthCount} bulan ini` },
-                                { icon: 'fa-regular fa-clock', label: 'Menunggu Approval', value: stats.pending, sub: `${myPending.length} perlu aksimu` },
-                                { icon: 'fa-circle-check', label: 'Disetujui', value: stats.approved, sub: `${stats.total ? Math.round(stats.approved / stats.total * 100) : 0}% approval rate` },
-                                { icon: 'fa-rotate', label: 'Revisi', value: stats.revision, sub: `${stats.revision} kontrak perlu revisi` },
-                            ].map(s => (
-                                <div key={s.label} className="bg-card border border-border rounded-xl flex items-center gap-3" style={{ padding: 16 }}>
-                                    <div className="flex items-center justify-center rounded-lg border border-border text-muted-foreground flex-shrink-0" style={{ width: 36, height: 36 }}>
-                                        <i className={`${s.icon.startsWith('fa-regular') ? s.icon : 'fa-solid ' + s.icon}`} />
-                                    </div>
-                                    <div>
-                                        <div className="font-medium text-muted-foreground" style={{ fontSize: 12 }}>{s.label}</div>
-                                        <div className="font-bold leading-tight" style={{ fontSize: 22 }}>{s.value}</div>
-                                        <div className="text-muted-foreground" style={{ fontSize: 12 }}>{s.sub}</div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                        {/* Stats & Trends */}
+                        <DashboardMetrics metrics={metrics} />
 
                         {/* Recent Contracts Header & Filter */}
                         <div className="flex flex-col gap-4 mb-4">
@@ -506,6 +616,9 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
                                                 <div className="flex-1 min-w-0">
                                                     <div className="text-gray-900 font-medium truncate" style={{ fontSize: 10 }}>{c.creator?.name}</div>
                                                     <div className="text-muted-foreground" style={{ fontSize: 9 }}>v{c.current_version} · {c.created_at}</div>
+                                                </div>
+                                                <div className="w-20">
+                                                    <ProgressCell c={c} />
                                                 </div>
                                             </div>
                                         </div>
@@ -661,7 +774,7 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
                                                     <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">v{c.current_version}</span>
                                                     <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground truncate max-w-[80px]">{c.contract_type}</span>
                                                 </div>
-                                                <div className="w-16">
+                                                <div className="w-20">
                                                     <ProgressCell c={c} />
                                                 </div>
                                             </div>
@@ -770,11 +883,16 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
                                                 </div>
                                             </div>
                                             <div className="pt-3 border-t border-border/50 flex items-center justify-between">
-                                                <div className="flex gap-2">
-                                                    <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold uppercase tracking-tight">{a.role}</span>
-                                                    <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">v{c.current_version}</span>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex gap-2 mb-2">
+                                                        <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold uppercase tracking-tight">{a.role}</span>
+                                                        <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">v{c.current_version}</span>
+                                                    </div>
+                                                    <div className="text-[10px] text-muted-foreground font-medium">Approval Seq {a.sequence}</div>
                                                 </div>
-                                                <div className="text-[10px] text-muted-foreground font-medium">Seq {a.sequence}</div>
+                                                <div className="w-20">
+                                                    <ProgressCell c={c} />
+                                                </div>
                                             </div>
                                         </div>
                                     );
@@ -791,42 +909,6 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
                 )}
 
                 {/* ── Audit ── */}
-                {view === 'audit' && !selected && meUser?.role === 'Admin' && (
-                    <div className="bg-card border border-border rounded-xl overflow-hidden">
-                        <div className="flex items-center justify-between border-b border-border/50" style={{ padding: '12px 16px' }}>
-                            <span className="font-semibold flex items-center gap-2" style={{ fontSize: 13 }}>
-                                <i className="fa-solid fa-chart-bar text-muted-foreground" style={{ fontSize: 12 }} /> Audit Trail
-                            </span>
-                            <div className="flex gap-2">
-                                <input type="date" style={{ fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, padding: '6px 8px', outline: 'none', width: 144 }} />
-                                <input type="date" style={{ fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, padding: '6px 8px', outline: 'none', width: 144 }} />
-                                <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid var(--border)', fontSize: 12, fontWeight: 500, borderRadius: 6, background: 'none', cursor: 'pointer' }}>
-                                    <i className="fa-solid fa-filter" style={{ fontSize: 12 }} /> Filter
-                                </button>
-                            </div>
-                        </div>
-                        <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%' }}>
-                                <thead><tr style={{ background: 'var(--muted)' }}>
-                                    <Th>Waktu</Th><Th>Kontrak</Th><Th>Aksi</Th><Th>Deskripsi</Th><Th>Aktor</Th>
-                                </tr></thead>
-                                <tbody>
-                                    {contracts.flatMap(c => c.histories.map(h => ({ ...h, contract: c }))).sort((a, b) => b.created_at.localeCompare(a.created_at)).map((h, i) => (
-                                        <tr key={i} onMouseOver={e => (e.currentTarget as HTMLElement).style.background = 'var(--muted)'} onMouseOut={e => (e.currentTarget as HTMLElement).style.background = ''}>
-                                            <Td><span className="text-muted-foreground whitespace-nowrap" style={{ fontSize: 12 }}>{h.created_at}</span></Td>
-                                            <Td>
-                                                <button onClick={() => openDetail(h.contract)} style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer' }}>{h.contract.contract_no}</button>
-                                            </Td>
-                                            <Td><span className="font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded" style={{ fontSize: 12 }}>{h.action}</span></Td>
-                                            <Td style={{ fontSize: 12 }}>{h.description}</Td>
-                                            <Td><div className="flex items-center gap-1.5"><Avatar user={h.actor} size="sm" /><span style={{ fontSize: 12 }}>{h.actor?.name}</span></div></Td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                )}
 
                 {view === 'audit' && !selected && meUser?.role !== 'Admin' && (
                     <div className="bg-card border border-border rounded-xl p-12 text-center text-muted-foreground">
@@ -1215,7 +1297,7 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
             {/* ── Floating Chat ── */}
             <FloatingChat contracts={contracts} meId={meId} onContractUpdated={updateContract} />
 
-        </AppLayout >
+        </>
     );
 }
 
@@ -1334,11 +1416,17 @@ export default function ContractsIndex({ currentView = 'dashboard' }: { currentV
     const [types, setTypes] = useState<ContractType[]>([]);
     const [bootLoading, setBootLoading] = useState(true);
     const [initialSelected, setInitialSelected] = useState<Contract | null>(null);
+    const [metrics, setMetrics] = useState<any>(null);
 
     useEffect(() => {
-        Promise.all([contractApi.list(), contractApi.getTypes()]).then(([cData, tData]) => {
+        Promise.all([
+            contractApi.list(),
+            contractApi.getTypes(),
+            axios.post('/admin/api/reports/data', {}).then(res => res.data).catch(() => null)
+        ]).then(([cData, tData, mData]) => {
             setContracts(cData);
             setTypes(tData);
+            setMetrics(mData);
             if (initialId) {
                 setInitialSelected(cData.find((c: Contract) => c.id === initialId) ?? null);
             }
@@ -1356,7 +1444,7 @@ export default function ContractsIndex({ currentView = 'dashboard' }: { currentV
                         <span >Memuat data kontrak...</span>
                     </div>
                 ) : (
-                    <ContractPage contracts={contracts} setContracts={setContracts} meId={meId} meUser={meUser} initialSelected={initialSelected} types={types} currentView={currentView} />
+                    <ContractPage contracts={contracts} setContracts={setContracts} meId={meId} meUser={meUser} initialSelected={initialSelected} types={types} currentView={currentView} metrics={metrics} />
                 )}
             </ToastProvider>
         </>

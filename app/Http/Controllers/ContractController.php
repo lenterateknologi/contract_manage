@@ -27,7 +27,7 @@ class ContractController extends Controller
 
     public function index(): JsonResponse
     {
-        $contracts = Contract::with(['creator', 'versions.uploader', 'approvals.user', 'approvals.workflowStep', 'workflow.steps', 'histories.actor', 'messages.user', 'attachments.uploader', 'contractType'])
+        $contracts = Contract::with(['creator', 'versions.uploader', 'approvals.approver', 'approvals.workflowStep', 'workflow.steps', 'histories.actor', 'messages.user', 'attachments.uploader', 'contractType'])
             ->orderByDesc('created_at')
             ->get()
             ->map(fn($c) => $this->formatContract($c));
@@ -45,7 +45,7 @@ class ContractController extends Controller
         $contract = Contract::with([
             'creator',
             'versions.uploader',
-            'approvals.user',
+            'approvals.approver',
             'approvals.workflowStep',
             'workflow.steps',
             'histories.actor',
@@ -87,7 +87,7 @@ class ContractController extends Controller
             // Use workflow service to send for approval
             $contract = $this->workflowService->sendForApproval($contract, $workflowId, $customSteps);
 
-            $contract->load(['creator', 'versions.uploader', 'approvals.user', 'approvals.workflowStep', 'workflow.steps', 'histories.actor', 'messages.user', 'workflow', 'workflowStep']);
+            $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'approvals.workflowStep', 'workflow.steps', 'histories.actor', 'messages.user', 'workflow', 'workflowStep']);
             return response()->json($this->formatContract($contract), 200);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 422);
@@ -607,7 +607,7 @@ class ContractController extends Controller
                         'status'        => $a->status,
                         'note'          => $a->comment,
                         'approved_at'   => $a->decided_at?->toDateTimeString(),
-                        'approver'      => $this->formatUser($a->user),
+                        'approver'      => $this->formatUser($a->approver),
                     ];
                 }
             } else {

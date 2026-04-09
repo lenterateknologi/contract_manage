@@ -106,6 +106,7 @@ class ContractWorkflowService
                 'status' => 'pending',
                 'created_by' => auth()->id(),
                 'updated_by' => auth()->id(),
+                'sequence'   => $step->step,
             ]);
         }
     }

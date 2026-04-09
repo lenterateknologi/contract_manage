@@ -12,9 +12,19 @@ declare global {
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
+import AppLayout from './layouts/app-layout';
+
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,
-    resolve: (name) => resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob('./pages/**/*.tsx')),
+    resolve: (name) => {
+        const page = resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob('./pages/**/*.tsx')) as any;
+        page.then((module: any) => {
+            if (module.default.layout === undefined && !name.startsWith('auth/')) {
+                module.default.layout = (page: React.ReactNode) => <AppLayout children={page} />;
+            }
+        });
+        return page;
+    },
     setup({ el, App, props }) {
         const root = createRoot(el);
 

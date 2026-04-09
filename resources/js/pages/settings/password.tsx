@@ -49,7 +49,7 @@ export default function Password() {
     };
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <>
             <Head title="Profile settings" />
 
             <SettingsLayout>
@@ -123,6 +123,6 @@ export default function Password() {
                     </form>
                 </div>
             </SettingsLayout>
-        </AppLayout>
+        </>
     );
 }

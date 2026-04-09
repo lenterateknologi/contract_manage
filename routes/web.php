@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ContractController;
 use App\Http\Controllers\ContractMessageController;
+use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -30,9 +32,6 @@ Route::middleware(['auth'])->group(function () {
         return Inertia::render('contracts/index', ['currentView' => 'f2']);
     })->name('f2');
 
-    Route::get('audit', function () {
-        return Inertia::render('contracts/index', ['currentView' => 'audit']);
-    })->name('audit');
 
     Route::get('contracts/{id}', function ($id) {
         return Inertia::render('contracts/show', ['contractId' => $id]);
@@ -40,60 +39,66 @@ Route::middleware(['auth'])->group(function () {
 
     // ── Contract API (under web middleware so session auth works) ──
     Route::prefix('api')->group(function () {
-        Route::get('/contracts',                            [ContractController::class, 'index']);
-        Route::get('/contract-types',                       [ContractController::class, 'getTypes']);
-        Route::post('/contracts',                          [ContractController::class, 'store']);
-        Route::get('/contracts/workflows',                 [ContractController::class, 'getWorkflows']);
-        Route::get('/contracts/users',                     [ContractController::class, 'getUsers']);
-        Route::get('/contracts/roles',                     [ContractController::class, 'getRoles']);
-        Route::get('/contracts/{id}',                      [ContractController::class, 'show']);
-        Route::patch('/contracts/{id}',                    [ContractController::class, 'update']);
-        Route::delete('/contracts/{id}',                   [ContractController::class, 'destroy']);
-        Route::post('/contracts/{id}/send',                [ContractController::class, 'send']);
-        Route::post('/contracts/{id}/approve',             [ContractController::class, 'approve']);
-        Route::post('/contracts/{id}/reject',              [ContractController::class, 'reject']);
-        Route::post('/contracts/{id}/revision',            [ContractController::class, 'uploadRevision']);
-        Route::post('/contracts/{id}/version',             [ContractController::class, 'changeVersion']);
-        Route::post('/contracts/{id}/attachments',         [ContractController::class, 'uploadAttachment']);
+        Route::get('/contracts', [ContractController::class, 'index']);
+        Route::get('/contract-types', [ContractController::class, 'getTypes']);
+        Route::post('/contracts', [ContractController::class, 'store']);
+        Route::get('/contracts/workflows', [ContractController::class, 'getWorkflows']);
+        Route::get('/contracts/users', [ContractController::class, 'getUsers']);
+        Route::get('/contracts/roles', [ContractController::class, 'getRoles']);
+        Route::get('/contracts/{id}', [ContractController::class, 'show']);
+        Route::patch('/contracts/{id}', [ContractController::class, 'update']);
+        Route::delete('/contracts/{id}', [ContractController::class, 'destroy']);
+        Route::post('/contracts/{id}/send', [ContractController::class, 'send']);
+        Route::post('/contracts/{id}/approve', [ContractController::class, 'approve']);
+        Route::post('/contracts/{id}/reject', [ContractController::class, 'reject']);
+        Route::post('/contracts/{id}/revision', [ContractController::class, 'uploadRevision']);
+        Route::post('/contracts/{id}/version', [ContractController::class, 'changeVersion']);
+        Route::post('/contracts/{id}/attachments', [ContractController::class, 'uploadAttachment']);
         Route::delete('/contracts/{id}/attachments/{atId}', [ContractController::class, 'deleteAttachment']);
-        Route::get('/contracts/{id}/download',             [ContractController::class, 'download'])->name('contracts.download');
-        Route::get('/contracts/{id}/file/{versionNo}',     [ContractController::class, 'fileContent'])->name('contracts.file-url');
-        Route::get('/contracts/{id}/attachment/{atId}',    [ContractController::class, 'attachmentFile'])->name('contracts.attachment-file');
-        Route::get('/contracts/{id}/pdf/{versionNo}',      [ContractController::class, 'pdfPreview'])->name('contracts.pdf-preview');
+        Route::get('/contracts/{id}/download', [ContractController::class, 'download'])->name('contracts.download');
+        Route::get('/contracts/{id}/file/{versionNo}', [ContractController::class, 'fileContent'])->name('contracts.file-url');
+        Route::get('/contracts/{id}/attachment/{atId}', [ContractController::class, 'attachmentFile'])->name('contracts.attachment-file');
+        Route::get('/contracts/{id}/pdf/{versionNo}', [ContractController::class, 'pdfPreview'])->name('contracts.pdf-preview');
         Route::get('/contracts/{id}/attachment-pdf/{atId}', [ContractController::class, 'attachmentPdfPreview'])->name('contracts.attachment-pdf-preview');
 
-        Route::get('/contracts/{contractId}/messages',     [ContractMessageController::class, 'index']);
-        Route::post('/contracts/{contractId}/messages',    [ContractMessageController::class, 'store']);
+        Route::get('/contracts/{contractId}/messages', [ContractMessageController::class, 'index']);
+        Route::post('/contracts/{contractId}/messages', [ContractMessageController::class, 'store']);
         Route::post('/contracts/{contractId}/messages/read', [ContractMessageController::class, 'markRead']);
     });
 
     // ── Admin Panel ──
     Route::middleware(['admin'])->prefix('admin')->group(function () {
-        Route::get('/contracts', [\App\Http\Controllers\ContractController::class, 'index'])->name('contracts.index');
-        Route::get('/contracts/workflows', [\App\Http\Controllers\ContractController::class, 'getWorkflows'])->name('contracts.workflows');
-        Route::get('/contracts/users', [\App\Http\Controllers\ContractController::class, 'getUsers'])->name('contracts.users');
-        Route::post('/contracts', [\App\Http\Controllers\ContractController::class, 'store'])->name('contracts.store');
+        Route::get('/contracts', [ContractController::class, 'index'])->name('contracts.index');
+        Route::get('/contracts/workflows', [ContractController::class, 'getWorkflows'])->name('contracts.workflows');
+        Route::get('/contracts/users', [ContractController::class, 'getUsers'])->name('contracts.users');
+        Route::post('/contracts', [ContractController::class, 'store'])->name('contracts.store');
 
-        Route::get('/users', [\App\Http\Controllers\AdminController::class, 'users'])->name('admin.users');
-        Route::post('/users', [\App\Http\Controllers\AdminController::class, 'storeUser'])->name('admin.users.store');
-        Route::put('/users/{user}', [\App\Http\Controllers\AdminController::class, 'updateUser'])->name('admin.users.update');
-        Route::delete('/users/{user}', [\App\Http\Controllers\AdminController::class, 'destroyUser'])->name('admin.users.destroy');
+        Route::get('/users', [AdminController::class, 'users'])->name('admin.users');
+        Route::post('/users', [AdminController::class, 'storeUser'])->name('admin.users.store');
+        Route::put('/users/{user}', [AdminController::class, 'updateUser'])->name('admin.users.update');
+        Route::delete('/users/{user}', [AdminController::class, 'destroyUser'])->name('admin.users.destroy');
 
-        Route::get('/contract-types', [\App\Http\Controllers\AdminController::class, 'contractTypes'])->name('admin.contract-types');
-        Route::post('/contract-types', [\App\Http\Controllers\AdminController::class, 'storeContractType'])->name('admin.contract-types.store');
-        Route::put('/contract-types/{type}', [\App\Http\Controllers\AdminController::class, 'updateContractType'])->name('admin.contract-types.update');
-        Route::delete('/contract-types/{type}', [\App\Http\Controllers\AdminController::class, 'destroyContractType'])->name('admin.contract-types.destroy');
+        Route::get('/contract-types', [AdminController::class, 'contractTypes'])->name('admin.contract-types');
+        Route::post('/contract-types', [AdminController::class, 'storeContractType'])->name('admin.contract-types.store');
+        Route::put('/contract-types/{type}', [AdminController::class, 'updateContractType'])->name('admin.contract-types.update');
+        Route::delete('/contract-types/{type}', [AdminController::class, 'destroyContractType'])->name('admin.contract-types.destroy');
 
-        Route::get('/workflows', [\App\Http\Controllers\AdminController::class, 'workflows'])->name('admin.workflows');
-        Route::post('/workflows', [\App\Http\Controllers\AdminController::class, 'storeWorkflow'])->name('admin.workflows.store');
-        Route::put('/workflows/{workflow}', [\App\Http\Controllers\AdminController::class, 'updateWorkflow'])->name('admin.workflows.update');
-        Route::delete('/workflows/{workflow}', [\App\Http\Controllers\AdminController::class, 'destroyWorkflow'])->name('admin.workflows.destroy');
+        Route::get('/workflows', [AdminController::class, 'workflows'])->name('admin.workflows');
+        Route::post('/workflows', [AdminController::class, 'storeWorkflow'])->name('admin.workflows.store');
+        Route::put('/workflows/{workflow}', [AdminController::class, 'updateWorkflow'])->name('admin.workflows.update');
+        Route::delete('/workflows/{workflow}', [AdminController::class, 'destroyWorkflow'])->name('admin.workflows.destroy');
 
+        Route::get('/roles', [AdminController::class, 'roles'])->name('admin.roles');
+        Route::post('/roles', [AdminController::class, 'storeRole'])->name('admin.roles.store');
+        Route::put('/roles/{role}', [AdminController::class, 'updateRole'])->name('admin.roles.update');
+        Route::delete('/roles/{role}', [AdminController::class, 'destroyRole'])->name('admin.roles.destroy');
 
-        Route::get('/roles', [\App\Http\Controllers\AdminController::class, 'roles'])->name('admin.roles');
-        Route::post('/roles', [\App\Http\Controllers\AdminController::class, 'storeRole'])->name('admin.roles.store');
-        Route::put('/roles/{role}', [\App\Http\Controllers\AdminController::class, 'updateRole'])->name('admin.roles.update');
-        Route::delete('/roles/{role}', [\App\Http\Controllers\AdminController::class, 'destroyRole'])->name('admin.roles.destroy');
+        Route::get('/reports', function () {
+            return Inertia::render('admin/reports');
+        })->name('admin.reports');
+        Route::post('/api/reports/data', [ReportController::class, 'index']);
+        Route::get('/api/reports/export', [ReportController::class, 'exportCsv']);
+        Route::get('/api/reports/audit/export', [ReportController::class, 'exportAuditCsv']);
     });
 });
 
