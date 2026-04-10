@@ -56,20 +56,27 @@ function DashboardMetrics({ metrics }: { metrics: any }) {
     const { metrics: m, monthlyTrend } = metrics;
 
     // Dynamic Y-axis scale calculation
-    const allCounts = Array.isArray(monthlyTrend) ? monthlyTrend.flatMap((mo: any) => mo.types.map((ti: any) => ti.count)) : [0];
+    const allCounts = Array.isArray(monthlyTrend) ? monthlyTrend.flatMap((mo: any) => mo.types?.map((ti: any) => ti.count) || []) : [0];
     const rawMax = Math.max(...allCounts, 5);
     const yMax = Math.ceil(rawMax / 5) * 5 || 5;
     const steps = 5;
     const yLabels = Array.from({ length: steps + 1 }, (_, i) => Math.round(yMax - (i * (yMax / steps))));
 
+    const metricsData = m || {
+        avgCycleTime: 0,
+        totalContracts: 0,
+        pendingApprovals: 0,
+        approvedThisMonth: 0
+    };
+
     return (
         <div className="space-y-6 mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
             {/* Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <MetricCard title="Rata-rata SLA" value={`${m.avgCycleTime} Hari`} icon="fa-clock" color="blue" />
-                <MetricCard title="Total Kontrak" value={String(m.totalContracts)} icon="fa-file-signature" color="green" />
-                <MetricCard title="Approval Pending" value={String(m.pendingApprovals)} icon="fa-triangle-exclamation" color="amber" />
-                <MetricCard title="Approved (Bulan Ini)" value={String(m.approvedThisMonth)} icon="fa-calendar-check" color="purple" />
+                <MetricCard title="Rata-rata SLA" value={`${metricsData.avgCycleTime} Hari`} icon="fa-clock" color="blue" />
+                <MetricCard title="Total Kontrak" value={String(metricsData.totalContracts)} icon="fa-file-signature" color="green" />
+                <MetricCard title="Approval Pending" value={String(metricsData.pendingApprovals)} icon="fa-triangle-exclamation" color="amber" />
+                <MetricCard title="Approved (Bulan Ini)" value={String(metricsData.approvedThisMonth)} icon="fa-calendar-check" color="purple" />
             </div>
 
             {/* Growth Chart */}
@@ -1408,17 +1415,35 @@ function DeleteConfirmModal({ open, onClose, onConfirm, processing }: { open: bo
 }
 
 // ─── Page Entry ──────────────────────────────────────────────────────
-export default function ContractsIndex({ currentView = 'dashboard' }: { currentView?: View }) {
+export default function ContractsIndex({ 
+    currentView = 'dashboard',
+    contracts: initialContracts = [],
+    types: initialTypes = [],
+    metrics: initialMetrics = null
+}: { 
+    currentView?: View;
+    contracts?: Contract[];
+    types?: ContractType[];
+    metrics?: any;
+}) {
     const { auth, contractId: initialId } = usePage<{ auth: { user: any }; contractId?: string }>().props;
     const meId = auth?.user?.id ?? '';
     const meUser = auth?.user ?? null;
-    const [contracts, setContracts] = useState<Contract[]>([]);
-    const [types, setTypes] = useState<ContractType[]>([]);
-    const [bootLoading, setBootLoading] = useState(true);
+    const [contracts, setContracts] = useState<Contract[]>(initialContracts);
+    const [types, setTypes] = useState<ContractType[]>(initialTypes);
+    const [bootLoading, setBootLoading] = useState(initialContracts.length === 0);
     const [initialSelected, setInitialSelected] = useState<Contract | null>(null);
-    const [metrics, setMetrics] = useState<any>(null);
+    const [metrics, setMetrics] = useState<any>(initialMetrics);
 
     useEffect(() => {
+        if (initialContracts.length > 0 && initialTypes.length > 0) {
+            if (initialId) {
+                setInitialSelected(initialContracts.find((c: Contract) => c.id === initialId) ?? null);
+            }
+            return;
+        }
+
+        setBootLoading(true);
         Promise.all([
             contractApi.list(),
             contractApi.getTypes(),
@@ -1432,7 +1457,7 @@ export default function ContractsIndex({ currentView = 'dashboard' }: { currentV
             }
             setBootLoading(false);
         }).catch(() => setBootLoading(false));
-    }, []);
+    }, [initialContracts, initialTypes, initialId]);
 
     return (
         <>

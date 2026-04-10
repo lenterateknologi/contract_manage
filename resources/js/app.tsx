@@ -19,7 +19,7 @@ createInertiaApp({
     resolve: (name) => {
         const page = resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob('./pages/**/*.tsx')) as any;
         page.then((module: any) => {
-            if (module.default.layout === undefined && !name.startsWith('auth/')) {
+            if (module.default.layout === undefined && !name.startsWith('auth/') && name !== 'welcome') {
                 module.default.layout = (page: React.ReactNode) => <AppLayout children={page} />;
             }
         });

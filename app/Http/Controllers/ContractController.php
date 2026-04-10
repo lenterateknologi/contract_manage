@@ -2,19 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Approval;
 use App\Models\Contract;
-use App\Models\ContractHistory;
-use App\Models\ContractVersion;
 use App\Models\ContractAttachment;
-use App\Models\User;
-use App\Services\ContractWorkflowService;
+use App\Models\ContractHistory;
 use App\Models\ContractType;
+use App\Models\ContractVersion;
+use App\Models\Role;
+use App\Models\User;
 use App\Models\Workflow;
+use App\Services\ContractWorkflowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class ContractController extends Controller
 {
@@ -30,7 +33,7 @@ class ContractController extends Controller
         $contracts = Contract::with(['creator', 'versions.uploader', 'approvals.approver', 'approvals.workflowStep', 'workflow.steps', 'histories.actor', 'messages.user', 'attachments.uploader', 'contractType'])
             ->orderByDesc('created_at')
             ->get()
-            ->map(fn($c) => $this->formatContract($c));
+            ->map(fn ($c) => $this->formatContract($c));
 
         return response()->json($contracts);
     }
@@ -51,11 +54,12 @@ class ContractController extends Controller
             'histories.actor',
             'messages.user',
             'attachments.uploader',
-            'contractType'
+            'contractType',
         ])->findOrFail($id);
 
         return response()->json($this->formatContract($contract));
     }
+
     public function getWorkflows(): JsonResponse
     {
         return response()->json(Workflow::where('is_template', true)->get());
@@ -68,9 +72,8 @@ class ContractController extends Controller
 
     public function getRoles(): JsonResponse
     {
-        return response()->json(\App\Models\Role::orderBy('name')->get());
+        return response()->json(Role::orderBy('name')->get());
     }
-
 
     public function send(Request $request, string $id): JsonResponse
     {
@@ -88,6 +91,7 @@ class ContractController extends Controller
             $contract = $this->workflowService->sendForApproval($contract, $workflowId, $customSteps);
 
             $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'approvals.workflowStep', 'workflow.steps', 'histories.actor', 'messages.user', 'workflow', 'workflowStep']);
+
             return response()->json($this->formatContract($contract), 200);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 422);
@@ -97,13 +101,13 @@ class ContractController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'title'            => 'required|string|max:255',
-            'description'      => 'nullable|string',
-            'contract_no'      => 'nullable|string',
-            'contract_date'    => 'nullable|date',
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'contract_no' => 'nullable|string',
+            'contract_date' => 'nullable|date',
             'contract_type_id' => 'nullable|exists:contract_types,id',
-            'f1_file'          => 'required|file|extensions:docx,doc,pdf|max:102400',
-            'changelog'        => 'nullable|string'
+            'f1_file' => 'required|file|extensions:docx,doc,pdf|max:102400',
+            'changelog' => 'nullable|string',
         ]);
 
         return \DB::transaction(function () use ($validated, $request) {
@@ -111,13 +115,13 @@ class ContractController extends Controller
             $contractTypeId = $validated['contract_type_id'] ?: null;
 
             $contract = Contract::create([
-                'contract_no'      => $validated['contract_no'] ?? ('CTR-' . date('Y') . '-' . strtoupper(Str::random(5))),
-                'title'            => $validated['title'],
-                'description'      => $validated['description'] ?? '—',
-                'contract_date'    => $validated['contract_date'] ?? null,
+                'contract_no' => $validated['contract_no'] ?? ('CTR-'.date('Y').'-'.strtoupper(Str::random(5))),
+                'title' => $validated['title'],
+                'description' => $validated['description'] ?? '—',
+                'contract_date' => $validated['contract_date'] ?? null,
                 'contract_type_id' => $contractTypeId,
-                'status'           => 'draft',
-                'created_by'       => $userId,
+                'status' => 'draft',
+                'created_by' => $userId,
             ]);
 
             $f1 = $request->file('f1_file');
@@ -125,15 +129,15 @@ class ContractController extends Controller
             $filePath = $f1->storeAs("contracts/{$contract->id}", "v1_f1_{$fileName}", 'local');
 
             ContractVersion::create([
-                'contract_id'   => $contract->id,
-                'version_no'    => 1,
+                'contract_id' => $contract->id,
+                'version_no' => 1,
                 'document_type' => 'f1',
-                'file_name'     => $fileName,
-                'file_path'     => $filePath,
-                'change_log'    => $validated['changelog'] ?? 'Initial version (F1)',
-                'uploaded_by'   => $userId,
-                'is_final'      => false,
-                'file_hash'     => Str::random(32),
+                'file_name' => $fileName,
+                'file_path' => $filePath,
+                'change_log' => $validated['changelog'] ?? 'Initial version (F1)',
+                'uploaded_by' => $userId,
+                'is_final' => false,
+                'file_hash' => Str::random(32),
             ]);
 
             ContractHistory::create(['contract_id' => $contract->id, 'action' => 'CONTRACT_CREATED', 'description' => 'Kontrak dibuat', 'actor_id' => $userId]);
@@ -154,10 +158,10 @@ class ContractController extends Controller
         }
 
         $validated = $request->validate([
-            'title'            => 'required|string|max:255',
-            'description'      => 'nullable|string',
-            'contract_no'      => 'nullable|string',
-            'contract_date'    => 'nullable|date',
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'contract_no' => 'nullable|string',
+            'contract_date' => 'nullable|date',
             'contract_type_id' => 'nullable|exists:contract_types,id',
         ]);
 
@@ -165,9 +169,9 @@ class ContractController extends Controller
 
         ContractHistory::create([
             'contract_id' => $contract->id,
-            'action'      => 'CONTRACT_UPDATED',
+            'action' => 'CONTRACT_UPDATED',
             'description' => 'Informasi kontrak diperbarui',
-            'actor_id'    => Auth::id(),
+            'actor_id' => Auth::id(),
         ]);
 
         return response()->json($this->formatContract($contract->fresh()));
@@ -197,14 +201,14 @@ class ContractController extends Controller
         $request->validate(['note' => 'nullable|string']);
 
         $contract = Contract::findOrFail($id);
-        
+
         // Find the pending approval for the current user
-        $approval = \App\Models\Approval::where('contract_id', $id)
+        $approval = Approval::where('contract_id', $id)
             ->where('user_id', Auth::id())
             ->where('status', 'pending')
             ->first();
 
-        if (!$approval) {
+        if (! $approval) {
             return response()->json(['message' => 'No pending approval found for you.'], 422);
         }
 
@@ -218,14 +222,14 @@ class ContractController extends Controller
         $request->validate(['reason' => 'required|string']);
 
         $contract = Contract::findOrFail($id);
-        
+
         // Find the pending approval for the current user
-        $approval = \App\Models\Approval::where('contract_id', $id)
+        $approval = Approval::where('contract_id', $id)
             ->where('user_id', Auth::id())
             ->where('status', 'pending')
             ->first();
 
-        if (!$approval) {
+        if (! $approval) {
             return response()->json(['message' => 'No pending approval found for you.'], 422);
         }
 
@@ -239,50 +243,50 @@ class ContractController extends Controller
         try {
             $request->validate([
                 'document_type' => 'nullable|string|in:contract,f1,f2',
-                'changelog'     => 'required|string',
-                'file'          => 'required|file|extensions:docx,doc,pdf|max:102400',
+                'changelog' => 'required|string',
+                'file' => 'required|file|extensions:docx,doc,pdf|max:102400',
             ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::error("Validation Failed on Revision", [
+        } catch (ValidationException $e) {
+            \Log::error('Validation Failed on Revision', [
                 'contract_id' => $id,
-                'errors'      => $e->errors(),
+                'errors' => $e->errors(),
             ]);
             throw $e;
         }
 
         $type = $request->input('document_type', 'contract');
         $contract = Contract::findOrFail($id);
-        
+
         // Find latest version for this type
         $lastVer = ContractVersion::where('contract_id', $contract->id)
             ->where('document_type', $type)
             ->max('version_no') ?? 0;
-            
+
         $newVer = $lastVer + 1;
         $userId = Auth::id();
-        $hash   = Str::random(12) . '...';
-        
+        $hash = Str::random(12).'...';
+
         $typeLabel = strtoupper($type);
-        $ext       = $request->file('file')->getClientOriginalExtension();
-        $fileName  = "{$contract->contract_no}_{$typeLabel}_v{$newVer}.{$ext}";
-        $filePath  = $request->file('file')->storeAs("contracts/{$contract->id}", "v{$newVer}_{$type}_{$fileName}", 'local');
+        $ext = $request->file('file')->getClientOriginalExtension();
+        $fileName = "{$contract->contract_no}_{$typeLabel}_v{$newVer}.{$ext}";
+        $filePath = $request->file('file')->storeAs("contracts/{$contract->id}", "v{$newVer}_{$type}_{$fileName}", 'local');
 
         ContractVersion::create([
-            'contract_id'   => $contract->id,
+            'contract_id' => $contract->id,
             'document_type' => $type,
-            'version_no'    => $newVer,
-            'file_name'     => $fileName,
-            'file_path'     => $filePath,
-            'change_log'    => $request->changelog,
-            'uploaded_by'   => $userId,
-            'file_hash'     => $hash,
+            'version_no' => $newVer,
+            'file_name' => $fileName,
+            'file_path' => $filePath,
+            'change_log' => $request->changelog,
+            'uploaded_by' => $userId,
+            'file_hash' => $hash,
         ]);
 
         // If it's a 'contract' type revision, update the main contract pointer
         if ($type === 'contract') {
             $contract->update(['current_version' => $newVer]);
         }
-        
+
         // Reset status and approvals regardless of doc type (any revision restarts process)
         $contract->update(['status' => 'in_review']);
 
@@ -293,19 +297,20 @@ class ContractController extends Controller
 
         ContractHistory::create([
             'contract_id' => $contract->id,
-            'action'      => 'FILE_UPLOADED',
+            'action' => 'FILE_UPLOADED',
             'description' => "Upload revisi {$typeLabel} v{$newVer}",
-            'actor_id'    => $userId,
+            'actor_id' => $userId,
         ]);
 
         $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'histories.actor', 'messages.user', 'attachments.uploader']);
+
         return response()->json($this->formatContract($contract));
     }
 
     public function download(string $id): mixed
     {
         $contract = Contract::findOrFail($id);
-        $version  = $contract->currentVersionModel();
+        $version = $contract->currentVersionModel();
 
         if ($version && $version->file_path && Storage::disk('local')->exists($version->file_path)) {
             return Storage::disk('local')->download($version->file_path, $version->file_name);
@@ -316,9 +321,9 @@ class ContractController extends Controller
 
     public function fileContent(string $id, int $versionNo, Request $request): mixed
     {
-        $type     = $request->query('type', 'contract');
+        $type = $request->query('type', 'contract');
         $contract = Contract::findOrFail($id);
-        $version  = $contract->versions()
+        $version = $contract->versions()
             ->where('document_type', $type)
             ->where('version_no', $versionNo)
             ->firstOrFail();
@@ -332,7 +337,7 @@ class ContractController extends Controller
 
     public function attachmentFile(string $id, string $atId): mixed
     {
-        $contract   = Contract::findOrFail($id);
+        $contract = Contract::findOrFail($id);
         $attachment = $contract->attachments()->findOrFail($atId);
 
         if ($attachment->file_path && Storage::disk('local')->exists($attachment->file_path)) {
@@ -345,28 +350,29 @@ class ContractController extends Controller
     public function changeVersion(Request $request, string $id): JsonResponse
     {
         $request->validate(['version_no' => 'required|integer']);
-        
+
         $contract = Contract::findOrFail($id);
-        $version  = $contract->versions()->where('version_no', $request->version_no)->firstOrFail();
-        
+        $version = $contract->versions()->where('version_no', $request->version_no)->firstOrFail();
+
         $contract->update(['current_version' => $request->version_no]);
-        
+
         ContractHistory::create([
             'contract_id' => $contract->id,
-            'action'      => 'VERSION_CHANGED',
+            'action' => 'VERSION_CHANGED',
             'description' => "Versi aktif diubah ke v{$request->version_no}",
-            'actor_id'    => Auth::id(),
+            'actor_id' => Auth::id(),
         ]);
-        
+
         $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'histories.actor', 'messages.user']);
+
         return response()->json($this->formatContract($contract));
     }
 
     public function pdfPreview(Request $request, string $id, int $versionNo): mixed
     {
-        $type     = $request->query('type', 'contract');
+        $type = $request->query('type', 'contract');
         $contract = Contract::findOrFail($id);
-        $version  = $contract->versions()
+        $version = $contract->versions()
             ->where('document_type', $type)
             ->where('version_no', $versionNo)
             ->firstOrFail();
@@ -376,8 +382,8 @@ class ContractController extends Controller
         }
 
         $sourcePath = Storage::disk('local')->path($version->file_path);
-        $pdfDir     = Storage::disk('local')->path("contracts/{$id}/pdfs");
-        $pdfPath    = $pdfDir . '/' . pathinfo($version->file_path, PATHINFO_FILENAME) . '.pdf';
+        $pdfDir = Storage::disk('local')->path("contracts/{$id}/pdfs");
+        $pdfPath = $pdfDir.'/'.pathinfo($version->file_path, PATHINFO_FILENAME).'.pdf';
 
         if (! file_exists($pdfDir)) {
             mkdir($pdfDir, 0755, true);
@@ -386,19 +392,20 @@ class ContractController extends Controller
         if (! file_exists($pdfPath)) {
             $soffice = '/Applications/LibreOffice.app/Contents/MacOS/soffice';
             // Use a specific user installation dir to avoid common headless errors on macOS/Server
-            $userDir = "file://" . sys_get_temp_dir() . "/soffice_user_" . md5($id);
+            $userDir = 'file://'.sys_get_temp_dir().'/soffice_user_'.md5($id);
             $command = "export HOME=/tmp && \"{$soffice}\" -env:UserInstallation={$userDir} --headless --convert-to pdf --outdir \"{$pdfDir}\" \"{$sourcePath}\" 2>&1";
             $output = shell_exec($command);
-            
+
             if (! file_exists($pdfPath)) {
-                \Log::error("PDF Generation Failed", [
+                \Log::error('PDF Generation Failed', [
                     'command' => $command,
-                    'output' => $output
+                    'output' => $output,
                 ]);
+
                 return response()->json([
                     'message' => 'Failed to generate PDF.',
-                    'debug'   => $output,
-                    'path'    => $sourcePath
+                    'debug' => $output,
+                    'path' => $sourcePath,
                 ], 500);
             }
         }
@@ -406,7 +413,7 @@ class ContractController extends Controller
         if (file_exists($pdfPath)) {
             return response()->file($pdfPath, [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="' . basename($pdfPath) . '"'
+                'Content-Disposition' => 'inline; filename="'.basename($pdfPath).'"',
             ]);
         }
 
@@ -415,7 +422,7 @@ class ContractController extends Controller
 
     public function attachmentPdfPreview(string $id, string $atId): mixed
     {
-        $contract   = Contract::findOrFail($id);
+        $contract = Contract::findOrFail($id);
         $attachment = $contract->attachments()->findOrFail($atId);
 
         if (! $attachment->file_path || ! Storage::disk('local')->exists($attachment->file_path)) {
@@ -423,10 +430,12 @@ class ContractController extends Controller
         }
 
         $sourcePath = Storage::disk('local')->path($attachment->file_path);
-        $pdfDir     = Storage::disk('local')->path("contracts/{$id}/attachments/pdfs");
-        $pdfPath    = $pdfDir . '/' . pathinfo($attachment->file_path, PATHINFO_FILENAME) . '.pdf';
+        $pdfDir = Storage::disk('local')->path("contracts/{$id}/attachments/pdfs");
+        $pdfPath = $pdfDir.'/'.pathinfo($attachment->file_path, PATHINFO_FILENAME).'.pdf';
 
-        if (! file_exists($pdfDir)) mkdir($pdfDir, 0755, true);
+        if (! file_exists($pdfDir)) {
+            mkdir($pdfDir, 0755, true);
+        }
 
         if (! file_exists($pdfPath)) {
             // If it's already a PDF, just copy/link it
@@ -434,7 +443,7 @@ class ContractController extends Controller
                 copy($sourcePath, $pdfPath);
             } else {
                 $soffice = '/Applications/LibreOffice.app/Contents/MacOS/soffice';
-                $userDir = "file://" . sys_get_temp_dir() . "/soffice_user_at_" . md5($atId);
+                $userDir = 'file://'.sys_get_temp_dir().'/soffice_user_at_'.md5($atId);
                 $command = "export HOME=/tmp && \"{$soffice}\" -env:UserInstallation={$userDir} --headless --convert-to pdf --outdir \"{$pdfDir}\" \"{$sourcePath}\" 2>&1";
                 shell_exec($command);
             }
@@ -443,7 +452,7 @@ class ContractController extends Controller
         if (file_exists($pdfPath)) {
             return response()->file($pdfPath, [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="' . basename($pdfPath) . '"'
+                'Content-Disposition' => 'inline; filename="'.basename($pdfPath).'"',
             ]);
         }
 
@@ -453,41 +462,42 @@ class ContractController extends Controller
     public function uploadAttachment(Request $request, string $id): JsonResponse
     {
         $request->validate([
-            'label'    => 'required|string|max:255',
+            'label' => 'required|string|max:255',
             'category' => 'nullable|string|max:255',
-            'file'     => 'required|file|max:102400',
+            'file' => 'required|file|max:102400',
         ]);
 
         $contract = Contract::findOrFail($id);
-        $file     = $request->file('file');
-        $name     = $file->getClientOriginalName();
-        $ext      = $file->getClientOriginalExtension();
-        $path     = $file->storeAs("contracts/{$contract->id}/attachments", Str::uuid() . ".{$ext}", 'local');
+        $file = $request->file('file');
+        $name = $file->getClientOriginalName();
+        $ext = $file->getClientOriginalExtension();
+        $path = $file->storeAs("contracts/{$contract->id}/attachments", Str::uuid().".{$ext}", 'local');
 
         ContractAttachment::create([
             'contract_id' => $contract->id,
-            'label'       => $request->label,
-            'category'    => $request->category,
-            'file_name'   => $name,
-            'file_path'   => $path,
-            'file_type'   => $file->getMimeType(),
+            'label' => $request->label,
+            'category' => $request->category,
+            'file_name' => $name,
+            'file_path' => $path,
+            'file_type' => $file->getMimeType(),
             'uploaded_by' => Auth::id(),
         ]);
 
         ContractHistory::create([
             'contract_id' => $contract->id,
-            'action'      => 'FILE_UPLOADED',
+            'action' => 'FILE_UPLOADED',
             'description' => "Upload lampiran: {$request->label} ({$name})",
-            'actor_id'    => Auth::id(),
+            'actor_id' => Auth::id(),
         ]);
 
         $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'histories.actor', 'messages.user', 'attachments.uploader']);
+
         return response()->json($this->formatContract($contract));
     }
 
     public function deleteAttachment(string $id, string $atId): JsonResponse
     {
-        $contract   = Contract::findOrFail($id);
+        $contract = Contract::findOrFail($id);
         $attachment = $contract->attachments()->findOrFail($atId);
 
         if (Storage::disk('local')->exists($attachment->file_path)) {
@@ -498,94 +508,96 @@ class ContractController extends Controller
 
         ContractHistory::create([
             'contract_id' => $contract->id,
-            'action'      => 'FILE_DELETED',
+            'action' => 'FILE_DELETED',
             'description' => "Hapus lampiran: {$attachment->label}",
-            'actor_id'    => Auth::id(),
+            'actor_id' => Auth::id(),
         ]);
 
         $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'histories.actor', 'messages.user', 'attachments.uploader']);
+
         return response()->json($this->formatContract($contract));
     }
 
-    // ── Format helper ──────────────────────────────────────────────────
-    private function formatContract(Contract $c): array
+    // ── Format helpers (Exposed for use in routes) ──────────────────────
+    public function formatContract(Contract $c): array
     {
         $progress = $c->progressData();
+
         return [
-            'id'              => $c->id,
-            'contract_no'     => $c->contract_no,
-            'title'           => $c->title,
-            'description'     => $c->description,
-            'contract_type'   => $c->contract_type,
-            'contract_date'   => $c->contract_date,
-            'contract_type'   => $c->contractType?->name ?? '—',
+            'id' => $c->id,
+            'contract_no' => $c->contract_no,
+            'title' => $c->title,
+            'description' => $c->description,
+            'contract_type' => $c->contract_type,
+            'contract_date' => $c->contract_date,
+            'contract_type' => $c->contractType?->name ?? '—',
             'contract_type_id' => $c->contract_type_id,
-            'created_by'      => $c->created_by,
-            'status'          => $c->status,
+            'created_by' => $c->created_by,
+            'status' => $c->status,
             'current_version' => $c->current_version,
-            'created_at'      => $c->created_at->toDateString(),
-            'creator'         => $this->formatUser($c->creator),
-            'progress'        => $progress,
-            'workflow_id'     => $c->workflow_id,
-            'workflow_step_id'=> $c->workflow_step_id,
-            'workflow'        => $c->workflow ? [
+            'created_at' => $c->created_at->toDateString(),
+            'creator' => $this->formatUser($c->creator),
+            'progress' => $progress,
+            'workflow_id' => $c->workflow_id,
+            'workflow_step_id' => $c->workflow_step_id,
+            'workflow' => $c->workflow ? [
                 'id' => $c->workflow->id,
                 'name' => $c->workflow->name,
                 'contract_type' => $c->workflow->contract_type,
             ] : null,
-            'workflow_step'   => $c->workflowStep ? [
+            'workflow_step' => $c->workflowStep ? [
                 'id' => $c->workflowStep->id,
                 'step' => $c->workflowStep->step,
                 'role' => $c->workflowStep->role,
                 'description' => $c->workflowStep->description,
             ] : null,
-            'versions'        => $c->versions->map(fn($v) => [
-                'id'         => $v->id,
+            'versions' => $c->versions->map(fn ($v) => [
+                'id' => $v->id,
                 'document_type' => $v->document_type,
                 'version_no' => $v->version_no,
-                'file_name'  => $v->file_name,
+                'file_name' => $v->file_name,
                 'change_log' => $v->change_log,
-                'uploaded_by'=> $v->uploaded_by,
-                'is_final'   => (bool) $v->is_final,
-                'file_hash'  => $v->file_hash,
-                'has_file'   => (bool) $v->file_path,
+                'uploaded_by' => $v->uploaded_by,
+                'is_final' => (bool) $v->is_final,
+                'file_hash' => $v->file_hash,
+                'has_file' => (bool) $v->file_path,
                 'created_at' => $v->created_at->toDateString(),
-                'uploader'   => $this->formatUser($v->uploader),
+                'uploader' => $this->formatUser($v->uploader),
             ])->sortByDesc('version_no')->values(),
-            'approvals'  => $this->mapApprovalTimeline($c),
-            'workflow_id'     => $c->workflow_id,
-            'workflow_step_id'=> $c->workflow_step_id,
-            'histories' => $c->histories->map(fn($h) => [
-                'action'      => $h->action,
+            'approvals' => $this->mapApprovalTimeline($c),
+            'workflow_id' => $c->workflow_id,
+            'workflow_step_id' => $c->workflow_step_id,
+            'histories' => $c->histories->map(fn ($h) => [
+                'action' => $h->action,
                 'description' => $h->description,
-                'actor_id'    => $h->actor_id,
-                'created_at'  => $h->created_at->format('Y-m-d H:i'),
-                'actor'       => $this->formatUser($h->actor),
+                'actor_id' => $h->actor_id,
+                'created_at' => $h->created_at->format('Y-m-d H:i'),
+                'actor' => $this->formatUser($h->actor),
             ])->sortByDesc('created_at')->values(),
-            'messages' => $c->messages->map(fn($m) => [
-                'id'         => $m->id,
-                'user_id'    => $m->user_id,
-                'message'    => $m->message,
-                'read_by'    => $m->read_by ?? [],
+            'messages' => $c->messages->map(fn ($m) => [
+                'id' => $m->id,
+                'user_id' => $m->user_id,
+                'message' => $m->message,
+                'read_by' => $m->read_by ?? [],
                 'created_at' => $m->created_at->format('Y-m-d H:i'),
-                'user'       => $this->formatUser($m->user),
+                'user' => $this->formatUser($m->user),
             ]),
-            'attachments' => $c->attachments->map(fn($at) => [
-                'id'         => $at->id,
-                'label'      => $at->label,
-                'category'   => $at->category,
-                'file_name'  => $at->file_name,
-                'file_type'  => $at->file_type,
+            'attachments' => $c->attachments->map(fn ($at) => [
+                'id' => $at->id,
+                'label' => $at->label,
+                'category' => $at->category,
+                'file_name' => $at->file_name,
+                'file_type' => $at->file_type,
                 'created_at' => $at->created_at->toDateString(),
-                'uploader'   => $this->formatUser($at->uploader),
+                'uploader' => $this->formatUser($at->uploader),
             ]),
         ];
     }
 
-    private function mapApprovalTimeline($c)
+    public function mapApprovalTimeline($c)
     {
         // If no workflow assigned yet, return empty or default empty steps
-        if (!$c->workflow) {
+        if (! $c->workflow) {
             return [];
         }
 
@@ -599,29 +611,29 @@ class ContractController extends Controller
                 // If we have actual approval records for this step
                 foreach ($approvals as $a) {
                     $timeline[] = [
-                        'id'            => $a->id,
-                        'user_id'       => $a->user_id,
+                        'id' => $a->id,
+                        'user_id' => $a->user_id,
                         'approver_name' => $a->approver_name,
-                        'role'          => $a->role,
-                        'sequence'      => $step->step,
-                        'status'        => $a->status,
-                        'note'          => $a->comment,
-                        'approved_at'   => $a->decided_at?->toDateTimeString(),
-                        'approver'      => $this->formatUser($a->approver),
+                        'role' => $a->role,
+                        'sequence' => $step->step,
+                        'status' => $a->status,
+                        'note' => $a->comment,
+                        'approved_at' => $a->decided_at?->toDateTimeString(),
+                        'approver' => $this->formatUser($a->approver),
                     ];
                 }
             } else {
                 // Future step placeholder
                 $timeline[] = [
-                    'id'            => 'step-' . $step->id,
-                    'user_id'       => null,
-                    'approver_name' => 'Pendataan ' . $step->role,
-                    'role'          => $step->role,
-                    'sequence'      => $step->step,
-                    'status'        => 'waiting',
-                    'note'          => null,
-                    'approved_at'   => null,
-                    'approver'      => ['name' => 'Approver ' . $step->role],
+                    'id' => 'step-'.$step->id,
+                    'user_id' => null,
+                    'approver_name' => 'Pendataan '.$step->role,
+                    'role' => $step->role,
+                    'sequence' => $step->step,
+                    'status' => 'waiting',
+                    'note' => null,
+                    'approved_at' => null,
+                    'approver' => ['name' => 'Approver '.$step->role],
                 ];
             }
         }
@@ -629,15 +641,18 @@ class ContractController extends Controller
         return $timeline;
     }
 
-    private function formatUser($user): ?array
+    public function formatUser($user): ?array
     {
-        if (! $user) return null;
+        if (! $user) {
+            return null;
+        }
+
         return [
-            'id'         => $user->id,
-            'name'       => $user->name,
-            'initials'   => $user->initials,
-            'role'       => $user->role,
-            'bg_color'   => $user->bg_color,
+            'id' => $user->id,
+            'name' => $user->name,
+            'initials' => $user->initials,
+            'role' => $user->role,
+            'bg_color' => $user->bg_color,
             'text_color' => $user->text_color,
         ];
     }
