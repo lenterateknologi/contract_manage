@@ -6,22 +6,56 @@ import { Avatar } from './ui';
 interface Props { contracts: Contract[]; meId: string; onContractUpdated: (c: Contract) => void; }
 
 function MsgBubble({ msg, isMe }: { msg: any; isMe: boolean }) {
-    const time = msg.created_at?.split(' ')[1] ?? '';
+    const time = msg.created_at?.split(' ')[1]?.substring(0, 5) ?? '';
+    const name = msg.user?.name ?? 'Unknown';
+    const role = msg.user?.role ?? '';
+
     if (isMe) return (
-        <div className="flex flex-col items-end gap-0.5">
-            <span className="text-[10px] text-gray-400 mr-1">{msg.user?.name}</span>
-            <div className="px-3 py-2 text-[12px] max-w-[85%]" style={{ background: '#2563eb', color: '#fff', borderRadius: '14px 14px 4px 14px' }}>{msg.message}</div>
-            <span className="text-[10px] text-gray-400 mr-1">{time}</span>
+        <div className="flex flex-col items-end gap-1 mb-1">
+            <div className="flex items-center gap-1.5 mr-1">
+                <span className="text-[10px] font-bold text-blue-600">You</span>
+                {role && <span className="text-[10px] text-gray-400 font-medium px-1.2 py-0.3 bg-gray-50 rounded-md border border-gray-100">{role}</span>}
+            </div>
+            <div className="group relative max-w-[85%]">
+                <div className="px-3 py-2 text-[12px] leading-relaxed text-white rounded-[14px_14px_4px_14px] shadow-sm select-text" style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' }}>
+                    {msg.message}
+                </div>
+            </div>
+            <div className="flex items-center gap-1 mr-1 mt-0.5">
+                <span className="text-[10px] text-gray-400">{time}</span>
+                {msg.read_by?.length > 1 && <i className="fa-solid fa-check-double text-[9px] text-blue-500" />}
+            </div>
         </div>
     );
+
     return (
-        <div className="flex items-end gap-2">
-            <Avatar user={msg.user} size="sm" />
-            <div className="flex flex-col gap-0.5">
-                <span className="text-[10px] text-gray-400">{msg.user?.name}</span>
-                <div className="px-3 py-2 text-[12px] max-w-[85%]" style={{ background: '#f3f4f6', color: '#111827', borderRadius: '14px 14px 14px 4px' }}>{msg.message}</div>
-                <span className="text-[10px] text-gray-400">{time}</span>
+        <div className="flex items-start gap-2 mb-1">
+            <Avatar user={msg.user} size="sm" className="mt-4" />
+            <div className="flex flex-col gap-1 flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold text-gray-700 truncate">{name}</span>
+                    {role && <span className="text-[10px] text-gray-400 font-medium px-1.2 py-0.3 bg-gray-50 rounded-md border border-gray-100">{role}</span>}
+                </div>
+                <div className="group relative max-w-[88%] w-fit">
+                    <div className="px-3 py-2 text-[12px] leading-relaxed rounded-[14px_14px_14px_4px] shadow-sm select-text border border-gray-100" style={{ background: '#f9fafb', color: '#1f2937' }}>
+                        {msg.message}
+                    </div>
+                </div>
+                <span className="text-[10px] text-gray-400 ml-1 mt-0.5">{time}</span>
             </div>
+        </div>
+    );
+}
+
+function DateSeparator({ date }: { date: string }) {
+    return (
+        <div className="flex items-center justify-center my-4 relative">
+            <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-100"></div>
+            </div>
+            <span className="relative px-3 py-1 bg-white text-[9px] font-bold text-gray-400 uppercase tracking-widest border border-gray-100 rounded-full shadow-sm">
+                {date}
+            </span>
         </div>
     );
 }
@@ -189,10 +223,36 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
                         {/* Message view */}
                         {activeId && (
                             <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-                                <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-2.5" style={{ scrollbarWidth: 'thin' }}>
+                                <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-2" style={{ scrollbarWidth: 'thin' }}>
                                     {filteredMsgs.length === 0
                                         ? <div className="text-center text-gray-400 text-[12px] pt-8"><i className="fa-solid fa-comments text-2xl block mb-2" />{searchThread ? 'Pesan tidak ditemukan.' : 'Belum ada pesan.'}</div>
-                                        : filteredMsgs.map(m => <MsgBubble key={m.id} msg={m} isMe={m.user_id === meId} />)}
+                                        : (() => {
+                                            let lastDate = '';
+                                            return filteredMsgs.map((m) => {
+                                                const mDateStr = m.created_at?.split(' ')[0] || '';
+                                                let separator = null;
+                                                if (mDateStr && mDateStr !== lastDate) {
+                                                    lastDate = mDateStr;
+                                                    let label = mDateStr;
+                                                    const d = new Date(mDateStr);
+                                                    const now = new Date();
+                                                    const yesterday = new Date();
+                                                    yesterday.setDate(now.getDate() - 1);
+
+                                                    if (mDateStr === now.toISOString().split('T')[0]) label = 'Hari ini';
+                                                    else if (mDateStr === yesterday.toISOString().split('T')[0]) label = 'Kemarin';
+                                                    else label = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+                                                    
+                                                    separator = <DateSeparator key={`sep-${mDateStr}`} date={label} />;
+                                                }
+                                                return (
+                                                    <React.Fragment key={m.id}>
+                                                        {separator}
+                                                        <MsgBubble msg={m} isMe={m.user_id === meId} />
+                                                    </React.Fragment>
+                                                );
+                                            });
+                                        })()}
                                     <div ref={endRef} />
                                 </div>
                                 <div className="px-3 pb-3 pt-2 border-t border-gray-100 flex gap-2">

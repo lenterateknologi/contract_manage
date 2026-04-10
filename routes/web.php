@@ -44,7 +44,27 @@ Route::middleware(['auth'])->group(function () {
                     ->where('updated_at', '>=', now()->startOfMonth())
                     ->count(),
             ],
-            'monthlyTrend' => [],
+            'monthlyTrend' => \App\Models\Contract::leftJoin('contract_types', 'contracts.contract_type_id', '=', 'contract_types.id')
+                ->select(
+                    \Illuminate\Support\Facades\DB::raw("to_char(contracts.created_at, 'YYYY-MM') as month"),
+                    'contract_types.name as type_name',
+                    \Illuminate\Support\Facades\DB::raw('count(*) as count')
+                )
+                ->where('contracts.created_at', '>=', now()->subMonths(6))
+                ->groupBy('month', 'type_name')
+                ->orderBy('month')
+                ->get()
+                ->groupBy('month')
+                ->map(function ($items, $month) {
+                    return [
+                        'month' => $month,
+                        'types' => $items->map(fn ($i) => [
+                            'name' => $i->type_name ?? 'Unspecified',
+                            'count' => (int) $i->count,
+                        ])->values(),
+                        'total' => $items->sum('count'),
+                    ];
+                })->values(),
         ];
 
         return Inertia::render('contracts/index', [
@@ -69,6 +89,21 @@ Route::middleware(['auth'])->group(function () {
             'types' => \App\Models\ContractType::all(),
         ]);
     })->name('contracts');
+
+    Route::get('my-contracts', function () {
+        $controller = app(ContractController::class);
+        $contracts = \App\Models\Contract::with([
+            'creator', 'contractType', 'approvals.approver', 'approvals.workflowStep', 
+            'workflow.steps', 'versions.uploader', 'histories.actor', 'messages.user', 
+            'attachments.uploader'
+        ])->orderByDesc('created_at')->get();
+
+        return Inertia::render('contracts/index', [
+            'currentView' => 'mine',
+            'contracts' => $contracts->map(fn($c) => $controller->formatContract($c)),
+            'types' => \App\Models\ContractType::all(),
+        ]);
+    })->name('contracts.mine');
 
     Route::get('pending', function () {
         $controller = app(ContractController::class);

@@ -20,6 +20,7 @@ const navGroups = [
         title: 'Manajemen Kontrak',
         items: [
             { title: 'Semua Kontrak', url: '/contracts', icon: FileText },
+            { title: 'Kontrak Saya', url: '/my-contracts', icon: Users },
             { title: 'Menunggu Approval', url: '/pending', icon: Clock },
         ],
     },
@@ -105,11 +106,11 @@ export function AppSidebar() {
                     ) : (
                         <div className="px-2">
                             <div className="relative group/search">
-                                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground transition-colors group-focus-within/search:text-primary" />
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-colors group-focus-within/search:text-primary" />
                                 <input 
                                     type="text"
                                     placeholder="Cari menu & fitur..."
-                                    className="w-full bg-muted/30 border border-border rounded-md pl-8 pr-7 py-1.5 text-[10px] outline-none focus:ring-1 focus:ring-primary/20 transition-all font-medium"
+                                    className="w-full bg-muted/30 border border-border rounded-md pl-9 pr-8 py-2 text-[13px] outline-none focus:ring-1 focus:ring-primary/20 transition-all font-medium"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     autoFocus={search !== ''}
@@ -117,9 +118,9 @@ export function AppSidebar() {
                                 {search && (
                                     <button 
                                         onClick={() => setSearch('')}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 hover:bg-muted rounded-full"
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded-full"
                                     >
-                                        <X className="h-2.5 w-2.5 text-muted-foreground" />
+                                        <X className="h-3.5 w-3.5 text-muted-foreground" />
                                     </button>
                                 )}
                             </div>
@@ -137,7 +138,7 @@ export function AppSidebar() {
 
                 {search && filteredNavGroups.length === 0 && filteredAdminGroups.length === 0 && (
                     <div className="px-6 py-8 text-center animate-in fade-in zoom-in duration-300">
-                        <p className="text-[10px] text-muted-foreground italic font-medium">Tidak ada menu ditemukan untuk "{search}"</p>
+                        <p className="text-[12px] text-muted-foreground italic font-medium">Tidak ada menu ditemukan untuk "{search}"</p>
                     </div>
                 )}
             </SidebarContent>

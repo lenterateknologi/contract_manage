@@ -19,7 +19,7 @@ import ContractAttachments from '@/components/contracts/ContractAttachments';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem } from '@/types';
 
-type View = 'dashboard' | 'contracts' | 'pending' | 'audit' | 'f1' | 'f2' | 'profile';
+type View = 'dashboard' | 'contracts' | 'pending' | 'audit' | 'f1' | 'f2' | 'profile' | 'mine';
 
 // ─── Table header cell ───────────────────────────────────────────────
 function Th({ children, style }: { children?: React.ReactNode; style?: React.CSSProperties }) {
@@ -391,6 +391,7 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
         if (view === 'f1') matchV = c.versions.some(v => v.document_type === 'f1');
         if (view === 'f2') matchV = c.versions.some(v => v.document_type === 'f2');
         if (view === 'pending') matchV = c.approvals.some(a => a.user_id === meId && a.status === 'pending');
+        if (view === 'mine') matchV = c.created_by === meId;
         return matchV;
     });
 
