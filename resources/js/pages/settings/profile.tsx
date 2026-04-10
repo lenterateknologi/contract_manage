@@ -34,7 +34,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
     };
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <>
             <Head title="Profile settings" />
 
             <SettingsLayout>
@@ -115,6 +115,6 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
 
                 <DeleteUser />
             </SettingsLayout>
-        </AppLayout>
+        </>
     );
 }

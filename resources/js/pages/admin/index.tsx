@@ -191,7 +191,7 @@ export default function AdminIndex({ currentView, users, types, workflows, contr
     };
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <>
             <Head title={`Admin - ${viewTitle}`} />
 
             <div className="flex h-full flex-col flex-1 divide-y divide-border">
@@ -213,37 +213,59 @@ export default function AdminIndex({ currentView, users, types, workflows, contr
                 </div>
 
                 {/* Content Section */}
-                <div className="flex-1 overflow-auto p-6 text-foreground bg-background">
-                    <div className="rounded-lg border bg-card">
-                        <table className="w-full text-sm">
+                <div className="flex-1 overflow-auto p-4 bg-slate-50/30">
+                    <div className="bg-card border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                        <table className="w-full text-[13px] border-collapse">
                             <thead>
-                                <tr className="border-b bg-muted/50 text-left font-medium text-muted-foreground">
-                                    <th className="px-4 py-3">ID</th>
-                                    <th className="px-4 py-3">{currentView === 'users' ? 'Nama' : 'Nama Item'}</th>
-                                    <th className="px-4 py-3">{currentView === 'users' ? 'Email / Role' : 'Detail'}</th>
-                                    <th className="px-4 py-3 text-right">Aksi</th>
+                                <tr className="border-b-2 border-slate-100 bg-white text-left">
+                                    <th className="px-6 py-4 uppercase text-[10px] tracking-widest font-bold text-slate-500">ID</th>
+                                    <th className="px-6 py-4 uppercase text-[10px] tracking-widest font-bold text-slate-500">{currentView === 'users' ? 'Identitas Pengguna' : 'Informasi Item'}</th>
+                                    <th className="px-6 py-4 uppercase text-[10px] tracking-widest font-bold text-slate-500">{currentView === 'users' ? 'Role & Akses' : 'Metadata / Detail'}</th>
+                                    <th className="px-6 py-4 uppercase text-[10px] tracking-widest font-bold text-slate-500 text-right">Manajemen</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y">
+                            <tbody className="divide-y divide-slate-100 bg-white">
                                 {currentView === 'users' && users?.map((u) => (
-                                    <tr key={u.id} className="hover:bg-muted/30 transition-colors">
-                                        <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{String(u.id).substring(0, 8)}</td>
-                                        <td className="px-4 py-3 font-medium">{u.name}</td>
-                                        <td className="px-4 py-3 text-muted-foreground">
-                                            {u.email} • <span className="text-primary font-medium">{u.role}</span>
+                                    <tr key={u.id} className="hover:bg-slate-50/50 transition-colors group">
+                                        <td className="px-6 py-4 text-slate-400 font-mono text-[10px]">{String(u.id).substring(0, 8)}</td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-slate-900">{u.name}</span>
+                                                <span className="text-[11px] text-slate-500">{u.email}</span>
+                                            </div>
                                         </td>
-                                        <td className="px-4 py-3 text-right flex justify-end gap-2">
-                                            <Button variant="ghost" size="icon" onClick={() => openEdit(u)}>
-                                                <Pencil className="h-4 w-4" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(u.id)}>
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
+                                        <td className="px-6 py-4">
+                                            <span className="inline-block px-2 py-0.5 border border-slate-300 rounded text-[10px] font-bold uppercase tracking-tight text-slate-700">
+                                                {u.role}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openEdit(u)}>
+                                                    <Pencil className="h-3.5 w-3.5 text-slate-600" />
+                                                </Button>
+                                                <Button variant="ghost" size="sm" className="h-7 w-7 p-0 hover:bg-red-50 hover:text-red-600" onClick={() => handleDelete(u.id)}>
+                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                </Button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
 
                                 {currentView === 'roles' && roles?.map((r) => (
+                                    <tr key={r.id} className="hover:bg-slate-50/50 transition-colors group">
+                                        <td className="px-6 py-4 text-slate-400 font-mono text-[10px]">{String(r.id).substring(0, 8)}</td>
+                                        <td className="px-6 py-4 font-bold text-slate-900 uppercase tracking-tighter">{r.name}</td>
+                                        <td className="px-6 py-4 text-slate-500 italic text-[12px]">{r.description || 'Tidak ada deskripsi'}</td>
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openEdit(r)}>
+                                                    <Pencil className="h-3.5 w-3.5 text-slate-600" />
+                                                </Button>
+                                                <Button variant="ghost" size="sm" className="h-7 w-7 p-0 hover:bg-red-50 hover:text-red-600" onClick={() => handleDelete(r.id)}>
+                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                </Button>
+                                            </div>
                                     <tr key={r.id} className="hover:bg-muted/30 transition-colors">
                                         <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{String(r.id).substring(0, 8)}</td>
                                         <td className="px-4 py-3 font-medium">{r.name}</td>
@@ -265,17 +287,19 @@ export default function AdminIndex({ currentView, users, types, workflows, contr
                                 ))}
 
                                 {currentView === 'contract-types' && types?.map((t) => (
-                                    <tr key={t.id} className="hover:bg-muted/30 transition-colors">
-                                        <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{String(t.id).substring(0, 8)}</td>
-                                        <td className="px-4 py-3 font-medium">{t.name}</td>
-                                        <td className="px-4 py-3 text-muted-foreground">{t.description || '-'}</td>
-                                        <td className="px-4 py-3 text-right flex justify-end gap-2">
-                                            <Button variant="ghost" size="icon" onClick={() => openEdit(t)}>
-                                                <Pencil className="h-4 w-4" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(t.id)}>
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
+                                    <tr key={t.id} className="hover:bg-slate-50/50 transition-colors group">
+                                        <td className="px-6 py-4 text-slate-400 font-mono text-[10px]">{String(t.id).substring(0, 8)}</td>
+                                        <td className="px-6 py-4 font-bold text-slate-900 uppercase tracking-tighter">{t.name}</td>
+                                        <td className="px-6 py-4 text-slate-500 italic text-[12px]">{t.description || 'Tidak ada deskripsi'}</td>
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openEdit(t)}>
+                                                    <Pencil className="h-3.5 w-3.5 text-slate-600" />
+                                                </Button>
+                                                <Button variant="ghost" size="sm" className="h-7 w-7 p-0 hover:bg-red-50 hover:text-red-600" onClick={() => handleDelete(t.id)}>
+                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                </Button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -283,51 +307,80 @@ export default function AdminIndex({ currentView, users, types, workflows, contr
                                 {currentView === 'workflows' && workflows?.map((w) => (
                                     <React.Fragment key={w.id}>
                                         <tr className={cn(
-                                            "hover:bg-muted/30 transition-colors",
-                                            expandedWorkflowId === w.id && "bg-muted/20"
+                                            "hover:bg-slate-50/50 transition-all group border-l-2 border-transparent",
+                                            expandedWorkflowId === w.id && "bg-slate-50 border-primary shadow-inner"
                                         )}>
-                                            <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{String(w.id).substring(0, 8)}</td>
-                                            <td className="px-4 py-3 font-medium">
-                                                <div className="flex items-center gap-2">
+                                            <td className="px-6 py-4 text-slate-400 font-mono text-[10px]">{String(w.id).substring(0, 8)}</td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-3">
                                                     <button
                                                         onClick={() => toggleExpand(w.id)}
-                                                        className="p-1 hover:bg-muted rounded"
+                                                        className="p-1 hover:bg-white border rounded shadow-sm transition-all"
                                                     >
-                                                        {expandedWorkflowId === w.id ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                                                        {expandedWorkflowId === w.id ? <ChevronDown className="h-3 w-3 text-slate-600" /> : <ChevronRight className="h-3 w-3 text-slate-400" />}
                                                     </button>
-                                                    {w.name}
-                                                    {w.is_default && <span className="ml-2 inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900 dark:text-green-300">Default</span>}
+                                                    <div className="flex flex-col">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="font-bold text-slate-900 uppercase tracking-tight">{w.name}</span>
+                                                            {w.is_default && <span className="text-[9px] font-black bg-slate-200 px-1.5 py-0.5 rounded tracking-tighter uppercase">Default</span>}
+                                                        </div>
+                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{w.contract_type}</span>
+                                                    </div>
                                                 </div>
                                             </td>
-                                            <td className="px-4 py-3 text-muted-foreground">
-                                                {w.contract_type} • {w.steps?.length || 0} tahapan
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="flex -space-x-1.5 overflow-hidden">
+                                                        {w.steps?.slice(0, 3).map((step: any, i: number) => (
+                                                            <div key={i} className="inline-block h-5 w-5 rounded-full ring-2 ring-white bg-slate-200 flex items-center justify-center text-[8px] font-bold text-slate-600">
+                                                                {step.role?.charAt(0)}
+                                                            </div>
+                                                        ))}
+                                                        {w.steps?.length > 3 && (
+                                                            <div className="inline-block h-5 w-5 rounded-full ring-2 ring-white bg-slate-300 flex items-center justify-center text-[8px] font-bold text-slate-700">
+                                                                +{w.steps.length - 3}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <span className="text-[11px] font-medium text-slate-600">{w.steps?.length || 0} Approval Steps</span>
+                                                </div>
                                             </td>
-                                            <td className="px-4 py-3 text-right flex justify-end gap-2">
-                                                <Button variant="ghost" size="icon" onClick={() => openEdit(w)}>
-                                                    <Pencil className="h-4 w-4" />
-                                                </Button>
-                                                <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(w.id)}>
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
+                                            <td className="px-6 py-4 text-right">
+                                                <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openEdit(w)}>
+                                                        <Pencil className="h-3.5 w-3.5 text-slate-600" />
+                                                    </Button>
+                                                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 hover:bg-red-50 hover:text-red-600" onClick={() => handleDelete(w.id)}>
+                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                </div>
                                             </td>
                                         </tr>
                                         {expandedWorkflowId === w.id && (
-                                            <tr className="bg-muted/10">
-                                                <td colSpan={4} className="px-12 py-4">
-                                                    <div className="flex flex-col gap-3 max-w-md border-l-2 border-primary/20 pl-6 py-2">
-                                                        {w.steps?.sort((a: any, b: any) => a.step - b.step).map((step: any) => (
-                                                            <div key={step.id} className="flex items-center gap-3 relative">
-                                                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/20 text-primary text-[10px] font-bold">
-                                                                    {step.step}
-                                                                </div>
-                                                                <div>
-                                                                    <p className="font-medium text-sm">{step.role}</p>
-                                                                    <p className="text-[10px] text-muted-foreground">{step.name}</p>
+                                            <tr className="bg-slate-50/80">
+                                                <td colSpan={4} className="px-16 py-6">
+                                                    <div className="relative border-l-2 border-slate-200 pl-8 space-y-6 py-2">
+                                                        {w.steps?.sort((a: any, b: any) => a.step - b.step).map((step: any, idx: number) => (
+                                                            <div key={step.id} className="relative">
+                                                                {/* Connector dot */}
+                                                                <div className="absolute -left-[37px] top-1 h-4 w-4 rounded-full border-2 border-white bg-slate-300 ring-4 ring-slate-50/80" />
+                                                                
+                                                                <div className="flex flex-col">
+                                                                    <div className="flex items-center gap-2 mb-0.5">
+                                                                        <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Step {step.step}</span>
+                                                                        <span className="h-[1px] w-4 bg-slate-200" />
+                                                                        <span className="text-[10px] font-bold text-primary uppercase tracking-tight">{step.role}</span>
+                                                                    </div>
+                                                                    <p className="text-xs font-bold text-slate-800">{step.name}</p>
+                                                                    <p className="text-[10px] text-slate-500 italic max-w-sm mt-1">Personil yang memiliki otorisasi untuk melakukan peninjauan dan persetujuan pada tahap ini.</p>
                                                                 </div>
                                                             </div>
                                                         ))}
                                                         {(!w.steps || w.steps.length === 0) && (
-                                                            <p className="text-sm text-muted-foreground italic">Belum ada tahapan yang dikonfigurasi.</p>
+                                                            <div className="flex items-center gap-2 text-slate-400">
+                                                                <AlertCircle className="h-3 w-3" />
+                                                                <p className="text-[11px] italic font-medium">Belum ada tahapan alur kerja yang didefinisikan untuk tipe ini.</p>
+                                                            </div>
                                                         )}
                                                     </div>
                                                 </td>
@@ -464,6 +517,6 @@ export default function AdminIndex({ currentView, users, types, workflows, contr
                     </form>
                 </DialogContent>
             </Dialog>
-        </AppLayout>
+        </>
     );
 }

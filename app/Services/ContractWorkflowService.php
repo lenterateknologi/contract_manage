@@ -6,6 +6,7 @@ use App\Models\Contract;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
 use App\Models\Approval;
+use App\Models\ContractType;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -14,13 +15,43 @@ class ContractWorkflowService
     /**
      * Send contract for approval (initiate workflow)
      */
-    public function sendForApproval(Contract $contract): Contract
+    public function sendForApproval(Contract $contract, string $workflowId = null, array $customSteps = null): Contract
     {
-        // Get default workflow for contract type
-        $workflow = Workflow::getDefaultByContractType($contract->contract_type);
+        $workflow = null;
+
+        if ($workflowId) {
+            $workflow = Workflow::find($workflowId);
+        } elseif ($customSteps) {
+            // Create ad-hoc workflow
+            $workflow = Workflow::create([
+                'contract_type' => $contract->contract_type_id ? ContractType::find($contract->contract_type_id)->name : 'General',
+                'name' => 'Custom Request for ' . $contract->contract_no,
+                'description' => 'Automatically generated for custom approval flow',
+                'is_default' => false,
+                'is_template' => false,
+                'created_by' => auth()->id(),
+                'updated_by' => auth()->id(),
+            ]);
+
+            foreach ($customSteps as $index => $stepData) {
+                $workflow->steps()->create([
+                    'step' => $index + 1,
+                    'role' => $stepData['role'],
+                    'user_id' => $stepData['user_id'] ?? null,
+                    'description' => $stepData['description'] ?? "Approval step " . ($index + 1),
+                    'created_by' => auth()->id(),
+                    'updated_by' => auth()->id(),
+                ]);
+            }
+        }
+
+        // Fallback to default if no workflow selected and no custom steps
+        if (!$workflow) {
+            $workflow = Workflow::getDefaultByContractType($contract->contract_type);
+        }
 
         if (!$workflow) {
-            throw new \Exception('No default workflow found for contract type: ' . $contract->contract_type);
+            throw new \Exception('No workflow found and no default available for this contract type.');
         }
 
         // Get first workflow step
@@ -44,7 +75,7 @@ class ContractWorkflowService
         // Log the action
         $contract->histories()->create([
             'action' => 'CONTRACT_SENT',
-            'description' => 'Contract sent for approval',
+            'description' => 'Contract sent for approval' . ($customSteps ? ' (Custom Flow)' : ''),
             'actor_id' => auth()->id(),
         ]);
 
@@ -56,8 +87,13 @@ class ContractWorkflowService
      */
     private function createApprovalForStep(Contract $contract, WorkflowStep $step): void
     {
-        // Find all users with the required role
-        $approvers = User::where('role', $step->role)->get();
+        // Determine approvers
+        if ($step->user_id) {
+            $approvers = User::where('id', $step->user_id)->get();
+        } else {
+            // Find all users with the required role
+            $approvers = User::where('role', $step->role)->get();
+        }
 
         foreach ($approvers as $approver) {
             Approval::create([
@@ -70,6 +106,7 @@ class ContractWorkflowService
                 'status' => 'pending',
                 'created_by' => auth()->id(),
                 'updated_by' => auth()->id(),
+                'sequence'   => $step->step,
             ]);
         }
     }

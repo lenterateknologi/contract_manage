@@ -30,12 +30,12 @@ export function StatusBadge({ status, label }: { status: string; label?: string 
 }
 
 // ─── Avatar ─────────────────────────────────────────────────────────
-export function Avatar({ user, size = 'sm' }: { user: UserProfile | null | undefined; size?: 'sm' | 'md' | 'lg' }) {
+export function Avatar({ user, size = 'sm', className = '' }: { user: UserProfile | null | undefined; size?: 'sm' | 'md' | 'lg'; className?: string }) {
     const sizeMap = { sm: 'w-5 h-5 text-xs', md: 'w-7 h-7 text-xs', lg: 'w-8 h-8 text-xs' };
     if (!user) return null;
     return (
         <span
-            className={`inline-flex items-center justify-center rounded-full font-bold flex-shrink-0 ${sizeMap[size]}`}
+            className={`inline-flex items-center justify-center rounded-full font-bold flex-shrink-0 ${sizeMap[size]} ${className}`}
             style={{ background: user.bg_color, color: user.text_color }}
         >
             {user.initials}

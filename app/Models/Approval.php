@@ -19,6 +19,7 @@ class Approval extends Model
         'decided_at',
         'created_by',
         'updated_by',
+        'sequence',
     ];
 
     protected $casts = [
@@ -35,9 +36,9 @@ class Approval extends Model
         return $this->belongsTo(WorkflowStep::class);
     }
 
-    public function user(): BelongsTo
+    public function approver(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function approve(string $comment = null): void

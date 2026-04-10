@@ -12,12 +12,16 @@ export function NavUser() {
     const { state } = useSidebar();
     const isMobile = useIsMobile();
 
+    if (!auth.user) {
+        return null;
+    }
+
     return (
         <SidebarMenu>
             <SidebarMenuItem>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <SidebarMenuButton size="lg" className="text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent group">
+                        <SidebarMenuButton size="lg" className="text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent group" tooltip={auth.user.name}>
                             <UserInfo user={auth.user} />
                             <ChevronsUpDown className="ml-auto size-4" />
                         </SidebarMenuButton>

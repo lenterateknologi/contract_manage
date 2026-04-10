@@ -1,4 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import axios from 'axios';
+import { cn } from '@/lib/utils';
 import { Head, router, usePage, useForm } from '@inertiajs/react';
 import { Contract, ContractType } from '@/types/contracts';
 import { contractApi } from '@/lib/contract-api';
@@ -10,13 +12,14 @@ import PreviewModal from '@/components/contracts/PreviewModal';
 import CompareModal from '@/components/contracts/CompareModal';
 import UploadRevisionModal from '@/components/contracts/UploadRevisionModal';
 import RejectModal from '@/components/contracts/RejectModal';
+import SendApprovalModal from '@/components/contracts/SendApprovalModal';
 import ApprovalSteps from '@/components/contracts/ApprovalSteps';
 import ContractChat from '@/components/contracts/ContractChat';
 import ContractAttachments from '@/components/contracts/ContractAttachments';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem } from '@/types';
 
-type View = 'dashboard' | 'contracts' | 'pending' | 'audit' | 'f1' | 'f2' | 'profile';
+type View = 'dashboard' | 'contracts' | 'pending' | 'audit' | 'f1' | 'f2' | 'profile' | 'mine';
 
 // ─── Table header cell ───────────────────────────────────────────────
 function Th({ children, style }: { children?: React.ReactNode; style?: React.CSSProperties }) {
@@ -34,14 +37,145 @@ function Td({ children, className, style }: { children?: React.ReactNode; classN
     );
 }
 
-// ─── Progress ────────────────────────────────────────────────────────
 function ProgressCell({ c }: { c: Contract }) {
     const { done, total, pct } = c.progress;
     return (
-        <div>
-            <div style={{ fontSize: 12, color: 'var(--muted-foreground)', marginBottom: 4 }}>{done}/{total}</div>
-            <div style={{ height: 4, background: 'var(--muted)', borderRadius: 99, overflow: 'hidden', width: 80 }}>
+        <div style={{ padding: '0 12px', minWidth: 80 }}>
+            <div style={{ fontSize: 11, color: 'var(--muted-foreground)', marginBottom: 4 }}>{done}/{total}</div>
+            <div style={{ height: 4, background: 'var(--muted)', borderRadius: 99, overflow: 'hidden', width: '100%' }}>
                 <div style={{ height: '100%', background: 'var(--primary)', borderRadius: 99, width: `${pct}%` }} />
+            </div>
+        </div>
+    );
+}
+
+
+
+function DashboardMetrics({ metrics }: { metrics: any }) {
+    if (!metrics) return null;
+    const { metrics: m, monthlyTrend } = metrics;
+
+    // Dynamic Y-axis scale calculation
+    const allCounts = Array.isArray(monthlyTrend) ? monthlyTrend.flatMap((mo: any) => mo.types?.map((ti: any) => ti.count) || []) : [0];
+    const rawMax = Math.max(...allCounts, 5);
+    const yMax = Math.ceil(rawMax / 5) * 5 || 5;
+    const steps = 5;
+    const yLabels = Array.from({ length: steps + 1 }, (_, i) => Math.round(yMax - (i * (yMax / steps))));
+
+    const metricsData = m || {
+        avgCycleTime: 0,
+        totalContracts: 0,
+        pendingApprovals: 0,
+        approvedThisMonth: 0
+    };
+
+    return (
+        <div className="space-y-6 mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
+            {/* Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <MetricCard title="Rata-rata SLA" value={`${metricsData.avgCycleTime} Hari`} icon="fa-clock" color="blue" />
+                <MetricCard title="Total Kontrak" value={String(metricsData.totalContracts)} icon="fa-file-signature" color="green" />
+                <MetricCard title="Approval Pending" value={String(metricsData.pendingApprovals)} icon="fa-triangle-exclamation" color="amber" />
+                <MetricCard title="Approved (Bulan Ini)" value={String(metricsData.approvedThisMonth)} icon="fa-calendar-check" color="purple" />
+            </div>
+
+            {/* Growth Chart */}
+            <div className="bg-card border border-border rounded-xl overflow-hidden flex flex-col">
+                <div className="px-5 py-4 border-b border-border font-semibold flex items-center justify-between shadow-sm bg-muted/20">
+                    <div className="flex items-center gap-2">
+                        <i className="fa-solid fa-chart-line text-muted-foreground mr-1" />
+                        <span style={{ fontSize: 13 }}>Tren Pertumbuhan Kontrak</span>
+                    </div>
+                </div>
+                <div className="p-6 flex flex-col justify-end min-h-[380px]">
+                    <div className="flex gap-2 h-[220px] relative items-end">
+                        {/* Dynamic Y-Axis Labels */}
+                        <div className="flex flex-col justify-between h-full pb-6 pr-2 text-[10px] font-bold text-muted-foreground/60 select-none border-r border-border/50 min-w-[24px]">
+                            {yLabels.map((v) => (
+                                <span key={v} className="flex items-center justify-end h-0">{v}</span>
+                            ))}
+                        </div>
+
+                        {/* Chart Area with Rules */}
+                        <div className="flex-1 relative h-full flex items-end justify-between px-4 pb-6">
+                            {/* Horizontal Grid Lines (Rules) */}
+                            <div className="absolute inset-x-0 top-0 bottom-6 flex flex-col justify-between pointer-events-none">
+                                {yLabels.map((_, i) => (
+                                    <div key={i} className="w-full border-t border-muted-foreground/10 border-dashed first:border-solid last:border-solid last:border-muted-foreground/20" />
+                                ))}
+                            </div>
+
+                            {/* Data Points (Bars) */}
+                            {Array.isArray(monthlyTrend) && monthlyTrend.map((mo: any) => {
+                                return (
+                                    <div key={mo.month} className="flex-1 flex flex-col items-center gap-2 group h-full justify-end relative z-10">
+                                        <div className="relative w-full flex items-end justify-center gap-1 h-full">
+                                            {mo.types.map((t: any, idx: number) => {
+                                                const typePct = (t.count / yMax) * 100;
+                                                return (
+                                                    <div 
+                                                        key={t.name}
+                                                        className={cn(
+                                                            "w-full max-w-[8px] rounded-t-sm transition-all duration-500 ease-out hover:brightness-110 cursor-help",
+                                                            idx === 0 ? "bg-primary" : 
+                                                            idx === 1 ? "bg-blue-500" : 
+                                                            idx === 2 ? "bg-purple-500" : "bg-amber-500"
+                                                        )}
+                                                        style={{ height: `${typePct}%`, minHeight: t.count > 0 ? 2 : 0 }}
+                                                        title={`${t.name}: ${t.count}`}
+                                                    />
+                                                );
+                                            })}
+                                            <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground px-2 py-1 rounded text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-md border border-border z-10">
+                                                {mo.total} Kontrak
+                                            </div>
+                                        </div>
+                                        <div className="absolute -bottom-6 flex flex-col items-center">
+                                            <span className="text-[10px] font-bold text-muted-foreground mt-1 whitespace-nowrap">{mo.month}</span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                    
+                    {/* Legend */}
+                    <div className="mt-8 flex flex-wrap gap-4 px-4 justify-center">
+                        {Array.from(new Set(monthlyTrend?.flatMap((m: any) => m.types.map((t: any) => t.name)) || [])).map((name: any, idx) => (
+                            <div key={name} className="flex items-center gap-2">
+                                <div className={cn(
+                                    "h-2 w-2 rounded-full",
+                                    idx === 0 ? "bg-primary" : 
+                                    idx === 1 ? "bg-blue-500" : 
+                                    idx === 2 ? "bg-purple-500" : "bg-amber-500"
+                                )} />
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase">{name}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function MetricCard({ title, value, icon, color }: { title: string; value: string; icon: string; color: string }) {
+    const bgMap = {
+        blue: 'bg-blue-500/10 text-blue-600',
+        green: 'bg-green-500/10 text-green-600',
+        amber: 'bg-amber-500/10 text-amber-600',
+        purple: 'bg-purple-500/10 text-purple-600'
+    } as any;
+    return (
+        <div className="bg-card border border-border rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+            <div className="flex items-start justify-between relative z-10">
+                <div className="space-y-1">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{title}</p>
+                    <p className="text-2xl font-black text-gray-900 leading-tight">{value}</p>
+                </div>
+                <div className={cn("h-10 w-10 flex items-center justify-center rounded-lg border border-border/10", bgMap[color])}>
+                    <i className={cn("fa-solid", icon)} style={{ fontSize: 16 }} />
+                </div>
             </div>
         </div>
     );
@@ -162,7 +296,7 @@ function ProfileView({ meUser, showToast }: { meUser: any; showToast: any }) {
 
 
 // ─── Main Page ──────────────────────────────────────────────────────
-function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, types, currentView }: {
+function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, types, currentView, metrics }: {
     contracts: Contract[];
     setContracts: React.Dispatch<React.SetStateAction<Contract[]>>;
     meId: string;
@@ -170,6 +304,7 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
     initialSelected?: Contract | null;
     types: ContractType[];
     currentView: View;
+    metrics: any;
 }) {
     const { showToast } = useToast();
     const [view, setView] = useState<View>(currentView);
@@ -185,6 +320,7 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
     const [detailTab, setDetailTab] = useState<'f1' | 'f2' | 'attachments' | 'audit' | 'chat'>('f1');
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+    const [layout, setLayout] = useState<'list' | 'card'>('list');
     const [approvalNote, setApprovalNote] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -193,6 +329,7 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
     const [revOpen, setRevOpen] = useState(false);
     const [revType, setRevType] = useState<'contract' | 'f1' | 'f2'>('f1');
     const [rejectOpen, setRejectOpen] = useState(false);
+    const [sendOpen, setSendOpen] = useState(false);
 
     const [previewOpen, setPreviewOpen] = useState(false);
     const [previewTitle, setPreviewTitle] = useState('');
@@ -202,6 +339,10 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
     const [compareOpen, setCompareOpen] = useState(false);
     const [compareVer, setCompareVer] = useState<number | null>(null);
     const [compareType, setCompareType] = useState<'contract' | 'f1' | 'f2'>('contract');
+
+    const [editOpen, setEditOpen] = useState(false);
+    const [deleteOpen, setDeleteOpen] = useState(false);
+    const [processing, setProcessing] = useState(false);
 
     useEffect(() => {
         if (initialSelected) { setSelected(initialSelected); }
@@ -233,16 +374,31 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
     const hasAnyPending = !!firstPending;
     const canApprove = (selected?.status === 'in_review' || selected?.status === 'revision') && !!pendingApprovalForMe;
 
-    const filtered = contracts.filter(c => {
+    const applyFilters = (list: Contract[]) => {
         const q = search.toLowerCase();
-        const matchQ = !q || c.title.toLowerCase().includes(q) || c.contract_no.toLowerCase().includes(q);
-        const matchS = statusFilter === 'all' || c.status === statusFilter;
+        return list.filter(c => {
+            const matchQ = !q ||
+                c.title.toLowerCase().includes(q) ||
+                c.contract_no.toLowerCase().includes(q) ||
+                (c.creator?.name || '').toLowerCase().includes(q);
+            const matchS = statusFilter === 'all' || c.status === statusFilter;
+            return matchQ && matchS;
+        });
+    };
+
+    const filtered = applyFilters(contracts).filter(c => {
         let matchV = true;
         if (view === 'f1') matchV = c.versions.some(v => v.document_type === 'f1');
         if (view === 'f2') matchV = c.versions.some(v => v.document_type === 'f2');
         if (view === 'pending') matchV = c.approvals.some(a => a.user_id === meId && a.status === 'pending');
-        return matchQ && matchS && matchV;
+        if (view === 'mine') matchV = c.created_by === meId;
+        return matchV;
     });
+
+    const recentContracts = applyFilters(contracts).slice(0, layout === 'card' ? 6 : 4);
+    const myFilteredPending = applyFilters(contracts.filter(c =>
+        c.approvals.some(a => a.user_id === meId && a.status === 'pending')
+    ));
 
     // Handlers
     const handleCreate = async (fd: FormData) => {
@@ -315,11 +471,46 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
 
     const handleSendForApproval = async () => {
         if (!selected) return;
+        setSendOpen(true);
+    };
+
+    const handleUpdate = async (data: any) => {
+        if (!selected) return;
+        setProcessing(true);
         try {
-            const c = await contractApi.send(selected.id);
+            const c = await contractApi.update(selected.id, data);
+            updateContract(c);
+            setEditOpen(false);
+            showToast('Informasi kontrak diperbarui.', 'success');
+        } catch { showToast('Gagal memperbarui kontrak.', 'danger'); }
+        finally { setProcessing(false); }
+    };
+
+    const handleDelete = async () => {
+        if (!selected) return;
+        setProcessing(true);
+        try {
+            await contractApi.delete(selected.id);
+            const newContracts = contracts.filter(x => x.id !== selected.id);
+            setContracts(newContracts);
+            setSelected(null);
+            setDeleteOpen(false);
+            showToast('Kontrak berhasil dihapus.', 'success');
+        } catch { showToast('Gagal menghapus kontrak.', 'danger'); }
+        finally { setProcessing(false); }
+    };
+
+    const handleSendSubmit = async (data: any) => {
+        if (!selected) return;
+        try {
+            const c = await contractApi.send(selected.id, data);
             updateContract(c);
             showToast('Kontrak berhasil dikirim untuk approval!', 'success');
-        } catch { showToast('Gagal mengirim kontrak.', 'danger'); }
+        } catch (err: any) {
+            console.error(err);
+            const msg = err.response?.data?.message || 'Gagal mengirim kontrak.';
+            showToast(msg, 'danger');
+        }
     };
 
     const handleChangeVersion = async (vno: number) => {
@@ -340,7 +531,7 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
     ];
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <>
             <Head title={SL[view]} />
 
             <div className="flex flex-1 flex-col gap-4 p-4">
@@ -353,67 +544,100 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
                 {/* ── Dashboard ── */}
                 {view === 'dashboard' && !selected && (
                     <div>
-                        {/* Stats */}
-                        <div className="grid grid-cols-4 gap-3 mb-5">
-                            {[
-                                { icon: 'fa-file-lines', label: 'Total Kontrak', value: stats.total, sub: `+ ${stats.monthCount} bulan ini` },
-                                { icon: 'fa-regular fa-clock', label: 'Menunggu Approval', value: stats.pending, sub: `${myPending.length} perlu aksimu` },
-                                { icon: 'fa-circle-check', label: 'Disetujui', value: stats.approved, sub: `${stats.total ? Math.round(stats.approved / stats.total * 100) : 0}% approval rate` },
-                                { icon: 'fa-rotate', label: 'Revisi', value: stats.revision, sub: `${stats.revision} kontrak perlu revisi` },
-                            ].map(s => (
-                                <div key={s.label} className="bg-card border border-border rounded-xl flex items-center gap-3" style={{ padding: 16 }}>
-                                    <div className="flex items-center justify-center rounded-lg border border-border text-muted-foreground flex-shrink-0" style={{ width: 36, height: 36 }}>
-                                        <i className={`${s.icon.startsWith('fa-regular') ? s.icon : 'fa-solid ' + s.icon}`} />
-                                    </div>
-                                    <div>
-                                        <div className="font-medium text-muted-foreground" style={{ fontSize: 12 }}>{s.label}</div>
-                                        <div className="font-bold leading-tight" style={{ fontSize: 22 }}>{s.value}</div>
-                                        <div className="text-muted-foreground" style={{ fontSize: 12 }}>{s.sub}</div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                        {/* Stats & Trends */}
+                        <DashboardMetrics metrics={metrics} />
 
-                        {/* Recent table */}
-                        <div className="bg-card border border-border rounded-xl overflow-hidden mb-4">
-                            <div className="flex items-center justify-between border-b border-border/50" style={{ padding: '12px 16px' }}>
+                        {/* Recent Contracts Header & Filter */}
+                        <div className="flex flex-col gap-4 mb-4">
+                            <div className="flex flex-wrap items-center justify-between gap-4">
                                 <span className="font-semibold flex items-center gap-2" style={{ fontSize: 13 }}>
                                     <i className="fa-solid fa-list-ul text-muted-foreground" style={{ fontSize: 12 }} /> Kontrak Terbaru
                                 </span>
-                                <button onClick={() => navTo('contracts')} style={{ fontSize: 12, color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
-                                    Lihat Semua <i className="fa-solid fa-arrow-right" style={{ fontSize: 12 }} />
-                                </button>
+                                <div className="flex items-center gap-3">
+                                    <div className="relative max-w-[200px]">
+                                        <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" style={{ fontSize: 11 }} />
+                                        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari..."
+                                            className="w-full bg-card border border-border rounded-lg pl-8 pr-3 py-1.5 text-xs outline-none focus:border-primary/50 transition-all" />
+                                    </div>
+                                    <div className="flex border border-border rounded-lg overflow-hidden bg-card">
+                                        <button onClick={() => setLayout('list')} className={`p-1.5 transition-colors ${layout === 'list' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-muted-foreground'}`} title="List View">
+                                            <i className="fa-solid fa-list" style={{ fontSize: 11 }} />
+                                        </button>
+                                        <button onClick={() => setLayout('card')} className={`p-1.5 transition-colors ${layout === 'card' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-muted-foreground'}`} title="Grid View">
+                                            <i className="fa-solid fa-table-cells-large" style={{ fontSize: 11 }} />
+                                        </button>
+                                    </div>
+                                    <button onClick={() => navTo('contracts')} style={{ fontSize: 12, color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        Lihat Semua <i className="fa-solid fa-arrow-right" style={{ fontSize: 11 }} />
+                                    </button>
+                                </div>
                             </div>
-                            <div style={{ overflowX: 'auto' }}>
-                                <table style={{ width: '100%' }}>
-                                    <thead><tr style={{ background: 'var(--muted)' }}>
-                                        <Th>No. Kontrak</Th><Th>Judul</Th><Th>Dibuat Oleh</Th>
-                                        <Th>Status</Th><Th>Versi</Th><Th>Tgl Dibuat</Th><Th></Th>
-                                    </tr></thead>
-                                    <tbody>
-                                        {contracts.slice(0, 4).map(c => (
-                                            <tr key={c.id} onClick={() => openDetail(c)} style={{ cursor: 'pointer' }}
-                                                onMouseOver={e => (e.currentTarget as HTMLElement).style.background = 'var(--muted)'}
-                                                onMouseOut={e => (e.currentTarget as HTMLElement).style.background = ''}>
-                                                <Td><span style={{ fontSize: 12 }}>{c.contract_no}</span></Td>
-                                                <Td>
-                                                    <div className="font-medium" style={{ fontSize: 12 }}>{c.title}</div>
-                                                    <div className="text-muted-foreground" style={{ fontSize: 12, marginTop: 2 }}>{c.description.substring(0, 55)}…</div>
-                                                </Td>
-                                                <Td><div className="flex items-center gap-1.5"><Avatar user={c.creator} size="sm" /><span style={{ fontSize: 12 }}>{c.creator?.name}</span></div></Td>
-                                                <Td><StatusBadge status={c.status} /></Td>
-                                                <Td><span className="font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded" style={{ fontSize: 12 }}>v{c.current_version}</span></Td>
-                                                <Td><span className="text-muted-foreground" style={{ fontSize: 12 }}>{c.created_at}</span></Td>
-                                                <Td>
-                                                    <button onClick={e => { e.stopPropagation(); openDetail(c); }} style={{ padding: '4px 8px', fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, background: 'none', cursor: 'pointer' }}>
-                                                        <i className="fa-solid fa-eye" />
-                                                    </button>
-                                                </Td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+
+                            {/* Dashboard Content */}
+                            {layout === 'list' ? (
+                                <div className="bg-card border border-border rounded-xl overflow-hidden">
+                                    <div style={{ overflowX: 'auto' }}>
+                                        <table style={{ width: '100%' }}>
+                                            <thead><tr style={{ background: 'var(--muted)' }}>
+                                                <Th>No. Kontrak</Th><Th>Judul</Th><Th>Dibuat Oleh</Th>
+                                                <Th>Status</Th><Th>Versi</Th><Th>Tgl Dibuat</Th><Th></Th>
+                                            </tr></thead>
+                                            <tbody>
+                                                {recentContracts.map(c => (
+                                                    <tr key={c.id} onClick={() => openDetail(c)} style={{ cursor: 'pointer' }}
+                                                        onMouseOver={e => (e.currentTarget as HTMLElement).style.background = 'var(--muted)'}
+                                                        onMouseOut={e => (e.currentTarget as HTMLElement).style.background = ''}>
+                                                        <Td><span style={{ fontSize: 12 }}>{c.contract_no}</span></Td>
+                                                        <Td>
+                                                            <div className="font-medium" style={{ fontSize: 12 }}>{c.title}</div>
+                                                            <div className="text-muted-foreground" style={{ fontSize: 11, marginTop: 1 }}>{c.contract_type}</div>
+                                                        </Td>
+                                                        <Td><div className="flex items-center gap-1.5"><Avatar user={c.creator} size="sm" /><span style={{ fontSize: 12 }}>{c.creator?.name}</span></div></Td>
+                                                        <Td><StatusBadge status={c.status} /></Td>
+                                                        <Td><span className="font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded" style={{ fontSize: 11 }}>v{c.current_version}</span></Td>
+                                                        <Td><span className="text-muted-foreground" style={{ fontSize: 12 }}>{c.created_at}</span></Td>
+                                                        <Td>
+                                                            <button onClick={e => { e.stopPropagation(); openDetail(c); }} style={{ padding: '4px 8px', fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, background: 'none', cursor: 'pointer' }}>
+                                                                <i className="fa-solid fa-eye" />
+                                                            </button>
+                                                        </Td>
+                                                    </tr>
+                                                ))}
+                                                {recentContracts.length === 0 && (
+                                                    <tr><td colSpan={7} style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--muted-foreground)', fontSize: 12 }}>Tidak ada kontrak ditemukan.</td></tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    {recentContracts.map(c => (
+                                        <div key={c.id} onClick={() => openDetail(c)} className="bg-card border border-border rounded-xl p-3 hover:border-primary/50 transition-all cursor-pointer group shadow-sm hover:shadow-md">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <span className="font-mono text-[9px] bg-muted text-muted-foreground px-1 py-0.5 rounded uppercase tracking-wider">{c.contract_no}</span>
+                                                <StatusBadge status={c.status} />
+                                            </div>
+                                            <h3 className="font-bold text-gray-900 mb-1 line-clamp-1" style={{ fontSize: 13 }}>{c.title}</h3>
+                                            <div className="flex items-center gap-2 mt-4 pt-2 border-t border-border/50">
+                                                <Avatar user={c.creator} size="sm" />
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="text-gray-900 font-medium truncate" style={{ fontSize: 10 }}>{c.creator?.name}</div>
+                                                    <div className="text-muted-foreground" style={{ fontSize: 9 }}>v{c.current_version} · {c.created_at}</div>
+                                                </div>
+                                                <div className="w-20">
+                                                    <ProgressCell c={c} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {recentContracts.length === 0 && (
+                                        <div className="col-span-full p-12 text-center text-muted-foreground bg-card border border-border rounded-xl">
+                                            <p style={{ fontSize: 12 }}>Tidak ada kontrak ditemukan.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         {/* Bottom row */}
@@ -460,143 +684,245 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
 
                 {/* ── Contracts ── */}
                 {(view === 'contracts' || view === 'f1' || view === 'f2') && !selected && (
-                    <div className="bg-card border border-border rounded-xl overflow-hidden">
-                        <div className="flex items-center justify-between border-b border-border/50" style={{ padding: '12px 16px' }}>
-                            <span className="font-semibold flex items-center gap-2" style={{ fontSize: 13 }}>
-                                <i className={`fa-solid ${view === 'f1' ? 'fa-file-lines' : (view === 'f2' ? 'fa-file-shield' : 'fa-folder-open')} text-muted-foreground`} style={{ fontSize: 12 }} /> {(SL as any)[view]}
-                            </span>
-                            <div className="flex gap-2">
-                                <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, padding: '6px 8px', outline: 'none', background: 'var(--card)' }}>
+                    <div className="flex flex-col gap-4">
+                        {/* Filters Bar */}
+                        <div className="flex flex-wrap items-center justify-between gap-4">
+                            <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[300px]">
+                                <div className="relative flex-1 max-w-sm">
+                                    <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" style={{ fontSize: 13 }} />
+                                    <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari kontrak, no, atau pembuat..."
+                                        className="w-full bg-card border border-border rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:border-primary/50 transition-all" />
+                                </div>
+                                <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+                                    className="bg-card border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary/50 transition-all cursor-pointer min-w-[140px]">
                                     <option value="all">Semua Status</option>
                                     <option value="draft">Draft</option>
                                     <option value="in_review">In Review</option>
                                     <option value="revision">Revision</option>
                                     <option value="approved">Approved</option>
+                                    <option value="rejected">Rejected</option>
                                 </select>
-                                <button onClick={() => setCreateOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: 'var(--primary)', color: 'var(--primary-foreground)', fontSize: 12, fontWeight: 500, borderRadius: 6, border: 'none', cursor: 'pointer' }}
-                                    onMouseOver={e => (e.currentTarget.style.background = 'var(--primary)')} onMouseOut={e => (e.currentTarget.style.background = 'var(--primary)')}>
-                                    <i className="fa-solid fa-plus" style={{ fontSize: 12 }} /> Buat Kontrak
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                                <div className="flex border border-border rounded-lg overflow-hidden bg-card">
+                                    <button onClick={() => setLayout('list')} className={`p-2 transition-colors ${layout === 'list' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-muted-foreground'}`} title="List View">
+                                        <i className="fa-solid fa-list" style={{ fontSize: 13 }} />
+                                    </button>
+                                    <button onClick={() => setLayout('card')} className={`p-2 transition-colors ${layout === 'card' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-muted-foreground'}`} title="Grid View">
+                                        <i className="fa-solid fa-table-cells-large" style={{ fontSize: 13 }} />
+                                    </button>
+                                </div>
+                                <button onClick={() => setCreateOpen(true)} className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all active:scale-95">
+                                    <i className="fa-solid fa-plus" /> Buat Kontrak
                                 </button>
                             </div>
                         </div>
-                        <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%' }}>
-                                <thead><tr style={{ background: 'var(--muted)' }}>
-                                    <Th>No. Kontrak</Th><Th>Judul</Th><Th>Tgl Kontrak</Th><Th>Tipe</Th><Th>Status</Th><Th>Versi</Th><Th>Progress</Th><Th></Th>
-                                </tr></thead>
-                                <tbody>
+
+                        {/* Content */}
+                        {layout === 'list' ? (
+                            <div className="bg-card border border-border rounded-xl overflow-hidden">
+                                <div style={{ overflowX: 'auto' }}>
+                                    <table style={{ width: '100%' }}>
+                                        <thead><tr style={{ background: 'var(--muted)' }}>
+                                            <Th>No. Kontrak</Th><Th>Judul</Th><Th>Tgl Kontrak</Th><Th>Tipe</Th><Th>Status</Th><Th>Versi</Th><Th>Progress</Th><Th></Th>
+                                        </tr></thead>
+                                        <tbody>
+                                            {filtered.map(c => (
+                                                <tr key={c.id} onClick={() => openDetail(c)} style={{ cursor: 'pointer' }}
+                                                    onMouseOver={e => (e.currentTarget as HTMLElement).style.background = 'var(--muted)'}
+                                                    onMouseOut={e => (e.currentTarget as HTMLElement).style.background = ''}>
+                                                    <Td><span style={{ fontSize: 12 }}>{c.contract_no}</span></Td>
+                                                    <Td>
+                                                        <div className="font-medium" style={{ fontSize: 12 }}>{c.title}</div>
+                                                        <div className="text-muted-foreground" style={{ fontSize: 12, marginTop: 2 }}>{c.creator?.name} · {c.created_at}</div>
+                                                    </Td>
+                                                    <Td><span className="text-muted-foreground font-medium" style={{ fontSize: 12 }}>{c.contract_date || '—'}</span></Td>
+                                                    <Td><span className="px-2 py-0.5 bg-muted rounded text-muted-foreground" style={{ fontSize: 12 }}>{c.contract_type || '—'}</span></Td>
+                                                    <Td><StatusBadge status={c.status} /></Td>
+                                                    <Td><span className="font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded" style={{ fontSize: 12 }}>v{c.current_version}</span></Td>
+                                                    <Td><ProgressCell c={c} /></Td>
+                                                    <Td>
+                                                        <button onClick={e => { e.stopPropagation(); openDetail(c); }} style={{ padding: '4px 8px', fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, background: 'none', cursor: 'pointer' }}>
+                                                            <i className="fa-solid fa-eye" />
+                                                        </button>
+                                                    </Td>
+                                                </tr>
+                                            ))}
+                                            {filtered.length === 0 && (
+                                                <tr><td colSpan={8} style={{ textAlign: 'center', padding: '48px 16px', color: 'var(--muted-foreground)', fontSize: 12 }}>Tidak ada kontrak ditemukan.</td></tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        ) : (
+                            <div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                     {filtered.map(c => (
-                                        <tr key={c.id} onClick={() => openDetail(c)} style={{ cursor: 'pointer' }}
-                                            onMouseOver={e => (e.currentTarget as HTMLElement).style.background = 'var(--muted)'}
-                                            onMouseOut={e => (e.currentTarget as HTMLElement).style.background = ''}>
-                                            <Td><span style={{ fontSize: 12 }}>{c.contract_no}</span></Td>
-                                            <Td>
-                                                <div className="font-medium" style={{ fontSize: 12 }}>{c.title}</div>
-                                                <div className="text-muted-foreground" style={{ fontSize: 12, marginTop: 2 }}>{c.creator?.name} · {c.created_at}</div>
-                                            </Td>
-                                            <Td><span className="text-muted-foreground font-medium" style={{ fontSize: 12 }}>{c.contract_date || '—'}</span></Td>
-                                            <Td><span className="px-2 py-0.5 bg-muted rounded text-muted-foreground" style={{ fontSize: 12 }}>{c.contract_type || '—'}</span></Td>
-                                            <Td><StatusBadge status={c.status} /></Td>
-                                            <Td><span className="font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded" style={{ fontSize: 12 }}>v{c.current_version}</span></Td>
-                                            <Td><ProgressCell c={c} /></Td>
-                                            <Td>
-                                                <button onClick={e => { e.stopPropagation(); openDetail(c); }} style={{ padding: '4px 8px', fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, background: 'none', cursor: 'pointer' }}>
-                                                    <i className="fa-solid fa-eye" />
-                                                </button>
-                                            </Td>
-                                        </tr>
+                                        <div key={c.id} onClick={() => openDetail(c)}
+                                            className="bg-card border border-border rounded-xl p-4 hover:border-primary/50 transition-all cursor-pointer group shadow-sm hover:shadow-md">
+                                            <div className="flex justify-between items-start mb-3">
+                                                <span className="font-mono text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded uppercase tracking-wider">{c.contract_no}</span>
+                                                <StatusBadge status={c.status} />
+                                            </div>
+                                            <h3 className="font-bold text-gray-900 mb-1 group-hover:text-primary transition-colors line-clamp-1" style={{ fontSize: 14 }}>{c.title}</h3>
+                                            <p className="text-muted-foreground mb-4 line-clamp-2" style={{ fontSize: 11 }}>{c.description || '—'}</p>
+
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <Avatar user={c.creator} size="sm" />
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="text-gray-900 font-medium truncate" style={{ fontSize: 11 }}>{c.creator?.name}</div>
+                                                    <div className="text-muted-foreground" style={{ fontSize: 10 }}>{c.created_at}</div>
+                                                </div>
+                                            </div>
+
+                                            <div className="pt-3 border-t border-border/50 flex items-center justify-between">
+                                                <div className="flex gap-2">
+                                                    <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">v{c.current_version}</span>
+                                                    <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground truncate max-w-[80px]">{c.contract_type}</span>
+                                                </div>
+                                                <div className="w-20">
+                                                    <ProgressCell c={c} />
+                                                </div>
+                                            </div>
+                                        </div>
                                     ))}
-                                    {filtered.length === 0 && (
-                                        <tr><td colSpan={8} style={{ textAlign: 'center', padding: '48px 16px', color: 'var(--muted-foreground)', fontSize: 12 }}>Tidak ada kontrak ditemukan.</td></tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
+                                </div>
+                                {filtered.length === 0 && (
+                                    <div className="p-12 text-center text-muted-foreground bg-card border border-border rounded-xl">
+                                        <i className="fa-solid fa-folder-open mb-3 block" style={{ fontSize: 32 }} />
+                                        <p style={{ fontSize: 13 }}>Tidak ada kontrak ditemukan.</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 )}
 
                 {/* ── Pending ── */}
                 {view === 'pending' && !selected && (
-                    <div className="bg-card border border-border rounded-xl overflow-hidden">
-                        <div className="border-b border-border/50 font-semibold flex items-center gap-2" style={{ padding: '12px 16px', fontSize: 13 }}>
-                            <i className="fa-regular fa-clock text-muted-foreground" style={{ fontSize: 12 }} /> Menunggu Approval Saya
+                    <div className="flex flex-col gap-4">
+                        <div className="flex flex-wrap items-center justify-between gap-4">
+                            <span className="font-semibold flex items-center gap-2" style={{ fontSize: 13 }}>
+                                <i className="fa-regular fa-clock text-muted-foreground" style={{ fontSize: 12 }} /> Menunggu Approval Saya
+                            </span>
+                            <div className="flex items-center gap-3">
+                                <div className="relative max-w-[200px]">
+                                    <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" style={{ fontSize: 11 }} />
+                                    <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari..."
+                                        className="w-full bg-card border border-border rounded-lg pl-8 pr-3 py-1.5 text-xs outline-none focus:border-primary/50 transition-all" />
+                                </div>
+                                <div className="flex border border-border rounded-lg overflow-hidden bg-card">
+                                    <button onClick={() => setLayout('list')} className={`p-1.5 transition-colors ${layout === 'list' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-muted-foreground'}`} title="List View">
+                                        <i className="fa-solid fa-list" style={{ fontSize: 11 }} />
+                                    </button>
+                                    <button onClick={() => setLayout('card')} className={`p-1.5 transition-colors ${layout === 'card' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-muted-foreground'}`} title="Grid View">
+                                        <i className="fa-solid fa-table-cells-large" style={{ fontSize: 11 }} />
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                        <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%' }}>
-                                <thead><tr style={{ background: 'var(--muted)' }}>
-                                    <Th>No. Kontrak</Th><Th>Judul</Th><Th>Role</Th>
-                                    <Th>Versi</Th><Th>Sequence</Th><Th>Tgl Dibuat</Th><Th>Aksi</Th>
-                                </tr></thead>
-                                <tbody>
-                                    {myPending.length === 0 ? (
-                                        <tr><td colSpan={7} style={{ textAlign: 'center', padding: '48px 16px', color: 'var(--muted-foreground)' }}>
-                                            <i className="fa-solid fa-circle-check" style={{ fontSize: 32, display: 'block', marginBottom: 8, color: 'var(--muted-foreground)' }} />
-                                            <strong style={{ color: 'var(--muted-foreground)', display: 'block', marginBottom: 4 }}>Tidak ada approval pending</strong>
-                                            <span style={{ fontSize: 12 }}>Semua sudah ditangani.</span>
-                                        </td></tr>
-                                    ) : myPending.map(({ contract: c, approval: a }) => (
-                                        <tr key={`${c.id}-${a.id}`} onClick={() => openDetail(c)} style={{ cursor: 'pointer' }}
-                                            onMouseOver={e => (e.currentTarget as HTMLElement).style.background = 'var(--muted)'}
-                                            onMouseOut={e => (e.currentTarget as HTMLElement).style.background = ''}>
-                                            <Td><span style={{ fontSize: 12 }}>{c.contract_no}</span></Td>
-                                            <Td className="font-medium">{c.title}</Td>
-                                            <Td><span className="font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded" style={{ fontSize: 12 }}>{a.role}</span></Td>
-                                            <Td><span className="font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded" style={{ fontSize: 12 }}>v{c.current_version}</span></Td>
-                                            <Td className="text-muted-foreground" style={{ fontSize: 12 }}>Seq {a.sequence}</Td>
-                                            <Td><span className="text-muted-foreground" style={{ fontSize: 12 }}>{c.created_at}</span></Td>
-                                            <Td>
-                                                <div className="flex gap-1.5">
-                                                    <button onClick={e => { e.stopPropagation(); handleQuickApprove(c.id); }} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', background: 'var(--primary)', color: 'var(--primary-foreground)', fontSize: 12, fontWeight: 500, borderRadius: 6, border: 'none', cursor: 'pointer' }}>
-                                                        <i className="fa-solid fa-check" style={{ fontSize: 12 }} /> Setuju
-                                                    </button>
-                                                    <button onClick={e => { e.stopPropagation(); openDetail(c); }} style={{ padding: '4px 8px', fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, background: 'none', cursor: 'pointer' }}>
-                                                        <i className="fa-solid fa-eye" />
-                                                    </button>
+
+                        {/* Pending Content */}
+                        {layout === 'list' ? (
+                            <div className="bg-card border border-border rounded-xl overflow-hidden">
+                                <div style={{ overflowX: 'auto' }}>
+                                    <table style={{ width: '100%' }}>
+                                        <thead><tr style={{ background: 'var(--muted)' }}>
+                                            <Th>No. Kontrak</Th><Th>Judul</Th><Th>Role</Th>
+                                            <Th>Versi</Th><Th>Sequence</Th><Th>Tgl Dibuat</Th><Th></Th>
+                                        </tr></thead>
+                                        <tbody>
+                                            {myFilteredPending.length === 0 ? (
+                                                <tr><td colSpan={7} style={{ textAlign: 'center', padding: '48px 16px', color: 'var(--muted-foreground)' }}>
+                                                    <i className="fa-solid fa-circle-check" style={{ fontSize: 32, display: 'block', marginBottom: 8, color: 'var(--muted-foreground)' }} />
+                                                    <strong style={{ color: 'var(--muted-foreground)', display: 'block', marginBottom: 4 }}>Tidak ada approval pending</strong>
+                                                    <span style={{ fontSize: 12 }}>Semua sudah ditangani.</span>
+                                                </td></tr>
+                                            ) : myFilteredPending.map(c => {
+                                                const a = c.approvals.find(ap => ap.user_id === meId && ap.status === 'pending');
+                                                if (!a) return null;
+                                                return (
+                                                    <tr key={`${c.id}-${a.id}`} onClick={() => openDetail(c)} style={{ cursor: 'pointer' }}
+                                                        onMouseOver={e => (e.currentTarget as HTMLElement).style.background = 'var(--muted)'}
+                                                        onMouseOut={e => (e.currentTarget as HTMLElement).style.background = ''}>
+                                                        <Td><span style={{ fontSize: 12 }}>{c.contract_no}</span></Td>
+                                                        <Td>
+                                                            <div className="font-medium" style={{ fontSize: 12 }}>{c.title}</div>
+                                                            <div className="text-muted-foreground font-mono" style={{ fontSize: 10 }}>{c.contract_type}</div>
+                                                        </Td>
+                                                        <Td><span className="font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded" style={{ fontSize: 12 }}>{a.role}</span></Td>
+                                                        <Td><span className="font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded" style={{ fontSize: 12 }}>v{c.current_version}</span></Td>
+                                                        <Td className="text-muted-foreground" style={{ fontSize: 12 }}>Seq {a.sequence}</Td>
+                                                        <Td><span className="text-muted-foreground" style={{ fontSize: 12 }}>{c.created_at}</span></Td>
+                                                        <Td>
+                                                            <button onClick={e => { e.stopPropagation(); openDetail(c); }} style={{ padding: '4px 8px', fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, background: 'none', cursor: 'pointer' }}>
+                                                                <i className="fa-solid fa-eye" />
+                                                            </button>
+                                                        </Td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {myFilteredPending.map(c => {
+                                    const a = c.approvals.find(ap => ap.user_id === meId && ap.status === 'pending');
+                                    if (!a) return null;
+                                    return (
+                                        <div key={`${c.id}-${a.id}`} onClick={() => openDetail(c)}
+                                            className="bg-card border border-primary/20 hover:border-primary/50 rounded-xl p-4 transition-all cursor-pointer shadow-sm hover:shadow-md relative overflow-hidden group">
+                                            <div className="absolute top-0 right-0 p-2 bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors" style={{ borderRadius: '0 0 0 12px' }}>
+                                                <i className="fa-solid fa-clock-rotate-left" style={{ fontSize: 12 }} />
+                                            </div>
+                                            <div className="mb-3">
+                                                <span className="font-mono text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded uppercase">{c.contract_no}</span>
+                                            </div>
+                                            <h3 className="font-bold text-gray-900 mb-2 line-clamp-1 pr-6" style={{ fontSize: 14 }}>{c.title}</h3>
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <Avatar user={c.creator} size="sm" />
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="text-gray-900 font-medium truncate" style={{ fontSize: 11 }}>{c.creator?.name}</div>
+                                                    <div className="text-muted-foreground" style={{ fontSize: 10 }}>Dibuat: {c.created_at}</div>
                                                 </div>
-                                            </Td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                            </div>
+                                            <div className="pt-3 border-t border-border/50 flex items-center justify-between">
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex gap-2 mb-2">
+                                                        <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold uppercase tracking-tight">{a.role}</span>
+                                                        <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">v{c.current_version}</span>
+                                                    </div>
+                                                    <div className="text-[10px] text-muted-foreground font-medium">Approval Seq {a.sequence}</div>
+                                                </div>
+                                                <div className="w-20">
+                                                    <ProgressCell c={c} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                                {myFilteredPending.length === 0 && (
+                                    <div className="col-span-full p-12 text-center text-muted-foreground bg-card border border-border rounded-xl">
+                                        <i className="fa-solid fa-circle-check mb-3 block" style={{ fontSize: 32 }} />
+                                        <p style={{ fontSize: 13 }}>Tidak ada approval pending.</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 )}
 
                 {/* ── Audit ── */}
-                {view === 'audit' && !selected && (
-                    <div className="bg-card border border-border rounded-xl overflow-hidden">
-                        <div className="flex items-center justify-between border-b border-border/50" style={{ padding: '12px 16px' }}>
-                            <span className="font-semibold flex items-center gap-2" style={{ fontSize: 13 }}>
-                                <i className="fa-solid fa-chart-bar text-muted-foreground" style={{ fontSize: 12 }} /> Audit Trail
-                            </span>
-                            <div className="flex gap-2">
-                                <input type="date" style={{ fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, padding: '6px 8px', outline: 'none', width: 144 }} />
-                                <input type="date" style={{ fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, padding: '6px 8px', outline: 'none', width: 144 }} />
-                                <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid var(--border)', fontSize: 12, fontWeight: 500, borderRadius: 6, background: 'none', cursor: 'pointer' }}>
-                                    <i className="fa-solid fa-filter" style={{ fontSize: 12 }} /> Filter
-                                </button>
-                            </div>
-                        </div>
-                        <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%' }}>
-                                <thead><tr style={{ background: 'var(--muted)' }}>
-                                    <Th>Waktu</Th><Th>Kontrak</Th><Th>Aksi</Th><Th>Deskripsi</Th><Th>Aktor</Th>
-                                </tr></thead>
-                                <tbody>
-                                    {contracts.flatMap(c => c.histories.map(h => ({ ...h, contract: c }))).sort((a, b) => b.created_at.localeCompare(a.created_at)).map((h, i) => (
-                                        <tr key={i} onMouseOver={e => (e.currentTarget as HTMLElement).style.background = 'var(--muted)'} onMouseOut={e => (e.currentTarget as HTMLElement).style.background = ''}>
-                                            <Td><span className="text-muted-foreground whitespace-nowrap" style={{ fontSize: 12 }}>{h.created_at}</span></Td>
-                                            <Td>
-                                                <button onClick={() => openDetail(h.contract)} style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer' }}>{h.contract.contract_no}</button>
-                                            </Td>
-                                            <Td><span className="font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded" style={{ fontSize: 12 }}>{h.action}</span></Td>
-                                            <Td style={{ fontSize: 12 }}>{h.description}</Td>
-                                            <Td><div className="flex items-center gap-1.5"><Avatar user={h.actor} size="sm" /><span style={{ fontSize: 12 }}>{h.actor?.name}</span></div></Td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+
+                {view === 'audit' && !selected && meUser?.role !== 'Admin' && (
+                    <div className="bg-card border border-border rounded-xl p-12 text-center text-muted-foreground">
+                        <i className="fa-solid fa-lock mb-4 block" style={{ fontSize: 32 }} />
+                        <h3 className="font-bold text-gray-900 mb-2" style={{ fontSize: 16 }}>Akses Terbatas</h3>
+                        <p style={{ fontSize: 13 }}>Halaman Audit Trail hanya dapat diakses oleh Administrator.</p>
                     </div>
                 )}
 
@@ -619,10 +945,18 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
                             </div>
                             <div className="flex gap-2">
                                 {selected.status === 'draft' && (
-                                    <button onClick={handleSendForApproval} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: '#2563eb', color: '#fff', fontSize: 12, fontWeight: 500, borderRadius: 6, border: 'none', cursor: 'pointer' }}
-                                        onMouseOver={e => (e.currentTarget.style.background = '#1d4ed8')} onMouseOut={e => (e.currentTarget.style.background = '#2563eb')}>
-                                        <i className="fa-solid fa-paper-plane" style={{ fontSize: 11 }} /> Kirim
-                                    </button>
+                                    <>
+                                        <button onClick={() => setEditOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid #e5e7eb', fontSize: 12, fontWeight: 500, borderRadius: 6, background: 'none', cursor: 'pointer', color: '#374151' }}>
+                                            <i className="fa-solid fa-pen-to-square" style={{ fontSize: 11 }} /> Edit
+                                        </button>
+                                        <button onClick={() => setDeleteOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: 'var(--destructive)', color: 'var(--destructive-foreground)', fontSize: 12, fontWeight: 500, borderRadius: 6, border: 'none', cursor: 'pointer' }}>
+                                            <i className="fa-solid fa-trash-can" style={{ fontSize: 11 }} /> Hapus
+                                        </button>
+                                        <button onClick={handleSendForApproval} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: '#2563eb', color: '#fff', fontSize: 12, fontWeight: 500, borderRadius: 6, border: 'none', cursor: 'pointer' }}
+                                            onMouseOver={e => ((e.currentTarget as any).style.background = '#1d4ed8')} onMouseOut={e => ((e.currentTarget as any).style.background = '#2563eb')}>
+                                            <i className="fa-solid fa-paper-plane" style={{ fontSize: 11 }} /> Kirim
+                                        </button>
+                                    </>
                                 )}
                                 <button onClick={() => handleDownload(selected.id, selected.versions.find(v => v.version_no === selected.current_version)?.file_name)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid #e5e7eb', fontSize: 12, fontWeight: 500, borderRadius: 6, background: 'none', cursor: 'pointer', color: '#374151' }}>
                                     <i className="fa-solid fa-download" style={{ fontSize: 11 }} /> Download
@@ -949,6 +1283,9 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
             <CreateContractModal open={createOpen} onClose={() => setCreateOpen(false)} onSubmit={handleCreate} types={types} />
             <UploadRevisionModal open={revOpen} onClose={() => setRevOpen(false)} onSubmit={handleRevision} initialType={revType} />
             <RejectModal open={rejectOpen} onClose={() => setRejectOpen(false)} onSubmit={handleReject} />
+            <SendApprovalModal open={sendOpen} onClose={() => setSendOpen(false)} onSubmit={handleSendSubmit} contractType={selected?.contract_type || undefined} />
+            <EditContractModal open={editOpen} onClose={() => setEditOpen(false)} onSubmit={handleUpdate} contract={selected} types={types} processing={processing} />
+            <DeleteConfirmModal open={deleteOpen} onClose={() => setDeleteOpen(false)} onConfirm={handleDelete} processing={processing} />
             <PreviewModal
                 open={previewOpen}
                 onClose={() => setPreviewOpen(false)}
@@ -968,30 +1305,160 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
             {/* ── Floating Chat ── */}
             <FloatingChat contracts={contracts} meId={meId} onContractUpdated={updateContract} />
 
-        </AppLayout>
+        </>
+    );
+}
+
+function EditContractModal({ open, onClose, onSubmit, contract, types, processing }: {
+    open: boolean;
+    onClose: () => void;
+    onSubmit: (data: any) => void;
+    contract: Contract | null;
+    types: ContractType[];
+    processing: boolean;
+}) {
+    const [title, setTitle] = useState('');
+    const [contractNo, setContractNo] = useState('');
+    const [description, setDescription] = useState('');
+    const [date, setDate] = useState('');
+    const [typeId, setTypeId] = useState('');
+
+    useEffect(() => {
+        if (open && contract) {
+            setTitle(contract.title);
+            setContractNo(contract.contract_no);
+            setDescription(contract.description || '');
+            setDate(contract.contract_date || '');
+            const t = types.find(x => x.name === contract.contract_type);
+            setTypeId(t ? String(t.id) : '');
+        }
+    }, [open, contract, types]);
+
+    if (!open) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="bg-card border border-border w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden scale-in-center">
+                <div className="flex items-center justify-between border-b border-border/50" style={{ padding: '16px 20px' }}>
+                    <h3 className="font-bold text-gray-900" style={{ fontSize: 16 }}>Edit Informasi Kontrak</h3>
+                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors text-muted-foreground"><i className="fa-solid fa-xmark" /></button>
+                </div>
+                <div style={{ padding: 20 }}>
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">Judul Kontrak</label>
+                            <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Contoh: Perjanjian Kerjasama Jasa IT"
+                                className="w-full bg-muted/30 border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary/50 transition-all font-medium" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">No. Kontrak</label>
+                                <input value={contractNo} onChange={e => setContractNo(e.target.value)} placeholder="CTR/2026/..."
+                                    className="w-full bg-muted/30 border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary/50 transition-all font-mono" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">Tanggal</label>
+                                <input type="date" value={date} onChange={e => setDate(e.target.value)}
+                                    className="w-full bg-muted/30 border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary/50 transition-all" />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">Tipe Kontrak</label>
+                            <select value={typeId} onChange={e => setTypeId(e.target.value)}
+                                className="w-full bg-muted/30 border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary/50 transition-all">
+                                <option value="">Pilih Tipe</option>
+                                {types.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">Deskripsi</label>
+                            <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} placeholder="Penjelasan singkat kontrak..."
+                                className="w-full bg-muted/30 border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary/50 transition-all resize-none" />
+                        </div>
+                    </div>
+                    <div className="flex gap-3 mt-8">
+                        <button onClick={onClose} className="flex-1 py-2.5 border border-border text-sm font-bold rounded-xl hover:bg-muted transition-all">Batal</button>
+                        <button onClick={() => onSubmit({ title, contract_no: contractNo, description, contract_date: date, contract_type_id: typeId })}
+                            disabled={processing || !title}
+                            className="flex-1 py-2.5 bg-primary text-primary-foreground text-sm font-bold rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all active:scale-95 disabled:opacity-50">
+                            {processing ? <i className="fa-solid fa-spinner fa-spin mr-2" /> : <i className="fa-solid fa-save mr-2" />}
+                            Simpan Perubahan
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function DeleteConfirmModal({ open, onClose, onConfirm, processing }: { open: boolean, onClose: () => void, onConfirm: () => void, processing: boolean }) {
+    if (!open) return null;
+    return (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="bg-card border border-border w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden scale-in-center">
+                <div style={{ padding: '32px 24px', textAlign: 'center' }}>
+                    <div className="w-16 h-16 bg-destructive/10 text-destructive rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i className="fa-solid fa-trash-can" style={{ fontSize: 24 }} />
+                    </div>
+                    <h3 className="font-bold text-gray-900 mb-2" style={{ fontSize: 18 }}>Hapus Kontrak?</h3>
+                    <p className="text-muted-foreground text-sm leading-relaxed">Seluruh data dokumen, riwayat, dan chat terkait kontrak ini akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan.</p>
+                </div>
+                <div className="flex border-t border-border">
+                    <button onClick={onClose} className="flex-1 py-4 text-sm font-bold text-muted-foreground hover:bg-muted transition-colors border-r border-border">Batal</button>
+                    <button onClick={onConfirm} disabled={processing} className="flex-1 py-4 text-sm font-bold text-destructive hover:bg-destructive/5 transition-colors">
+                        {processing ? <i className="fa-solid fa-spinner fa-spin mr-2" /> : null}
+                        Ya, Hapus
+                    </button>
+                </div>
+            </div>
+        </div>
     );
 }
 
 // ─── Page Entry ──────────────────────────────────────────────────────
-export default function ContractsIndex({ currentView = 'dashboard' }: { currentView?: View }) {
+export default function ContractsIndex({ 
+    currentView = 'dashboard',
+    contracts: initialContracts = [],
+    types: initialTypes = [],
+    metrics: initialMetrics = null
+}: { 
+    currentView?: View;
+    contracts?: Contract[];
+    types?: ContractType[];
+    metrics?: any;
+}) {
     const { auth, contractId: initialId } = usePage<{ auth: { user: any }; contractId?: string }>().props;
     const meId = auth?.user?.id ?? '';
     const meUser = auth?.user ?? null;
-    const [contracts, setContracts] = useState<Contract[]>([]);
-    const [types, setTypes] = useState<ContractType[]>([]);
-    const [bootLoading, setBootLoading] = useState(true);
+    const [contracts, setContracts] = useState<Contract[]>(initialContracts);
+    const [types, setTypes] = useState<ContractType[]>(initialTypes);
+    const [bootLoading, setBootLoading] = useState(initialContracts.length === 0);
     const [initialSelected, setInitialSelected] = useState<Contract | null>(null);
+    const [metrics, setMetrics] = useState<any>(initialMetrics);
 
     useEffect(() => {
-        Promise.all([contractApi.list(), contractApi.getTypes()]).then(([cData, tData]) => {
+        if (initialContracts.length > 0 && initialTypes.length > 0) {
+            if (initialId) {
+                setInitialSelected(initialContracts.find((c: Contract) => c.id === initialId) ?? null);
+            }
+            return;
+        }
+
+        setBootLoading(true);
+        Promise.all([
+            contractApi.list(),
+            contractApi.getTypes(),
+            axios.post('/admin/api/reports/data', {}).then(res => res.data).catch(() => null)
+        ]).then(([cData, tData, mData]) => {
             setContracts(cData);
             setTypes(tData);
+            setMetrics(mData);
             if (initialId) {
                 setInitialSelected(cData.find((c: Contract) => c.id === initialId) ?? null);
             }
             setBootLoading(false);
         }).catch(() => setBootLoading(false));
-    }, []);
+    }, [initialContracts, initialTypes, initialId]);
 
     return (
         <>
@@ -1003,7 +1470,7 @@ export default function ContractsIndex({ currentView = 'dashboard' }: { currentV
                         <span >Memuat data kontrak...</span>
                     </div>
                 ) : (
-                    <ContractPage contracts={contracts} setContracts={setContracts} meId={meId} meUser={meUser} initialSelected={initialSelected} types={types} currentView={currentView} />
+                    <ContractPage contracts={contracts} setContracts={setContracts} meId={meId} meUser={meUser} initialSelected={initialSelected} types={types} currentView={currentView} metrics={metrics} />
                 )}
             </ToastProvider>
         </>
