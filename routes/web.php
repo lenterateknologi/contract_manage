@@ -101,7 +101,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('my-contracts', function () {
         $controller = app(ContractController::class);
-        $contracts = Contract::with([
+        $contracts = Contract::where('created_by', auth()->id())->with([
             'creator', 'contractType', 'approvals.approver', 'approvals.workflowStep',
             'workflow.steps', 'versions.uploader', 'histories.actor', 'messages.user',
             'attachments.uploader',
