@@ -97,7 +97,7 @@ export function AppSidebar() {
                                 <input 
                                     type="text"
                                     placeholder="Cari menu & fitur..."
-                                    className="w-full bg-muted/30 border border-border rounded-md pl-9 pr-8 py-2 text-[13px] outline-none focus:ring-1 focus:ring-primary/20 transition-all font-medium"
+                                    className="w-full bg-muted/30 border border-border rounded-md pl-9 pr-8 py-2 text-[14px] outline-none focus:ring-1 focus:ring-primary/20 transition-all font-medium"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     autoFocus={search !== ''}

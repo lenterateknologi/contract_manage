@@ -50,9 +50,35 @@ class HandleInertiaRequests extends Middleware
                     'bg_color' => $request->user()->bg_color,
                     'text_color' => $request->user()->text_color,
                 ]) : null,
+                'permissions' => $this->getUserPermissions($request),
             ],
             'sidebarNavGroups' => $this->getSidebarNavGroups($request),
         ]);
+    }
+
+    protected function getUserPermissions(Request $request): array
+    {
+        if (! $request->user()) {
+            return [];
+        }
+
+        $role = Role::firstWhere('name', $request->user()->role);
+        if (! $role) {
+            return [];
+        }
+
+        return \App\Models\AccessModule::where('role_id', $role->id)
+            ->join('modules', 'access_modules.module_id', '=', 'modules.id')
+            ->select('modules.code', 'can_read', 'can_create', 'can_update', 'can_delete')
+            ->get()
+            ->keyBy('code')
+            ->map(fn ($item) => [
+                'read' => (bool) $item->can_read,
+                'create' => (bool) $item->can_create,
+                'update' => (bool) $item->can_update,
+                'delete' => (bool) $item->can_delete,
+            ])
+            ->all();
     }
 
     protected function getSidebarNavGroups(Request $request): array
@@ -69,7 +95,7 @@ class HandleInertiaRequests extends Middleware
         $modules = Module::where('showed_as_menu', true)
             ->join('module_groups', 'modules.module_group_id', '=', 'module_groups.id')
             ->whereHas('accessModules', function ($query) use ($role) {
-                $query->where('role_id', $role->id);
+                $query->where('role_id', $role->id)->where('can_read', true);
             })
             ->select('modules.*', 'module_groups.title as group_title', 'module_groups.sort_number as group_sort')
             ->orderBy('group_sort')

@@ -226,8 +226,27 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/api/reports/export', [ReportController::class, 'exportCsv']);
         Route::get('/api/reports/audit/export', [ReportController::class, 'exportAuditCsv']);
         
+        // Roles & Access
+        Route::get('/roles', [AdminController::class, 'roles'])->name('admin.roles');
+        Route::post('/roles', [AdminController::class, 'storeRole'])->name('admin.roles.store');
+        Route::put('/roles/{role}', [AdminController::class, 'updateRole'])->name('admin.roles.update');
+        Route::delete('/roles/{role}', [AdminController::class, 'destroyRole'])->name('admin.roles.destroy');
         Route::get('/roles/{role}/access', [AdminController::class, 'roleAccess'])->name('admin.roles.access');
         Route::post('/roles/{role}/access', [AdminController::class, 'updateRoleAccess'])->name('admin.roles.access.update');
+
+        // Navigation Management (Combined)
+        Route::get('/navigation', [AdminController::class, 'navigation'])->name('admin.navigation');
+        Route::post('/navigation/reorder', [AdminController::class, 'reorderNavigation'])->name('admin.navigation.reorder');
+
+        // Module Groups (Keep individual CRUD but we focus on navigation page)
+        Route::post('/module-groups', [AdminController::class, 'storeModuleGroup'])->name('admin.module-groups.store');
+        Route::put('/module-groups/{group}', [AdminController::class, 'updateModuleGroup'])->name('admin.module-groups.update');
+        Route::delete('/module-groups/{group}', [AdminController::class, 'destroyModuleGroup'])->name('admin.module-groups.destroy');
+
+        // Modules (Keep individual CRUD)
+        Route::post('/modules', [AdminController::class, 'storeModule'])->name('admin.modules.store');
+        Route::put('/modules/{module}', [AdminController::class, 'updateModule'])->name('admin.modules.update');
+        Route::delete('/modules/{module}', [AdminController::class, 'destroyModule'])->name('admin.modules.destroy');
 
         // Email testing
         Route::post('/test-email', [EmailTestController::class, 'sendTestEmail'])->name('admin.test-email');

@@ -26,7 +26,7 @@ class AccessModuleSeeder extends Seeder
                     continue;
                 }
 
-                AccessModule::updateOrCreate(
+                \Illuminate\Support\Facades\DB::table('access_modules')->updateOrInsert(
                     [
                         'role_id' => $role->id,
                         'module_id' => $module->id,
@@ -37,6 +37,7 @@ class AccessModuleSeeder extends Seeder
                         'can_update' => true,
                         'can_delete' => true,
                         'created_by' => $admin->id,
+                        'updated_at' => now(),
                     ]
                 );
             }

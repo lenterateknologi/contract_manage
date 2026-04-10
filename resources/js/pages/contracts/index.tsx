@@ -18,6 +18,7 @@ import ContractChat from '@/components/contracts/ContractChat';
 import ContractAttachments from '@/components/contracts/ContractAttachments';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem } from '@/types';
+import { usePermissions } from '@/hooks/use-permissions';
 
 type View = 'dashboard' | 'contracts' | 'pending' | 'audit' | 'f1' | 'f2' | 'profile' | 'mine';
 
@@ -307,6 +308,7 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
     metrics: any;
 }) {
     const { showToast } = useToast();
+    const { canCreate, canUpdate, canDelete } = usePermissions('CONTRACTS');
     const [view, setView] = useState<View>(currentView);
 
     useEffect(() => {
@@ -713,9 +715,11 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
                                         <i className="fa-solid fa-table-cells-large" style={{ fontSize: 13 }} />
                                     </button>
                                 </div>
-                                <button onClick={() => setCreateOpen(true)} className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all active:scale-95">
-                                    <i className="fa-solid fa-plus" /> Buat Kontrak
-                                </button>
+                                {canCreate && (
+                                    <button onClick={() => setCreateOpen(true)} className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all active:scale-95">
+                                        <i className="fa-solid fa-plus" /> Buat Kontrak
+                                    </button>
+                                )}
                             </div>
                         </div>
 
@@ -946,24 +950,32 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
                             <div className="flex gap-2">
                                 {selected.status === 'draft' && (
                                     <>
-                                        <button onClick={() => setEditOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid #e5e7eb', fontSize: 12, fontWeight: 500, borderRadius: 6, background: 'none', cursor: 'pointer', color: '#374151' }}>
-                                            <i className="fa-solid fa-pen-to-square" style={{ fontSize: 11 }} /> Edit
-                                        </button>
-                                        <button onClick={() => setDeleteOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: 'var(--destructive)', color: 'var(--destructive-foreground)', fontSize: 12, fontWeight: 500, borderRadius: 6, border: 'none', cursor: 'pointer' }}>
-                                            <i className="fa-solid fa-trash-can" style={{ fontSize: 11 }} /> Hapus
-                                        </button>
-                                        <button onClick={handleSendForApproval} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: '#2563eb', color: '#fff', fontSize: 12, fontWeight: 500, borderRadius: 6, border: 'none', cursor: 'pointer' }}
-                                            onMouseOver={e => ((e.currentTarget as any).style.background = '#1d4ed8')} onMouseOut={e => ((e.currentTarget as any).style.background = '#2563eb')}>
-                                            <i className="fa-solid fa-paper-plane" style={{ fontSize: 11 }} /> Kirim
-                                        </button>
+                                        {canUpdate && (
+                                            <>
+                                                <button onClick={() => setEditOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid #e5e7eb', fontSize: 12, fontWeight: 500, borderRadius: 6, background: 'none', cursor: 'pointer', color: '#374151' }}>
+                                                    <i className="fa-solid fa-pen-to-square" style={{ fontSize: 11 }} /> Edit
+                                                </button>
+                                                <button onClick={handleSendForApproval} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: '#2563eb', color: '#fff', fontSize: 12, fontWeight: 500, borderRadius: 6, border: 'none', cursor: 'pointer' }}
+                                                    onMouseOver={e => ((e.currentTarget as any).style.background = '#1d4ed8')} onMouseOut={e => ((e.currentTarget as any).style.background = '#2563eb')}>
+                                                    <i className="fa-solid fa-paper-plane" style={{ fontSize: 11 }} /> Kirim
+                                                </button>
+                                            </>
+                                        )}
+                                        {canDelete && (
+                                            <button onClick={() => setDeleteOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: 'var(--destructive)', color: 'var(--destructive-foreground)', fontSize: 12, fontWeight: 500, borderRadius: 6, border: 'none', cursor: 'pointer' }}>
+                                                <i className="fa-solid fa-trash-can" style={{ fontSize: 11 }} /> Hapus
+                                            </button>
+                                        )}
                                     </>
                                 )}
                                 <button onClick={() => handleDownload(selected.id, selected.versions.find(v => v.version_no === selected.current_version)?.file_name)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid #e5e7eb', fontSize: 12, fontWeight: 500, borderRadius: 6, background: 'none', cursor: 'pointer', color: '#374151' }}>
                                     <i className="fa-solid fa-download" style={{ fontSize: 11 }} /> Download
                                 </button>
-                                <button onClick={() => setRevOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid #e5e7eb', fontSize: 12, fontWeight: 500, borderRadius: 6, background: 'none', cursor: 'pointer', color: '#374151' }}>
-                                    <i className="fa-solid fa-upload" style={{ fontSize: 11 }} /> Upload Revisi
-                                </button>
+                                {canUpdate && (
+                                    <button onClick={() => setRevOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid #e5e7eb', fontSize: 12, fontWeight: 500, borderRadius: 6, background: 'none', cursor: 'pointer', color: '#374151' }}>
+                                        <i className="fa-solid fa-upload" style={{ fontSize: 11 }} /> Upload Revisi
+                                    </button>
+                                )}
                             </div>
                         </div>
 

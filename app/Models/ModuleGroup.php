@@ -19,6 +19,7 @@ class ModuleGroup extends Model
     protected $fillable = [
         'id',
         'title',
+        'sort_number',
         'created_by',
         'updated_by',
     ];

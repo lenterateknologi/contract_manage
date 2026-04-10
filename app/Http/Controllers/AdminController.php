@@ -89,7 +89,7 @@ class AdminController extends Controller
         ]);
 
         foreach ($data['accesses'] as $accessData) {
-            AccessModule::updateOrCreate(
+            \Illuminate\Support\Facades\DB::table('access_modules')->updateOrInsert(
                 [
                     'role_id' => $role->id,
                     'module_id' => $accessData['module_id'],
@@ -100,6 +100,7 @@ class AdminController extends Controller
                     'can_update' => $accessData['can_update'],
                     'can_delete' => $accessData['can_delete'],
                     'created_by' => auth()->id(),
+                    'updated_at' => now(),
                 ]
             );
         }
@@ -228,5 +229,94 @@ class AdminController extends Controller
     {
         $workflow->delete();
         return back()->with('success', 'Workflow deleted successfully.');
+    }
+
+    // Navigation Management (Combined)
+    public function navigation()
+    {
+        $groups = \App\Models\ModuleGroup::with(['modules' => function ($query) {
+                $query->orderBy('sort_number');
+            }])
+            ->orderBy('sort_number')
+            ->get();
+
+        return Inertia::render('admin/index', [
+            'currentView' => 'navigation',
+            'navigation' => $groups,
+        ]);
+    }
+
+    public function reorderNavigation(Request $request)
+    {
+        $data = $request->validate([
+            'groups' => 'required|array',
+            'groups.*.id' => 'required|uuid|exists:module_groups,id',
+            'groups.*.sort_number' => 'required|integer',
+            'groups.*.modules' => 'nullable|array',
+            'groups.*.modules.*.id' => 'required|uuid|exists:modules,id',
+            'groups.*.modules.*.sort_number' => 'required|integer',
+        ]);
+
+        foreach ($data['groups'] as $groupData) {
+            \App\Models\ModuleGroup::where('id', $groupData['id'])->update([
+                'sort_number' => $groupData['sort_number']
+            ]);
+
+            if (!empty($groupData['modules'])) {
+                foreach ($groupData['modules'] as $moduleData) {
+                    Module::where('id', $moduleData['id'])->update([
+                        'sort_number' => $moduleData['sort_number'],
+                        'module_group_id' => $groupData['id']
+                    ]);
+                }
+            }
+        }
+
+        return back()->with('success', 'Navigation order updated successfully.');
+    }
+
+    // Module Groups
+
+    public function storeModule(Request $request)
+    {
+        $data = $request->validate([
+            'code' => 'required|string|max:10|unique:modules,code',
+            'title' => 'required|string|max:255',
+            'sort_number' => 'required|integer',
+            'url' => 'nullable|string',
+            'icon' => 'nullable|string',
+            'module_group_id' => 'required|uuid|exists:module_groups,id',
+            'showed_as_menu' => 'boolean',
+        ]);
+
+        $data['created_by'] = auth()->id();
+        $data['updated_by'] = auth()->id();
+
+        Module::create($data);
+        return back()->with('success', 'Module created successfully.');
+    }
+
+    public function updateModule(Request $request, Module $module)
+    {
+        $data = $request->validate([
+            'code' => 'required|string|max:10|unique:modules,code,' . $module->id,
+            'title' => 'required|string|max:255',
+            'sort_number' => 'required|integer',
+            'url' => 'nullable|string',
+            'icon' => 'nullable|string',
+            'module_group_id' => 'required|uuid|exists:module_groups,id',
+            'showed_as_menu' => 'boolean',
+        ]);
+
+        $data['updated_by'] = auth()->id();
+
+        $module->update($data);
+        return back()->with('success', 'Module updated successfully.');
+    }
+
+    public function destroyModule(Module $module)
+    {
+        $module->delete();
+        return back()->with('success', 'Module deleted successfully.');
     }
 }

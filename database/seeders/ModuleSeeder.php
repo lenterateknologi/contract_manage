@@ -29,6 +29,7 @@ class ModuleSeeder extends Seeder
             ['code' => 'ROLES', 'title' => 'Role', 'url' => '/admin/roles', 'icon' => 'ShieldCheck', 'group' => 'Data Master', 'sort' => 2],
             ['code' => 'CTC_TYPES', 'title' => 'Tipe Kontrak', 'url' => '/admin/contract-types', 'icon' => 'Settings2', 'group' => 'Data Master', 'sort' => 3],
             ['code' => 'WORKFLOWS', 'title' => 'Alur Kerja', 'url' => '/admin/workflows', 'icon' => 'GitBranch', 'group' => 'Data Master', 'sort' => 4],
+            ['code' => 'NAV_MGMT', 'title' => 'Manajemen Navigasi', 'url' => '/admin/navigation', 'icon' => 'LayoutGrid', 'group' => 'Data Master', 'sort' => 5],
         ];
 
         $activeCodes = array_column($modules, 'code');
@@ -50,8 +51,8 @@ class ModuleSeeder extends Seeder
             );
         }
 
-        // Specifically remove AUDIT if it exists
-        Module::where('code', 'AUDIT')->delete();
+        // Specifically remove old modules
+        Module::whereIn('code', ['MOD_GRPS', 'MODS', 'AUDIT'])->delete();
         ModuleGroup::where('title', 'Laporan')->delete();
     }
 }

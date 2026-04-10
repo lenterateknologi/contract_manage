@@ -8,7 +8,7 @@ export function NavMain({ title, items = [] }: { title?: string; items: NavItem[
     return (
         <SidebarGroup className="px-2 py-0">
             {title && (
-                <SidebarGroupLabel className="text-[11px] uppercase tracking-widest font-bold opacity-70 px-2 mt-3 mb-1">
+                <SidebarGroupLabel className="text-[12px] uppercase tracking-widest font-bold opacity-80 px-2 mt-4 mb-1 text-slate-500">
                     {title}
                 </SidebarGroupLabel>
             )}
@@ -20,13 +20,13 @@ export function NavMain({ title, items = [] }: { title?: string; items: NavItem[
                             isActive={item.url === page.url}
                             tooltip={item.title}
                             className={cn(
-                                "h-9 px-0 transition-all duration-200 overflow-hidden",
-                                item.url === page.url ? "bg-primary/5 text-primary font-bold shadow-sm" : "hover:bg-muted/50"
+                                "h-10 px-0 transition-all duration-200 overflow-hidden",
+                                item.url === page.url ? "bg-primary/8 text-primary font-bold shadow-sm" : "hover:bg-muted/50"
                             )}
                         >
-                            <Link href={item.url} prefetch className="flex items-center gap-2.5 w-full h-full px-2.5">
-                                {item.icon && <item.icon className={cn("h-4 w-4 shrink-0", item.url === page.url ? "text-primary" : "text-muted-foreground/80")} />}
-                                <span className="text-[13px] truncate tracking-tight">{item.title}</span>
+                            <Link href={item.url} prefetch className="flex items-center gap-3 w-full h-full px-3">
+                                {item.icon && <item.icon className={cn("h-[18px] w-[18px] shrink-0", item.url === page.url ? "text-primary" : "text-muted-foreground/80")} />}
+                                <span className="text-[14.5px] truncate tracking-tight">{item.title}</span>
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
