@@ -259,6 +259,9 @@ export default function AdminIndex({ currentView, users, types, workflows, contr
                                         <td className="px-6 py-4 text-slate-500 italic text-[12px]">{r.description || 'Tidak ada deskripsi'}</td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Kelola Akses" onClick={() => router.visit(`/admin/roles/${r.id}/access`)}>
+                                                    <Key className="h-3.5 w-3.5 text-slate-600" />
+                                                </Button>
                                                 <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openEdit(r)}>
                                                     <Pencil className="h-3.5 w-3.5 text-slate-600" />
                                                 </Button>
@@ -266,22 +269,6 @@ export default function AdminIndex({ currentView, users, types, workflows, contr
                                                     <Trash2 className="h-3.5 w-3.5" />
                                                 </Button>
                                             </div>
-                                    <tr key={r.id} className="hover:bg-muted/30 transition-colors">
-                                        <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{String(r.id).substring(0, 8)}</td>
-                                        <td className="px-4 py-3 font-medium">{r.name}</td>
-                                        <td className="px-4 py-3 text-muted-foreground">{r.description || '-'}</td>
-                                        <td className="px-4 py-3 text-right flex justify-end gap-2">
-                                           
-                                            <Button variant="ghost" size="icon" onClick={() => router.visit(`/admin/roles/${r.id}/access`)}>
-                                                <Key className="h-4 w-4" />
-                                            </Button>
-                                        
-                                            <Button variant="ghost" size="icon" onClick={() => openEdit(r)}>
-                                                <Pencil className="h-4 w-4" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(r.id)}>
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
                                         </td>
                                     </tr>
                                 ))}

@@ -16,7 +16,6 @@ class ModuleGroupSeeder extends Seeder
             'Ringkasan',
             'Manajemen Kontrak',
             'Formulir Standar',
-            'Laporan',
             'Data Master',
         ];
 

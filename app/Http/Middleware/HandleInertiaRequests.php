@@ -45,9 +45,9 @@ class HandleInertiaRequests extends Middleware
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
                 'user' => $request->user() ? array_merge($request->user()->toArray(), [
-                    'initials'   => $request->user()->initials,
-                    'role'       => $request->user()->role,
-                    'bg_color'   => $request->user()->bg_color,
+                    'initials' => $request->user()->initials,
+                    'role' => $request->user()->role,
+                    'bg_color' => $request->user()->bg_color,
                     'text_color' => $request->user()->text_color,
                 ]) : null,
             ],
@@ -67,15 +67,16 @@ class HandleInertiaRequests extends Middleware
         }
 
         $modules = Module::where('showed_as_menu', true)
+            ->join('module_groups', 'modules.module_group_id', '=', 'module_groups.id')
             ->whereHas('accessModules', function ($query) use ($role) {
                 $query->where('role_id', $role->id);
             })
-            ->with('moduleGroup')
-            ->orderBy('module_group_id')
-            ->orderBy('sort_number')
+            ->select('modules.*', 'module_groups.title as group_title', 'module_groups.sort_number as group_sort')
+            ->orderBy('group_sort')
+            ->orderBy('modules.sort_number')
             ->get();
 
-        return $modules->groupBy(fn ($module) => $module->moduleGroup?->title ?? 'Other')
+        return $modules->groupBy('group_title')
             ->map(function ($items, $title) {
                 return [
                     'title' => $title,

@@ -1,60 +1,28 @@
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar';
-import { type NavItem, type SharedData } from '@/types';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { type LucideIcon, LayoutGrid, FileText, Clock, FilePlus, FileEdit, History, ShieldCheck, Users, Settings2, GitBranch } from 'lucide-react';
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar';
 import { type NavGroup, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutGrid, FileText, Clock, FilePlus, FileEdit, ShieldCheck, Users, Settings2, GitBranch, BarChart3, Search, X } from 'lucide-react';
+import { 
+    LayoutGrid, 
+    FileText, 
+    Clock, 
+    FilePlus, 
+    FileEdit, 
+    History, 
+    ShieldCheck, 
+    Users, 
+    Settings2, 
+    GitBranch, 
+    BarChart3, 
+    Search, 
+    X,
+    type LucideIcon 
+} from 'lucide-react';
 import React, { useState } from 'react';
 import AppLogo from './app-logo';
 import { cn } from '@/lib/utils';
-
-const navGroups = [
-    {
-        title: 'Ringkasan',
-        items: [
-            { title: 'Dashboard', url: '/dashboard', icon: LayoutGrid },
-        ],
-    },
-    {
-        title: 'Manajemen Kontrak',
-        items: [
-            { title: 'Semua Kontrak', url: '/contracts', icon: FileText },
-            { title: 'Kontrak Saya', url: '/my-contracts', icon: Users },
-            { title: 'Menunggu Approval', url: '/pending', icon: Clock },
-        ],
-    },
-    {
-        title: 'Formulir Standar',
-        items: [
-            { title: 'Form F1', url: '/f1', icon: FilePlus },
-            { title: 'Form F2', url: '/f2', icon: FileEdit },
-        ],
-    },
-];
-
-const adminGroups = [
-    {
-        title: 'Laporan & Audit',
-        items: [
-            { title: 'Pusat Laporan', url: '/admin/reports', icon: BarChart3 },
-        ],
-    },
-    {
-        title: 'Pengaturan Sistem',
-        items: [
-            { title: 'Pengguna', url: '/admin/users', icon: Users },
-            { title: 'Role', url: '/admin/roles', icon: ShieldCheck },
-            { title: 'Tipe Kontrak', url: '/admin/contract-types', icon: Settings2 },
-            { title: 'Alur Kerja', url: '/admin/workflows', icon: GitBranch },
-        ],
-    },
-];
-
-const footerNavItems: NavItem[] = [];
 
 const iconMap: Record<string, LucideIcon> = {
     LayoutGrid,
@@ -67,35 +35,30 @@ const iconMap: Record<string, LucideIcon> = {
     ShieldCheck,
     Settings2,
     GitBranch,
+    BarChart3,
 };
 
+const footerNavItems: NavItem[] = [];
+
 export function AppSidebar() {
-    const { auth } = usePage<SharedData>().props;
-    const userRole = (auth.user as any)?.role;
-    const isAdmin = userRole === 'Admin';
+    const { sidebarNavGroups } = usePage<SharedData>().props;
     const { state, setOpen } = useSidebar();
     const [search, setSearch] = useState('');
 
-    const filterItems = (items: NavItem[]) => 
-        items.filter(item => item.title.toLowerCase().includes(search.toLowerCase()));
-
-    const filteredNavGroups = navGroups.map(group => ({
-        ...group,
-        items: filterItems(group.items)
-    })).filter(group => group.items.length > 0);
-
-    const filteredAdminGroups = isAdmin ? adminGroups.map(group => ({
-        ...group,
-        items: filterItems(group.items)
-    })).filter(group => group.items.length > 0) : [];
-    const { sidebarNavGroups } = usePage<SharedData>().props;
     const groups = ((sidebarNavGroups as NavGroup[]) ?? []).map((group) => ({
         ...group,
         items: group.items.map((item) => ({
             ...item,
-            icon: typeof item.icon === 'string' ? iconMap[item.icon] ?? null : item.icon,
+            icon: typeof item.icon === 'string' ? iconMap[item.icon] ?? FileText : item.icon,
         })),
     }));
+
+    const filteredGroups = groups.map(group => ({
+        ...group,
+        items: group.items.filter(item => 
+            item.title.toLowerCase().includes(search.toLowerCase())
+        )
+    })).filter(group => group.items.length > 0);
 
     return (
         <Sidebar collapsible="icon" variant="inset">
@@ -152,16 +115,11 @@ export function AppSidebar() {
                     )}
                 </div>
 
-                {filteredNavGroups.map((group) => (
+                {filteredGroups.map((group) => (
                     <NavMain key={group.title} title={group.title} items={group.items} />
                 ))}
 
-                {isAdmin && filteredAdminGroups.map((group) => (
-                {groups.map((group) => (
-                    <NavMain key={group.title} title={group.title} items={group.items} />
-                ))}
-
-                {search && filteredNavGroups.length === 0 && filteredAdminGroups.length === 0 && (
+                {search && filteredGroups.length === 0 && (
                     <div className="px-6 py-8 text-center animate-in fade-in zoom-in duration-300">
                         <p className="text-[12px] text-muted-foreground italic font-medium">Tidak ada menu ditemukan untuk "{search}"</p>
                     </div>

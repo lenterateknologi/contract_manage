@@ -1,5 +1,4 @@
 import { Head, useForm, router } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -76,7 +75,7 @@ export default function RoleAccess({ role, modules }: Props) {
     }, {} as Record<string, typeof modules>);
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <>
             <Head title={`Access Management - ${role.name}`} />
 
             <div className="flex h-full flex-col flex-1">
@@ -162,6 +161,6 @@ export default function RoleAccess({ role, modules }: Props) {
                     </div>
                 </div>
             </div>
-        </AppLayout>
+        </>
     );
 }
