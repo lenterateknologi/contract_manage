@@ -3,8 +3,38 @@ import { Head, useForm, router } from '@inertiajs/react';
 import { 
     Users, ShieldCheck, Settings2, GitBranch, Plus, 
     Pencil, Trash2, Key, LayoutGrid, ChevronRight, 
-    ChevronDown, GitMerge, AlertCircle, Edit3
+    ChevronDown, GitMerge, AlertCircle, Edit3,
+    ChevronUp, Edit, Filter, PlusCircle, Save, 
+    Search, Shield, Info, CheckCircle2, GripVertical,
+    Users as UsersIcon
 } from 'lucide-react';
+
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
+
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -20,24 +50,251 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { usePermissions } from '@/hooks/use-permissions';
-import {
-    DndContext,
-    closestCenter,
-    KeyboardSensor,
-    PointerSensor,
-    useSensor,
-    useSensors,
-    DragOverlay,
-} from '@dnd-kit/core';
-import {
-    arrayMove,
-    SortableContext,
-    sortableKeyboardCoordinates,
-    verticalListSortingStrategy,
-    useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { GripVertical } from 'lucide-react';
+
+// ─── Table header cell ───────────────────────────────────────────────
+function Th({ children, style }: { children?: React.ReactNode; style?: React.CSSProperties }) {
+    return (
+        <th style={{ 
+            padding: '12px 14px', 
+            textAlign: 'left', 
+            fontSize: 11, 
+            fontWeight: 700, 
+            textTransform: 'uppercase', 
+            letterSpacing: '0.05em', 
+            color: 'var(--muted-foreground)', 
+            borderBottom: '1px solid var(--border)', 
+            whiteSpace: 'nowrap',
+            background: 'rgba(0,0,0,0.02)',
+            ...style 
+        }}>
+            {children}
+        </th>
+    );
+}
+function Td({ children, className, style, colSpan }: { children?: React.ReactNode; className?: string; style?: React.CSSProperties; colSpan?: number }) {
+    return (
+        <td colSpan={colSpan} style={{ 
+            padding: '12px 14px', 
+            fontSize: 13, 
+            borderBottom: '1px solid var(--border)', 
+            verticalAlign: 'middle', 
+            ...style 
+        }} className={className}>
+            {children}
+        </td>
+    );
+}
+
+// ─── Sortable Step Item ───────────────────────────────────────────────
+function SortableStepItem({ 
+    step, 
+    idx, 
+    users, 
+    roles, 
+    updateLocalStep, 
+    removeLocalStep 
+}: { 
+    step: any; 
+    idx: number; 
+    users?: any[]; 
+    roles?: any[];
+    updateLocalStep: (idx: number, data: any) => void;
+    removeLocalStep: (idx: number) => void;
+}) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging
+    } = useSortable({ id: step.id });
+
+    // Internal UI States
+    const [userSearchText, setUserSearchText] = useState('');
+    const [roleSearchText, setRoleSearchText] = useState('');
+    const [userRoleFilter, setUserRoleFilter] = useState<string>('all');
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 50 : 'auto',
+        opacity: isDragging ? 0.5 : 1,
+    };
+
+    // Filter Logic
+    const filteredRoles = roles?.filter(r => 
+        r.name.toLowerCase().includes(roleSearchText.toLowerCase())
+    ) || [];
+
+    const filteredUsers = users?.filter(u => {
+        const matchesName = u.name.toLowerCase().includes(userSearchText.toLowerCase()) || 
+                          u.email.toLowerCase().includes(userSearchText.toLowerCase());
+        const matchesRole = userRoleFilter === 'all' || u.role === userRoleFilter;
+        return matchesName && matchesRole;
+    }) || [];
+
+    return (
+        <div 
+            ref={setNodeRef} 
+            style={style}
+            className="bg-white border border-slate-200 rounded-xl p-3 flex gap-4 items-start shadow-sm hover:shadow-md transition-all group/step"
+        >
+            <div 
+                {...attributes} 
+                {...listeners} 
+                className="h-7 w-7 rounded-lg bg-slate-900 flex items-center justify-center text-white font-black text-[10px] shrink-0 cursor-grab active:cursor-grabbing hover:bg-slate-800"
+            >
+                <GripVertical size={12} className="mr-0.5 opacity-50" />
+                {idx + 1}
+            </div>
+            
+            <div className="flex-1 grid grid-cols-12 gap-3">
+                <div className="col-span-3 space-y-1">
+                    <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Label Langkah</Label>
+                    <Input 
+                        placeholder="Contoh: Manager Legal" 
+                        value={step.role || ''}
+                        onChange={e => updateLocalStep(idx, { role: e.target.value })}
+                        className="h-7 font-bold text-slate-800 text-[11px] bg-slate-50/50"
+                    />
+                </div>
+                
+                <div className="col-span-3 space-y-1">
+                    <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Tipe Otoritas</Label>
+                    <div className="flex p-0.5 bg-slate-100 rounded-lg border border-slate-200 h-7">
+                        <button 
+                            type="button"
+                            onClick={() => updateLocalStep(idx, { approver_type: 'role', user_ids: [] })}
+                            className={cn(
+                                "flex-1 flex items-center justify-center gap-1 rounded font-bold text-[8px] uppercase transition-all",
+                                step.approver_type === 'role' ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-800"
+                            )}
+                        >
+                            <Shield size={9} /> Role
+                        </button>
+                        <button 
+                            type="button"
+                            onClick={() => updateLocalStep(idx, { approver_type: 'user' })}
+                            className={cn(
+                                "flex-1 flex items-center justify-center gap-1 rounded font-bold text-[8px] uppercase transition-all",
+                                step.approver_type === 'user' ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-800"
+                            )}
+                        >
+                            <UsersIcon size={9} /> User
+                        </button>
+                    </div>
+                </div>
+
+                <div className="col-span-6 space-y-1.5">
+                    {step.approver_type === 'role' ? (
+                        <div className="space-y-1">
+                            <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400 flex justify-between">
+                                Pilih Spesifik Role
+                                {step.selected_role && <span className="text-primary normal-case font-bold">{step.selected_role}</span>}
+                            </Label>
+                            <Select 
+                                value={step.selected_role} 
+                                onValueChange={(val) => updateLocalStep(idx, { selected_role: val })}
+                            >
+                                <SelectTrigger className="h-7 font-bold text-slate-800 text-[11px] bg-white border-slate-200 px-2">
+                                    <SelectValue placeholder="Cari & Pilih Role..." />
+                                </SelectTrigger>
+                                <SelectContent className="p-0">
+                                    <div className="p-2 border-b">
+                                        <div className="relative">
+                                            <Search className="absolute left-2 top-1.5 h-3 w-3 text-slate-400" />
+                                            <Input 
+                                                placeholder="Cari role..." 
+                                                className="h-6 pl-7 text-[10px] bg-slate-50"
+                                                value={roleSearchText}
+                                                onChange={e => setRoleSearchText(e.target.value)}
+                                                onClick={e => e.stopPropagation()}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="max-h-[150px] overflow-y-auto p-1">
+                                        {filteredRoles.map(r => (
+                                            <SelectItem key={r.id} value={r.name} className="text-[10px] font-medium uppercase py-1.5">
+                                                {r.name}
+                                            </SelectItem>
+                                        ))}
+                                        {filteredRoles.length === 0 && (
+                                            <div className="p-4 text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest">Tidak ada role</div>
+                                        )}
+                                    </div>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    ) : (
+                        <div className="space-y-1.5">
+                            <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Pilih User (Filter & Search)</Label>
+                            
+                            <div className="flex gap-2">
+                                <div className="relative flex-1">
+                                    <Search className="absolute left-2 top-1.5 h-3 w-3 text-slate-400" />
+                                    <Input 
+                                        placeholder="Cari nama/email..." 
+                                        className="h-6 pl-7 text-[10px] bg-white border-slate-200 shadow-sm"
+                                        value={userSearchText}
+                                        onChange={e => setUserSearchText(e.target.value)}
+                                    />
+                                </div>
+                                <Select value={userRoleFilter} onValueChange={setUserRoleFilter}>
+                                    <SelectTrigger className="h-6 w-[120px] text-[10px] font-bold bg-slate-50 border-slate-200 px-2 uppercase tracking-tight">
+                                        <Filter className="h-2.5 w-2.5 mr-1 text-slate-400" />
+                                        <SelectValue placeholder="Role filter" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all" className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Show All Roles</SelectItem>
+                                        {roles?.map(r => (
+                                            <SelectItem key={r.id} value={r.name} className="text-[10px] font-medium uppercase">
+                                                {r.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-1 max-h-[100px] overflow-y-auto p-1 bg-slate-50/50 rounded-lg border border-slate-100">
+                                {filteredUsers.map(u => (
+                                    <label key={u.id} className={cn(
+                                        "inline-flex items-center gap-1.5 px-2 py-1 rounded-md border text-[9px] font-bold cursor-pointer transition-all",
+                                        step.user_ids?.includes(u.id) ? "bg-primary text-white border-primary shadow-sm" : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
+                                    )}>
+                                        <Checkbox 
+                                            checked={step.user_ids?.includes(u.id)}
+                                            onCheckedChange={(checked: boolean | 'indeterminate') => {
+                                                const ids = step.user_ids || [];
+                                                const isChecked = checked === true;
+                                                updateLocalStep(idx, { user_ids: isChecked ? [...ids, u.id] : ids.filter((id: any) => id !== u.id) });
+                                            }}
+                                            className={cn("h-3 w-3 rounded-[3px]", step.user_ids?.includes(u.id) ? "border-white" : "border-slate-300")}
+                                        />
+                                        <span className="truncate flex-1">{u.name}</span>
+                                    </label>
+                                ))}
+                                {filteredUsers.length === 0 && (
+                                    <div className="col-span-2 py-4 text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest">User tidak ditemukan</div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <Button 
+                type="button"
+                variant="ghost" 
+                size="icon" 
+                onClick={() => removeLocalStep(idx)}
+                className="h-8 w-8 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg shrink-0 mt-3"
+            >
+                <Trash2 size={13} />
+            </Button>
+        </div>
+    );
+}
 
 interface Props {
     currentView: string;
@@ -50,148 +307,6 @@ interface Props {
     modules?: any[];
     moduleGroups?: any[];
 }
-
-const SortableStepItem = ({ 
-    id,
-    step, 
-    index, 
-    roles, 
-    users,
-    onRemove, 
-    onUpdateRole, 
-    onUpdateType,
-    onUpdateUserIds,
-    onUpdateDesc 
-}: { 
-    id: string;
-    step: any; 
-    index: number; 
-    roles: any[]; 
-    users: any[];
-    onRemove: () => void;
-    onUpdateRole: (role: string) => void;
-    onUpdateType: (type: 'role' | 'user') => void;
-    onUpdateUserIds: (userIds: string[] | null) => void;
-    onUpdateDesc: (desc: string) => void;
-}) => {
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        transform,
-        transition,
-        isDragging,
-    } = useSortable({ id });
-
-    const style = {
-        transform: CSS.Translate.toString(transform),
-        transition,
-    };
-
-    const filteredUsers = users?.filter(u => u.role === (step.role || roles?.[0]?.name)) || [];
-
-    return (
-        <div 
-            ref={setNodeRef}
-            style={style}
-            className={cn(
-                "group relative bg-white rounded-lg p-2 border border-slate-200 transition-all flex flex-col gap-2",
-                isDragging && "opacity-50 ring-2 ring-primary border-primary z-[100] shadow-xl"
-            )}
-        >
-            <div className="flex gap-2 items-center">
-                <div {...attributes} {...listeners} className="cursor-grab hover:bg-slate-100 p-1 rounded shrink-0">
-                    <GripVertical className="h-3.5 w-3.5 text-slate-400" />
-                </div>
-                
-                <div className="bg-slate-950 text-white text-[9px] font-black h-4 w-4 rounded-full flex items-center justify-center shrink-0 shadow-sm">
-                    {index + 1}
-                </div>
-
-                <div className="flex-1 flex gap-2 items-center min-w-0">
-                    <div className="relative shrink-0">
-                        <select 
-                            className="flex h-7 min-w-[80px] rounded border border-input bg-slate-50 px-1.5 py-0.5 text-[10px] font-bold shadow-sm focus:ring-1 focus:ring-primary/20 appearance-none pr-6"
-                            value={step.role} 
-                            onChange={e => onUpdateRole(e.target.value)}
-                            required
-                        >
-                            {roles?.map((r: any) => (
-                                <option key={r.id} value={r.name}>{r.name}</option>
-                            ))}
-                        </select>
-                        <div className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none">
-                            <ChevronDown className="h-3 w-3 text-slate-400" />
-                        </div>
-                    </div>
-
-                    <div className="flex bg-slate-100 p-0.5 rounded-md h-7 shrink-0">
-                        <button 
-                            type="button"
-                            onClick={() => onUpdateType('role')}
-                            className={cn(
-                                "px-2 text-[9px] font-black uppercase tracking-tighter rounded transition-all",
-                                step.approver_type === 'role' ? "bg-white text-primary shadow-sm" : "text-slate-400 hover:text-slate-600"
-                            )}
-                        >
-                            Role
-                        </button>
-                        <button 
-                            type="button"
-                            onClick={() => onUpdateType('user')}
-                            className={cn(
-                                "px-2 text-[9px] font-black uppercase tracking-tighter rounded transition-all",
-                                step.approver_type === 'user' ? "bg-white text-primary shadow-sm" : "text-slate-400 hover:text-slate-600"
-                            )}
-                        >
-                            User
-                        </button>
-                    </div>
-
-                    <Input 
-                        className="h-7 text-[10px] bg-white flex-1 border-dashed hover:border-solid hover:bg-slate-50 transition-all px-2 shadow-none focus-visible:ring-0 focus-visible:border-primary/30" 
-                        placeholder="Instruksi singkat..." 
-                        value={step.description}
-                        onChange={e => onUpdateDesc(e.target.value)}
-                    />
-                </div>
-
-                <button 
-                    type="button"
-                    className="p-1 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded transition-all shrink-0"
-                    onClick={onRemove}
-                >
-                    <Trash2 className="h-3 w-3.5" />
-                </button>
-            </div>
-
-            {step.approver_type === 'user' && (
-                <div className="pl-12 pr-2 pb-1">
-                    <div className="flex flex-wrap gap-1.5 max-h-[100px] overflow-y-auto p-2 bg-slate-50 rounded-md border border-slate-200">
-                        {filteredUsers.length > 0 ? filteredUsers.map(u => (
-                            <label key={u.id} className="flex items-center gap-1.5 bg-white border px-2 py-1 rounded-full cursor-pointer hover:border-primary/50 transition-all group/user">
-                                <Checkbox 
-                                    className="h-3 w-3"
-                                    checked={step.user_ids?.includes(u.id)}
-                                    onCheckedChange={(checked) => {
-                                        const currentIds = step.user_ids || [];
-                                        const newIds = checked 
-                                            ? [...currentIds, u.id]
-                                            : currentIds.filter((id: string) => id !== u.id);
-                                        onUpdateUserIds(newIds.length > 0 ? newIds : null);
-                                    }}
-                                />
-                                <span className="text-[9px] font-bold text-slate-600 group-hover/user:text-primary transition-colors">{u.name}</span>
-                            </label>
-                        )) : (
-                            <p className="text-[9px] font-bold text-slate-400 italic">Tidak ada user dengan role ini</p>
-                        )}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-};
 
 export default function AdminIndex({ 
     currentView, 
@@ -206,7 +321,96 @@ export default function AdminIndex({
 }: Props) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<any>(null);
-    const [expandedWorkflowId, setExpandedWorkflowId] = useState<any>(null);
+    const [expandedWorkflowId, setExpandedWorkflowId] = useState<number | null>(null);
+    const [editingSteps, setEditingSteps] = useState<any[]>([]);
+    const [isSavingSteps, setIsSavingSteps] = useState(false);
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 5,
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+        if (over && active.id !== over.id) {
+            const oldIndex = editingSteps.findIndex((s) => s.id === active.id);
+            const newIndex = editingSteps.findIndex((s) => s.id === over.id);
+            if (oldIndex !== -1 && newIndex !== -1) {
+                setEditingSteps(arrayMove(editingSteps, oldIndex, newIndex));
+            }
+        }
+    };
+
+    const showToast = (msg: string, type: 'success' | 'danger') => alert(msg);
+
+    const toggleWorkflowExpand = (w: any) => {
+        if (expandedWorkflowId === w.id) {
+            setExpandedWorkflowId(null);
+            setEditingSteps([]);
+        } else {
+            setExpandedWorkflowId(w.id);
+            setEditingSteps(w.steps?.map((s: any) => ({
+                id: s.id,
+                role: s.role,
+                approver_type: s.approver_type || 'role',
+                user_ids: s.user_ids || [],
+                description: s.description || '',
+                step: s.step
+            })) || []);
+        }
+    };
+
+    const addLocalStep = () => {
+        setEditingSteps([...editingSteps, {
+            id: `new-${Date.now()}`,
+            role: '',
+            approver_type: 'role',
+            user_ids: [],
+            description: '',
+            step: editingSteps.length + 1
+        }]);
+    };
+
+    const updateLocalStep = (idx: number, data: any) => {
+        setEditingSteps(editingSteps.map((s, i) => i === idx ? { ...s, ...data } : s));
+    };
+
+    const removeLocalStep = (idx: number) => {
+        setEditingSteps(editingSteps.filter((_, i) => i !== idx));
+    };
+
+    const saveWorkflowSteps = (workflowId: number) => {
+        if (editingSteps.some(s => !s.role.trim())) {
+            showToast("Semua peran harus memiliki nama/label.", "danger");
+            return;
+        }
+
+        setIsSavingSteps(true);
+        router.post(`/admin/workflows/${workflowId}/steps`, { 
+            steps: editingSteps.map((s, idx) => ({
+                role: s.role,
+                approver_type: s.approver_type,
+                user_ids: s.user_ids,
+                description: s.description,
+                step: idx + 1
+            }))
+        }, {
+            onSuccess: () => {
+                setIsSavingSteps(false);
+                showToast("Alur kerja berhasil diperbarui.", "success");
+            },
+            onError: () => {
+                setIsSavingSteps(false);
+                showToast("Terjadi kesalahan.", "danger");
+            }
+        });
+    };
 
     const viewTitleMap: Record<string, string> = {
         'users': 'Manajemen Pengguna',
@@ -241,20 +445,6 @@ export default function AdminIndex({
     const moduleCode = viewModuleMap[currentView] || 'ADMIN';
     const { canCreate, canUpdate, canDelete } = usePermissions(moduleCode);
 
-    const sensors = useSensors(
-        useSensor(PointerSensor, {
-            activationConstraint: {
-                distance: 8,
-            },
-        }),
-        useSensor(KeyboardSensor, {
-            coordinateGetter: sortableKeyboardCoordinates,
-        })
-    );
-
-    // Removed handleDragEnd for modal as steps are now inline-only
-
-    // Forms
     const userForm = useForm({
         name: '',
         email: '',
@@ -278,15 +468,6 @@ export default function AdminIndex({
         contract_type: '',
         description: '',
         is_default: true as boolean,
-    });
-
-    const inlineWorkflowForm = useForm({
-        steps: [] as { 
-            role: string; 
-            approver_type: 'role' | 'user'; 
-            user_ids: string[] | null; 
-            description: string 
-        }[],
     });
 
     const moduleGroupForm = useForm({
@@ -430,30 +611,11 @@ export default function AdminIndex({
         return `/admin/${base}`;
     };
 
-    const toggleExpand = (id: any) => {
-        if (expandedWorkflowId === id) {
-            setExpandedWorkflowId(null);
-        } else {
-            const workflow = workflows?.find(w => w.id === id);
-            setExpandedWorkflowId(id);
-            if (workflow) {
-                const steps = workflow.steps?.map((s: any) => ({
-                    role: s.role,
-                    approver_type: s.approver_type || 'role',
-                    user_ids: s.user_ids || null,
-                    description: s.description || '',
-                })) || [];
-                inlineWorkflowForm.setData('steps', steps);
-            }
-        }
-    };
-
     return (
         <>
             <Head title={`Admin - ${viewTitle}`} />
 
             <div className="flex h-full flex-col flex-1 divide-y divide-border">
-                {/* Header Section */}
                 <div className="flex items-center justify-between px-6 py-4">
                     <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -478,45 +640,40 @@ export default function AdminIndex({
                     )}
                 </div>
 
-                {/* Content Section */}
                 <div className="flex-1 overflow-auto p-4 bg-slate-50/30">
                     <div className="bg-card border border-slate-200 rounded-xl overflow-hidden shadow-sm">
                         <table className="w-full text-[13px] border-collapse">
                             <thead>
-                                <tr className="border-b border-slate-200 bg-slate-50/50 text-left">
-                                    <th className="px-6 py-3 uppercase text-[9px] tracking-[0.15em] font-black text-slate-500 w-16">ID</th>
-                                    <th className="px-6 py-3 uppercase text-[9px] tracking-[0.15em] font-black text-slate-500">
-                                        {currentView === 'users' ? 'Identitas Pengguna' : 'Informasi Item'}
-                                    </th>
-                                    <th className="px-6 py-3 uppercase text-[9px] tracking-[0.15em] font-black text-slate-500">
-                                        {currentView === 'users' ? 'Role & Akses' : 'Metadata / Detail'}
-                                    </th>
-                                    <th className="px-6 py-3 uppercase text-[9px] tracking-[0.15em] font-black text-slate-500 text-right">Manajemen</th>
+                                <tr>
+                                    <Th style={{ width: 60 }}>ID</Th>
+                                    <Th>{currentView === 'users' ? 'Identitas Pengguna' : 'Informasi Item'}</Th>
+                                    <Th>{currentView === 'users' ? 'Role & Akses' : 'Metadata / Detail'}</Th>
+                                    <Th style={{ textAlign: 'right' }}>Manajemen</Th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 bg-white">
                                 {currentView === 'users' && users?.map((u: any) => (
-                                    <tr key={u.id} className="hover:bg-slate-50/50 transition-colors group border-l-2 border-transparent hover:border-blue-400">
-                                        <td className="px-6 py-4 text-slate-400 font-mono text-[9px] tracking-tighter tabular-nums">{String(u.id).substring(0, 8)}</td>
-                                        <td className="px-6 py-4">
+                                    <tr key={u.id} className="hover:bg-slate-50/50 transition-colors group">
+                                        <Td><span className="text-slate-400 font-mono text-[10px] tabular-nums uppercase">{String(u.id).substring(0, 8)}</span></Td>
+                                        <Td>
                                             <div className="flex flex-col">
-                                                <span className="font-bold text-slate-900">{u.name}</span>
-                                                <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                                                <span className="font-semibold text-slate-900">{u.name}</span>
+                                                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5">
                                                     <span>{u.email}</span>
                                                     <span className="h-1 w-1 rounded-full bg-slate-300" />
                                                     <span className="font-mono">{u.username}</span>
                                                 </div>
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4">
+                                        </Td>
+                                        <Td>
                                             <div className="flex items-center gap-2">
-                                                <Badge variant="outline" className="bg-blue-50/50 text-blue-700 border-blue-100 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-tighter shadow-sm">
+                                                <Badge variant="outline" className="bg-blue-50/50 text-blue-700 border-blue-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-tight shadow-sm">
                                                     {u.role}
                                                 </Badge>
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase">System Access Granted</span>
+                                                <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">System Access</span>
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
+                                        </Td>
+                                        <Td style={{ textAlign: 'right' }}>
                                             <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 {canUpdate && (
                                                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-primary/5 hover:text-primary transition-all" onClick={() => openEdit(u)}>
@@ -529,16 +686,16 @@ export default function AdminIndex({
                                                     </Button>
                                                 )}
                                             </div>
-                                        </td>
+                                        </Td>
                                     </tr>
                                 ))}
 
                                 {currentView === 'roles' && roles?.map((r: any) => (
-                                    <tr key={r.id} className="hover:bg-slate-50/50 transition-colors group border-l-2 border-transparent hover:border-slate-800">
-                                        <td className="px-6 py-4 text-slate-400 font-mono text-[9px] tracking-tighter tabular-nums">{String(r.id).substring(0, 8)}</td>
-                                        <td className="px-6 py-4 font-black text-slate-900 uppercase tracking-tighter text-[12px]">{r.name}</td>
-                                        <td className="px-6 py-4 font-bold text-slate-400 uppercase tracking-widest text-[10px]">{r.description || 'Tidak ada deskripsi'}</td>
-                                        <td className="px-6 py-4 text-right">
+                                    <tr key={r.id} className="hover:bg-slate-50/50 transition-colors group">
+                                        <Td><span className="text-slate-400 font-mono text-[10px] tabular-nums uppercase">{String(r.id).substring(0, 8)}</span></Td>
+                                        <Td className="font-semibold text-slate-900 uppercase text-[12px]">{r.name}</Td>
+                                        <Td className="font-medium text-muted-foreground uppercase text-[10px] tracking-wide">{r.description || 'Tidak ada deskripsi'}</Td>
+                                        <Td style={{ textAlign: 'right' }}>
                                             <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-slate-100 text-slate-600 transition-all" title="Kelola Akses" onClick={() => router.get(`/admin/roles/${r.id}/access`)}>
                                                     <Key className="h-3.5 w-3.5" />
@@ -557,16 +714,16 @@ export default function AdminIndex({
                                                     </Button>
                                                 )}
                                             </div>
-                                        </td>
+                                        </Td>
                                     </tr>
                                 ))}
 
                                 {currentView === 'contract-types' && (contractTypes || types)?.map((t: any) => (
-                                    <tr key={t.id} className="hover:bg-slate-50/50 transition-colors group border-l-2 border-transparent hover:border-slate-800">
-                                        <td className="px-6 py-4 text-slate-400 font-mono text-[9px] tracking-tighter tabular-nums">{String(t.id).substring(0, 8)}</td>
-                                        <td className="px-6 py-4 font-black text-slate-900 uppercase tracking-tighter text-[12px]">{t.name}</td>
-                                        <td className="px-6 py-4 font-bold text-slate-400 uppercase tracking-widest text-[10px]">{t.description || 'Tidak ada deskripsi'}</td>
-                                        <td className="px-6 py-4 text-right">
+                                    <tr key={t.id} className="hover:bg-slate-50/50 transition-colors group">
+                                        <Td><span className="text-slate-400 font-mono text-[10px] tabular-nums uppercase">{String(t.id).substring(0, 8)}</span></Td>
+                                        <Td className="font-semibold text-slate-900 uppercase text-[12px]">{t.name}</Td>
+                                        <Td className="font-medium text-muted-foreground uppercase text-[10px] tracking-wide">{t.description || 'Tidak ada deskripsi'}</Td>
+                                        <Td style={{ textAlign: 'right' }}>
                                             <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 {canUpdate && (
                                                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-primary/5 hover:text-primary transition-all" onClick={() => openEdit(t)}>
@@ -579,59 +736,62 @@ export default function AdminIndex({
                                                     </Button>
                                                 )}
                                             </div>
-                                        </td>
+                                        </Td>
                                     </tr>
                                 ))}
 
                                 {currentView === 'workflows' && workflows?.map((w: any) => (
                                     <React.Fragment key={w.id}>
                                         <tr className={cn(
-                                            "hover:bg-slate-50/80 transition-all group border-l-2 border-transparent",
-                                            expandedWorkflowId === w.id && "bg-slate-50/50 border-primary shadow-sm"
+                                            "hover:bg-slate-50/50 transition-colors group",
+                                            expandedWorkflowId === w.id && "bg-slate-50/50"
                                         )}>
-                                            <td className="px-6 py-4 text-slate-400 font-mono text-[9px] tracking-tighter tabular-nums">{String(w.id).substring(0, 8)}</td>
-                                            <td className="px-6 py-4">
+                                            <Td><span className="text-slate-400 font-mono text-[10px] tabular-nums uppercase">{String(w.id).substring(0, 8)}</span></Td>
+                                            <Td>
                                                 <div className="flex items-center gap-3">
-                                                    <button
-                                                        onClick={() => toggleExpand(w.id)}
-                                                        className={cn(
-                                                            "p-1.5 hover:bg-white border rounded shadow-sm transition-all",
-                                                            expandedWorkflowId === w.id ? "bg-white border-primary/20" : "bg-slate-50/50"
-                                                        )}
-                                                    >
-                                                        {expandedWorkflowId === w.id ? <ChevronDown className="h-3 w-3 text-primary" /> : <ChevronRight className="h-3 w-3 text-slate-400" />}
-                                                    </button>
                                                     <div className="flex flex-col">
                                                         <div className="flex items-center gap-2">
-                                                            <span className="font-black text-slate-900 uppercase tracking-tighter text-[12px]">{w.name}</span>
-                                                            {w.is_default && <span className="text-[8px] font-black bg-slate-950 text-white px-1.5 py-0.5 rounded tracking-tighter uppercase shadow-sm">Default</span>}
+                                                            <span className="font-semibold text-slate-900 uppercase text-[12px]">{w.name}</span>
+                                                            {w.is_default && <Badge variant="outline" className="bg-slate-950 text-white px-1.5 py-0 text-[8px] font-bold uppercase shadow-sm border-none">Default</Badge>}
                                                         </div>
-                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{w.contract_type}</span>
+                                                        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest leading-none mt-1">{w.contract_type}</span>
                                                     </div>
                                                 </div>
-                                            </td>
-                                            <td className="px-6 py-4">
+                                            </Td>
+                                            <Td>
                                                 <div className="flex items-center gap-3">
                                                     <div className="flex -space-x-1.5 overflow-hidden">
                                                         {w.steps?.slice(0, 3).map((step: any, i: number) => (
-                                                            <div key={i} className="inline-block h-6 w-6 rounded-full ring-2 ring-white bg-slate-100 flex items-center justify-center text-[9px] font-black text-slate-800 border border-slate-200 uppercase">
+                                                            <div key={i} className="inline-block h-6 w-6 rounded-full ring-2 ring-white bg-slate-100 flex items-center justify-center text-[9px] font-bold text-slate-800 border border-slate-200 uppercase">
                                                                 {step.role?.charAt(0)}
                                                             </div>
                                                         ))}
                                                         {w.steps?.length > 3 && (
-                                                            <div className="inline-block h-6 w-6 rounded-full ring-2 ring-white bg-slate-800 flex items-center justify-center text-[9px] font-black text-white border border-slate-700 shadow-sm">
+                                                            <div className="inline-block h-6 w-6 rounded-full ring-2 ring-white bg-slate-800 flex items-center justify-center text-[9px] font-bold text-white border border-slate-700 shadow-sm">
                                                                 +{w.steps.length - 3}
                                                             </div>
                                                         )}
                                                     </div>
                                                     <div className="flex flex-col">
-                                                        <span className="text-[11px] font-black text-slate-700 uppercase tracking-tighter">{w.steps?.length || 0} Approval Steps</span>
-                                                        <span className="text-[10px] font-bold text-slate-400 uppercase">Sequence Configured</span>
+                                                        <span className="text-[11px] font-bold text-slate-700 uppercase tracking-tight">{w.steps?.length || 0} Approval Steps</span>
+                                                        <span className="text-[10px] font-medium text-muted-foreground uppercase">Sequence Configured</span>
                                                     </div>
                                                 </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
+                                            </Td>
+                                            <Td style={{ textAlign: 'right' }}>
                                                 <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Button 
+                                                        variant="ghost" 
+                                                        size="sm" 
+                                                        className={cn(
+                                                            "h-8 w-8 p-0 transition-all",
+                                                            expandedWorkflowId === w.id ? "bg-slate-900 text-white hover:bg-slate-800" : "hover:bg-slate-100 text-slate-600"
+                                                        )}
+                                                        title={expandedWorkflowId === w.id ? "Tutup Management" : "Kelola Steps & Alur"} 
+                                                        onClick={() => toggleWorkflowExpand(w)}
+                                                    >
+                                                        <LayoutGrid className="h-3.5 w-3.5" />
+                                                    </Button>
                                                     {canUpdate && (
                                                         <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-primary/5 hover:text-primary transition-all" onClick={() => openEdit(w)}>
                                                             <Pencil className="h-3.5 w-3.5" />
@@ -643,46 +803,105 @@ export default function AdminIndex({
                                                         </Button>
                                                     )}
                                                 </div>
-                                            </td>
+                                            </Td>
                                         </tr>
                                         {expandedWorkflowId === w.id && (
                                             <tr className="bg-slate-50/80">
-                                                <td colSpan={4} className="px-16 py-6">
-                                                    <div className="relative border-l-2 border-slate-200 pl-8 space-y-6 py-2">
-                                                        {w.steps?.sort((a: any, b: any) => a.step - b.step).map((step: any, idx: number) => (
-                                                            <div key={step.id} className="relative">
-                                                                {/* Connector dot */}
-                                                                <div className="absolute -left-[37px] top-1 h-4 w-4 rounded-full border-2 border-white bg-slate-300 ring-4 ring-slate-50/80" />
+                                                <Td colSpan={4} className="p-0 border-b border-slate-200">
+                                                    <div className="p-6 space-y-5">
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="h-8 w-8 rounded-xl bg-white shadow-sm border flex items-center justify-center text-primary">
+                                                                    <GitBranch size={16} />
+                                                                </div>
+                                                                <div>
+                                                                    <h4 className="text-[13px] font-black text-slate-900 leading-none">Alur Approval</h4>
+                                                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Kelola urutan dan otoritas persetujuan</p>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <Button 
+                                                                    variant="outline" 
+                                                                    size="sm" 
+                                                                    onClick={addLocalStep}
+                                                                    className="h-8 px-3 rounded-lg font-bold gap-1.5 bg-white border-slate-200 text-[11px]"
+                                                                >
+                                                                    <Plus size={14} /> Tambah
+                                                                </Button>
+                                                                <Button 
+                                                                    size="sm" 
+                                                                    onClick={() => saveWorkflowSteps(w.id)}
+                                                                    disabled={isSavingSteps}
+                                                                    className="h-8 px-4 rounded-lg font-black gap-1.5 shadow-sm text-[11px]"
+                                                                >
+                                                                    {isSavingSteps ? <div className="h-3 w-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={14} />}
+                                                                    Simpan
+                                                                </Button>
+                                                            </div>
+                                                        </div>
 
-                                                                <div className="flex flex-col">
-                                                                    <div className="flex items-center gap-2 mb-0.5">
-                                                                        <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Step {step.step}</span>
-                                                                        <span className="h-[1px] w-4 bg-slate-200" />
-                                                                        <span className="text-[10px] font-bold text-primary uppercase tracking-tight">{step.role}</span>
+                                                        {editingSteps.length === 0 ? (
+                                                            <div className="py-8 flex flex-col items-center justify-center bg-white rounded-xl border-2 border-dashed border-slate-200">
+                                                                <PlusCircle className="h-6 w-6 text-slate-200 mb-2" />
+                                                                <p className="text-[11px] font-bold text-slate-400">Belum ada langkah approval</p>
+                                                                <Button variant="link" onClick={addLocalStep} className="text-primary font-black uppercase text-[9px] tracking-widest h-auto p-0 mt-1">Buat Pertama</Button>
+                                                            </div>
+                                                        ) : (
+                                                            <DndContext 
+                                                                sensors={sensors}
+                                                                collisionDetection={closestCenter}
+                                                                onDragEnd={handleDragEnd}
+                                                                modifiers={[restrictToVerticalAxis]}
+                                                            >
+                                                                <SortableContext 
+                                                                    items={editingSteps.map(s => s.id)}
+                                                                    strategy={verticalListSortingStrategy}
+                                                                >
+                                                                    <div className="space-y-2">
+                                                                        {editingSteps.map((step, idx) => (
+                                                                            <SortableStepItem
+                                                                                key={step.id}
+                                                                                step={step}
+                                                                                idx={idx}
+                                                                                users={users}
+                                                                                roles={roles}
+                                                                                updateLocalStep={updateLocalStep}
+                                                                                removeLocalStep={removeLocalStep}
+                                                                            />
+                                                                        ))}
                                                                     </div>
-                                                                </DndContext>
-                                                             </div>
-                                                         </div>
+                                                                </SortableContext>
+                                                            </DndContext>
+                                                        )}
+                                                        
+                                                        <div className="flex items-center justify-center py-2 opacity-50">
+                                                            <div className="h-[1px] flex-1 bg-slate-200" />
+                                                            <div className="flex items-center gap-1.5 px-4">
+                                                                <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                                                                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Selesai</span>
+                                                            </div>
+                                                            <div className="h-[1px] flex-1 bg-slate-200" />
+                                                        </div>
                                                     </div>
-                                                </td>
+                                                </Td>
                                             </tr>
                                         )}
                                     </React.Fragment>
                                 ))}
 
                                 {currentView === 'module-groups' && (moduleGroups || groups)?.map((g: any) => (
-                                    <tr key={g.id} className="hover:bg-slate-50/50 transition-colors group border-l-2 border-transparent hover:border-slate-800">
-                                        <td className="px-6 py-4 text-slate-400 font-mono text-[9px] tracking-tighter tabular-nums">{String(g.id).substring(0, 8)}</td>
-                                        <td className="px-6 py-4">
+                                    <tr key={g.id} className="hover:bg-slate-50/50 transition-colors group">
+                                        <Td><span className="text-slate-400 font-mono text-[10px] tabular-nums uppercase">{String(g.id).substring(0, 8)}</span></Td>
+                                        <Td>
                                             <div className="flex items-center gap-3">
-                                                <div className="h-6 w-8 rounded bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-600 border border-slate-200 tabular-nums">
+                                                <div className="h-6 w-8 rounded bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-600 border border-slate-200 tabular-nums">
                                                     #{g.sort_number}
                                                 </div>
-                                                <span className="font-black text-slate-900 uppercase tracking-tighter text-[12px]">{g.title}</span>
+                                                <span className="font-semibold text-slate-900 uppercase text-[12px]">{g.title}</span>
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4 font-bold text-slate-400 uppercase tracking-widest text-[10px]">Grup Menu Navigasi Utama</td>
-                                        <td className="px-6 py-4 text-right">
+                                        </Td>
+                                        <Td className="font-medium text-muted-foreground uppercase text-[10px] tracking-wide">Grup Menu Navigasi Utama</Td>
+                                        <Td style={{ textAlign: 'right' }}>
                                             <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 {canUpdate && (
                                                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-primary/5 hover:text-primary transition-all" onClick={() => openEdit(g)}>
@@ -695,33 +914,33 @@ export default function AdminIndex({
                                                     </Button>
                                                 )}
                                             </div>
-                                        </td>
+                                        </Td>
                                     </tr>
                                 ))}
 
                                 {currentView === 'modules' && modules?.map((m: any) => (
-                                    <tr key={m.id} className="hover:bg-slate-50/50 transition-colors group border-l-2 border-transparent hover:border-slate-800">
-                                        <td className="px-6 py-4 text-slate-400 font-mono text-[9px] tracking-tighter tabular-nums">{String(m.id).substring(0, 8)}</td>
-                                        <td className="px-6 py-4">
+                                    <tr key={m.id} className="hover:bg-slate-50/50 transition-colors group">
+                                        <Td><span className="text-slate-400 font-mono text-[10px] tabular-nums uppercase">{String(m.id).substring(0, 8)}</span></Td>
+                                        <Td>
                                             <div className="flex items-center gap-3">
-                                                <div className="h-8 w-8 rounded bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 tracking-tighter font-black text-[9px]">
+                                                <div className="h-8 w-8 rounded bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 font-bold text-[10px]">
                                                     {m.icon ? <i className={cn("fa-solid h-4 w-4 flex items-center justify-center", m.icon)} /> : m.code?.substring(0, 2)}
                                                 </div>
                                                 <div className="flex flex-col">
-                                                    <span className="font-black text-slate-900 uppercase tracking-tighter text-[12px]">{m.title}</span>
-                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{m.code}</span>
+                                                    <span className="font-semibold text-slate-900 uppercase text-[12px]">{m.title}</span>
+                                                    <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest leading-none mt-1">{m.code}</span>
                                                 </div>
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4">
+                                        </Td>
+                                        <Td>
                                             <div className="flex items-center gap-2">
-                                                <span className="px-2 py-0.5 bg-slate-100 rounded text-[9px] font-black text-slate-500 uppercase tracking-tighter border border-slate-200">
+                                                <Badge variant="outline" className="bg-slate-100 rounded text-[9px] font-bold text-slate-500 uppercase tracking-tight border border-slate-200">
                                                     {moduleGroups?.find((mg: any) => mg.id === m.module_group_id)?.title || 'No Group'}
-                                                </span>
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase">Route: {m.url || '#'}</span>
+                                                </Badge>
+                                                <span className="text-[10px] font-medium text-muted-foreground uppercase opacity-70">Route: {m.url || '#'}</span>
                                             </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
+                                        </Td>
+                                        <Td style={{ textAlign: 'right' }}>
                                             <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 {canUpdate && (
                                                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-primary/5 hover:text-primary transition-all" onClick={() => openEdit(m)}>
@@ -734,7 +953,7 @@ export default function AdminIndex({
                                                     </Button>
                                                 )}
                                             </div>
-                                        </td>
+                                        </Td>
                                     </tr>
                                 ))}
                             </tbody>

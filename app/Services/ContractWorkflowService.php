@@ -88,7 +88,9 @@ class ContractWorkflowService
     private function createApprovalForStep(Contract $contract, WorkflowStep $step): void
     {
         // Determine approvers
-        if ($step->user_id) {
+        if (! empty($step->user_ids) && is_array($step->user_ids)) {
+            $approvers = User::whereIn('id', $step->user_ids)->get();
+        } elseif ($step->user_id) {
             $approvers = User::where('id', $step->user_id)->get();
         } else {
             // Find all users with the required role

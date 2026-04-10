@@ -247,8 +247,8 @@ class AdminController extends Controller
     {
         $data = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
-            'username' => 'required|string|max:20|unique:users,username,' . $user->id,
+            'email' => 'required|email|unique:users,email,'.$user->id,
+            'username' => 'required|string|max:20|unique:users,username,'.$user->id,
             'role' => 'required|string',
             'password' => 'nullable|string|min:8',
         ]);
@@ -395,8 +395,50 @@ class AdminController extends Controller
     public function destroyWorkflow(Workflow $workflow)
     {
         $workflow->delete();
+        return redirect()->back();
+    }
 
-        return back()->with('success', 'Workflow deleted successfully.');
+    public function workflowSteps(Workflow $workflow)
+    {
+        $workflow->load('steps');
+        $roles = Role::orderBy('name')->get();
+        $users = User::orderBy('name')->get();
+
+        return Inertia::render('admin/workflow-steps', [
+            'workflow' => $workflow,
+            'roles' => $roles,
+            'users' => $users,
+        ]);
+    }
+
+    public function updateWorkflowSteps(Request $request, Workflow $workflow)
+    {
+        $data = $request->validate([
+            'steps' => 'nullable|array',
+            'steps.*.role' => 'required|string',
+            'steps.*.selected_role' => 'nullable|string',
+            'steps.*.description' => 'nullable|string',
+            'steps.*.approver_type' => 'nullable|string|in:role,user',
+            'steps.*.user_ids' => 'nullable|array',
+        ]);
+
+        $workflow->steps()->delete();
+        
+        if (! empty($data['steps'])) {
+            foreach ($data['steps'] as $index => $stepData) {
+                $workflow->steps()->create([
+                    'role' => $stepData['approver_type'] === 'role' ? ($stepData['selected_role'] ?? $stepData['role']) : $stepData['role'],
+                    'approver_type' => $stepData['approver_type'] ?? 'role',
+                    'user_ids' => $stepData['user_ids'] ?? null,
+                    'description' => $stepData['role'], // Use manual label for description/display
+                    'step' => $index + 1,
+                    'created_by' => auth()->id(),
+                    'updated_by' => auth()->id(),
+                ]);
+            }
+        }
+
+        return redirect()->route('admin.workflows');
     }
 
     // Navigation Management (Combined)

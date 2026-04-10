@@ -25,65 +25,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('contracts', [ContractController::class, 'contractsView'])->defaults('view', 'contracts')->name('contracts');
     Route::get('my-contracts', [ContractController::class, 'contractsView'])->defaults('view', 'mine')->name('contracts.mine');
 
-    Route::get('my-contracts', function () {
-        $controller = app(ContractController::class);
-        $contracts = Contract::where('created_by', auth()->id())->with([
-            'creator', 'contractType', 'approvals.approver', 'approvals.workflowStep',
-            'workflow.steps', 'versions.uploader', 'histories.actor', 'messages.user',
-            'attachments.uploader',
-        ])->orderByDesc('created_at')->get();
-
-        return Inertia::render('contracts/index', [
-            'currentView' => 'mine',
-            'contracts' => $contracts->map(fn ($c) => $controller->formatContract($c)),
-            'types' => ContractType::all(),
-        ]);
-    })->name('contracts.mine');
-
-    Route::get('pending', function () {
-        $controller = app(ContractController::class);
-        $contracts = Contract::with([
-            'creator', 'contractType', 'approvals.approver', 'approvals.workflowStep',
-            'workflow.steps', 'versions.uploader', 'histories.actor', 'messages.user',
-            'attachments.uploader',
-        ])->orderByDesc('created_at')->get();
-
-        return Inertia::render('contracts/index', [
-            'currentView' => 'pending',
-            'contracts' => $contracts->map(fn ($c) => $controller->formatContract($c)),
-            'types' => ContractType::all(),
-        ]);
-    })->name('pending');
-
-    Route::get('f1', function () {
-        $controller = app(ContractController::class);
-        $contracts = Contract::with([
-            'creator', 'contractType', 'approvals.approver', 'approvals.workflowStep',
-            'workflow.steps', 'versions.uploader', 'histories.actor', 'messages.user',
-            'attachments.uploader',
-        ])->orderByDesc('created_at')->get();
-
-        return Inertia::render('contracts/index', [
-            'currentView' => 'f1',
-            'contracts' => $contracts->map(fn ($c) => $controller->formatContract($c)),
-            'types' => ContractType::all(),
-        ]);
-    })->name('f1');
-
-    Route::get('f2', function () {
-        $controller = app(ContractController::class);
-        $contracts = Contract::with([
-            'creator', 'contractType', 'approvals.approver', 'approvals.workflowStep',
-            'workflow.steps', 'versions.uploader', 'histories.actor', 'messages.user',
-            'attachments.uploader',
-        ])->orderByDesc('created_at')->get();
-
-        return Inertia::render('contracts/index', [
-            'currentView' => 'f2',
-            'contracts' => $contracts->map(fn ($c) => $controller->formatContract($c)),
-            'types' => ContractType::all(),
-        ]);
-    })->name('f2');
+    Route::get('pending', [ContractController::class, 'contractsView'])->defaults('view', 'pending')->name('pending');
+    Route::get('f1', [ContractController::class, 'contractsView'])->defaults('view', 'f1')->name('f1');
+    Route::get('f2', [ContractController::class, 'contractsView'])->defaults('view', 'f2')->name('f2');
 
     Route::get('contracts/{id}', function ($id) {
         return Inertia::render('contracts/show', ['contractId' => $id]);
@@ -120,6 +64,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::middleware(['admin'])->prefix('admin')->group(function () {
         Route::get('/contracts', [ContractController::class, 'contractsView'])->defaults('view', 'contracts')->name('admin.contracts.index');
+        Route::get('/expiry', [ContractController::class, 'contractsView'])->defaults('view', 'expiry')->name('admin.expiry');
+        Route::get('/audit', [ContractController::class, 'contractsView'])->defaults('view', 'audit')->name('admin.audit');
+
         Route::get('/contracts-data', [ContractController::class, 'index'])->name('contracts.data');
         Route::get('/contracts/workflows', [ContractController::class, 'getWorkflows'])->name('contracts.workflows');
         Route::get('/contracts/users', [ContractController::class, 'getUsers'])->name('contracts.users');
@@ -139,6 +86,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/workflows', [AdminController::class, 'storeWorkflow'])->name('admin.workflows.store');
         Route::put('/workflows/{workflow}', [AdminController::class, 'updateWorkflow'])->name('admin.workflows.update');
         Route::delete('/workflows/{workflow}', [AdminController::class, 'destroyWorkflow'])->name('admin.workflows.destroy');
+        Route::get('/workflows/{workflow}/steps', [AdminController::class, 'workflowSteps'])->name('admin.workflows.steps');
+        Route::post('/workflows/{workflow}/steps', [AdminController::class, 'updateWorkflowSteps'])->name('admin.workflows.steps.update');
 
         Route::get('/roles', [AdminController::class, 'roles'])->name('admin.roles');
         Route::post('/roles', [AdminController::class, 'storeRole'])->name('admin.roles.store');
