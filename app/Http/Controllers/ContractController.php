@@ -12,12 +12,15 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Services\ContractWorkflowService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class ContractController extends Controller
 {
@@ -28,14 +31,134 @@ class ContractController extends Controller
         $this->workflowService = $workflowService;
     }
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $contracts = Contract::with(['creator', 'versions.uploader', 'approvals.approver', 'approvals.workflowStep', 'workflow.steps', 'histories.actor', 'messages.user', 'attachments.uploader', 'contractType'])
-            ->orderByDesc('created_at')
-            ->get()
-            ->map(fn ($c) => $this->formatContract($c));
+        $contracts = $this->getFilteredContractsQuery($request)
+            ->paginate($request->integer('per_page', 10))
+            ->through(fn ($c) => $this->formatContract($c));
 
         return response()->json($contracts);
+    }
+
+    /**
+     * Generalized method for Inertia contract views
+     */
+    public function contractsView(Request $request, string $view = 'contracts'): Response
+    {
+        $contracts = $this->getFilteredContractsQuery($request, $view)
+            ->paginate($request->integer('per_page', 10))
+            ->withQueryString()
+            ->through(fn ($c) => $this->formatContract($c));
+
+        $data = [
+            'currentView' => $view,
+            'contracts' => $contracts,
+            'types' => ContractType::all(),
+            'filters' => array_merge($request->only(['search', 'status']), [
+                'per_page' => $request->integer('per_page', 10)
+            ]),
+        ];
+
+        if ($view === 'dashboard') {
+            $data['metrics'] = $this->getDashboardMetrics();
+        }
+
+        return Inertia::render('contracts/index', $data);
+    }
+
+    private function getFilteredContractsQuery(Request $request, string $view = 'contracts')
+    {
+        $query = Contract::with([
+            'creator', 'contractType', 'approvals.approver', 'approvals.workflowStep',
+            'workflow.steps', 'versions.uploader', 'histories.actor', 'messages.user',
+            'attachments.uploader',
+        ])->orderByDesc('created_at');
+
+        // Apply View Filter
+        switch ($view) {
+            case 'mine':
+                $query->where('created_by', Auth::id());
+                break;
+            case 'pending':
+                $query->whereHas('approvals', function ($q) {
+                    $q->where('user_id', Auth::id())->where('status', 'pending');
+                });
+                break;
+            case 'expiry':
+                $query->whereNotNull('end_date');
+                break;
+            case 'f1':
+                $query->whereHas('versions', fn ($q) => $q->where('document_type', 'f1'));
+                break;
+            case 'f2':
+                $query->whereHas('versions', fn ($q) => $q->where('document_type', 'f2'));
+                break;
+        }
+
+        // Apply Search Filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'ilike', "%{$search}%")
+                    ->orWhere('contract_no', 'ilike', "%{$search}%")
+                    ->orWhereHas('creator', fn ($uq) => $uq->where('name', 'ilike', "%{$search}%"));
+            });
+        }
+
+        // Apply Status Filter
+        if ($request->filled('status') && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
+
+        return $query;
+    }
+
+    private function getDashboardMetrics()
+    {
+        $query = Contract::query();
+        $approvedContracts = (clone $query)->where('status', 'approved')->get();
+        $avgDays = 0;
+
+        if ($approvedContracts->count() > 0) {
+            $totalDays = $approvedContracts->sum(function ($c) {
+                $firstSentAt = Approval::where('contract_id', $c->id)->oldest()->value('created_at');
+
+                return $firstSentAt ? Carbon::parse($firstSentAt)->diffInHours($c->updated_at) / 24 : 0;
+            });
+            $avgDays = round($totalDays / $approvedContracts->count(), 1);
+        }
+
+        return [
+            'metrics' => [
+                'avgCycleTime' => $avgDays,
+                'totalContracts' => $query->count(),
+                'pendingApprovals' => Approval::whereIn('contract_id', Contract::pluck('id'))->where('status', 'pending')->count(),
+                'approvedThisMonth' => (clone $query)->where('status', 'approved')
+                    ->where('updated_at', '>=', now()->startOfMonth())
+                    ->count(),
+            ],
+            'monthlyTrend' => Contract::leftJoin('contract_types', 'contracts.contract_type_id', '=', 'contract_types.id')
+                ->select(
+                    \DB::raw("to_char(contracts.created_at, 'YYYY-MM') as month"),
+                    'contract_types.name as type_name',
+                    \DB::raw('count(*) as count')
+                )
+                ->where('contracts.created_at', '>=', now()->subMonths(6))
+                ->groupBy('month', 'type_name')
+                ->orderBy('month')
+                ->get()
+                ->groupBy('month')
+                ->map(function ($items, $month) {
+                    return [
+                        'month' => $month,
+                        'types' => $items->map(fn ($i) => [
+                            'name' => $i->type_name ?? 'Unspecified',
+                            'count' => (int) $i->count,
+                        ])->values(),
+                        'total' => $items->sum('count'),
+                    ];
+                })->values(),
+        ];
     }
 
     public function getTypes(): JsonResponse
@@ -105,6 +228,7 @@ class ContractController extends Controller
             'description' => 'nullable|string',
             'contract_no' => 'nullable|string',
             'contract_date' => 'nullable|date',
+            'end_date' => 'nullable|date',
             'contract_type_id' => 'nullable|exists:contract_types,id',
             'f1_file' => 'required|file|extensions:docx,doc,pdf|max:102400',
             'changelog' => 'nullable|string',
@@ -119,6 +243,7 @@ class ContractController extends Controller
                 'title' => $validated['title'],
                 'description' => $validated['description'] ?? '—',
                 'contract_date' => $validated['contract_date'] ?? null,
+                'end_date' => $validated['end_date'] ?? null,
                 'contract_type_id' => $contractTypeId,
                 'status' => 'draft',
                 'created_by' => $userId,
@@ -162,6 +287,7 @@ class ContractController extends Controller
             'description' => 'nullable|string',
             'contract_no' => 'nullable|string',
             'contract_date' => 'nullable|date',
+            'end_date' => 'nullable|date',
             'contract_type_id' => 'nullable|exists:contract_types,id',
         ]);
 
@@ -530,6 +656,7 @@ class ContractController extends Controller
             'description' => $c->description,
             'contract_type' => $c->contract_type,
             'contract_date' => $c->contract_date,
+            'end_date' => $c->end_date,
             'contract_type' => $c->contractType?->name ?? '—',
             'contract_type_id' => $c->contract_type_id,
             'created_by' => $c->created_by,

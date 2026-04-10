@@ -4,41 +4,32 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
 
-class AccessModule extends Model
+class RoleModuleGroup extends Model
 {
     use HasFactory;
 
-    protected $table = 'access_modules';
+    protected $table = 'role_module_groups';
 
     public $incrementing = false;
 
-    protected $primaryKey = null;
+    protected $primaryKey = ['role_id', 'module_group_id'];
 
     protected $keyType = 'string';
 
     protected $fillable = [
         'role_id',
-        'module_id',
-        'can_read',
-        'can_create',
-        'can_update',
-        'can_delete',
-        'created_by',
         'module_group_id',
         'sort_number',
     ];
-
-    public $timestamps = true;
 
     public function role()
     {
         return $this->belongsTo(Role::class, 'role_id');
     }
 
-    public function module()
+    public function moduleGroup()
     {
-        return $this->belongsTo(Module::class, 'module_id');
+        return $this->belongsTo(ModuleGroup::class, 'module_group_id');
     }
 }

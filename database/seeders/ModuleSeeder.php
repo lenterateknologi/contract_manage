@@ -15,25 +15,35 @@ class ModuleSeeder extends Seeder
         $groups = ModuleGroup::pluck('id', 'title')->all();
 
         $modules = [
-            ['code' => 'DASH', 'title' => 'Dashboard', 'url' => '/dashboard', 'icon' => 'LayoutGrid', 'group' => 'Ringkasan', 'sort' => 1],
-            ['code' => 'REPORTS', 'title' => 'Pusat Laporan', 'url' => '/admin/reports', 'icon' => 'BarChart3', 'group' => 'Ringkasan', 'sort' => 2],
+            // Insight & Analytics
+            ['code' => 'DASH', 'title' => 'Dashboard Utama', 'url' => '/dashboard', 'icon' => 'LayoutGrid', 'group' => 'Insight & Analytics', 'sort' => 1],
+            ['code' => 'ANLTX', 'title' => 'Analitik & SLA', 'url' => '/admin/reports', 'icon' => 'BarChart3', 'group' => 'Insight & Analytics', 'sort' => 2],
 
-            ['code' => 'CONTRACTS', 'title' => 'Semua Kontrak', 'url' => '/contracts', 'icon' => 'FileText', 'group' => 'Manajemen Kontrak', 'sort' => 1],
-            ['code' => 'MY_CTC', 'title' => 'Kontrak Saya', 'url' => '/my-contracts', 'icon' => 'Users', 'group' => 'Manajemen Kontrak', 'sort' => 2],
-            ['code' => 'PENDING', 'title' => 'Menunggu Approval', 'url' => '/pending', 'icon' => 'Clock', 'group' => 'Manajemen Kontrak', 'sort' => 3],
+            // Manajemen Kontrak
+            ['code' => 'CONTRACTS', 'title' => 'Register Kontrak', 'url' => '/contracts', 'icon' => 'FileText', 'group' => 'Manajemen Kontrak', 'sort' => 1],
+            ['code' => 'PENDING', 'title' => 'Menunggu Approval', 'url' => '/pending', 'icon' => 'Clock', 'group' => 'Manajemen Kontrak', 'sort' => 2],
+            ['code' => 'EXPIRY', 'title' => 'Monitoring Masa Berlaku', 'url' => '/admin/expiry', 'icon' => 'AlertCircle', 'group' => 'Manajemen Kontrak', 'sort' => 3],
+            ['code' => 'MY_CTC', 'title' => 'Dokumen Saya', 'url' => '/my-contracts', 'icon' => 'UserCheck', 'group' => 'Manajemen Kontrak', 'sort' => 4],
 
-            ['code' => 'F1', 'title' => 'Form F1', 'url' => '/f1', 'icon' => 'FilePlus', 'group' => 'Formulir Standar', 'sort' => 1],
-            ['code' => 'F2', 'title' => 'Form F2', 'url' => '/f2', 'icon' => 'FileEdit', 'group' => 'Formulir Standar', 'sort' => 2],
+            // E-Form & Dokumen
+            ['code' => 'F1', 'title' => 'Permintaan Kontrak (F1)', 'url' => '/f1', 'icon' => 'FilePlus', 'group' => 'E-Form & Dokumen', 'sort' => 1],
+            ['code' => 'F2', 'title' => 'Review Legal (F2)', 'url' => '/f2', 'icon' => 'FileCheck', 'group' => 'E-Form & Dokumen', 'sort' => 2],
 
-            ['code' => 'USERS', 'title' => 'Pengguna', 'url' => '/admin/users', 'icon' => 'Users', 'group' => 'Data Master', 'sort' => 1],
-            ['code' => 'ROLES', 'title' => 'Role', 'url' => '/admin/roles', 'icon' => 'ShieldCheck', 'group' => 'Data Master', 'sort' => 2],
-            ['code' => 'CTC_TYPES', 'title' => 'Tipe Kontrak', 'url' => '/admin/contract-types', 'icon' => 'Settings2', 'group' => 'Data Master', 'sort' => 3],
-            ['code' => 'WORKFLOWS', 'title' => 'Alur Kerja', 'url' => '/admin/workflows', 'icon' => 'GitBranch', 'group' => 'Data Master', 'sort' => 4],
-            ['code' => 'NAV_MGMT', 'title' => 'Manajemen Navigasi', 'url' => '/admin/navigation', 'icon' => 'LayoutGrid', 'group' => 'Data Master', 'sort' => 5],
+            // Administrasi Sistem
+            ['code' => 'USERS', 'title' => 'Manajemen Pengguna', 'url' => '/admin/users', 'icon' => 'Users', 'group' => 'Administrasi Sistem', 'sort' => 1],
+            ['code' => 'ROLES', 'title' => 'Role & Otoritas', 'url' => '/admin/roles', 'icon' => 'ShieldCheck', 'group' => 'Administrasi Sistem', 'sort' => 2],
+            ['code' => 'CTC_TYPES', 'title' => 'Master Tipe Kontrak', 'url' => '/admin/contract-types', 'icon' => 'Settings2', 'group' => 'Administrasi Sistem', 'sort' => 3],
+            ['code' => 'WORKFLOWS', 'title' => 'Konfigurasi Alur Kerja', 'url' => '/admin/workflows', 'icon' => 'GitBranch', 'group' => 'Administrasi Sistem', 'sort' => 4],
+            ['code' => 'NAV_MGMT', 'title' => 'Struktur Navigasi', 'url' => '/admin/navigation', 'icon' => 'Layers', 'group' => 'Administrasi Sistem', 'sort' => 5],
+
+            // Audit & Keamanan
+            ['code' => 'AUDIT', 'title' => 'Jejak Audit (Logs)', 'url' => '/admin/audit', 'icon' => 'History', 'group' => 'Audit & Keamanan', 'sort' => 1],
         ];
 
         $activeCodes = array_column($modules, 'code');
-        Module::whereNotIn('code', $activeCodes)->update(['showed_as_menu' => false]);
+
+        // Cleanup: Remove any modules not in our enterprise list
+        Module::whereNotIn('code', $activeCodes)->delete();
 
         foreach ($modules as $module) {
             Module::updateOrCreate(
@@ -44,7 +54,7 @@ class ModuleSeeder extends Seeder
                     'url' => $module['url'],
                     'icon' => $module['icon'],
                     'module_group_id' => $groups[$module['group']] ?? null,
-                    'showed_as_menu' => true,
+                    'showed_as_menu' => $module['code'] !== 'NAV_MGMT',
                     'created_by' => $admin->id,
                     'updated_by' => $admin->id,
                 ]

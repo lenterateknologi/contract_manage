@@ -13,11 +13,15 @@ class ModuleGroupSeeder extends Seeder
         $admin = User::firstWhere('email', 'admin@example.com') ?? User::first();
 
         $groups = [
-            'Ringkasan',
+            'Insight & Analytics',
             'Manajemen Kontrak',
-            'Formulir Standar',
-            'Data Master',
+            'E-Form & Dokumen',
+            'Administrasi Sistem',
+            'Audit & Keamanan',
         ];
+
+        // Cleanup: Remove any groups not in our list to ensure a clean state
+        ModuleGroup::whereNotIn('title', $groups)->delete();
 
         foreach ($groups as $index => $title) {
             ModuleGroup::updateOrCreate(

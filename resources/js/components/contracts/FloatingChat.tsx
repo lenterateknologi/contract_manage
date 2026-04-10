@@ -70,6 +70,37 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
     const [sending, setSending] = useState(false);
     const endRef = useRef<HTMLDivElement>(null);
 
+    // Draggable state
+    const [pos, setPos] = useState({ x: 0, y: 0 });
+    const [isDragging, setIsDragging] = useState(false);
+    const dragRef = useRef({ startX: 0, startY: 0, initialX: 0, initialY: 0 });
+
+    const handlePointerDown = (e: React.PointerEvent) => {
+        setIsDragging(true);
+        dragRef.current = {
+            startX: e.clientX,
+            startY: e.clientY,
+            initialX: pos.x,
+            initialY: pos.y
+        };
+        (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    };
+
+    const handlePointerMove = (e: React.PointerEvent) => {
+        if (!isDragging) return;
+        const dx = e.clientX - dragRef.current.startX;
+        const dy = e.clientY - dragRef.current.startY;
+        setPos({
+            x: dragRef.current.initialX + dx,
+            y: dragRef.current.initialY + dy
+        });
+    };
+
+    const handlePointerUp = (e: React.PointerEvent) => {
+        setIsDragging(false);
+        (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    };
+
     const totalUnread = contracts.reduce((sum, c) =>
         sum + (c.messages ?? []).filter(m => !m.read_by.includes(meId)).length, 0);
 
@@ -122,13 +153,20 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
     return (
         <>
             {/* FAB — always shows fa-comments icon; badge shows when unread > 0 */}
-            <button onClick={toggleChat}
-                className="fixed bottom-5 right-5 z-[200] w-12 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all"
-                style={{ position: 'fixed' }}>
+            {/* FAB — always shows fa-comments icon; badge shows when unread > 0 */}
+            <button 
+                onClick={(e) => !isDragging && toggleChat()}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                className="fixed bottom-5 right-5 z-[200] w-12 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all cursor-move select-none"
+                style={{ 
+                    transform: `translate(${pos.x}px, ${pos.y}px)`,
+                    touchAction: 'none'
+                }}>
                 <i className={`fa-solid ${open ? 'fa-xmark' : 'fa-comments'} text-[18px]`} />
                 {totalUnread > 0 && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center"
-                        style={{ position: 'absolute', top: -4, right: -4, width: 20, height: 20 }}>
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center pointer-events-none">
                         {totalUnread}
                     </span>
                 )}

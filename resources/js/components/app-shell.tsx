@@ -1,4 +1,5 @@
 import { SidebarProvider } from '@/components/ui/sidebar';
+import { ToastProvider } from '@/components/contracts/Toast';
 import { useState } from 'react';
 
 interface AppShellProps {
@@ -22,8 +23,10 @@ export function AppShell({ children, variant = 'header' }: AppShellProps) {
     }
 
     return (
-        <SidebarProvider defaultOpen={isOpen} open={isOpen} onOpenChange={handleSidebarChange}>
-            {children}
-        </SidebarProvider>
+        <ToastProvider>
+            <SidebarProvider defaultOpen={isOpen} open={isOpen} onOpenChange={handleSidebarChange}>
+                {children}
+            </SidebarProvider>
+        </ToastProvider>
     );
 }

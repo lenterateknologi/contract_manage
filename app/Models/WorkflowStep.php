@@ -10,16 +10,20 @@ class WorkflowStep extends Model
 {
     protected $fillable = [
         'workflow_id',
-        'user_id',
         'role',
+        'approver_type',
+        'user_ids',
         'step',
         'description',
         'created_by',
         'updated_by',
+        'is_active',
     ];
 
     protected $casts = [
         'step' => 'integer',
+        'user_ids' => 'array',
+        'is_active' => 'boolean',
     ];
 
     public function workflow(): BelongsTo

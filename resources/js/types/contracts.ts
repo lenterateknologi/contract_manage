@@ -80,6 +80,7 @@ export interface Contract {
     title: string;
     description: string;
     contract_date: string | null;
+    end_date: string | null;
     contract_type: string | null;
     contract_type_id?: string;
     created_by: string;
@@ -100,3 +101,23 @@ export interface Contract {
 }
 
 export type ContractStatus = 'draft' | 'in_review' | 'revision' | 'approved' | 'locked' | 'archived';
+
+export interface PaginatedData<T> {
+    data: T[];
+    links: {
+        url: string | null;
+        label: string;
+        active: boolean;
+    }[];
+    current_page: number;
+    last_page: number;
+    total: number;
+    first_page_url: string;
+    last_page_url: string;
+    prev_page_url: string | null;
+    next_page_url: string | null;
+    from: number;
+    to: number;
+    path: string;
+    per_page: number;
+}

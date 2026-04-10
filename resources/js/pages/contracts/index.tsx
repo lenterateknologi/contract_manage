@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { cn } from '@/lib/utils';
 import { Head, router, usePage, useForm } from '@inertiajs/react';
-import { Contract, ContractType } from '@/types/contracts';
+import { Contract, ContractType, PaginatedData } from '@/types/contracts';
 import { contractApi } from '@/lib/contract-api';
 import { ToastProvider, useToast } from '@/components/contracts/Toast';
 import { Avatar, StatusBadge } from '@/components/contracts/ui';
@@ -20,19 +20,37 @@ import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem } from '@/types';
 import { usePermissions } from '@/hooks/use-permissions';
 
-type View = 'dashboard' | 'contracts' | 'pending' | 'audit' | 'f1' | 'f2' | 'profile' | 'mine';
+type View = 'dashboard' | 'contracts' | 'pending' | 'audit' | 'f1' | 'f2' | 'profile' | 'mine' | 'expiry';
 
 // ─── Table header cell ───────────────────────────────────────────────
 function Th({ children, style }: { children?: React.ReactNode; style?: React.CSSProperties }) {
     return (
-        <th style={{ padding: '9px 14px', textAlign: 'left', fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--muted-foreground)', borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap', ...style }}>
+        <th style={{ 
+            padding: '12px 14px', 
+            textAlign: 'left', 
+            fontSize: 11, 
+            fontWeight: 700, 
+            textTransform: 'uppercase', 
+            letterSpacing: '0.05em', 
+            color: 'var(--muted-foreground)', 
+            borderBottom: '1px solid var(--border)', 
+            whiteSpace: 'nowrap',
+            background: 'var(--muted)/30',
+            ...style 
+        }}>
             {children}
         </th>
     );
 }
 function Td({ children, className, style }: { children?: React.ReactNode; className?: string; style?: React.CSSProperties }) {
     return (
-        <td style={{ padding: '11px 14px', fontSize: 14, borderBottom: '1px solid var(--border)', verticalAlign: 'middle', ...style }} className={className}>
+        <td style={{ 
+            padding: '12px 14px', 
+            fontSize: 13, 
+            borderBottom: '1px solid var(--border)', 
+            verticalAlign: 'middle', 
+            ...style 
+        }} className={className}>
             {children}
         </td>
     );
@@ -45,6 +63,92 @@ function ProgressCell({ c }: { c: Contract }) {
             <div style={{ fontSize: 11, color: 'var(--muted-foreground)', marginBottom: 4 }}>{done}/{total}</div>
             <div style={{ height: 4, background: 'var(--muted)', borderRadius: 99, overflow: 'hidden', width: '100%' }}>
                 <div style={{ height: '100%', background: 'var(--primary)', borderRadius: 99, width: `${pct}%` }} />
+            </div>
+        </div>
+    );
+}
+function ExpiryBadge({ endDate }: { endDate: string | null }) {
+    if (!endDate) return null;
+    const end = new Date(endDate);
+    const now = new Date();
+    now.setHours(0, 0, 0, 0); // Normalize now to start of day
+    const diffTime = end.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    let color = 'bg-green-500/10 text-green-600 border-green-200';
+    let icon = 'fa-circle-check';
+    let label = `${diffDays} Hari Lagi`;
+
+    if (diffDays < 0) {
+        color = 'bg-red-500/10 text-red-600 border-red-200';
+        icon = 'fa-circle-exclamation';
+        label = `Expired ${Math.abs(diffDays)} Hari`;
+    } else if (diffDays <= 30) {
+        color = 'bg-red-500/10 text-red-600 border-red-200';
+        icon = 'fa-triangle-exclamation';
+    } else if (diffDays <= 90) {
+        color = 'bg-amber-500/10 text-amber-600 border-amber-200';
+        icon = 'fa-clock';
+    }
+
+    return (
+        <div className={cn("inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-wider", color)}>
+            <i className={cn("fa-solid", icon)} />
+            {label}
+        </div>
+    );
+}
+
+function Pagination({ data, filters }: { data: PaginatedData<Contract>; filters: any }) {
+    if (!data || data.last_page <= 1) return null;
+
+    return (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 py-6 border-t border-border mt-auto">
+            <div className="flex items-center gap-4">
+                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest whitespace-nowrap">
+                    Showing <span className="text-foreground">{data.from}</span> to <span className="text-foreground">{data.to}</span> of <span className="text-foreground">{data.total}</span> Results
+                </div>
+                
+                <div className="flex items-center gap-2 border-l border-border pl-4">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Show</span>
+                    <select 
+                        value={data.per_page} 
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            router.get(window.location.href, { ...filters, per_page: val, page: 1 }, { 
+                                preserveState: true, 
+                                preserveScroll: true 
+                            } as any);
+                        }}
+                        className="bg-muted/50 border border-border rounded px-1.5 py-0.5 text-[10px] font-bold outline-none focus:border-primary/50"
+                    >
+                        {[10, 25, 50, 100].map(v => <option key={v} value={v}>{v}</option>)}
+                    </select>
+                </div>
+            </div>
+            <div className="flex items-center gap-1">
+                {data.links.map((link: any, i: number) => {
+                    const isPrev = i === 0;
+                    const isNext = i === data.links.length - 1;
+                    const label = isPrev ? 'Prev' : isNext ? 'Next' : link.label;
+
+                    return (
+                        <button
+                            key={i}
+                            onClick={() => link.url && router.get(link.url, {}, { preserveState: true, preserveScroll: true })}
+                            disabled={!link.url}
+                            className={cn(
+                                "h-8 px-3 rounded text-[10px] font-black uppercase tracking-tighter transition-all border shrink-0",
+                                link.active 
+                                    ? "bg-slate-950 text-white border-slate-950 shadow-sm" 
+                                    : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50 hover:text-slate-900 active:scale-95",
+                                !link.url && "opacity-30 cursor-not-allowed grayscale"
+                            )}
+                        >
+                            {label}
+                        </button>
+                    );
+                })}
             </div>
         </div>
     );
@@ -162,13 +266,13 @@ function DashboardMetrics({ metrics }: { metrics: any }) {
 
 function MetricCard({ title, value, icon, color }: { title: string; value: string; icon: string; color: string }) {
     const bgMap = {
-        blue: 'bg-blue-500/10 text-blue-600',
-        green: 'bg-green-500/10 text-green-600',
-        amber: 'bg-amber-500/10 text-amber-600',
-        purple: 'bg-purple-500/10 text-purple-600'
+        blue: 'bg-blue-500/10 text-blue-600 border-blue-200/50',
+        green: 'bg-green-500/10 text-green-600 border-green-200/50',
+        amber: 'bg-amber-500/10 text-amber-600 border-amber-200/50',
+        purple: 'bg-purple-500/10 text-purple-600 border-purple-200/50'
     } as any;
     return (
-        <div className="bg-card border border-border rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+        <div className="bg-card border border-border rounded-xl p-5 hover:bg-muted/5 transition-colors relative overflow-hidden group">
             <div className="flex items-start justify-between relative z-10">
                 <div className="space-y-1">
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{title}</p>
@@ -297,16 +401,17 @@ function ProfileView({ meUser, showToast }: { meUser: any; showToast: any }) {
 
 
 // ─── Main Page ──────────────────────────────────────────────────────
-function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, types, currentView, metrics }: {
-    contracts: Contract[];
-    setContracts: React.Dispatch<React.SetStateAction<Contract[]>>;
+function ContractPage({ contracts: contractsPaged, meId, meUser, initialSelected, types, currentView, metrics, filters }: {
+    contracts: PaginatedData<Contract>;
     meId: string;
     meUser: any;
     initialSelected?: Contract | null;
     types: ContractType[];
     currentView: View;
     metrics: any;
+    filters: { search?: string; status?: string; per_page?: number };
 }) {
+    const contracts = contractsPaged.data;
     const { showToast } = useToast();
     const { canCreate, canUpdate, canDelete } = usePermissions('CONTRACTS');
     const [view, setView] = useState<View>(currentView);
@@ -320,8 +425,8 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
 
     const [selected, setSelected] = useState<Contract | null>(initialSelected ?? null);
     const [detailTab, setDetailTab] = useState<'f1' | 'f2' | 'attachments' | 'audit' | 'chat'>('f1');
-    const [search, setSearch] = useState('');
-    const [statusFilter, setStatusFilter] = useState('all');
+    const [search, setSearch] = useState(filters?.search || '');
+    const [statusFilter, setStatusFilter] = useState(filters?.status || 'all');
     const [layout, setLayout] = useState<'list' | 'card'>('list');
     const [approvalNote, setApprovalNote] = useState('');
     const [loading, setLoading] = useState(false);
@@ -351,9 +456,9 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
     }, [initialSelected?.id]);
 
     const updateContract = useCallback((c: Contract) => {
-        setContracts(prev => prev.map(x => x.id === c.id ? c : x));
+        router.reload({ preserveScroll: true, preserveState: true } as any);
         if (selected?.id === c.id) setSelected(c);
-    }, [selected?.id, setContracts]);
+    }, [selected?.id]);
 
     const openDetail = (c: Contract) => { setSelected(c); setDetailTab('f1'); setApprovalNote(''); };
     const closeDetail = () => { setSelected(null); setDetailTab('f1'); };
@@ -376,38 +481,18 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
     const hasAnyPending = !!firstPending;
     const canApprove = (selected?.status === 'in_review' || selected?.status === 'revision') && !!pendingApprovalForMe;
 
-    const applyFilters = (list: Contract[]) => {
-        const q = search.toLowerCase();
-        return list.filter(c => {
-            const matchQ = !q ||
-                c.title.toLowerCase().includes(q) ||
-                c.contract_no.toLowerCase().includes(q) ||
-                (c.creator?.name || '').toLowerCase().includes(q);
-            const matchS = statusFilter === 'all' || c.status === statusFilter;
-            return matchQ && matchS;
-        });
-    };
-
-    const filtered = applyFilters(contracts).filter(c => {
-        let matchV = true;
-        if (view === 'f1') matchV = c.versions.some(v => v.document_type === 'f1');
-        if (view === 'f2') matchV = c.versions.some(v => v.document_type === 'f2');
-        if (view === 'pending') matchV = c.approvals.some(a => a.user_id === meId && a.status === 'pending');
-        if (view === 'mine') matchV = c.created_by === meId;
-        return matchV;
-    });
-
-    const recentContracts = applyFilters(contracts).slice(0, layout === 'card' ? 6 : 4);
-    const myFilteredPending = applyFilters(contracts.filter(c =>
+    const filtered = contracts; // Server handled filtering
+    const recentContracts = contracts.slice(0, layout === 'card' ? 6 : 4);
+    const myFilteredPending = contracts.filter(c =>
         c.approvals.some(a => a.user_id === meId && a.status === 'pending')
-    ));
+    );
 
     // Handlers
     const handleCreate = async (fd: FormData) => {
         setLoading(true);
         try {
-            const c = await contractApi.create(fd);
-            setContracts(prev => [c, ...prev]);
+            await contractApi.create(fd);
+            router.reload({ preserveScroll: true } as any);
             showToast('Kontrak berhasil dibuat!', 'success');
         } catch (err: any) {
             console.error(err);
@@ -493,8 +578,7 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
         setProcessing(true);
         try {
             await contractApi.delete(selected.id);
-            const newContracts = contracts.filter(x => x.id !== selected.id);
-            setContracts(newContracts);
+            router.reload({ preserveScroll: true } as any);
             setSelected(null);
             setDeleteOpen(false);
             showToast('Kontrak berhasil dihapus.', 'success');
@@ -526,7 +610,33 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
 
     const navTo = (v: View) => { setView(v); closeDetail(); };
 
-    const SL: Record<string, string> = { dashboard: 'Dashboard', contracts: 'Semua Kontrak', pending: 'Menunggu Approval', audit: 'Audit Trail', f1: 'Form F1', f2: 'Form F2', profile: 'Profil Saya' };
+    const SL: Record<string, string> = { 
+        dashboard: 'Dashboard', 
+        contracts: 'Semua Kontrak', 
+        pending: 'Menunggu Approval', 
+        audit: 'Audit Trail', 
+        f1: 'Form F1', 
+        f2: 'Form F2', 
+        profile: 'Profil Saya',
+        mine: 'Dokumen Saya',
+        expiry: 'Monitoring Masa Berlaku'
+    };
+
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        router.get(window.location.pathname, { search, status: statusFilter, per_page: filters?.per_page }, { 
+            preserveState: true, 
+            preserveScroll: true 
+        } as any);
+    };
+
+    const handleStatusChange = (val: string) => {
+        setStatusFilter(val);
+        router.get(window.location.pathname, { search, status: val, per_page: filters?.per_page }, { 
+            preserveState: true, 
+            preserveScroll: true 
+        } as any);
+    }
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: SL[view] || 'Dashboard', href: '#' },
@@ -536,9 +646,8 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
         <>
             <Head title={SL[view]} />
 
-            <div className="flex flex-1 flex-col gap-4 p-4">
-                {/* ── View Content ── */}
-                {/* ── Profile ── */}
+        <div className="flex flex-1 flex-col gap-4 p-4 min-h-0">
+            {/* ── View Content ── */}
                 {view === 'profile' && !selected && (
                     <ProfileView meUser={meUser} showToast={showToast} />
                 )}
@@ -685,7 +794,7 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
                 )}
 
                 {/* ── Contracts ── */}
-                {(view === 'contracts' || view === 'f1' || view === 'f2') && !selected && (
+                {(view === 'contracts' || view === 'f1' || view === 'f2' || view === 'mine' || view === 'expiry') && !selected && (
                     <div className="flex flex-col gap-4">
                         {/* Filters Bar */}
                         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -716,7 +825,7 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
                                     </button>
                                 </div>
                                 {canCreate && (
-                                    <button onClick={() => setCreateOpen(true)} className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all active:scale-95">
+                                    <button onClick={() => setCreateOpen(true)} className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-bold border border-primary/20 hover:bg-primary/95 transition-all active:scale-95 shadow-sm">
                                         <i className="fa-solid fa-plus" /> Buat Kontrak
                                     </button>
                                 )}
@@ -728,27 +837,45 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
                             <div className="bg-card border border-border rounded-xl overflow-hidden">
                                 <div style={{ overflowX: 'auto' }}>
                                     <table style={{ width: '100%' }}>
-                                        <thead><tr style={{ background: 'var(--muted)' }}>
-                                            <Th>No. Kontrak</Th><Th>Judul</Th><Th>Tgl Kontrak</Th><Th>Tipe</Th><Th>Status</Th><Th>Versi</Th><Th>Progress</Th><Th></Th>
+                                        <thead><tr style={{ background: 'var(--muted)/40' }}>
+                                            <Th>Judul / No. Kontrak</Th>
+                                            <Th>Pembuat</Th>
+                                            <Th>{view === 'expiry' ? 'Tgl Berakhir' : 'Tgl Kontrak'}</Th>
+                                            <Th>Tipe</Th>
+                                            <Th>Status & Versi</Th>
+                                            <Th>{view === 'expiry' ? 'Sisa Waktu' : 'Progress'}</Th>
+                                            <Th></Th>
                                         </tr></thead>
                                         <tbody>
                                             {filtered.map(c => (
                                                 <tr key={c.id} onClick={() => openDetail(c)} style={{ cursor: 'pointer' }}
                                                     onMouseOver={e => (e.currentTarget as HTMLElement).style.background = 'var(--muted)'}
                                                     onMouseOut={e => (e.currentTarget as HTMLElement).style.background = ''}>
-                                                    <Td><span style={{ fontSize: 12 }}>{c.contract_no}</span></Td>
                                                     <Td>
-                                                        <div className="font-medium" style={{ fontSize: 12 }}>{c.title}</div>
-                                                        <div className="text-muted-foreground" style={{ fontSize: 12, marginTop: 2 }}>{c.creator?.name} · {c.created_at}</div>
+                                                        <div className="font-bold text-slate-900" style={{ fontSize: 13 }}>{c.title}</div>
+                                                        <div className="font-mono text-muted-foreground uppercase tracking-tight" style={{ fontSize: 10, marginTop: 2 }}>{c.contract_no}</div>
                                                     </Td>
-                                                    <Td><span className="text-muted-foreground font-medium" style={{ fontSize: 12 }}>{c.contract_date || '—'}</span></Td>
-                                                    <Td><span className="px-2 py-0.5 bg-muted rounded text-muted-foreground" style={{ fontSize: 12 }}>{c.contract_type || '—'}</span></Td>
-                                                    <Td><StatusBadge status={c.status} /></Td>
-                                                    <Td><span className="font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded" style={{ fontSize: 12 }}>v{c.current_version}</span></Td>
-                                                    <Td><ProgressCell c={c} /></Td>
                                                     <Td>
-                                                        <button onClick={e => { e.stopPropagation(); openDetail(c); }} style={{ padding: '4px 8px', fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, background: 'none', cursor: 'pointer' }}>
-                                                            <i className="fa-solid fa-eye" />
+                                                        <div className="flex items-center gap-2">
+                                                            <Avatar user={c.creator} size="sm" />
+                                                            <div>
+                                                                <div className="font-semibold text-slate-800" style={{ fontSize: 11 }}>{c.creator?.name}</div>
+                                                                <div className="text-muted-foreground" style={{ fontSize: 10 }}>{c.created_at}</div>
+                                                            </div>
+                                                        </div>
+                                                    </Td>
+                                                    <Td><span className="text-slate-600 font-medium">{view === 'expiry' ? (c.end_date || '—') : (c.contract_date || '—')}</span></Td>
+                                                    <Td><span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[11px] font-bold border border-slate-200">{c.contract_type || '—'}</span></Td>
+                                                    <Td>
+                                                        <div className="flex items-center gap-2">
+                                                            <StatusBadge status={c.status} />
+                                                            <span className="font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded text-[10px] font-bold">v{c.current_version}</span>
+                                                        </div>
+                                                    </Td>
+                                                    <Td>{view === 'expiry' ? <ExpiryBadge endDate={c.end_date} /> : <ProgressCell c={c} />}</Td>
+                                                    <Td style={{ textAlign: 'right' }}>
+                                                        <button onClick={e => { e.stopPropagation(); openDetail(c); }} className="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all">
+                                                            <i className="fa-solid fa-chevron-right" />
                                                         </button>
                                                     </Td>
                                                 </tr>
@@ -765,7 +892,7 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                     {filtered.map(c => (
                                         <div key={c.id} onClick={() => openDetail(c)}
-                                            className="bg-card border border-border rounded-xl p-4 hover:border-primary/50 transition-all cursor-pointer group shadow-sm hover:shadow-md">
+                                            className="bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-all cursor-pointer group hover:bg-muted/5 shadow-sm">
                                             <div className="flex justify-between items-start mb-3">
                                                 <span className="font-mono text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded uppercase tracking-wider">{c.contract_no}</span>
                                                 <StatusBadge status={c.status} />
@@ -782,9 +909,12 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
                                             </div>
 
                                             <div className="pt-3 border-t border-border/50 flex items-center justify-between">
-                                                <div className="flex gap-2">
-                                                    <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">v{c.current_version}</span>
-                                                    <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground truncate max-w-[80px]">{c.contract_type}</span>
+                                                <div className="flex flex-col gap-1.5">
+                                                    <div className="flex gap-2">
+                                                        <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">v{c.current_version}</span>
+                                                        <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground truncate max-w-[80px]">{c.contract_type}</span>
+                                                    </div>
+                                                    {c.end_date && <ExpiryBadge endDate={c.end_date} />}
                                                 </div>
                                                 <div className="w-20">
                                                     <ProgressCell c={c} />
@@ -921,13 +1051,17 @@ function ContractPage({ contracts, setContracts, meId, meUser, initialSelected, 
                 )}
 
                 {/* ── Audit ── */}
-
                 {view === 'audit' && !selected && meUser?.role !== 'Admin' && (
                     <div className="bg-card border border-border rounded-xl p-12 text-center text-muted-foreground">
                         <i className="fa-solid fa-lock mb-4 block" style={{ fontSize: 32 }} />
                         <h3 className="font-bold text-gray-900 mb-2" style={{ fontSize: 16 }}>Akses Terbatas</h3>
                         <p style={{ fontSize: 13 }}>Halaman Audit Trail hanya dapat diakses oleh Administrator.</p>
                     </div>
+                )}
+
+                {/* ── Common Pagination ── */}
+                {(!selected && view !== 'dashboard' && view !== 'profile') && (
+                    <Pagination data={contractsPaged} filters={{ search, status: statusFilter }} />
                 )}
 
                 {/* ── Detail ── */}
@@ -1430,28 +1564,50 @@ function DeleteConfirmModal({ open, onClose, onConfirm, processing }: { open: bo
 // ─── Page Entry ──────────────────────────────────────────────────────
 export default function ContractsIndex({ 
     currentView = 'dashboard',
-    contracts: initialContracts = [],
+    contracts: initialContractsPaged = { 
+        data: [], 
+        links: [], 
+        current_page: 1, 
+        last_page: 1, 
+        total: 0,
+        first_page_url: '',
+        last_page_url: '',
+        prev_page_url: null,
+        next_page_url: null,
+        from: 0,
+        to: 0,
+        path: '',
+        per_page: 10
+    } as PaginatedData<Contract>,
     types: initialTypes = [],
-    metrics: initialMetrics = null
+    metrics: initialMetrics = null,
+    filters = {}
 }: { 
     currentView?: View;
-    contracts?: Contract[];
+    contracts?: PaginatedData<Contract>;
     types?: ContractType[];
     metrics?: any;
+    filters?: any;
 }) {
     const { auth, contractId: initialId } = usePage<{ auth: { user: any }; contractId?: string }>().props;
     const meId = auth?.user?.id ?? '';
     const meUser = auth?.user ?? null;
-    const [contracts, setContracts] = useState<Contract[]>(initialContracts);
+    const [contractsPaged, setContractsPaged] = useState<PaginatedData<Contract>>(initialContractsPaged);
     const [types, setTypes] = useState<ContractType[]>(initialTypes);
-    const [bootLoading, setBootLoading] = useState(initialContracts.length === 0);
+    const [bootLoading, setBootLoading] = useState(initialContractsPaged.data.length === 0 && !initialMetrics);
     const [initialSelected, setInitialSelected] = useState<Contract | null>(null);
     const [metrics, setMetrics] = useState<any>(initialMetrics);
 
     useEffect(() => {
-        if (initialContracts.length > 0 && initialTypes.length > 0) {
+        if (initialContractsPaged.data.length > 0) {
+            setContractsPaged(initialContractsPaged);
+        }
+    }, [initialContractsPaged]);
+
+    useEffect(() => {
+        if (initialContractsPaged.data.length > 0 && initialTypes.length > 0) {
             if (initialId) {
-                setInitialSelected(initialContracts.find((c: Contract) => c.id === initialId) ?? null);
+                setInitialSelected(initialContractsPaged.data.find((c: Contract) => c.id === initialId) ?? null);
             }
             return;
         }
@@ -1462,15 +1618,15 @@ export default function ContractsIndex({
             contractApi.getTypes(),
             axios.post('/admin/api/reports/data', {}).then(res => res.data).catch(() => null)
         ]).then(([cData, tData, mData]) => {
-            setContracts(cData);
+            setContractsPaged(cData as any);
             setTypes(tData);
             setMetrics(mData);
             if (initialId) {
-                setInitialSelected(cData.find((c: Contract) => c.id === initialId) ?? null);
+                setInitialSelected(cData.data.find((c: Contract) => c.id === initialId) ?? null);
             }
             setBootLoading(false);
         }).catch(() => setBootLoading(false));
-    }, [initialContracts, initialTypes, initialId]);
+    }, [initialContractsPaged, initialTypes, initialId]);
 
     return (
         <>
@@ -1482,7 +1638,16 @@ export default function ContractsIndex({
                         <span >Memuat data kontrak...</span>
                     </div>
                 ) : (
-                    <ContractPage contracts={contracts} setContracts={setContracts} meId={meId} meUser={meUser} initialSelected={initialSelected} types={types} currentView={currentView} metrics={metrics} />
+                    <ContractPage 
+                        contracts={contractsPaged} 
+                        meId={meId} 
+                        meUser={meUser} 
+                        initialSelected={initialSelected} 
+                        types={types} 
+                        currentView={currentView} 
+                        metrics={metrics}
+                        filters={filters}
+                    />
                 )}
             </ToastProvider>
         </>

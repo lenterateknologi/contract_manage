@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -11,11 +11,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Contract extends Model
 {
     use HasFactory, HasUuids;
+
     protected $fillable = [
         'contract_no',
         'title',
         'description',
         'contract_date',
+        'end_date',
         'contract_type',
         'contract_type_id',
         'status',
@@ -24,7 +26,6 @@ class Contract extends Model
         'workflow_id',
         'workflow_step_id',
     ];
-
 
     public function contractType()
     {
@@ -86,17 +87,18 @@ class Contract extends Model
         if ($this->workflow_id) {
             $steps = $this->workflow->steps ?? collect();
             $total = $steps->count();
-            
+
             // A step is done if all approvals for that step are 'approved'
             $doneCount = 0;
             foreach ($steps as $step) {
                 $approvals = $this->approvals()->where('workflow_step_id', $step->id)->get();
-                if ($approvals->isNotEmpty() && $approvals->every(fn($a) => $a->status === 'approved')) {
+                if ($approvals->isNotEmpty() && $approvals->every(fn ($a) => $a->status === 'approved')) {
                     $doneCount++;
                 }
             }
-            
+
             $pct = $total > 0 ? round(($doneCount / $total) * 100) : 0;
+
             return ['done' => $doneCount, 'total' => $total, 'pct' => $pct];
         }
 

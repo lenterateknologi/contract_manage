@@ -1,4 +1,4 @@
-import { Contract } from '@/types/contracts';
+import { Contract, PaginatedData } from '@/types/contracts';
 import axios from 'axios';
 
 const api = axios.create({
@@ -7,7 +7,7 @@ const api = axios.create({
 });
 
 export const contractApi = {
-    list: (): Promise<Contract[]> => api.get('/api/contracts').then((r) => r.data),
+    list: (params?: any): Promise<PaginatedData<Contract>> => api.get('/api/contracts', { params }).then((r) => r.data),
     get: (id: string): Promise<Contract> => api.get(`/api/contracts/${id}`).then((r) => r.data),
     create: (data: FormData): Promise<Contract> => api.post('/api/contracts', data).then((r) => r.data),
     getWorkflows: (): Promise<any[]> => api.get('/api/contracts/workflows').then((r) => r.data),

@@ -13,6 +13,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types }: 
     const [title, setTitle] = useState('');
     const [desc, setDesc] = useState('');
     const [contractDate, setContractDate] = useState('');
+    const [endDate, setEndDate] = useState('');
     const [contractTypeId, setContractTypeId] = useState('');
     const [changelog, setChangelog] = useState('');
     const [f1File, setF1File] = useState<File | null>(null);
@@ -30,6 +31,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types }: 
         fd.append('title', title);
         fd.append('description', desc);
         fd.append('contract_date', contractDate);
+        fd.append('end_date', endDate);
         if (contractTypeId) fd.append('contract_type_id', contractTypeId);
         fd.append('changelog', changelog);
         fd.append('f1_file', f1File);
@@ -38,7 +40,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types }: 
         try {
             await onSubmit(fd);
             onClose();
-            setTitle(''); setDesc(''); setContractDate(''); setContractTypeId(''); setChangelog(''); setF1File(null);
+            setTitle(''); setDesc(''); setContractDate(''); setEndDate(''); setContractTypeId(''); setChangelog(''); setF1File(null);
         } catch (err: any) {
             if (err.response?.data?.errors) setErrors(err.response.data.errors);
             else setErrors({ general: 'Gagal membuat kontrak.' });
@@ -73,6 +75,9 @@ export default function CreateContractModal({ open, onClose, onSubmit, types }: 
                             <input type="date" value={contractDate} onChange={e => setContractDate(e.target.value)}
                                 className="w-full text-[12px] border border-border rounded-md px-3 py-2 outline-none focus:border-blue-500" />
                         </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Tipe Perjanjian</label>
                             <select value={contractTypeId} onChange={e => setContractTypeId(e.target.value)}
@@ -82,6 +87,11 @@ export default function CreateContractModal({ open, onClose, onSubmit, types }: 
                                     <option key={t.id} value={t.id}>{t.name}</option>
                                 ))}
                             </select>
+                        </div>
+                        <div>
+                            <label className="block text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Tgl Berakhir Kontrak</label>
+                            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
+                                className="w-full text-[12px] border border-border rounded-md px-3 py-2 outline-none focus:border-blue-500" />
                         </div>
                     </div>
 

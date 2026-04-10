@@ -93,13 +93,22 @@ class HandleInertiaRequests extends Middleware
         }
 
         $modules = Module::where('showed_as_menu', true)
-            ->join('module_groups', 'modules.module_group_id', '=', 'module_groups.id')
-            ->whereHas('accessModules', function ($query) use ($role) {
-                $query->where('role_id', $role->id)->where('can_read', true);
+            ->join('access_modules', 'modules.id', '=', 'access_modules.module_id')
+            ->join('module_groups', 'access_modules.module_group_id', '=', 'module_groups.id')
+            ->leftJoin('role_module_groups', function ($join) use ($role) {
+                $join->on('module_groups.id', '=', 'role_module_groups.module_group_id')
+                    ->where('role_module_groups.role_id', '=', $role->id);
             })
-            ->select('modules.*', 'module_groups.title as group_title', 'module_groups.sort_number as group_sort')
-            ->orderBy('group_sort')
-            ->orderBy('modules.sort_number')
+            ->where('access_modules.role_id', $role->id)
+            ->where('access_modules.can_read', true)
+            ->select(
+                'modules.*', 
+                'module_groups.title as group_title', 
+                'access_modules.sort_number as module_sort',
+                'role_module_groups.sort_number as group_sort'
+            )
+            ->orderByRaw('COALESCE(role_module_groups.sort_number, 999)')
+            ->orderBy('access_modules.sort_number')
             ->get();
 
         return $modules->groupBy('group_title')
