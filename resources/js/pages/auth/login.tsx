@@ -39,24 +39,24 @@ export default function Login({ status, canResetPassword, canTestEmail }: LoginP
     };
 
     return (
-        <AuthLayout title="Log in to your account" description="Enter your email and password below to log in">
+        <AuthLayout title="Log in to your account" description="Enter your email or username and password below to log in">
             <Head title="Log in" />
 
             <div className="rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
                 <form className="flex flex-col gap-6" onSubmit={submit}>
                     <div className="grid gap-6">
                         <div className="grid gap-2">
-                            <Label htmlFor="email">Email Address</Label>
+                            <Label htmlFor="email">Email or Username</Label>
                             <Input
                                 id="email"
-                                type="email"
+                                type="text"
                                 required
                                 autoFocus
                                 tabIndex={1}
                                 autoComplete="email"
                                 value={data.email}
                                 onChange={(e) => setData('email', e.target.value)}
-                                placeholder="email@example.com"
+                                placeholder="email@example.com or username"
                             />
                             <InputError message={errors.email} />
                         </div>

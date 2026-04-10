@@ -218,13 +218,13 @@ function DashboardMetrics({ metrics }: { metrics: any }) {
                                             {mo.types.map((t: any, idx: number) => {
                                                 const typePct = (t.count / yMax) * 100;
                                                 return (
-                                                    <div 
+                                                    <div
                                                         key={t.name}
                                                         className={cn(
                                                             "w-full max-w-[8px] rounded-t-sm transition-all duration-500 ease-out hover:brightness-110 cursor-help",
-                                                            idx === 0 ? "bg-primary" : 
-                                                            idx === 1 ? "bg-blue-500" : 
-                                                            idx === 2 ? "bg-purple-500" : "bg-amber-500"
+                                                            idx === 0 ? "bg-primary" :
+                                                                idx === 1 ? "bg-blue-500" :
+                                                                    idx === 2 ? "bg-purple-500" : "bg-amber-500"
                                                         )}
                                                         style={{ height: `${typePct}%`, minHeight: t.count > 0 ? 2 : 0 }}
                                                         title={`${t.name}: ${t.count}`}
@@ -243,16 +243,16 @@ function DashboardMetrics({ metrics }: { metrics: any }) {
                             })}
                         </div>
                     </div>
-                    
+
                     {/* Legend */}
                     <div className="mt-8 flex flex-wrap gap-4 px-4 justify-center">
                         {Array.from(new Set(monthlyTrend?.flatMap((m: any) => m.types.map((t: any) => t.name)) || [])).map((name: any, idx) => (
                             <div key={name} className="flex items-center gap-2">
                                 <div className={cn(
                                     "h-2 w-2 rounded-full",
-                                    idx === 0 ? "bg-primary" : 
-                                    idx === 1 ? "bg-blue-500" : 
-                                    idx === 2 ? "bg-purple-500" : "bg-amber-500"
+                                    idx === 0 ? "bg-primary" :
+                                        idx === 1 ? "bg-blue-500" :
+                                            idx === 2 ? "bg-purple-500" : "bg-amber-500"
                                 )} />
                                 <span className="text-[10px] font-bold text-muted-foreground uppercase">{name}</span>
                             </div>
@@ -1562,7 +1562,7 @@ function DeleteConfirmModal({ open, onClose, onConfirm, processing }: { open: bo
 }
 
 // ─── Page Entry ──────────────────────────────────────────────────────
-export default function ContractsIndex({ 
+export default function ContractsIndex({
     currentView = 'dashboard',
     contracts: initialContractsPaged = { 
         data: [], 

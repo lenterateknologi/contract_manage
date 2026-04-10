@@ -258,7 +258,8 @@ export default function AdminIndex({
     const userForm = useForm({
         name: '',
         email: '',
-        role: roles?.[0]?.name || '',
+        username: '',
+        role: roles?.[0]?.name || 'Initiator',
         password: '',
     });
 
@@ -320,6 +321,7 @@ export default function AdminIndex({
             userForm.setData({
                 name: item.name,
                 email: item.email,
+                username: item.username || '',
                 role: item.role,
                 password: '',
             });
@@ -497,13 +499,12 @@ export default function AdminIndex({
                                     <tr key={u.id} className="hover:bg-slate-50/50 transition-colors group border-l-2 border-transparent hover:border-blue-400">
                                         <td className="px-6 py-4 text-slate-400 font-mono text-[9px] tracking-tighter tabular-nums">{String(u.id).substring(0, 8)}</td>
                                         <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-[10px] font-black text-blue-700 border border-blue-200">
-                                                    {u.name?.charAt(0)}
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    <span className="font-black text-slate-900 uppercase tracking-tighter text-[12px]">{u.name}</span>
-                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{u.email}</span>
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-slate-900">{u.name}</span>
+                                                <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                                                    <span>{u.email}</span>
+                                                    <span className="h-1 w-1 rounded-full bg-slate-300" />
+                                                    <span className="font-mono">{u.username}</span>
                                                 </div>
                                             </div>
                                         </td>
@@ -645,109 +646,19 @@ export default function AdminIndex({
                                             </td>
                                         </tr>
                                         {expandedWorkflowId === w.id && (
-                                            <tr className="bg-slate-50 border-l-2 border-primary">
-                                                <td colSpan={4} className="px-12 py-8">
-                                                    <div className="flex flex-col gap-5 max-w-2xl">
-                                                        <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-                                                            <div className="flex items-center gap-2">
-                                                                <GitMerge className="h-4 w-4 text-primary" />
-                                                                <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-800">Review & Approval Sequence</h4>
-                                                            </div>
-                                                            <Badge variant="outline" className="bg-white text-[9px] font-black h-5 uppercase tracking-tighter shadow-sm border-slate-200 px-2">
-                                                                {w.steps?.length || 0} Stages
-                                                            </Badge>
-                                                        </div>
-                                                        
-                                                        <div className="relative space-y-4">
-                                                             <div className="p-1 border rounded-xl bg-slate-50/50">
-                                                                <DndContext
-                                                                    sensors={sensors}
-                                                                    collisionDetection={closestCenter}
-                                                                    onDragEnd={(event) => {
-                                                                        const { active, over } = event;
-                                                                        if (over && active.id !== over.id) {
-                                                                            const oldIndex = parseInt(String(active.id).split('-')[2]);
-                                                                            const newIndex = parseInt(String(over.id).split('-')[2]);
-                                                                            const newSteps = arrayMove(inlineWorkflowForm.data.steps, oldIndex, newIndex);
-                                                                            inlineWorkflowForm.setData('steps', newSteps);
-                                                                        }
-                                                                    }}
-                                                                >
-                                                                    <div className="space-y-1.5 max-h-[400px] overflow-y-auto custom-scrollbar p-1">
-                                                                        <SortableContext 
-                                                                            items={inlineWorkflowForm.data.steps.map((_, i) => `inline-step-${i}`)} 
-                                                                            strategy={verticalListSortingStrategy}
-                                                                        >
-                                                                            {inlineWorkflowForm.data.steps.map((step, index) => (
-                                                                                <SortableStepItem 
-                                                                                    key={`inline-step-${index}`}
-                                                                                    id={`inline-step-${index}`}
-                                                                                    step={step}
-                                                                                    index={index}
-                                                                                    roles={roles || []}
-                                                                                    users={users || []}
-                                                                                    onRemove={() => {
-                                                                                        const newSteps = inlineWorkflowForm.data.steps.filter((_, i) => i !== index);
-                                                                                        inlineWorkflowForm.setData('steps', newSteps);
-                                                                                    }}
-                                                                                    onUpdateRole={(role) => {
-                                                                                        const newSteps = [...inlineWorkflowForm.data.steps];
-                                                                                        newSteps[index].role = role;
-                                                                                        inlineWorkflowForm.setData('steps', newSteps);
-                                                                                    }}
-                                                                                    onUpdateType={(type) => {
-                                                                                        const newSteps = [...inlineWorkflowForm.data.steps];
-                                                                                        newSteps[index].approver_type = type;
-                                                                                        newSteps[index].user_ids = null;
-                                                                                        inlineWorkflowForm.setData('steps', newSteps);
-                                                                                    }}
-                                                                                    onUpdateUserIds={(userIds) => {
-                                                                                        const newSteps = [...inlineWorkflowForm.data.steps];
-                                                                                        newSteps[index].user_ids = userIds;
-                                                                                        inlineWorkflowForm.setData('steps', newSteps);
-                                                                                    }}
-                                                                                    onUpdateDesc={(description) => {
-                                                                                        const newSteps = [...inlineWorkflowForm.data.steps];
-                                                                                        newSteps[index].description = description;
-                                                                                        inlineWorkflowForm.setData('steps', newSteps);
-                                                                                    }}
-                                                                                />
-                                                                            ))}
-                                                                        </SortableContext>
-                                                                        
-                                                                        <div className="flex gap-2 p-1">
-                                                                            <Button 
-                                                                                type="button" 
-                                                                                variant="outline" 
-                                                                                size="sm" 
-                                                                                className="h-8 flex-1 text-[10px] font-black uppercase tracking-tighter"
-                                                                                onClick={() => inlineWorkflowForm.setData('steps', [...inlineWorkflowForm.data.steps, { role: roles?.[0]?.name || '', approver_type: 'role', user_ids: null, description: '' }])}
-                                                                            >
-                                                                                <Plus className="h-3 w-3 mr-1" /> Tambah Step Inline
-                                                                            </Button>
-                                                                            {JSON.stringify(inlineWorkflowForm.data.steps) !== JSON.stringify(w.steps?.map((s: any) => ({
-                                                                                role: s.role,
-                                                                                approver_type: s.approver_type || 'role',
-                                                                                user_ids: s.user_ids || null,
-                                                                                description: s.description || '',
-                                                                            })) || []) && (
-                                                                                <Button 
-                                                                                    type="button" 
-                                                                                    size="sm" 
-                                                                                    className="h-8 text-[10px] font-black uppercase tracking-tighter shadow-sm"
-                                                                                    disabled={inlineWorkflowForm.processing}
-                                                                                    onClick={() => inlineWorkflowForm.put(route('admin.workflows.update', w.id), {
-                                                                                        preserveScroll: true,
-                                                                                        onSuccess: () => {
-                                                                                            setExpandedWorkflowId(null);
-                                                                                            inlineWorkflowForm.reset();
-                                                                                        }
-                                                                                    })}
-                                                                                >
-                                                                                    {inlineWorkflowForm.processing ? 'Menyimpan...' : 'Simpan Perubahan'}
-                                                                                </Button>
-                                                                            )}
-                                                                        </div>
+                                            <tr className="bg-slate-50/80">
+                                                <td colSpan={4} className="px-16 py-6">
+                                                    <div className="relative border-l-2 border-slate-200 pl-8 space-y-6 py-2">
+                                                        {w.steps?.sort((a: any, b: any) => a.step - b.step).map((step: any, idx: number) => (
+                                                            <div key={step.id} className="relative">
+                                                                {/* Connector dot */}
+                                                                <div className="absolute -left-[37px] top-1 h-4 w-4 rounded-full border-2 border-white bg-slate-300 ring-4 ring-slate-50/80" />
+
+                                                                <div className="flex flex-col">
+                                                                    <div className="flex items-center gap-2 mb-0.5">
+                                                                        <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Step {step.step}</span>
+                                                                        <span className="h-[1px] w-4 bg-slate-200" />
+                                                                        <span className="text-[10px] font-bold text-primary uppercase tracking-tight">{step.role}</span>
                                                                     </div>
                                                                 </DndContext>
                                                              </div>
@@ -866,6 +777,12 @@ export default function AdminIndex({
                                     <div className="grid gap-2">
                                         <Label htmlFor="email">Email</Label>
                                         <Input id="email" type="email" value={userForm.data.email} onChange={e => userForm.setData('email', e.target.value)} required />
+                                        {userForm.errors.email && <p className="text-xs text-destructive">{userForm.errors.email}</p>}
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="username">Username</Label>
+                                        <Input id="username" value={userForm.data.username} onChange={e => userForm.setData('username', e.target.value)} required maxLength={20} />
+                                        {userForm.errors.username && <p className="text-xs text-destructive">{userForm.errors.username}</p>}
                                     </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="role">Role</Label>
