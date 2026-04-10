@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Module;
+use App\Models\Role;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -39,7 +41,6 @@ class HandleInertiaRequests extends Middleware
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
 
         return array_merge(parent::share($request), [
-            ...parent::share($request),
             'name' => config('app.name'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
@@ -50,6 +51,42 @@ class HandleInertiaRequests extends Middleware
                     'text_color' => $request->user()->text_color,
                 ]) : null,
             ],
+            'sidebarNavGroups' => $this->getSidebarNavGroups($request),
         ]);
+    }
+
+    protected function getSidebarNavGroups(Request $request): array
+    {
+        if (! $request->user()) {
+            return [];
+        }
+
+        $role = Role::firstWhere('name', $request->user()->role);
+        if (! $role) {
+            return [];
+        }
+
+        $modules = Module::where('showed_as_menu', true)
+            ->whereHas('accessModules', function ($query) use ($role) {
+                $query->where('role_id', $role->id);
+            })
+            ->with('moduleGroup')
+            ->orderBy('module_group_id')
+            ->orderBy('sort_number')
+            ->get();
+
+        return $modules->groupBy(fn ($module) => $module->moduleGroup?->title ?? 'Other')
+            ->map(function ($items, $title) {
+                return [
+                    'title' => $title,
+                    'items' => $items->map(fn ($module) => [
+                        'title' => $module->title,
+                        'url' => $module->url,
+                        'icon' => $module->icon,
+                    ])->values()->all(),
+                ];
+            })
+            ->values()
+            ->all();
     }
 }

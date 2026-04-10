@@ -2,58 +2,35 @@ import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { type NavItem, type SharedData } from '@/types';
+import { type LucideIcon, LayoutGrid, FileText, Clock, FilePlus, FileEdit, History, ShieldCheck, Users, Settings2, GitBranch } from 'lucide-react';
+import { type NavGroup, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, FileText, Clock, FilePlus, FileEdit, History, ShieldCheck, Users, Settings2, GitBranch } from 'lucide-react';
 import AppLogo from './app-logo';
-
-const navGroups = [
-    {
-        title: 'Ringkasan',
-        items: [
-            { title: 'Dashboard', url: '/dashboard', icon: LayoutGrid },
-        ],
-    },
-    {
-        title: 'Manajemen Kontrak',
-        items: [
-            { title: 'Semua Kontrak', url: '/contracts', icon: FileText },
-            { title: 'Menunggu Approval', url: '/pending', icon: Clock },
-        ],
-    },
-    {
-        title: 'Formulir Standar',
-        items: [
-            { title: 'Form F1', url: '/f1', icon: FilePlus },
-            { title: 'Form F2', url: '/f2', icon: FileEdit },
-        ],
-    },
-    {
-        title: 'Laporan',
-        items: [
-            { title: 'Audit Trail', url: '/audit', icon: History },
-        ],
-    },
-];
-
-const adminGroups = [
-    {
-        title: 'Data Master',
-        items: [
-            { title: 'Pengguna', url: '/admin/users', icon: Users },
-            { title: 'Role', url: '/admin/roles', icon: ShieldCheck },
-            { title: 'Tipe Kontrak', url: '/admin/contract-types', icon: Settings2 },
-            { title: 'Alur Kerja', url: '/admin/workflows', icon: GitBranch },
-        ],
-    },
-];
 
 const footerNavItems: NavItem[] = [];
 
+const iconMap: Record<string, LucideIcon> = {
+    LayoutGrid,
+    FileText,
+    Clock,
+    FilePlus,
+    FileEdit,
+    History,
+    Users,
+    ShieldCheck,
+    Settings2,
+    GitBranch,
+};
+
 export function AppSidebar() {
-    const { auth } = usePage<SharedData>().props;
-    const userRole = (auth.user as any)?.role;
-    const isAdmin = userRole === 'Admin';
+    const { sidebarNavGroups } = usePage<SharedData>().props;
+    const groups = ((sidebarNavGroups as NavGroup[]) ?? []).map((group) => ({
+        ...group,
+        items: group.items.map((item) => ({
+            ...item,
+            icon: typeof item.icon === 'string' ? iconMap[item.icon] ?? null : item.icon,
+        })),
+    }));
 
     return (
         <Sidebar collapsible="icon" variant="inset">
@@ -70,11 +47,7 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                {navGroups.map((group) => (
-                    <NavMain key={group.title} title={group.title} items={group.items} />
-                ))}
-
-                {isAdmin && adminGroups.map((group) => (
+                {groups.map((group) => (
                     <NavMain key={group.title} title={group.title} items={group.items} />
                 ))}
             </SidebarContent>

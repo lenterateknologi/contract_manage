@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\ContractType;
 use App\Models\Workflow;
+use App\Models\Role;
+use App\Models\Module;
+use App\Models\AccessModule;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
 
@@ -49,11 +52,59 @@ class AdminController extends Controller
         return back()->with('success', 'Role updated successfully.');
     }
 
-    public function destroyRole(\App\Models\Role $role)
+    public function destroyRole(Role $role)
     {
         // Prevent deleting core roles if needed, but for now just delete
         $role->delete();
         return back()->with('success', 'Role deleted successfully.');
+    }
+
+    public function roleAccess(Role $role)
+    {
+        $modules = Module::with(['moduleGroup', 'accessModules' => function ($query) use ($role) {
+            $query->where('role_id', $role->id);
+        }])->orderBy('module_group_id')->orderBy('sort_number')->get();
+
+        $modules->transform(function ($module) {
+            $module->access = $module->accessModules->first();
+            unset($module->accessModules);
+            return $module;
+        });
+
+        return Inertia::render('admin/role-access', [
+            'role' => $role,
+            'modules' => $modules,
+        ]);
+    }
+
+    public function updateRoleAccess(Request $request, Role $role)
+    {
+        $data = $request->validate([
+            'accesses' => 'required|array',
+            'accesses.*.module_id' => 'required|uuid|exists:modules,id',
+            'accesses.*.can_read' => 'boolean',
+            'accesses.*.can_create' => 'boolean',
+            'accesses.*.can_update' => 'boolean',
+            'accesses.*.can_delete' => 'boolean',
+        ]);
+
+        foreach ($data['accesses'] as $accessData) {
+            AccessModule::updateOrCreate(
+                [
+                    'role_id' => $role->id,
+                    'module_id' => $accessData['module_id'],
+                ],
+                [
+                    'can_read' => $accessData['can_read'],
+                    'can_create' => $accessData['can_create'],
+                    'can_update' => $accessData['can_update'],
+                    'can_delete' => $accessData['can_delete'],
+                    'created_by' => auth()->id(),
+                ]
+            );
+        }
+
+        return back()->with('success', 'Role access updated successfully.');
     }
 
     public function storeUser(Request $request)

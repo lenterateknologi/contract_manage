@@ -1,7 +1,7 @@
 import { Head, useForm, router } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem } from '@/types';
-import { Users, Settings2, GitBranch, Plus, Pencil, Trash2, Check, AlertCircle, ChevronRight, ChevronDown, ShieldCheck } from 'lucide-react';
+import { Users, Settings2, GitBranch, Plus, Pencil, Trash2, Check, AlertCircle, ChevronRight, ChevronDown, ShieldCheck, Key } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import React, { useState, FormEvent } from 'react';
 import { cn } from '@/lib/utils';
@@ -249,6 +249,11 @@ export default function AdminIndex({ currentView, users, types, workflows, contr
                                         <td className="px-4 py-3 font-medium">{r.name}</td>
                                         <td className="px-4 py-3 text-muted-foreground">{r.description || '-'}</td>
                                         <td className="px-4 py-3 text-right flex justify-end gap-2">
+                                           
+                                            <Button variant="ghost" size="icon" onClick={() => router.visit(`/admin/roles/${r.id}/access`)}>
+                                                <Key className="h-4 w-4" />
+                                            </Button>
+                                        
                                             <Button variant="ghost" size="icon" onClick={() => openEdit(r)}>
                                                 <Pencil className="h-4 w-4" />
                                             </Button>

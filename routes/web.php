@@ -91,6 +91,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/roles', [\App\Http\Controllers\AdminController::class, 'storeRole'])->name('admin.roles.store');
         Route::put('/roles/{role}', [\App\Http\Controllers\AdminController::class, 'updateRole'])->name('admin.roles.update');
         Route::delete('/roles/{role}', [\App\Http\Controllers\AdminController::class, 'destroyRole'])->name('admin.roles.destroy');
+        Route::get('/roles/{role}/access', [\App\Http\Controllers\AdminController::class, 'roleAccess'])->name('admin.roles.access');
+        Route::post('/roles/{role}/access', [\App\Http\Controllers\AdminController::class, 'updateRoleAccess'])->name('admin.roles.access.update');
 
         // Email testing
         Route::post('/test-email', [\App\Http\Controllers\EmailTestController::class, 'sendTestEmail'])->name('admin.test-email');
