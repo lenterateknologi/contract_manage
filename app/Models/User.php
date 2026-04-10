@@ -26,6 +26,7 @@ class User extends Authenticatable
         'role',
         'bg_color',
         'text_color',
+        'username',
     ];
 
     /**

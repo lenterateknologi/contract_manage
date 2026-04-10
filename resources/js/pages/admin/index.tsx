@@ -67,6 +67,7 @@ export default function AdminIndex({ currentView, users, types, workflows, contr
     const userForm = useForm({
         name: '',
         email: '',
+        username: '',
         role: roles?.[0]?.name || 'Initiator',
         password: '',
     });
@@ -103,6 +104,7 @@ export default function AdminIndex({ currentView, users, types, workflows, contr
             userForm.setData({
                 name: item.name,
                 email: item.email,
+                username: item.username || '',
                 role: item.role,
                 password: '', // Don't pre-fill password
             });
@@ -231,7 +233,11 @@ export default function AdminIndex({ currentView, users, types, workflows, contr
                                         <td className="px-6 py-4">
                                             <div className="flex flex-col">
                                                 <span className="font-bold text-slate-900">{u.name}</span>
-                                                <span className="text-[11px] text-slate-500">{u.email}</span>
+                                                <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                                                    <span>{u.email}</span>
+                                                    <span className="h-1 w-1 rounded-full bg-slate-300" />
+                                                    <span className="font-mono">{u.username}</span>
+                                                </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
@@ -351,7 +357,7 @@ export default function AdminIndex({ currentView, users, types, workflows, contr
                                                             <div key={step.id} className="relative">
                                                                 {/* Connector dot */}
                                                                 <div className="absolute -left-[37px] top-1 h-4 w-4 rounded-full border-2 border-white bg-slate-300 ring-4 ring-slate-50/80" />
-                                                                
+
                                                                 <div className="flex flex-col">
                                                                     <div className="flex items-center gap-2 mb-0.5">
                                                                         <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Step {step.step}</span>
@@ -403,6 +409,11 @@ export default function AdminIndex({ currentView, users, types, workflows, contr
                                         <Label htmlFor="email">Email</Label>
                                         <Input id="email" type="email" value={userForm.data.email} onChange={e => userForm.setData('email', e.target.value)} required />
                                         {userForm.errors.email && <p className="text-xs text-destructive">{userForm.errors.email}</p>}
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="username">Username</Label>
+                                        <Input id="username" value={userForm.data.username} onChange={e => userForm.setData('username', e.target.value)} required maxLength={20} />
+                                        {userForm.errors.username && <p className="text-xs text-destructive">{userForm.errors.username}</p>}
                                     </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="role">Role</Label>

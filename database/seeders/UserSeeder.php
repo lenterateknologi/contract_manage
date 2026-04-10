@@ -19,6 +19,7 @@ class UserSeeder extends Seeder
                 'role'       => 'Initiator',
                 'bg_color'   => '#ede9fe',
                 'text_color' => '#5b21b6',
+                'username'   => '1000000000000001',
             ],
             [
                 'name'       => 'Budi Santoso',
@@ -28,6 +29,7 @@ class UserSeeder extends Seeder
                 'role'       => 'Legal',
                 'bg_color'   => '#e0f2fe',
                 'text_color' => '#0369a1',
+                'username'   => '1000000000000002',
             ],
             [
                 'name'       => 'Citra Dewi',
@@ -37,6 +39,7 @@ class UserSeeder extends Seeder
                 'role'       => 'Tax',
                 'bg_color'   => '#fef9c3',
                 'text_color' => '#854d0e',
+                'username'   => '1000000000000003',
             ],
             [
                 'name'       => 'Dian Rahayu',
@@ -46,6 +49,7 @@ class UserSeeder extends Seeder
                 'role'       => 'Management',
                 'bg_color'   => '#dbeafe',
                 'text_color' => '#1d4ed8',
+                'username'   => '1000000000000004',
             ],
             [
                 'name'       => 'Eko Prasetyo',
@@ -55,6 +59,7 @@ class UserSeeder extends Seeder
                 'role'       => 'Direksi',
                 'bg_color'   => '#dcfce7',
                 'text_color' => '#166534',
+                'username'   => '1000000000000005',
             ],
             [
                 'name'       => 'Fajar Vendor',
@@ -64,6 +69,7 @@ class UserSeeder extends Seeder
                 'role'       => 'Vendor',
                 'bg_color'   => '#ffedd5',
                 'text_color' => '#9a3412',
+                'username'   => '1000000000000006',
             ],
             [
                 'name'       => 'Super Admin',
@@ -73,6 +79,7 @@ class UserSeeder extends Seeder
                 'role'       => 'Admin',
                 'bg_color'   => '#fee2e2',
                 'text_color' => '#991b1b',
+                'username'   => '1000000000000007',
             ],
         ];
 

@@ -112,6 +112,7 @@ class AdminController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
+            'username' => 'required|string|max:20|unique:users,username',
             'password' => 'required|string|min:8',
             'role' => 'required|string',
         ]);
@@ -129,6 +130,7 @@ class AdminController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
+            'username' => 'required|string|max:20|unique:users,username,' . $user->id,
             'role' => 'required|string',
             'password' => 'nullable|string|min:8',
         ]);
