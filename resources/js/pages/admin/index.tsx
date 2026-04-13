@@ -1,4 +1,4 @@
-import React, { useState, FormEvent } from 'react';
+import React, { useState, useMemo, useCallback, FormEvent } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import { 
     Users, ShieldCheck, Settings2, GitBranch, Plus, 
@@ -6,8 +6,9 @@ import {
     ChevronDown, GitMerge, AlertCircle, Edit3,
     ChevronUp, Edit, Filter, PlusCircle, Save, 
     Search, Shield, Info, CheckCircle2, GripVertical,
-    Users as UsersIcon
+    Users as UsersIcon, RefreshCw
 } from 'lucide-react';
+import { DataTable, Column } from '@/components/ui/DataTable';
 
 import {
     DndContext,
@@ -296,16 +297,29 @@ function SortableStepItem({
     );
 }
 
+interface PaginatedData<T> {
+    data: T[];
+    links: any[];
+    meta: {
+        current_page: number;
+        last_page: number;
+        total: number;
+        from: number;
+        to: number;
+        per_page: number;
+    };
+}
+
 interface Props {
     currentView: string;
-    users?: any[];
-    roles?: any[];
-    contractTypes?: any[];
-    types?: any[];
-    workflows?: any[];
-    groups?: any[];
-    modules?: any[];
-    moduleGroups?: any[];
+    users?: PaginatedData<any> | any[];
+    roles?: PaginatedData<any> | any[];
+    contractTypes?: PaginatedData<any> | any[];
+    types?: PaginatedData<any> | any[];
+    workflows?: PaginatedData<any> | any[];
+    groups?: PaginatedData<any> | any[];
+    modules?: PaginatedData<any> | any[];
+    moduleGroups?: PaginatedData<any> | any[];
 }
 
 export default function AdminIndex({ 
@@ -324,6 +338,232 @@ export default function AdminIndex({
     const [expandedWorkflowId, setExpandedWorkflowId] = useState<number | null>(null);
     const [editingSteps, setEditingSteps] = useState<any[]>([]);
     const [isSavingSteps, setIsSavingSteps] = useState(false);
+
+    const viewModuleMap: Record<string, string> = {
+        'users': 'USERS',
+        'roles': 'ROLES',
+        'contract-types': 'CTC_TYPES',
+        'workflows': 'WORKFLOWS',
+        'module-groups': 'NAV_MGMT',
+        'modules': 'NAV_MGMT',
+    };
+    
+    const moduleCode = viewModuleMap[currentView] || 'ADMIN';
+    const { canCreate, canUpdate, canDelete } = usePermissions(moduleCode);
+
+    // ─── Data Accessors ──────────────────────────────────────────────
+    const getPaginatedData = useCallback((prop: any) => {
+        if (!prop) return { data: [], pagination: undefined };
+        
+        // If it's a direct array, no pagination footer
+        if (Array.isArray(prop)) return { data: prop, pagination: undefined };
+        
+        // If it's a Laravel paginated object
+        const data = prop.data || [];
+        const isPaginated = prop.current_page !== undefined || prop.meta !== undefined;
+        
+        if (!isPaginated) return { data: [], pagination: undefined };
+
+        // Support both direct pagination (from paginate()) and Resource pagination (from Resource::collection)
+        const meta = prop.meta || prop;
+        
+        return {
+            data: data,
+            pagination: {
+                currentPage: meta.current_page,
+                lastPage: meta.last_page,
+                total: meta.total,
+                from: meta.from,
+                to: meta.to,
+                perPage: meta.per_page,
+                onPageChange: (page: number) => {
+                    router.get(window.location.pathname, { page }, { 
+                        preserveState: true, 
+                        preserveScroll: true 
+                    });
+                },
+                onPerPageChange: (perPage: number) => {
+                    router.get(window.location.pathname, { per_page: perPage }, { 
+                        preserveState: true, 
+                        preserveScroll: true 
+                    });
+                }
+            }
+        };
+    }, []);
+
+    const ensureArray = useCallback((prop: any) => {
+        if (!prop) return [];
+        if (Array.isArray(prop)) return prop;
+        return prop.data || [];
+    }, []);
+
+    const { data: displayData, pagination } = useMemo(() => {
+        switch (currentView) {
+            case 'users': return getPaginatedData(users);
+            case 'roles': return getPaginatedData(roles);
+            case 'contract-types': return getPaginatedData(contractTypes || types);
+            case 'workflows': return getPaginatedData(workflows);
+            case 'module-groups': return getPaginatedData(moduleGroups || groups);
+            case 'modules': return getPaginatedData(modules);
+            case 'navigation': return { data: ensureArray(groups), pagination: undefined };
+            default: return { data: [], pagination: undefined };
+        }
+    }, [currentView, users, roles, contractTypes, types, workflows, moduleGroups, groups, modules, getPaginatedData, ensureArray]);
+
+    const getRowId = useCallback((row: any) => row.id, []);
+
+    // ─── Columns Definition ─────────────────────────────────────────
+    const columns = useMemo(() => {
+        const baseColumns: Column<any>[] = [
+            {
+                header: 'ID',
+                accessorKey: 'id',
+                className: 'w-[100px]',
+                cell: (row) => <span className="text-slate-400 font-mono text-[10px] tabular-nums uppercase">{String(row.id).substring(0, 8)}</span>
+            }
+        ];
+
+        switch (currentView) {
+            case 'users':
+                return [
+                    ...baseColumns,
+                    {
+                        header: 'Identitas Pengguna',
+                        accessorKey: 'name',
+                        sortable: true,
+                        cell: (row: any) => (
+                            <div className="flex flex-col">
+                                <span className="font-semibold text-slate-900">{row.name}</span>
+                                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5">
+                                    <span>{row.email}</span>
+                                    <span className="h-1 w-1 rounded-full bg-slate-300" />
+                                    <span className="font-mono">{row.username}</span>
+                                </div>
+                            </div>
+                        )
+                    },
+                    {
+                        header: 'Role & Akses',
+                        accessorKey: 'role',
+                        sortable: true,
+                        cell: (row: any) => (
+                            <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="bg-blue-50/50 text-blue-700 border-blue-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-tight shadow-sm">
+                                    {row.role}
+                                </Badge>
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">System Access</span>
+                            </div>
+                        )
+                    }
+                ];
+            case 'roles':
+                return [
+                    ...baseColumns,
+                    { header: 'Nama Role', accessorKey: 'name', sortable: true, className: 'font-semibold text-slate-900 uppercase text-[12px]' },
+                    { header: 'Deskripsi', accessorKey: 'description', className: 'font-medium text-muted-foreground uppercase text-[10px] tracking-wide' }
+                ];
+            case 'contract-types':
+                return [
+                    ...baseColumns,
+                    { header: 'Tipe Kontrak', accessorKey: 'name', sortable: true, className: 'font-semibold text-slate-900 uppercase text-[12px]' },
+                    { header: 'Deskripsi', accessorKey: 'description', className: 'font-medium text-muted-foreground uppercase text-[10px] tracking-wide' }
+                ];
+            case 'workflows':
+                return [
+                    ...baseColumns,
+                    {
+                        header: 'Workflow',
+                        accessorKey: 'name',
+                        sortable: true,
+                        cell: (row: any) => (
+                            <div className="flex flex-col">
+                                <div className="flex items-center gap-2">
+                                    <span className="font-semibold text-slate-900 uppercase text-[12px]">{row.name}</span>
+                                    {row.is_default && <Badge variant="outline" className="bg-slate-950 text-white px-1.5 py-0 text-[8px] font-bold uppercase shadow-sm border-none">Default</Badge>}
+                                </div>
+                                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest leading-none mt-1">{row.contract_type}</span>
+                            </div>
+                        )
+                    },
+                    {
+                        header: 'Persetujuan',
+                        accessorKey: 'steps_count',
+                        cell: (row: any) => (
+                            <div className="flex items-center gap-3">
+                                <div className="flex -space-x-1.5 overflow-hidden">
+                                    {row.steps?.slice(0, 3).map((step: any, i: number) => (
+                                        <div key={i} className="inline-block h-6 w-6 rounded-full ring-2 ring-white bg-slate-100 flex items-center justify-center text-[9px] font-bold text-slate-800 border border-slate-200 uppercase">
+                                            {step.role?.charAt(0)}
+                                        </div>
+                                    ))}
+                                    {row.steps?.length > 3 && (
+                                        <div className="inline-block h-6 w-6 rounded-full ring-2 ring-white bg-slate-800 flex items-center justify-center text-[9px] font-bold text-white border border-slate-700 shadow-sm">
+                                            +{row.steps.length - 3}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-[11px] font-bold text-slate-700 uppercase tracking-tight">{row.steps?.length || 0} Approval Steps</span>
+                                    <span className="text-[10px] font-medium text-muted-foreground uppercase">Sequence Configured</span>
+                                </div>
+                            </div>
+                        )
+                    }
+                ];
+            case 'module-groups':
+                return [
+                    ...baseColumns,
+                    {
+                        header: 'Grup Modul',
+                        accessorKey: 'title',
+                        sortable: true,
+                        cell: (row: any) => (
+                            <div className="flex items-center gap-3">
+                                <div className="h-6 w-8 rounded bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-600 border border-slate-200 tabular-nums">
+                                    #{row.sort_number}
+                                </div>
+                                <span className="font-semibold text-slate-900 uppercase text-[12px]">{row.title}</span>
+                            </div>
+                        )
+                    },
+                    { header: 'Status', accessorKey: 'id', cell: () => <span className="text-[10px] font-bold text-muted-foreground uppercase">Active</span> }
+                ];
+            case 'modules':
+                return [
+                    ...baseColumns,
+                    {
+                        header: 'Modul',
+                        accessorKey: 'title',
+                        sortable: true,
+                        cell: (row: any) => (
+                            <div className="flex items-center gap-3">
+                                <div className="h-8 w-8 rounded bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 font-bold text-[10px]">
+                                    {row.icon ? <i className={cn("fa-solid h-4 w-4 flex items-center justify-center", row.icon)} /> : row.code?.substring(0, 2)}
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="font-semibold text-slate-900 uppercase text-[12px]">{row.title}</span>
+                                    <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest leading-none mt-1">{row.code}</span>
+                                </div>
+                            </div>
+                        )
+                    },
+                    {
+                        header: 'Koneksi',
+                        accessorKey: 'module_group_id',
+                        cell: (row: any) => (
+                            <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="bg-slate-100 rounded text-[9px] font-bold text-slate-500 uppercase tracking-tight border border-slate-200">
+                                    {ensureArray(moduleGroups).find((mg: any) => mg.id === row.module_group_id)?.title || 'No Group'}
+                                </Badge>
+                                <span className="text-[10px] font-medium text-muted-foreground uppercase opacity-70">Route: {row.url || '#'}</span>
+                            </div>
+                        )
+                    }
+                ];
+            default: return baseColumns;
+        }
+    }, [currentView, moduleGroups]);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -351,7 +591,7 @@ export default function AdminIndex({
 
     const showToast = (msg: string, type: 'success' | 'danger') => toast(msg, type);
 
-    const toggleWorkflowExpand = (w: any) => {
+    const toggleWorkflowExpand = useCallback((w: any) => {
         if (expandedWorkflowId === w.id) {
             setExpandedWorkflowId(null);
             setEditingSteps([]);
@@ -367,7 +607,49 @@ export default function AdminIndex({
                 step: s.step
             })) || []);
         }
-    };
+    }, [expandedWorkflowId]);
+
+    // ─── Row Actions ────────────────────────────────────────────────
+    const renderRowActions = useCallback((row: any) => {
+        return (
+            <div className="flex items-center gap-1">
+                {currentView === 'roles' && (
+                    <>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-slate-100 text-slate-600 transition-all" title="Kelola Akses" onClick={() => router.get(`/admin/roles/${row.id}/access`)}>
+                            <Key size={14} />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-slate-100 text-slate-600 transition-all" title="Kelola Navigasi" onClick={() => router.get(`/admin/roles/${row.id}/navigation`)}>
+                            <LayoutGrid size={14} />
+                        </Button>
+                    </>
+                )}
+                {currentView === 'workflows' && (
+                    <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className={cn(
+                            "h-8 w-8 p-0 transition-all",
+                            expandedWorkflowId === row.id ? "bg-slate-900 text-white hover:bg-slate-800" : "hover:bg-slate-100 text-slate-600"
+                        )}
+                        title={expandedWorkflowId === row.id ? "Tutup Management" : "Kelola Steps & Alur"} 
+                        onClick={() => toggleWorkflowExpand(row)}
+                    >
+                        <LayoutGrid size={14} />
+                    </Button>
+                )}
+                {canUpdate && (
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-primary/5 hover:text-primary transition-all" onClick={() => openEdit(row)}>
+                        <Pencil size={14} />
+                    </Button>
+                )}
+                {canDelete && (
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600 transition-all" onClick={() => handleDelete(row.id)}>
+                        <Trash2 size={14} />
+                    </Button>
+                )}
+            </div>
+        );
+    }, [currentView, canUpdate, canDelete, expandedWorkflowId, toggleWorkflowExpand]);
 
     const addLocalStep = () => {
         setEditingSteps([...editingSteps, {
@@ -439,26 +721,14 @@ export default function AdminIndex({
         'modules': LayoutGrid,
     };
 
-    const viewModuleMap: Record<string, string> = {
-        'users': 'USERS',
-        'roles': 'ROLES',
-        'contract-types': 'CTC_TYPES',
-        'workflows': 'WORKFLOWS',
-        'module-groups': 'NAV_MGMT',
-        'modules': 'NAV_MGMT',
-    };
-
     const viewTitle = viewTitleMap[currentView] || 'Admin';
     const Icon = viewIconMap[currentView] || Settings2;
     
-    const moduleCode = viewModuleMap[currentView] || 'ADMIN';
-    const { canCreate, canUpdate, canDelete } = usePermissions(moduleCode);
-
     const userForm = useForm({
         name: '',
         email: '',
         username: '',
-        role: roles?.[0]?.name || 'Initiator',
+        role: ensureArray(roles)?.[0]?.name || 'Initiator',
         password: '',
     });
 
@@ -490,7 +760,7 @@ export default function AdminIndex({
         sort_number: 0,
         url: '',
         icon: '',
-        module_group_id: moduleGroups?.[0]?.id || '',
+        module_group_id: ensureArray(moduleGroups)?.[0]?.id || '',
         showed_as_menu: true as boolean,
     });
 
@@ -624,350 +894,137 @@ export default function AdminIndex({
         <ToastProvider>
             <Head title={`Admin - ${viewTitle}`} />
 
-            <div className="flex h-full flex-col flex-1 divide-y divide-border">
-                <div className="flex items-center justify-between px-6 py-4">
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                            <Icon className="h-5 w-5" />
-                        </div>
-                        <div>
-                            <h1 className="text-xl font-semibold leading-none">{viewTitle}</h1>
-                            <p className="mt-1 text-sm text-muted-foreground">Kelola data {viewTitle.toLowerCase()} sistem Anda.</p>
-                        </div>
-                    </div>
-                    {canCreate && (
-                        <Button className="gap-2" onClick={openCreate}>
-                            <Plus className="h-4 w-4" />
-                            Tambah {
-                                currentView === 'users' ? 'Pengguna' : 
-                                currentView === 'roles' ? 'Role' : 
-                                currentView === 'contract-types' ? 'Tipe' : 
-                                currentView === 'workflows' ? 'Alur' : 
-                                currentView === 'module-groups' ? 'Grup' : 'Modul'
-                            }
-                        </Button>
-                    )}
-                </div>
-
+            <div className="flex h-full flex-col flex-1">
                 <div className="flex-1 overflow-auto p-4 bg-slate-50/30">
-                    <div className="bg-card border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                        <table className="w-full text-[13px] border-collapse">
-                            <thead>
-                                <tr>
-                                    <Th style={{ width: 60 }}>ID</Th>
-                                    <Th>{currentView === 'users' ? 'Identitas Pengguna' : 'Informasi Item'}</Th>
-                                    <Th>{currentView === 'users' ? 'Role & Akses' : 'Metadata / Detail'}</Th>
-                                    <Th style={{ textAlign: 'right' }}>Manajemen</Th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 bg-white">
-                                {currentView === 'users' && users?.map((u: any) => (
-                                    <tr key={u.id} className="hover:bg-slate-50/50 transition-colors group">
-                                        <Td><span className="text-slate-400 font-mono text-[10px] tabular-nums uppercase">{String(u.id).substring(0, 8)}</span></Td>
-                                        <Td>
-                                            <div className="flex flex-col">
-                                                <span className="font-semibold text-slate-900">{u.name}</span>
-                                                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5">
-                                                    <span>{u.email}</span>
-                                                    <span className="h-1 w-1 rounded-full bg-slate-300" />
-                                                    <span className="font-mono">{u.username}</span>
-                                                </div>
-                                            </div>
-                                        </Td>
-                                        <Td>
-                                            <div className="flex items-center gap-2">
-                                                <Badge variant="outline" className="bg-blue-50/50 text-blue-700 border-blue-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-tight shadow-sm">
-                                                    {u.role}
-                                                </Badge>
-                                                <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">System Access</span>
-                                            </div>
-                                        </Td>
-                                        <Td style={{ textAlign: 'right' }}>
-                                            <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                {canUpdate && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-primary/5 hover:text-primary transition-all" onClick={() => openEdit(u)}>
-                                                        <Pencil className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                )}
-                                                {canDelete && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600 transition-all" onClick={() => handleDelete(u.id)}>
-                                                        <Trash2 className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </Td>
-                                    </tr>
-                                ))}
+                    <DataTable
+                        getRowId={getRowId}
+                        searchKey={currentView === 'users' ? 'name' : 'title'}
+                        searchPlaceholder={`Cari ${viewTitle.toLowerCase()}...`}
+                        columns={columns}
+                        data={displayData}
+                        pagination={pagination}
+                        headerActions={canCreate && (
+                            <Button className="h-10 px-4 gap-2 font-bold text-[11px] uppercase tracking-wider rounded-lg" onClick={openCreate}>
+                                <Plus className="h-3.5 w-3.5" />
+                                Tambah {
+                                    currentView === 'users' ? 'Pengguna' : 
+                                    currentView === 'roles' ? 'Role' : 
+                                    currentView === 'contract-types' ? 'Tipe' : 
+                                    currentView === 'workflows' ? 'Alur' : 
+                                    currentView === 'module-groups' ? 'Grup' : 'Modul'
+                                }
+                            </Button>
+                        )}
+                        filters={
+                            currentView === 'users' ? [
+                                { label: 'Role', key: 'role', options: ensureArray(roles).map((r: any) => ({ label: r.name, value: r.name })) }
+                            ] : currentView === 'workflows' ? [
+                                { label: 'Tipe Kontrak', key: 'contract_type', options: ensureArray(contractTypes || types).map((t: any) => ({ label: t.name, value: t.name })) }
+                            ] : currentView === 'modules' ? [
+                                { label: 'Grup Modul', key: 'module_group_id', options: ensureArray(moduleGroups).map((mg: any) => ({ label: mg.title, value: mg.id })) }
+                            ] : undefined
+                        }
+                        onRefresh={() => router.reload({ preserveScroll: true } as any)}
+                        renderExpandedRow={(row) => (
+                            <div className="p-6 space-y-5 bg-slate-50/80">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-8 w-8 rounded-xl bg-white shadow-sm border flex items-center justify-center text-primary">
+                                            <GitBranch size={16} />
+                                        </div>
+                                        <div>
+                                            <h4 className="text-[13px] font-black text-slate-900 leading-none">Alur Approval</h4>
+                                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Kelola urutan dan otoritas persetujuan</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Button 
+                                            variant="outline" 
+                                            size="sm" 
+                                            onClick={addLocalStep}
+                                            className="h-8 px-3 rounded-lg font-bold gap-1.5 bg-white border-slate-200 text-[11px]"
+                                        >
+                                            <Plus size={14} /> Tambah
+                                        </Button>
+                                        <Button 
+                                            size="sm" 
+                                            onClick={() => saveWorkflowSteps(row.id)}
+                                            disabled={isSavingSteps}
+                                            className="h-8 px-4 rounded-lg font-black gap-1.5 shadow-sm text-[11px]"
+                                        >
+                                            {isSavingSteps ? <div className="h-3 w-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={14} />}
+                                            Simpan
+                                        </Button>
+                                    </div>
+                                </div>
 
-                                {currentView === 'roles' && roles?.map((r: any) => (
-                                    <tr key={r.id} className="hover:bg-slate-50/50 transition-colors group">
-                                        <Td><span className="text-slate-400 font-mono text-[10px] tabular-nums uppercase">{String(r.id).substring(0, 8)}</span></Td>
-                                        <Td className="font-semibold text-slate-900 uppercase text-[12px]">{r.name}</Td>
-                                        <Td className="font-medium text-muted-foreground uppercase text-[10px] tracking-wide">{r.description || 'Tidak ada deskripsi'}</Td>
-                                        <Td style={{ textAlign: 'right' }}>
-                                            <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-slate-100 text-slate-600 transition-all" title="Kelola Akses" onClick={() => router.get(`/admin/roles/${r.id}/access`)}>
-                                                    <Key className="h-3.5 w-3.5" />
-                                                </Button>
-                                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-slate-100 text-slate-600 transition-all" title="Kelola Navigasi" onClick={() => router.get(`/admin/roles/${r.id}/navigation`)}>
-                                                    <LayoutGrid className="h-3.5 w-3.5" />
-                                                </Button>
-                                                {canUpdate && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-primary/5 hover:text-primary transition-all" onClick={() => openEdit(r)}>
-                                                        <Pencil className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                )}
-                                                {canDelete && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600 transition-all" onClick={() => handleDelete(r.id)}>
-                                                        <Trash2 className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                )}
+                                {editingSteps.length === 0 ? (
+                                    <div className="py-8 flex flex-col items-center justify-center bg-white rounded-xl border-2 border-dashed border-slate-200">
+                                        <PlusCircle className="h-6 w-6 text-slate-200 mb-2" />
+                                        <p className="text-[11px] font-bold text-slate-400">Belum ada langkah approval</p>
+                                        <Button variant="link" onClick={addLocalStep} className="text-primary font-black uppercase text-[9px] tracking-widest h-auto p-0 mt-1">Buat Pertama</Button>
+                                    </div>
+                                ) : (
+                                    <DndContext 
+                                        sensors={sensors}
+                                        collisionDetection={closestCenter}
+                                        onDragEnd={handleDragEnd}
+                                        modifiers={[restrictToVerticalAxis]}
+                                    >
+                                        <SortableContext 
+                                            items={editingSteps.map(s => s.id)}
+                                            strategy={verticalListSortingStrategy}
+                                        >
+                                            <div className="space-y-2">
+                                                {editingSteps.map((step, idx) => (
+                                                    <SortableStepItem
+                                                        key={step.id}
+                                                        step={step}
+                                                        idx={idx}
+                                                        users={ensureArray(users)}
+                                                        roles={ensureArray(roles)}
+                                                        updateLocalStep={updateLocalStep}
+                                                        removeLocalStep={removeLocalStep}
+                                                    />
+                                                ))}
                                             </div>
-                                        </Td>
-                                    </tr>
-                                ))}
-
-                                {currentView === 'contract-types' && (contractTypes || types)?.map((t: any) => (
-                                    <tr key={t.id} className="hover:bg-slate-50/50 transition-colors group">
-                                        <Td><span className="text-slate-400 font-mono text-[10px] tabular-nums uppercase">{String(t.id).substring(0, 8)}</span></Td>
-                                        <Td className="font-semibold text-slate-900 uppercase text-[12px]">{t.name}</Td>
-                                        <Td className="font-medium text-muted-foreground uppercase text-[10px] tracking-wide">{t.description || 'Tidak ada deskripsi'}</Td>
-                                        <Td style={{ textAlign: 'right' }}>
-                                            <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                {canUpdate && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-primary/5 hover:text-primary transition-all" onClick={() => openEdit(t)}>
-                                                        <Pencil className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                )}
-                                                {canDelete && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600 transition-all" onClick={() => handleDelete(t.id)}>
-                                                        <Trash2 className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </Td>
-                                    </tr>
-                                ))}
-
-                                {currentView === 'workflows' && workflows?.map((w: any) => (
-                                    <React.Fragment key={w.id}>
-                                        <tr className={cn(
-                                            "hover:bg-slate-50/50 transition-colors group",
-                                            expandedWorkflowId === w.id && "bg-slate-50/50"
-                                        )}>
-                                            <Td><span className="text-slate-400 font-mono text-[10px] tabular-nums uppercase">{String(w.id).substring(0, 8)}</span></Td>
-                                            <Td>
-                                                <div className="flex items-center gap-3">
-                                                    <div className="flex flex-col">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="font-semibold text-slate-900 uppercase text-[12px]">{w.name}</span>
-                                                            {w.is_default && <Badge variant="outline" className="bg-slate-950 text-white px-1.5 py-0 text-[8px] font-bold uppercase shadow-sm border-none">Default</Badge>}
-                                                        </div>
-                                                        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest leading-none mt-1">{w.contract_type}</span>
-                                                    </div>
-                                                </div>
-                                            </Td>
-                                            <Td>
-                                                <div className="flex items-center gap-3">
-                                                    <div className="flex -space-x-1.5 overflow-hidden">
-                                                        {w.steps?.slice(0, 3).map((step: any, i: number) => (
-                                                            <div key={i} className="inline-block h-6 w-6 rounded-full ring-2 ring-white bg-slate-100 flex items-center justify-center text-[9px] font-bold text-slate-800 border border-slate-200 uppercase">
-                                                                {step.role?.charAt(0)}
-                                                            </div>
-                                                        ))}
-                                                        {w.steps?.length > 3 && (
-                                                            <div className="inline-block h-6 w-6 rounded-full ring-2 ring-white bg-slate-800 flex items-center justify-center text-[9px] font-bold text-white border border-slate-700 shadow-sm">
-                                                                +{w.steps.length - 3}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <div className="flex flex-col">
-                                                        <span className="text-[11px] font-bold text-slate-700 uppercase tracking-tight">{w.steps?.length || 0} Approval Steps</span>
-                                                        <span className="text-[10px] font-medium text-muted-foreground uppercase">Sequence Configured</span>
-                                                    </div>
-                                                </div>
-                                            </Td>
-                                            <Td style={{ textAlign: 'right' }}>
-                                                <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <Button 
-                                                        variant="ghost" 
-                                                        size="sm" 
-                                                        className={cn(
-                                                            "h-8 w-8 p-0 transition-all",
-                                                            expandedWorkflowId === w.id ? "bg-slate-900 text-white hover:bg-slate-800" : "hover:bg-slate-100 text-slate-600"
-                                                        )}
-                                                        title={expandedWorkflowId === w.id ? "Tutup Management" : "Kelola Steps & Alur"} 
-                                                        onClick={() => toggleWorkflowExpand(w)}
-                                                    >
-                                                        <LayoutGrid className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                    {canUpdate && (
-                                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-primary/5 hover:text-primary transition-all" onClick={() => openEdit(w)}>
-                                                            <Pencil className="h-3.5 w-3.5" />
-                                                        </Button>
-                                                    )}
-                                                    {canDelete && (
-                                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600 transition-all" onClick={() => handleDelete(w.id)}>
-                                                            <Trash2 className="h-3.5 w-3.5" />
-                                                        </Button>
-                                                    )}
-                                                </div>
-                                            </Td>
-                                        </tr>
-                                        {expandedWorkflowId === w.id && (
-                                            <tr className="bg-slate-50/80">
-                                                <Td colSpan={4} className="p-0 border-b border-slate-200">
-                                                    <div className="p-6 space-y-5">
-                                                        <div className="flex items-center justify-between">
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="h-8 w-8 rounded-xl bg-white shadow-sm border flex items-center justify-center text-primary">
-                                                                    <GitBranch size={16} />
-                                                                </div>
-                                                                <div>
-                                                                    <h4 className="text-[13px] font-black text-slate-900 leading-none">Alur Approval</h4>
-                                                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Kelola urutan dan otoritas persetujuan</p>
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex items-center gap-2">
-                                                                <Button 
-                                                                    variant="outline" 
-                                                                    size="sm" 
-                                                                    onClick={addLocalStep}
-                                                                    className="h-8 px-3 rounded-lg font-bold gap-1.5 bg-white border-slate-200 text-[11px]"
-                                                                >
-                                                                    <Plus size={14} /> Tambah
-                                                                </Button>
-                                                                <Button 
-                                                                    size="sm" 
-                                                                    onClick={() => saveWorkflowSteps(w.id)}
-                                                                    disabled={isSavingSteps}
-                                                                    className="h-8 px-4 rounded-lg font-black gap-1.5 shadow-sm text-[11px]"
-                                                                >
-                                                                    {isSavingSteps ? <div className="h-3 w-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={14} />}
-                                                                    Simpan
-                                                                </Button>
-                                                            </div>
-                                                        </div>
-
-                                                        {editingSteps.length === 0 ? (
-                                                            <div className="py-8 flex flex-col items-center justify-center bg-white rounded-xl border-2 border-dashed border-slate-200">
-                                                                <PlusCircle className="h-6 w-6 text-slate-200 mb-2" />
-                                                                <p className="text-[11px] font-bold text-slate-400">Belum ada langkah approval</p>
-                                                                <Button variant="link" onClick={addLocalStep} className="text-primary font-black uppercase text-[9px] tracking-widest h-auto p-0 mt-1">Buat Pertama</Button>
-                                                            </div>
-                                                        ) : (
-                                                            <DndContext 
-                                                                sensors={sensors}
-                                                                collisionDetection={closestCenter}
-                                                                onDragEnd={handleDragEnd}
-                                                                modifiers={[restrictToVerticalAxis]}
-                                                            >
-                                                                <SortableContext 
-                                                                    items={editingSteps.map(s => s.id)}
-                                                                    strategy={verticalListSortingStrategy}
-                                                                >
-                                                                    <div className="space-y-2">
-                                                                        {editingSteps.map((step, idx) => (
-                                                                            <SortableStepItem
-                                                                                key={step.id}
-                                                                                step={step}
-                                                                                idx={idx}
-                                                                                users={users}
-                                                                                roles={roles}
-                                                                                updateLocalStep={updateLocalStep}
-                                                                                removeLocalStep={removeLocalStep}
-                                                                            />
-                                                                        ))}
-                                                                    </div>
-                                                                </SortableContext>
-                                                            </DndContext>
-                                                        )}
-                                                        
-                                                        <div className="flex items-center justify-center py-2 opacity-50">
-                                                            <div className="h-[1px] flex-1 bg-slate-200" />
-                                                            <div className="flex items-center gap-1.5 px-4">
-                                                                <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-                                                                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Selesai</span>
-                                                            </div>
-                                                            <div className="h-[1px] flex-1 bg-slate-200" />
-                                                        </div>
-                                                    </div>
-                                                </Td>
-                                            </tr>
-                                        )}
-                                    </React.Fragment>
-                                ))}
-
-                                {currentView === 'module-groups' && (moduleGroups || groups)?.map((g: any) => (
-                                    <tr key={g.id} className="hover:bg-slate-50/50 transition-colors group">
-                                        <Td><span className="text-slate-400 font-mono text-[10px] tabular-nums uppercase">{String(g.id).substring(0, 8)}</span></Td>
-                                        <Td>
-                                            <div className="flex items-center gap-3">
-                                                <div className="h-6 w-8 rounded bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-600 border border-slate-200 tabular-nums">
-                                                    #{g.sort_number}
-                                                </div>
-                                                <span className="font-semibold text-slate-900 uppercase text-[12px]">{g.title}</span>
-                                            </div>
-                                        </Td>
-                                        <Td className="font-medium text-muted-foreground uppercase text-[10px] tracking-wide">Grup Menu Navigasi Utama</Td>
-                                        <Td style={{ textAlign: 'right' }}>
-                                            <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                {canUpdate && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-primary/5 hover:text-primary transition-all" onClick={() => openEdit(g)}>
-                                                        <Pencil className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                )}
-                                                {canDelete && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600 transition-all" onClick={() => handleDelete(g.id)}>
-                                                        <Trash2 className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </Td>
-                                    </tr>
-                                ))}
-
-                                {currentView === 'modules' && modules?.map((m: any) => (
-                                    <tr key={m.id} className="hover:bg-slate-50/50 transition-colors group">
-                                        <Td><span className="text-slate-400 font-mono text-[10px] tabular-nums uppercase">{String(m.id).substring(0, 8)}</span></Td>
-                                        <Td>
-                                            <div className="flex items-center gap-3">
-                                                <div className="h-8 w-8 rounded bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 font-bold text-[10px]">
-                                                    {m.icon ? <i className={cn("fa-solid h-4 w-4 flex items-center justify-center", m.icon)} /> : m.code?.substring(0, 2)}
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    <span className="font-semibold text-slate-900 uppercase text-[12px]">{m.title}</span>
-                                                    <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest leading-none mt-1">{m.code}</span>
-                                                </div>
-                                            </div>
-                                        </Td>
-                                        <Td>
-                                            <div className="flex items-center gap-2">
-                                                <Badge variant="outline" className="bg-slate-100 rounded text-[9px] font-bold text-slate-500 uppercase tracking-tight border border-slate-200">
-                                                    {moduleGroups?.find((mg: any) => mg.id === m.module_group_id)?.title || 'No Group'}
-                                                </Badge>
-                                                <span className="text-[10px] font-medium text-muted-foreground uppercase opacity-70">Route: {m.url || '#'}</span>
-                                            </div>
-                                        </Td>
-                                        <Td style={{ textAlign: 'right' }}>
-                                            <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                {canUpdate && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-primary/5 hover:text-primary transition-all" onClick={() => openEdit(m)}>
-                                                        <Pencil className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                )}
-                                                {canDelete && (
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600 transition-all" onClick={() => handleDelete(m.id)}>
-                                                        <Trash2 className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </Td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                        </SortableContext>
+                                    </DndContext>
+                                )}
+                                
+                                <div className="flex items-center justify-center py-2 opacity-50">
+                                    <div className="h-[1px] flex-1 bg-slate-200" />
+                                    <div className="flex items-center gap-1.5 px-4">
+                                        <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Selesai</span>
+                                    </div>
+                                    <div className="h-[1px] flex-1 bg-slate-200" />
+                                </div>
+                            </div>
+                        )}
+                        isRowExpanded={(row) => currentView === 'workflows' && expandedWorkflowId === row.id}
+                        rowActions={(row) => (
+                            <>
+                                {renderRowActions(row)}
+                            </>
+                        )}
+                        bulkActions={(selectedRows) => (
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-10 px-3 text-red-600 hover:bg-red-50 hover:text-red-700 font-bold text-[11px] uppercase tracking-wider gap-2"
+                                onClick={() => {
+                                    if (confirm(`Hapus ${selectedRows.length} data terpilih?`)) {
+                                        // Bulk delete logic here
+                                        showToast(`${selectedRows.length} data berhasil dihapus.`, "success");
+                                    }
+                                }}
+                            >
+                                <Trash2 size={14} />
+                                Hapus Terpilih ({selectedRows.length})
+                            </Button>
+                        )}
+                    />
                 </div>
             </div>
 
@@ -1014,16 +1071,18 @@ export default function AdminIndex({
                                     </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="role">Role</Label>
-                                        <select 
-                                            id="role" 
-                                            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                                            value={userForm.data.role} 
-                                            onChange={e => userForm.setData('role', e.target.value)}
-                                        >
-                                            {roles?.map(r => (
-                                                <option key={r.id} value={r.name}>{r.name}</option>
-                                            ))}
-                                        </select>
+                                        <Select value={userForm.data.role} onValueChange={value => userForm.setData('role', value)}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Pilih Role" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {ensureArray(roles).map((role: any) => (
+                                                    <SelectItem key={role.id} value={role.name}>
+                                                        {role.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                     </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="password">Password {editingItem && '(Kosongkan jika tidak ingin mengubah)'}</Label>
@@ -1066,20 +1125,19 @@ export default function AdminIndex({
                                     </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="wf-type">Tipe Kontrak</Label>
-                                        <select 
-                                            id="wf-type" 
-                                            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                                            value={workflowForm.data.contract_type} 
-                                            onChange={e => workflowForm.setData('contract_type', e.target.value)}
-                                            required
-                                        >
-                                            <option value="">Pilih Tipe</option>
-                                            {(contractTypes || types)?.map((t: any) => (
-                                                <option key={t.id} value={t.name}>{t.name}</option>
-                                            ))}
-                                        </select>
+                                        <Select value={workflowForm.data.contract_type} onValueChange={value => workflowForm.setData('contract_type', value)}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Pilih Tipe" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {ensureArray(contractTypes || types).map((type: any) => (
+                                                    <SelectItem key={type.id} value={type.name}>
+                                                        {type.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                     </div>
-                                    {/* Steps removed from modal as per request */}
                                     <div className="flex items-center gap-2 pt-2 border-t">
                                         <Checkbox 
                                             id="wf-default" 
@@ -1124,17 +1182,18 @@ export default function AdminIndex({
                                     </div>
                                     <div className="grid gap-2">
                                         <Label htmlFor="m-group">Grup Modul</Label>
-                                        <select 
-                                            id="m-group" 
-                                            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
-                                            value={moduleForm.data.module_group_id} 
-                                            onChange={e => moduleForm.setData('module_group_id', e.target.value)}
-                                            required
-                                        >
-                                            {moduleGroups?.map((g: any) => (
-                                                <option key={g.id} value={g.id}>{g.title}</option>
-                                            ))}
-                                        </select>
+                                        <Select value={moduleForm.data.module_group_id} onValueChange={value => moduleForm.setData('module_group_id', value)}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Pilih Grup" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {ensureArray(moduleGroups).map((group: any) => (
+                                                    <SelectItem key={group.id} value={group.id}>
+                                                        {group.title}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Checkbox 

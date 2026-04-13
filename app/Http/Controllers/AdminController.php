@@ -21,8 +21,12 @@ class AdminController extends Controller
     {
         return Inertia::render('admin/index', [
             'currentView' => 'users',
-            'users' => User::orderBy('name')->get(),
+            'users' => User::orderBy('name')->paginate(request('per_page', 10)),
             'roles' => Role::orderBy('name')->get(),
+            'breadcrumbs' => [
+                ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
+                ['title' => 'Manajemen User', 'href' => route('admin.users'), 'description' => 'Kelola akses dan profil pengguna sistem.', 'icon' => 'Users'],
+            ],
         ]);
     }
 
@@ -30,7 +34,11 @@ class AdminController extends Controller
     {
         return Inertia::render('admin/index', [
             'currentView' => 'roles',
-            'roles' => Role::orderBy('name')->get(),
+            'roles' => Role::orderBy('name')->paginate(request('per_page', 10)),
+            'breadcrumbs' => [
+                ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
+                ['title' => 'Manajemen Role', 'href' => route('admin.roles'), 'description' => 'Pengaturan peran dan otorisasi.', 'icon' => 'ShieldCheck'],
+            ],
         ]);
     }
 
@@ -82,6 +90,11 @@ class AdminController extends Controller
         return Inertia::render('admin/role-access', [
             'role' => $role,
             'modules' => $modules,
+            'breadcrumbs' => [
+                ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
+                ['title' => 'Manajemen Role', 'href' => route('admin.roles'), 'icon' => 'ShieldCheck'],
+                ['title' => 'Hak Akses', 'href' => '#', 'description' => "Otorisasi modul untuk role {$role->name}.", 'icon' => 'Settings2'],
+            ],
         ]);
     }
 
@@ -149,6 +162,11 @@ class AdminController extends Controller
             'role' => $role,
             'navigation' => $groups,
             'allModules' => $allModules,
+            'breadcrumbs' => [
+                ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
+                ['title' => 'Manajemen Role', 'href' => route('admin.roles'), 'icon' => 'ShieldCheck'],
+                ['title' => 'Struktur Navigasi', 'href' => '#', 'description' => "Kelola urutan menu untuk role {$role->name}.", 'icon' => 'LayoutGrid'],
+            ],
         ]);
     }
 
@@ -278,7 +296,11 @@ class AdminController extends Controller
     {
         return Inertia::render('admin/index', [
             'currentView' => 'contract-types',
-            'types' => ContractType::orderBy('name')->get(),
+            'types' => ContractType::orderBy('name')->paginate(request('per_page', 10)),
+            'breadcrumbs' => [
+                ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
+                ['title' => 'Tipe Kontrak', 'href' => route('admin.contract-types'), 'description' => 'Definisi kategori dan template dokumen.', 'icon' => 'FileText'],
+            ],
         ]);
     }
 
@@ -317,10 +339,14 @@ class AdminController extends Controller
     {
         return Inertia::render('admin/index', [
             'currentView' => 'workflows',
-            'workflows' => Workflow::with('steps.users')->orderBy('name')->get(),
+            'workflows' => Workflow::with('steps.users')->orderBy('name')->paginate(request('per_page', 10)),
             'contractTypes' => ContractType::all(),
             'roles' => Role::all(),
             'users' => User::all(),
+            'breadcrumbs' => [
+                ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
+                ['title' => 'Alur Kerja (Workflows)', 'href' => route('admin.workflows'), 'description' => 'Konfigurasi tahapan persetujuan.', 'icon' => 'GitBranch'],
+            ],
         ]);
     }
 
@@ -456,7 +482,32 @@ class AdminController extends Controller
 
         return Inertia::render('admin/index', [
             'currentView' => 'navigation',
-            'navigation' => $groups,
+            'groups' => $groups,
+        ]);
+    }
+
+    public function moduleGroups()
+    {
+        return Inertia::render('admin/index', [
+            'currentView' => 'module-groups',
+            'moduleGroups' => ModuleGroup::orderBy('sort_number')->paginate(request('per_page', 10)),
+            'breadcrumbs' => [
+                ['title' => 'Administrasi', 'href' => '#'],
+                ['title' => 'Grup Modul', 'href' => route('admin.module-groups'), 'description' => 'Kelola pengelompokan menu navigasi.'],
+            ],
+        ]);
+    }
+
+    public function modules()
+    {
+        return Inertia::render('admin/index', [
+            'currentView' => 'modules',
+            'modules' => Module::with('moduleGroup')->orderBy('title')->paginate(request('per_page', 10)),
+            'moduleGroups' => ModuleGroup::all(),
+            'breadcrumbs' => [
+                ['title' => 'Administrasi', 'href' => '#'],
+                ['title' => 'Modul Sistem', 'href' => route('admin.modules'), 'description' => 'Kelola modul dan fitur aplikasi.'],
+            ],
         ]);
     }
 
@@ -502,6 +553,42 @@ class AdminController extends Controller
     }
 
     // Module Groups
+
+    public function storeModuleGroup(Request $request)
+    {
+        $data = $request->validate([
+            'title' => 'required|string|max:255',
+            'sort_number' => 'required|integer',
+        ]);
+
+        $data['created_by'] = auth()->id();
+        $data['updated_by'] = auth()->id();
+
+        ModuleGroup::create($data);
+
+        return back()->with('success', 'Module group created successfully.');
+    }
+
+    public function updateModuleGroup(Request $request, ModuleGroup $group)
+    {
+        $data = $request->validate([
+            'title' => 'required|string|max:255',
+            'sort_number' => 'required|integer',
+        ]);
+
+        $data['updated_by'] = auth()->id();
+
+        $group->update($data);
+
+        return back()->with('success', 'Module group updated successfully.');
+    }
+
+    public function destroyModuleGroup(ModuleGroup $group)
+    {
+        $group->delete();
+
+        return back()->with('success', 'Module group deleted successfully.');
+    }
 
     public function storeModule(Request $request)
     {

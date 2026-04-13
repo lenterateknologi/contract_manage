@@ -13,6 +13,8 @@ export interface Auth {
 export interface BreadcrumbItem {
     title: string;
     href: string;
+    description?: string;
+    icon?: LucideIcon | string | null;
 }
 
 export interface NavGroup {

@@ -513,22 +513,7 @@ export default function RoleNavigation({ role, navigation: initialNavigation, al
             
             <div className="flex flex-col h-[calc(100vh-64px)] p-4 gap-4">
                 {/* Header Section - Compact Version */}
-                <div className="flex items-center justify-between bg-white px-5 py-3 rounded-xl border border-slate-200 shadow-sm shrink-0">
-                    <div className="flex items-center gap-4">
-                        <div className="bg-primary/10 p-2 rounded-lg">
-                            <ShieldCheck className="text-primary" size={20} />
-                        </div>
-                        <div>
-                            <h1 className="text-base font-black text-slate-900 tracking-tight">Manajemen Navigasi</h1>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Role:</span>
-                                <span className="px-2 py-0.5 bg-slate-950 text-white text-[9px] font-black rounded-md uppercase tracking-wider shadow-sm">
-                                    {role.name}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    
+                <div className="flex items-center justify-end bg-white px-5 py-3 rounded-xl border border-slate-200 shadow-sm shrink-0">
                     <div className="flex items-center gap-2">
                         <Button 
                             variant="outline" 

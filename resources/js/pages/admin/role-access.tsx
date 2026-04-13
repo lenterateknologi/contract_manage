@@ -126,21 +126,6 @@ export default function RoleAccess({ role, modules }: Props) {
                 {/* Header Section */}
                 <div className="bg-white border-b px-6 py-4 sticky top-0 z-20 shadow-sm">
                     <div className="max-w-[1400px] mx-auto flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <Button variant="outline" size="icon" className="rounded-full h-9 w-9" onClick={() => router.visit('/admin/roles')}>
-                                <ArrowLeft className="h-4 w-4" />
-                            </Button>
-                            <div>
-                                <div className="flex items-center gap-2">
-                                    <Shield className="h-5 w-5 text-primary" />
-                                    <h1 className="text-lg font-bold tracking-tight text-slate-900">Konfigurasi Hak Akses</h1>
-                                </div>
-                                <p className="text-[11px] font-medium text-slate-500 uppercase tracking-[0.15em]">
-                                    Role: <span className="text-primary font-black">{role.name}</span> • {role.description || 'Pengaturan otorisasi modul'}
-                                </p>
-                            </div>
-                        </div>
-
                         <div className="flex items-center gap-2">
                             <div className="flex bg-slate-100 p-1 rounded-lg border mr-4">
                                 <Button 

@@ -1,7 +1,28 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
 import { cn } from '@/lib/utils';
 import { Head, router, usePage, useForm } from '@inertiajs/react';
+import { 
+    Plus, 
+    FileText, 
+    Clock, 
+    CheckCircle2, 
+    AlertCircle, 
+    XCircle, 
+    Search, 
+    Filter, 
+    MoreHorizontal, 
+    FileDown, 
+    History, 
+    MessageSquare, 
+    ExternalLink,
+    ChevronDown,
+    LayoutGrid,
+    List as ListIcon,
+    RefreshCcw,
+    User,
+    FileSearch
+} from 'lucide-react';
 import { Contract, ContractType, PaginatedData } from '@/types/contracts';
 import { contractApi } from '@/lib/contract-api';
 import { ToastProvider, useToast } from '@/components/contracts/Toast';
@@ -19,6 +40,16 @@ import ContractAttachments from '@/components/contracts/ContractAttachments';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem } from '@/types';
 import { usePermissions } from '@/hooks/use-permissions';
+import { DataTable, Column } from '@/components/ui/DataTable';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type View = 'dashboard' | 'contracts' | 'pending' | 'audit' | 'f1' | 'f2' | 'profile' | 'mine' | 'expiry';
 
@@ -409,7 +440,7 @@ function ContractPage({ contracts: contractsPaged, meId, meUser, initialSelected
     types: ContractType[];
     currentView: View;
     metrics: any;
-    filters: { search?: string; status?: string; per_page?: number };
+    filters: { search?: string; status?: string; contract_type_id?: string; per_page?: number };
 }) {
     const contracts = contractsPaged.data;
     const { showToast } = useToast();
@@ -427,9 +458,34 @@ function ContractPage({ contracts: contractsPaged, meId, meUser, initialSelected
     const [detailTab, setDetailTab] = useState<'f1' | 'f2' | 'attachments' | 'audit' | 'chat'>('f1');
     const [search, setSearch] = useState(filters?.search || '');
     const [statusFilter, setStatusFilter] = useState(filters?.status || 'all');
+    const [typeFilter, setTypeFilter] = useState(filters?.contract_type_id || 'all');
     const [layout, setLayout] = useState<'list' | 'card'>('list');
     const [approvalNote, setApprovalNote] = useState('');
     const [loading, setLoading] = useState(false);
+
+    // Filter Logic
+    const handleFilterChange = useCallback((newFilters: { search?: string; status?: string; contract_type_id?: string }) => {
+        const merged = { 
+            search: newFilters.search !== undefined ? newFilters.search : search,
+            status: (newFilters.status !== undefined ? newFilters.status : statusFilter) === 'all' ? undefined : (newFilters.status || statusFilter),
+            contract_type_id: (newFilters.contract_type_id !== undefined ? newFilters.contract_type_id : typeFilter) === 'all' ? undefined : (newFilters.contract_type_id || typeFilter)
+        };
+        
+        router.get(window.location.pathname, merged, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true
+        } as any);
+    }, [search, statusFilter]);
+
+    // Debounced search
+    useEffect(() => {
+        if (search === (filters?.search || '')) return;
+        const timer = setTimeout(() => {
+            handleFilterChange({ search });
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [search, handleFilterChange, filters?.search]);
 
     // Modals
     const [createOpen, setCreateOpen] = useState(false);
@@ -450,6 +506,84 @@ function ContractPage({ contracts: contractsPaged, meId, meUser, initialSelected
     const [editOpen, setEditOpen] = useState(false);
     const [deleteOpen, setDeleteOpen] = useState(false);
     const [processing, setProcessing] = useState(false);
+
+    // ─── Columns Definition ─────────────────────────────────────────
+    const columns = useMemo<Column<Contract>[]>(() => {
+        const baseColumns: Column<Contract>[] = [
+            {
+                header: 'No. Kontrak',
+                accessorKey: 'contract_no',
+                sortable: true,
+                className: 'font-mono text-[11px] font-bold uppercase tracking-wider text-slate-500'
+            },
+            {
+                header: 'Judul Kontrak',
+                accessorKey: 'title',
+                sortable: true,
+                cell: (c) => (
+                    <div className="flex flex-col">
+                        <span className="font-bold text-slate-900 line-clamp-1">{c.title}</span>
+                        <span className="text-[10px] font-medium text-slate-400 uppercase tracking-tight">{c.contract_type}</span>
+                    </div>
+                )
+            },
+            {
+                header: 'Dibuat Oleh',
+                accessorKey: 'creator.name',
+                cell: (c) => (
+                    <div className="flex items-center gap-2">
+                        <Avatar user={c.creator} size="sm" />
+                        <span className="text-[12px] font-medium text-slate-700">{c.creator?.name}</span>
+                    </div>
+                )
+            },
+            {
+                header: 'Status',
+                accessorKey: 'status',
+                cell: (c) => <StatusBadge status={c.status} />
+            },
+            {
+                header: 'Versi',
+                accessorKey: 'current_version',
+                className: 'w-[80px]',
+                cell: (c) => <span className="font-mono bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase">v{c.current_version}</span>
+            },
+            {
+                header: 'Progress',
+                accessorKey: 'progress.pct',
+                cell: (c) => <ProgressCell c={c} />
+            }
+        ];
+
+        if (view === 'expiry') {
+            baseColumns.push({
+                header: 'Masa Berlaku',
+                accessorKey: 'end_date',
+                cell: (c) => <ExpiryBadge endDate={c.end_date} />
+            });
+        }
+
+        baseColumns.push({
+            header: 'Tgl Dibuat',
+            accessorKey: 'created_at',
+            className: 'text-slate-400 text-[11px] font-medium',
+            cell: (c) => c.created_at
+        });
+
+        return baseColumns;
+    }, [view]);
+
+    const renderRowActions = useCallback((c: Contract) => {
+        return (
+            <button 
+                onClick={(e) => { e.stopPropagation(); openDetail(c); }}
+                className="h-8 w-8 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 hover:text-primary hover:border-primary/30 transition-all shadow-sm active:scale-95"
+                title="Lihat Detail"
+            >
+                <i className="fa-solid fa-eye text-[11px]" />
+            </button>
+        );
+    }, []);
 
     useEffect(() => {
         if (initialSelected) { setSelected(initialSelected); }
@@ -638,15 +772,30 @@ function ContractPage({ contracts: contractsPaged, meId, meUser, initialSelected
         } as any);
     }
 
+    const viewConfig = {
+        dashboard: { title: 'Dashboard Kontrak', icon: LayoutGrid, desc: 'Ringkasan aktivitas dan status kontrak terbaru.' },
+        contracts: { title: 'Manajemen Kontrak', icon: FileText, desc: 'Kelola semua data kontrak dalam sistem.' },
+        mine: { title: 'Kontrak Saya', icon: User, desc: 'Daftar kontrak yang Anda buat.' },
+        pending: { title: 'Menunggu Approval', icon: Clock, desc: 'Daftar kontrak yang sedang menunggu persetujuan Anda.' },
+        f1: { title: 'Kontrak F1', icon: FileText, desc: 'Kelola draft kontrak dan dokumen F1.' },
+        f2: { title: 'Kontrak F2', icon: FileSearch, desc: 'Kelola revisi kontrak dan dokumen F2.' },
+        expiry: { title: 'Kontrak Berakhir', icon: AlertCircle, desc: 'Daftar kontrak yang mendekati masa kadaluarsa.' },
+        audit: { title: 'Audit Trail', icon: History, desc: 'Riwayat lengkap aktivitas perubahan kontrak.' },
+        profile: { title: 'Profil Saya', icon: User, desc: 'Kelola informasi profil dan akun Anda.' }
+    };
+
+    const currentViewConfig = viewConfig[view] || viewConfig.contracts;
+    const Icon = currentViewConfig.icon;
+
     const breadcrumbs: BreadcrumbItem[] = [
-        { title: SL[view] || 'Dashboard', href: '#' },
+        { title: 'Manajemen Kontrak', href: route('contracts'), description: currentViewConfig.desc },
     ];
 
     return (
         <>
             <Head title={SL[view]} />
 
-        <div className="flex flex-1 flex-col gap-4 p-4 min-h-0">
+        <div className="flex flex-1 flex-col gap-6 p-6 min-h-0 bg-slate-50/50">
             {/* ── View Content ── */}
                 {view === 'profile' && !selected && (
                     <ProfileView meUser={meUser} showToast={showToast} />
@@ -684,44 +833,19 @@ function ContractPage({ contracts: contractsPaged, meId, meUser, initialSelected
                                 </div>
                             </div>
 
-                            {/* Dashboard Content */}
-                            {layout === 'list' ? (
-                                <div className="bg-card border border-border rounded-xl overflow-hidden">
-                                    <div style={{ overflowX: 'auto' }}>
-                                        <table style={{ width: '100%' }}>
-                                            <thead><tr style={{ background: 'var(--muted)' }}>
-                                                <Th>No. Kontrak</Th><Th>Judul</Th><Th>Dibuat Oleh</Th>
-                                                <Th>Status</Th><Th>Versi</Th><Th>Tgl Dibuat</Th><Th></Th>
-                                            </tr></thead>
-                                            <tbody>
-                                                {recentContracts.map(c => (
-                                                    <tr key={c.id} onClick={() => openDetail(c)} style={{ cursor: 'pointer' }}
-                                                        onMouseOver={e => (e.currentTarget as HTMLElement).style.background = 'var(--muted)'}
-                                                        onMouseOut={e => (e.currentTarget as HTMLElement).style.background = ''}>
-                                                        <Td><span style={{ fontSize: 12 }}>{c.contract_no}</span></Td>
-                                                        <Td>
-                                                            <div className="font-medium" style={{ fontSize: 12 }}>{c.title}</div>
-                                                            <div className="text-muted-foreground" style={{ fontSize: 11, marginTop: 1 }}>{c.contract_type}</div>
-                                                        </Td>
-                                                        <Td><div className="flex items-center gap-1.5"><Avatar user={c.creator} size="sm" /><span style={{ fontSize: 12 }}>{c.creator?.name}</span></div></Td>
-                                                        <Td><StatusBadge status={c.status} /></Td>
-                                                        <Td><span className="font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded" style={{ fontSize: 11 }}>v{c.current_version}</span></Td>
-                                                        <Td><span className="text-muted-foreground" style={{ fontSize: 12 }}>{c.created_at}</span></Td>
-                                                        <Td>
-                                                            <button onClick={e => { e.stopPropagation(); openDetail(c); }} style={{ padding: '4px 8px', fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, background: 'none', cursor: 'pointer' }}>
-                                                                <i className="fa-solid fa-eye" />
-                                                            </button>
-                                                        </Td>
-                                                    </tr>
-                                                ))}
-                                                {recentContracts.length === 0 && (
-                                                    <tr><td colSpan={7} style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--muted-foreground)', fontSize: 12 }}>Tidak ada kontrak ditemukan.</td></tr>
-                                                )}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            ) : (
+                        {/* Dashboard Content */}
+                        {layout === 'list' ? (
+                            <div className="h-[450px]">
+                                <DataTable
+                                    columns={columns}
+                                    data={recentContracts}
+                                    searchKey="title"
+                                    searchPlaceholder="Cari kontrak terbaru..."
+                                    onRowClick={openDetail}
+                                    rowActions={renderRowActions}
+                                />
+                            </div>
+                        ) : (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                     {recentContracts.map(c => (
                                         <div key={c.id} onClick={() => openDetail(c)} className="bg-card border border-border rounded-xl p-3 hover:border-primary/50 transition-all cursor-pointer group shadow-sm hover:shadow-md">
@@ -796,96 +920,142 @@ function ContractPage({ contracts: contractsPaged, meId, meUser, initialSelected
                 {/* ── Contracts ── */}
                 {(view === 'contracts' || view === 'f1' || view === 'f2' || view === 'mine' || view === 'expiry') && !selected && (
                     <div className="flex flex-col gap-4">
-                        {/* Filters Bar */}
-                        <div className="flex flex-wrap items-center justify-between gap-4">
-                            <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[300px]">
-                                <div className="relative flex-1 max-w-sm">
-                                    <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" style={{ fontSize: 13 }} />
-                                    <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari kontrak, no, atau pembuat..."
-                                        className="w-full bg-card border border-border rounded-lg pl-9 pr-3 py-2 text-sm outline-none focus:border-primary/50 transition-all" />
+                        {/* Toolbar - Standardized for Card View */}
+                        {layout === 'card' && (
+                            <div className="p-4 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50 mb-4">
+                                <div className="flex items-center gap-3 flex-1 max-w-md">
+                                    <div className="relative flex-1">
+                                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                                        <Input 
+                                            value={search} 
+                                            onChange={e => setSearch(e.target.value)} 
+                                            placeholder="Cari kontrak..."
+                                            className="pl-9 h-10 border-slate-200 focus:ring-primary/20 rounded-lg bg-white" 
+                                        />
+                                    </div>
+                                    <Button variant="outline" size="icon" onClick={() => router.reload({ preserveScroll: true, preserveState: true } as any)} className="shrink-0 h-10 w-10 border-slate-200">
+                                        <RefreshCcw className="h-4 w-4" />
+                                    </Button>
                                 </div>
-                                <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-                                    className="bg-card border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary/50 transition-all cursor-pointer min-w-[140px]">
-                                    <option value="all">Semua Status</option>
-                                    <option value="draft">Draft</option>
-                                    <option value="in_review">In Review</option>
-                                    <option value="revision">Revision</option>
-                                    <option value="approved">Approved</option>
-                                    <option value="rejected">Rejected</option>
-                                </select>
-                            </div>
 
-                            <div className="flex items-center gap-3">
-                                <div className="flex border border-border rounded-lg overflow-hidden bg-card">
-                                    <button onClick={() => setLayout('list')} className={`p-2 transition-colors ${layout === 'list' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-muted-foreground'}`} title="List View">
-                                        <i className="fa-solid fa-list" style={{ fontSize: 13 }} />
-                                    </button>
-                                    <button onClick={() => setLayout('card')} className={`p-2 transition-colors ${layout === 'card' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-muted-foreground'}`} title="Grid View">
-                                        <i className="fa-solid fa-table-cells-large" style={{ fontSize: 13 }} />
-                                    </button>
+                                <div className="flex items-center gap-3">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="outline" className="h-10 px-3 gap-2 border-slate-200 font-bold text-[11px] uppercase tracking-wider">
+                                                <Filter className="h-3.5 w-3.5 text-slate-400" />
+                                                Status: {statusFilter === 'all' ? 'Semua' : (statusFilter === 'in_review' ? 'Dalam Tinjauan' : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1))}
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="w-48">
+                                            <DropdownMenuItem onClick={() => { setStatusFilter('all'); handleFilterChange({ status: 'all' }); }}>Semua</DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => { setStatusFilter('draft'); handleFilterChange({ status: 'draft' }); }}>Draft</DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => { setStatusFilter('in_review'); handleFilterChange({ status: 'in_review' }); }}>Dalam Tinjauan</DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => { setStatusFilter('approved'); handleFilterChange({ status: 'approved' }); }}>Disetujui</DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => { setStatusFilter('rejected'); handleFilterChange({ status: 'rejected' }); }}>Ditolak</DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+
+                                    <div className="flex border border-slate-200 rounded-lg overflow-hidden bg-white h-10 shadow-sm">
+                                        <button onClick={() => setLayout('list')} className={`px-2.5 transition-colors ${(layout as string) === 'list' ? 'bg-primary text-primary-foreground' : 'hover:bg-slate-100 text-slate-500'}`} title="List View">
+                                            <ListIcon size={16} />
+                                        </button>
+                                        <button onClick={() => setLayout('card')} className={`px-2.5 transition-colors ${(layout as string) === 'card' ? 'bg-primary text-primary-foreground' : 'hover:bg-slate-100 text-slate-500'}`} title="Grid View">
+                                            <LayoutGrid size={16} />
+                                        </button>
+                                    </div>
+
+                                    {canCreate && (
+                                        <Button className="h-10 px-4 gap-2 font-bold text-[11px] uppercase tracking-wider rounded-lg shadow-sm" onClick={() => setCreateOpen(true)}>
+                                            <Plus className="h-3.5 w-3.5" />
+                                            Buat Kontrak
+                                        </Button>
+                                    )}
                                 </div>
-                                {canCreate && (
-                                    <button onClick={() => setCreateOpen(true)} className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-bold border border-primary/20 hover:bg-primary/95 transition-all active:scale-95 shadow-sm">
-                                        <i className="fa-solid fa-plus" /> Buat Kontrak
-                                    </button>
-                                )}
                             </div>
-                        </div>
+                        )}
+
+                        {/* Content moved integrated toolbar into DataTable for List view */}
 
                         {/* Content */}
                         {layout === 'list' ? (
-                            <div className="bg-card border border-border rounded-xl overflow-hidden">
-                                <div style={{ overflowX: 'auto' }}>
-                                    <table style={{ width: '100%' }}>
-                                        <thead><tr style={{ background: 'var(--muted)/40' }}>
-                                            <Th>Judul / No. Kontrak</Th>
-                                            <Th>Pembuat</Th>
-                                            <Th>{view === 'expiry' ? 'Tgl Berakhir' : 'Tgl Kontrak'}</Th>
-                                            <Th>Tipe</Th>
-                                            <Th>Status & Versi</Th>
-                                            <Th>{view === 'expiry' ? 'Sisa Waktu' : 'Progress'}</Th>
-                                            <Th></Th>
-                                        </tr></thead>
-                                        <tbody>
-                                            {filtered.map(c => (
-                                                <tr key={c.id} onClick={() => openDetail(c)} style={{ cursor: 'pointer' }}
-                                                    onMouseOver={e => (e.currentTarget as HTMLElement).style.background = 'var(--muted)'}
-                                                    onMouseOut={e => (e.currentTarget as HTMLElement).style.background = ''}>
-                                                    <Td>
-                                                        <div className="font-bold text-slate-900" style={{ fontSize: 13 }}>{c.title}</div>
-                                                        <div className="font-mono text-muted-foreground uppercase tracking-tight" style={{ fontSize: 10, marginTop: 2 }}>{c.contract_no}</div>
-                                                    </Td>
-                                                    <Td>
-                                                        <div className="flex items-center gap-2">
-                                                            <Avatar user={c.creator} size="sm" />
-                                                            <div>
-                                                                <div className="font-semibold text-slate-800" style={{ fontSize: 11 }}>{c.creator?.name}</div>
-                                                                <div className="text-muted-foreground" style={{ fontSize: 10 }}>{c.created_at}</div>
-                                                            </div>
-                                                        </div>
-                                                    </Td>
-                                                    <Td><span className="text-slate-600 font-medium">{view === 'expiry' ? (c.end_date || '—') : (c.contract_date || '—')}</span></Td>
-                                                    <Td><span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[11px] font-bold border border-slate-200">{c.contract_type || '—'}</span></Td>
-                                                    <Td>
-                                                        <div className="flex items-center gap-2">
-                                                            <StatusBadge status={c.status} />
-                                                            <span className="font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded text-[10px] font-bold">v{c.current_version}</span>
-                                                        </div>
-                                                    </Td>
-                                                    <Td>{view === 'expiry' ? <ExpiryBadge endDate={c.end_date} /> : <ProgressCell c={c} />}</Td>
-                                                    <Td style={{ textAlign: 'right' }}>
-                                                        <button onClick={e => { e.stopPropagation(); openDetail(c); }} className="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all">
-                                                            <i className="fa-solid fa-chevron-right" />
-                                                        </button>
-                                                    </Td>
-                                                </tr>
-                                            ))}
-                                            {filtered.length === 0 && (
-                                                <tr><td colSpan={8} style={{ textAlign: 'center', padding: '48px 16px', color: 'var(--muted-foreground)', fontSize: 12 }}>Tidak ada kontrak ditemukan.</td></tr>
+                            <div className="flex-1 min-h-[500px]">
+                                <DataTable
+                                    columns={columns}
+                                    data={contractsPaged.data}
+                                    searchPlaceholder="Cari kontrak, no, atau pembuat..."
+                                    onRefresh={() => router.reload({ preserveScroll: true, preserveState: true } as any)}
+                                    onRowClick={openDetail}
+                                    headerActions={
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex border border-slate-200 rounded-lg overflow-hidden bg-white h-10">
+                                                <button onClick={() => setLayout('list')} className={`px-2.5 transition-colors ${(layout as string) === 'list' ? 'bg-primary text-primary-foreground' : 'hover:bg-slate-100 text-slate-500'}`} title="List View">
+                                                    <ListIcon size={16} />
+                                                </button>
+                                                <button onClick={() => setLayout('card')} className={`px-2.5 transition-colors ${(layout as string) === 'card' ? 'bg-primary text-primary-foreground' : 'hover:bg-slate-100 text-slate-500'}`} title="Grid View">
+                                                    <LayoutGrid size={16} />
+                                                </button>
+                                            </div>
+                                            {canCreate && (
+                                                <Button className="h-10 px-4 gap-2 font-bold text-[11px] uppercase tracking-wider rounded-lg" onClick={() => setCreateOpen(true)}>
+                                                    <Plus className="h-3.5 w-3.5" />
+                                                    Buat Kontrak
+                                                </Button>
                                             )}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                        </div>
+                                    }
+                                    pagination={{
+                                        currentPage: contractsPaged.current_page,
+                                        lastPage: contractsPaged.last_page,
+                                        total: contractsPaged.total,
+                                        from: contractsPaged.from,
+                                        to: contractsPaged.to,
+                                        perPage: contractsPaged.per_page,
+                                        onPageChange: (page) => router.get(window.location.href, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                                        onPerPageChange: (perPage) => router.get(window.location.href, { ...filters, per_page: perPage, page: 1 }, { preserveState: true, preserveScroll: true })
+                                    }}
+                                    searchValue={search}
+                                    onSearchChange={setSearch}
+                                    activeFilters={{ status: statusFilter, contract_type_id: typeFilter }}
+                                    onFilterChange={(fs) => {
+                                        if (fs.status !== undefined && fs.status !== statusFilter) {
+                                            handleFilterChange({ status: fs.status });
+                                            setStatusFilter(fs.status);
+                                        }
+                                        if (fs.contract_type_id !== undefined && fs.contract_type_id !== typeFilter) {
+                                            handleFilterChange({ contract_type_id: fs.contract_type_id });
+                                            setTypeFilter(fs.contract_type_id);
+                                        }
+                                    }}
+                                    filters={[
+                                        {
+                                            label: 'Tipe',
+                                            key: 'contract_type_id',
+                                            options: [
+                                                { label: 'Semua Tipe', value: 'all' },
+                                                ...types.map(t => ({ label: t.name, value: t.id }))
+                                            ]
+                                        },
+                                        {
+                                            label: 'Status',
+                                            key: 'status',
+                                            options: [
+                                                { label: 'Draft', value: 'draft' },
+                                                { label: 'Dalam Tinjauan', value: 'in_review' },
+                                                { label: 'Revisi', value: 'revision' },
+                                                { label: 'Disetujui', value: 'approved' },
+                                                { label: 'Ditolak', value: 'rejected' },
+                                            ]
+                                        }
+                                    ]}
+                                    searchKey="title"
+                                    bulkActions={(selectedRows) => (
+                                        <div className="flex items-center gap-2">
+                                            <Button variant="ghost" size="sm" className="h-9 px-3 text-slate-500 hover:text-slate-900 font-bold text-[11px] uppercase tracking-wider gap-2">
+                                                <i className="fa-solid fa-file-export" /> Export ({selectedRows.length})
+                                            </Button>
+                                        </div>
+                                    )}
+                                />
                             </div>
                         ) : (
                             <div>
@@ -936,115 +1106,202 @@ function ContractPage({ contracts: contractsPaged, meId, meUser, initialSelected
 
                 {/* ── Pending ── */}
                 {view === 'pending' && !selected && (
-                    <div className="flex flex-col gap-4">
-                        <div className="flex flex-wrap items-center justify-between gap-4">
-                            <span className="font-semibold flex items-center gap-2" style={{ fontSize: 13 }}>
-                                <i className="fa-regular fa-clock text-muted-foreground" style={{ fontSize: 12 }} /> Menunggu Approval Saya
-                            </span>
-                            <div className="flex items-center gap-3">
-                                <div className="relative max-w-[200px]">
-                                    <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" style={{ fontSize: 11 }} />
-                                    <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari..."
-                                        className="w-full bg-card border border-border rounded-lg pl-8 pr-3 py-1.5 text-xs outline-none focus:border-primary/50 transition-all" />
+                    <div className="flex flex-col gap-4 flex-1 min-h-0">
+                        {/* Toolbar - Standardized for Card View */}
+                        {layout === 'card' && (
+                            <div className="p-4 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50 mb-4">
+                                <div className="flex items-center gap-3 flex-1 max-w-md">
+                                    <div className="relative flex-1">
+                                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                                        <Input 
+                                            value={search} 
+                                            onChange={e => setSearch(e.target.value)} 
+                                            placeholder="Cari approval pending..."
+                                            className="pl-9 h-10 border-slate-200 focus:ring-primary/20 rounded-lg bg-white" 
+                                        />
+                                    </div>
+                                    <Button 
+                                        variant="outline" 
+                                        size="icon" 
+                                        onClick={() => router.reload({ preserveScroll: true, preserveState: true } as any)} 
+                                        className="shrink-0 h-10 w-10 border-slate-200"
+                                    >
+                                        <RefreshCcw className="h-4 w-4" />
+                                    </Button>
                                 </div>
-                                <div className="flex border border-border rounded-lg overflow-hidden bg-card">
-                                    <button onClick={() => setLayout('list')} className={`p-1.5 transition-colors ${layout === 'list' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-muted-foreground'}`} title="List View">
-                                        <i className="fa-solid fa-list" style={{ fontSize: 11 }} />
-                                    </button>
-                                    <button onClick={() => setLayout('card')} className={`p-1.5 transition-colors ${layout === 'card' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-muted-foreground'}`} title="Grid View">
-                                        <i className="fa-solid fa-table-cells-large" style={{ fontSize: 11 }} />
-                                    </button>
+                                <div className="flex items-center gap-3">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="outline" className="h-10 px-3 gap-2 border-slate-200 font-bold text-[11px] uppercase tracking-wider">
+                                                <Filter className="h-3.5 w-3.5 text-slate-400" />
+                                                Status: {statusFilter === 'all' ? 'Semua' : (statusFilter === 'in_review' ? 'Dalam Tinjauan' : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1))}
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="w-48">
+                                            <DropdownMenuItem onClick={() => { setStatusFilter('all'); handleFilterChange({ status: 'all' }); }}>Semua</DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => { setStatusFilter('draft'); handleFilterChange({ status: 'draft' }); }}>Draft</DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => { setStatusFilter('in_review'); handleFilterChange({ status: 'in_review' }); }}>Dalam Tinjauan</DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => { setStatusFilter('approved'); handleFilterChange({ status: 'approved' }); }}>Disetujui</DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => { setStatusFilter('rejected'); handleFilterChange({ status: 'rejected' }); }}>Ditolak</DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="outline" className="h-10 px-3 gap-2 border-slate-200 font-bold text-[11px] uppercase tracking-wider">
+                                                <FileText className="h-3.5 w-3.5 text-slate-400" />
+                                                Tipe: {typeFilter === 'all' ? 'Semua' : (types.find(t => t.id === typeFilter)?.name || 'Custom')}
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="w-56">
+                                            <DropdownMenuItem onClick={() => { setTypeFilter('all'); handleFilterChange({ contract_type_id: 'all' }); }}>Semua Tipe</DropdownMenuItem>
+                                            {types.map(t => (
+                                                <DropdownMenuItem key={t.id} onClick={() => { setTypeFilter(t.id); handleFilterChange({ contract_type_id: t.id }); }}>{t.name}</DropdownMenuItem>
+                                            ))}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+
+                                    <div className="flex border border-slate-200 rounded-lg overflow-hidden bg-white h-10 shadow-sm">
+                                        <button onClick={() => setLayout('list')} className={`px-2.5 transition-colors ${(layout as any) === 'list' ? 'bg-primary text-primary-foreground' : 'hover:bg-slate-100 text-slate-500'}`} title="List View">
+                                            <ListIcon size={16} />
+                                        </button>
+                                        <button onClick={() => setLayout('card')} className={`px-2.5 transition-colors ${(layout as any) === 'card' ? 'bg-primary text-primary-foreground' : 'hover:bg-slate-100 text-slate-500'}`} title="Grid View">
+                                            <LayoutGrid size={16} />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
 
-                        {/* Pending Content */}
+                        {/* Content */}
                         {layout === 'list' ? (
-                            <div className="bg-card border border-border rounded-xl overflow-hidden">
-                                <div style={{ overflowX: 'auto' }}>
-                                    <table style={{ width: '100%' }}>
-                                        <thead><tr style={{ background: 'var(--muted)' }}>
-                                            <Th>No. Kontrak</Th><Th>Judul</Th><Th>Role</Th>
-                                            <Th>Versi</Th><Th>Sequence</Th><Th>Tgl Dibuat</Th><Th></Th>
-                                        </tr></thead>
-                                        <tbody>
-                                            {myFilteredPending.length === 0 ? (
-                                                <tr><td colSpan={7} style={{ textAlign: 'center', padding: '48px 16px', color: 'var(--muted-foreground)' }}>
-                                                    <i className="fa-solid fa-circle-check" style={{ fontSize: 32, display: 'block', marginBottom: 8, color: 'var(--muted-foreground)' }} />
-                                                    <strong style={{ color: 'var(--muted-foreground)', display: 'block', marginBottom: 4 }}>Tidak ada approval pending</strong>
-                                                    <span style={{ fontSize: 12 }}>Semua sudah ditangani.</span>
-                                                </td></tr>
-                                            ) : myFilteredPending.map(c => {
+                            <div className="flex-1 min-h-[500px]">
+                                <DataTable
+                                    columns={[
+                                        ...columns.filter(col => col.accessorKey !== 'progress.pct'),
+                                        {
+                                            header: 'Role / Seq',
+                                            accessorKey: 'role',
+                                            cell: (c) => {
                                                 const a = c.approvals.find(ap => ap.user_id === meId && ap.status === 'pending');
-                                                if (!a) return null;
                                                 return (
-                                                    <tr key={`${c.id}-${a.id}`} onClick={() => openDetail(c)} style={{ cursor: 'pointer' }}
-                                                        onMouseOver={e => (e.currentTarget as HTMLElement).style.background = 'var(--muted)'}
-                                                        onMouseOut={e => (e.currentTarget as HTMLElement).style.background = ''}>
-                                                        <Td><span style={{ fontSize: 12 }}>{c.contract_no}</span></Td>
-                                                        <Td>
-                                                            <div className="font-medium" style={{ fontSize: 12 }}>{c.title}</div>
-                                                            <div className="text-muted-foreground font-mono" style={{ fontSize: 10 }}>{c.contract_type}</div>
-                                                        </Td>
-                                                        <Td><span className="font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded" style={{ fontSize: 12 }}>{a.role}</span></Td>
-                                                        <Td><span className="font-mono bg-muted text-muted-foreground px-1.5 py-0.5 rounded" style={{ fontSize: 12 }}>v{c.current_version}</span></Td>
-                                                        <Td className="text-muted-foreground" style={{ fontSize: 12 }}>Seq {a.sequence}</Td>
-                                                        <Td><span className="text-muted-foreground" style={{ fontSize: 12 }}>{c.created_at}</span></Td>
-                                                        <Td>
-                                                            <button onClick={e => { e.stopPropagation(); openDetail(c); }} style={{ padding: '4px 8px', fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, background: 'none', cursor: 'pointer' }}>
-                                                                <i className="fa-solid fa-eye" />
-                                                            </button>
-                                                        </Td>
-                                                    </tr>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-mono bg-primary/10 text-primary px-1.5 py-0.5 rounded text-[10px] font-bold uppercase w-fit">{a?.role}</span>
+                                                        <span className="text-[10px] text-muted-foreground mt-1">Sequence {a?.sequence}</span>
+                                                    </div>
                                                 );
-                                            })}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                            }
+                                        }
+                                    ]}
+                                    data={contracts}
+                                    searchValue={search}
+                                    onSearchChange={setSearch}
+                                    searchPlaceholder="Cari approval pending..."
+                                    onRefresh={() => router.reload({ preserveScroll: true, preserveState: true } as any)}
+                                    onRowClick={openDetail}
+                                    rowActions={renderRowActions}
+                                    pagination={{
+                                        currentPage: contractsPaged.current_page,
+                                        lastPage: contractsPaged.last_page,
+                                        total: contractsPaged.total,
+                                        from: contractsPaged.from,
+                                        to: contractsPaged.to,
+                                        perPage: contractsPaged.per_page,
+                                        onPageChange: (page) => router.get(window.location.href, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                                        onPerPageChange: (perPage) => router.get(window.location.href, { ...filters, per_page: perPage, page: 1 }, { preserveState: true, preserveScroll: true })
+                                    }}
+                                    activeFilters={{ status: statusFilter, contract_type_id: typeFilter }}
+                                    onFilterChange={(fs) => {
+                                        if (fs.status !== undefined && fs.status !== statusFilter) {
+                                            handleFilterChange({ status: fs.status });
+                                            setStatusFilter(fs.status);
+                                        }
+                                        if (fs.contract_type_id !== undefined && fs.contract_type_id !== typeFilter) {
+                                            handleFilterChange({ contract_type_id: fs.contract_type_id });
+                                            setTypeFilter(fs.contract_type_id);
+                                        }
+                                    }}
+                                    filters={[
+                                        {
+                                            label: 'Tipe',
+                                            key: 'contract_type_id',
+                                            options: [
+                                                { label: 'Semua Tipe', value: 'all' },
+                                                ...types.map(t => ({ label: t.name, value: t.id }))
+                                            ]
+                                        },
+                                        {
+                                            label: 'Status',
+                                            key: 'status',
+                                            options: [
+                                                { label: 'Draft', value: 'draft' },
+                                                { label: 'Dalam Tinjauan', value: 'in_review' },
+                                                { label: 'Revisi', value: 'revision' },
+                                                { label: 'Disetujui', value: 'approved' },
+                                                { label: 'Ditolak', value: 'rejected' },
+                                            ]
+                                        }
+                                    ]}
+                                    headerActions={
+                                        <div className="flex items-center gap-3">
+                                          
+                                            <div className="flex border border-slate-200 rounded-lg overflow-hidden bg-white h-10 shadow-sm">
+                                                <button onClick={() => setLayout('list')} className={`px-2.5 transition-colors ${(layout as any) === 'list' ? 'bg-primary text-primary-foreground' : 'hover:bg-slate-100 text-slate-500'}`} title="List View">
+                                                    <ListIcon size={16} />
+                                                </button>
+                                                <button onClick={() => setLayout('card')} className={`px-2.5 transition-colors ${(layout as any) === 'card' ? 'bg-primary text-primary-foreground' : 'hover:bg-slate-100 text-slate-500'}`} title="Grid View">
+                                                    <LayoutGrid size={16} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    }
+                                />
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {myFilteredPending.map(c => {
-                                    const a = c.approvals.find(ap => ap.user_id === meId && ap.status === 'pending');
-                                    if (!a) return null;
-                                    return (
-                                        <div key={`${c.id}-${a.id}`} onClick={() => openDetail(c)}
-                                            className="bg-card border border-primary/20 hover:border-primary/50 rounded-xl p-4 transition-all cursor-pointer shadow-sm hover:shadow-md relative overflow-hidden group">
-                                            <div className="absolute top-0 right-0 p-2 bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors" style={{ borderRadius: '0 0 0 12px' }}>
-                                                <i className="fa-solid fa-clock-rotate-left" style={{ fontSize: 12 }} />
+                            <div className="flex flex-col gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {contracts.map(c => (
+                                        <div key={c.id} onClick={() => openDetail(c)}
+                                            className="bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-all cursor-pointer group hover:bg-muted/5 shadow-sm">
+                                            <div className="flex justify-between items-start mb-3">
+                                                <span className="font-mono text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded uppercase tracking-wider">{c.contract_no}</span>
+                                                <StatusBadge status={c.status} />
                                             </div>
-                                            <div className="mb-3">
-                                                <span className="font-mono text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded uppercase">{c.contract_no}</span>
-                                            </div>
-                                            <h3 className="font-bold text-gray-900 mb-2 line-clamp-1 pr-6" style={{ fontSize: 14 }}>{c.title}</h3>
+                                            <h3 className="font-bold text-gray-900 mb-1 group-hover:text-primary transition-colors line-clamp-1" style={{ fontSize: 14 }}>{c.title}</h3>
+                                            <p className="text-muted-foreground mb-4 line-clamp-2" style={{ fontSize: 11 }}>{c.description || '—'}</p>
+
                                             <div className="flex items-center gap-2 mb-4">
                                                 <Avatar user={c.creator} size="sm" />
                                                 <div className="flex-1 min-w-0">
                                                     <div className="text-gray-900 font-medium truncate" style={{ fontSize: 11 }}>{c.creator?.name}</div>
-                                                    <div className="text-muted-foreground" style={{ fontSize: 10 }}>Dibuat: {c.created_at}</div>
+                                                    <div className="text-muted-foreground" style={{ fontSize: 10 }}>{c.created_at}</div>
                                                 </div>
                                             </div>
+
                                             <div className="pt-3 border-t border-border/50 flex items-center justify-between">
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex gap-2 mb-2">
-                                                        <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold uppercase tracking-tight">{a.role}</span>
+                                                <div className="flex flex-col gap-1.5">
+                                                    <div className="flex gap-2">
                                                         <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">v{c.current_version}</span>
+                                                        <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground truncate max-w-[80px]">{c.contract_type}</span>
                                                     </div>
-                                                    <div className="text-[10px] text-muted-foreground font-medium">Approval Seq {a.sequence}</div>
+                                                    {c.end_date && <ExpiryBadge endDate={c.end_date} />}
                                                 </div>
                                                 <div className="w-20">
                                                     <ProgressCell c={c} />
                                                 </div>
                                             </div>
                                         </div>
-                                    );
-                                })}
-                                {myFilteredPending.length === 0 && (
-                                    <div className="col-span-full p-12 text-center text-muted-foreground bg-card border border-border rounded-xl">
-                                        <i className="fa-solid fa-circle-check mb-3 block" style={{ fontSize: 32 }} />
-                                        <p style={{ fontSize: 13 }}>Tidak ada approval pending.</p>
+                                    ))}
+                                </div>
+                                {contracts.length === 0 && (
+                                    <div className="p-12 text-center text-muted-foreground bg-card border border-border rounded-xl">
+                                        <i className="fa-solid fa-folder-open mb-3 block" style={{ fontSize: 32 }} />
+                                        <p style={{ fontSize: 13 }}>Tidak ada approval pending ditemukan.</p>
                                     </div>
                                 )}
+                                <div className="mt-4">
+                                    <Pagination data={contractsPaged} filters={filters} />
+                                </div>
                             </div>
                         )}
                     </div>
@@ -1060,7 +1317,7 @@ function ContractPage({ contracts: contractsPaged, meId, meUser, initialSelected
                 )}
 
                 {/* ── Common Pagination ── */}
-                {(!selected && view !== 'dashboard' && view !== 'profile') && (
+                {(!selected && view !== 'dashboard' && view !== 'profile' && layout !== 'list') && (
                     <Pagination data={contractsPaged} filters={{ search, status: statusFilter }} />
                 )}
 

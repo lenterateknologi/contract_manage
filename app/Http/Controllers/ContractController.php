@@ -54,14 +54,56 @@ class ContractController extends Controller
             'currentView' => $view,
             'contracts' => $contracts,
             'types' => ContractType::all(),
-            'filters' => array_merge($request->only(['search', 'status']), [
-                'per_page' => $request->integer('per_page', 10)
+            'filters' => array_merge($request->only(['search', 'status', 'contract_type_id']), [
+                'per_page' => $request->integer('per_page', 10),
             ]),
         ];
+
+        $viewTitle = 'Manajemen Kontrak';
+        $viewDesc = 'Daftar seluruh kontrak dalam sistem.';
+        $viewIcon = 'FileText';
+
+        switch ($view) {
+            case 'dashboard':
+                $viewTitle = 'Dashboard';
+                $viewDesc = 'Statistik dan ringkasan aktivitas kontrak.';
+                $viewIcon = 'LayoutGrid';
+                break;
+            case 'mine':
+                $viewTitle = 'Kontrak Saya';
+                $viewDesc = 'Daftar kontrak yang Anda buat.';
+                $viewIcon = 'FileEdit';
+                break;
+            case 'pending':
+                $viewTitle = 'Pending Approval';
+                $viewDesc = 'Kontrak yang menunggu persetujuan Anda.';
+                $viewIcon = 'Clock';
+                break;
+            case 'expiry':
+                $viewTitle = 'Masa Berlaku';
+                $viewDesc = 'Kontrak yang akan atau telah berakhir.';
+                $viewIcon = 'History';
+                break;
+            case 'f1':
+                $viewTitle = 'Formulir F1';
+                $viewDesc = 'Daftar kontrak dengan dokumen F1.';
+                $viewIcon = 'FilePlus';
+                break;
+            case 'f2':
+                $viewTitle = 'Formulir F2';
+                $viewDesc = 'Daftar kontrak dengan dokumen F2.';
+                $viewIcon = 'FilePlus';
+                break;
+        }
 
         if ($view === 'dashboard') {
             $data['metrics'] = $this->getDashboardMetrics();
         }
+
+        $data['breadcrumbs'] = [
+            ['title' => 'Manajemen Kontrak', 'href' => route('contracts'), 'icon' => 'FileText'],
+            ['title' => $viewTitle, 'href' => '#', 'description' => $viewDesc, 'icon' => $viewIcon],
+        ];
 
         return Inertia::render('contracts/index', $data);
     }
@@ -81,7 +123,9 @@ class ContractController extends Controller
                 break;
             case 'pending':
                 $query->whereHas('approvals', function ($q) {
-                    $q->where('user_id', Auth::id())->where('status', 'pending');
+                    $q->where('user_id', Auth::id())
+                        ->where('status', 'pending')
+                        ->whereColumn('workflow_step_id', 'contracts.workflow_step_id');
                 });
                 break;
             case 'expiry':
@@ -108,6 +152,11 @@ class ContractController extends Controller
         // Apply Status Filter
         if ($request->filled('status') && $request->status !== 'all') {
             $query->where('status', $request->status);
+        }
+
+        // Apply Type Filter
+        if ($request->filled('contract_type_id') && $request->contract_type_id !== 'all') {
+            $query->where('contract_type_id', $request->contract_type_id);
         }
 
         return $query;

@@ -95,7 +95,12 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/roles/{role}', [AdminController::class, 'destroyRole'])->name('admin.roles.destroy');
 
         Route::get('/reports', function () {
-            return Inertia::render('admin/reports');
+            return Inertia::render('admin/reports', [
+                'breadcrumbs' => [
+                    ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
+                    ['title' => 'Laporan & Statistik', 'href' => route('admin.reports'), 'description' => 'Rekapitulasi data dan statistik kontrak.', 'icon' => 'BarChart3'],
+                ],
+            ]);
         })->name('admin.reports');
         Route::post('/api/reports/data', [ReportController::class, 'index']);
         Route::get('/api/reports/export', [ReportController::class, 'exportCsv']);
@@ -116,11 +121,13 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/navigation/reorder', [AdminController::class, 'reorderNavigation'])->name('admin.navigation.reorder');
 
         // Module Groups (Keep individual CRUD but we focus on navigation page)
+        Route::get('/module-groups', [AdminController::class, 'moduleGroups'])->name('admin.module-groups.index');
         Route::post('/module-groups', [AdminController::class, 'storeModuleGroup'])->name('admin.module-groups.store');
         Route::put('/module-groups/{group}', [AdminController::class, 'updateModuleGroup'])->name('admin.module-groups.update');
         Route::delete('/module-groups/{group}', [AdminController::class, 'destroyModuleGroup'])->name('admin.module-groups.destroy');
 
         // Modules (Keep individual CRUD)
+        Route::get('/modules', [AdminController::class, 'modules'])->name('admin.modules.index');
         Route::post('/modules', [AdminController::class, 'storeModule'])->name('admin.modules.store');
         Route::put('/modules/{module}', [AdminController::class, 'updateModule'])->name('admin.modules.update');
         Route::delete('/modules/{module}', [AdminController::class, 'destroyModule'])->name('admin.modules.destroy');
