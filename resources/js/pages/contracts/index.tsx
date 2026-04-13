@@ -21,8 +21,12 @@ import {
     List as ListIcon,
     RefreshCcw,
     User,
-    FileSearch
+    FileSearch,
+    ChevronLeft,
+    Inbox
 } from 'lucide-react';
+import { FilterDialog } from '@/components/ui/FilterDialog';
+import { FilterPills } from '@/components/ui/FilterPills';
 import { Contract, ContractType, PaginatedData } from '@/types/contracts';
 import { contractApi } from '@/lib/contract-api';
 import { ToastProvider, useToast } from '@/components/contracts/Toast';
@@ -457,26 +461,38 @@ function ContractPage({ contracts: contractsPaged, meId, meUser, initialSelected
     const [selected, setSelected] = useState<Contract | null>(initialSelected ?? null);
     const [detailTab, setDetailTab] = useState<'f1' | 'f2' | 'attachments' | 'audit' | 'chat'>('f1');
     const [search, setSearch] = useState(filters?.search || '');
-    const [statusFilter, setStatusFilter] = useState(filters?.status || 'all');
-    const [typeFilter, setTypeFilter] = useState(filters?.contract_type_id || 'all');
+    
+    // Multi-select faceted filters
+    const [statusFilter, setStatusFilter] = useState<string[]>(
+        Array.isArray(filters?.status) ? filters.status : (filters?.status && filters.status !== 'all' ? [filters.status] : [])
+    );
+    const [typeFilter, setTypeFilter] = useState<string[]>(
+        Array.isArray(filters?.contract_type_id) ? filters.contract_type_id : (filters?.contract_type_id && filters.contract_type_id !== 'all' ? [filters.contract_type_id] : [])
+    );
     const [layout, setLayout] = useState<'list' | 'card'>('list');
     const [approvalNote, setApprovalNote] = useState('');
     const [loading, setLoading] = useState(false);
+    const [filterOpen, setFilterOpen] = useState(false);
 
     // Filter Logic
-    const handleFilterChange = useCallback((newFilters: { search?: string; status?: string; contract_type_id?: string }) => {
+    const handleFilterChange = useCallback((newFilters: { search?: string; status?: string[]; contract_type_id?: string[] }) => {
         const merged = { 
             search: newFilters.search !== undefined ? newFilters.search : search,
-            status: (newFilters.status !== undefined ? newFilters.status : statusFilter) === 'all' ? undefined : (newFilters.status || statusFilter),
-            contract_type_id: (newFilters.contract_type_id !== undefined ? newFilters.contract_type_id : typeFilter) === 'all' ? undefined : (newFilters.contract_type_id || typeFilter)
+            status: newFilters.status !== undefined ? newFilters.status : statusFilter,
+            contract_type_id: newFilters.contract_type_id !== undefined ? newFilters.contract_type_id : typeFilter,
         };
+
+        // Clean up empty filters
+        const query = Object.fromEntries(
+            Object.entries(merged).filter(([_, v]) => v !== undefined && v !== '' && (Array.isArray(v) ? v.length > 0 : true))
+        );
         
-        router.get(window.location.pathname, merged, {
+        router.get(window.location.pathname, query, {
             preserveState: true,
             preserveScroll: true,
             replace: true
         } as any);
-    }, [search, statusFilter]);
+    }, [search, statusFilter, typeFilter]);
 
     // Debounced search
     useEffect(() => {
@@ -765,8 +781,9 @@ function ContractPage({ contracts: contractsPaged, meId, meUser, initialSelected
     };
 
     const handleStatusChange = (val: string) => {
-        setStatusFilter(val);
-        router.get(window.location.pathname, { search, status: val, per_page: filters?.per_page }, { 
+        const next = val === 'all' ? [] : [val];
+        setStatusFilter(next);
+        router.get(window.location.pathname, { search, status: next, per_page: filters?.per_page }, { 
             preserveState: true, 
             preserveScroll: true 
         } as any);
@@ -917,394 +934,179 @@ function ContractPage({ contracts: contractsPaged, meId, meUser, initialSelected
                     </div>
                 )}
 
-                {/* ── Contracts ── */}
-                {(view === 'contracts' || view === 'f1' || view === 'f2' || view === 'mine' || view === 'expiry') && !selected && (
-                    <div className="flex flex-col gap-4">
-                        {/* Toolbar - Standardized for Card View */}
-                        {layout === 'card' && (
-                            <div className="p-4 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50 mb-4">
-                                <div className="flex items-center gap-3 flex-1 max-w-md">
-                                    <div className="relative flex-1">
-                                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                                        <Input 
-                                            value={search} 
-                                            onChange={e => setSearch(e.target.value)} 
-                                            placeholder="Cari kontrak..."
-                                            className="pl-9 h-10 border-slate-200 focus:ring-primary/20 rounded-lg bg-white" 
-                                        />
-                                    </div>
-                                    <Button variant="outline" size="icon" onClick={() => router.reload({ preserveScroll: true, preserveState: true } as any)} className="shrink-0 h-10 w-10 border-slate-200">
-                                        <RefreshCcw className="h-4 w-4" />
+                {/* ── Contracts & Pending View with unified layout ── */}
+                {(view === 'contracts' || view === 'f1' || view === 'f2' || view === 'mine' || view === 'expiry' || view === 'pending') && !selected && (
+                    <div className="flex-1 flex flex-col min-w-0 bg-slate-50/30 overflow-hidden -mx-6 -mb-6 border-t border-slate-200">
+                        {/* Top Action Bar */}
+                        <div className="px-6 py-4 bg-white border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div className="flex items-center gap-3 flex-1 max-w-md">
+                                <div className="relative flex-1">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                    <Input 
+                                        value={search} 
+                                        onChange={e => setSearch(e.target.value)} 
+                                        placeholder="Cari kontrak, no, atau pembuat..."
+                                        className="pl-9 h-10 border-slate-200 focus:ring-primary/20 rounded-lg bg-white shadow-sm" 
+                                    />
+                                </div>
+                                <Button variant="outline" size="icon" onClick={() => router.reload({ preserveScroll: true, preserveState: true } as any)} className="shrink-0 h-10 w-10 border-slate-200 bg-white shadow-sm hover:bg-slate-50">
+                                    <RefreshCcw className="h-4 w-4 text-slate-500" />
+                                </Button>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                                <Button 
+                                    variant="outline" 
+                                    onClick={() => setFilterOpen(true)}
+                                    className={cn(
+                                        "h-10 px-4 flex items-center gap-2 font-bold text-xs uppercase tracking-wider border-slate-200 bg-white shadow-sm",
+                                        (statusFilter.length > 0 || typeFilter.length > 0) && "border-primary/50 bg-primary/5 text-primary"
+                                    )}
+                                >
+                                    <Filter className="h-3.5 w-3.5" />
+                                    Filter
+                                    {(statusFilter.length > 0 || typeFilter.length > 0) && (
+                                        <Badge className="ml-1 h-5 min-w-5 flex items-center justify-center p-0 text-[10px] bg-primary text-primary-foreground border-0 font-bold">
+                                            {statusFilter.length + typeFilter.length}
+                                        </Badge>
+                                    )}
+                                </Button>
+
+                                <div className="flex border border-slate-200 rounded-lg overflow-hidden bg-white h-10 shadow-sm">
+                                    <button onClick={() => setLayout('list')} className={`px-2.5 transition-colors ${layout === 'list' ? 'bg-primary text-primary-foreground' : 'hover:bg-slate-100 text-slate-500'}`} title="List View">
+                                        <ListIcon size={16} />
+                                    </button>
+                                    <button onClick={() => setLayout('card')} className={`px-2.5 transition-colors ${layout === 'card' ? 'bg-primary text-primary-foreground' : 'hover:bg-slate-100 text-slate-500'}`} title="Grid View">
+                                        <LayoutGrid size={16} />
+                                    </button>
+                                </div>
+
+                                {canCreate && (
+                                    <Button className="h-10 px-4 gap-2 font-bold text-[11px] uppercase tracking-wider rounded-lg shadow-lg shadow-primary/20" onClick={() => setCreateOpen(true)}>
+                                        <Plus className="h-3.5 w-3.5" />
+                                        Buat Kontrak
                                     </Button>
-                                </div>
-
-                                <div className="flex items-center gap-3">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="outline" className="h-10 px-3 gap-2 border-slate-200 font-bold text-[11px] uppercase tracking-wider">
-                                                <Filter className="h-3.5 w-3.5 text-slate-400" />
-                                                Status: {statusFilter === 'all' ? 'Semua' : (statusFilter === 'in_review' ? 'Dalam Tinjauan' : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1))}
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="w-48">
-                                            <DropdownMenuItem onClick={() => { setStatusFilter('all'); handleFilterChange({ status: 'all' }); }}>Semua</DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => { setStatusFilter('draft'); handleFilterChange({ status: 'draft' }); }}>Draft</DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => { setStatusFilter('in_review'); handleFilterChange({ status: 'in_review' }); }}>Dalam Tinjauan</DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => { setStatusFilter('approved'); handleFilterChange({ status: 'approved' }); }}>Disetujui</DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => { setStatusFilter('rejected'); handleFilterChange({ status: 'rejected' }); }}>Ditolak</DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-
-                                    <div className="flex border border-slate-200 rounded-lg overflow-hidden bg-white h-10 shadow-sm">
-                                        <button onClick={() => setLayout('list')} className={`px-2.5 transition-colors ${(layout as string) === 'list' ? 'bg-primary text-primary-foreground' : 'hover:bg-slate-100 text-slate-500'}`} title="List View">
-                                            <ListIcon size={16} />
-                                        </button>
-                                        <button onClick={() => setLayout('card')} className={`px-2.5 transition-colors ${(layout as string) === 'card' ? 'bg-primary text-primary-foreground' : 'hover:bg-slate-100 text-slate-500'}`} title="Grid View">
-                                            <LayoutGrid size={16} />
-                                        </button>
-                                    </div>
-
-                                    {canCreate && (
-                                        <Button className="h-10 px-4 gap-2 font-bold text-[11px] uppercase tracking-wider rounded-lg shadow-sm" onClick={() => setCreateOpen(true)}>
-                                            <Plus className="h-3.5 w-3.5" />
-                                            Buat Kontrak
-                                        </Button>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Content moved integrated toolbar into DataTable for List view */}
-
-                        {/* Content */}
-                        {layout === 'list' ? (
-                            <div className="flex-1 min-h-[500px]">
-                                <DataTable
-                                    columns={columns}
-                                    data={contractsPaged.data}
-                                    searchPlaceholder="Cari kontrak, no, atau pembuat..."
-                                    onRefresh={() => router.reload({ preserveScroll: true, preserveState: true } as any)}
-                                    onRowClick={openDetail}
-                                    headerActions={
-                                        <div className="flex items-center gap-2">
-                                            <div className="flex border border-slate-200 rounded-lg overflow-hidden bg-white h-10">
-                                                <button onClick={() => setLayout('list')} className={`px-2.5 transition-colors ${(layout as string) === 'list' ? 'bg-primary text-primary-foreground' : 'hover:bg-slate-100 text-slate-500'}`} title="List View">
-                                                    <ListIcon size={16} />
-                                                </button>
-                                                <button onClick={() => setLayout('card')} className={`px-2.5 transition-colors ${(layout as string) === 'card' ? 'bg-primary text-primary-foreground' : 'hover:bg-slate-100 text-slate-500'}`} title="Grid View">
-                                                    <LayoutGrid size={16} />
-                                                </button>
-                                            </div>
-                                            {canCreate && (
-                                                <Button className="h-10 px-4 gap-2 font-bold text-[11px] uppercase tracking-wider rounded-lg" onClick={() => setCreateOpen(true)}>
-                                                    <Plus className="h-3.5 w-3.5" />
-                                                    Buat Kontrak
-                                                </Button>
-                                            )}
-                                        </div>
-                                    }
-                                    pagination={{
-                                        currentPage: contractsPaged.current_page,
-                                        lastPage: contractsPaged.last_page,
-                                        total: contractsPaged.total,
-                                        from: contractsPaged.from,
-                                        to: contractsPaged.to,
-                                        perPage: contractsPaged.per_page,
-                                        onPageChange: (page) => router.get(window.location.href, { ...filters, page }, { preserveState: true, preserveScroll: true }),
-                                        onPerPageChange: (perPage) => router.get(window.location.href, { ...filters, per_page: perPage, page: 1 }, { preserveState: true, preserveScroll: true })
-                                    }}
-                                    searchValue={search}
-                                    onSearchChange={setSearch}
-                                    activeFilters={{ status: statusFilter, contract_type_id: typeFilter }}
-                                    onFilterChange={(fs) => {
-                                        if (fs.status !== undefined && fs.status !== statusFilter) {
-                                            handleFilterChange({ status: fs.status });
-                                            setStatusFilter(fs.status);
-                                        }
-                                        if (fs.contract_type_id !== undefined && fs.contract_type_id !== typeFilter) {
-                                            handleFilterChange({ contract_type_id: fs.contract_type_id });
-                                            setTypeFilter(fs.contract_type_id);
-                                        }
-                                    }}
-                                    filters={[
-                                        {
-                                            label: 'Tipe',
-                                            key: 'contract_type_id',
-                                            options: [
-                                                { label: 'Semua Tipe', value: 'all' },
-                                                ...types.map(t => ({ label: t.name, value: t.id }))
-                                            ]
-                                        },
-                                        {
-                                            label: 'Status',
-                                            key: 'status',
-                                            options: [
-                                                { label: 'Draft', value: 'draft' },
-                                                { label: 'Dalam Tinjauan', value: 'in_review' },
-                                                { label: 'Revisi', value: 'revision' },
-                                                { label: 'Disetujui', value: 'approved' },
-                                                { label: 'Ditolak', value: 'rejected' },
-                                            ]
-                                        }
-                                    ]}
-                                    searchKey="title"
-                                    bulkActions={(selectedRows) => (
-                                        <div className="flex items-center gap-2">
-                                            <Button variant="ghost" size="sm" className="h-9 px-3 text-slate-500 hover:text-slate-900 font-bold text-[11px] uppercase tracking-wider gap-2">
-                                                <i className="fa-solid fa-file-export" /> Export ({selectedRows.length})
-                                            </Button>
-                                        </div>
-                                    )}
-                                />
-                            </div>
-                        ) : (
-                            <div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    {filtered.map(c => (
-                                        <div key={c.id} onClick={() => openDetail(c)}
-                                            className="bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-all cursor-pointer group hover:bg-muted/5 shadow-sm">
-                                            <div className="flex justify-between items-start mb-3">
-                                                <span className="font-mono text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded uppercase tracking-wider">{c.contract_no}</span>
-                                                <StatusBadge status={c.status} />
-                                            </div>
-                                            <h3 className="font-bold text-gray-900 mb-1 group-hover:text-primary transition-colors line-clamp-1" style={{ fontSize: 14 }}>{c.title}</h3>
-                                            <p className="text-muted-foreground mb-4 line-clamp-2" style={{ fontSize: 11 }}>{c.description || '—'}</p>
-
-                                            <div className="flex items-center gap-2 mb-4">
-                                                <Avatar user={c.creator} size="sm" />
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="text-gray-900 font-medium truncate" style={{ fontSize: 11 }}>{c.creator?.name}</div>
-                                                    <div className="text-muted-foreground" style={{ fontSize: 10 }}>{c.created_at}</div>
-                                                </div>
-                                            </div>
-
-                                            <div className="pt-3 border-t border-border/50 flex items-center justify-between">
-                                                <div className="flex flex-col gap-1.5">
-                                                    <div className="flex gap-2">
-                                                        <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">v{c.current_version}</span>
-                                                        <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground truncate max-w-[80px]">{c.contract_type}</span>
-                                                    </div>
-                                                    {c.end_date && <ExpiryBadge endDate={c.end_date} />}
-                                                </div>
-                                                <div className="w-20">
-                                                    <ProgressCell c={c} />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                                {filtered.length === 0 && (
-                                    <div className="p-12 text-center text-muted-foreground bg-card border border-border rounded-xl">
-                                        <i className="fa-solid fa-folder-open mb-3 block" style={{ fontSize: 32 }} />
-                                        <p style={{ fontSize: 13 }}>Tidak ada kontrak ditemukan.</p>
-                                    </div>
                                 )}
                             </div>
-                        )}
-                    </div>
-                )}
+                        </div>
 
-                {/* ── Pending ── */}
-                {view === 'pending' && !selected && (
-                    <div className="flex flex-col gap-4 flex-1 min-h-0">
-                        {/* Toolbar - Standardized for Card View */}
-                        {layout === 'card' && (
-                            <div className="p-4 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50 mb-4">
-                                <div className="flex items-center gap-3 flex-1 max-w-md">
-                                    <div className="relative flex-1">
-                                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                                        <Input 
-                                            value={search} 
-                                            onChange={e => setSearch(e.target.value)} 
-                                            placeholder="Cari approval pending..."
-                                            className="pl-9 h-10 border-slate-200 focus:ring-primary/20 rounded-lg bg-white" 
+                        {/* Active Pills */}
+                        <div className="px-6 py-2">
+                            <FilterPills 
+                                activeFilters={{ status: statusFilter, contract_type_id: typeFilter }}
+                                types={types}
+                                onRemove={(key, val) => {
+                                    if (key === 'status') {
+                                        const next = statusFilter.filter(v => v !== val);
+                                        setStatusFilter(next);
+                                        handleFilterChange({ status: next });
+                                    } else {
+                                        const next = typeFilter.filter(v => v !== val);
+                                        setTypeFilter(next);
+                                        handleFilterChange({ contract_type_id: next });
+                                    }
+                                }}
+                                onClearAll={() => {
+                                    setStatusFilter([]);
+                                    setTypeFilter([]);
+                                    handleFilterChange({ status: [], contract_type_id: [] });
+                                }}
+                            />
+                        </div>
+
+                            {/* List/Grid Area */}
+                            <div className="flex-1 overflow-auto px-6 pb-6 pt-2">
+                                {layout === 'list' ? (
+                                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                                        <DataTable
+                                            columns={view === 'pending' ? [
+                                                ...columns.filter(col => col.accessorKey !== 'progress.pct'),
+                                                {
+                                                    header: 'Role / Seq',
+                                                    accessorKey: 'role',
+                                                    cell: (c) => {
+                                                        const a = c.approvals.find(ap => ap.user_id === meId && ap.status === 'pending');
+                                                        return (
+                                                            <div className="flex flex-col">
+                                                                <span className="font-mono bg-primary/10 text-primary px-1.5 py-0.5 rounded text-[10px] font-bold uppercase w-fit">{a?.role}</span>
+                                                                <span className="text-[10px] text-muted-foreground mt-1">Sequence {a?.sequence}</span>
+                                                            </div>
+                                                        );
+                                                    }
+                                                }
+                                            ] : columns}
+                                            data={contractsPaged.data}
+                                            loading={loading}
+                                            onRowClick={openDetail}
+                                            rowActions={view === 'pending' ? renderRowActions : undefined}
+                                            pagination={{
+                                                currentPage: contractsPaged.current_page,
+                                                lastPage: contractsPaged.last_page,
+                                                total: contractsPaged.total,
+                                                from: contractsPaged.from,
+                                                to: contractsPaged.to,
+                                                perPage: contractsPaged.per_page,
+                                                onPageChange: (page) => router.get(window.location.href, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                                                onPerPageChange: (perPage) => router.get(window.location.href, { ...filters, per_page: perPage, page: 1 }, { preserveState: true, preserveScroll: true })
+                                            }}
+                                            getRowId={(c) => c.id}
                                         />
                                     </div>
-                                    <Button 
-                                        variant="outline" 
-                                        size="icon" 
-                                        onClick={() => router.reload({ preserveScroll: true, preserveState: true } as any)} 
-                                        className="shrink-0 h-10 w-10 border-slate-200"
-                                    >
-                                        <RefreshCcw className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="outline" className="h-10 px-3 gap-2 border-slate-200 font-bold text-[11px] uppercase tracking-wider">
-                                                <Filter className="h-3.5 w-3.5 text-slate-400" />
-                                                Status: {statusFilter === 'all' ? 'Semua' : (statusFilter === 'in_review' ? 'Dalam Tinjauan' : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1))}
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="w-48">
-                                            <DropdownMenuItem onClick={() => { setStatusFilter('all'); handleFilterChange({ status: 'all' }); }}>Semua</DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => { setStatusFilter('draft'); handleFilterChange({ status: 'draft' }); }}>Draft</DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => { setStatusFilter('in_review'); handleFilterChange({ status: 'in_review' }); }}>Dalam Tinjauan</DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => { setStatusFilter('approved'); handleFilterChange({ status: 'approved' }); }}>Disetujui</DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => { setStatusFilter('rejected'); handleFilterChange({ status: 'rejected' }); }}>Ditolak</DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
+                                ) : (
+                                    <div className="flex flex-col gap-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            {contractsPaged.data.map(c => (
+                                                <div key={c.id} onClick={() => openDetail(c)}
+                                                    className="bg-white border border-slate-200 rounded-xl p-5 hover:border-primary/40 transition-all cursor-pointer group hover:bg-primary/5 shadow-sm hover:shadow-md animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                                    <div className="flex justify-between items-start mb-4">
+                                                        <span className="font-mono text-[10px] bg-slate-100 text-slate-600 px-2 py-1 rounded-md uppercase tracking-wider font-bold border border-slate-200/50">{c.contract_no}</span>
+                                                        <StatusBadge status={c.status} />
+                                                    </div>
+                                                    <h3 className="font-bold text-slate-900 mb-2 group-hover:text-primary transition-colors line-clamp-1 text-[15px]">{c.title}</h3>
+                                                    <p className="text-slate-500 mb-5 line-clamp-2 text-[12px] leading-relaxed">{c.description || '—'}</p>
+                                                    
+                                                    <div className="flex items-center gap-3 mb-5">
+                                                        <Avatar user={c.creator} size="sm" className="ring-2 ring-white shadow-sm" />
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="text-slate-900 font-semibold truncate text-[12px]">{c.creator?.name}</div>
+                                                            <div className="text-slate-400 text-[10px] items-center flex gap-1"><Clock size={10} /> {c.created_at}</div>
+                                                        </div>
+                                                    </div>
 
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="outline" className="h-10 px-3 gap-2 border-slate-200 font-bold text-[11px] uppercase tracking-wider">
-                                                <FileText className="h-3.5 w-3.5 text-slate-400" />
-                                                Tipe: {typeFilter === 'all' ? 'Semua' : (types.find(t => t.id === typeFilter)?.name || 'Custom')}
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="w-56">
-                                            <DropdownMenuItem onClick={() => { setTypeFilter('all'); handleFilterChange({ contract_type_id: 'all' }); }}>Semua Tipe</DropdownMenuItem>
-                                            {types.map(t => (
-                                                <DropdownMenuItem key={t.id} onClick={() => { setTypeFilter(t.id); handleFilterChange({ contract_type_id: t.id }); }}>{t.name}</DropdownMenuItem>
+                                                    <div className="pt-4 border-t border-slate-100 flex items-center justify-between mt-auto">
+                                                        <div className="flex flex-col gap-2">
+                                                            <div className="flex gap-2">
+                                                                <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full text-slate-600 font-bold uppercase ring-1 ring-slate-200/50">v{c.current_version}</span>
+                                                                <span className="text-[10px] bg-primary/10 px-2 py-0.5 rounded-full text-primary font-bold uppercase truncate max-w-[100px] ring-1 ring-primary/20">{c.contract_type}</span>
+                                                            </div>
+                                                            {c.end_date && <ExpiryBadge endDate={c.end_date} />}
+                                                        </div>
+                                                        <div className="w-24">
+                                                            <ProgressCell c={c} />
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             ))}
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-
-                                    <div className="flex border border-slate-200 rounded-lg overflow-hidden bg-white h-10 shadow-sm">
-                                        <button onClick={() => setLayout('list')} className={`px-2.5 transition-colors ${(layout as any) === 'list' ? 'bg-primary text-primary-foreground' : 'hover:bg-slate-100 text-slate-500'}`} title="List View">
-                                            <ListIcon size={16} />
-                                        </button>
-                                        <button onClick={() => setLayout('card')} className={`px-2.5 transition-colors ${(layout as any) === 'card' ? 'bg-primary text-primary-foreground' : 'hover:bg-slate-100 text-slate-500'}`} title="Grid View">
-                                            <LayoutGrid size={16} />
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Content */}
-                        {layout === 'list' ? (
-                            <div className="flex-1 min-h-[500px]">
-                                <DataTable
-                                    columns={[
-                                        ...columns.filter(col => col.accessorKey !== 'progress.pct'),
-                                        {
-                                            header: 'Role / Seq',
-                                            accessorKey: 'role',
-                                            cell: (c) => {
-                                                const a = c.approvals.find(ap => ap.user_id === meId && ap.status === 'pending');
-                                                return (
-                                                    <div className="flex flex-col">
-                                                        <span className="font-mono bg-primary/10 text-primary px-1.5 py-0.5 rounded text-[10px] font-bold uppercase w-fit">{a?.role}</span>
-                                                        <span className="text-[10px] text-muted-foreground mt-1">Sequence {a?.sequence}</span>
-                                                    </div>
-                                                );
-                                            }
-                                        }
-                                    ]}
-                                    data={contracts}
-                                    searchValue={search}
-                                    onSearchChange={setSearch}
-                                    searchPlaceholder="Cari approval pending..."
-                                    onRefresh={() => router.reload({ preserveScroll: true, preserveState: true } as any)}
-                                    onRowClick={openDetail}
-                                    rowActions={renderRowActions}
-                                    pagination={{
-                                        currentPage: contractsPaged.current_page,
-                                        lastPage: contractsPaged.last_page,
-                                        total: contractsPaged.total,
-                                        from: contractsPaged.from,
-                                        to: contractsPaged.to,
-                                        perPage: contractsPaged.per_page,
-                                        onPageChange: (page) => router.get(window.location.href, { ...filters, page }, { preserveState: true, preserveScroll: true }),
-                                        onPerPageChange: (perPage) => router.get(window.location.href, { ...filters, per_page: perPage, page: 1 }, { preserveState: true, preserveScroll: true })
-                                    }}
-                                    activeFilters={{ status: statusFilter, contract_type_id: typeFilter }}
-                                    onFilterChange={(fs) => {
-                                        if (fs.status !== undefined && fs.status !== statusFilter) {
-                                            handleFilterChange({ status: fs.status });
-                                            setStatusFilter(fs.status);
-                                        }
-                                        if (fs.contract_type_id !== undefined && fs.contract_type_id !== typeFilter) {
-                                            handleFilterChange({ contract_type_id: fs.contract_type_id });
-                                            setTypeFilter(fs.contract_type_id);
-                                        }
-                                    }}
-                                    filters={[
-                                        {
-                                            label: 'Tipe',
-                                            key: 'contract_type_id',
-                                            options: [
-                                                { label: 'Semua Tipe', value: 'all' },
-                                                ...types.map(t => ({ label: t.name, value: t.id }))
-                                            ]
-                                        },
-                                        {
-                                            label: 'Status',
-                                            key: 'status',
-                                            options: [
-                                                { label: 'Draft', value: 'draft' },
-                                                { label: 'Dalam Tinjauan', value: 'in_review' },
-                                                { label: 'Revisi', value: 'revision' },
-                                                { label: 'Disetujui', value: 'approved' },
-                                                { label: 'Ditolak', value: 'rejected' },
-                                            ]
-                                        }
-                                    ]}
-                                    headerActions={
-                                        <div className="flex items-center gap-3">
-                                          
-                                            <div className="flex border border-slate-200 rounded-lg overflow-hidden bg-white h-10 shadow-sm">
-                                                <button onClick={() => setLayout('list')} className={`px-2.5 transition-colors ${(layout as any) === 'list' ? 'bg-primary text-primary-foreground' : 'hover:bg-slate-100 text-slate-500'}`} title="List View">
-                                                    <ListIcon size={16} />
-                                                </button>
-                                                <button onClick={() => setLayout('card')} className={`px-2.5 transition-colors ${(layout as any) === 'card' ? 'bg-primary text-primary-foreground' : 'hover:bg-slate-100 text-slate-500'}`} title="Grid View">
-                                                    <LayoutGrid size={16} />
-                                                </button>
-                                            </div>
                                         </div>
-                                    }
-                                />
-                            </div>
-                        ) : (
-                            <div className="flex flex-col gap-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {contracts.map(c => (
-                                        <div key={c.id} onClick={() => openDetail(c)}
-                                            className="bg-card border border-border rounded-xl p-4 hover:border-primary/30 transition-all cursor-pointer group hover:bg-muted/5 shadow-sm">
-                                            <div className="flex justify-between items-start mb-3">
-                                                <span className="font-mono text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded uppercase tracking-wider">{c.contract_no}</span>
-                                                <StatusBadge status={c.status} />
-                                            </div>
-                                            <h3 className="font-bold text-gray-900 mb-1 group-hover:text-primary transition-colors line-clamp-1" style={{ fontSize: 14 }}>{c.title}</h3>
-                                            <p className="text-muted-foreground mb-4 line-clamp-2" style={{ fontSize: 11 }}>{c.description || '—'}</p>
-
-                                            <div className="flex items-center gap-2 mb-4">
-                                                <Avatar user={c.creator} size="sm" />
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="text-gray-900 font-medium truncate" style={{ fontSize: 11 }}>{c.creator?.name}</div>
-                                                    <div className="text-muted-foreground" style={{ fontSize: 10 }}>{c.created_at}</div>
+                                        {contractsPaged.data.length === 0 && (
+                                            <div className="p-20 text-center text-slate-400 bg-white border border-slate-200 rounded-2xl shadow-sm">
+                                                <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
+                                                    <Inbox size={32} className="text-slate-300" />
                                                 </div>
+                                                <h3 className="text-slate-900 font-bold text-lg mb-1">Tidak ada kontrak</h3>
+                                                <p className="text-sm">Tidak ada kontrak yang sesuai dengan kriteria filter Anda.</p>
+                                                <Button variant="outline" className="mt-6 font-bold text-xs uppercase" onClick={() => { setStatusFilter([]); setTypeFilter([]); handleFilterChange({ status: [], contract_type_id: [] }); }}>
+                                                    Reset Semua Filter
+                                                </Button>
                                             </div>
-
-                                            <div className="pt-3 border-t border-border/50 flex items-center justify-between">
-                                                <div className="flex flex-col gap-1.5">
-                                                    <div className="flex gap-2">
-                                                        <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">v{c.current_version}</span>
-                                                        <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground truncate max-w-[80px]">{c.contract_type}</span>
-                                                    </div>
-                                                    {c.end_date && <ExpiryBadge endDate={c.end_date} />}
-                                                </div>
-                                                <div className="w-20">
-                                                    <ProgressCell c={c} />
-                                                </div>
-                                            </div>
+                                        )}
+                                        <div className="mt-8 flex justify-center">
+                                            <Pagination data={contractsPaged} filters={filters} />
                                         </div>
-                                    ))}
-                                </div>
-                                {contracts.length === 0 && (
-                                    <div className="p-12 text-center text-muted-foreground bg-card border border-border rounded-xl">
-                                        <i className="fa-solid fa-folder-open mb-3 block" style={{ fontSize: 32 }} />
-                                        <p style={{ fontSize: 13 }}>Tidak ada approval pending ditemukan.</p>
                                     </div>
                                 )}
-                                <div className="mt-4">
-                                    <Pagination data={contractsPaged} filters={filters} />
-                                </div>
                             </div>
-                        )}
-                    </div>
+                        </div>
                 )}
 
                 {/* ── Audit ── */}
@@ -1688,6 +1490,22 @@ function ContractPage({ contracts: contractsPaged, meId, meUser, initialSelected
             <RejectModal open={rejectOpen} onClose={() => setRejectOpen(false)} onSubmit={handleReject} />
             <SendApprovalModal open={sendOpen} onClose={() => setSendOpen(false)} onSubmit={handleSendSubmit} contractType={selected?.contract_type || undefined} />
             <EditContractModal open={editOpen} onClose={() => setEditOpen(false)} onSubmit={handleUpdate} contract={selected} types={types} processing={processing} />
+            <FilterDialog
+                open={filterOpen}
+                onOpenChange={setOpen => setFilterOpen(setOpen)}
+                types={types}
+                activeFilters={{ status: statusFilter, contract_type_id: typeFilter }}
+                onFilterChange={(fs) => {
+                    if (fs.status) setStatusFilter(fs.status);
+                    if (fs.contract_type_id) setTypeFilter(fs.contract_type_id);
+                    handleFilterChange(fs);
+                }}
+                onClearAll={() => {
+                    setStatusFilter([]);
+                    setTypeFilter([]);
+                    handleFilterChange({ status: [], contract_type_id: [] });
+                }}
+            />
             <DeleteConfirmModal open={deleteOpen} onClose={() => setDeleteOpen(false)} onConfirm={handleDelete} processing={processing} />
             <PreviewModal
                 open={previewOpen}

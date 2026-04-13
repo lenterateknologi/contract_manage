@@ -151,12 +151,20 @@ class ContractController extends Controller
 
         // Apply Status Filter
         if ($request->filled('status') && $request->status !== 'all') {
-            $query->where('status', $request->status);
+            if (is_array($request->status)) {
+                $query->whereIn('status', $request->status);
+            } else {
+                $query->where('status', $request->status);
+            }
         }
 
         // Apply Type Filter
         if ($request->filled('contract_type_id') && $request->contract_type_id !== 'all') {
-            $query->where('contract_type_id', $request->contract_type_id);
+            if (is_array($request->contract_type_id)) {
+                $query->whereIn('contract_type_id', $request->contract_type_id);
+            } else {
+                $query->where('contract_type_id', $request->contract_type_id);
+            }
         }
 
         return $query;

@@ -168,31 +168,7 @@ export function DataTable<T extends Record<string, any>>({
                 </div>
 
                 <div className="flex items-center gap-2">
-                    {filters?.map(f => {
-                        const activeValue = activeFilters[f.key];
-                        const activeLabel = f.options.find(opt => opt.value === activeValue)?.label || 'Semua';
-                        
-                        return (
-                            <DropdownMenu key={f.key}>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" size="sm" className="h-10 px-3 gap-2 border-slate-200 font-bold text-[11px] uppercase tracking-wider">
-                                        <Filter className="h-3.5 w-3.5 text-slate-400" />
-                                        {f.label}: {activeLabel}
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-48">
-                                    <DropdownMenuItem onClick={() => setActiveFilters({...activeFilters, [f.key]: undefined})}>
-                                        Semua
-                                    </DropdownMenuItem>
-                                    {f.options.map(opt => (
-                                        <DropdownMenuItem key={opt.value} onClick={() => setActiveFilters({...activeFilters, [f.key]: opt.value})}>
-                                            {opt.label}
-                                        </DropdownMenuItem>
-                                    ))}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        );
-                    })}
+                    {/* Filters moved to Sidebar */}
                     
                     {headerActions && (
                         <div className="flex items-center gap-2">
