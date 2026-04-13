@@ -57,6 +57,7 @@ class AccessModuleSeeder extends Seeder
                         'module_group_id' => $module->module_group_id,
                         'sort_number' => $module->sort_number,
                         'created_by' => $admin->id,
+                        'created_at' => now(),
                         'updated_at' => now(),
                     ]
                 );

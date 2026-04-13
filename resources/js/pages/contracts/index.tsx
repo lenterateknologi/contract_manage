@@ -417,11 +417,11 @@ function ContractPage({ contracts: contractsPaged, meId, meUser, initialSelected
     const [view, setView] = useState<View>(currentView);
 
     useEffect(() => {
-        if (currentView) {
+        if (currentView && currentView !== view) {
             setView(currentView);
             setSelected(null);
         }
-    }, [currentView]);
+    }, [currentView, view]);
 
     const [selected, setSelected] = useState<Contract | null>(initialSelected ?? null);
     const [detailTab, setDetailTab] = useState<'f1' | 'f2' | 'attachments' | 'audit' | 'chat'>('f1');

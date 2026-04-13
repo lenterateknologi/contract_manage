@@ -50,6 +50,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { usePermissions } from '@/hooks/use-permissions';
+import { ToastProvider, useToast } from '@/components/contracts/Toast';
 
 // ─── Table header cell ───────────────────────────────────────────────
 function Th({ children, style }: { children?: React.ReactNode; style?: React.CSSProperties }) {
@@ -138,28 +139,19 @@ function SortableStepItem({
         <div 
             ref={setNodeRef} 
             style={style}
-            className="bg-white border border-slate-200 rounded-xl p-3 flex gap-4 items-start shadow-sm hover:shadow-md transition-all group/step"
+            className="bg-white border border-slate-200 rounded-2xl p-4 flex gap-5 items-start shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_30px_-10px_rgba(0,0,0,0.12)] transition-all duration-300 group/step relative overflow-hidden"
         >
+            <div className="absolute top-0 left-0 w-1 h-full bg-slate-900 opacity-0 group-hover/step:opacity-100 transition-opacity" />
             <div 
                 {...attributes} 
                 {...listeners} 
-                className="h-7 w-7 rounded-lg bg-slate-900 flex items-center justify-center text-white font-black text-[10px] shrink-0 cursor-grab active:cursor-grabbing hover:bg-slate-800"
+                className="h-8 w-8 rounded-xl bg-slate-900 flex items-center justify-center text-white font-black text-[11px] shrink-0 cursor-grab active:cursor-grabbing hover:bg-slate-800 shadow-lg shadow-slate-200 transition-transform active:scale-95"
             >
-                <GripVertical size={12} className="mr-0.5 opacity-50" />
+                <GripVertical size={12} className="mr-0.5 opacity-40" />
                 {idx + 1}
             </div>
             
             <div className="flex-1 grid grid-cols-12 gap-3">
-                <div className="col-span-3 space-y-1">
-                    <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Label Langkah</Label>
-                    <Input 
-                        placeholder="Contoh: Manager Legal" 
-                        value={step.role || ''}
-                        onChange={e => updateLocalStep(idx, { role: e.target.value })}
-                        className="h-7 font-bold text-slate-800 text-[11px] bg-slate-50/50"
-                    />
-                </div>
-                
                 <div className="col-span-3 space-y-1">
                     <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Tipe Otoritas</Label>
                     <div className="flex p-0.5 bg-slate-100 rounded-lg border border-slate-200 h-7">
@@ -186,7 +178,7 @@ function SortableStepItem({
                     </div>
                 </div>
 
-                <div className="col-span-6 space-y-1.5">
+                <div className="col-span-9 space-y-1.5">
                     {step.approver_type === 'role' ? (
                         <div className="space-y-1">
                             <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400 flex justify-between">
@@ -197,16 +189,16 @@ function SortableStepItem({
                                 value={step.selected_role} 
                                 onValueChange={(val) => updateLocalStep(idx, { selected_role: val })}
                             >
-                                <SelectTrigger className="h-7 font-bold text-slate-800 text-[11px] bg-white border-slate-200 px-2">
+                                <SelectTrigger className="h-8 font-bold text-slate-800 text-[11px] bg-white border-slate-200 px-3 rounded-lg hover:border-primary/30 transition-colors">
                                     <SelectValue placeholder="Cari & Pilih Role..." />
                                 </SelectTrigger>
                                 <SelectContent className="p-0">
-                                    <div className="p-2 border-b">
+                                    <div className="p-2 border-b bg-slate-50/50">
                                         <div className="relative">
-                                            <Search className="absolute left-2 top-1.5 h-3 w-3 text-slate-400" />
+                                            <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
                                             <Input 
                                                 placeholder="Cari role..." 
-                                                className="h-6 pl-7 text-[10px] bg-slate-50"
+                                                className="h-7 pl-8 text-[11px] bg-white border-slate-200 shadow-sm rounded-md"
                                                 value={roleSearchText}
                                                 onChange={e => setRoleSearchText(e.target.value)}
                                                 onClick={e => e.stopPropagation()}
@@ -232,18 +224,18 @@ function SortableStepItem({
                             
                             <div className="flex gap-2">
                                 <div className="relative flex-1">
-                                    <Search className="absolute left-2 top-1.5 h-3 w-3 text-slate-400" />
+                                    <Search className="absolute left-3 top-2 h-3.5 w-3.5 text-slate-400" />
                                     <Input 
-                                        placeholder="Cari nama/email..." 
-                                        className="h-6 pl-7 text-[10px] bg-white border-slate-200 shadow-sm"
+                                        placeholder="Cari berdasarkan nama atau email..." 
+                                        className="h-8 pl-9 text-[11px] bg-white border-slate-200 shadow-sm rounded-lg focus-visible:ring-primary/20"
                                         value={userSearchText}
                                         onChange={e => setUserSearchText(e.target.value)}
                                     />
                                 </div>
                                 <Select value={userRoleFilter} onValueChange={setUserRoleFilter}>
-                                    <SelectTrigger className="h-6 w-[120px] text-[10px] font-bold bg-slate-50 border-slate-200 px-2 uppercase tracking-tight">
-                                        <Filter className="h-2.5 w-2.5 mr-1 text-slate-400" />
-                                        <SelectValue placeholder="Role filter" />
+                                    <SelectTrigger className="h-8 w-[140px] text-[10px] font-bold bg-slate-50 border-slate-200 px-3 rounded-lg uppercase tracking-tight hover:bg-slate-100 transition-colors">
+                                        <Filter className="h-3 w-3 mr-1.5 text-slate-400" />
+                                        <SelectValue placeholder="Filter Role" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all" className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Show All Roles</SelectItem>
@@ -256,11 +248,13 @@ function SortableStepItem({
                                 </Select>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-1 max-h-[100px] overflow-y-auto p-1 bg-slate-50/50 rounded-lg border border-slate-100">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[160px] overflow-y-auto p-2 bg-slate-50/50 rounded-xl border border-slate-100 shadow-inner">
                                 {filteredUsers.map(u => (
                                     <label key={u.id} className={cn(
-                                        "inline-flex items-center gap-1.5 px-2 py-1 rounded-md border text-[9px] font-bold cursor-pointer transition-all",
-                                        step.user_ids?.includes(u.id) ? "bg-primary text-white border-primary shadow-sm" : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
+                                        "group/u inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-[10px] font-bold cursor-pointer transition-all duration-200",
+                                        step.user_ids?.includes(u.id) 
+                                            ? "bg-primary text-white border-primary shadow-md shadow-primary/10 scale-[1.02]" 
+                                            : "bg-white border-slate-200 text-slate-600 hover:border-primary/40 hover:bg-slate-50 hover:shadow-sm"
                                     )}>
                                         <Checkbox 
                                             checked={step.user_ids?.includes(u.id)}
@@ -269,13 +263,19 @@ function SortableStepItem({
                                                 const isChecked = checked === true;
                                                 updateLocalStep(idx, { user_ids: isChecked ? [...ids, u.id] : ids.filter((id: any) => id !== u.id) });
                                             }}
-                                            className={cn("h-3 w-3 rounded-[3px]", step.user_ids?.includes(u.id) ? "border-white" : "border-slate-300")}
+                                            className={cn("h-3.5 w-3.5 rounded-md transition-colors", step.user_ids?.includes(u.id) ? "border-white data-[state=checked]:bg-white data-[state=checked]:text-primary" : "border-slate-300")}
                                         />
-                                        <span className="truncate flex-1">{u.name}</span>
+                                        <div className="flex flex-col min-w-0">
+                                            <span className="truncate leading-tight">{u.name}</span>
+                                            <span className={cn("text-[8px] opacity-60 font-medium truncate", step.user_ids?.includes(u.id) ? "text-white" : "text-slate-400")}>{u.email}</span>
+                                        </div>
                                     </label>
                                 ))}
                                 {filteredUsers.length === 0 && (
-                                    <div className="col-span-2 py-4 text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest">User tidak ditemukan</div>
+                                    <div className="col-span-full py-8 text-center flex flex-col items-center gap-2">
+                                        <UsersIcon size={20} className="text-slate-200" />
+                                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">User tidak ditemukan</div>
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -347,7 +347,9 @@ export default function AdminIndex({
         }
     };
 
-    const showToast = (msg: string, type: 'success' | 'danger') => alert(msg);
+    const { showToast: toast } = useToast();
+
+    const showToast = (msg: string, type: 'success' | 'danger') => toast(msg, type);
 
     const toggleWorkflowExpand = (w: any) => {
         if (expandedWorkflowId === w.id) {
@@ -359,7 +361,8 @@ export default function AdminIndex({
                 id: s.id,
                 role: s.role,
                 approver_type: s.approver_type || 'role',
-                user_ids: s.user_ids || [],
+                user_ids: s.users?.map((u: any) => u.id) || [],
+                selected_role: s.approver_type === 'role' ? s.role : '',
                 description: s.description || '',
                 step: s.step
             })) || []);
@@ -386,18 +389,24 @@ export default function AdminIndex({
     };
 
     const saveWorkflowSteps = (workflowId: number) => {
-        if (editingSteps.some(s => !s.role.trim())) {
-            showToast("Semua peran harus memiliki nama/label.", "danger");
+        if (editingSteps.some(s => s.approver_type === 'role' && !s.selected_role)) {
+            showToast("Semua langkah role harus dipilih.", "danger");
+            return;
+        }
+
+        if (editingSteps.some(s => s.approver_type === 'user' && (!s.user_ids || s.user_ids.length === 0))) {
+            showToast("Semua langkah user harus memiliki minimal satu user.", "danger");
             return;
         }
 
         setIsSavingSteps(true);
         router.post(`/admin/workflows/${workflowId}/steps`, { 
             steps: editingSteps.map((s, idx) => ({
-                role: s.role,
+                role: s.approver_type === 'role' ? s.selected_role : 'Persetujuan User',
+                selected_role: s.selected_role,
                 approver_type: s.approver_type,
                 user_ids: s.user_ids,
-                description: s.description,
+                description: s.approver_type === 'role' ? s.selected_role : 'Persetujuan User',
                 step: idx + 1
             }))
         }, {
@@ -612,7 +621,7 @@ export default function AdminIndex({
     };
 
     return (
-        <>
+        <ToastProvider>
             <Head title={`Admin - ${viewTitle}`} />
 
             <div className="flex h-full flex-col flex-1 divide-y divide-border">
@@ -1147,6 +1156,6 @@ export default function AdminIndex({
                     </form>
                 </DialogContent>
             </Dialog>
-        </>
+        </ToastProvider>
     );
 }

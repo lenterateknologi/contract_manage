@@ -34,14 +34,18 @@ class ContractWorkflowService
             ]);
 
             foreach ($customSteps as $index => $stepData) {
-                $workflow->steps()->create([
+                $step = $workflow->steps()->create([
                     'step' => $index + 1,
-                    'role' => $stepData['role'],
-                    'user_id' => $stepData['user_id'] ?? null,
+                    'role' => $stepData['role'] ?? 'Approval Step',
+                    'approver_type' => !empty($stepData['user_ids']) ? 'user' : 'role',
                     'description' => $stepData['description'] ?? "Approval step " . ($index + 1),
                     'created_by' => auth()->id(),
                     'updated_by' => auth()->id(),
                 ]);
+
+                if (!empty($stepData['user_ids'])) {
+                    $step->users()->sync($stepData['user_ids']);
+                }
             }
         }
 
@@ -88,10 +92,8 @@ class ContractWorkflowService
     private function createApprovalForStep(Contract $contract, WorkflowStep $step): void
     {
         // Determine approvers
-        if (! empty($step->user_ids) && is_array($step->user_ids)) {
-            $approvers = User::whereIn('id', $step->user_ids)->get();
-        } elseif ($step->user_id) {
-            $approvers = User::where('id', $step->user_id)->get();
+        if ($step->approver_type === 'user') {
+            $approvers = $step->users;
         } else {
             // Find all users with the required role
             $approvers = User::where('role', $step->role)->get();

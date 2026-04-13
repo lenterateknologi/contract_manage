@@ -12,12 +12,6 @@ class AccessModule extends Model
 
     protected $table = 'access_modules';
 
-    public $incrementing = false;
-
-    protected $primaryKey = null;
-
-    protected $keyType = 'string';
-
     protected $fillable = [
         'role_id',
         'module_id',

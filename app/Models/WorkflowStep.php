@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class WorkflowStep extends Model
@@ -12,7 +13,6 @@ class WorkflowStep extends Model
         'workflow_id',
         'role',
         'approver_type',
-        'user_ids',
         'step',
         'description',
         'created_by',
@@ -22,7 +22,6 @@ class WorkflowStep extends Model
 
     protected $casts = [
         'step' => 'integer',
-        'user_ids' => 'array',
         'is_active' => 'boolean',
     ];
 
@@ -31,14 +30,14 @@ class WorkflowStep extends Model
         return $this->belongsTo(Workflow::class);
     }
 
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
-    }
-
     public function approvals(): HasMany
     {
         return $this->hasMany(Approval::class);
+    }
+
+    public function users(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'workflow_step_users')->withTimestamps();
     }
 
     public function nextStep(): ?self

@@ -25,7 +25,6 @@ class Module extends Model
         'sort_number',
         'url',
         'icon',
-        'parent_module_id',
         'module_group_id',
         'showed_as_menu',
         'created_by',

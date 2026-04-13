@@ -317,7 +317,7 @@ class AdminController extends Controller
     {
         return Inertia::render('admin/index', [
             'currentView' => 'workflows',
-            'workflows' => Workflow::with('steps')->orderBy('name')->get(),
+            'workflows' => Workflow::with('steps.users')->orderBy('name')->get(),
             'contractTypes' => ContractType::all(),
             'roles' => Role::all(),
             'users' => User::all(),
@@ -395,6 +395,7 @@ class AdminController extends Controller
     public function destroyWorkflow(Workflow $workflow)
     {
         $workflow->delete();
+
         return redirect()->back();
     }
 
@@ -423,18 +424,21 @@ class AdminController extends Controller
         ]);
 
         $workflow->steps()->delete();
-        
+
         if (! empty($data['steps'])) {
             foreach ($data['steps'] as $index => $stepData) {
-                $workflow->steps()->create([
-                    'role' => $stepData['approver_type'] === 'role' ? ($stepData['selected_role'] ?? $stepData['role']) : $stepData['role'],
+                $step = $workflow->steps()->create([
+                    'role' => ($stepData['approver_type'] ?? 'role') === 'role' ? ($stepData['selected_role'] ?? $stepData['role']) : $stepData['role'],
                     'approver_type' => $stepData['approver_type'] ?? 'role',
-                    'user_ids' => $stepData['user_ids'] ?? null,
                     'description' => $stepData['role'], // Use manual label for description/display
                     'step' => $index + 1,
                     'created_by' => auth()->id(),
                     'updated_by' => auth()->id(),
                 ]);
+
+                if (($stepData['approver_type'] ?? 'role') === 'user' && ! empty($stepData['user_ids'])) {
+                    $step->users()->sync($stepData['user_ids']);
+                }
             }
         }
 

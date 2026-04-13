@@ -33,3 +33,10 @@ Financial Fields: Input nilai kontrak, mata uang, dan termin pembayaran.
 Integration with Finance: Sinkronisasi dengan departemen keuangan untuk pencatatan liabilitas.
 
 ///
+
+13 april do
+
+- pas upload dokumen, lari ke depan
+- pas kirim pesan lari ke depan
+- dialog di workflow step
+- workflow step untuk per user berlum berjalan. harus dipisah 1 tabel baru lagi, namaunya contract_approvers
