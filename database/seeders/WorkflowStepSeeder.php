@@ -14,6 +14,9 @@ class WorkflowStepSeeder extends Seeder
     {
         $sampleUserId = '123e4567-e89b-12d3-a456-426614174000';
 
+        // Clear existing steps first to avoid unique constraint violations
+        DB::table('workflow_steps')->truncate();
+
         // Get all workflows
         $workflows = DB::table('workflows')->get();
 

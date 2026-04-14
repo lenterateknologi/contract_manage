@@ -13,10 +13,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('contracts', function (Blueprint $table) {
-            $table->foreignId('workflow_id')->index()->nullable()->constrained('workflows')->onDelete('set null');
-            $table->foreignId('workflow_step_id')->index()->nullable()->constrained('workflow_steps')->onDelete('set null');
-            $table->boolean('is_active')->default(true)->index();
-            $table->timestamp('submitted_at')->nullable()->index();
+            if (!Schema::hasColumn('contracts', 'workflow_id')) {
+                $table->foreignId('workflow_id')->index()->nullable()->constrained('workflows')->onDelete('set null');
+            }
+            if (!Schema::hasColumn('contracts', 'workflow_step_id')) {
+                $table->foreignId('workflow_step_id')->index()->nullable()->constrained('workflow_steps')->onDelete('set null');
+            }
+            if (!Schema::hasColumn('contracts', 'is_active')) {
+                $table->boolean('is_active')->default(true)->index();
+            }
+            if (!Schema::hasColumn('contracts', 'submitted_at')) {
+                $table->timestamp('submitted_at')->nullable()->index();
+            }
            // $table->timestamp('submitted_by')->nullable()->index();
         });
     }

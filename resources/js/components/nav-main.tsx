@@ -24,7 +24,7 @@ export function NavMain({ title, items = [] }: { title?: string; items: NavItem[
                                 item.url === page.url ? "bg-primary/8 text-primary font-bold shadow-sm" : "hover:bg-muted/50"
                             )}
                         >
-                            <Link href={item.url} prefetch className="flex items-center gap-3 w-full h-full px-3">
+                            <Link href={item.url} className="flex items-center gap-3 w-full h-full px-3">
                                 {item.icon && <item.icon className={cn("h-[18px] w-[18px] shrink-0", item.url === page.url ? "text-primary" : "text-muted-foreground/80")} />}
                                 <span className="text-[14.5px] truncate tracking-tight">{item.title}</span>
                             </Link>

@@ -13,11 +13,10 @@ class ModuleGroupSeeder extends Seeder
         $admin = User::firstWhere('email', 'admin@example.com') ?? User::first();
 
         $groups = [
-            'Insight & Analytics',
+            'Dashboard',
             'Manajemen Kontrak',
-            'E-Form & Dokumen',
-            'Administrasi Sistem',
-            'Audit & Keamanan',
+            'Form Digital',
+            'Konfigurasi Sistem',
         ];
 
         // Cleanup: Remove any groups not in our list to ensure a clean state

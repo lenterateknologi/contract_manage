@@ -12,6 +12,9 @@ class WorkflowSeeder extends Seeder
      */
     public function run(): void
     {
+        // Clear existing workflows first to avoid unique constraint violations
+        DB::table('workflows')->truncate();
+
         $workflows = [
             [
                 'contract_type' => 'Service Agreement',

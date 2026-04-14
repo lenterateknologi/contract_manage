@@ -15,29 +15,25 @@ class ModuleSeeder extends Seeder
         $groups = ModuleGroup::pluck('id', 'title')->all();
 
         $modules = [
-            // Insight & Analytics
-            ['code' => 'DASH', 'title' => 'Dashboard Utama', 'url' => '/dashboard', 'icon' => 'LayoutGrid', 'group' => 'Insight & Analytics', 'sort' => 1],
-            ['code' => 'ANLTX', 'title' => 'Analitik & SLA', 'url' => '/admin/reports', 'icon' => 'BarChart3', 'group' => 'Insight & Analytics', 'sort' => 2],
+            // Dashboard
+            ['code' => 'DASH', 'title' => 'Dashboard', 'url' => '/dashboard', 'icon' => 'LayoutGrid', 'group' => 'Dashboard', 'sort' => 1],
+            ['code' => 'ANLTX', 'title' => 'Laporan', 'url' => '/admin/reports', 'icon' => 'BarChart3', 'group' => 'Dashboard', 'sort' => 2],
 
             // Manajemen Kontrak
-            ['code' => 'CONTRACTS', 'title' => 'Register Kontrak', 'url' => '/contracts', 'icon' => 'FileText', 'group' => 'Manajemen Kontrak', 'sort' => 1],
-            ['code' => 'PENDING', 'title' => 'Menunggu Approval', 'url' => '/pending', 'icon' => 'Clock', 'group' => 'Manajemen Kontrak', 'sort' => 2],
-            ['code' => 'EXPIRY', 'title' => 'Monitoring Masa Berlaku', 'url' => '/admin/expiry', 'icon' => 'AlertCircle', 'group' => 'Manajemen Kontrak', 'sort' => 3],
-            ['code' => 'MY_CTC', 'title' => 'Dokumen Saya', 'url' => '/my-contracts', 'icon' => 'UserCheck', 'group' => 'Manajemen Kontrak', 'sort' => 4],
+            ['code' => 'CONTRACTS', 'title' => 'Daftar Kontrak', 'url' => '/contracts', 'icon' => 'FileText', 'group' => 'Manajemen Kontrak', 'sort' => 1],
+            ['code' => 'MY_CTC', 'title' => 'Kontrak Saya', 'url' => '/my-contracts', 'icon' => 'UserCheck', 'group' => 'Manajemen Kontrak', 'sort' => 2],
+            ['code' => 'PENDING', 'title' => 'Persetujuan', 'url' => '/pending', 'icon' => 'Clock', 'group' => 'Manajemen Kontrak', 'sort' => 3],
 
-            // E-Form & Dokumen
-            ['code' => 'F1', 'title' => 'Permintaan Kontrak (F1)', 'url' => '/f1', 'icon' => 'FilePlus', 'group' => 'E-Form & Dokumen', 'sort' => 1],
-            ['code' => 'F2', 'title' => 'Review Legal (F2)', 'url' => '/f2', 'icon' => 'FileCheck', 'group' => 'E-Form & Dokumen', 'sort' => 2],
+            // Form Digital
+            // ['code' => 'F1', 'title' => 'Pengajuan Baru', 'url' => '/f1', 'icon' => 'FilePlus', 'group' => 'Form Digital', 'sort' => 1],
 
-            // Administrasi Sistem
-            ['code' => 'USERS', 'title' => 'Manajemen Pengguna', 'url' => '/admin/users', 'icon' => 'Users', 'group' => 'Administrasi Sistem', 'sort' => 1],
-            ['code' => 'ROLES', 'title' => 'Role & Otoritas', 'url' => '/admin/roles', 'icon' => 'ShieldCheck', 'group' => 'Administrasi Sistem', 'sort' => 2],
-            ['code' => 'CTC_TYPES', 'title' => 'Master Tipe Kontrak', 'url' => '/admin/contract-types', 'icon' => 'Settings2', 'group' => 'Administrasi Sistem', 'sort' => 3],
-            ['code' => 'WORKFLOWS', 'title' => 'Konfigurasi Alur Kerja', 'url' => '/admin/workflows', 'icon' => 'GitBranch', 'group' => 'Administrasi Sistem', 'sort' => 4],
-            ['code' => 'NAV_MGMT', 'title' => 'Struktur Navigasi', 'url' => '/admin/navigation', 'icon' => 'Layers', 'group' => 'Administrasi Sistem', 'sort' => 5],
+            // Konfigurasi Sistem
 
-            // Audit & Keamanan
-            ['code' => 'AUDIT', 'title' => 'Jejak Audit (Logs)', 'url' => '/admin/audit', 'icon' => 'History', 'group' => 'Audit & Keamanan', 'sort' => 1],
+            ['code' => 'USERS', 'title' => 'Pengguna', 'url' => '/admin/users', 'icon' => 'Users', 'group' => 'Konfigurasi Sistem', 'sort' => 1],
+            ['code' => 'ROLES', 'title' => 'Hak Akses', 'url' => '/admin/roles', 'icon' => 'ShieldCheck', 'group' => 'Konfigurasi Sistem', 'sort' => 2],
+            ['code' => 'CTC_TYPES', 'title' => 'Tipe Kontrak', 'url' => '/admin/contract-types', 'icon' => 'Settings2', 'group' => 'Konfigurasi Sistem', 'sort' => 3],
+            ['code' => 'WORKFLOWS', 'title' => 'Alur Kerja', 'url' => '/admin/workflows', 'icon' => 'GitBranch', 'group' => 'Konfigurasi Sistem', 'sort' => 4],
+            // ['code' => 'AUDIT', 'title' => 'Log Aktivitas', 'url' => '/admin/audit', 'icon' => 'History', 'group' => 'Konfigurasi Sistem', 'sort' => 5],
         ];
 
         $activeCodes = array_column($modules, 'code');
@@ -61,8 +57,7 @@ class ModuleSeeder extends Seeder
             );
         }
 
-        // Specifically remove old modules
-        Module::whereIn('code', ['MOD_GRPS', 'MODS', 'AUDIT'])->delete();
-        ModuleGroup::where('title', 'Laporan')->delete();
+        // Specifically remove old modules/groups if needed
+        ModuleGroup::whereIn('title', ['Insight & Analytics', 'E-Form & Dokumen', 'Administrasi Sistem', 'Audit & Keamanan', 'Laporan'])->delete();
     }
 }

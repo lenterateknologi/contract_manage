@@ -36,7 +36,7 @@ class AccessModuleSeeder extends Seeder
             }
 
             foreach ($modules as $module) {
-                if ($module->title === 'Audit Trail' && $role->name !== 'Admin') {
+                if ($module->code === 'AUDIT' && $role->name !== 'Admin') {
                     continue;
                 }
 

@@ -66,7 +66,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild tooltip="Dashboard">
-                            <Link href="/dashboard" prefetch className="flex items-center justify-center w-full h-full">
+                            <Link href="/dashboard" className="flex items-center justify-center w-full h-full">
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>
