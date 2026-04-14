@@ -26,12 +26,33 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('workflows', function (Blueprint $table) {
-            $table->dropColumn('is_template');
+            if (Schema::hasColumn('workflows', 'is_template')) {
+                $table->dropColumn('is_template');
+            }
         });
 
         Schema::table('workflow_steps', function (Blueprint $table) {
-            $table->dropForeign(['user_id']);
-            $table->dropColumn('user_id');
+            // Only drop the foreign key if it actually exists in Postgres
+            if (config('database.default') === 'pgsql') {
+                $exists = \Illuminate\Support\Facades\DB::selectOne("
+                    SELECT 1 FROM information_schema.table_constraints 
+                    WHERE table_name='workflow_steps' 
+                    AND constraint_name='workflow_steps_user_id_foreign'
+                ");
+                if ($exists) {
+                    $table->dropForeign(['user_id']);
+                }
+            } else {
+                try {
+                    $table->dropForeign(['user_id']);
+                } catch (\Exception $e) {
+                    // Ignore if driver doesn't support or constraint missing
+                }
+            }
+
+            if (Schema::hasColumn('workflow_steps', 'user_id')) {
+                $table->dropColumn('user_id');
+            }
         });
     }
 };
