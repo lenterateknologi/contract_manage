@@ -4,7 +4,9 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ContractController;
 use App\Http\Controllers\ContractMessageController;
 use App\Http\Controllers\EmailTestController;
+use App\Http\Controllers\FormTemplateController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\TemplateController;
 use App\Models\Contract;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -28,6 +30,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('pending', [ContractController::class, 'contractsView'])->defaults('view', 'pending')->name('pending');
     Route::get('f1', [ContractController::class, 'contractsView'])->defaults('view', 'f1')->name('f1');
     Route::get('f2', [ContractController::class, 'contractsView'])->defaults('view', 'f2')->name('f2');
+    Route::get('expiry', [ContractController::class, 'contractsView'])->defaults('view', 'expiry')->name('expiry');
 
     Route::get('contracts/{id}', function ($id) {
         return Inertia::render('contracts/show', ['contractId' => $id]);
@@ -57,6 +60,15 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/contracts/{id}/pdf/{versionNo}', [ContractController::class, 'pdfPreview'])->name('contracts.pdf-preview');
         Route::get('/contracts/{id}/attachment-pdf/{atId}', [ContractController::class, 'attachmentPdfPreview'])->name('contracts.attachment-pdf-preview');
 
+        // Form Submissions (F1/F2)
+        Route::post('/contracts/{id}/form-submissions', [ContractController::class, 'saveFormSubmission']);
+        Route::get('/contracts/{id}/form-submissions/{type}', [ContractController::class, 'getFormSubmission']);
+        Route::get('/contracts/{id}/form-submissions/{type}/pdf', [ContractController::class, 'exportFormSubmissionPdf']);
+        Route::get('/form-templates/{id}/fields', function ($id) {
+            $tpl = \App\Models\FormTemplate::with(['fields' => fn($q) => $q->orderBy('order')])->findOrFail($id);
+            return response()->json($tpl);
+        });
+
         Route::get('/contracts/{contractId}/messages', [ContractMessageController::class, 'index']);
         Route::post('/contracts/{contractId}/messages', [ContractMessageController::class, 'store']);
         Route::post('/contracts/{contractId}/messages/read', [ContractMessageController::class, 'markRead']);
@@ -64,7 +76,6 @@ Route::middleware(['auth'])->group(function () {
 
     Route::middleware(['admin'])->prefix('admin')->group(function () {
         Route::get('/contracts', [ContractController::class, 'contractsView'])->defaults('view', 'contracts')->name('admin.contracts.index');
-        Route::get('/expiry', [ContractController::class, 'contractsView'])->defaults('view', 'expiry')->name('admin.expiry');
         Route::get('/audit', [ContractController::class, 'contractsView'])->defaults('view', 'audit')->name('admin.audit');
 
         Route::get('/contracts-data', [ContractController::class, 'index'])->name('contracts.data');
@@ -134,6 +145,28 @@ Route::middleware(['auth'])->group(function () {
 
         // Email testing
         Route::post('/test-email', [EmailTestController::class, 'sendTestEmail'])->name('admin.test-email');
+
+        // Template Management
+        Route::get('/templates', [TemplateController::class, 'index'])->name('admin.templates.index');
+        Route::post('/templates/folders', [TemplateController::class, 'storeFolder'])->name('admin.templates.folders.store');
+        Route::put('/templates/folders/{folder}', [TemplateController::class, 'updateFolder'])->name('admin.templates.folders.update');
+        Route::delete('/templates/folders/{folder}', [TemplateController::class, 'destroyFolder'])->name('admin.templates.folders.destroy');
+        Route::post('/templates', [TemplateController::class, 'storeTemplate'])->name('admin.templates.store');
+        Route::put('/templates/{template}', [TemplateController::class, 'updateTemplate'])->name('admin.templates.update');
+        Route::delete('/templates/{template}', [TemplateController::class, 'destroyTemplate'])->name('admin.templates.destroy');
+        Route::get('/templates/{template}/download', [TemplateController::class, 'downloadTemplate'])->name('admin.templates.download');
+        Route::patch('/templates/folders/{folder}/move', [TemplateController::class, 'moveFolder'])->name('admin.templates.folders.move');
+        Route::patch('/templates/{template}/move', [TemplateController::class, 'moveTemplate'])->name('admin.templates.move');
+
+        // Form Templates (Digital Forms)
+        Route::get('/form-templates', [FormTemplateController::class, 'index'])->name('admin.form-templates.index');
+        Route::get('/form-templates/builder/{template?}', [FormTemplateController::class, 'builder'])->name('admin.form-templates.builder');
+        Route::post('/form-templates/save/{template?}', [FormTemplateController::class, 'save'])->name('admin.form-templates.save');
+        Route::get('/form-templates/{template}/fill', [FormTemplateController::class, 'fill'])->name('admin.form-templates.fill');
+        Route::post('/form-templates/{template}/export-pdf', [FormTemplateController::class, 'exportPdf'])->name('admin.form-templates.export-pdf');
+        Route::delete('/form-templates/{template}', [FormTemplateController::class, 'destroy'])->name('admin.form-templates.destroy');
+
+        Route::get('/api/templates/data', [TemplateController::class, 'getApiData'])->name('admin.templates.api.data');
     });
 });
 

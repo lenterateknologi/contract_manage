@@ -74,6 +74,15 @@ export interface ContractType {
     description?: string;
 }
 
+export interface ContractFormSubmissionInfo {
+    id: string;
+    document_type: 'f1' | 'f2';
+    form_template_id: string;
+    current_version: number;
+    submitted_by: string;
+    updated_at: string;
+}
+
 export interface Contract {
     id: string;
     contract_no: string;
@@ -98,6 +107,7 @@ export interface Contract {
     histories: ContractHistory[];
     messages?: ContractMessage[];
     attachments?: ContractAttachment[];
+    form_submissions?: ContractFormSubmissionInfo[];
 }
 
 export type ContractStatus = 'draft' | 'in_review' | 'revision' | 'approved' | 'locked' | 'archived';

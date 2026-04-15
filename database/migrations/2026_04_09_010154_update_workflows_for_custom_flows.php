@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -34,7 +35,7 @@ return new class extends Migration
         Schema::table('workflow_steps', function (Blueprint $table) {
             // Only drop the foreign key if it actually exists in Postgres
             if (config('database.default') === 'pgsql') {
-                $exists = \Illuminate\Support\Facades\DB::selectOne("
+                $exists = DB::selectOne("
                     SELECT 1 FROM information_schema.table_constraints 
                     WHERE table_name='workflow_steps' 
                     AND constraint_name='workflow_steps_user_id_foreign'
@@ -45,7 +46,7 @@ return new class extends Migration
             } else {
                 try {
                     $table->dropForeign(['user_id']);
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     // Ignore if driver doesn't support or constraint missing
                 }
             }

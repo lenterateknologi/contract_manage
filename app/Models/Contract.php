@@ -62,6 +62,11 @@ class Contract extends Model
         return $this->hasMany(ContractMessage::class)->orderBy('created_at');
     }
 
+    public function formSubmissions(): HasMany
+    {
+        return $this->hasMany(ContractFormSubmission::class);
+    }
+
     public function workflow(): BelongsTo
     {
         return $this->belongsTo(Workflow::class);

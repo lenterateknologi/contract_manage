@@ -36,6 +36,7 @@ import FloatingChat from '@/components/contracts/FloatingChat';
 import PreviewModal from '@/components/contracts/PreviewModal';
 import CompareModal from '@/components/contracts/CompareModal';
 import UploadRevisionModal from '@/components/contracts/UploadRevisionModal';
+import { FormSubmissionTab } from '@/components/contracts/FormSubmissionTab';
 import RejectModal from '@/components/contracts/RejectModal';
 import SendApprovalModal from '@/components/contracts/SendApprovalModal';
 import ApprovalSteps from '@/components/contracts/ApprovalSteps';
@@ -436,7 +437,17 @@ function ProfileView({ meUser, showToast }: { meUser: any; showToast: any }) {
 
 
 // ─── Main Page ──────────────────────────────────────────────────────
-function ContractPage({ contracts: contractsPaged, meId, meUser, initialSelected, types, currentView, metrics, filters }: {
+interface FormTemplateInfo {
+    id: string;
+    name: string;
+    description: string;
+    document_type?: string;
+    contract_type_id: string | null;
+    contract_type_name: string | null;
+    fields_count: number;
+}
+
+function ContractPage({ contracts: contractsPaged, meId, meUser, initialSelected, types, currentView, metrics, filters, formTemplates = [] }: {
     contracts: PaginatedData<Contract>;
     meId: string;
     meUser: any;
@@ -445,6 +456,7 @@ function ContractPage({ contracts: contractsPaged, meId, meUser, initialSelected
     currentView: View;
     metrics: any;
     filters: { search?: string; status?: string; contract_type_id?: string; per_page?: number };
+    formTemplates?: FormTemplateInfo[];
 }) {
     const contracts = contractsPaged.data;
     const { showToast } = useToast();
@@ -459,7 +471,7 @@ function ContractPage({ contracts: contractsPaged, meId, meUser, initialSelected
     }, [currentView, view]);
 
     const [selected, setSelected] = useState<Contract | null>(initialSelected ?? null);
-    const [detailTab, setDetailTab] = useState<'f1' | 'f2' | 'attachments' | 'audit' | 'chat'>('f1');
+    const [detailTab, setDetailTab] = useState<'form_template' | 'f2' | 'attachments' | 'audit' | 'chat'>('form_template');
     const [search, setSearch] = useState(filters?.search || '');
     
     // Multi-select faceted filters
@@ -610,8 +622,8 @@ function ContractPage({ contracts: contractsPaged, meId, meUser, initialSelected
         if (selected?.id === c.id) setSelected(c);
     }, [selected?.id]);
 
-    const openDetail = (c: Contract) => { setSelected(c); setDetailTab('f1'); setApprovalNote(''); };
-    const closeDetail = () => { setSelected(null); setDetailTab('f1'); };
+    const openDetail = (c: Contract) => { setSelected(c); setDetailTab('form_template'); setApprovalNote(''); };
+    const closeDetail = () => { setSelected(null); setDetailTab('form_template'); };
 
     // Computed
     const stats = {
@@ -1145,9 +1157,6 @@ function ContractPage({ contracts: contractsPaged, meId, meUser, initialSelected
                                     <>
                                         {canUpdate && (
                                             <>
-                                                <button onClick={() => setEditOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid #e5e7eb', fontSize: 12, fontWeight: 500, borderRadius: 6, background: 'none', cursor: 'pointer', color: '#374151' }}>
-                                                    <i className="fa-solid fa-pen-to-square" style={{ fontSize: 11 }} /> Edit
-                                                </button>
                                                 <button onClick={handleSendForApproval} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: '#2563eb', color: '#fff', fontSize: 12, fontWeight: 500, borderRadius: 6, border: 'none', cursor: 'pointer' }}
                                                     onMouseOver={e => ((e.currentTarget as any).style.background = '#1d4ed8')} onMouseOut={e => ((e.currentTarget as any).style.background = '#2563eb')}>
                                                     <i className="fa-solid fa-paper-plane" style={{ fontSize: 11 }} /> Kirim
@@ -1161,14 +1170,14 @@ function ContractPage({ contracts: contractsPaged, meId, meUser, initialSelected
                                         )}
                                     </>
                                 )}
-                                <button onClick={() => handleDownload(selected.id, selected.versions.find(v => v.version_no === selected.current_version)?.file_name)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid #e5e7eb', fontSize: 12, fontWeight: 500, borderRadius: 6, background: 'none', cursor: 'pointer', color: '#374151' }}>
+                                {/* <button onClick={() => handleDownload(selected.id, selected.versions.find(v => v.version_no === selected.current_version)?.file_name)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid #e5e7eb', fontSize: 12, fontWeight: 500, borderRadius: 6, background: 'none', cursor: 'pointer', color: '#374151' }}>
                                     <i className="fa-solid fa-download" style={{ fontSize: 11 }} /> Download
                                 </button>
                                 {canUpdate && (
                                     <button onClick={() => setRevOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid #e5e7eb', fontSize: 12, fontWeight: 500, borderRadius: 6, background: 'none', cursor: 'pointer', color: '#374151' }}>
                                         <i className="fa-solid fa-upload" style={{ fontSize: 11 }} /> Upload Revisi
                                     </button>
-                                )}
+                                )} */}
                             </div>
                         </div>
 
@@ -1178,74 +1187,26 @@ function ContractPage({ contracts: contractsPaged, meId, meUser, initialSelected
                             {/* Left */}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-                                {/* Info Card */}
-                                <div className="bg-card border border-border rounded-xl overflow-hidden">
-                                    <div className="flex items-center gap-2 border-b border-border/50 font-semibold" style={{ padding: '12px 16px', fontSize: 13 }}>
-                                        <i className="fa-solid fa-circle-info text-muted-foreground" style={{ fontSize: 12 }} /> Informasi Kontrak
-                                    </div>
-                                    <div style={{ padding: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                                        {[
-                                            { k: 'No. Kontrak', v: <span className="font-mono bg-muted text-foreground/80 px-2 py-0.5 rounded" style={{ fontSize: 12 }}>{selected.contract_no}</span> },
-                                            { k: 'Status', v: <StatusBadge status={selected.status} /> },
-                                            { k: 'Tipe Kontrak', v: <span className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider text-xs border border-blue-100 dark:border-blue-900/30">{selected.contract_type}</span> },
-                                            { k: 'Dibuat Oleh', v: <div className="flex items-center gap-1.5"><Avatar user={selected.creator} size="sm" /><span style={{ fontSize: 12 }}>{selected.creator?.name}</span></div> },
-                                            { k: 'Tgl Dibuat', v: <span style={{ fontSize: 12 }}>{selected.created_at}</span> },
-                                            {
-                                                k: 'Dokumen F1', v: (() => {
-                                                    const v = selected.versions.find(x => x.document_type === 'f1' && x.version_no === selected.current_version);
-                                                    return v ? (
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="flex flex-col"><span className="font-mono font-bold text-blue-600" style={{ fontSize: 12 }}>v{v.version_no}</span><span className="text-muted-foreground truncate max-w-[140px]" style={{ fontSize: 12 }} title={v.file_name}>{v.file_name}</span></div>
-                                                            <div className="flex gap-1">
-                                                                <button onClick={() => { setPreviewTitle('F1 - v' + v.version_no); setPreviewUrl(contractApi.pdfPreviewUrl(selected.id, v.version_no, 'f1')); setPreviewHasFile(v.has_file); setPreviewOpen(true); }} className="w-5 h-5 flex items-center justify-center rounded bg-muted/50 border border-border/50 text-muted-foreground hover:text-blue-600 hover:bg-card transition-all shadow-sm">
-                                                                    <i className="fa-solid fa-eye" style={{ fontSize: 12 }} />
-                                                                </button>
-                                                                <a href={contractApi.downloadUrl(selected.id, 'f1', v.version_no)} download className="w-5 h-5 flex items-center justify-center rounded bg-muted/50 border border-border/50 text-muted-foreground hover:text-blue-600 hover:bg-card transition-all shadow-sm">
-                                                                    <i className="fa-solid fa-download" style={{ fontSize: 12 }} />
-                                                                </a>
-                                                            </div>
-                                                        </div>
-                                                    ) : <span className="text-muted-foreground italic" style={{ fontSize: 12 }}>-</span>;
-                                                })()
-                                            },
-                                            {
-                                                k: 'Dokumen F2', v: (() => {
-                                                    const v = selected.versions.filter(x => x.document_type === 'f2').sort((a, b) => b.version_no - a.version_no)[0];
-                                                    return v ? (
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="flex flex-col"><span className="font-mono font-bold text-cyan-600" style={{ fontSize: 12 }}>v{v.version_no}</span><span className="text-muted-foreground truncate max-w-[140px]" style={{ fontSize: 12 }} title={v.file_name}>{v.file_name}</span></div>
-                                                            <div className="flex gap-1">
-                                                                <button onClick={() => { setPreviewTitle('F2 - v' + v.version_no); setPreviewUrl(contractApi.pdfPreviewUrl(selected.id, v.version_no, 'f2')); setPreviewHasFile(v.has_file); setPreviewOpen(true); }} className="w-5 h-5 flex items-center justify-center rounded bg-muted/50 border border-border/50 text-muted-foreground hover:text-cyan-600 hover:bg-card transition-all shadow-sm">
-                                                                    <i className="fa-solid fa-eye" style={{ fontSize: 12 }} />
-                                                                </button>
-                                                                <a href={contractApi.downloadUrl(selected.id, 'f2', v.version_no)} download className="w-5 h-5 flex items-center justify-center rounded bg-muted/50 border border-border/50 text-muted-foreground hover:text-cyan-600 hover:bg-card transition-all shadow-sm">
-                                                                    <i className="fa-solid fa-download" style={{ fontSize: 12 }} />
-                                                                </a>
-                                                            </div>
-                                                        </div>
-                                                    ) : <span className="text-muted-foreground italic" style={{ fontSize: 12 }}>-</span>;
-                                                })()
-                                            },
-                                            { k: 'Total Versi', v: <span style={{ fontSize: 12 }}>{selected.versions.length} versi</span> },
-                                        ].map(({ k, v }) => (
-                                            <div key={k}>
-                                                <div className="font-semibold uppercase tracking-wider text-muted-foreground" style={{ fontSize: 12, marginBottom: 4 }}>{k}</div>
-                                                {v}
-                                            </div>
-                                        ))}
-                                        <div style={{ gridColumn: '1/-1' }}>
-                                            <div className="font-semibold uppercase tracking-wider text-muted-foreground" style={{ fontSize: 12, marginBottom: 4 }}>Deskripsi</div>
-                                            <div style={{ fontSize: 12 }}>{selected.description}</div>
-                                        </div>
-                                    </div>
-                                </div>
+                                {/* Info Card - Inline Editable for Draft */}
+                                <DraftEditableInfoCard
+                                    selected={selected}
+                                    types={types}
+                                    formTemplates={formTemplates}
+                                    canUpdate={!!canUpdate}
+                                    onUpdate={handleUpdate}
+                                    processing={processing}
+                                    setPreviewTitle={setPreviewTitle}
+                                    setPreviewUrl={setPreviewUrl}
+                                    setPreviewHasFile={setPreviewHasFile}
+                                    setPreviewOpen={setPreviewOpen}
+                                />
 
                                 {/* Tabs Card */}
                                 <div className="bg-card border border-border rounded-xl overflow-hidden">
                                     <div className="flex border-b border-border px-4 pt-2 gap-1">
                                         {([
-                                            { id: 'f1', icon: 'fa-file-lines', label: 'F1', badge: 0 },
-                                            { id: 'f2', icon: 'fa-file-shield', label: 'F2', badge: 0 },
+                                            { id: 'form_template', icon: 'fa-file-lines', label: 'F1', badge: selected.form_submissions?.find(s => s.document_type === 'f1') ? selected.form_submissions.find(s => s.document_type === 'f1')!.current_version : 0 },
+                                            { id: 'f2', icon: 'fa-file-shield', label: 'F2', badge: selected.form_submissions?.find(s => s.document_type === 'f2') ? selected.form_submissions.find(s => s.document_type === 'f2')!.current_version : 0 },
                                             { id: 'attachments', icon: 'fa-paperclip', label: 'Lampiran', badge: selected.attachments?.length ?? 0 },
                                             { id: 'audit', icon: 'fa-list-check', label: 'Audit Trail', badge: 0 },
                                             {
@@ -1268,126 +1229,25 @@ function ContractPage({ contracts: contractsPaged, meId, meUser, initialSelected
                                     </div>
                                     <div style={{ padding: 16 }}>
 
-                                        {/* F1 Tab */}
-                                        {detailTab === 'f1' && (
-                                            <div className="flex flex-col gap-4">
-                                                <div className="flex items-center justify-between">
-                                                    <h4 className="font-bold text-foreground" style={{ fontSize: 13 }}>Riwayat Dokumen F1</h4>
-                                                    <button onClick={() => { setRevType('f1'); setRevOpen(true); }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', background: 'var(--primary)', color: 'var(--primary-foreground)', fontSize: 12, fontWeight: 600, borderRadius: 6, border: 'none', cursor: 'pointer' }}>
-                                                        <i className="fa-solid fa-plus" /> Upload Revisi F1
-                                                    </button>
-                                                </div>
-                                                <div className="space-y-3">
-                                                    {selected.versions.filter(v => v.document_type === 'f1').sort((a, b) => b.version_no - a.version_no).map(v => (
-                                                        <div key={v.id} style={{
-                                                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                                            border: v.version_no === selected.current_version ? '1px solid var(--primary)' : '1px solid var(--border)',
-                                                            background: v.version_no === selected.current_version ? 'var(--accent)' : 'var(--card)',
-                                                            borderRadius: 8, padding: '10px 12px'
-                                                        }}>
-                                                            <div className="min-w-0">
-                                                                <div className="flex items-center gap-2 mb-1">
-                                                                    <span className="font-mono font-bold text-xs">v{v.version_no}</span>
-                                                                    {v.is_final && <StatusBadge status="approved" label="Final" />}
-                                                                    {v.version_no === selected.current_version && (
-                                                                        <span className="rounded-full font-bold uppercase tracking-wider" style={{ fontSize: 12 }}>Aktif</span>
-                                                                    )}
-                                                                </div>
-                                                                <div className="text-xs font-medium text-foreground/80 truncate" title={v.file_name}>
-                                                                    <i className="fa-regular fa-file-word mr-1.5 text-blue-400" />
-                                                                    {v.file_name}
-                                                                </div>
-                                                                <div className="text-xs text-muted-foreground mt-0.5">{v.change_log} · {v.created_at} · {v.uploader?.name}</div>
-                                                            </div>
-                                                            <div className="flex items-center gap-1.5 ml-4 flex-shrink-0">
-                                                                <button onClick={() => {
-                                                                    setPreviewTitle(`F1 - v${v.version_no}`);
-                                                                    setPreviewUrl(contractApi.pdfPreviewUrl(selected.id, v.version_no, 'f1'));
-                                                                    setPreviewHasFile(v.has_file);
-                                                                    setPreviewOpen(true);
-                                                                }} className="px-2.5 py-1.5 text-xs font-semibold border border-border rounded-md hover:bg-muted/50 transition-all flex items-center gap-1.5">
-                                                                    <i className="fa-solid fa-eye" /> Preview
-                                                                </button>
-                                                                <button onClick={() => {
-                                                                    setCompareVer(v.version_no);
-                                                                    setCompareType('f1');
-                                                                    setCompareOpen(true);
-                                                                }} className="px-2.5 py-1.5 text-xs font-semibold border border-border rounded-md hover:bg-muted/50 transition-all flex items-center gap-1.5">
-                                                                    <i className="fa-solid fa-shuffle" /> Diff
-                                                                </button>
-                                                                <a href={contractApi.downloadUrl(selected.id, 'f1', v.version_no)} download className="w-8 h-8 flex items-center justify-center border border-border rounded-md hover:bg-muted/50 transition-all text-muted-foreground">
-                                                                    <i className="fa-solid fa-download text-xs" />
-                                                                </a>
-                                                                {v.version_no !== selected.current_version && (
-                                                                    <button onClick={() => handleChangeVersion(v.version_no)} className="w-8 h-8 flex items-center justify-center border border-border rounded-md hover:bg-green-50 hover:text-green-600 transition-all text-muted-foreground" title="Jadikan versi aktif">
-                                                                        <i className="fa-solid fa-circle-check text-xs" />
-                                                                    </button>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                    {selected.versions.filter(v => v.document_type === 'f1').length === 0 && (
-                                                        <div className="text-center py-8 text-muted-foreground" style={{ fontSize: 12 }}>Belum ada dokumen F1.</div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )}
+                                        {/* F1 Tab (Persistence via hidden div) */}
+                                        <div style={{ display: detailTab === 'form_template' ? 'block' : 'none' }}>
+                                            <FormSubmissionTab
+                                                docType="f1"
+                                                selected={selected}
+                                                formTemplates={formTemplates}
+                                                onContractUpdated={updateContract}
+                                            />
+                                        </div>
 
-                                        {/* F2 Tab */}
-                                        {detailTab === 'f2' && (
-                                            <div className="flex flex-col gap-4">
-                                                <div className="flex items-center justify-between">
-                                                    <h4 className="font-bold text-foreground" style={{ fontSize: 13 }}>Riwayat Dokumen F2</h4>
-                                                    <button onClick={() => { setRevType('f2'); setRevOpen(true); }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', background: 'var(--primary)', color: 'var(--primary-foreground)', fontSize: 12, fontWeight: 600, borderRadius: 6, border: 'none', cursor: 'pointer' }}>
-                                                        <i className="fa-solid fa-plus" /> Upload Revisi F2
-                                                    </button>
-                                                </div>
-                                                <div className="space-y-3">
-                                                    {selected.versions.filter(v => v.document_type === 'f2').sort((a, b) => b.version_no - a.version_no).map(v => (
-                                                        <div key={v.id} style={{
-                                                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                                            border: '1px solid var(--border)',
-                                                            background: 'var(--card)',
-                                                            borderRadius: 8, padding: '10px 12px'
-                                                        }}>
-                                                            <div className="min-w-0">
-                                                                <div className="flex items-center gap-2 mb-1">
-                                                                    <span className="font-mono font-bold text-cyan-600 text-xs">v{v.version_no}</span>
-                                                                </div>
-                                                                <div className="text-xs font-medium text-foreground/80 truncate" title={v.file_name}>
-                                                                    <i className="fa-regular fa-file-word mr-1.5 text-cyan-400" />
-                                                                    {v.file_name}
-                                                                </div>
-                                                                <div className="text-xs text-muted-foreground mt-0.5">{v.change_log} · {v.created_at} · {v.uploader?.name}</div>
-                                                            </div>
-                                                            <div className="flex items-center gap-1.5 ml-4 flex-shrink-0">
-                                                                <button onClick={() => {
-                                                                    setPreviewTitle(`F2 - v${v.version_no}`);
-                                                                    setPreviewUrl(contractApi.pdfPreviewUrl(selected.id, v.version_no, 'f2'));
-                                                                    setPreviewHasFile(v.has_file);
-                                                                    setPreviewOpen(true);
-                                                                }} className="px-2.5 py-1.5 text-xs font-semibold border border-border rounded-md hover:bg-muted/50 transition-all flex items-center gap-1.5">
-                                                                    <i className="fa-solid fa-eye" /> Preview
-                                                                </button>
-                                                                <button onClick={() => {
-                                                                    setCompareVer(v.version_no);
-                                                                    setCompareType('f2');
-                                                                    setCompareOpen(true);
-                                                                }} className="px-2.5 py-1.5 text-xs font-semibold border border-border rounded-md hover:bg-muted/50 transition-all flex items-center gap-1.5">
-                                                                    <i className="fa-solid fa-shuffle" /> Diff
-                                                                </button>
-                                                                <a href={contractApi.downloadUrl(selected.id, 'f2', v.version_no)} download className="w-8 h-8 flex items-center justify-center border border-border rounded-md hover:bg-muted/50 transition-all text-muted-foreground">
-                                                                    <i className="fa-solid fa-download text-xs" />
-                                                                </a>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                    {selected.versions.filter(v => v.document_type === 'f2').length === 0 && (
-                                                        <div className="text-center py-8 text-muted-foreground" style={{ fontSize: 12 }}>Belum ada dokumen F2.</div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )}
+                                        {/* F2 Tab (Persistence via hidden div) */}
+                                        <div style={{ display: detailTab === 'f2' ? 'block' : 'none' }}>
+                                            <FormSubmissionTab
+                                                docType="f2"
+                                                selected={selected}
+                                                formTemplates={formTemplates}
+                                                onContractUpdated={updateContract}
+                                            />
+                                        </div>
 
                                         {/* Lampiran tab */}
                                         {detailTab === 'attachments' && (
@@ -1530,6 +1390,164 @@ function ContractPage({ contracts: contractsPaged, meId, meUser, initialSelected
     );
 }
 
+// ─── Inline-Editable Info Card for Draft Contracts ──────────────────
+function DraftEditableInfoCard({ selected, types, formTemplates, canUpdate, onUpdate, processing, setPreviewTitle, setPreviewUrl, setPreviewHasFile, setPreviewOpen }: {
+    selected: Contract;
+    types: ContractType[];
+    formTemplates: FormTemplateInfo[];
+    canUpdate: boolean;
+    onUpdate: (data: any) => void;
+    processing: boolean;
+    setPreviewTitle: (v: string) => void;
+    setPreviewUrl: (v: string) => void;
+    setPreviewHasFile: (v: boolean) => void;
+    setPreviewOpen: (v: boolean) => void;
+}) {
+    const isDraft = selected.status === 'draft' && canUpdate;
+    const [title, setTitle] = useState(selected.title);
+    const [description, setDescription] = useState(selected.description || '');
+    const [typeId, setTypeId] = useState(() => {
+        const t = types.find(x => x.name === selected.contract_type);
+        return t ? String(t.id) : '';
+    });
+
+    useEffect(() => {
+        setTitle(selected.title);
+        setDescription(selected.description || '');
+        const t = types.find(x => x.name === selected.contract_type);
+        setTypeId(t ? String(t.id) : '');
+    }, [selected.id, selected.title, selected.description, selected.contract_type, types]);
+
+    const hasChanges = useMemo(() => {
+        const origType = types.find(x => x.name === selected.contract_type);
+        const origTypeId = origType ? String(origType.id) : '';
+        return title !== selected.title || description !== (selected.description || '') || typeId !== origTypeId;
+    }, [title, description, typeId, selected, types]);
+
+    const handleSave = () => {
+        onUpdate({ title, description, contract_type_id: typeId || undefined });
+    };
+
+    const inputCls = "w-full bg-white dark:bg-muted/30 border border-border rounded-lg px-3 py-1.5 text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all";
+
+    const f2Version = selected.versions?.filter(x => x.document_type === 'f2').sort((a, b) => b.version_no - a.version_no)[0];
+    const tpl = formTemplates.find(ft => ft.contract_type_name === (isDraft ? types.find(t => String(t.id) === typeId)?.name : selected.contract_type));
+
+    return (
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <div className="flex items-center justify-between border-b border-border/50" style={{ padding: '12px 16px' }}>
+                <div className="flex items-center gap-2 font-semibold" style={{ fontSize: 13 }}>
+                    <i className="fa-solid fa-circle-info text-muted-foreground" style={{ fontSize: 12 }} /> Informasi Kontrak
+                    {isDraft && <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full">Editable</span>}
+                </div>
+                {isDraft && hasChanges && (
+                    <button onClick={handleSave} disabled={processing || !title.trim()}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground text-xs font-bold rounded-lg shadow-md shadow-primary/20 hover:shadow-primary/30 transition-all active:scale-95 disabled:opacity-50">
+                        {processing ? <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: 10 }} /> : <i className="fa-solid fa-save" style={{ fontSize: 10 }} />}
+                        Simpan
+                    </button>
+                )}
+            </div>
+            <div style={{ padding: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                {/* Title - full width if draft */}
+                {isDraft ? (
+                    <div style={{ gridColumn: '1/-1' }}>
+                        <div className="font-semibold uppercase tracking-wider text-muted-foreground" style={{ fontSize: 10, marginBottom: 4 }}>Judul Kontrak</div>
+                        <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Nama kontrak..."
+                            className={inputCls + " font-medium"} />
+                    </div>
+                ) : null}
+
+                {/* No. Kontrak */}
+                <div>
+                    <div className="font-semibold uppercase tracking-wider text-muted-foreground" style={{ fontSize: 10, marginBottom: 4 }}>No. Kontrak</div>
+                    <span className="font-mono bg-muted text-foreground/80 px-2 py-0.5 rounded" style={{ fontSize: 12 }}>{selected.contract_no}</span>
+                </div>
+
+                {/* Status */}
+                <div>
+                    <div className="font-semibold uppercase tracking-wider text-muted-foreground" style={{ fontSize: 10, marginBottom: 4 }}>Status</div>
+                    <StatusBadge status={selected.status} />
+                </div>
+
+                {/* Tipe Kontrak */}
+                <div>
+                    <div className="font-semibold uppercase tracking-wider text-muted-foreground" style={{ fontSize: 10, marginBottom: 4 }}>Tipe Kontrak</div>
+                    {isDraft ? (
+                        <select value={typeId} onChange={e => setTypeId(e.target.value)}
+                            className={inputCls}>
+                            <option value="">Pilih Tipe</option>
+                            {types.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                        </select>
+                    ) : (
+                        <span className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider text-xs border border-blue-100 dark:border-blue-900/30">{selected.contract_type}</span>
+                    )}
+                </div>
+
+                {/* Dibuat Oleh */}
+                <div>
+                    <div className="font-semibold uppercase tracking-wider text-muted-foreground" style={{ fontSize: 10, marginBottom: 4 }}>Dibuat Oleh</div>
+                    <div className="flex items-center gap-1.5"><Avatar user={selected.creator} size="sm" /><span style={{ fontSize: 12 }}>{selected.creator?.name}</span></div>
+                </div>
+
+                {/* Tgl Dibuat */}
+                <div>
+                    <div className="font-semibold uppercase tracking-wider text-muted-foreground" style={{ fontSize: 10, marginBottom: 4 }}>Tgl Dibuat</div>
+                    <span style={{ fontSize: 12 }}>{selected.created_at}</span>
+                </div>
+
+                {/* Form Template */}
+                <div>
+                    <div className="font-semibold uppercase tracking-wider text-muted-foreground" style={{ fontSize: 10, marginBottom: 4 }}>Form Template</div>
+                    {tpl ? (
+                        <div className="flex items-center gap-2">
+                            <span className="text-blue-600 font-medium truncate max-w-[160px]" style={{ fontSize: 12 }} title={tpl.name}>{tpl.name}</span>
+                            <span className="text-muted-foreground" style={{ fontSize: 10 }}>({tpl.fields_count} fields)</span>
+                        </div>
+                    ) : <span className="text-muted-foreground italic" style={{ fontSize: 12 }}>Belum ada template</span>}
+                </div>
+
+                {/* Dokumen F2 */}
+                <div>
+                    <div className="font-semibold uppercase tracking-wider text-muted-foreground" style={{ fontSize: 10, marginBottom: 4 }}>Dokumen F2</div>
+                    {f2Version ? (
+                        <div className="flex items-center gap-2">
+                            <div className="flex flex-col"><span className="font-mono font-bold text-cyan-600" style={{ fontSize: 12 }}>v{f2Version.version_no}</span><span className="text-muted-foreground truncate max-w-[140px]" style={{ fontSize: 12 }} title={f2Version.file_name}>{f2Version.file_name}</span></div>
+                            <div className="flex gap-1">
+                                <button onClick={() => { setPreviewTitle('F2 - v' + f2Version.version_no); setPreviewUrl(contractApi.pdfPreviewUrl(selected.id, f2Version.version_no, 'f2')); setPreviewHasFile(f2Version.has_file); setPreviewOpen(true); }} className="w-5 h-5 flex items-center justify-center rounded bg-muted/50 border border-border/50 text-muted-foreground hover:text-cyan-600 hover:bg-card transition-all shadow-sm">
+                                    <i className="fa-solid fa-eye" style={{ fontSize: 12 }} />
+                                </button>
+                                <a href={contractApi.downloadUrl(selected.id, 'f2', f2Version.version_no)} download className="w-5 h-5 flex items-center justify-center rounded bg-muted/50 border border-border/50 text-muted-foreground hover:text-cyan-600 hover:bg-card transition-all shadow-sm">
+                                    <i className="fa-solid fa-download" style={{ fontSize: 12 }} />
+                                </a>
+                            </div>
+                        </div>
+                    ) : <span className="text-muted-foreground italic" style={{ fontSize: 12 }}>-</span>}
+                </div>
+
+                {/* Total Versi */}
+                <div>
+                    <div className="font-semibold uppercase tracking-wider text-muted-foreground" style={{ fontSize: 10, marginBottom: 4 }}>Total Versi</div>
+                    <span style={{ fontSize: 12 }}>{selected.versions?.length ?? 0} versi</span>
+                </div>
+
+                {/* Deskripsi - full width */}
+                <div style={{ gridColumn: '1/-1' }}>
+                    <div className="font-semibold uppercase tracking-wider text-muted-foreground" style={{ fontSize: 10, marginBottom: 4 }}>Deskripsi</div>
+                    {isDraft ? (
+                        <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} placeholder="Deskripsi kontrak (opsional)..."
+                            className={inputCls + " resize-none"} />
+                    ) : (
+                        <div style={{ fontSize: 12 }}>{selected.description || <span className="text-muted-foreground italic">-</span>}</div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+
+
 function EditContractModal({ open, onClose, onSubmit, contract, types, processing }: {
     open: boolean;
     onClose: () => void;
@@ -1655,12 +1673,14 @@ export default function ContractsIndex({
         per_page: 10
     } as PaginatedData<Contract>,
     types: initialTypes = [],
+    formTemplates: initialFormTemplates = [],
     metrics: initialMetrics = null,
     filters = {}
 }: { 
     currentView?: View;
     contracts?: PaginatedData<Contract>;
     types?: ContractType[];
+    formTemplates?: FormTemplateInfo[];
     metrics?: any;
     filters?: any;
 }) {
@@ -1674,22 +1694,30 @@ export default function ContractsIndex({
     const [metrics, setMetrics] = useState<any>(initialMetrics);
 
     useEffect(() => {
-        if (initialContractsPaged.data.length > 0) {
+        // Only update if initialContractsPaged actually has items
+        // or if we are currently in a view that SHOULD be empty (like a fresh pending view)
+        if (initialContractsPaged.data.length > 0 || currentView === 'pending' || currentView === 'mine') {
             setContractsPaged(initialContractsPaged);
         }
-    }, [initialContractsPaged]);
+    }, [initialContractsPaged, currentView]);
 
     useEffect(() => {
-        if (initialContractsPaged.data.length > 0 && initialTypes.length > 0) {
+        // If we already have data or types, don't boot load unless it's genuinely empty
+        // We consider it "has data" if it has items OR if it's intentionally empty for a specific view
+        const hasInitialData = initialContractsPaged.data.length > 0 || initialContractsPaged.total > 0;
+        const isIntentionallyEmpty = currentView === 'pending' || currentView === 'mine';
+
+        if ((hasInitialData || isIntentionallyEmpty) && initialTypes.length > 0) {
             if (initialId) {
                 setInitialSelected(initialContractsPaged.data.find((c: Contract) => c.id === initialId) ?? null);
             }
+            setBootLoading(false);
             return;
         }
 
         setBootLoading(true);
         Promise.all([
-            contractApi.list(),
+            contractApi.list({ view: currentView }),
             contractApi.getTypes(),
             axios.post('/admin/api/reports/data', {}).then(res => res.data).catch(() => null)
         ]).then(([cData, tData, mData]) => {
@@ -1701,7 +1729,7 @@ export default function ContractsIndex({
             }
             setBootLoading(false);
         }).catch(() => setBootLoading(false));
-    }, [initialContractsPaged, initialTypes, initialId]);
+    }, [initialContractsPaged, initialTypes, initialId, currentView]);
 
     return (
         <>
@@ -1719,6 +1747,7 @@ export default function ContractsIndex({
                         meUser={meUser} 
                         initialSelected={initialSelected} 
                         types={types} 
+                        formTemplates={initialFormTemplates}
                         currentView={currentView} 
                         metrics={metrics}
                         filters={filters}

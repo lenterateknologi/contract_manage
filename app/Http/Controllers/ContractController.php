@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Approval;
 use App\Models\Contract;
 use App\Models\ContractAttachment;
+use App\Models\ContractFormSubmission;
+use App\Models\ContractFormSubmissionVersion;
+use App\Models\FormTemplate;
 use App\Models\ContractHistory;
 use App\Models\ContractType;
 use App\Models\ContractVersion;
@@ -33,7 +36,8 @@ class ContractController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $contracts = $this->getFilteredContractsQuery($request)
+        $view = $request->query('view', 'contracts');
+        $contracts = $this->getFilteredContractsQuery($request, $view)
             ->paginate($request->integer('per_page', 10))
             ->through(fn ($c) => $this->formatContract($c));
 
@@ -54,6 +58,15 @@ class ContractController extends Controller
             'currentView' => $view,
             'contracts' => $contracts,
             'types' => ContractType::all(),
+            'formTemplates' => \App\Models\FormTemplate::where('is_active', true)->with('contractType')->get()->map(fn ($ft) => [
+                'id' => $ft->id,
+                'name' => $ft->name,
+                'description' => $ft->description,
+                'document_type' => $ft->document_type,
+                'contract_type_id' => $ft->contract_type_id,
+                'contract_type_name' => $ft->contractType?->name,
+                'fields_count' => $ft->fields()->count(),
+            ]),
             'filters' => array_merge($request->only(['search', 'status', 'contract_type_id']), [
                 'per_page' => $request->integer('per_page', 10),
             ]),
@@ -113,7 +126,7 @@ class ContractController extends Controller
         $query = Contract::with([
             'creator', 'contractType', 'approvals.approver', 'approvals.workflowStep',
             'workflow.steps', 'versions.uploader', 'histories.actor', 'messages.user',
-            'attachments.uploader',
+            'attachments.uploader', 'formSubmissions',
         ])->orderByDesc('created_at');
 
         // Apply View Filter
@@ -172,7 +185,14 @@ class ContractController extends Controller
 
     private function getDashboardMetrics()
     {
+        $user = Auth::user();
         $query = Contract::query();
+
+        // If not admin, only show user's own contracts in metrics
+        if ($user->role !== 'Admin') {
+            $query->where('created_by', $user->id);
+        }
+
         $approvedContracts = (clone $query)->where('status', 'approved')->get();
         $avgDays = 0;
 
@@ -189,7 +209,7 @@ class ContractController extends Controller
             'metrics' => [
                 'avgCycleTime' => $avgDays,
                 'totalContracts' => $query->count(),
-                'pendingApprovals' => Approval::whereIn('contract_id', Contract::pluck('id'))->where('status', 'pending')->count(),
+                'pendingApprovals' => Approval::where('user_id', Auth::id())->where('status', 'pending')->count(),
                 'approvedThisMonth' => (clone $query)->where('status', 'approved')
                     ->where('updated_at', '>=', now()->startOfMonth())
                     ->count(),
@@ -235,6 +255,7 @@ class ContractController extends Controller
             'messages.user',
             'attachments.uploader',
             'contractType',
+            'formSubmissions',
         ])->findOrFail($id);
 
         return response()->json($this->formatContract($contract));
@@ -283,47 +304,20 @@ class ContractController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'contract_no' => 'nullable|string',
-            'contract_date' => 'nullable|date',
-            'end_date' => 'nullable|date',
-            'contract_type_id' => 'nullable|exists:contract_types,id',
-            'f1_file' => 'required|file|extensions:docx,doc,pdf|max:102400',
-            'changelog' => 'nullable|string',
         ]);
 
-        return \DB::transaction(function () use ($validated, $request) {
+        return \DB::transaction(function () use ($validated) {
             $userId = Auth::id();
-            $contractTypeId = $validated['contract_type_id'] ?: null;
 
             $contract = Contract::create([
-                'contract_no' => $validated['contract_no'] ?? ('CTR-'.date('Y').'-'.strtoupper(Str::random(5))),
+                'contract_no' => 'CTR-'.date('Y').'-'.strtoupper(Str::random(5)),
                 'title' => $validated['title'],
                 'description' => $validated['description'] ?? '—',
-                'contract_date' => $validated['contract_date'] ?? null,
-                'end_date' => $validated['end_date'] ?? null,
-                'contract_type_id' => $contractTypeId,
                 'status' => 'draft',
                 'created_by' => $userId,
             ]);
 
-            $f1 = $request->file('f1_file');
-            $fileName = $f1->getClientOriginalName();
-            $filePath = $f1->storeAs("contracts/{$contract->id}", "v1_f1_{$fileName}", 'local');
-
-            ContractVersion::create([
-                'contract_id' => $contract->id,
-                'version_no' => 1,
-                'document_type' => 'f1',
-                'file_name' => $fileName,
-                'file_path' => $filePath,
-                'change_log' => $validated['changelog'] ?? 'Initial version (F1)',
-                'uploaded_by' => $userId,
-                'is_final' => false,
-                'file_hash' => Str::random(32),
-            ]);
-
             ContractHistory::create(['contract_id' => $contract->id, 'action' => 'CONTRACT_CREATED', 'description' => 'Kontrak dibuat', 'actor_id' => $userId]);
-            ContractHistory::create(['contract_id' => $contract->id, 'action' => 'FILE_UPLOADED',    'description' => 'Upload v1',      'actor_id' => $userId]);
 
             $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'histories.actor', 'messages.user', 'contractType']);
 
@@ -775,6 +769,14 @@ class ContractController extends Controller
                 'created_at' => $at->created_at->toDateString(),
                 'uploader' => $this->formatUser($at->uploader),
             ]),
+            'form_submissions' => $c->formSubmissions->map(fn ($fs) => [
+                'id' => $fs->id,
+                'document_type' => $fs->document_type,
+                'form_template_id' => $fs->form_template_id,
+                'current_version' => $fs->current_version,
+                'submitted_by' => $fs->submitted_by,
+                'updated_at' => $fs->updated_at->format('Y-m-d H:i'),
+            ]),
         ];
     }
 
@@ -839,5 +841,199 @@ class ContractController extends Controller
             'bg_color' => $user->bg_color,
             'text_color' => $user->text_color,
         ];
+    }
+
+    // ── Form Submission (F1/F2) ──────────────────────────────────────
+
+    /**
+     * Save or update a form submission for a contract.
+     */
+    public function saveFormSubmission(Request $request, string $id): JsonResponse
+    {
+        $contract = Contract::findOrFail($id);
+
+        $request->validate([
+            'form_template_id' => 'required|uuid|exists:form_templates,id',
+            'document_type' => 'required|in:f1,f2',
+            'form_data' => 'required|array',
+        ]);
+
+        $docType = $request->document_type;
+        $formData = $request->form_data;
+
+        // Find or create submission
+        $submission = ContractFormSubmission::firstOrNew([
+            'contract_id' => $contract->id,
+            'document_type' => $docType,
+        ]);
+
+        $isNew = !$submission->exists;
+
+        if ($isNew) {
+            $submission->form_template_id = $request->form_template_id;
+            $submission->submitted_by = auth()->id();
+            $submission->current_version = 1;
+            $submission->save();
+        }
+
+        // Determine version number
+        $versionNo = $isNew ? 1 : $submission->current_version + 1;
+
+        // Build change summary
+        $changeSummary = null;
+        if (!$isNew) {
+            $prevVersion = $submission->versions()->where('version_no', $submission->current_version)->first();
+            if ($prevVersion) {
+                $oldData = $prevVersion->form_data ?? [];
+                $changes = [];
+                foreach ($formData as $key => $val) {
+                    $oldVal = $oldData[$key] ?? null;
+                    if ($val !== $oldVal) {
+                        $changes[] = $key;
+                    }
+                }
+                if (!empty($changes)) {
+                    $changeSummary = 'Perubahan pada: ' . implode(', ', array_slice($changes, 0, 10));
+                    if (count($changes) > 10) $changeSummary .= ' (dan ' . (count($changes) - 10) . ' lainnya)';
+                }
+            }
+        }
+
+        // Create version
+        ContractFormSubmissionVersion::create([
+            'submission_id' => $submission->id,
+            'version_no' => $versionNo,
+            'form_data' => $formData,
+            'change_summary' => $changeSummary,
+            'created_by' => auth()->id(),
+        ]);
+
+        // Update current version
+        $submission->current_version = $versionNo;
+        $submission->save();
+
+        // Log to contract history
+        $action = $isNew ? "form_{$docType}_submitted" : "form_{$docType}_updated";
+        $desc = $isNew
+            ? 'Form ' . strtoupper($docType) . ' telah diisi (v1)'
+            : 'Form ' . strtoupper($docType) . " diperbarui ke v{$versionNo}" . ($changeSummary ? ". {$changeSummary}" : '');
+
+        ContractHistory::create([
+            'contract_id' => $contract->id,
+            'action' => $action,
+            'description' => $desc,
+            'actor_id' => auth()->id(),
+        ]);
+
+        // Return updated contract
+        $contract->load(['versions.uploader', 'approvals.user', 'approvals.workflowStep', 'creator', 'histories.actor', 'messages.user', 'attachments.uploader', 'contractType', 'workflow.steps', 'workflowStep', 'formSubmissions']);
+
+        return response()->json($this->formatContract($contract));
+    }
+
+    /**
+     * Get form submission data for a contract by document type.
+     */
+    public function getFormSubmission(string $id, string $type): JsonResponse
+    {
+        $contract = Contract::findOrFail($id);
+
+        $submission = ContractFormSubmission::where('contract_id', $contract->id)
+            ->where('document_type', $type)
+            ->first();
+
+        if (!$submission) {
+            return response()->json(['submission' => null, 'versions' => []]);
+        }
+
+        $versions = $submission->versions()->with('createdBy')->get()->map(fn ($v) => [
+            'id' => $v->id,
+            'version_no' => $v->version_no,
+            'form_data' => $v->form_data,
+            'change_summary' => $v->change_summary,
+            'created_by' => $this->formatUser($v->createdBy),
+            'created_at' => $v->created_at->format('Y-m-d H:i'),
+        ]);
+
+        return response()->json([
+            'submission' => [
+                'id' => $submission->id,
+                'document_type' => $submission->document_type,
+                'form_template_id' => $submission->form_template_id,
+                'current_version' => $submission->current_version,
+                'submitted_by' => $submission->submitted_by,
+            ],
+            'versions' => $versions,
+        ]);
+    }
+
+    /**
+     * Export a contract's form submission (F1/F2) to PDF.
+     * Uses the standard form-template blade for both, but maps F1 data for F2.
+     */
+    public function exportFormSubmissionPdf(string $id, string $type): mixed
+    {
+        $contract = Contract::findOrFail($id);
+
+        // Find the template for this docType
+        // All form templates are universal right now per the seeder (contract_type_id is null)
+        // If contract_type specific ones were added, we would query the relation, but this is safest.
+        $template = FormTemplate::with(['fields' => fn($q) => $q->orderBy('order')])
+            ->where('document_type', $type)
+            ->first();
+
+        if (!$template) {
+            return response()->json(['message' => "Form template $type not found."], 404);
+        }
+
+        // ── Get the Data Source ──
+        // Always try to get F1 data because F2 is a resume of F1
+        $f1Submission = ContractFormSubmission::where('contract_id', $contract->id)
+            ->where('document_type', 'f1')
+            ->first();
+
+        if (!$f1Submission) {
+            return response()->json(['message' => 'Form F1 belum diisi.'], 404);
+        }
+
+        $latestF1Version = $f1Submission->versions()->orderByDesc('version_no')->first();
+        $f1Data = $latestF1Version ? ($latestF1Version->form_data ?? []) : [];
+
+        $formData = [];
+        if ($type === 'f1') {
+            $formData = $f1Data;
+        } else {
+            // Mapping F1 data to F2 field names based on seeder
+            $formData = [
+                'jenis_perjanjian' => $f1Data['type_perjanjian'] ?? '',
+                'perjanjian_tentang' => $f1Data['judul'] ?? '',
+                'no_perjanjian' => $contract->contract_no,
+                'tanggal' => $f1Data['tanggal'] ?? '',
+                'dimohonkan_oleh' => $contract->user->name ?? '',
+                'pihak_pertama' => $f1Data['pihak_i_(pt.)'] ?? '',
+                'pihak_kedua' => (!empty($f1Data['pihak_ii_(pt.)']) ? $f1Data['pihak_ii_(pt.)'] : ($f1Data['pihak_ii_(perorangan)'] ?? '')),
+                'ruang_lingkup' => $f1Data['tujuan/latar_belakang'] ?? '',
+                'harga_pekerjaan' => $f1Data['harga/fee'] ?? '',
+                'cara_pembayaran' => $f1Data['terms_of_payment'] ?? '',
+                'jangka_waktu' => (($f1Data['jangka_waktu_(mulai)'] ?? '') . ' s/d ' . ($f1Data['jangka_waktu_(s.d)'] ?? '')),
+                'lokasi' => $f1Data['lokasi_area'] ?? '',
+                'nama_direksi_pihak_pertama' => $f1Data['penandatanganan_pihak_i'] ?? '',
+                'jabatan_pihak_pertama' => $f1Data['jabatan_pihak_i'] ?? '',
+                'nama_direksi_pihak_kedua' => $f1Data['penandatanganan_pihak_ii'] ?? '',
+                'jabatan_pihak_kedua' => $f1Data['jabatan_pihak_ii'] ?? '',
+                'dibuat_oleh_(nama_pic)' => $contract->user->name ?? '',
+            ];
+        }
+
+        $fields = $template->fields->sortBy('order');
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.form-template', [
+            'template' => $template,
+            'formData' => $formData,
+            'fields' => $fields,
+        ]);
+
+        $fileName = $contract->contract_no . '_' . strtoupper($type) . '.pdf';
+        return $pdf->download($fileName);
     }
 }

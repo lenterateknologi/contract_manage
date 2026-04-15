@@ -44,4 +44,11 @@ export const contractApi = {
         markRead: (contractId: string) =>
             api.post(`/api/contracts/${contractId}/messages/read`).then((r) => r.data),
     },
+    formSubmissions: {
+        save: (contractId: string, data: { form_template_id: string; document_type: string; form_data: Record<string, any> }): Promise<Contract> =>
+            api.post(`/api/contracts/${contractId}/form-submissions`, data).then((r) => r.data),
+        get: (contractId: string, type: string): Promise<any> =>
+            api.get(`/api/contracts/${contractId}/form-submissions/${type}`).then((r) => r.data),
+        pdfUrl: (contractId: string, type: string) => `/api/contracts/${contractId}/form-submissions/${type}/pdf`,
+    },
 };
