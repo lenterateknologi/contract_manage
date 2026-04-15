@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from 'react';
-import { contractApi } from '@/lib/contract-api';
+import { useEffect, useState } from 'react';
 
 interface Props {
     open: boolean;
@@ -27,64 +26,80 @@ export default function PreviewModal({ open, onClose, title, url, hasFile }: Pro
     return (
         <div className="fixed inset-0 z-[60] flex flex-col bg-[#525659]">
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-3 border-b border-gray-800 flex-shrink-0 bg-[#323639] text-white shadow-lg">
-                <div className="flex items-center gap-3 min-w-0">
-                    <button onClick={onClose}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-gray-300 transition-colors flex-shrink-0">
+            <div className="flex flex-shrink-0 items-center justify-between border-b border-gray-800 bg-[#323639] px-5 py-3 text-white shadow-lg">
+                <div className="flex min-w-0 items-center gap-3">
+                    <button
+                        onClick={onClose}
+                        className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-white/10"
+                    >
                         <i className="fa-solid fa-arrow-left text-[13px]" />
                     </button>
-                    <div className="w-8 h-8 rounded-lg bg-red-500/20 border border-red-500/30 flex items-center justify-center flex-shrink-0">
+                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-red-500/30 bg-red-500/20">
                         <i className="fa-regular fa-file-pdf text-red-500" />
                     </div>
                     <div className="min-w-0">
-                        <div className="text-[13px] font-semibold truncate" title={title}>{title}</div>
-                        <div className="text-[10px] text-gray-400 uppercase tracking-wider">Adobe PDF Render v2.0</div>
+                        <div className="truncate text-[13px] font-semibold" title={title}>
+                            {title}
+                        </div>
+                        <div className="text-[10px] tracking-wider text-gray-400 uppercase">Adobe PDF Render v2.0</div>
                     </div>
                 </div>
                 <div className="flex items-center gap-4">
-                    <div className="hidden md:flex items-center gap-1.5 bg-black/20 border border-white/10 rounded-lg px-2 py-1">
-                        <button onClick={() => setZoom(z => Math.max(50, z - 10))} className="w-6 h-6 flex items-center justify-center rounded hover:bg-white/10 text-gray-300 text-[11px]"><i className="fa-solid fa-minus" /></button>
-                        <span className="text-[11px] text-gray-300 px-1 min-w-[36px] text-center font-mono">{zoom}%</span>
-                        <button onClick={() => setZoom(z => Math.min(200, z + 10))} className="w-6 h-6 flex items-center justify-center rounded hover:bg-white/10 text-gray-300 text-[11px]"><i className="fa-solid fa-plus" /></button>
+                    <div className="hidden items-center gap-1.5 rounded-lg border border-white/10 bg-black/20 px-2 py-1 md:flex">
+                        <button
+                            onClick={() => setZoom((z) => Math.max(50, z - 10))}
+                            className="flex h-6 w-6 items-center justify-center rounded text-[11px] text-gray-300 hover:bg-white/10"
+                        >
+                            <i className="fa-solid fa-minus" />
+                        </button>
+                        <span className="min-w-[36px] px-1 text-center font-mono text-[11px] text-gray-300">{zoom}%</span>
+                        <button
+                            onClick={() => setZoom((z) => Math.min(200, z + 10))}
+                            className="flex h-6 w-6 items-center justify-center rounded text-[11px] text-gray-300 hover:bg-white/10"
+                        >
+                            <i className="fa-solid fa-plus" />
+                        </button>
                     </div>
-                    <button onClick={onClose}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-500 hover:text-white text-gray-400 text-[13px] transition-all">
+                    <button
+                        onClick={onClose}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-[13px] text-gray-400 transition-all hover:bg-red-500 hover:text-white"
+                    >
                         <i className="fa-solid fa-xmark" />
                     </button>
                 </div>
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-hidden relative">
+            <div className="relative flex-1 overflow-hidden">
                 {loading && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#525659] z-10 text-gray-300 gap-3">
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-[#525659] text-gray-300">
                         <i className="fa-solid fa-spinner fa-spin text-3xl text-blue-400" />
                         <span className="text-[13px] font-medium">Generating PDF Preview...</span>
                     </div>
                 )}
 
                 {!hasFile ? (
-                    <div className="flex flex-col items-center justify-center h-full text-gray-300 gap-4 max-w-sm mx-auto text-center px-6">
-                        <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center">
+                    <div className="mx-auto flex h-full max-w-sm flex-col items-center justify-center gap-4 px-6 text-center text-gray-300">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/5">
                             <i className="fa-solid fa-file-circle-exclamation text-3xl text-amber-500" />
                         </div>
                         <div>
-                            <h3 className="text-lg font-semibold mb-1">File Tidak Ditemukan</h3>
-                            <p className="text-gray-400 text-sm leading-relaxed">
-                                Dokumen ini mungkin berasal dari data dummy (seeder) yang tidak memiliki file fisik di disk.
-                                Silakan <b>Upload Dokumen Baru</b> untuk mencoba fitur PDF preview.
+                            <h3 className="mb-1 text-lg font-semibold">File Tidak Ditemukan</h3>
+                            <p className="text-sm leading-relaxed text-gray-400">
+                                Dokumen ini mungkin berasal dari data dummy (seeder) yang tidak memiliki file fisik di disk. Silakan{' '}
+                                <b>Upload Dokumen Baru</b> untuk mencoba fitur PDF preview.
                             </p>
                         </div>
                     </div>
                 ) : url ? (
                     <iframe
                         src={`${url}#toolbar=0&navpanes=0&scrollbar=1&view=FitH&zoom=${zoom}`}
-                        className="w-full h-full border-none"
+                        className="h-full w-full border-none"
                         title="PDF Preview"
                         onLoad={() => setLoading(false)}
                     />
                 ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
+                    <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-400">
                         <i className="fa-solid fa-triangle-exclamation text-3xl text-amber-500" />
                         <span className="text-[13px]">Gagal memuat preview PDF</span>
                     </div>

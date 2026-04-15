@@ -54,7 +54,7 @@
 @elseif($field->type === 'signature_box')
     @php
         $role = $field->options['role'] ?? 'Disetujui oleh :';
-        $namePlaceholder = $field->options['name_placeholder'] ?? '[nama]';
+        $namePlaceholder = $field->options['name_placeholder'] ?? '';
         $actualName = isset($formData[$field->name]) && $formData[$field->name] !== '' ? $formData[$field->name] : $namePlaceholder;
     @endphp
     <div class="field-cell" style="padding: 5pt;">

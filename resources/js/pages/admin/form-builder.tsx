@@ -19,7 +19,8 @@ import {
     MousePointer2, 
     Layout, 
     Image as ImageIcon,
-    Heading1
+    Heading1,
+    FileSignature
 } from 'lucide-react';
 import {
     DndContext,
@@ -113,6 +114,9 @@ const FIELD_TYPES = [
         { value: 'select', label: 'Dropdown', icon: List, defaultLabel: '', defaultPlaceholder: 'Pilih opsi...' },
         { value: 'checkbox', label: 'Checkbox', icon: CheckSquare, defaultLabel: '', defaultPlaceholder: '' },
         { value: 'radio', label: 'Radio Button', icon: CircleDot, defaultLabel: '', defaultPlaceholder: '' },
+    ]},
+    { category: 'signature', items: [
+        { value: 'signature_box', label: 'Kotak Tanda Tangan', icon: FileSignature, defaultLabel: 'Diketahui oleh :', defaultPlaceholder: '[nama personil]' },
     ]}
 ];
 
@@ -633,6 +637,25 @@ function DesignerElement({ field, isSelected, onSelect, renderChildren }: any) {
                 style={{ width: `${field.options?.image_scale || 100}%` }}
                 className="h-auto rounded-lg object-contain transition-all" />
              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-white/80 p-1 rounded backdrop-blur-sm" {...attributes} {...listeners}><GripVertical size={12} /></div>
+        </div>
+    );
+
+    if (field.type === 'signature_box') return (
+        <div ref={setNodeRef} style={style} onClick={onSelect} className={cn("group relative p-1 rounded-xl transition-all cursor-pointer", widthClass, isSelected ? "ring-2 ring-primary" : "ring-1 ring-transparent hover:ring-muted shadow-sm")}>
+            <div className="border border-slate-950 rounded overflow-hidden bg-white">
+                <div className="bg-slate-50 border-b border-slate-950 px-2 py-1 text-[9px] font-black text-slate-900 text-center uppercase tracking-tight">
+                    {field.label}
+                </div>
+                <div className="h-20 p-2 flex flex-col items-center justify-end">
+                    <div className="text-[10px] font-black text-slate-900 uppercase tracking-tighter">
+                        {field.placeholder || ''}
+                    </div>
+                </div>
+                <div className="bg-slate-50 border-t border-slate-950 px-2 py-1 text-[8px] text-slate-400 font-bold italic">
+                    Tgl. ________________
+                </div>
+            </div>
+            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 bg-background border rounded shadow-sm" {...attributes} {...listeners}><GripVertical size={10} /></div>
         </div>
     );
 

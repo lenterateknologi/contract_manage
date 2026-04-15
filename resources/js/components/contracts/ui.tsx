@@ -1,11 +1,16 @@
-import React from 'react';
-import { ContractStatus, UserProfile } from '@/types/contracts';
+import { UserProfile } from '@/types/contracts';
 
 // ─── Status config ─────────────────────────────────────────────────
 const STATUS_LABEL: Record<string, string> = {
-    draft: 'Draft', in_review: 'In Review', revision: 'Revision',
-    approved: 'Approved', locked: 'Locked', archived: 'Archived',
-    pending: 'Pending', rejected: 'Rejected', waiting: 'Waiting',
+    draft: 'Draft',
+    in_review: 'In Review',
+    revision: 'Revision',
+    approved: 'Approved',
+    locked: 'Locked',
+    archived: 'Archived',
+    pending: 'Pending',
+    rejected: 'Rejected',
+    waiting: 'Waiting',
 };
 
 const STATUS_CLS: Record<string, string> = {
@@ -23,19 +28,27 @@ const STATUS_CLS: Record<string, string> = {
 export function StatusBadge({ status, label }: { status: string; label?: string }) {
     const cls = STATUS_CLS[status] ?? STATUS_CLS.draft;
     return (
-        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${cls}`}>
+        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${cls}`}>
             {label ?? STATUS_LABEL[status] ?? status}
         </span>
     );
 }
 
 // ─── Avatar ─────────────────────────────────────────────────────────
-export function Avatar({ user, size = 'sm', className = '' }: { user: UserProfile | null | undefined; size?: 'sm' | 'md' | 'lg'; className?: string }) {
+export function Avatar({
+    user,
+    size = 'sm',
+    className = '',
+}: {
+    user: UserProfile | null | undefined;
+    size?: 'sm' | 'md' | 'lg';
+    className?: string;
+}) {
     const sizeMap = { sm: 'w-5 h-5 text-xs', md: 'w-7 h-7 text-xs', lg: 'w-8 h-8 text-xs' };
     if (!user) return null;
     return (
         <span
-            className={`inline-flex items-center justify-center rounded-full font-bold flex-shrink-0 ${sizeMap[size]} ${className}`}
+            className={`inline-flex flex-shrink-0 items-center justify-center rounded-full font-bold ${sizeMap[size]} ${className}`}
             style={{ background: user.bg_color, color: user.text_color }}
         >
             {user.initials}
@@ -47,9 +60,11 @@ export function Avatar({ user, size = 'sm', className = '' }: { user: UserProfil
 export function ProgressBar({ done, total, pct }: { done: number; total: number; pct: number }) {
     return (
         <div>
-            <div className="text-xs text-muted-foreground mb-1">{done}/{total}</div>
-            <div className="h-1 bg-muted rounded-full overflow-hidden w-20">
-                <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${pct}%` }} />
+            <div className="text-muted-foreground mb-1 text-xs">
+                {done}/{total}
+            </div>
+            <div className="bg-muted h-1 w-20 overflow-hidden rounded-full">
+                <div className="bg-primary h-full rounded-full transition-all" style={{ width: `${pct}%` }} />
             </div>
         </div>
     );

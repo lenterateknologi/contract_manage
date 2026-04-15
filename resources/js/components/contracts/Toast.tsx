@@ -1,10 +1,15 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 // ─── Toast ───────────────────────────────────────────────────────────
-interface ToastMsg { msg: string; type: 'success' | 'danger' | 'info' }
-interface ToastCtx { showToast: (msg: string, type?: ToastMsg['type']) => void }
+interface ToastMsg {
+    msg: string;
+    type: 'success' | 'danger' | 'info';
+}
+interface ToastCtx {
+    showToast: (msg: string, type?: ToastMsg['type']) => void;
+}
 
-const ToastContext = createContext<ToastCtx>({ showToast: () => { } });
+const ToastContext = createContext<ToastCtx>({ showToast: () => {} });
 export const useToast = () => useContext(ToastContext);
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
@@ -26,8 +31,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         <ToastContext.Provider value={{ showToast }}>
             {children}
             {toast && (
-                <div className={`fixed bottom-5 right-24 z-[200] flex items-center gap-2 px-4 py-2.5 rounded-lg text-white text-[12px] font-medium shadow-xl ${bgMap[toast.type]}`}
-                    style={{ animation: 'toast-in .18s ease' }}>
+                <div
+                    className={`fixed right-24 bottom-5 z-[200] flex items-center gap-2 rounded-lg px-4 py-2.5 text-[12px] font-medium text-white shadow-xl ${bgMap[toast.type]}`}
+                    style={{ animation: 'toast-in .18s ease' }}
+                >
                     <i className={`fa-solid ${iconMap[toast.type]} text-[13px]`} />
                     {toast.msg}
                 </div>

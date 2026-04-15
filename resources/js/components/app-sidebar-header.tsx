@@ -1,22 +1,21 @@
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { type BreadcrumbItem as BreadcrumbItemType, type SharedData, type NavGroup } from '@/types';
+import { type BreadcrumbItem as BreadcrumbItemType, type NavGroup, type SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
-import { 
-    LayoutGrid, 
-    FileText, 
-    Clock, 
-    FilePlus, 
-    FileEdit, 
-    History, 
-    ShieldCheck, 
-    Users, 
-    Settings2, 
-    GitBranch, 
+import {
     BarChart3,
-    type LucideIcon 
+    Clock,
+    FileEdit,
+    FilePlus,
+    FileText,
+    GitBranch,
+    History,
+    LayoutGrid,
+    Settings2,
+    ShieldCheck,
+    Users,
+    type LucideIcon,
 } from 'lucide-react';
-import React from 'react';
 
 const iconMap: Record<string, LucideIcon> = {
     LayoutGrid,
@@ -34,23 +33,23 @@ const iconMap: Record<string, LucideIcon> = {
 
 export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItemType[] }) {
     const { sidebarNavGroups } = usePage<SharedData>().props;
-    
+
     // Fallback: Find active menu from sidebar navigation if breadcrumbs are missing or incomplete
     const findActiveMenuItem = () => {
         const currentUrl = window.location.pathname;
-        for (const group of (sidebarNavGroups as NavGroup[] || [])) {
-            const activeItem = group.items.find(item => item.url === currentUrl || currentUrl.startsWith(item.url + '/'));
+        for (const group of (sidebarNavGroups as NavGroup[]) || []) {
+            const activeItem = group.items.find((item) => item.url === currentUrl || currentUrl.startsWith(item.url + '/'));
             if (activeItem) return activeItem;
         }
         return null;
     };
 
     const activeItem = findActiveMenuItem();
-    
+
     const lastItem = breadcrumbs.length > 0 ? breadcrumbs[breadcrumbs.length - 1] : null;
     const pageTitle = lastItem?.title || activeItem?.title || '';
     const pageDescription = lastItem?.description || '';
-    
+
     const iconName = lastItem?.icon || activeItem?.icon;
     const Icon = typeof iconName === 'string' ? iconMap[iconName] : iconName;
 
@@ -63,18 +62,16 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
                         <div className="flex items-center gap-3">
                             <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
                                 <div className="flex items-center gap-2">
-                                    {Icon && <Icon className="h-4 w-4 text-primary" />}
-                                    <span className="text-sm font-black text-slate-900 uppercase tracking-widest whitespace-nowrap">
-                                        {pageTitle}
-                                    </span>
+                                    {Icon && <Icon className="text-primary h-4 w-4" />}
+                                    <span className="text-sm font-black tracking-widest whitespace-nowrap text-slate-900 uppercase">{pageTitle}</span>
                                 </div>
                                 {pageDescription && (
-                                    <span className="text-[11px] font-medium text-slate-400 whitespace-nowrap hidden sm:block">
+                                    <span className="hidden text-[11px] font-medium whitespace-nowrap text-slate-400 sm:block">
                                         — {pageDescription}
                                     </span>
                                 )}
                             </div>
-                            <div className="h-4 w-[1px] bg-slate-200 hidden sm:block" />
+                            <div className="hidden h-4 w-[1px] bg-slate-200 sm:block" />
                         </div>
                     )}
                     <Breadcrumbs breadcrumbs={breadcrumbs} />

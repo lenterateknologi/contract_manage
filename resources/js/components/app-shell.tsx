@@ -1,5 +1,5 @@
-import { SidebarProvider } from '@/components/ui/sidebar';
 import { ToastProvider } from '@/components/contracts/Toast';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import { useState } from 'react';
 
 interface AppShellProps {

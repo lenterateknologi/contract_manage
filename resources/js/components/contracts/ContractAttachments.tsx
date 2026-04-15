@@ -1,7 +1,6 @@
-import React, { useRef, useState } from 'react';
-import { Contract, ContractAttachment } from '@/types/contracts';
 import { contractApi } from '@/lib/contract-api';
-import { Avatar } from '@/components/contracts/ui';
+import { Contract, ContractAttachment } from '@/types/contracts';
+import React, { useRef, useState } from 'react';
 
 interface Props {
     contract: Contract;
@@ -23,14 +22,14 @@ const CATEGORIES = [
             'Asli Surat Kuasa',
             'Copy KTP / Passport Direksi',
             'Copy QCF / Bidding Price',
-            'Copy BA Negosiasi'
-        ]
+            'Copy BA Negosiasi',
+        ],
     },
     {
         id: 'perorangan',
         label: 'Lampiran (Perorangan)',
-        items: ['Copy KTP Suami/Istri', 'Copy Kartu Keluarga', 'Copy NPWP']
-    }
+        items: ['Copy KTP Suami/Istri', 'Copy Kartu Keluarga', 'Copy NPWP'],
+    },
 ];
 
 export default function ContractAttachments({ contract, onUpdated, showToast, onPreview }: Props & { onPreview: (at: ContractAttachment) => void }) {
@@ -72,71 +71,91 @@ export default function ContractAttachments({ contract, onUpdated, showToast, on
         }
     };
 
-    const getAttachment = (label: string) => contract.attachments?.find(a => a.label === label);
+    const getAttachment = (label: string) => contract.attachments?.find((a) => a.label === label);
 
     return (
         <div className="space-y-8">
             <input type="file" ref={fileRef} className="hidden" onChange={handleFileChange} />
 
-            {CATEGORIES.map(cat => (
+            {CATEGORIES.map((cat) => (
                 <div key={cat.id}>
-                    <h6 className="text-[12px] font-bold text-foreground mb-3 flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                    <h6 className="text-foreground mb-3 flex items-center gap-2 text-[12px] font-bold">
+                        <div className="bg-primary h-1.5 w-1.5 rounded-full" />
                         {cat.label}
                     </h6>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {cat.items.map(label => {
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                        {cat.items.map((label) => {
                             const at = getAttachment(label);
                             const isUp = uploading === label;
 
                             return (
-                                <div key={label} className={`flex items-center justify-between p-3 rounded-lg border transition-all ${at ? 'bg-primary/5 border-primary/20 dark:bg-primary/10 dark:border-primary/20' : 'bg-card border-border'}`}>
-                                    <div className="flex items-center gap-3 min-w-0">
-                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${at ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                                            <i className={at ? "fa-solid fa-file-circle-check" : "fa-regular fa-file"} />
+                                <div
+                                    key={label}
+                                    className={`flex items-center justify-between rounded-lg border p-3 transition-all ${at ? 'bg-primary/5 border-primary/20 dark:bg-primary/10 dark:border-primary/20' : 'bg-card border-border'}`}
+                                >
+                                    <div className="flex min-w-0 items-center gap-3">
+                                        <div
+                                            className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg ${at ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}
+                                        >
+                                            <i className={at ? 'fa-solid fa-file-circle-check' : 'fa-regular fa-file'} />
                                         </div>
                                         <div className="min-w-0">
-                                            <div className="text-[12px] font-medium text-foreground/80 truncate" title={label}>{label}</div>
+                                            <div className="text-foreground/80 truncate text-[12px] font-medium" title={label}>
+                                                {label}
+                                            </div>
                                             {at ? (
-                                                <div className="text-[10px] text-muted-foreground truncate mt-0.5">
+                                                <div className="text-muted-foreground mt-0.5 truncate text-[10px]">
                                                     {at.file_name} · {at.created_at}
                                                 </div>
                                             ) : (
-                                                <div className="text-[10px] text-muted-foreground/50 mt-0.5">Belum ada dokumen</div>
+                                                <div className="text-muted-foreground/50 mt-0.5 text-[10px]">Belum ada dokumen</div>
                                             )}
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-1.25 ml-3 flex-shrink-0">
+                                    <div className="ml-3 flex flex-shrink-0 items-center gap-1.25">
                                         {at ? (
                                             <>
-                                                <button onClick={() => onPreview(at)} className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-primary/10 text-primary/70 hover:text-primary transition-colors" title="Preview">
+                                                <button
+                                                    onClick={() => onPreview(at)}
+                                                    className="hover:bg-primary/10 text-primary/70 hover:text-primary flex h-7 w-7 items-center justify-center rounded-md transition-colors"
+                                                    title="Preview"
+                                                >
                                                     <i className="fa-solid fa-eye text-[11px]" />
                                                 </button>
-                                                <a href={contractApi.attachmentDownloadUrl(contract.id, at.id)} download className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-primary/10 text-primary/70 hover:text-primary transition-colors" title="Download">
+                                                <a
+                                                    href={contractApi.attachmentDownloadUrl(contract.id, at.id)}
+                                                    download
+                                                    className="hover:bg-primary/10 text-primary/70 hover:text-primary flex h-7 w-7 items-center justify-center rounded-md transition-colors"
+                                                    title="Download"
+                                                >
                                                     <i className="fa-solid fa-download text-[11px]" />
                                                 </a>
-                                                <button onClick={() => handleDelete(at.id, label)} className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-destructive/10 text-destructive/70 hover:text-destructive transition-colors" title="Delete">
+                                                <button
+                                                    onClick={() => handleDelete(at.id, label)}
+                                                    className="hover:bg-destructive/10 text-destructive/70 hover:text-destructive flex h-7 w-7 items-center justify-center rounded-md transition-colors"
+                                                    title="Delete"
+                                                >
                                                     <i className="fa-solid fa-trash-can text-[11px]" />
                                                 </button>
                                             </>
                                         ) : (
                                             <button
                                                 disabled={!!uploading}
-                                                onClick={() => { setActiveLabel(label); setActiveCat(cat.id); fileRef.current?.click(); }}
-                                                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted hover:bg-primary text-muted-foreground hover:text-primary-foreground text-[10px] font-semibold rounded-md transition-all disabled:opacity-50"
+                                                onClick={() => {
+                                                    setActiveLabel(label);
+                                                    setActiveCat(cat.id);
+                                                    fileRef.current?.click();
+                                                }}
+                                                className="bg-muted hover:bg-primary text-muted-foreground hover:text-primary-foreground flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[10px] font-semibold transition-all disabled:opacity-50"
                                             >
-                                                {isUp ? (
-                                                    <i className="fa-solid fa-spinner fa-spin" />
-                                                ) : (
-                                                    <i className="fa-solid fa-plus" />
-                                                )}
+                                                {isUp ? <i className="fa-solid fa-spinner fa-spin" /> : <i className="fa-solid fa-plus" />}
                                                 Upload
                                             </button>
                                         )}
                                     </div>
                                 </div>
-                            )
+                            );
                         })}
                     </div>
                 </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 interface Props {
     open: boolean;
@@ -17,7 +17,10 @@ export default function CreateContractModal({ open, onClose, onSubmit }: Props) 
 
     const handleSubmit = async () => {
         setErrors({});
-        if (!title.trim()) { setErrors(prev => ({ ...prev, title: 'Nama kontrak harus diisi' })); return; }
+        if (!title.trim()) {
+            setErrors((prev) => ({ ...prev, title: 'Nama kontrak harus diisi' }));
+            return;
+        }
 
         const fd = new FormData();
         fd.append('title', title);
@@ -27,7 +30,8 @@ export default function CreateContractModal({ open, onClose, onSubmit }: Props) 
         try {
             await onSubmit(fd);
             onClose();
-            setTitle(''); setDesc('');
+            setTitle('');
+            setDesc('');
         } catch (err: any) {
             if (err.response?.data?.errors) setErrors(err.response.data.errors);
             else setErrors({ general: 'Gagal membuat kontrak.' });
@@ -37,10 +41,16 @@ export default function CreateContractModal({ open, onClose, onSubmit }: Props) 
     };
 
     return (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
-            <div className="bg-background border border-border shadow-xl rounded-xl w-[520px] max-w-full overflow-hidden" style={{ animation: 'modal-in .18s ease' }}>
-                <div className="flex items-center justify-between px-5 py-4 border-b border-border/50">
-                    <h6 className="text-[14px] font-semibold flex items-center gap-2">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+            onClick={(e) => e.target === e.currentTarget && onClose()}
+        >
+            <div
+                className="bg-background border-border w-[520px] max-w-full overflow-hidden rounded-xl border shadow-xl"
+                style={{ animation: 'modal-in .18s ease' }}
+            >
+                <div className="border-border/50 flex items-center justify-between border-b px-5 py-4">
+                    <h6 className="flex items-center gap-2 text-[14px] font-semibold">
                         <i className="fa-solid fa-file-circle-plus text-muted-foreground text-[13px]" /> Buat Kontrak Baru
                     </h6>
                     <button onClick={onClose} className="text-muted-foreground hover:text-muted-foreground transition-colors">
@@ -48,33 +58,53 @@ export default function CreateContractModal({ open, onClose, onSubmit }: Props) 
                     </button>
                 </div>
 
-                <div className="p-5 space-y-4 max-h-[80vh] overflow-y-auto">
+                <div className="max-h-[80vh] space-y-4 overflow-y-auto p-5">
                     <div>
-                        <label className="block text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Nama Kontrak <span className="text-red-500">*</span></label>
-                        <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Masukkan nama kontrak"
-                            className="w-full text-[12px] border border-border rounded-md px-3 py-2 outline-none focus:border-blue-500 placeholder:text-muted-foreground/30" />
-                        {errors.title && <div className="text-red-500 text-[10px] mt-1">{errors.title}</div>}
+                        <label className="text-muted-foreground mb-1.5 block text-[11px] font-semibold tracking-wider uppercase">
+                            Nama Kontrak <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            placeholder="Masukkan nama kontrak"
+                            className="border-border placeholder:text-muted-foreground/30 w-full rounded-md border px-3 py-2 text-[12px] outline-none focus:border-blue-500"
+                        />
+                        {errors.title && <div className="mt-1 text-[10px] text-red-500">{errors.title}</div>}
                     </div>
 
                     <div>
-                        <label className="block text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Deskripsi <span className="text-muted-foreground/50 text-[10px] normal-case">(opsional)</span></label>
-                        <textarea value={desc} onChange={e => setDesc(e.target.value)} rows={3} placeholder="Deskripsi singkat kontrak..."
-                            className="w-full text-[12px] border border-border rounded-md px-3 py-2 outline-none focus:border-blue-500 placeholder:text-muted-foreground/30" />
+                        <label className="text-muted-foreground mb-1.5 block text-[11px] font-semibold tracking-wider uppercase">
+                            Deskripsi <span className="text-muted-foreground/50 text-[10px] normal-case">(opsional)</span>
+                        </label>
+                        <textarea
+                            value={desc}
+                            onChange={(e) => setDesc(e.target.value)}
+                            rows={3}
+                            placeholder="Deskripsi singkat kontrak..."
+                            className="border-border placeholder:text-muted-foreground/30 w-full rounded-md border px-3 py-2 text-[12px] outline-none focus:border-blue-500"
+                        />
                     </div>
 
                     {errors.general && (
-                        <div className="p-3 bg-red-50 border border-red-100 rounded-md text-red-600 text-[11px]">
+                        <div className="rounded-md border border-red-100 bg-red-50 p-3 text-[11px] text-red-600">
                             <i className="fa-solid fa-circle-exclamation mr-2" />
                             {errors.general}
                         </div>
                     )}
                 </div>
 
-                <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-border/50">
-                    <button onClick={onClose} className="px-5 py-2 text-[12px] font-medium text-muted-foreground hover:text-foreground/80 transition-colors">
+                <div className="border-border/50 flex items-center justify-end gap-3 border-t px-5 py-4">
+                    <button
+                        onClick={onClose}
+                        className="text-muted-foreground hover:text-foreground/80 px-5 py-2 text-[12px] font-medium transition-colors"
+                    >
                         Batal
                     </button>
-                    <button onClick={handleSubmit} disabled={loading} className="px-6 py-2 bg-primary hover:bg-primary/90 disabled:bg-gray-400 text-white text-[12px] font-semibold rounded-lg transition-all shadow-lg shadow-primary/10">
+                    <button
+                        onClick={handleSubmit}
+                        disabled={loading}
+                        className="bg-primary hover:bg-primary/90 shadow-primary/10 rounded-lg px-6 py-2 text-[12px] font-semibold text-white shadow-lg transition-all disabled:bg-gray-400"
+                    >
                         {loading ? <i className="fa-solid fa-spinner fa-spin mr-2" /> : <i className="fa-solid fa-check mr-2" />}
                         Buat Kontrak
                     </button>

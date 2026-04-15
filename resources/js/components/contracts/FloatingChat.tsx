@@ -1,47 +1,66 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Contract } from '@/types/contracts';
 import { contractApi } from '@/lib/contract-api';
+import { Contract } from '@/types/contracts';
+import React, { useEffect, useRef, useState } from 'react';
 import { Avatar } from './ui';
 
-interface Props { contracts: Contract[]; meId: string; onContractUpdated: (c: Contract) => void; }
+interface Props {
+    contracts: Contract[];
+    meId: string;
+    onContractUpdated: (c: Contract) => void;
+}
 
 function MsgBubble({ msg, isMe }: { msg: any; isMe: boolean }) {
     const time = msg.created_at?.split(' ')[1]?.substring(0, 5) ?? '';
     const name = msg.user?.name ?? 'Unknown';
     const role = msg.user?.role ?? '';
 
-    if (isMe) return (
-        <div className="flex flex-col items-end gap-1 mb-1">
-            <div className="flex items-center gap-1.5 mr-1">
-                <span className="text-[10px] font-bold text-blue-600">You</span>
-                {role && <span className="text-[10px] text-gray-400 font-medium px-1.2 py-0.3 bg-gray-50 rounded-md border border-gray-100">{role}</span>}
-            </div>
-            <div className="group relative max-w-[85%]">
-                <div className="px-3 py-2 text-[12px] leading-relaxed text-white rounded-[14px_14px_4px_14px] shadow-sm select-text" style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' }}>
-                    {msg.message}
+    if (isMe)
+        return (
+            <div className="mb-1 flex flex-col items-end gap-1">
+                <div className="mr-1 flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold text-blue-600">You</span>
+                    {role && (
+                        <span className="px-1.2 py-0.3 rounded-md border border-gray-100 bg-gray-50 text-[10px] font-medium text-gray-400">
+                            {role}
+                        </span>
+                    )}
                 </div>
-            </div>
-            <div className="flex items-center gap-1 mr-1 mt-0.5">
-                <span className="text-[10px] text-gray-400">{time}</span>
-                {msg.read_by?.length > 1 && <i className="fa-solid fa-check-double text-[9px] text-blue-500" />}
-            </div>
-        </div>
-    );
-
-    return (
-        <div className="flex items-start gap-2 mb-1">
-            <Avatar user={msg.user} size="sm" className="mt-4" />
-            <div className="flex flex-col gap-1 flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-bold text-gray-700 truncate">{name}</span>
-                    {role && <span className="text-[10px] text-gray-400 font-medium px-1.2 py-0.3 bg-gray-50 rounded-md border border-gray-100">{role}</span>}
-                </div>
-                <div className="group relative max-w-[88%] w-fit">
-                    <div className="px-3 py-2 text-[12px] leading-relaxed rounded-[14px_14px_14px_4px] shadow-sm select-text border border-gray-100" style={{ background: '#f9fafb', color: '#1f2937' }}>
+                <div className="group relative max-w-[85%]">
+                    <div
+                        className="rounded-[14px_14px_4px_14px] px-3 py-2 text-[12px] leading-relaxed text-white shadow-sm select-text"
+                        style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' }}
+                    >
                         {msg.message}
                     </div>
                 </div>
-                <span className="text-[10px] text-gray-400 ml-1 mt-0.5">{time}</span>
+                <div className="mt-0.5 mr-1 flex items-center gap-1">
+                    <span className="text-[10px] text-gray-400">{time}</span>
+                    {msg.read_by?.length > 1 && <i className="fa-solid fa-check-double text-[9px] text-blue-500" />}
+                </div>
+            </div>
+        );
+
+    return (
+        <div className="mb-1 flex items-start gap-2">
+            <Avatar user={msg.user} size="sm" className="mt-4" />
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <div className="flex items-center gap-1.5">
+                    <span className="truncate text-[10px] font-bold text-gray-700">{name}</span>
+                    {role && (
+                        <span className="px-1.2 py-0.3 rounded-md border border-gray-100 bg-gray-50 text-[10px] font-medium text-gray-400">
+                            {role}
+                        </span>
+                    )}
+                </div>
+                <div className="group relative w-fit max-w-[88%]">
+                    <div
+                        className="rounded-[14px_14px_14px_4px] border border-gray-100 px-3 py-2 text-[12px] leading-relaxed shadow-sm select-text"
+                        style={{ background: '#f9fafb', color: '#1f2937' }}
+                    >
+                        {msg.message}
+                    </div>
+                </div>
+                <span className="mt-0.5 ml-1 text-[10px] text-gray-400">{time}</span>
             </div>
         </div>
     );
@@ -49,11 +68,11 @@ function MsgBubble({ msg, isMe }: { msg: any; isMe: boolean }) {
 
 function DateSeparator({ date }: { date: string }) {
     return (
-        <div className="flex items-center justify-center my-4 relative">
+        <div className="relative my-4 flex items-center justify-center">
             <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-100"></div>
             </div>
-            <span className="relative px-3 py-1 bg-white text-[9px] font-bold text-gray-400 uppercase tracking-widest border border-gray-100 rounded-full shadow-sm">
+            <span className="relative rounded-full border border-gray-100 bg-white px-3 py-1 text-[9px] font-bold tracking-widest text-gray-400 uppercase shadow-sm">
                 {date}
             </span>
         </div>
@@ -81,7 +100,7 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
             startX: e.clientX,
             startY: e.clientY,
             initialX: pos.x,
-            initialY: pos.y
+            initialY: pos.y,
         };
         (e.target as HTMLElement).setPointerCapture(e.pointerId);
     };
@@ -92,7 +111,7 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
         const dy = e.clientY - dragRef.current.startY;
         setPos({
             x: dragRef.current.initialX + dx,
-            y: dragRef.current.initialY + dy
+            y: dragRef.current.initialY + dy,
         });
     };
 
@@ -101,25 +120,25 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
         (e.target as HTMLElement).releasePointerCapture(e.pointerId);
     };
 
-    const totalUnread = contracts.reduce((sum, c) =>
-        sum + (c.messages ?? []).filter(m => !m.read_by.includes(meId)).length, 0);
+    const totalUnread = contracts.reduce((sum, c) => sum + (c.messages ?? []).filter((m) => !m.read_by.includes(meId)).length, 0);
 
-    const filteredContracts = contracts.filter(c => 
-        c.contract_no.toLowerCase().includes(searchList.toLowerCase()) || 
-        c.title?.toLowerCase().includes(searchList.toLowerCase())
+    const filteredContracts = contracts.filter(
+        (c) => c.contract_no.toLowerCase().includes(searchList.toLowerCase()) || c.title?.toLowerCase().includes(searchList.toLowerCase()),
     );
 
-    const active = activeId ? contracts.find(c => c.id === activeId) : null;
+    const active = activeId ? contracts.find((c) => c.id === activeId) : null;
     const msgs = active?.messages ?? [];
-    const filteredMsgs = searchThread.trim() 
-        ? msgs.filter(m => m.message.toLowerCase().includes(searchThread.toLowerCase())) 
-        : msgs;
+    const filteredMsgs = searchThread.trim() ? msgs.filter((m) => m.message.toLowerCase().includes(searchThread.toLowerCase())) : msgs;
 
-    useEffect(() => { !showSearchThread && endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs.length, activeId, showSearchThread]);
+    useEffect(() => {
+        !showSearchThread && endRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [msgs.length, activeId, showSearchThread]);
 
     const toggleChat = () => {
-        if (!open) { setActiveId(null); }
-        setOpen(o => !o);
+        if (!open) {
+            setActiveId(null);
+        }
+        setOpen((o) => !o);
         setSearchList('');
     };
 
@@ -147,26 +166,29 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
             const updated = await contractApi.get(activeId);
             onContractUpdated(updated);
             setInput('');
-        } finally { setSending(false); }
+        } finally {
+            setSending(false);
+        }
     };
 
     return (
         <>
             {/* FAB — always shows fa-comments icon; badge shows when unread > 0 */}
             {/* FAB — always shows fa-comments icon; badge shows when unread > 0 */}
-            <button 
+            <button
                 onClick={(e) => !isDragging && toggleChat()}
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
-                className="fixed bottom-5 right-5 z-[200] w-12 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all cursor-move select-none"
-                style={{ 
+                className="fixed right-5 bottom-5 z-[200] flex h-12 w-12 cursor-move items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition-all select-none hover:bg-blue-700"
+                style={{
                     transform: `translate(${pos.x}px, ${pos.y}px)`,
-                    touchAction: 'none'
-                }}>
+                    touchAction: 'none',
+                }}
+            >
                 <i className={`fa-solid ${open ? 'fa-xmark' : 'fa-comments'} text-[18px]`} />
                 {totalUnread > 0 && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center pointer-events-none">
+                    <span className="pointer-events-none absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
                         {totalUnread}
                     </span>
                 )}
@@ -174,30 +196,36 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
 
             {/* Panel */}
             {open && (
-                <div className="fixed bottom-20 right-5 z-[199]" style={{ width: 340, animation: 'slide-up .2s ease' }}>
-                    <div className="bg-white rounded-xl shadow-xl border border-gray-200 flex flex-col overflow-hidden" style={{ height: 480 }}>
-
+                <div className="fixed right-5 bottom-20 z-[199]" style={{ width: 340, animation: 'slide-up .2s ease' }}>
+                    <div className="flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl" style={{ height: 480 }}>
                         {/* Panel header */}
-                        <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100">
-                            <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                        <div className="flex items-center justify-between border-b border-gray-100 bg-white px-4 py-3">
+                            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                                 <div className="flex items-center gap-2">
                                     {activeId && (
-                                        <button onClick={showList}
-                                            className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-500 text-[13px] transition-colors">
+                                        <button
+                                            onClick={showList}
+                                            className="flex h-7 w-7 items-center justify-center rounded-md text-[13px] text-gray-500 transition-colors hover:bg-gray-100"
+                                        >
                                             <i className="fa-solid fa-arrow-left" />
                                         </button>
                                     )}
-                                    <span className="text-[13px] font-semibold truncate">{active ? active.contract_no : 'Diskusi Kontrak'}</span>
+                                    <span className="truncate text-[13px] font-semibold">{active ? active.contract_no : 'Diskusi Kontrak'}</span>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-1 ml-2">
+                            <div className="ml-2 flex items-center gap-1">
                                 {activeId && !showSearchThread && (
-                                    <button onClick={() => setShowSearchThread(true)} className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400 text-[12px] transition-colors">
+                                    <button
+                                        onClick={() => setShowSearchThread(true)}
+                                        className="flex h-7 w-7 items-center justify-center rounded-md text-[12px] text-gray-400 transition-colors hover:bg-gray-100"
+                                    >
                                         <i className="fa-solid fa-magnifying-glass" />
                                     </button>
                                 )}
-                                <button onClick={() => setOpen(false)}
-                                    className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-400 text-[13px] transition-colors">
+                                <button
+                                    onClick={() => setOpen(false)}
+                                    className="flex h-7 w-7 items-center justify-center rounded-md text-[13px] text-gray-400 transition-colors hover:bg-gray-100"
+                                >
                                     <i className="fa-solid fa-xmark" />
                                 </button>
                             </div>
@@ -205,10 +233,22 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
 
                         {/* Search Sub-header for Thread */}
                         {activeId && showSearchThread && (
-                            <div className="px-4 py-2 border-b border-gray-50 flex items-center gap-2 bg-gray-50/50">
-                                <i className="fa-solid fa-magnifying-glass text-gray-400 text-[10px]" />
-                                <input autoFocus value={searchThread} onChange={e => setSearchThread(e.target.value)} placeholder="Cari pesan..." className="flex-1 bg-transparent border-none outline-none text-[11px] placeholder-gray-400" />
-                                <button onClick={() => { setShowSearchThread(false); setSearchThread(''); }} className="text-gray-400 hover:text-gray-600 transition-colors">
+                            <div className="flex items-center gap-2 border-b border-gray-50 bg-gray-50/50 px-4 py-2">
+                                <i className="fa-solid fa-magnifying-glass text-[10px] text-gray-400" />
+                                <input
+                                    autoFocus
+                                    value={searchThread}
+                                    onChange={(e) => setSearchThread(e.target.value)}
+                                    placeholder="Cari pesan..."
+                                    className="flex-1 border-none bg-transparent text-[11px] placeholder-gray-400 outline-none"
+                                />
+                                <button
+                                    onClick={() => {
+                                        setShowSearchThread(false);
+                                        setSearchThread('');
+                                    }}
+                                    className="text-gray-400 transition-colors hover:text-gray-600"
+                                >
                                     <i className="fa-solid fa-xmark text-[10px]" />
                                 </button>
                             </div>
@@ -216,10 +256,19 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
 
                         {/* Search header for List view */}
                         {!activeId && (
-                            <div className="px-4 py-2 border-b border-gray-50 flex items-center gap-2">
-                                <i className="fa-solid fa-magnifying-glass text-gray-300 text-[11px]" />
-                                <input value={searchList} onChange={e => setSearchList(e.target.value)} placeholder="Cari kontrak..." className="flex-1 bg-transparent border-none outline-none text-[12px] placeholder-gray-300" />
-                                {searchList && <button onClick={() => setSearchList('')} className="text-gray-300 hover:text-gray-500"><i className="fa-solid fa-xmark text-[11px]" /></button>}
+                            <div className="flex items-center gap-2 border-b border-gray-50 px-4 py-2">
+                                <i className="fa-solid fa-magnifying-glass text-[11px] text-gray-300" />
+                                <input
+                                    value={searchList}
+                                    onChange={(e) => setSearchList(e.target.value)}
+                                    placeholder="Cari kontrak..."
+                                    className="flex-1 border-none bg-transparent text-[12px] placeholder-gray-300 outline-none"
+                                />
+                                {searchList && (
+                                    <button onClick={() => setSearchList('')} className="text-gray-300 hover:text-gray-500">
+                                        <i className="fa-solid fa-xmark text-[11px]" />
+                                    </button>
+                                )}
                             </div>
                         )}
 
@@ -227,44 +276,65 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
                         {!activeId && (
                             <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
                                 {filteredContracts.length === 0 ? (
-                                    <div className="text-center py-12 text-gray-400 text-[12px]">
-                                        <i className="fa-solid fa-magnifying-glass block text-2xl mb-2 opacity-20" />
+                                    <div className="py-12 text-center text-[12px] text-gray-400">
+                                        <i className="fa-solid fa-magnifying-glass mb-2 block text-2xl opacity-20" />
                                         Kontrak tidak ditemukan
                                     </div>
-                                ) : filteredContracts.map(c => {
-                                    const unread = (c.messages ?? []).filter(m => !m.read_by.includes(meId)).length;
-                                    const last = c.messages?.at(-1);
-                                    return (
-                                        <div key={c.id} onClick={() => openThread(c.id)}
-                                            className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors"
-                                            style={{ width: '100%', boxSizing: 'border-box', overflow: 'hidden' }}>
-                                            <div className="w-9 h-9 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center flex-shrink-0">
-                                                <i className="fa-solid fa-file-lines text-blue-400 text-[13px]" />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-[12px] font-semibold text-gray-800 truncate">{c.contract_no}</span>
-                                                    {last && <span className="text-[10px] text-gray-400 flex-shrink-0 ml-2">{last.created_at.split(' ')[1]}</span>}
+                                ) : (
+                                    filteredContracts.map((c) => {
+                                        const unread = (c.messages ?? []).filter((m) => !m.read_by.includes(meId)).length;
+                                        const last = c.messages?.at(-1);
+                                        return (
+                                            <div
+                                                key={c.id}
+                                                onClick={() => openThread(c.id)}
+                                                className="flex cursor-pointer items-center gap-3 border-b border-gray-100 px-4 py-3 transition-colors last:border-0 hover:bg-gray-50"
+                                                style={{ width: '100%', boxSizing: 'border-box', overflow: 'hidden' }}
+                                            >
+                                                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-blue-100 bg-blue-50">
+                                                    <i className="fa-solid fa-file-lines text-[13px] text-blue-400" />
                                                 </div>
-                                                <div className="text-[11px] text-gray-400 truncate mt-0.5">{c.title}</div>
-                                                {last
-                                                    ? <div className="text-[11px] text-gray-500 truncate mt-0.5"><span className="font-medium">{last.user?.name?.split(' ')[0]}:</span> {last.message}</div>
-                                                    : <div className="text-[11px] text-gray-300 italic mt-0.5">Belum ada pesan</div>}
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="truncate text-[12px] font-semibold text-gray-800">{c.contract_no}</span>
+                                                        {last && (
+                                                            <span className="ml-2 flex-shrink-0 text-[10px] text-gray-400">
+                                                                {last.created_at.split(' ')[1]}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="mt-0.5 truncate text-[11px] text-gray-400">{c.title}</div>
+                                                    {last ? (
+                                                        <div className="mt-0.5 truncate text-[11px] text-gray-500">
+                                                            <span className="font-medium">{last.user?.name?.split(' ')[0]}:</span> {last.message}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="mt-0.5 text-[11px] text-gray-300 italic">Belum ada pesan</div>
+                                                    )}
+                                                </div>
+                                                {unread > 0 && (
+                                                    <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
+                                                        {unread}
+                                                    </span>
+                                                )}
                                             </div>
-                                            {unread > 0 && <span className="w-5 h-5 bg-blue-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center flex-shrink-0">{unread}</span>}
-                                        </div>
-                                    );
-                                })}
+                                        );
+                                    })
+                                )}
                             </div>
                         )}
 
                         {/* Message view */}
                         {activeId && (
                             <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-                                <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-2" style={{ scrollbarWidth: 'thin' }}>
-                                    {filteredMsgs.length === 0
-                                        ? <div className="text-center text-gray-400 text-[12px] pt-8"><i className="fa-solid fa-comments text-2xl block mb-2" />{searchThread ? 'Pesan tidak ditemukan.' : 'Belum ada pesan.'}</div>
-                                        : (() => {
+                                <div className="flex flex-1 flex-col gap-2 overflow-y-auto px-4 py-3" style={{ scrollbarWidth: 'thin' }}>
+                                    {filteredMsgs.length === 0 ? (
+                                        <div className="pt-8 text-center text-[12px] text-gray-400">
+                                            <i className="fa-solid fa-comments mb-2 block text-2xl" />
+                                            {searchThread ? 'Pesan tidak ditemukan.' : 'Belum ada pesan.'}
+                                        </div>
+                                    ) : (
+                                        (() => {
                                             let lastDate = '';
                                             return filteredMsgs.map((m) => {
                                                 const mDateStr = m.created_at?.split(' ')[0] || '';
@@ -280,7 +350,7 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
                                                     if (mDateStr === now.toISOString().split('T')[0]) label = 'Hari ini';
                                                     else if (mDateStr === yesterday.toISOString().split('T')[0]) label = 'Kemarin';
                                                     else label = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
-                                                    
+
                                                     separator = <DateSeparator key={`sep-${mDateStr}`} date={label} />;
                                                 }
                                                 return (
@@ -290,13 +360,23 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
                                                     </React.Fragment>
                                                 );
                                             });
-                                        })()}
+                                        })()
+                                    )}
                                     <div ref={endRef} />
                                 </div>
-                                <div className="px-3 pb-3 pt-2 border-t border-gray-100 flex gap-2">
-                                    <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()} placeholder="Tulis pesan..."
-                                        className="flex-1 text-[12px] border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-blue-500 placeholder-gray-300" />
-                                    <button onClick={send} disabled={sending || !input.trim()} className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[12px] transition-colors disabled:opacity-50">
+                                <div className="flex gap-2 border-t border-gray-100 px-3 pt-2 pb-3">
+                                    <input
+                                        value={input}
+                                        onChange={(e) => setInput(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && send()}
+                                        placeholder="Tulis pesan..."
+                                        className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-[12px] placeholder-gray-300 outline-none focus:border-blue-500"
+                                    />
+                                    <button
+                                        onClick={send}
+                                        disabled={sending || !input.trim()}
+                                        className="rounded-lg bg-blue-600 px-3 py-2 text-[12px] text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+                                    >
                                         <i className="fa-solid fa-paper-plane text-[11px]" />
                                     </button>
                                 </div>
