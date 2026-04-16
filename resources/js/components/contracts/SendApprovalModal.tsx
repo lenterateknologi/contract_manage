@@ -23,7 +23,7 @@ interface CustomStep {
 interface Props {
     open: boolean;
     onClose: () => void;
-    onSubmit: (data: { workflow_id?: string; custom_steps?: CustomStep[] }) => Promise<void>;
+    onSubmit: (data: { workflow_id?: string; custom_steps?: CustomStep[]; metadata?: any }) => Promise<void>;
     contractType?: string;
 }
 
@@ -36,6 +36,9 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
     const [customSteps, setCustomSteps] = useState<CustomStep[]>([]);
     const [loading, setLoading] = useState(false);
     const [initLoading, setInitLoading] = useState(true);
+    const [metadata, setMetadata] = useState<Record<string, any>>({
+        tax_required: false,
+    });
 
     useEffect(() => {
         if (open) {
@@ -80,9 +83,10 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
     const handleSubmit = async () => {
         setLoading(true);
         try {
-            const data: { workflow_id?: string; custom_steps?: CustomStep[] } = {};
+            const data: { workflow_id?: string; custom_steps?: CustomStep[]; metadata?: any } = {};
             if (mode === 'selectable') data.workflow_id = selectedWorkflowId;
             if (mode === 'custom') data.custom_steps = customSteps;
+            data.metadata = metadata;
 
             await onSubmit(data);
             onClose();
@@ -115,6 +119,29 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
                 </div>
 
                 <div className="space-y-6 p-6">
+                    {/* Workflow Options / Logic Gates */}
+                    <div className="space-y-3">
+                        <label className="text-muted-foreground ml-1 block text-xs font-bold tracking-wider uppercase">
+                            Business Logic / Gateways
+                        </label>
+                        <div className="bg-muted/30 border-border grid grid-cols-1 gap-3 rounded-xl border p-4">
+                            <label className="flex cursor-pointer items-center justify-between">
+                                <span className="flex items-center gap-2">
+                                    <i className="fa-solid fa-receipt text-muted-foreground text-[10px]" />
+                                    <span className="text-[11px] font-medium leading-none">Requires Tax Review?</span>
+                                </span>
+                                <div
+                                    onClick={() => setMetadata({ ...metadata, tax_required: !metadata.tax_required })}
+                                    className={`relative h-5 w-9 rounded-full transition-colors ${metadata.tax_required ? 'bg-primary' : 'bg-muted-foreground/30'}`}
+                                >
+                                    <div
+                                        className={`absolute top-1 h-3 w-3 rounded-full bg-white transition-all ${metadata.tax_required ? 'left-5' : 'left-1'}`}
+                                    />
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
                     {/* Mode Selector */}
                     <div className="bg-muted/50 border-border grid grid-cols-3 gap-2 rounded-lg border p-1">
                         {[

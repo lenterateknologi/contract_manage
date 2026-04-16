@@ -26,8 +26,11 @@ import {
     Search,
     Settings2,
     ShieldCheck,
+    Tags,
     Users,
     X,
+    Building2,
+    Truck,
     type LucideIcon,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -45,6 +48,9 @@ const iconMap: Record<string, LucideIcon> = {
     Settings2,
     GitBranch,
     BarChart3,
+    Tags,
+    Building2,
+    Truck,
 };
 
 const footerNavItems: NavItem[] = [];

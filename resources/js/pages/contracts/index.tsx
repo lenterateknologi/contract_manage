@@ -1431,7 +1431,13 @@ function DraftEditableInfoCard({ selected, types, formTemplates, canUpdate, onUp
     const inputCls = "w-full bg-white dark:bg-muted/30 border border-border rounded-lg px-3 py-1.5 text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all";
 
     const f2Version = selected.versions?.filter(x => x.document_type === 'f2').sort((a, b) => b.version_no - a.version_no)[0];
-    const tpl = formTemplates.find(ft => ft.contract_type_name === (isDraft ? types.find(t => String(t.id) === typeId)?.name : selected.contract_type));
+    
+    // Improved template lookup
+    const filterTypeId = isDraft ? typeId : (selected.contract_type_id ? String(selected.contract_type_id) : '');
+    const tpl = formTemplates.find(ft => 
+        ft.document_type === 'f1' && 
+        (ft.contract_type_id === filterTypeId || ft.contract_type_name === selected.contract_type)
+    );
 
     return (
         <div className="bg-card border border-border rounded-xl overflow-hidden">

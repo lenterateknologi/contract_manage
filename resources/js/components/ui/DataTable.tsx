@@ -152,13 +152,13 @@ export function DataTable<T extends Record<string, any>>({
             <div className="p-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50">
                 <div className="flex items-center gap-3 flex-1 max-w-md">
                     <div className="relative flex-1">
-                        {/* <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                         <Input 
                             placeholder={searchPlaceholder} 
                             className="pl-9 h-10 border-slate-200 focus:ring-primary/20 rounded-lg bg-white"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                        /> */}
+                        />
                     </div>
                     {onRefresh && (
                         <Button variant="outline" size="icon" onClick={onRefresh} disabled={loading} className="shrink-0 h-10 w-10">

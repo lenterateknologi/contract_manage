@@ -3,16 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Models\AccessModule;
+use App\Models\ContractStatus;
+use App\Models\Department;
 use App\Models\ContractType;
 use App\Models\Module;
 use App\Models\ModuleGroup;
 use App\Models\Role;
 use App\Models\RoleModuleGroup;
 use App\Models\User;
+use App\Models\Vendor;
 use App\Models\Workflow;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class AdminController extends Controller
@@ -21,8 +25,9 @@ class AdminController extends Controller
     {
         return Inertia::render('admin/index', [
             'currentView' => 'users',
-            'users' => User::orderBy('name')->paginate(request('per_page', 10)),
+            'users' => User::with('department')->orderBy('name')->paginate(request('per_page', 10)),
             'roles' => Role::orderBy('name')->get(),
+            'departments' => Department::orderBy('name')->get(),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Manajemen User', 'href' => route('admin.users'), 'description' => 'Kelola akses dan profil pengguna sistem.', 'icon' => 'Users'],
@@ -120,7 +125,7 @@ class AdminController extends Controller
                     'can_create' => $accessData['can_create'],
                     'can_update' => $accessData['can_update'],
                     'can_delete' => $accessData['can_delete'],
-                    'created_by' => auth()->id(),
+                    'created_by' => Auth::id(),
                     'updated_at' => now(),
                 ]
             );
@@ -224,7 +229,7 @@ class AdminController extends Controller
                             'can_read' => true,
                             'module_group_id' => $groupData['id'],
                             'sort_number' => $moduleData['sort_number'],
-                            'created_by' => auth()->id() ?? User::where('role', 'admin')->first()->id,
+                            'created_by' => Auth::id() ?? User::where('role', 'admin')->first()->id,
                         ]);
                     }
                 }
@@ -251,6 +256,10 @@ class AdminController extends Controller
             'username' => 'required|string|max:20|unique:users,username',
             'password' => 'required|string|min:8',
             'role' => 'required|string',
+            'position' => 'nullable|string',
+            'phone' => 'nullable|string',
+            'department_id' => 'nullable|uuid|exists:departments,id',
+            'is_active' => 'boolean',
         ]);
 
         $data['password'] = bcrypt($data['password']);
@@ -261,6 +270,12 @@ class AdminController extends Controller
         return back()->with('success', 'User created successfully.');
     }
 
+    /**
+     * Update user details.
+     * @param Request $request
+     * @param User $user
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function updateUser(Request $request, User $user)
     {
         $data = $request->validate([
@@ -268,6 +283,10 @@ class AdminController extends Controller
             'email' => 'required|email|unique:users,email,'.$user->id,
             'username' => 'required|string|max:20|unique:users,username,'.$user->id,
             'role' => 'required|string',
+            'position' => 'nullable|string',
+            'phone' => 'nullable|string',
+            'department_id' => 'nullable|uuid|exists:departments,id',
+            'is_active' => 'boolean',
             'password' => 'nullable|string|min:8',
         ]);
 
@@ -284,7 +303,7 @@ class AdminController extends Controller
 
     public function destroyUser(User $user)
     {
-        if ($user->id === auth()->id()) {
+        if ($user->id === Auth::id()) {
             abort(403, 'Cannot delete yourself.');
         }
         $user->delete();
@@ -309,6 +328,7 @@ class AdminController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255|unique:contract_types,name',
             'description' => 'nullable|string',
+            'type' => 'required|string|in:f1,f2',
         ]);
 
         ContractType::create($data);
@@ -321,6 +341,7 @@ class AdminController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255|unique:contract_types,name,'.$type->id,
             'description' => 'nullable|string',
+            'type' => 'required|string|in:f1,f2',
         ]);
 
         $type->update($data);
@@ -335,12 +356,184 @@ class AdminController extends Controller
         return back()->with('success', 'Contract type deleted successfully.');
     }
 
+    public function contractStatuses()
+    {
+        return Inertia::render('admin/index', [
+            'currentView' => 'contract-statuses',
+            'statuses' => ContractStatus::orderBy('sort_order')->paginate(request('per_page', 10)),
+            'breadcrumbs' => [
+                ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
+                ['title' => 'Master Status', 'href' => route('admin.contract-statuses'), 'description' => 'Pengaturan status kontrak dan visualisasi.', 'icon' => 'Tags'],
+            ],
+        ]);
+    }
+
+    public function storeContractStatus(Request $request)
+    {
+        $data = $request->validate([
+            'code' => 'required|string|max:50|unique:contract_statuses,code',
+            'name' => 'required|string|max:255',
+            'color' => 'required|string|max:20',
+            'bg_color' => 'required|string|max:20',
+            'icon' => 'nullable|string|max:50',
+            'description' => 'nullable|string',
+            'sort_order' => 'required|integer',
+            'is_active' => 'boolean',
+        ]);
+
+        ContractStatus::create($data);
+
+        return back()->with('success', 'Status created successfully.');
+    }
+
+    public function updateContractStatus(Request $request, ContractStatus $status)
+    {
+        $data = $request->validate([
+            'code' => 'required|string|max:50|unique:contract_statuses,code,'.$status->id,
+            'name' => 'required|string|max:255',
+            'color' => 'required|string|max:20',
+            'bg_color' => 'required|string|max:20',
+            'icon' => 'nullable|string|max:50',
+            'description' => 'nullable|string',
+            'sort_order' => 'required|integer',
+            'is_active' => 'boolean',
+        ]);
+
+        $status->update($data);
+
+        return back()->with('success', 'Status updated successfully.');
+    }
+
+    public function destroyContractStatus(ContractStatus $status)
+    {
+        $status->delete();
+
+        return back()->with('success', 'Status deleted successfully.');
+    }
+
+    public function departments()
+    {
+        return Inertia::render('admin/index', [
+            'currentView' => 'departments',
+            'departments' => Department::orderBy('name')->paginate(request('per_page', 10)),
+            'breadcrumbs' => [
+                ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
+                ['title' => 'Master Departemen', 'href' => route('admin.departments'), 'description' => 'Kelola divisi dan struktur organisasi.', 'icon' => 'Building2'],
+            ],
+        ]);
+    }
+
+    public function storeDepartment(Request $request)
+    {
+        $data = $request->validate([
+            'code' => 'required|string|max:50|unique:departments,code',
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'is_active' => 'boolean',
+        ]);
+
+        $data['created_by'] = Auth::id();
+        $data['updated_by'] = Auth::id();
+
+        Department::create($data);
+
+        return back()->with('success', 'Department created successfully.');
+    }
+
+    public function updateDepartment(Request $request, Department $department)
+    {
+        $data = $request->validate([
+            'code' => 'required|string|max:50|unique:departments,code,' . $department->id,
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'is_active' => 'boolean',
+        ]);
+
+        $data['updated_by'] = Auth::id();
+
+        $department->update($data);
+
+        return back()->with('success', 'Department updated successfully.');
+    }
+
+    public function destroyDepartment(Department $department)
+    {
+        $department->delete();
+
+        return back()->with('success', 'Department deleted successfully.');
+    }
+
+    public function vendors()
+    {
+        return Inertia::render('admin/index', [
+            'currentView' => 'vendors',
+            'vendors' => Vendor::orderBy('name')->paginate(request('per_page', 10)),
+            'breadcrumbs' => [
+                ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
+                ['title' => 'Master Vendor', 'href' => route('admin.vendors'), 'description' => 'Kelola database pihak ketiga dan mitra.', 'icon' => 'Truck'],
+            ],
+        ]);
+    }
+
+    public function storeVendor(Request $request)
+    {
+        $data = $request->validate([
+            'code' => 'required|string|max:50|unique:vendors,code',
+            'name' => 'required|string|max:255',
+            'category' => 'nullable|string|max:100',
+            'email' => 'nullable|email|max:255',
+            'phone' => 'nullable|string|max:50',
+            'address' => 'nullable|string',
+            'is_active' => 'boolean',
+        ]);
+
+        $data['created_by'] = Auth::id();
+        $data['updated_by'] = Auth::id();
+
+        Vendor::create($data);
+
+        return back()->with('success', 'Vendor created successfully.');
+    }
+
+    /**
+     * Update vendor details.
+     * @param Request $request
+     * @param Vendor $vendor
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function updateVendor(Request $request, Vendor $vendor)
+    {
+        $data = $request->validate([
+            'code' => 'required|string|max:50|unique:vendors,code,' . $vendor->id,
+            'name' => 'required|string|max:255',
+            'category' => 'nullable|string|max:100',
+            'email' => 'nullable|email|max:255',
+            'phone' => 'nullable|string|max:50',
+            'address' => 'nullable|string',
+            'is_active' => 'boolean',
+        ]);
+
+        $data['updated_by'] = Auth::id();
+
+        $vendor->update($data);
+
+        return back()->with('success', 'Vendor updated successfully.');
+    }
+
+    public function destroyVendor(Vendor $vendor)
+    {
+        $vendor->delete();
+
+        return back()->with('success', 'Vendor deleted successfully.');
+    }
+
     public function workflows()
     {
         return Inertia::render('admin/index', [
             'currentView' => 'workflows',
-            'workflows' => Workflow::with('steps.users')->orderBy('name')->paginate(request('per_page', 10)),
+            'workflows' => Workflow::with(['steps.users', 'department'])->orderBy('name')->paginate(request('per_page', 10)),
             'contractTypes' => ContractType::all(),
+            'departments' => Department::all(),
             'roles' => Role::all(),
             'users' => User::all(),
             'breadcrumbs' => [
@@ -355,6 +548,7 @@ class AdminController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'contract_type' => 'required|string',
+            'department_id' => 'nullable|uuid|exists:departments,id',
             'description' => 'nullable|string',
             'is_default' => 'boolean',
             'steps' => 'nullable|array',
@@ -362,6 +556,7 @@ class AdminController extends Controller
             'steps.*.description' => 'nullable|string',
             'steps.*.approver_type' => 'nullable|string|in:role,user',
             'steps.*.user_ids' => 'nullable|array',
+            'steps.*.department_id' => 'nullable|uuid|exists:departments,id',
         ]);
 
         $workflow = Workflow::create($data);
@@ -373,9 +568,10 @@ class AdminController extends Controller
                     'approver_type' => $stepData['approver_type'] ?? 'role',
                     'user_ids' => $stepData['user_ids'] ?? null,
                     'description' => $stepData['description'] ?? '',
+                    'department_id' => $stepData['department_id'] ?? null,
                     'step' => $index + 1,
-                    'created_by' => auth()->id(),
-                    'updated_by' => auth()->id(),
+                    'created_by' => Auth::id(),
+                    'updated_by' => Auth::id(),
                 ]);
             }
         }
@@ -388,6 +584,7 @@ class AdminController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'contract_type' => 'required|string',
+            'department_id' => 'nullable|uuid|exists:departments,id',
             'description' => 'nullable|string',
             'is_default' => 'boolean',
             'steps' => 'nullable|array',
@@ -395,6 +592,7 @@ class AdminController extends Controller
             'steps.*.description' => 'nullable|string',
             'steps.*.approver_type' => 'nullable|string|in:role,user',
             'steps.*.user_ids' => 'nullable|array',
+            'steps.*.department_id' => 'nullable|uuid|exists:departments,id',
         ]);
 
         $workflow->update($data);
@@ -408,9 +606,10 @@ class AdminController extends Controller
                     'approver_type' => $stepData['approver_type'] ?? 'role',
                     'user_ids' => $stepData['user_ids'] ?? null,
                     'description' => $stepData['description'] ?? '',
+                    'department_id' => $stepData['department_id'] ?? null,
                     'step' => $index + 1,
-                    'created_by' => auth()->id(),
-                    'updated_by' => auth()->id(),
+                    'created_by' => Auth::id(),
+                    'updated_by' => Auth::id(),
                 ]);
             }
         }
@@ -447,6 +646,7 @@ class AdminController extends Controller
             'steps.*.description' => 'nullable|string',
             'steps.*.approver_type' => 'nullable|string|in:role,user',
             'steps.*.user_ids' => 'nullable|array',
+            'steps.*.department_id' => 'nullable|uuid|exists:departments,id',
         ]);
 
         $workflow->steps()->delete();
@@ -456,10 +656,11 @@ class AdminController extends Controller
                 $step = $workflow->steps()->create([
                     'role' => ($stepData['approver_type'] ?? 'role') === 'role' ? ($stepData['selected_role'] ?? $stepData['role']) : $stepData['role'],
                     'approver_type' => $stepData['approver_type'] ?? 'role',
-                    'description' => $stepData['role'], // Use manual label for description/display
+                    'description' => ($stepData['approver_type'] ?? 'role') === 'role' ? ($stepData['selected_role'] ?? $stepData['role']) : $stepData['role'],
+                    'department_id' => $stepData['department_id'] ?? null,
                     'step' => $index + 1,
-                    'created_by' => auth()->id(),
-                    'updated_by' => auth()->id(),
+                    'created_by' => Auth::id(),
+                    'updated_by' => Auth::id(),
                 ]);
 
                 if (($stepData['approver_type'] ?? 'role') === 'user' && ! empty($stepData['user_ids'])) {
@@ -542,7 +743,7 @@ class AdminController extends Controller
                         ['role_id' => $roleId, 'module_id' => $moduleData['id']],
                         [
                             'can_read' => true,
-                            'created_by' => auth()->id(), // Fix: Add current user ID
+                            'created_by' => Auth::id(), // Fix: Add current user ID
                         ]
                     );
                 }
@@ -561,8 +762,8 @@ class AdminController extends Controller
             'sort_number' => 'required|integer',
         ]);
 
-        $data['created_by'] = auth()->id();
-        $data['updated_by'] = auth()->id();
+        $data['created_by'] = Auth::id();
+        $data['updated_by'] = Auth::id();
 
         ModuleGroup::create($data);
 
@@ -576,7 +777,7 @@ class AdminController extends Controller
             'sort_number' => 'required|integer',
         ]);
 
-        $data['updated_by'] = auth()->id();
+        $data['updated_by'] = Auth::id();
 
         $group->update($data);
 
@@ -602,8 +803,8 @@ class AdminController extends Controller
             'showed_as_menu' => 'boolean',
         ]);
 
-        $data['created_by'] = auth()->id();
-        $data['updated_by'] = auth()->id();
+        $data['created_by'] = Auth::id();
+        $data['updated_by'] = Auth::id();
 
         Module::create($data);
 
@@ -622,7 +823,7 @@ class AdminController extends Controller
             'showed_as_menu' => 'boolean',
         ]);
 
-        $data['updated_by'] = auth()->id();
+        $data['updated_by'] = Auth::id();
 
         $module->update($data);
 

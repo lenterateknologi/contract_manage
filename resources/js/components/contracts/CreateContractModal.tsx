@@ -7,9 +7,10 @@ interface Props {
     types?: any[];
 }
 
-export default function CreateContractModal({ open, onClose, onSubmit }: Props) {
+export default function CreateContractModal({ open, onClose, onSubmit, types = [] }: Props) {
     const [title, setTitle] = useState('');
     const [desc, setDesc] = useState('');
+    const [typeId, setTypeId] = useState('');
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -21,10 +22,15 @@ export default function CreateContractModal({ open, onClose, onSubmit }: Props) 
             setErrors((prev) => ({ ...prev, title: 'Nama kontrak harus diisi' }));
             return;
         }
+        if (!typeId) {
+            setErrors((prev) => ({ ...prev, contract_type_id: 'Tipe kontrak harus dipilih' }));
+            return;
+        }
 
         const fd = new FormData();
         fd.append('title', title);
         fd.append('description', desc);
+        fd.append('contract_type_id', typeId);
 
         setLoading(true);
         try {
@@ -32,6 +38,7 @@ export default function CreateContractModal({ open, onClose, onSubmit }: Props) 
             onClose();
             setTitle('');
             setDesc('');
+            setTypeId('');
         } catch (err: any) {
             if (err.response?.data?.errors) setErrors(err.response.data.errors);
             else setErrors({ general: 'Gagal membuat kontrak.' });
@@ -70,6 +77,23 @@ export default function CreateContractModal({ open, onClose, onSubmit }: Props) 
                             className="border-border placeholder:text-muted-foreground/30 w-full rounded-md border px-3 py-2 text-[12px] outline-none focus:border-blue-500"
                         />
                         {errors.title && <div className="mt-1 text-[10px] text-red-500">{errors.title}</div>}
+                    </div>
+
+                    <div>
+                        <label className="text-muted-foreground mb-1.5 block text-[11px] font-semibold tracking-wider uppercase">
+                            Tipe Kontrak <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                            value={typeId}
+                            onChange={(e) => setTypeId(e.target.value)}
+                            className="border-border placeholder:text-muted-foreground/30 w-full rounded-md border px-3 py-2 text-[12px] outline-none focus:border-blue-500 bg-white"
+                        >
+                            <option value="">Pilih Tipe Perjanjian</option>
+                            {types.map((t) => (
+                                <option key={t.id} value={t.id}>{t.name}</option>
+                            ))}
+                        </select>
+                        {errors.contract_type_id && <div className="mt-1 text-[10px] text-red-500">{errors.contract_type_id}</div>}
                     </div>
 
                     <div>

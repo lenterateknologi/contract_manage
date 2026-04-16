@@ -36,16 +36,22 @@ class ModuleSeeder extends Seeder
             ['code' => 'WORKFLOWS', 'title' => 'Alur Kerja', 'url' => '/admin/workflows', 'icon' => 'GitBranch', 'group' => 'Konfigurasi Sistem', 'sort' => 4],
             ['code' => 'TPL_MGMT', 'title' => 'Template Kontrak', 'url' => '/admin/templates', 'icon' => 'FilePlus', 'group' => 'Konfigurasi Sistem', 'sort' => 5],
             ['code' => 'FORM_TPL', 'title' => 'Form Template', 'url' => '/admin/form-templates', 'icon' => 'FileJson', 'group' => 'Konfigurasi Sistem', 'sort' => 6],
-            ['code' => 'AUDIT', 'title' => 'Log Aktivitas', 'url' => '/admin/audit', 'icon' => 'History', 'group' => 'Konfigurasi Sistem', 'sort' => 7],
+            ['code' => 'STS_MGMT', 'title' => 'Master Status', 'url' => '/admin/contract-statuses', 'icon' => 'Tags', 'group' => 'Konfigurasi Sistem', 'sort' => 7],
+            ['code' => 'DEPT_MGMT', 'title' => 'Departemen', 'url' => '/admin/departments', 'icon' => 'Building2', 'group' => 'Konfigurasi Sistem', 'sort' => 8],
+            ['code' => 'VEN_MGMT', 'title' => 'Vendor', 'url' => '/admin/vendors', 'icon' => 'Truck', 'group' => 'Konfigurasi Sistem', 'sort' => 9],
+            ['code' => 'AUDIT', 'title' => 'Log Aktivitas', 'url' => '/admin/audit', 'icon' => 'History', 'group' => 'Konfigurasi Sistem', 'sort' => 10],
         ];
 
         $activeCodes = array_column($modules, 'code');
 
         // Cleanup: Remove any modules not in our enterprise list
-        Module::whereNotIn('code', $activeCodes)->delete();
+        \App\Models\Module::whereNotIn('code', $activeCodes)->delete();
+
+        // Get the Admin Role
+        $adminRole = \App\Models\Role::firstWhere('name', 'Admin');
 
         foreach ($modules as $module) {
-            Module::updateOrCreate(
+            $createdModule = \App\Models\Module::updateOrCreate(
                 ['code' => $module['code']],
                 [
                     'title' => $module['title'],
@@ -53,11 +59,31 @@ class ModuleSeeder extends Seeder
                     'url' => $module['url'],
                     'icon' => $module['icon'],
                     'module_group_id' => $groups[$module['group']] ?? null,
-                    'showed_as_menu' => $module['code'] !== 'NAV_MGMT',
+                    'showed_as_menu' => !in_array($module['code'], ['NAV_MGMT']),
                     'created_by' => $admin->id,
                     'updated_by' => $admin->id,
                 ]
             );
+
+            // Grant Admin access to everything by default
+            if ($adminRole) {
+                \App\Models\AccessModule::updateOrCreate(
+                    [
+                        'role_id' => $adminRole->id,
+                        'module_id' => $createdModule->id,
+                    ],
+                    [
+                        'can_read' => true,
+                        'can_create' => true,
+                        'can_update' => true,
+                        'can_delete' => true,
+                        'module_group_id' => $createdModule->module_group_id,
+                        'sort_number' => $createdModule->sort_number,
+                        'created_by' => $admin->id,
+                        'updated_at' => now(),
+                    ]
+                );
+            }
         }
 
         // Specifically remove old modules/groups if needed

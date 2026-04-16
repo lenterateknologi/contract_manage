@@ -14,12 +14,10 @@ class RoleSeeder extends Seeder
     {
         $roles = [
             ['name' => 'Admin', 'description' => 'Super Administrator with full access'],
-            ['name' => 'Initiator', 'description' => 'User who initiates contract requests'],
-            ['name' => 'Tax', 'description' => 'Tax department reviewer'],
-            ['name' => 'Legal', 'description' => 'Legal department reviewer'],
-            ['name' => 'Management', 'description' => 'Management level reviewer'],
-            ['name' => 'Direksi', 'description' => 'Director level reviewer'],
-            ['name' => 'Vendor', 'description' => 'External vendor reviewer'],
+            ['name' => 'Manager', 'description' => 'Department head or team manager with approval authority'],
+            ['name' => 'Staff', 'description' => 'Regular employee with initiation and review authority'],
+            ['name' => 'Director', 'description' => 'Executive level with final approval authority'],
+            ['name' => 'Vendor', 'description' => 'External party with restricted access'],
         ];
 
         foreach ($roles as $role) {

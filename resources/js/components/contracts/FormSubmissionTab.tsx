@@ -63,6 +63,50 @@ const F2_IMPORTANT_FIELDS: { key: string; label: string; width: string; type?: s
     { key: 'diketahui_oleh_(vp_legal)', label: 'VP Legal / Management', width: '1/3', type: 'signature_box' },
 ];
 
+/**
+ * Fuzzy matching helper to autofill F1 form fields from general contract data.
+ */
+const getAutofillValue = (field: FormField, contract: Contract) => {
+    const name = field.name.toLowerCase();
+    const label = field.label.toLowerCase();
+
+    // Title / Judul
+    if (name === 'judul' || label.includes('judul perjanjian') || label.includes('nama kontrak')) {
+        return contract.title || '';
+    }
+    // Number / No Kontrak
+    if (name === 'no_kontrak' || label.includes('nomor kontrak') || label.includes('no. kontrak')) {
+        return contract.contract_no || '';
+    }
+    // Type / Jenis
+    if (name === 'type_perjanjian' || label.includes('tipe perjanjian') || label.includes('jenis kontrak') || label === 'type') {
+        return contract.contract_type || '';
+    }
+    // Date formatting helper
+    const formatDate = (date: string | null) => (date ? date.split(' ')[0] : '');
+    // Date / Tanggal
+    if (name === 'tanggal' || label === 'tanggal' || label.includes('tgl perjanjian')) {
+        return formatDate(contract.contract_date);
+    }
+    // Jangka Waktu
+    if (name.includes('jangka_waktu_(mulai)') || label.includes('jangka waktu mulai') || label.includes('tanggal mulai')) {
+        return formatDate(contract.contract_date);
+    }
+    if (name.includes('jangka_waktu_(s.d)') || label.includes('jangka waktu s.d') || label.includes('tanggal berakhir')) {
+        return formatDate(contract.end_date);
+    }
+    // PIC / Dibuat Oleh
+    if (name.includes('pic') || name.includes('dibuat_oleh') || label.includes('pic') || label.includes('dibuat oleh')) {
+        return contract.creator?.name || '';
+    }
+    // Description / Tujuan / Background
+    if (name === 'tujuan/latar_belakang' || label.includes('tujuan') || label.includes('latar belakang')) {
+        return contract.description || '';
+    }
+
+    return null;
+};
+
 // ═══════════════════════════════════════════════════════════════════════
 //  F1 Form Tab — Editable form
 // ═══════════════════════════════════════════════════════════════════════
@@ -132,12 +176,16 @@ function F1EditableTab({
                 setOriginalData(latest.form_data ?? {});
                 setVersions(subRes.versions);
             } else {
-                const empty: Record<string, any> = {};
+                const initial: Record<string, any> = {};
                 tplFields.forEach((f) => {
-                    if (f.type !== 'kop_surat' && f.type !== 'form_title') empty[f.name] = '';
+                    if (f.type !== 'kop_surat' && f.type !== 'form_title') {
+                        // Autofill from contract info if available
+                        const autofillValue = getAutofillValue(f, selected);
+                        initial[f.name] = autofillValue !== null ? autofillValue : '';
+                    }
                 });
-                setFormData(empty);
-                setOriginalData(empty);
+                setFormData(initial);
+                setOriginalData(initial);
                 setVersions([]);
             }
         } catch (e) {

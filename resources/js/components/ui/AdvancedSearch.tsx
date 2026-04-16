@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { 
-    Filter, 
-    Plus, 
-    X, 
-    Search, 
-    Trash2, 
-    Save, 
-    History, 
-    CheckCircle2, 
-    ChevronDown, 
+import {
+    Filter,
+    Plus,
+    X,
+    Search,
+    Trash2,
+    Save,
+    History,
+    CheckCircle2,
+    ChevronDown,
     Calendar as CalendarIcon,
     ArrowUpDown
 } from 'lucide-react';
@@ -58,7 +58,7 @@ export function AdvancedSearch({ fields, onApply, initialFilters, storageKey = '
         match_type: 'partial',
         rules: []
     });
-    
+
     const [history, setHistory] = useState<AdvancedFilters[]>([]);
     const [savedSearches, setSavedSearches] = useState<{ name: string; filters: AdvancedFilters }[]>([]);
 
@@ -127,7 +127,7 @@ export function AdvancedSearch({ fields, onApply, initialFilters, storageKey = '
     const getOperatorsForField = (fieldValue: string) => {
         const field = fields.find(f => f.value === fieldValue);
         if (!field) return [];
-        
+
         const common = [
             { label: 'Equals', value: '=' },
             { label: 'Not Equals', value: '!=' }
@@ -182,8 +182,8 @@ export function AdvancedSearch({ fields, onApply, initialFilters, storageKey = '
                         <p className="text-[11px] text-slate-500 font-medium">Create complex filters for your data</p>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Select 
-                            value={filters.conjunction} 
+                        <Select
+                            value={filters.conjunction}
                             onValueChange={(v: any) => setFilters(prev => ({ ...prev, conjunction: v }))}
                         >
                             <SelectTrigger className="h-8 w-24 text-[10px] font-bold uppercase bg-white border-slate-200">
@@ -194,8 +194,8 @@ export function AdvancedSearch({ fields, onApply, initialFilters, storageKey = '
                                 <SelectItem value="OR">Match Any (OR)</SelectItem>
                             </SelectContent>
                         </Select>
-                        <Select 
-                            value={filters.match_type} 
+                        <Select
+                            value={filters.match_type}
                         onValueChange={(v: any) => setFilters(prev => ({ ...prev, match_type: v }))}
                         >
                             <SelectTrigger className="h-8 w-24 text-[10px] font-bold uppercase bg-white border-slate-200">
@@ -213,15 +213,15 @@ export function AdvancedSearch({ fields, onApply, initialFilters, storageKey = '
                     {filters.rules.map((rule, index) => {
                         const fieldDef = fields.find(f => f.value === rule.field);
                         const operators = getOperatorsForField(rule.field);
-                        
+
                         return (
                             <div key={rule.id} className="group relative flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-200">
                                 <div className="flex-none text-[10px] font-black text-slate-300 w-6">
                                     {index === 0 ? '#' : filters.conjunction}
                                 </div>
                                 <div className="grid grid-cols-3 gap-2 flex-grow">
-                                    <Select 
-                                        value={rule.field} 
+                                    <Select
+                                        value={rule.field}
                                         onValueChange={(v) => updateRule(rule.id, { field: v, operator: '=', value: '' })}
                                     >
                                         <SelectTrigger className="h-9 text-[12px] bg-white border-slate-200">
@@ -234,8 +234,8 @@ export function AdvancedSearch({ fields, onApply, initialFilters, storageKey = '
                                         </SelectContent>
                                     </Select>
 
-                                    <Select 
-                                        value={rule.operator} 
+                                    <Select
+                                        value={rule.operator}
                                         onValueChange={(v) => updateRule(rule.id, { operator: v })}
                                     >
                                         <SelectTrigger className="h-9 text-[12px] bg-white border-slate-200 uppercase font-medium">
@@ -251,14 +251,14 @@ export function AdvancedSearch({ fields, onApply, initialFilters, storageKey = '
                                     <div className="relative">
                                         {rule.operator === 'between' ? (
                                             <div className="flex gap-1">
-                                                <Input 
+                                                <Input
                                                     type={fieldDef?.type === 'date' ? 'date' : 'number'}
                                                     placeholder="From"
                                                     className="h-9 text-[12px] border-slate-200 focus:ring-primary/20"
                                                     value={Array.isArray(rule.value) ? rule.value[0] : ''}
                                                     onChange={(e) => updateRule(rule.id, { value: [e.target.value, Array.isArray(rule.value) ? rule.value[1] : ''] })}
                                                 />
-                                                <Input 
+                                                <Input
                                                     type={fieldDef?.type === 'date' ? 'date' : 'number'}
                                                     placeholder="To"
                                                     className="h-9 text-[12px] border-slate-200 focus:ring-primary/20"
@@ -267,8 +267,8 @@ export function AdvancedSearch({ fields, onApply, initialFilters, storageKey = '
                                                 />
                                             </div>
                                         ) : fieldDef?.type === 'select' ? (
-                                            <Select 
-                                                value={rule.value} 
+                                            <Select
+                                                value={rule.value}
                                                 onValueChange={(v) => updateRule(rule.id, { value: v })}
                                             >
                                                 <SelectTrigger className="h-9 text-[12px] bg-white border-slate-200">
@@ -281,7 +281,7 @@ export function AdvancedSearch({ fields, onApply, initialFilters, storageKey = '
                                                 </SelectContent>
                                             </Select>
                                         ) : (
-                                            <Input 
+                                            <Input
                                                 type={fieldDef?.type === 'date' ? 'date' : fieldDef?.type === 'number' ? 'number' : 'text'}
                                                 className="h-9 text-[12px] border-slate-200 focus:ring-primary/20"
                                                 placeholder="Value..."
@@ -291,9 +291,9 @@ export function AdvancedSearch({ fields, onApply, initialFilters, storageKey = '
                                         )}
                                     </div>
                                 </div>
-                                <Button 
-                                    variant="ghost" 
-                                    size="icon" 
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
                                     className="h-8 w-8 text-slate-400 hover:text-red-500 hover:bg-red-50"
                                     onClick={() => removeRule(rule.id)}
                                 >
@@ -317,10 +317,10 @@ export function AdvancedSearch({ fields, onApply, initialFilters, storageKey = '
                     )}
 
                     {filters.rules.length > 0 && (
-                        <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={addRule} 
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={addRule}
                             className="h-9 self-start mt-2 border border-dashed border-slate-200 bg-white hover:bg-slate-50 text-primary gap-2 font-bold uppercase text-[10px] w-full"
                         >
                             <Plus className="h-3.5 w-3.5" /> Add Another Rule
@@ -332,18 +332,18 @@ export function AdvancedSearch({ fields, onApply, initialFilters, storageKey = '
 
                 <div className="p-4 bg-white flex items-center justify-between gap-4">
                     <div className="flex items-center gap-1.5">
-                        <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={clearAll} 
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={clearAll}
                             className="h-9 px-3 text-[10px] font-bold uppercase text-slate-400 hover:text-red-500"
                         >
                             Reset
                         </Button>
-                        <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={handleSave} 
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleSave}
                             disabled={filters.rules.length === 0}
                             className="h-9 px-3 text-[10px] font-bold uppercase text-slate-500 gap-1.5"
                         >
@@ -351,16 +351,16 @@ export function AdvancedSearch({ fields, onApply, initialFilters, storageKey = '
                         </Button>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Button 
-                            variant="outline" 
-                            size="sm" 
+                        <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => setOpen(false)}
                             className="h-9 px-6 text-[11px] font-bold uppercase border-slate-200"
                         >
                             Cancel
                         </Button>
-                        <Button 
-                            size="sm" 
+                        <Button
+                            size="sm"
                             onClick={handleApply}
                             className="h-9 px-8 text-[11px] font-bold uppercase shadow-lg shadow-primary/20"
                         >
@@ -379,9 +379,9 @@ export function AdvancedSearch({ fields, onApply, initialFilters, storageKey = '
                                     </h4>
                                     <div className="flex flex-wrap gap-1">
                                         {savedSearches.map((s, i) => (
-                                            <Badge 
-                                                key={i} 
-                                                variant="secondary" 
+                                            <Badge
+                                                key={i}
+                                                variant="secondary"
                                                 className="cursor-pointer hover:bg-slate-200 text-[10px] font-medium py-1 px-2 border-slate-200"
                                                 onClick={() => setFilters(s.filters)}
                                             >
@@ -398,9 +398,9 @@ export function AdvancedSearch({ fields, onApply, initialFilters, storageKey = '
                                     </h4>
                                     <div className="flex flex-wrap gap-1">
                                         {history.map((h, i) => (
-                                            <Badge 
-                                                key={i} 
-                                                variant="outline" 
+                                            <Badge
+                                                key={i}
+                                                variant="outline"
                                                 className="cursor-pointer hover:bg-slate-100 text-[10px] font-medium py-1 px-2 border-slate-200 bg-white"
                                                 onClick={() => setFilters(h)}
                                             >

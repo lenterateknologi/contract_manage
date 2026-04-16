@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Models\Department;
+use App\Models\Role;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -10,13 +12,20 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
+        // Ensure roles and departments are available
+        $roles = Role::pluck('id', 'name')->all();
+        $depts = Department::pluck('id', 'code')->all();
+
         $users = [
             [
                 'name' => 'Ahmad Fauzi',
                 'email' => 'ahmad@example.com',
                 'password' => Hash::make('password'),
                 'initials' => 'AF',
-                'role' => 'Initiator',
+                'role' => 'Staff',
+                'position' => 'Legal Officer',
+                'phone' => '081234567890',
+                'department_id' => $depts['LGL'] ?? null,
                 'bg_color' => '#ede9fe',
                 'text_color' => '#5b21b6',
                 'username' => '1000000000000001',
@@ -26,7 +35,10 @@ class UserSeeder extends Seeder
                 'email' => 'budi@example.com',
                 'password' => Hash::make('password'),
                 'initials' => 'BS',
-                'role' => 'Legal',
+                'role' => 'Manager',
+                'position' => 'Legal Manager',
+                'phone' => '081234567891',
+                'department_id' => $depts['LGL'] ?? null,
                 'bg_color' => '#e0f2fe',
                 'text_color' => '#0369a1',
                 'username' => '1000000000000002',
@@ -36,7 +48,10 @@ class UserSeeder extends Seeder
                 'email' => 'citra@example.com',
                 'password' => Hash::make('password'),
                 'initials' => 'CD',
-                'role' => 'Tax',
+                'role' => 'Staff',
+                'position' => 'Tax Specialist',
+                'phone' => '081234567892',
+                'department_id' => $depts['TAX'] ?? null,
                 'bg_color' => '#fef9c3',
                 'text_color' => '#854d0e',
                 'username' => '1000000000000003',
@@ -46,7 +61,10 @@ class UserSeeder extends Seeder
                 'email' => 'dian@example.com',
                 'password' => Hash::make('password'),
                 'initials' => 'DR',
-                'role' => 'Management',
+                'role' => 'Director',
+                'position' => 'Finance Director',
+                'phone' => '081234567893',
+                'department_id' => $depts['FIN'] ?? null,
                 'bg_color' => '#dbeafe',
                 'text_color' => '#1d4ed8',
                 'username' => '1000000000000004',
@@ -56,7 +74,10 @@ class UserSeeder extends Seeder
                 'email' => 'eko@example.com',
                 'password' => Hash::make('password'),
                 'initials' => 'EP',
-                'role' => 'Direksi',
+                'role' => 'Manager',
+                'position' => 'IT Infrastructure Manager',
+                'phone' => '081234567894',
+                'department_id' => $depts['ITC'] ?? null,
                 'bg_color' => '#dcfce7',
                 'text_color' => '#166534',
                 'username' => '1000000000000005',
@@ -67,6 +88,9 @@ class UserSeeder extends Seeder
                 'password' => Hash::make('password'),
                 'initials' => 'FV',
                 'role' => 'Vendor',
+                'position' => 'External Partner',
+                'phone' => '081234567895',
+                'department_id' => null,
                 'bg_color' => '#ffedd5',
                 'text_color' => '#9a3412',
                 'username' => '1000000000000006',
@@ -77,20 +101,39 @@ class UserSeeder extends Seeder
                 'password' => Hash::make('password'),
                 'initials' => 'SA',
                 'role' => 'Admin',
+                'position' => 'System Administrator',
+                'phone' => '081111111111',
+                'department_id' => $depts['ITC'] ?? null,
                 'bg_color' => '#fee2e2',
                 'text_color' => '#991b1b',
                 'username' => '1000000000000007',
             ],
+            [
+                'name' => 'Siti Aminah',
+                'email' => 'siti@example.com',
+                'password' => Hash::make('password'),
+                'initials' => 'SA',
+                'role' => 'Manager',
+                'position' => 'HR Manager',
+                'phone' => '081234567896',
+                'department_id' => $depts['HRD'] ?? null,
+                'bg_color' => '#fce7f3',
+                'text_color' => '#9d174d',
+                'username' => '1000000000000008',
+            ],
         ];
 
-        foreach ($users as $user) {
-            User::updateOrCreate(['email' => $user['email']], $user);
+        foreach ($users as $userData) {
+            User::updateOrCreate(['email' => $userData['email']], array_merge($userData, ['is_active' => true]));
         }
 
-        // Seed 50 more random users
-        $roles = ['Initiator', 'Legal', 'Tax', 'Management', 'Direksi', 'Vendor'];
+        // Seed 50 more random users across departments
+        $genericRoles = ['Staff', 'Manager'];
+        $deptCodes = array_keys($depts);
+        
         for ($i = 1; $i <= 50; $i++) {
-            $role = $roles[array_rand($roles)];
+            $role = $genericRoles[array_rand($genericRoles)];
+            $deptCode = $deptCodes[array_rand($deptCodes)];
             $name = fake()->name();
             $initials = collect(explode(' ', $name))->map(fn ($n) => strtoupper(substr($n, 0, 1)))->take(2)->join('');
 
@@ -100,9 +143,13 @@ class UserSeeder extends Seeder
                 'username' => '2000'.str_pad($i, 12, '0', STR_PAD_LEFT),
                 'password' => Hash::make('password'),
                 'role' => $role,
+                'position' => $role . ' of ' . $depts[$deptCode],
+                'phone' => fake()->phoneNumber(),
+                'department_id' => $depts[$deptCode],
                 'initials' => $initials,
                 'bg_color' => fake()->hexColor(),
                 'text_color' => '#ffffff',
+                'is_active' => true,
             ]);
         }
     }

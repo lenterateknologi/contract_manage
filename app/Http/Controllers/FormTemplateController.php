@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\FormTemplate;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
@@ -63,14 +65,14 @@ class FormTemplateController extends Controller
         return DB::transaction(function () use ($request, $template) {
             if (! $template) {
                 $template = new FormTemplate;
-                $template->created_by = auth()->id();
+                $template->created_by = Auth::id();
             }
 
             $template->name = $request->name;
             $template->description = $request->description;
             $template->has_letterhead = $request->has_letterhead ?? false;
             $template->letterhead_json = $request->letterhead_json ?? null;
-            $template->updated_by = auth()->id();
+            $template->updated_by = Auth::id();
             $template->save();
 
             // Sync fields: Delete old ones and create new ones (with parent mapping)
@@ -107,7 +109,7 @@ class FormTemplateController extends Controller
                 }
             }
 
-            return redirect()->route('admin.form-templates.index')->with('success', 'Template form berhasil disimpan.');
+            return redirect()->route('admin.form-templates.builder', $template->id)->with('success', 'Template form berhasil disimpan.');
         });
     }
 
@@ -150,7 +152,7 @@ class FormTemplateController extends Controller
 
             return $pdf->download($template->name.'.pdf');
         } catch (\Exception $e) {
-            \Log::error('PDF Export Error: ' . $e->getMessage());
+            Log::error('PDF Export Error: ' . $e->getMessage());
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }

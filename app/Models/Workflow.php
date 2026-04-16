@@ -5,10 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+
 class Workflow extends Model
 {
+    use HasUuids, SoftDeletes;
+
+    public $incrementing = false;
+    protected $keyType = 'string';
     protected $fillable = [
         'contract_type',
+        'department_id',
         'name',
         'description',
         'is_default',
@@ -20,6 +29,11 @@ class Workflow extends Model
     protected $casts = [
         'is_default' => 'boolean',
     ];
+
+    public function department(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
 
     public function steps(): HasMany
     {

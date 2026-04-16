@@ -5,6 +5,8 @@ namespace App\Http\Middleware;
 use App\Models\HttpLog;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 class LogHttpRequest
@@ -43,11 +45,11 @@ class LogHttpRequest
                 'header' => json_encode($request->headers->all()),
                 'file' => $request->hasFile('file') ? json_encode($request->allFiles()) : null,
                 'body' => $body,
-                'user_id' => auth()->id(),
+                'user_id' => Auth::id(),
                 'created_at' => now(),
             ]);
         } catch (\Exception $e) {
-            \Log::error('LogHttpRequest termination error: ' . $e->getMessage());
+            Log::error('LogHttpRequest termination error: ' . $e->getMessage());
         }
     }
 }

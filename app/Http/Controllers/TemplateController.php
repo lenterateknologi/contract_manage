@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ContractTemplate;
 use App\Models\TemplateFolder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -40,8 +41,8 @@ class TemplateController extends Controller
         TemplateFolder::create([
             'name' => $request->name,
             'parent_id' => $request->parent_id,
-            'created_by' => auth()->id(),
-            'updated_by' => auth()->id(),
+            'created_by' => Auth::id(),
+            'updated_by' => Auth::id(),
         ]);
 
         return back()->with('success', 'Folder berhasil dibuat.');
@@ -58,7 +59,7 @@ class TemplateController extends Controller
 
         $folder->update([
             'name' => $request->name,
-            'updated_by' => auth()->id(),
+            'updated_by' => Auth::id(),
         ]);
 
         return back()->with('success', 'Folder berhasil diperbarui.');
@@ -97,8 +98,8 @@ class TemplateController extends Controller
             'file_name' => $fileName,
             'file_size' => $file->getSize(),
             'file_type' => $file->getClientOriginalExtension(),
-            'created_by' => auth()->id(),
-            'updated_by' => auth()->id(),
+            'created_by' => Auth::id(),
+            'updated_by' => Auth::id(),
         ]);
 
         return back()->with('success', 'Template berhasil diunggah.');
@@ -119,7 +120,7 @@ class TemplateController extends Controller
             'name' => $request->name,
             'description' => $request->description,
             'template_folder_id' => $request->template_folder_id,
-            'updated_by' => auth()->id(),
+            'updated_by' => Auth::id(),
         ]);
 
         return back()->with('success', 'Template berhasil diperbarui.');

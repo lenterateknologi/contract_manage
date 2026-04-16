@@ -9,6 +9,7 @@ use App\Models\Approval;
 use App\Models\ContractType;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Auth;
 
 class ContractWorkflowService
 {
@@ -29,8 +30,8 @@ class ContractWorkflowService
                 'description' => 'Automatically generated for custom approval flow',
                 'is_default' => false,
                 'is_template' => false,
-                'created_by' => auth()->id(),
-                'updated_by' => auth()->id(),
+                'created_by' => Auth::id(),
+                'updated_by' => Auth::id(),
             ]);
 
             foreach ($customSteps as $index => $stepData) {
@@ -39,8 +40,8 @@ class ContractWorkflowService
                     'role' => $stepData['role'] ?? 'Approval Step',
                     'approver_type' => !empty($stepData['user_ids']) ? 'user' : 'role',
                     'description' => $stepData['description'] ?? "Approval step " . ($index + 1),
-                    'created_by' => auth()->id(),
-                    'updated_by' => auth()->id(),
+                    'created_by' => Auth::id(),
+                    'updated_by' => Auth::id(),
                 ]);
 
                 if (!empty($stepData['user_ids'])) {
@@ -58,11 +59,21 @@ class ContractWorkflowService
             throw new \Exception('No workflow found and no default available for this contract type.');
         }
 
+        // Update metadata if provided (for branching flags)
+        if (request()->has('metadata')) {
+            $contract->update(['metadata' => array_merge($contract->metadata ?? [], request()->input('metadata'))]);
+        }
+
         // Get first workflow step
         $firstStep = $workflow->steps()->orderBy('step')->first();
 
+        // Handle branching for the first step (e.g. skip if condition not met)
+        if ($firstStep && !$this->shouldExecuteStep($contract, $firstStep)) {
+            $firstStep = $this->findNextValidStep($contract, $firstStep);
+        }
+
         if (!$firstStep) {
-            throw new \Exception('No workflow steps defined for this workflow');
+            throw new \Exception('No valid workflow steps available for this request.');
         }
 
         // Update contract with workflow info and submission timestamp
@@ -80,7 +91,7 @@ class ContractWorkflowService
         $contract->histories()->create([
             'action' => 'CONTRACT_SENT',
             'description' => 'Contract sent for approval' . ($customSteps ? ' (Custom Flow)' : ''),
-            'actor_id' => auth()->id(),
+            'actor_id' => Auth::id(),
         ]);
 
         return $contract->fresh();
@@ -95,8 +106,17 @@ class ContractWorkflowService
         if ($step->approver_type === 'user') {
             $approvers = $step->users;
         } else {
-            // Find all users with the required role
-            $approvers = User::where('role', $step->role)->get();
+            // Find all users with the required role and in the same department
+            $query = User::where('role', $step->role);
+            
+            // Prioritize step-level department, then fallback to workflow-level
+            $targetDeptId = $step->department_id ?: ($step->workflow->department_id ?? null);
+            
+            if ($targetDeptId) {
+                $query->where('department_id', $targetDeptId);
+            }
+            
+            $approvers = $query->get();
         }
 
         foreach ($approvers as $approver) {
@@ -108,8 +128,8 @@ class ContractWorkflowService
                 'role' => $step->role,
                 'job_title' => $approver->job_title ?? null,
                 'status' => 'pending',
-                'created_by' => auth()->id(),
-                'updated_by' => auth()->id(),
+                'created_by' => Auth::id(),
+                'updated_by' => Auth::id(),
                 'sequence'   => $step->step,
             ]);
         }
@@ -127,7 +147,7 @@ class ContractWorkflowService
         $contract->histories()->create([
             'action' => 'APPROVAL_APPROVED',
             'description' => "Approved by {$approval->approver_name} ({$approval->role})",
-            'actor_id' => auth()->id(),
+            'actor_id' => Auth::id(),
         ]);
 
         // Check if all approvals for current step are complete
@@ -138,8 +158,8 @@ class ContractWorkflowService
         $allApproved = $currentStepApprovals->every(fn($a) => $a->status === 'approved');
 
         if ($allApproved) {
-            // Move to next step
-            $nextStep = $approval->workflowStep->nextStep();
+            // Move to next valid step (supporting branched logic)
+            $nextStep = $this->findNextValidStep($contract, $approval->workflowStep);
 
             if ($nextStep) {
                 // Update contract with next step
@@ -154,7 +174,7 @@ class ContractWorkflowService
                 $contract->histories()->create([
                     'action' => 'WORKFLOW_ADVANCED',
                     'description' => "Workflow advanced to step {$nextStep->step}: {$nextStep->description}",
-                    'actor_id' => auth()->id(),
+                    'actor_id' => Auth::id(),
                 ]);
             } else {
                 // No more steps - contract is approved
@@ -166,7 +186,7 @@ class ContractWorkflowService
                 $contract->histories()->create([
                     'action' => 'CONTRACT_APPROVED',
                     'description' => 'All approvals completed. Contract approved.',
-                    'actor_id' => auth()->id(),
+                    'actor_id' => Auth::id(),
                 ]);
             }
         }
@@ -220,10 +240,55 @@ class ContractWorkflowService
         $contract->histories()->create([
             'action' => 'APPROVAL_REJECTED',
             'description' => $description,
-            'actor_id' => auth()->id(),
+            'actor_id' => Auth::id(),
         ]);
 
         return $contract->fresh();
+    }
+
+    /**
+     * Finds the next step in the sequence that satisfies its entry conditions.
+     */
+    private function findNextValidStep(Contract $contract, WorkflowStep $currentStep): ?WorkflowStep
+    {
+        $allSteps = WorkflowStep::where('workflow_id', $currentStep->workflow_id)
+            ->where('step', '>', $currentStep->step)
+            ->orderBy('step')
+            ->get();
+
+        foreach ($allSteps as $step) {
+            if ($this->shouldExecuteStep($contract, $step)) {
+                return $step;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Evaluates whether a specific step should be executed or skipped.
+     */
+    private function shouldExecuteStep(Contract $contract, WorkflowStep $step): bool
+    {
+        if (empty($step->condition_expression)) {
+            return true;
+        }
+
+        $condition = $step->condition_expression;
+        $metadata = $contract->metadata ?? [];
+
+        // Simple condition evaluator
+        if (str_contains($condition, 'tax_required')) {
+            return !empty($metadata['tax_required']);
+        }
+
+        if (str_contains($condition, 'not_supervisor')) {
+            // Skip if initiator is already a supervisor/management
+            $role = $contract->creator->role ?? '';
+            return !in_array($role, ['Supervisor', 'Management', 'Direksi']);
+        }
+
+        return true;
     }
 
     /**

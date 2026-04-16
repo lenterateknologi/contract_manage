@@ -19,6 +19,8 @@ use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -216,9 +218,9 @@ class ContractController extends Controller
             ],
             'monthlyTrend' => Contract::leftJoin('contract_types', 'contracts.contract_type_id', '=', 'contract_types.id')
                 ->select(
-                    \DB::raw("to_char(contracts.created_at, 'YYYY-MM') as month"),
+                    DB::raw("to_char(contracts.created_at, 'YYYY-MM') as month"),
                     'contract_types.name as type_name',
-                    \DB::raw('count(*) as count')
+                    DB::raw('count(*) as count')
                 )
                 ->where('contracts.created_at', '>=', now()->subMonths(6))
                 ->groupBy('month', 'type_name')
@@ -304,15 +306,17 @@ class ContractController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'contract_type_id' => 'required|exists:contract_types,id',
         ]);
 
-        return \DB::transaction(function () use ($validated) {
+        return DB::transaction(function () use ($validated) {
             $userId = Auth::id();
 
             $contract = Contract::create([
                 'contract_no' => 'CTR-'.date('Y').'-'.strtoupper(Str::random(5)),
                 'title' => $validated['title'],
                 'description' => $validated['description'] ?? '—',
+                'contract_type_id' => $validated['contract_type_id'],
                 'status' => 'draft',
                 'created_by' => $userId,
             ]);
@@ -362,7 +366,7 @@ class ContractController extends Controller
             return response()->json(['message' => 'Hanya kontrak berstatus draft yang dapat dihapus.'], 422);
         }
 
-        return \DB::transaction(function () use ($contract) {
+        return DB::transaction(function () use ($contract) {
             // Delete from storage
             Storage::disk('local')->deleteDirectory("contracts/{$contract->id}");
 
@@ -424,7 +428,7 @@ class ContractController extends Controller
                 'file' => 'required|file|extensions:docx,doc,pdf|max:102400',
             ]);
         } catch (ValidationException $e) {
-            \Log::error('Validation Failed on Revision', [
+            Log::error('Validation Failed on Revision', [
                 'contract_id' => $id,
                 'errors' => $e->errors(),
             ]);
@@ -490,7 +494,7 @@ class ContractController extends Controller
         $version = $contract->currentVersionModel();
 
         if ($version && $version->file_path && Storage::disk('local')->exists($version->file_path)) {
-            return Storage::disk('local')->download($version->file_path, $version->file_name);
+            return response()->download(Storage::disk('local')->path($version->file_path), $version->file_name);
         }
 
         return response()->json(['message' => 'File not found.'], 404);
@@ -506,7 +510,7 @@ class ContractController extends Controller
             ->firstOrFail();
 
         if ($version->file_path && Storage::disk('local')->exists($version->file_path)) {
-            return Storage::disk('local')->download($version->file_path, $version->file_name);
+            return response()->download(Storage::disk('local')->path($version->file_path), $version->file_name);
         }
 
         return response()->json(['message' => 'File not found.'], 404);
@@ -518,7 +522,7 @@ class ContractController extends Controller
         $attachment = $contract->attachments()->findOrFail($atId);
 
         if ($attachment->file_path && Storage::disk('local')->exists($attachment->file_path)) {
-            return Storage::disk('local')->download($attachment->file_path, $attachment->file_name);
+            return response()->download(Storage::disk('local')->path($attachment->file_path), $attachment->file_name);
         }
 
         return response()->json(['message' => 'File not found.'], 404);
@@ -574,7 +578,7 @@ class ContractController extends Controller
             $output = shell_exec($command);
 
             if (! file_exists($pdfPath)) {
-                \Log::error('PDF Generation Failed', [
+                Log::error('PDF Generation Failed', [
                     'command' => $command,
                     'output' => $output,
                 ]);
@@ -871,7 +875,7 @@ class ContractController extends Controller
 
         if ($isNew) {
             $submission->form_template_id = $request->form_template_id;
-            $submission->submitted_by = auth()->id();
+            $submission->submitted_by = Auth::id();
             $submission->current_version = 1;
             $submission->save();
         }
@@ -905,7 +909,7 @@ class ContractController extends Controller
             'version_no' => $versionNo,
             'form_data' => $formData,
             'change_summary' => $changeSummary,
-            'created_by' => auth()->id(),
+            'created_by' => Auth::id(),
         ]);
 
         // Update current version
@@ -922,7 +926,7 @@ class ContractController extends Controller
             'contract_id' => $contract->id,
             'action' => $action,
             'description' => $desc,
-            'actor_id' => auth()->id(),
+            'actor_id' => Auth::id(),
         ]);
 
         // Return updated contract

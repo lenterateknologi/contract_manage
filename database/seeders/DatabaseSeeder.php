@@ -9,8 +9,10 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
+            DepartmentSeeder::class,
             RoleSeeder::class,
             UserSeeder::class,
+            VendorSeeder::class,
             ModuleGroupSeeder::class,
             ModuleSeeder::class,
             AccessModuleSeeder::class,
@@ -18,6 +20,7 @@ class DatabaseSeeder extends Seeder
             WorkflowSeeder::class,
             WorkflowStepSeeder::class,
             ContractSeeder::class,
+            ContractStatusSeeder::class,
         ]);
     }
 }

@@ -93,6 +93,25 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/contract-types/{type}', [AdminController::class, 'updateContractType'])->name('admin.contract-types.update');
         Route::delete('/contract-types/{type}', [AdminController::class, 'destroyContractType'])->name('admin.contract-types.destroy');
 
+        // Master Status
+        Route::get('/contract-statuses', [AdminController::class, 'contractStatuses'])->name('admin.contract-statuses');
+        Route::post('/contract-statuses', [AdminController::class, 'storeContractStatus'])->name('admin.contract-statuses.store');
+        Route::put('/contract-statuses/{status}', [AdminController::class, 'updateContractStatus'])->name('admin.contract-statuses.update');
+        Route::delete('/contract-statuses/{status}', [AdminController::class, 'destroyContractStatus'])->name('admin.contract-statuses.destroy');
+
+        // Master Departemen
+        Route::get('/departments', [AdminController::class, 'departments'])->name('admin.departments');
+        Route::post('/departments', [AdminController::class, 'storeDepartment'])->name('admin.departments.store');
+        Route::put('/departments/{department}', [AdminController::class, 'updateDepartment'])->name('admin.departments.update');
+        Route::delete('/departments/{department}', [AdminController::class, 'destroyDepartment'])->name('admin.departments.destroy');
+
+        // Master Vendor
+        Route::get('/vendors', [AdminController::class, 'vendors'])->name('admin.vendors');
+        Route::post('/vendors', [AdminController::class, 'storeVendor'])->name('admin.vendors.store');
+        Route::put('/vendors/{vendor}', [AdminController::class, 'updateVendor'])->name('admin.vendors.update');
+        Route::delete('/vendors/{vendor}', [AdminController::class, 'destroyVendor'])->name('admin.vendors.destroy');
+
+        // Workflows
         Route::get('/workflows', [AdminController::class, 'workflows'])->name('admin.workflows');
         Route::post('/workflows', [AdminController::class, 'storeWorkflow'])->name('admin.workflows.store');
         Route::put('/workflows/{workflow}', [AdminController::class, 'updateWorkflow'])->name('admin.workflows.update');

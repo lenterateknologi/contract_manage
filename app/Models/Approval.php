@@ -4,9 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
 
 class Approval extends Model
 {
+    use SoftDeletes;
     protected $fillable = [
         'contract_id',
         'workflow_step_id',
@@ -47,7 +50,7 @@ class Approval extends Model
             'status' => 'approved',
             'comment' => $comment,
             'decided_at' => now(),
-            'updated_by' => auth()->id(),
+            'updated_by' => Auth::id(),
         ]);
     }
 
@@ -57,7 +60,7 @@ class Approval extends Model
             'status' => 'rejected',
             'comment' => $comment,
             'decided_at' => now(),
-            'updated_by' => auth()->id(),
+            'updated_by' => Auth::id(),
         ]);
     }
 }

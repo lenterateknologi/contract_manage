@@ -3,7 +3,9 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
+use App\Models\WorkflowStep;
+use App\Models\Workflow;
+use App\Models\User;
 
 class WorkflowStepSeeder extends Seeder
 {
@@ -12,56 +14,58 @@ class WorkflowStepSeeder extends Seeder
      */
     public function run(): void
     {
-        $sampleUserId = '123e4567-e89b-12d3-a456-426614174000';
+        $admin = User::firstWhere('email', 'admin@example.com') ?? User::first();
+        $adminId = $admin ? $admin->id : null;
 
-        // Clear existing steps first to avoid unique constraint violations
-        DB::table('workflow_steps')->truncate();
+        // Clear existing steps first
+        WorkflowStep::query()->delete();
 
         // Get all workflows
-        $workflows = DB::table('workflows')->get();
+        $workflows = Workflow::all();
+        $depts = \App\Models\Department::pluck('id', 'code')->all();
 
         foreach ($workflows as $workflow) {
-            // Define steps for each workflow type
-            $steps = match ($workflow->contract_type) {
-                'Service Agreement' => [
-                    ['role' => 'Tax', 'step' => 1, 'description' => 'Tax Review'],
-                    ['role' => 'Legal', 'step' => 2, 'description' => 'Legal Review'],
-                    ['role' => 'Management', 'step' => 3, 'description' => 'Management Approval'],
-                    ['role' => 'Direksi', 'step' => 4, 'description' => 'Director Approval'],
-                    ['role' => 'Vendor', 'step' => 5, 'description' => 'Vendor Approval'],
-                ],
-                'Non-Disclosure Agreement' => [
-                    ['role' => 'Legal', 'step' => 1, 'description' => 'Legal Review'],
-                    ['role' => 'Management', 'step' => 2, 'description' => 'Management Approval'],
-                ],
-                'Purchase Agreement' => [
-                    ['role' => 'Procurement', 'step' => 1, 'description' => 'Procurement Review'],
-                    ['role' => 'Legal', 'step' => 2, 'description' => 'Legal Review'],
-                    ['role' => 'Finance', 'step' => 3, 'description' => 'Finance Review'],
-                    ['role' => 'Direksi', 'step' => 4, 'description' => 'Director Approval'],
-                ],
-                'Employment Agreement' => [
-                    ['role' => 'HR', 'step' => 1, 'description' => 'HR Review'],
-                    ['role' => 'Legal', 'step' => 2, 'description' => 'Legal Review'],
-                    ['role' => 'Management', 'step' => 3, 'description' => 'Management Approval'],
-                ],
-                default => [
-                    ['role' => 'Legal', 'step' => 1, 'description' => 'Legal Review'],
-                    ['role' => 'Management', 'step' => 2, 'description' => 'Management Approval'],
-                ],
-            };
+            $steps = [];
+            
+            if ($workflow->name === 'IT Procurement Workflow') {
+                $steps = [
+                    ['role' => 'Manager', 'step' => 1, 'description' => 'IT Department Review', 'dept_code' => 'ITC'],
+                    ['role' => 'Manager', 'step' => 2, 'description' => 'Procurement Review', 'dept_code' => 'PRC'],
+                    ['role' => 'Director', 'step' => 3, 'description' => 'Final Executive Approval', 'dept_code' => 'MGT'],
+                ];
+            } elseif ($workflow->name === 'Legal Compliance Workflow') {
+                $steps = [
+                    ['role' => 'Staff', 'step' => 1, 'description' => 'Initial Legal Review', 'dept_code' => 'LGL'],
+                    ['role' => 'Manager', 'step' => 2, 'description' => 'Legal Manager Approval', 'dept_code' => 'LGL'],
+                ];
+            } elseif ($workflow->name === 'Purchasing Control Workflow') {
+                $steps = [
+                    ['role' => 'Staff', 'step' => 1, 'description' => 'Procurement Verification', 'dept_code' => 'PRC'],
+                    ['role' => 'Manager', 'step' => 2, 'description' => 'Finance Approval', 'dept_code' => 'FIN'],
+                    ['role' => 'Director', 'step' => 3, 'description' => 'Budget Director Release', 'dept_code' => 'MGT'],
+                ];
+            } else {
+                // General Standard Workflow - Fallback to workflow department (null here) or specific ones
+                $steps = [
+                    ['role' => 'Manager', 'step' => 1, 'description' => 'Department Head Approval', 'dept_code' => null],
+                    ['role' => 'Manager', 'step' => 2, 'description' => 'General Management Review', 'dept_code' => 'MGT'],
+                    ['role' => 'Director', 'step' => 3, 'description' => 'Board Approval', 'dept_code' => 'MGT'],
+                ];
+            }
 
             foreach ($steps as $step) {
-                DB::table('workflow_steps')->insert([
+                WorkflowStep::create([
                     'workflow_id' => $workflow->id,
                     'role' => $step['role'],
                     'step' => $step['step'],
+                    'approver_type' => 'role',
+                    'department_id' => $step['dept_code'] ? ($depts[$step['dept_code']] ?? null) : null,
                     'description' => $step['description'],
+                    'condition_expression' => null,
+                    'step_type' => 'approval',
                     'is_active' => true,
-                    'created_by' => $sampleUserId,
-                    'updated_by' => $sampleUserId,
-                    'created_at' => now(),
-                    'updated_at' => now(),
+                    'created_by' => $adminId,
+                    'updated_by' => $adminId,
                 ]);
             }
         }
