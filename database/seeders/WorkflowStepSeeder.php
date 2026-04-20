@@ -24,42 +24,35 @@ class WorkflowStepSeeder extends Seeder
         $workflows = Workflow::all();
         $depts = \App\Models\Department::pluck('id', 'code')->all();
 
+        // Get a specific user for demonstration (e.g., Legal Staff)
+        // Note: User has 'role' column as string
+        $legalStaff = User::where('role', 'Staff')
+            ->whereHas('department', fn($q) => $q->where('code', 'LGL'))
+            ->first();
+
         foreach ($workflows as $workflow) {
-            $steps = [];
+            $isTax = $workflow->is_tax_involved;
             
-            if ($workflow->name === 'IT Procurement Workflow') {
-                $steps = [
-                    ['role' => 'Manager', 'step' => 1, 'description' => 'IT Department Review', 'dept_code' => 'ITC'],
-                    ['role' => 'Manager', 'step' => 2, 'description' => 'Procurement Review', 'dept_code' => 'PRC'],
-                    ['role' => 'Director', 'step' => 3, 'description' => 'Final Executive Approval', 'dept_code' => 'MGT'],
-                ];
-            } elseif ($workflow->name === 'Legal Compliance Workflow') {
-                $steps = [
-                    ['role' => 'Staff', 'step' => 1, 'description' => 'Initial Legal Review', 'dept_code' => 'LGL'],
-                    ['role' => 'Manager', 'step' => 2, 'description' => 'Legal Manager Approval', 'dept_code' => 'LGL'],
-                ];
-            } elseif ($workflow->name === 'Purchasing Control Workflow') {
-                $steps = [
-                    ['role' => 'Staff', 'step' => 1, 'description' => 'Procurement Verification', 'dept_code' => 'PRC'],
-                    ['role' => 'Manager', 'step' => 2, 'description' => 'Finance Approval', 'dept_code' => 'FIN'],
-                    ['role' => 'Director', 'step' => 3, 'description' => 'Budget Director Release', 'dept_code' => 'MGT'],
-                ];
-            } else {
-                // General Standard Workflow - Mapped to BRD: "Initiator to Direksi"
-                $steps = [
-                    ['role' => 'Manager', 'step' => 1, 'description' => 'Tax Validation Review', 'dept_code' => 'TAX', 'cond' => 'tax_required'],
-                    ['role' => 'Manager', 'step' => 2, 'description' => 'Management Operations Review', 'dept_code' => 'MGT', 'cond' => 'initiator_not_manager'],
-                    ['role' => 'Staff', 'step' => 3, 'description' => 'Legal Compliance & Document Verification', 'dept_code' => 'LGL', 'cond' => null],
-                    ['role' => 'Director', 'step' => 4, 'description' => 'Final Direksi Approval', 'dept_code' => 'MGT', 'cond' => null],
-                ];
+            $steps = [
+                ['role' => 'Manager', 'step' => 1, 'description' => 'Direct Supervisor Review', 'dept_code' => null, 'cond' => 'initiator_is_staff'],
+            ];
+
+            $currentStep = 2;
+
+            if ($isTax) {
+                $steps[] = ['role' => 'Manager', 'step' => $currentStep++, 'description' => 'Tax Validation Review', 'dept_code' => 'TAX', 'cond' => null];
             }
 
+            $steps[] = ['role' => 'Manager', 'step' => $currentStep++, 'description' => 'Management Operations Review', 'dept_code' => 'MGT', 'cond' => 'initiator_not_manager'];
+            $steps[] = ['role' => 'Staff', 'step' => $currentStep++, 'description' => 'Legal Compliance & Document Verification', 'dept_code' => 'LGL', 'cond' => null, 'approver_type' => 'user', 'user_id' => $legalStaff ? $legalStaff->id : null];
+            $steps[] = ['role' => 'Director', 'step' => $currentStep++, 'description' => 'Final Direksi Approval', 'dept_code' => 'MGT', 'cond' => null];
+
             foreach ($steps as $step) {
-                WorkflowStep::create([
+                $ws = WorkflowStep::create([
                     'workflow_id' => $workflow->id,
                     'role' => $step['role'],
                     'step' => $step['step'],
-                    'approver_type' => 'role',
+                    'approver_type' => $step['approver_type'] ?? 'role',
                     'department_id' => ($step['dept_code'] ?? null) ? ($depts[$step['dept_code']] ?? null) : null,
                     'description' => $step['description'],
                     'condition_expression' => $step['cond'] ?? null,
@@ -68,6 +61,10 @@ class WorkflowStepSeeder extends Seeder
                     'created_by' => $adminId,
                     'updated_by' => $adminId,
                 ]);
+
+                if (isset($step['user_id']) && $step['user_id']) {
+                    $ws->users()->attach($step['user_id']);
+                }
             }
         }
     }

@@ -8,6 +8,8 @@ use Illuminate\Support\Str;
 
 class Role extends Model
 {
+    protected $table = 'm_roles';
+
     use SoftDeletes;
     public $incrementing = false;
 

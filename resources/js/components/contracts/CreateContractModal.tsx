@@ -12,6 +12,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
     const [desc, setDesc] = useState('');
     const [typeId, setTypeId] = useState('');
     const [transactionType, setTransactionType] = useState('Perjanjian Baru');
+    const [taxRequired, setTaxRequired] = useState(false);
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -33,6 +34,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
         fd.append('description', desc);
         fd.append('contract_type_id', typeId);
         fd.append('transaction_type', transactionType);
+        fd.append('tax_required', taxRequired ? '1' : '0');
 
         setLoading(true);
         try {
@@ -42,6 +44,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
             setDesc('');
             setTypeId('');
             setTransactionType('Perjanjian Baru');
+            setTaxRequired(false);
         } catch (err: any) {
             if (err.response?.data?.errors) setErrors(err.response.data.errors);
             else setErrors({ general: 'Gagal membuat kontrak.' });
@@ -68,7 +71,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                     </button>
                 </div>
 
-                <div className="max-h-[80vh] space-y-4 overflow-y-auto p-5">
+                <div className="max-h-[80vh] space-y-5 overflow-y-auto p-5">
                     <div>
                         <label className="text-muted-foreground mb-1.5 block text-[11px] font-semibold tracking-wider uppercase">
                             Nama Kontrak <span className="text-red-500">*</span>
@@ -82,37 +85,39 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                         {errors.title && <div className="mt-1 text-[10px] text-red-500">{errors.title}</div>}
                     </div>
 
-                    <div>
-                        <label className="text-muted-foreground mb-1.5 block text-[11px] font-semibold tracking-wider uppercase">
-                            Tipe Kontrak <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                            value={typeId}
-                            onChange={(e) => setTypeId(e.target.value)}
-                            className="border-border placeholder:text-muted-foreground/30 w-full rounded-md border px-3 py-2 text-[12px] outline-none focus:border-blue-500 bg-white"
-                        >
-                            <option value="">Pilih Tipe Perjanjian</option>
-                            {types.map((t) => (
-                                <option key={t.id} value={t.id}>{t.name}</option>
-                            ))}
-                        </select>
-                        {errors.contract_type_id && <div className="mt-1 text-[10px] text-red-500">{errors.contract_type_id}</div>}
-                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-muted-foreground mb-1.5 block text-[11px] font-semibold tracking-wider uppercase">
+                                Tipe Kontrak <span className="text-red-500">*</span>
+                            </label>
+                            <select
+                                value={typeId}
+                                onChange={(e) => setTypeId(e.target.value)}
+                                className="border-border placeholder:text-muted-foreground/30 w-full rounded-md border px-3 py-2 text-[12px] outline-none focus:border-blue-500 bg-white"
+                            >
+                                <option value="">Pilih Tipe</option>
+                                {types.map((t) => (
+                                    <option key={t.id} value={t.id}>{t.name}</option>
+                                ))}
+                            </select>
+                            {errors.contract_type_id && <div className="mt-1 text-[10px] text-red-500">{errors.contract_type_id}</div>}
+                        </div>
 
-                    <div>
-                        <label className="text-muted-foreground mb-1.5 block text-[11px] font-semibold tracking-wider uppercase">
-                            Mode Transaksi <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                            value={transactionType}
-                            onChange={(e) => setTransactionType(e.target.value)}
-                            className="border-border placeholder:text-muted-foreground/30 w-full rounded-md border px-3 py-2 text-[12px] outline-none focus:border-blue-500 bg-white"
-                        >
-                            <option value="Perjanjian Baru">Perjanjian Baru</option>
-                            <option value="Addendum">Addendum</option>
-                            <option value="Amandement">Amandement</option>
-                            <option value="Perubahan Perjanjian">Perubahan Perjanjian</option>
-                        </select>
+                        <div>
+                            <label className="text-muted-foreground mb-1.5 block text-[11px] font-semibold tracking-wider uppercase">
+                                Mode Transaksi <span className="text-red-500">*</span>
+                            </label>
+                            <select
+                                value={transactionType}
+                                onChange={(e) => setTransactionType(e.target.value)}
+                                className="border-border placeholder:text-muted-foreground/30 w-full rounded-md border px-3 py-2 text-[12px] outline-none focus:border-blue-500 bg-white"
+                            >
+                                <option value="Perjanjian Baru">Perjanjian Baru</option>
+                                <option value="Addendum">Addendum</option>
+                                <option value="Amandement">Amandement</option>
+                                <option value="Perubahan Perjanjian">Perubahan Perjanjian</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div>
@@ -128,6 +133,22 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                         />
                     </div>
 
+                    <div className="bg-slate-50 border border-slate-100 rounded-lg p-4 flex items-center justify-between">
+                        <div className="flex flex-col">
+                            <span className="text-[11px] font-black uppercase tracking-widest text-slate-700">Pajak (Tax Review)</span>
+                            <span className="text-[10px] text-slate-500 font-medium">Apakah kontrak ini memerlukan review pajak?</span>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                checked={taxRequired} 
+                                onChange={(e) => setTaxRequired(e.target.checked)}
+                                className="sr-only peer"
+                            />
+                            <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                        </label>
+                    </div>
+
                     {errors.general && (
                         <div className="rounded-md border border-red-100 bg-red-50 p-3 text-[11px] text-red-600">
                             <i className="fa-solid fa-circle-exclamation mr-2" />
@@ -136,7 +157,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                     )}
                 </div>
 
-                <div className="border-border/50 flex items-center justify-end gap-3 border-t px-5 py-4">
+                <div className="border-border/50 flex items-center justify-end gap-3 border-t px-5 py-4 bg-slate-50/50">
                     <button
                         onClick={onClose}
                         className="text-muted-foreground hover:text-foreground/80 px-5 py-2 text-[12px] font-medium transition-colors"
@@ -146,7 +167,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                     <button
                         onClick={handleSubmit}
                         disabled={loading}
-                        className="bg-primary hover:bg-primary/90 shadow-primary/10 rounded-lg px-6 py-2 text-[12px] font-semibold text-white shadow-lg transition-all disabled:bg-gray-400"
+                        className="bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200/50 rounded-lg px-6 py-2 text-[12px] font-black uppercase tracking-widest text-white shadow-lg transition-all disabled:bg-gray-400 active:scale-95"
                     >
                         {loading ? <i className="fa-solid fa-spinner fa-spin mr-2" /> : <i className="fa-solid fa-check mr-2" />}
                         Buat Kontrak

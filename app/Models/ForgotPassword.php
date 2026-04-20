@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 
 class ForgotPassword extends Model
 {
-    protected $table = 'forgot_password';
+    protected $table = 't_forgot_password';
 
     protected $keyType = 'string';
 

@@ -13,7 +13,7 @@ class Module extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'modules';
+    protected $table = 'm_modules';
 
     public $incrementing = false;
 

@@ -1167,7 +1167,7 @@ function ContractPage({ contracts: contractsPaged, meId, meUser, initialSelected
                             <div className="flex gap-2">
                                 {selected.status === 'draft' && (
                                     <>
-                                        {canUpdate && (
+                                        {(canUpdate || meUser?.role === 'Admin') && (
                                             <>
                                                 <button onClick={handleSendForApproval} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: '#2563eb', color: '#fff', fontSize: 12, fontWeight: 500, borderRadius: 6, border: 'none', cursor: 'pointer' }}
                                                     onMouseOver={e => ((e.currentTarget as any).style.background = '#1d4ed8')} onMouseOut={e => ((e.currentTarget as any).style.background = '#2563eb')}>
@@ -1324,7 +1324,11 @@ function ContractPage({ contracts: contractsPaged, meId, meUser, initialSelected
                                         <i className="fa-solid fa-arrow-right-arrow-left text-muted-foreground" style={{ fontSize: 12 }} /> Alur Approval
                                     </div>
                                     <div style={{ padding: 16 }}>
-                                        <ApprovalSteps approvals={selected.approvals} />
+                                        <ApprovalSteps 
+                                            approvals={selected.approvals} 
+                                            creator={selected.creator} 
+                                            submittedAt={selected.submitted_at} 
+                                        />
                                     </div>
                                 </div>
 

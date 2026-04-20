@@ -356,6 +356,7 @@ interface Props {
     moduleGroups?: PaginatedData<any> | any[];
     statuses?: PaginatedData<any> | any[];
     departments?: PaginatedData<any> | any[];
+    filters?: any;
 }
 
 export default function AdminIndex({
@@ -370,7 +371,8 @@ export default function AdminIndex({
     moduleGroups,
     statuses,
     departments,
-}: Props) {
+    filters: serverFilters,
+}: Props & { filters: any }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<any>(null);
     const [expandedWorkflowId, setExpandedWorkflowId] = useState<number | null>(null);
@@ -472,7 +474,28 @@ export default function AdminIndex({
             default:
                 return { data: [], pagination: undefined };
         }
-    }, [currentView, users, roles, contractTypes, types, workflows, moduleGroups, groups, modules, getPaginatedData, ensureArray]);
+    }, [currentView, users, roles, contractTypes, types, workflows, moduleGroups, groups, modules, statuses, departments, getPaginatedData, ensureArray]);
+
+    const handleBackendFilter = useCallback((newParams: any) => {
+        const query = {
+            ...serverFilters,
+            ...newParams,
+            page: 1, // Reset to first page on filter change
+        };
+
+        // Filter out empty values
+        Object.keys(query).forEach(key => {
+            if (query[key] === null || query[key] === undefined || query[key] === '') {
+                delete query[key];
+            }
+        });
+
+        router.get(window.location.pathname, query, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true
+        });
+    }, [serverFilters]);
 
     const getRowId = useCallback((row: any) => row.id, []);
 
@@ -1373,7 +1396,10 @@ export default function AdminIndex({
                         }
                         filters={
                             currentView === 'users'
-                                ? [{ label: 'Role', key: 'role', options: ensureArray(roles).map((r: any) => ({ label: r.name, value: r.name })) }]
+                                ? [
+                                      { label: 'Role', key: 'role', options: ensureArray(roles).map((r: any) => ({ label: r.name, value: r.name })) },
+                                      { label: 'Departemen', key: 'department_id', options: ensureArray(departments).map((d: any) => ({ label: d.name, value: d.id })) }
+                                  ]
                                 : currentView === 'workflows'
                                   ? [
                                         {
@@ -1390,8 +1416,23 @@ export default function AdminIndex({
                                               options: ensureArray(moduleGroups).map((mg: any) => ({ label: mg.title, value: mg.id })),
                                           },
                                       ]
+                                  : currentView === 'contract-types'
+                                    ? [
+                                          {
+                                              label: 'Format',
+                                              key: 'type',
+                                              options: [
+                                                  { label: 'F1', value: 'f1' },
+                                                  { label: 'F2', value: 'f2' },
+                                              ],
+                                          },
+                                      ]
                                     : undefined
                         }
+                        searchValue={serverFilters?.search}
+                        onSearchChange={(val) => handleBackendFilter({ search: val })}
+                        activeFilters={serverFilters || {}}
+                        onFilterChange={(f) => handleBackendFilter(f)}
                         onRefresh={() => router.reload({ preserveScroll: true } as any)}
                         renderExpandedRow={(row) => (
                             <div className="space-y-5 bg-slate-50/80 p-6">

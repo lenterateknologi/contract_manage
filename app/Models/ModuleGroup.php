@@ -11,7 +11,7 @@ class ModuleGroup extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = 'module_groups';
+    protected $table = 'm_module_groups';
 
     public $incrementing = false;
 

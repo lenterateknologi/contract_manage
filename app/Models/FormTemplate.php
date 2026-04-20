@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class FormTemplate extends Model
 {
+    protected $table = 'm_form_templates';
+
     use HasFactory, HasUuids, SoftDeletes;
 
     protected $fillable = [

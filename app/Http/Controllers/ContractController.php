@@ -134,6 +134,11 @@ class ContractController extends Controller
             'workflow.steps', 'versions.uploader', 'histories.actor', 'messages.user',
             'attachments.uploader', 'formSubmissions',
         ])->findOrFail($id);
+        
+        // Authorization: Only Admin or Creator can view drafts
+        if ($contract->status === 'draft' && $contract->created_by !== Auth::id() && Auth::user()->role !== 'Admin') {
+            abort(403, 'Halaman tidak tersedia');
+        }
 
         $contracts = $this->getFilteredContractsQuery($request, 'contracts')
             ->paginate($request->integer('per_page', 10))
@@ -194,6 +199,16 @@ class ContractController extends Controller
                 break;
             case 'f2':
                 $query->whereHas('versions', fn ($q) => $q->where('document_type', 'f2'));
+                break;
+            case 'contracts':
+            default:
+                // If NOT an Admin, only show non-drafts OR drafts created by current user
+                if (Auth::user()->role !== 'Admin') {
+                    $query->where(function ($q) {
+                        $q->where('status', '!=', 'draft')
+                          ->orWhere('created_by', Auth::id());
+                    });
+                }
                 break;
         }
 
@@ -302,18 +317,23 @@ class ContractController extends Controller
             'contractType',
             'formSubmissions',
         ])->findOrFail($id);
+        
+        // Authorization: Only Admin or Creator can view drafts
+        if ($contract->status === 'draft' && $contract->created_by !== Auth::id() && Auth::user()->role !== 'Admin') {
+            abort(403, 'Halaman tidak tersedia');
+        }
 
         return response()->json($this->formatContract($contract));
     }
 
     public function getWorkflows(): JsonResponse
     {
-        return response()->json(Workflow::where('is_template', true)->get());
+        return response()->json(Workflow::where('is_template', true)->with('steps')->get());
     }
 
     public function getUsers(): JsonResponse
     {
-        return response()->json(User::orderBy('name')->get());
+        return response()->json(User::orderBy('name')->get()->map(fn($u) => $this->formatUser($u)));
     }
 
     public function getRoles(): JsonResponse
@@ -776,6 +796,7 @@ class ContractController extends Controller
             'status' => $c->status,
             'current_version' => $c->current_version,
             'created_at' => $c->created_at->toDateString(),
+            'submitted_at' => $c->submitted_at ? $c->submitted_at->format('Y-m-d H:i') : null,
             'creator' => $this->formatUser($c->creator),
             'progress' => $progress,
             'workflow_id' => $c->workflow_id,
@@ -854,6 +875,18 @@ class ContractController extends Controller
 
         foreach ($workflowSteps as $step) {
             $approvals = $c->approvals->where('workflow_step_id', $step->id);
+            
+            // Resolve Department Name
+            $deptName = $step->department?->name;
+            if (!$deptName && $step->step === 1 && $c->creator?->department) {
+                $deptName = $c->creator->department->name;
+            }
+
+            // Resolve Specific Names (if any)
+            $targetApprovers = null;
+            if ($step->approver_type === 'user') {
+                $targetApprovers = $step->users->pluck('name')->implode(', ');
+            }
 
             if ($approvals->isNotEmpty()) {
                 // If we have actual approval records for this step
@@ -863,6 +896,8 @@ class ContractController extends Controller
                         'user_id' => $a->user_id,
                         'approver_name' => $a->approver_name,
                         'role' => $a->role,
+                        'department_name' => $deptName,
+                        'target_approvers' => $targetApprovers,
                         'sequence' => $step->step,
                         'status' => $a->status,
                         'note' => $a->comment,
@@ -877,6 +912,8 @@ class ContractController extends Controller
                     'user_id' => null,
                     'approver_name' => 'Pendataan '.$step->role,
                     'role' => $step->role,
+                    'department_name' => $deptName,
+                    'target_approvers' => $targetApprovers,
                     'sequence' => $step->step,
                     'status' => 'waiting',
                     'note' => null,
@@ -900,6 +937,7 @@ class ContractController extends Controller
             'name' => $user->name,
             'initials' => $user->initials,
             'role' => $user->role,
+            'department_id' => $user->department_id,
             'bg_color' => $user->bg_color,
             'text_color' => $user->text_color,
         ];

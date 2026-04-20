@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ContractHistory extends Model
 {
+    protected $table = 't_contract_h';
+
     use HasUuids, SoftDeletes;
     protected $fillable = [
         'contract_id', 'action', 'description', 'actor_id',

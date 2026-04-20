@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class WorkflowStep extends Model
 {
+    protected $table = 'm_workflow_steps';
+
     use HasUuids, SoftDeletes;
 
     public $incrementing = false;
@@ -53,6 +55,6 @@ class WorkflowStep extends Model
 
     public function users(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'workflow_step_users')->withTimestamps();
+        return $this->belongsToMany(User::class, 't_workflow_step_users')->withTimestamps();
     }
 }

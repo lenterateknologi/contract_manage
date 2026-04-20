@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Department extends Model
 {
+    protected $table = 'm_departments';
+
     use HasUuids, SoftDeletes;
 
     protected $fillable = [

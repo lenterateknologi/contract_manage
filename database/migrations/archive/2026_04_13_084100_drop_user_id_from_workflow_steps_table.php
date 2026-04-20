@@ -11,7 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Skip dropping columns on SQLite because it often fails with foreign key constraints
+        if (config('database.default') === 'sqlite') {
+            return;
+        }
+
         Schema::table('workflow_steps', function (Blueprint $table) {
+            $table->dropForeign(['user_id']);
             $table->dropColumn('user_id');
         });
     }

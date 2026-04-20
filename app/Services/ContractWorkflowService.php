@@ -13,11 +13,16 @@ use Illuminate\Support\Facades\Auth;
 
 class ContractWorkflowService
 {
-    /**
-     * Send contract for approval (initiate workflow)
-     */
     public function sendForApproval(Contract $contract, string $workflowId = null, array $customSteps = null): Contract
     {
+        // Resolve tax requirement
+        $metadata = request()->input('metadata', []);
+        $taxRequired = $metadata['tax_required'] ?? ($contract->metadata['tax_required'] ?? false);
+
+        // Update metadata if provided (for branching flags)
+        $contract->update(['metadata' => array_merge($contract->metadata ?? [], $metadata)]);
+        $contract = $contract->fresh(); // Refresh to get updated metadata
+
         $workflow = null;
 
         if ($workflowId) {
@@ -52,17 +57,14 @@ class ContractWorkflowService
 
         // Fallback to default if no workflow selected and no custom steps
         if (!$workflow) {
-            $workflow = Workflow::getDefaultByContractType($contract->contract_type);
+            $typeStr = $contract->contract_type ?: ($contract->contractType ? $contract->contractType->name : 'General');
+            $workflow = Workflow::getDefaultByContractType($typeStr, (bool) $taxRequired);
         }
 
         if (!$workflow) {
             throw new \Exception('No workflow found and no default available for this contract type.');
         }
 
-        // Update metadata if provided (for branching flags)
-        if (request()->has('metadata')) {
-            $contract->update(['metadata' => array_merge($contract->metadata ?? [], request()->input('metadata'))]);
-        }
 
         // Get first workflow step
         $firstStep = $workflow->steps()->orderBy('step')->first();
@@ -109,8 +111,8 @@ class ContractWorkflowService
             // Find all users with the required role and in the same department
             $query = User::where('role', $step->role);
             
-            // Prioritize step-level department, then fallback to workflow-level
-            $targetDeptId = $step->department_id ?: ($step->workflow->department_id ?? null);
+            // Prioritize step-level department, then fallback to initiator's department if not specified
+            $targetDeptId = $step->department_id ?: $contract->creator->department_id;
             
             if ($targetDeptId) {
                 $query->where('department_id', $targetDeptId);
@@ -246,30 +248,26 @@ class ContractWorkflowService
         return null;
     }
 
-    /**
-     * Evaluates whether a specific step should be executed or skipped.
-     */
     private function shouldExecuteStep(Contract $contract, WorkflowStep $step): bool
     {
-        if (empty($step->condition_expression)) {
-            return true;
-        }
-
-        $condition = $step->condition_expression;
-        $metadata = $contract->metadata ?? [];
-
-        // Condition: Tax Review Required
-        if (str_contains($condition, 'tax_required')) {
-            return !empty($metadata['tax_required']) && $metadata['tax_required'] === true;
+        $condition = $step->condition_expression ?? '';
+        
+        // Condition: Direct Supervisor Review (only if initiator is Staff)
+        if (str_contains($condition, 'initiator_is_staff')) {
+            $roleName = $contract->creator->role ?? ''; 
+            return strtolower($roleName) === 'staff';
         }
 
         // Condition: Skip Management if Initiator is already Management/Direksi
         if (str_contains($condition, 'initiator_not_manager')) {
-            $role = $contract->creator->role->name ?? ''; // Assume relationship or raw string
+            $roleName = $contract->creator->role ?? '';
             // If the creator is NOT a manager or director, they need management approval
-            return !in_array($role, ['Manager', 'Director', 'Management']);
+            // Positions that count as manager here: 'Manager', 'Director', 'Direktur'
+            $exemptRoles = ['manager', 'director', 'direktur', 'direksi', 'admin'];
+            return !in_array(strtolower($roleName), $exemptRoles);
         }
 
+        // If no recognized condition, execute by default
         return true;
     }
 

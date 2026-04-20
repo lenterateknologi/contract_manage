@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class TemplateFolder extends Model
 {
+    protected $table = 'm_template_folders';
+
     use HasFactory, HasUuids, SoftDeletes;
 
     protected $fillable = [

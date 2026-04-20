@@ -120,15 +120,17 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
 
                 <div className="space-y-6 p-6">
                     {/* Workflow Options / Logic Gates */}
-                    <div className="space-y-3">
-                        <label className="text-muted-foreground ml-1 block text-xs font-bold tracking-wider uppercase">
-                            Business Logic / Gateways
-                        </label>
-                        <div className="bg-muted/30 border-border grid grid-cols-1 gap-3 rounded-xl border p-4">
+                    <div className="space-y-4">
+                        <div className="bg-muted/30 border-border rounded-xl border p-4">
                             <label className="flex cursor-pointer items-center justify-between">
-                                <span className="flex items-center gap-2">
-                                    <i className="fa-solid fa-receipt text-muted-foreground text-[10px]" />
-                                    <span className="text-[11px] font-medium leading-none">Requires Tax Review?</span>
+                                <span className="flex items-center gap-3">
+                                    <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-lg">
+                                        <i className="fa-solid fa-receipt text-primary text-sm" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-[12px] font-bold">Tax Review Required?</span>
+                                        <span className="text-muted-foreground text-[10px]">Pilih jika kontrak ini memerlukan review dari tim Pajak</span>
+                                    </div>
                                 </span>
                                 <div
                                     onClick={() => setMetadata({ ...metadata, tax_required: !metadata.tax_required })}
@@ -142,153 +144,21 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
                         </div>
                     </div>
 
-                    {/* Mode Selector */}
-                    <div className="bg-muted/50 border-border grid grid-cols-3 gap-2 rounded-lg border p-1">
-                        {[
-                            { id: 'default', label: 'Otomatis', icon: 'bolt' },
-                            { id: 'selectable', label: 'Pilih Alur', icon: 'list-check' },
-                            { id: 'custom', label: 'Kustom', icon: 'wand-magic-sparkles' },
-                        ].map((m) => (
-                            <button
-                                key={m.id}
-                                onClick={() => setMode(m.id as any)}
-                                className={`flex flex-col items-center gap-1.5 rounded-md py-2.5 transition-all ${mode === m.id ? 'bg-background text-primary ring-border shadow-sm ring-1' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
-                            >
-                                <i className={`fa-solid fa-${m.icon} text-xs`} />
-                                <span className="text-[10px] font-bold tracking-wider uppercase">{m.label}</span>
-                            </button>
-                        ))}
+                    <div className="flex gap-3 rounded-xl border border-blue-200/50 bg-blue-50/50 p-4 dark:border-blue-800/30 dark:bg-blue-900/10">
+                        <i className="fa-solid fa-circle-info mt-0.5 text-blue-500" />
+                        <div className="space-y-1">
+                            <p className="text-xs font-semibold text-blue-700 dark:text-blue-400">Alur Standar (Otomatis)</p>
+                            <p className="text-[11px] leading-relaxed text-blue-600/80 dark:text-blue-500/80">
+                                Kontrak akan dikirim menggunakan alur persetujuan standar yang telah disesuaikan secara otomatis.
+                            </p>
+                        </div>
                     </div>
 
-                    {initLoading ? (
-                        <div className="flex flex-col items-center justify-center gap-3 py-12">
+                    {initLoading && (
+                        <div className="flex flex-col items-center justify-center gap-3 py-6">
                             <i className="fa-solid fa-circle-notch fa-spin text-primary text-xl" />
-                            <p className="text-muted-foreground text-xs">Memuat data alur...</p>
+                            <p className="text-muted-foreground text-xs">Menyiapkan alur...</p>
                         </div>
-                    ) : (
-                        <>
-                            {mode === 'default' && (
-                                <div className="flex gap-3 rounded-xl border border-blue-200/50 bg-blue-50/50 p-4 dark:border-blue-800/30 dark:bg-blue-900/10">
-                                    <i className="fa-solid fa-circle-info mt-0.5 text-blue-500" />
-                                    <div className="space-y-1">
-                                        <p className="text-xs font-semibold text-blue-700 dark:text-blue-400">Alur Standar</p>
-                                        <p className="text-[11px] leading-relaxed text-blue-600/80 dark:text-blue-500/80">
-                                            Kontrak akan menggunakan alur approval default untuk tipe <strong>{contractType || 'General'}</strong>.
-                                        </p>
-                                    </div>
-                                </div>
-                            )}
-
-                            {mode === 'selectable' && (
-                                <div className="space-y-4">
-                                    <label className="text-muted-foreground ml-1 block text-xs font-bold tracking-wider uppercase">
-                                        Pilih Template Alur
-                                    </label>
-                                    <div className="grid gap-2">
-                                        {workflows.map((w) => (
-                                            <button
-                                                key={w.id}
-                                                onClick={() => setSelectedWorkflowId(w.id)}
-                                                className={`flex items-start gap-3 rounded-xl border p-3 text-left transition-all ${selectedWorkflowId === w.id ? 'bg-primary/5 border-primary ring-primary/20 ring-1' : 'bg-muted/30 border-border hover:border-muted-foreground/30'}`}
-                                            >
-                                                <div
-                                                    className={`mt-0.5 flex h-4 w-4 items-center justify-center rounded-full border-2 transition-all ${selectedWorkflowId === w.id ? 'border-primary' : 'border-muted-foreground'}`}
-                                                >
-                                                    {selectedWorkflowId === w.id && <div className="bg-primary h-1.5 w-1.5 rounded-full" />}
-                                                </div>
-                                                <div>
-                                                    <p className="text-xs font-bold">{w.name}</p>
-                                                    <p className="text-muted-foreground mt-0.5 text-[10px]">{w.description}</p>
-                                                </div>
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {mode === 'custom' && (
-                                <div className="space-y-4">
-                                    <div className="ml-1 flex items-center justify-between">
-                                        <label className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-                                            Langkah Persetujuan
-                                        </label>
-                                        <button
-                                            onClick={addStep}
-                                            className="text-primary flex items-center gap-1 text-[10px] font-bold hover:underline"
-                                        >
-                                            <i className="fa-solid fa-plus" /> Tambah Step
-                                        </button>
-                                    </div>
-                                    <div className="max-h-[300px] space-y-3 overflow-y-auto pr-1">
-                                        {customSteps.map((step, idx) => (
-                                            <div
-                                                key={idx}
-                                                className="bg-muted/30 border-border group animate-in slide-in-from-right-4 relative space-y-3 rounded-xl border p-4 duration-200"
-                                            >
-                                                <button
-                                                    onClick={() => removeStep(idx)}
-                                                    className="text-muted-foreground absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-md opacity-0 transition-all group-hover:opacity-100 hover:bg-red-50 hover:text-red-500"
-                                                >
-                                                    <i className="fa-solid fa-trash text-[10px]" />
-                                                </button>
-                                                <div className="mb-1 flex items-center gap-2">
-                                                    <div className="bg-primary/10 text-primary flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold">
-                                                        {idx + 1}
-                                                    </div>
-                                                    <span className="text-muted-foreground text-[11px] font-bold uppercase">Step {idx + 1}</span>
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-3">
-                                                    <div className="space-y-1.5">
-                                                        <label className="text-muted-foreground ml-1 text-[10px] font-bold uppercase">
-                                                            Role Approver
-                                                        </label>
-                                                        <select
-                                                            value={step.role}
-                                                            onChange={(e) => updateStep(idx, { role: e.target.value })}
-                                                            className="bg-background border-border focus:ring-primary focus:border-primary w-full rounded-lg border px-2 py-1.5 text-xs outline-none focus:ring-1"
-                                                        >
-                                                            {roles.map((r) => (
-                                                                <option key={r.id} value={r.name}>
-                                                                    {r.name}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-                                                    <div className="space-y-1.5">
-                                                        <label className="text-muted-foreground ml-1 text-[10px] font-bold uppercase">
-                                                            Spesifik User (Opsional)
-                                                        </label>
-                                                        <select
-                                                            value={step.user_id || ''}
-                                                            onChange={(e) => updateStep(idx, { user_id: e.target.value || undefined })}
-                                                            className="bg-background border-border focus:ring-primary focus:border-primary w-full rounded-lg border px-2 py-1.5 text-xs outline-none focus:ring-1"
-                                                        >
-                                                            <option value="">Semua dengan role ini</option>
-                                                            {users
-                                                                .filter((u) => u.role === step.role)
-                                                                .map((u) => (
-                                                                    <option key={u.id} value={u.id}>
-                                                                        {u.name}
-                                                                    </option>
-                                                                ))}
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                                <div className="space-y-1.5">
-                                                    <label className="text-muted-foreground ml-1 text-[10px] font-bold uppercase">Deskripsi</label>
-                                                    <input
-                                                        value={step.description}
-                                                        onChange={(e) => updateStep(idx, { description: e.target.value })}
-                                                        placeholder="Contoh: Review legal aspek..."
-                                                        className="bg-background border-border focus:ring-primary focus:border-primary w-full rounded-lg border px-2 py-1.5 text-xs outline-none focus:ring-1"
-                                                    />
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </>
                     )}
                 </div>
 

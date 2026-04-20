@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Auth;
 
 class Approval extends Model
 {
+    protected $table = 't_approvals';
+
     use SoftDeletes;
     protected $fillable = [
         'contract_id',

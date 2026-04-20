@@ -4,6 +4,7 @@ export interface UserProfile {
     name: string;
     initials: string;
     role: string;
+    department_id: string | null;
     bg_color: string;
     text_color: string;
 }
@@ -29,6 +30,8 @@ export interface ContractApproval {
     user_id: string | null;     // new system
     approver_name: string | null;
     role: string;
+    department_name?: string;
+    target_approvers?: string;
     sequence: number;
     status: 'pending' | 'waiting' | 'approved' | 'rejected';
     note: string | null;
@@ -97,7 +100,12 @@ export interface Contract {
     status: ContractStatus;
     current_version: number;
     created_at: string;
+    submitted_at: string | null;
     creator: UserProfile;
+    metadata?: {
+        tax_required?: boolean;
+        [key: string]: any;
+    };
     progress: {
         done: number;
         total: number;

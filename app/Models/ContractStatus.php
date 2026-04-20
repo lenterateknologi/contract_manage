@@ -9,6 +9,8 @@ use Illuminate\Support\Str;
 
 class ContractStatus extends Model
 {
+    protected $table = 'm_contract_statuses';
+
     use HasUuids, SoftDeletes;
 
     public $incrementing = false;

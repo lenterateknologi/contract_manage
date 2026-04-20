@@ -9,7 +9,7 @@ class RoleModuleGroup extends Model
 {
     use HasFactory;
 
-    protected $table = 'role_module_groups';
+    protected $table = 'm_role_module_groups';
 
     public $incrementing = false;
 

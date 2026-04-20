@@ -6,6 +6,7 @@ use App\Models\Module;
 use App\Models\ModuleGroup;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\AccessModule;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -14,51 +15,46 @@ class AccessModuleSeeder extends Seeder
     public function run(): void
     {
         $admin = User::firstWhere('email', 'admin@example.com') ?? User::first();
+        $adminId = $admin ? $admin->id : null;
         $roles = Role::all();
         $modules = Module::all();
 
-        // Cleanup: Remove all old assignments to ensure a perfect reset
-        DB::table('access_modules')->truncate();
-        DB::table('role_module_groups')->truncate();
-
-        $groups = ModuleGroup::all();
+        // Truncation is handled in MasterSeeder, but we'll do pivot table cleanup here too
+        DB::table('m_role_module_groups')->truncate();
 
         foreach ($roles as $role) {
-            // Seed group ordering for each role
+            // Seed group relationships for each role
+            $groups = ModuleGroup::all();
             foreach ($groups as $group) {
-                DB::table('role_module_groups')->insert([
+                DB::table('m_role_module_groups')->insert([
                     'role_id' => $role->id,
                     'module_group_id' => $group->id,
-                    'sort_number' => $group->sort_number,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
             }
 
             foreach ($modules as $module) {
-                if ($module->code === 'AUDIT' && $role->name !== 'Admin') {
+                // Skip sensitive modules for non-admins
+                if ($module->identifier === 'AUDIT' && $role->name !== 'Admin') {
                     continue;
                 }
 
-                if (str_starts_with($module->url, '/admin') && $role->name !== 'Admin') {
+                if (str_starts_with($module->route, '/admin') && $role->name !== 'Admin') {
                     continue;
                 }
 
-                DB::table('access_modules')->updateOrInsert(
+                AccessModule::updateOrCreate(
                     [
                         'role_id' => $role->id,
                         'module_id' => $module->id,
                     ],
                     [
-                        'can_read' => true,
-                        'can_create' => true,
-                        'can_update' => true,
-                        'can_delete' => true,
-                        'module_group_id' => $module->module_group_id,
-                        'sort_number' => $module->sort_number,
-                        'created_by' => $admin->id,
-                        'created_at' => now(),
-                        'updated_at' => now(),
+                        'can_view' => true,
+                        'can_create' => $role->name === 'Admin' || $role->name === 'Manager',
+                        'can_edit' => $role->name === 'Admin' || $role->name === 'Manager',
+                        'can_delete' => $role->name === 'Admin',
+                        'can_approve' => $role->name === 'Admin' || $role->name === 'Manager' || $role->name === 'Director',
                     ]
                 );
             }

@@ -1,79 +1,98 @@
 import React from 'react';
-import { X } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { X, SlidersHorizontal } from 'lucide-react';
+import { Badge } from './badge';
+import { cn } from '@/lib/utils';
 
 interface FilterPillsProps {
-    activeFilters: {
-        status?: string[];
-        contract_type_id?: string[];
-    };
-    types: { id: any; name: string }[];
-    onRemove: (key: 'status' | 'contract_type_id', value: string) => void;
+    filters?: {
+        label: string;
+        key: string;
+        options: { label: string; value: any }[];
+    }[];
+    activeFilters: Record<string, any>;
+    onRemove: (key: string, value: any) => void;
     onClearAll: () => void;
+    // Compatibility for old usages
+    types?: any[]; 
 }
 
-const statusLabels: Record<string, string> = {
-    draft: 'Draft',
-    pending: 'Pending',
-    in_review: 'In Review',
-    revision: 'Revision',
-    approved: 'Approved',
-    rejected: 'Rejected'
-};
+export function FilterPills({
+    filters = [],
+    activeFilters,
+    onRemove,
+    onClearAll,
+    types = []
+}: FilterPillsProps) {
+    const pills: { key: string; label: string; value: any; category: string }[] = [];
 
-export function FilterPills({ activeFilters, types, onRemove, onClearAll }: FilterPillsProps) {
-    const hasFilters = (activeFilters.status?.length || 0) > 0 || (activeFilters.contract_type_id?.length || 0) > 0;
+    // Use provided filters definition if available
+    if (filters.length > 0) {
+        filters.forEach(filter => {
+            const values = Array.isArray(activeFilters[filter.key])
+                ? activeFilters[filter.key]
+                : (activeFilters[filter.key] ? [activeFilters[filter.key]] : []);
 
-    if (!hasFilters) return null;
+            values.forEach((val: any) => {
+                const option = filter.options.find(opt => String(opt.value) === String(val));
+                if (option) {
+                    pills.push({
+                        key: filter.key,
+                        label: option.label,
+                        value: val,
+                        category: filter.label
+                    });
+                }
+            });
+        });
+    } else {
+        // Fallback/Compatibility logic for status and contract_type_id
+        if (activeFilters.status) {
+            const statuses = Array.isArray(activeFilters.status) ? activeFilters.status : [activeFilters.status];
+            statuses.forEach((s: string) => {
+                pills.push({ key: 'status', label: s.replace('_', ' '), value: s, category: 'Status' });
+            });
+        }
+        if (activeFilters.contract_type_id && types.length > 0) {
+            const tids = Array.isArray(activeFilters.contract_type_id) ? activeFilters.contract_type_id : [activeFilters.contract_type_id];
+            tids.forEach((tid: string) => {
+                const t = types.find(x => String(x.id) === String(tid));
+                if (t) pills.push({ key: 'contract_type_id', label: t.name, value: tid, category: 'Tipe' });
+            });
+        }
+    }
+
+    if (pills.length === 0) return null;
 
     return (
-        <div className="flex flex-wrap items-center gap-2 py-3 px-1">
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 mr-2">Active Filters:</span>
+        <div className="flex flex-wrap items-center gap-2 px-4 py-2 border-b border-slate-100 bg-white/50">
+            <div className="flex items-center gap-1.5 mr-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <SlidersHorizontal className="h-3 w-3" />
+                <span>Aktif:</span>
+            </div>
             
-            {activeFilters.status?.map(val => (
+            {pills.map((pill, idx) => (
                 <Badge 
-                    key={`status-${val}`} 
-                    variant="secondary" 
-                    className="pl-2 pr-1 py-1 gap-1 text-[11px] font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 border-0 rounded-full"
+                    key={`${pill.key}-${pill.value}-${idx}`}
+                    variant="secondary"
+                    className="h-7 pl-2 pr-1 gap-1 border-slate-200 bg-slate-100/50 hover:bg-slate-200/50 transition-colors text-[10px] font-bold uppercase tracking-tight text-slate-600 rounded-lg group"
                 >
-                    Status: {statusLabels[val] || val}
+                    <span className="text-slate-400 font-medium mr-0.5">{pill.category}:</span>
+                    {pill.label}
                     <button 
-                        onClick={() => onRemove('status', val)}
-                        className="hover:bg-slate-300 rounded-full p-0.5 transition-colors"
+                        onClick={() => onRemove(pill.key, pill.value)}
+                        className="p-0.5 rounded-md hover:bg-white hover:text-red-500 transition-all ml-1"
                     >
-                        <X size={12} />
+                        <X className="h-3 w-3" />
                     </button>
                 </Badge>
             ))}
 
-            {activeFilters.contract_type_id?.map(val => {
-                const typeName = types.find(t => String(t.id) === val)?.name || val;
-                return (
-                    <Badge 
-                        key={`type-${val}`} 
-                        variant="secondary" 
-                        className="pl-2 pr-1 py-1 gap-1 text-[11px] font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 border-0 rounded-full"
-                    >
-                        Type: {typeName}
-                        <button 
-                            onClick={() => onRemove('contract_type_id', val)}
-                            className="hover:bg-slate-300 rounded-full p-0.5 transition-colors"
-                        >
-                            <X size={12} />
-                        </button>
-                    </Badge>
-                );
-            })}
-
-            <Button 
-                variant="ghost" 
-                size="sm" 
+            <button 
                 onClick={onClearAll}
-                className="h-7 px-2 text-[10px] font-bold text-slate-400 hover:text-rose-500 uppercase tracking-tight"
+                className="text-[10px] font-bold text-slate-400 hover:text-red-500 hover:underline uppercase tracking-tight ml-auto"
             >
-                Clear All
-            </Button>
+                Hapus Semua
+            </button>
         </div>
     );
 }

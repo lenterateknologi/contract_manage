@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ContractType extends Model
 {
+    protected $table = 'm_contract_types';
+
     use HasUuids, SoftDeletes;
 
     protected $fillable = [

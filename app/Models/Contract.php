@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Contract extends Model
 {
+    protected $table = 't_contracts';
+
     use HasFactory, HasUuids, SoftDeletes;
 
     protected $fillable = [
@@ -28,10 +30,12 @@ class Contract extends Model
         'workflow_id',
         'workflow_step_id',
         'metadata',
+        'submitted_at',
     ];
 
     protected $casts = [
         'metadata' => 'array',
+        'submitted_at' => 'datetime',
     ];
 
     public function contractType()

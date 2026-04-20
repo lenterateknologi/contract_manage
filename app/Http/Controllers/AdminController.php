@@ -21,13 +21,29 @@ use Inertia\Inertia;
 
 class AdminController extends Controller
 {
-    public function users()
+    public function users(Request $request)
     {
+        $query = User::with('department')
+            ->when($request->search, function ($q, $search) {
+                $q->where(function($qq) use ($search) {
+                    $qq->where('name', 'ilike', "%{$search}%")
+                       ->orWhere('email', 'ilike', "%{$search}%")
+                       ->orWhere('username', 'ilike', "%{$search}%");
+                });
+            })
+            ->when($request->role, function ($q, $role) {
+                $q->whereIn('role', (array)$role);
+            })
+            ->when($request->department_id, function ($q, $deptId) {
+                $q->whereIn('department_id', (array)$deptId);
+            });
+
         return Inertia::render('admin/index', [
             'currentView' => 'users',
-            'users' => User::with('department')->orderBy('name')->paginate(request('per_page', 10)),
+            'users' => $query->orderBy('name')->paginate($request->input('per_page', 10))->withQueryString(),
             'roles' => Role::orderBy('name')->get(),
             'departments' => Department::orderBy('name')->get(),
+            'filters' => $request->only(['search', 'role', 'department_id']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Manajemen User', 'href' => route('admin.users'), 'description' => 'Kelola akses dan profil pengguna sistem.', 'icon' => 'Users'],
@@ -35,11 +51,18 @@ class AdminController extends Controller
         ]);
     }
 
-    public function roles()
+    public function roles(Request $request)
     {
+        $query = Role::query()
+            ->when($request->search, function ($q, $search) {
+                $q->where('name', 'ilike', "%{$search}%")
+                  ->orWhere('description', 'ilike', "%{$search}%");
+            });
+
         return Inertia::render('admin/index', [
             'currentView' => 'roles',
-            'roles' => Role::orderBy('name')->paginate(request('per_page', 10)),
+            'roles' => $query->orderBy('name')->paginate($request->input('per_page', 10))->withQueryString(),
+            'filters' => $request->only(['search']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Manajemen Role', 'href' => route('admin.roles'), 'description' => 'Pengaturan peran dan otorisasi.', 'icon' => 'ShieldCheck'],
@@ -311,11 +334,21 @@ class AdminController extends Controller
         return back()->with('success', 'User deleted successfully.');
     }
 
-    public function contractTypes()
+    public function contractTypes(Request $request)
     {
+        $query = ContractType::query()
+            ->when($request->search, function ($q, $search) {
+                $q->where('name', 'ilike', "%{$search}%")
+                  ->orWhere('description', 'ilike', "%{$search}%");
+            })
+            ->when($request->type, function ($q, $type) {
+                $q->whereIn('type', (array)$type);
+            });
+
         return Inertia::render('admin/index', [
             'currentView' => 'contract-types',
-            'types' => ContractType::orderBy('name')->paginate(request('per_page', 10)),
+            'types' => $query->orderBy('name')->paginate($request->input('per_page', 10))->withQueryString(),
+            'filters' => $request->only(['search', 'type']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Tipe Kontrak', 'href' => route('admin.contract-types'), 'description' => 'Definisi kategori dan template dokumen.', 'icon' => 'FileText'],
@@ -356,11 +389,19 @@ class AdminController extends Controller
         return back()->with('success', 'Contract type deleted successfully.');
     }
 
-    public function contractStatuses()
+    public function contractStatuses(Request $request)
     {
+        $query = ContractStatus::query()
+            ->when($request->search, function ($q, $search) {
+                $q->where('name', 'ilike', "%{$search}%")
+                  ->orWhere('code', 'ilike', "%{$search}%")
+                  ->orWhere('description', 'ilike', "%{$search}%");
+            });
+
         return Inertia::render('admin/index', [
             'currentView' => 'contract-statuses',
-            'statuses' => ContractStatus::orderBy('sort_order')->paginate(request('per_page', 10)),
+            'statuses' => $query->orderBy('sort_order')->paginate($request->input('per_page', 10))->withQueryString(),
+            'filters' => $request->only(['search']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Master Status', 'href' => route('admin.contract-statuses'), 'description' => 'Pengaturan status kontrak dan visualisasi.', 'icon' => 'Tags'],
@@ -411,11 +452,19 @@ class AdminController extends Controller
         return back()->with('success', 'Status deleted successfully.');
     }
 
-    public function departments()
+    public function departments(Request $request)
     {
+        $query = Department::query()
+            ->when($request->search, function ($q, $search) {
+                $q->where('name', 'ilike', "%{$search}%")
+                  ->orWhere('code', 'ilike', "%{$search}%")
+                  ->orWhere('description', 'ilike', "%{$search}%");
+            });
+
         return Inertia::render('admin/index', [
             'currentView' => 'departments',
-            'departments' => Department::orderBy('name')->paginate(request('per_page', 10)),
+            'departments' => $query->orderBy('name')->paginate($request->input('per_page', 10))->withQueryString(),
+            'filters' => $request->only(['search']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Master Departemen', 'href' => route('admin.departments'), 'description' => 'Kelola divisi dan struktur organisasi.', 'icon' => 'Building2'],
@@ -463,11 +512,19 @@ class AdminController extends Controller
         return back()->with('success', 'Department deleted successfully.');
     }
 
-    public function vendors()
+    public function vendors(Request $request)
     {
+        $query = Vendor::query()
+            ->when($request->search, function ($q, $search) {
+                $q->where('name', 'ilike', "%{$search}%")
+                  ->orWhere('code', 'ilike', "%{$search}%")
+                  ->orWhere('category', 'ilike', "%{$search}%");
+            });
+
         return Inertia::render('admin/index', [
             'currentView' => 'vendors',
-            'vendors' => Vendor::orderBy('name')->paginate(request('per_page', 10)),
+            'vendors' => $query->orderBy('name')->paginate($request->input('per_page', 10))->withQueryString(),
+            'filters' => $request->only(['search']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Master Vendor', 'href' => route('admin.vendors'), 'description' => 'Kelola database pihak ketiga dan mitra.', 'icon' => 'Truck'],
@@ -527,15 +584,28 @@ class AdminController extends Controller
         return back()->with('success', 'Vendor deleted successfully.');
     }
 
-    public function workflows()
+    public function workflows(Request $request)
     {
+        $query = Workflow::with(['steps.users', 'department'])
+            ->when($request->search, function ($q, $search) {
+                $q->where('name', 'ilike', "%{$search}%")
+                  ->orWhere('description', 'ilike', "%{$search}%");
+            })
+            ->when($request->contract_type, function ($q, $type) {
+                $q->whereIn('contract_type', (array)$type);
+            })
+            ->when($request->department_id, function ($q, $deptId) {
+                $q->whereIn('department_id', (array)$deptId);
+            });
+
         return Inertia::render('admin/index', [
             'currentView' => 'workflows',
-            'workflows' => Workflow::with(['steps.users', 'department'])->orderBy('name')->paginate(request('per_page', 10)),
+            'workflows' => $query->orderBy('name')->paginate($request->input('per_page', 10))->withQueryString(),
             'contractTypes' => ContractType::all(),
             'departments' => Department::all(),
             'roles' => Role::all(),
             'users' => User::all(),
+            'filters' => $request->only(['search', 'contract_type', 'department_id']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Alur Kerja (Workflows)', 'href' => route('admin.workflows'), 'description' => 'Konfigurasi tahapan persetujuan.', 'icon' => 'GitBranch'],
@@ -687,11 +757,17 @@ class AdminController extends Controller
         ]);
     }
 
-    public function moduleGroups()
+    public function moduleGroups(Request $request)
     {
+        $query = ModuleGroup::query()
+            ->when($request->search, function ($q, $search) {
+                $q->where('title', 'ilike', "%{$search}%");
+            });
+
         return Inertia::render('admin/index', [
             'currentView' => 'module-groups',
-            'moduleGroups' => ModuleGroup::orderBy('sort_number')->paginate(request('per_page', 10)),
+            'moduleGroups' => $query->orderBy('sort_number')->paginate($request->input('per_page', 10))->withQueryString(),
+            'filters' => $request->only(['search']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#'],
                 ['title' => 'Grup Modul', 'href' => route('admin.module-groups'), 'description' => 'Kelola pengelompokan menu navigasi.'],
@@ -699,12 +775,22 @@ class AdminController extends Controller
         ]);
     }
 
-    public function modules()
+    public function modules(Request $request)
     {
+        $query = Module::with('moduleGroup')
+            ->when($request->search, function ($q, $search) {
+                $q->where('title', 'ilike', "%{$search}%")
+                  ->orWhere('description', 'ilike', "%{$search}%");
+            })
+            ->when($request->module_group_id, function ($q, $groupId) {
+                $q->whereIn('module_group_id', (array)$groupId);
+            });
+
         return Inertia::render('admin/index', [
             'currentView' => 'modules',
-            'modules' => Module::with('moduleGroup')->orderBy('title')->paginate(request('per_page', 10)),
+            'modules' => $query->orderBy('title')->paginate($request->input('per_page', 10))->withQueryString(),
             'moduleGroups' => ModuleGroup::all(),
+            'filters' => $request->only(['search', 'module_group_id']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#'],
                 ['title' => 'Modul Sistem', 'href' => route('admin.modules'), 'description' => 'Kelola modul dan fitur aplikasi.'],

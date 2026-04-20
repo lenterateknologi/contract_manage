@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ContractMessage extends Model
 {
+    protected $table = 't_contract_messages';
+
     use HasUuids, SoftDeletes;
     protected $fillable = [
         'contract_id', 'user_id', 'message', 'read_by',

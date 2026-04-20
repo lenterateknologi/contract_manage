@@ -13,6 +13,8 @@ class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, HasUuids, Notifiable, SoftDeletes;
+    
+    protected $table = 'm_users';
 
     /**
      * The attributes that are mass assignable.
@@ -65,6 +67,6 @@ class User extends Authenticatable
 
     public function workflowSteps(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
-        return $this->belongsToMany(WorkflowStep::class, 'workflow_step_users')->withTimestamps();
+        return $this->belongsToMany(WorkflowStep::class, 't_workflow_step_users')->withTimestamps();
     }
 }

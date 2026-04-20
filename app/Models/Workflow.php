@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class Workflow extends Model
 {
+    protected $table = 'm_workflows';
+
     use HasUuids, SoftDeletes;
 
     public $incrementing = false;
@@ -22,12 +24,14 @@ class Workflow extends Model
         'description',
         'is_default',
         'is_template',
+        'is_tax_involved',
         'created_by',
         'updated_by',
     ];
 
     protected $casts = [
         'is_default' => 'boolean',
+        'is_tax_involved' => 'boolean',
     ];
 
     public function department(): \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -45,10 +49,16 @@ class Workflow extends Model
         return $this->hasMany(Contract::class);
     }
 
-    public static function getDefaultByContractType(string $contractType): ?self
+    public static function getDefaultByContractType(?string $contractType, bool $taxRequired = false): ?self
     {
-        return self::where('contract_type', $contractType)
-            ->where('is_default', true)
-            ->first();
+        $query = self::where('is_default', true)
+            ->where('is_tax_involved', $taxRequired);
+        
+        if ($contractType) {
+            $specific = (clone $query)->where('contract_type', $contractType)->first();
+            if ($specific) return $specific;
+        }
+
+        return $query->first();
     }
 }

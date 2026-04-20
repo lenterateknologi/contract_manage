@@ -34,7 +34,6 @@ class DepartmentSeeder extends Seeder
                 [
                     'name' => $dept['name'],
                     'description' => $dept['description'],
-                    'is_active' => true,
                     'created_by' => $adminId,
                     'updated_by' => $adminId,
                 ]

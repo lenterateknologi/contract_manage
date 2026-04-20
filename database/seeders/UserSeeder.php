@@ -130,30 +130,54 @@ class UserSeeder extends Seeder
             User::updateOrCreate(['email' => $userData['email']], array_merge($userData, ['is_active' => true]));
         }
 
-        // Seed 50 more random users across departments
-        $genericRoles = ['Staff', 'Manager'];
-        $deptCodes = array_keys($depts);
+        // Now seed more users in a structured way
+        $deptModels = Department::all();
         
-        for ($i = 1; $i <= 50; $i++) {
-            $role = $genericRoles[array_rand($genericRoles)];
-            $deptCode = $deptCodes[array_rand($deptCodes)];
-            $name = fake()->name();
-            $initials = collect(explode(' ', $name))->map(fn ($n) => strtoupper(substr($n, 0, 1)))->take(2)->join('');
+        foreach ($deptModels as $dept) {
+            // Check if this department already has a manager from the specific list above
+            $hasManager = User::where('department_id', $dept->id)
+                ->where('role', 'Manager')
+                ->exists();
+            
+            // If no manager, create one
+            if (!$hasManager) {
+                User::create([
+                    'name' => fake()->name(),
+                    'email' => "manager.".strtolower($dept->code)."@example.com",
+                    'username' => '2000'.str_pad(mt_rand(1, 999999), 12, '0', STR_PAD_LEFT),
+                    'password' => Hash::make('password'),
+                    'role' => 'Manager',
+                    'position' => 'Manager of ' . $dept->name,
+                    'phone' => fake()->phoneNumber(),
+                    'department_id' => $dept->id,
+                    'initials' => 'M' . substr($dept->code, 0, 1),
+                    'bg_color' => '#f1f5f9',
+                    'text_color' => '#0f172a',
+                    'is_active' => true,
+                ]);
+            }
 
-            User::create([
-                'name' => $name,
-                'email' => "user{$i}_".fake()->unique()->safeEmail(),
-                'username' => '2000'.str_pad($i, 12, '0', STR_PAD_LEFT),
-                'password' => Hash::make('password'),
-                'role' => $role,
-                'position' => $role . ' of ' . $depts[$deptCode],
-                'phone' => fake()->phoneNumber(),
-                'department_id' => $depts[$deptCode],
-                'initials' => $initials,
-                'bg_color' => fake()->hexColor(),
-                'text_color' => '#ffffff',
-                'is_active' => true,
-            ]);
+            // Create 3-5 staff members per department
+            $staffCount = mt_rand(3, 5);
+            for ($i = 1; $i <= $staffCount; $i++) {
+                $name = fake()->name();
+                $initials = collect(explode(' ', $name))->map(fn ($n) => strtoupper(substr($n, 0, 1)))->take(2)->join('');
+                
+                User::create([
+                    'name' => $name,
+                    'email' => "staff{$i}.".strtolower($dept->code)."@example.com",
+                    'username' => '3000' . str_pad(mt_rand(1, 99999999), 12, '0', STR_PAD_LEFT),
+                    'password' => Hash::make('password'),
+                    'role' => 'Staff',
+                    'position' => 'Staff of ' . $dept->name,
+                    'phone' => fake()->phoneNumber(),
+                    'department_id' => $dept->id,
+                    'initials' => $initials,
+                    'bg_color' => fake()->hexColor(),
+                    'text_color' => '#ffffff',
+                    'is_active' => true,
+                ]);
+            }
         }
     }
 }

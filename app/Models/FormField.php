@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class FormField extends Model
 {
+    protected $table = 'm_form_fields';
+
     use HasFactory, HasUuids, SoftDeletes;
 
     protected $fillable = [

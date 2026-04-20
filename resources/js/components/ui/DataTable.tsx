@@ -3,7 +3,8 @@ import {
     ChevronDown, ChevronUp, ChevronsUpDown, 
     Search, Filter, MoreHorizontal, 
     RefreshCcw, ChevronLeft, ChevronRight,
-    Loader2, Inbox, Trash2, CheckCircle2
+    Loader2, Inbox, Trash2, CheckCircle2,
+    Check
 } from 'lucide-react';
 import { Button } from './button';
 import { Input } from './input';
@@ -12,10 +13,18 @@ import {
     DropdownMenu, 
     DropdownMenuContent, 
     DropdownMenuItem, 
-    DropdownMenuTrigger 
+    DropdownMenuTrigger,
+    DropdownMenuSub,
+    DropdownMenuSubTrigger,
+    DropdownMenuPortal,
+    DropdownMenuSubContent,
+    DropdownMenuSeparator,
+    DropdownMenuCheckboxItem
 } from './dropdown-menu';
 import { cn } from '@/lib/utils';
 import { Badge } from './badge';
+import { FilterPills } from './FilterPills';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './dialog';
 
 export interface Column<T> {
     header: string;
@@ -99,6 +108,37 @@ export function DataTable<T extends Record<string, any>>({
         else setInternalActiveFilters(newFilters);
     };
 
+    const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
+
+    const toggleFilterValue = (key: string, value: any) => {
+        const currentValues = Array.isArray(activeFilters[key]) 
+            ? activeFilters[key] 
+            : (activeFilters[key] ? [activeFilters[key]] : []);
+        
+        const stringValue = String(value);
+        const newValues = currentValues.includes(stringValue)
+            ? currentValues.filter((v: any) => String(v) !== stringValue)
+            : [...currentValues, stringValue];
+        
+        setActiveFilters({
+            ...activeFilters,
+            [key]: newValues
+        });
+    };
+
+    const handleResetAll = () => {
+        const reset: any = {};
+        filters?.forEach(f => reset[f.key] = []);
+        setActiveFilters(reset);
+    };
+
+    const handleResetCategory = (key: string) => {
+        setActiveFilters({
+            ...activeFilters,
+            [key]: []
+        });
+    };
+
     // Filtering & Searching (Client-side fallback if no server-side info)
     const processedData = useMemo(() => {
         let result = [...data];
@@ -147,7 +187,7 @@ export function DataTable<T extends Record<string, any>>({
     };
 
     return (
-        <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="flex flex-col h-full bg-white overflow-hidden border border-slate-200 rounded-xl shadow-sm">
             {/* Toolbar */}
             <div className="p-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50/50">
                 <div className="flex items-center gap-3 flex-1 max-w-md">
@@ -161,14 +201,102 @@ export function DataTable<T extends Record<string, any>>({
                         />
                     </div>
                     {onRefresh && (
-                        <Button variant="outline" size="icon" onClick={onRefresh} disabled={loading} className="shrink-0 h-10 w-10">
+                        <Button variant="outline" size="icon" onClick={onRefresh} disabled={loading} className="shrink-0 h-10 w-10 bg-white shadow-sm">
                             <RefreshCcw className={cn("h-4 w-4", loading && "animate-spin")} />
                         </Button>
                     )}
                 </div>
 
                 <div className="flex items-center gap-2">
-                    {/* Filters moved to Sidebar */}
+                    {filters && filters.length > 0 && (
+                        <Dialog open={isFilterDialogOpen} onOpenChange={setIsFilterDialogOpen}>
+                            <DialogTrigger asChild>
+                                <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className={cn(
+                                        "h-10 gap-2 border-slate-200 bg-white px-4 font-bold transition-all shadow-sm",
+                                        Object.values(activeFilters).flat().filter(Boolean).length > 0 ? "text-primary border-primary/30 bg-primary/5" : "text-slate-700 hover:bg-slate-50"
+                                    )}
+                                >
+                                    <Filter className="h-3.5 w-3.5" />
+                                    <span className="text-[10px] uppercase tracking-wider">Set Filter</span>
+                                    {Object.values(activeFilters).flat().filter(Boolean).length > 0 && (
+                                        <Badge className="h-4 min-w-[1rem] bg-primary px-1 text-[8px] font-black">
+                                            {Object.values(activeFilters).flat().filter(Boolean).length}
+                                        </Badge>
+                                    )}
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-lg p-0 overflow-hidden rounded-2xl">
+                                <DialogHeader className="p-6 border-b border-slate-100">
+                                    <DialogTitle className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2 text-base font-bold text-slate-800">
+                                            <Filter className="h-4 w-4 text-primary" />
+                                            Filter Data
+                                        </div>
+                                        <Button variant="ghost" size="sm" onClick={handleResetAll} className="h-8 text-[10px] font-bold uppercase text-slate-400 hover:text-red-500">
+                                            Reset Semua
+                                        </Button>
+                                    </DialogTitle>
+                                </DialogHeader>
+                                
+                                <div className="p-6 space-y-8 max-h-[60vh] overflow-auto bg-white">
+                                    {filters.map((category) => (
+                                        <div key={category.key} className="space-y-4">
+                                            <h4 className="text-[11px] font-black uppercase tracking-[0.1em] text-slate-400">{category.label}</h4>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                {category.options.map((opt) => {
+                                                    const isSelected = Array.isArray(activeFilters[category.key]) 
+                                                        ? activeFilters[category.key].includes(opt.value)
+                                                        : activeFilters[category.key] === opt.value;
+                                                    
+                                                    return (
+                                                        <label 
+                                                            key={String(opt.value)} 
+                                                            className={cn(
+                                                                "flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer group",
+                                                                isSelected 
+                                                                    ? "border-primary/30 bg-primary/5 ring-1 ring-primary/20" 
+                                                                    : "border-slate-100 bg-slate-50/30 hover:border-slate-200 hover:bg-slate-50"
+                                                            )}
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                toggleFilterValue(category.key, opt.value);
+                                                            }}
+                                                        >
+                                                            <div className={cn(
+                                                                "h-4 w-4 rounded border flex items-center justify-center transition-all",
+                                                                isSelected ? "bg-primary border-primary text-white" : "bg-white border-slate-300 group-hover:border-slate-400"
+                                                            )}>
+                                                                {isSelected && <Check size={10} strokeWidth={4} />}
+                                                            </div>
+                                                            <span className={cn(
+                                                                "text-[12px] font-bold transition-colors truncate",
+                                                                isSelected ? "text-primary" : "text-slate-600"
+                                                            )}>
+                                                                {opt.label}
+                                                            </span>
+                                                        </label>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="p-4 px-6 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
+                                    <span className="text-[11px] font-bold text-slate-400 uppercase">
+                                        {Object.values(activeFilters).flat().filter(Boolean).length} Filter Terpilih
+                                    </span>
+                                    <div className="flex gap-2">
+                                        <Button variant="ghost" className="font-bold text-[11px] uppercase" onClick={() => setIsFilterDialogOpen(false)}>Batal</Button>
+                                        <Button className="font-bold text-[11px] uppercase px-8 shadow-lg shadow-primary/20" onClick={() => setIsFilterDialogOpen(false)}>Terapkan</Button>
+                                    </div>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
+                    )}
                     
                     {headerActions && (
                         <div className="flex items-center gap-2">
@@ -185,6 +313,16 @@ export function DataTable<T extends Record<string, any>>({
                 </div>
             </div>
 
+            {/* Filter Pills */}
+            {filters && (
+                <FilterPills 
+                    filters={filters}
+                    activeFilters={activeFilters}
+                    onRemove={(key, val) => toggleFilterValue(key, val)}
+                    onClearAll={handleResetAll}
+                />
+            )}
+
             {/* Table Area */}
             <div className="flex-1 overflow-auto relative min-h-[400px]">
                 {loading && (
@@ -199,12 +337,6 @@ export function DataTable<T extends Record<string, any>>({
                 <table className="w-full text-left border-collapse min-w-[800px]">
                     <thead className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 shadow-[0_1px_0_rgba(0,0,0,0.05)]">
                         <tr>
-                            {/* <th className="w-10 p-4">
-                                <Checkbox 
-                                    checked={selectedIds.size === data.length && data.length > 0}
-                                    onCheckedChange={toggleSelectAll}
-                                />
-                            </th> */}
                             {columns.map((col, i) => (
                                 <th 
                                     key={i} 
@@ -254,15 +386,9 @@ export function DataTable<T extends Record<string, any>>({
                                             (selectedRowId === getRowId(row) || (isRowExpanded && isRowExpanded(row))) && "bg-primary/5"
                                         )}
                                     >
-                                        {/* <td className="p-4 w-10" onClick={e => e.stopPropagation()}>
-                                            <Checkbox 
-                                                checked={selectedIds.has(getRowId(row))}
-                                                onCheckedChange={() => toggleSelectRow(getRowId(row))}
-                                            />
-                                        </td> */}
                                         {columns.map((col, j) => (
                                             <td key={j} className={cn("p-4 text-[13px] font-medium text-slate-700", col.className)}>
-                                                {col.cell ? col.cell(row) : (row[col.accessorKey] || '-')}
+                                                {col.cell ? col.cell(row) : (String(row[col.accessorKey]) || '-')}
                                             </td>
                                         ))}
                                         {rowActions && (
@@ -289,7 +415,7 @@ export function DataTable<T extends Record<string, any>>({
 
             {/* Footer / Pagination */}
             {pagination && (
-                <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-4 mt-auto">
                     <div className="flex items-center gap-4 text-[11px] font-bold text-slate-500 uppercase tracking-tight">
                         <span>Showing {pagination.from}-{pagination.to} of {pagination.total}</span>
                         <div className="flex items-center gap-2 border-l pl-4">
@@ -297,7 +423,7 @@ export function DataTable<T extends Record<string, any>>({
                             <select 
                                 value={pagination.perPage}
                                 onChange={(e) => pagination.onPerPageChange(Number(e.target.value))}
-                                className="bg-white border rounded px-1 py-0.5 outline-none focus:border-primary"
+                                className="bg-white border rounded px-1 py-0.5 outline-none focus:border-primary font-bold text-slate-700"
                             >
                                 {[10, 25, 50, 100].map(v => <option key={v} value={v}>{v}</option>)}
                             </select>
@@ -310,7 +436,7 @@ export function DataTable<T extends Record<string, any>>({
                             size="icon" 
                             disabled={pagination.currentPage === 1}
                             onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
-                            className="h-8 w-8 rounded-lg"
+                            className="h-8 w-8 rounded-lg bg-white"
                         >
                             <ChevronLeft size={16} />
                         </Button>
@@ -319,7 +445,6 @@ export function DataTable<T extends Record<string, any>>({
                         <div className="flex items-center gap-1 mx-2">
                             {Array.from({ length: Math.min(pagination.lastPage, 5) }, (_, i) => {
                                 let pageNum = i + 1;
-                                // Basic sliding window logic
                                 if (pagination.lastPage > 5 && pagination.currentPage > 3) {
                                     pageNum = pagination.currentPage - 3 + i;
                                     if (pageNum > pagination.lastPage) pageNum = pagination.lastPage - (4 - i);
@@ -344,7 +469,7 @@ export function DataTable<T extends Record<string, any>>({
                             size="icon" 
                             disabled={pagination.currentPage === pagination.lastPage}
                             onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
-                            className="h-8 w-8 rounded-lg"
+                            className="h-8 w-8 rounded-lg bg-white"
                         >
                             <ChevronRight size={16} />
                         </Button>

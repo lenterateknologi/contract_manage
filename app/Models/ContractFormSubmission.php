@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ContractFormSubmission extends Model
 {
+    protected $table = 't_contract_form_submissions';
+
     use HasUuids, SoftDeletes;
 
     protected $fillable = [

@@ -11,6 +11,7 @@ class ModuleGroupSeeder extends Seeder
     public function run(): void
     {
         $admin = User::firstWhere('email', 'admin@example.com') ?? User::first();
+        $adminId = $admin ? $admin->id : null;
 
         $groups = [
             'Dashboard',
@@ -19,16 +20,13 @@ class ModuleGroupSeeder extends Seeder
             'Konfigurasi Sistem',
         ];
 
-        // Cleanup: Remove any groups not in our list to ensure a clean state
-        ModuleGroup::whereNotIn('title', $groups)->delete();
-
-        foreach ($groups as $index => $title) {
+        foreach ($groups as $index => $name) {
             ModuleGroup::updateOrCreate(
-                ['title' => $title],
+                ['name' => $name],
                 [
-                    'sort_number' => $index,
-                    'created_by' => $admin->id,
-                    'updated_by' => $admin->id,
+                    'sequence' => $index,
+                    'created_by' => $adminId,
+                    'updated_by' => $adminId,
                 ]
             );
         }
