@@ -195,39 +195,20 @@ class ContractWorkflowService
     }
 
     /**
-     * Reject a contract and move it back to draft
+     * Reject a contract and move it back to drafting/revision
      */
     public function rejectContract(Contract $contract, Approval $approval, string $reason): Contract
     {
         // Mark approval as rejected
         $approval->reject($reason);
 
-        $currentStep = $approval->workflowStep;
-        $workflow = $contract->workflow;
+        // ALWAYS return to revision (Initiator) as per BRD "Flow A"
+        $contract->update([
+            'status' => 'revision',
+            'workflow_step_id' => null,
+        ]);
         
-        // Find Legal step in this workflow
-        $legalStep = $workflow->steps()->where('role', 'Legal')->first();
-
-        // Determine target
-        if ($currentStep->role === 'Legal' || $currentStep->step === 1 || !$legalStep) {
-            // If Legal rejects, or Step 1 rejects, or no Legal step exists: Return to Initiator
-            $contract->update([
-                'status' => 'revision',
-                'workflow_step_id' => null,
-            ]);
-            $description = "Rejected by {$approval->approver_name} ({$approval->role}): {$reason}. Sent back to Initiator.";
-        } else {
-            // Management/Direksi/Vendor rejects: Return to Legal
-            $contract->update([
-                'status' => 'in_review',
-                'workflow_step_id' => $legalStep->id,
-            ]);
-            
-            // Create fresh approvals for Legal
-            $this->createApprovalForStep($contract, $legalStep);
-            
-            $description = "Rejected by {$approval->approver_name} ({$approval->role}): {$reason}. Sent back to Legal for re-review.";
-        }
+        $description = "Rejected by {$approval->approver_name} ({$approval->role}): {$reason}. Sent back to Initiator for revision.";
 
         // Reject all other pending approvals for this step
         $contract->approvals()
@@ -277,15 +258,16 @@ class ContractWorkflowService
         $condition = $step->condition_expression;
         $metadata = $contract->metadata ?? [];
 
-        // Simple condition evaluator
+        // Condition: Tax Review Required
         if (str_contains($condition, 'tax_required')) {
-            return !empty($metadata['tax_required']);
+            return !empty($metadata['tax_required']) && $metadata['tax_required'] === true;
         }
 
-        if (str_contains($condition, 'not_supervisor')) {
-            // Skip if initiator is already a supervisor/management
-            $role = $contract->creator->role ?? '';
-            return !in_array($role, ['Supervisor', 'Management', 'Direksi']);
+        // Condition: Skip Management if Initiator is already Management/Direksi
+        if (str_contains($condition, 'initiator_not_manager')) {
+            $role = $contract->creator->role->name ?? ''; // Assume relationship or raw string
+            // If the creator is NOT a manager or director, they need management approval
+            return !in_array($role, ['Manager', 'Director', 'Management']);
         }
 
         return true;

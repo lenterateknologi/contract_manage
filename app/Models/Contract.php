@@ -21,6 +21,7 @@ class Contract extends Model
         'end_date',
         'contract_type',
         'contract_type_id',
+        'transaction_type',
         'status',
         'created_by',
         'current_version',

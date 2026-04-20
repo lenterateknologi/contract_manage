@@ -21,6 +21,8 @@ class DatabaseSeeder extends Seeder
             WorkflowStepSeeder::class,
             ContractSeeder::class,
             ContractStatusSeeder::class,
+            F1RedesignSeeder::class,
+            F2RedesignSeeder::class,
         ]);
     }
 }

@@ -23,6 +23,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use App\Jobs\GeneratePdfJob;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\URL;
+
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -121,6 +125,45 @@ class ContractController extends Controller
         ];
 
         return Inertia::render('contracts/index', $data);
+    }
+
+    public function showView(Request $request, string $id): Response
+    {
+        $contract = Contract::with([
+            'creator', 'contractType', 'approvals.approver', 'approvals.workflowStep',
+            'workflow.steps', 'versions.uploader', 'histories.actor', 'messages.user',
+            'attachments.uploader', 'formSubmissions',
+        ])->findOrFail($id);
+
+        $contracts = $this->getFilteredContractsQuery($request, 'contracts')
+            ->paginate($request->integer('per_page', 10))
+            ->withQueryString()
+            ->through(fn ($c) => $this->formatContract($c));
+
+        $data = [
+            'currentView' => 'contracts',
+            'contracts' => $contracts,
+            'initialSelected' => $this->formatContract($contract),
+            'types' => ContractType::all(),
+            'formTemplates' => \App\Models\FormTemplate::where('is_active', true)->with('contractType')->get()->map(fn ($ft) => [
+                'id' => $ft->id,
+                'name' => $ft->name,
+                'description' => $ft->description,
+                'document_type' => $ft->document_type,
+                'contract_type_id' => $ft->contract_type_id,
+                'contract_type_name' => $ft->contractType?->name,
+                'fields_count' => $ft->fields()->count(),
+            ]),
+            'filters' => array_merge($request->only(['search', 'status', 'contract_type_id']), [
+                'per_page' => $request->integer('per_page', 10),
+            ]),
+            'breadcrumbs' => [
+                ['title' => 'Manajemen Kontrak', 'href' => route('contracts'), 'icon' => 'FileText'],
+                ['title' => 'Detail Kontrak', 'href' => '#', 'description' => 'Melihat detail kontrak.', 'icon' => 'Eye'],
+            ],
+        ];
+
+        return Inertia::render('contracts/show', $data);
     }
 
     private function getFilteredContractsQuery(Request $request, string $view = 'contracts')
@@ -307,6 +350,8 @@ class ContractController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'contract_type_id' => 'required|exists:contract_types,id',
+            'transaction_type' => 'nullable|string|in:Perjanjian Baru,Addendum,Amandement,Perubahan Perjanjian',
+            'tax_required' => 'nullable|boolean',
         ]);
 
         return DB::transaction(function () use ($validated) {
@@ -317,8 +362,12 @@ class ContractController extends Controller
                 'title' => $validated['title'],
                 'description' => $validated['description'] ?? '—',
                 'contract_type_id' => $validated['contract_type_id'],
+                'transaction_type' => $validated['transaction_type'] ?? 'Perjanjian Baru',
                 'status' => 'draft',
                 'created_by' => $userId,
+                'metadata' => [
+                    'tax_required' => $validated['tax_required'] ?? false,
+                ]
             ]);
 
             ContractHistory::create(['contract_id' => $contract->id, 'action' => 'CONTRACT_CREATED', 'description' => 'Kontrak dibuat', 'actor_id' => $userId]);
@@ -344,6 +393,7 @@ class ContractController extends Controller
             'contract_date' => 'nullable|date',
             'end_date' => 'nullable|date',
             'contract_type_id' => 'nullable|exists:contract_types,id',
+            'transaction_type' => 'nullable|string|in:Perjanjian Baru,Addendum,Amandement,Perubahan Perjanjian',
         ]);
 
         $contract->update($validated);
@@ -552,6 +602,13 @@ class ContractController extends Controller
     public function pdfPreview(Request $request, string $id, int $versionNo): mixed
     {
         $type = $request->query('type', 'contract');
+
+        // UNIFIED EXPORT: If type is F1 or F2, use the high-fidelity form-based generation logic
+        // For previews, we want the PDF to be displayed inline in the browser
+        if ($type === 'f1' || $type === 'f2') {
+            return $this->exportFormSubmissionPdf($id, $type, 'inline');
+        }
+
         $contract = Contract::findOrFail($id);
         $version = $contract->versions()
             ->where('document_type', $type)
@@ -715,6 +772,7 @@ class ContractController extends Controller
             'contract_type' => $c->contractType?->name ?? '—',
             'contract_type_id' => $c->contract_type_id,
             'created_by' => $c->created_by,
+            'transaction_type' => $c->transaction_type,
             'status' => $c->status,
             'current_version' => $c->current_version,
             'created_at' => $c->created_at->toDateString(),
@@ -916,6 +974,25 @@ class ContractController extends Controller
         $submission->current_version = $versionNo;
         $submission->save();
 
+        // Sync critical fields from F1 to Contract main table
+        if ($docType === 'f1') {
+            $syncFields = [
+                'transaction_mode' => 'transaction_type',
+                'jenis_transaksi_pks' => 'transaction_type',
+                'contract_title' => 'title',
+                'judul_kontrak' => 'title',
+            ];
+            $updates = [];
+            foreach ($syncFields as $formField => $contractField) {
+                if (isset($formData[$formField]) && !empty($formData[$formField])) {
+                    $updates[$contractField] = $formData[$formField];
+                }
+            }
+            if (!empty($updates)) {
+                $contract->update($updates);
+            }
+        }
+
         // Log to contract history
         $action = $isNew ? "form_{$docType}_submitted" : "form_{$docType}_updated";
         $desc = $isNew
@@ -946,98 +1023,448 @@ class ContractController extends Controller
             ->where('document_type', $type)
             ->first();
 
-        if (!$submission) {
-            return response()->json(['submission' => null, 'versions' => []]);
+        $versions = [];
+        $prefillData = null;
+
+        if ($submission) {
+            $versions = $submission->versions()->with('createdBy')->get()->map(fn ($v) => [
+                'id' => $v->id,
+                'version_no' => $v->version_no,
+                'form_data' => $v->form_data,
+                'change_summary' => $v->change_summary,
+                'created_by' => $this->formatUser($v->createdBy),
+                'created_at' => $v->created_at->format('Y-m-d H:i'),
+            ]);
+        } else {
+            // Apply Smart Inheritance for NEW submissions if type is F2
+            if ($type === 'f2') {
+                $f1Submission = ContractFormSubmission::where('contract_id', $contract->id)
+                    ->where('document_type', 'f1')
+                    ->first();
+                
+                if ($f1Submission) {
+                    $latestF1 = $f1Submission->versions()->orderByDesc('version_no')->first();
+                    $f1Data = $latestF1 ? ($latestF1->form_data ?? []) : [];
+                    $prefillData = $this->applyInheritance($f1Data, $contract);
+                }
+            }
         }
 
-        $versions = $submission->versions()->with('createdBy')->get()->map(fn ($v) => [
-            'id' => $v->id,
-            'version_no' => $v->version_no,
-            'form_data' => $v->form_data,
-            'change_summary' => $v->change_summary,
-            'created_by' => $this->formatUser($v->createdBy),
-            'created_at' => $v->created_at->format('Y-m-d H:i'),
-        ]);
-
         return response()->json([
-            'submission' => [
+            'submission' => $submission ? [
                 'id' => $submission->id,
                 'document_type' => $submission->document_type,
                 'form_template_id' => $submission->form_template_id,
                 'current_version' => $submission->current_version,
                 'submitted_by' => $submission->submitted_by,
-            ],
+            ] : null,
             'versions' => $versions,
+            'prefill_data' => $prefillData, // Frontend can use this to initialize new forms
         ]);
     }
+
+    /**
+     * Export contract form submission to PDF via Background Queue.
+     */
+    public function exportFormSubmissionPdfQueue(Request $request, string $id, string $type)
+    {
+        Log::info("PDF Queue Request: id={$id}, type={$type}");
+        $contract = Contract::where('id', $id)->first();
+        if (!$contract) {
+            Log::error("Contract not found in PDF Queue: {$id}");
+            return response()->json(['message' => 'Contract not found.'], 404);
+        }
+
+        $submission = ContractFormSubmission::where('contract_id', $contract->id)
+            ->where('document_type', $type)
+            ->first();
+
+        $templateId = $request->input('form_template_id');
+        if ($templateId) {
+            $template = FormTemplate::find($templateId);
+        } else {
+            $template = $submission ? $submission->template : FormTemplate::where('document_type', $type)->first();
+        }
+
+        if (!$template) {
+            Log::error("Template not found in PDF Queue. Type: {$type}, Provided ID: " . ($templateId ?? 'none'));
+            return response()->json(['message' => 'Template not found.'], 404);
+        }
+
+
+
+        // Get form data: Prioritize live data from request (Builder-like) then fallback to DB
+        $formDataRaw = $request->input('data');
+        if ($formDataRaw) {
+            $formData = is_string($formDataRaw) ? json_decode($formDataRaw, true) : $formDataRaw;
+        } else {
+            $latestVersion = $submission ? $submission->versions()->orderByDesc('version_no')->first() : null;
+            $formData = $latestVersion ? ($latestVersion->form_data ?? []) : [];
+        }
+
+
+        // Apply Smart Inheritance if it's F2
+        if ($type === 'f2') {
+            $f1Submission = ContractFormSubmission::where('contract_id', $contract->id)
+                ->where('document_type', 'f1')
+                ->first();
+            
+            $latestF1 = $f1Submission ? $f1Submission->versions()->orderByDesc('version_no')->first() : null;
+            $f1Data = $latestF1 ? ($latestF1->form_data ?? []) : [];
+            
+            $formData = $this->applyInheritance($f1Data, $contract, $formData);
+        }
+
+        try {
+            $jobId = (string) Str::uuid();
+            $cacheKey = 'pdf_adhoc_' . $jobId;
+            
+            Log::info("Prepping PDF Cache: {$cacheKey}");
+            Cache::put($cacheKey, [
+                'template' => $template->toArray() + ['fields' => $template->fields->toArray()],
+                'formData' => $formData,
+            ], 1800);
+
+            $printUrl = URL::temporarySignedRoute(
+                'admin.form-templates.render-adhoc',
+                now()->addMinutes(30),
+                ['key' => $cacheKey]
+            );
+
+            if (app()->environment('local')) {
+                $printUrl = str_replace('localhost', '127.0.0.1', $printUrl);
+            }
+
+            // Safe filename (slugified contract number to avoid slash issues)
+            $safeNo = $contract->contract_no ? Str::slug($contract->contract_no) : 'contract';
+            $fileName = $safeNo . '_' . strtoupper($type) . '_' . time() . '.pdf';
+            
+            Log::info("Dispatching PDF Job: {$jobId} for file: {$fileName}");
+            // Queue the job
+            GeneratePdfJob::dispatch($jobId, $printUrl, $fileName);
+            
+            Cache::put('pdf_status_' . $jobId, ['status' => 'pending', 'progress' => 10], 1800);
+
+            return response()->json([
+                'success' => true,
+                'job_id' => $jobId
+            ]);
+        } catch (\Exception $e) {
+            Log::critical("PDF Queue Failure for ID {$id}: " . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'type' => $type
+            ]);
+            return response()->json([
+                'message' => 'Gagal antrikan PDF: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
 
     /**
      * Export a contract's form submission (F1/F2) to PDF.
      * Uses the standard form-template blade for both, but maps F1 data for F2.
      */
-    public function exportFormSubmissionPdf(string $id, string $type): mixed
+    public function exportFormSubmissionPdf(string $id, string $type, string $disposition = 'attachment'): mixed
     {
+        set_time_limit(120);
+
         $contract = Contract::findOrFail($id);
 
-        // Find the template for this docType
-        // All form templates are universal right now per the seeder (contract_type_id is null)
-        // If contract_type specific ones were added, we would query the relation, but this is safest.
-        $template = FormTemplate::with(['fields' => fn($q) => $q->orderBy('order')])
-            ->where('document_type', $type)
+        $template = FormTemplate::where('document_type', $type)
             ->first();
 
         if (!$template) {
             return response()->json(['message' => "Form template $type not found."], 404);
         }
 
-        // ── Get the Data Source ──
-        // Always try to get F1 data because F2 is a resume of F1
-        $f1Submission = ContractFormSubmission::where('contract_id', $contract->id)
-            ->where('document_type', 'f1')
+        $submission = ContractFormSubmission::where('contract_id', $contract->id)
+            ->where('document_type', $type)
             ->first();
 
-        if (!$f1Submission) {
-            return response()->json(['message' => 'Form F1 belum diisi.'], 404);
+        $latestVersion = $submission ? $submission->versions()->orderByDesc('version_no')->first() : null;
+        $formData = $latestVersion ? ($latestVersion->form_data ?? []) : [];
+
+        // Apply Smart Inheritance if it's F2
+        if ($type === 'f2') {
+            $f1Submission = ContractFormSubmission::where('contract_id', $contract->id)
+                ->where('document_type', 'f1')
+                ->first();
+            
+            $latestF1 = $f1Submission ? $f1Submission->versions()->orderByDesc('version_no')->first() : null;
+            $f1Data = $latestF1 ? ($latestF1->form_data ?? []) : [];
+            
+            $formData = $this->applyInheritance($f1Data, $contract, $formData);
         }
 
-        $latestF1Version = $f1Submission->versions()->orderByDesc('version_no')->first();
-        $f1Data = $latestF1Version ? ($latestF1Version->form_data ?? []) : [];
-
-        $formData = [];
-        if ($type === 'f1') {
-            $formData = $f1Data;
-        } else {
-            // Mapping F1 data to F2 field names based on seeder
-            $formData = [
-                'jenis_perjanjian' => $f1Data['type_perjanjian'] ?? '',
-                'perjanjian_tentang' => $f1Data['judul'] ?? '',
-                'no_perjanjian' => $contract->contract_no,
-                'tanggal' => $f1Data['tanggal'] ?? '',
-                'dimohonkan_oleh' => $contract->user->name ?? '',
-                'pihak_pertama' => $f1Data['pihak_i_(pt.)'] ?? '',
-                'pihak_kedua' => (!empty($f1Data['pihak_ii_(pt.)']) ? $f1Data['pihak_ii_(pt.)'] : ($f1Data['pihak_ii_(perorangan)'] ?? '')),
-                'ruang_lingkup' => $f1Data['tujuan/latar_belakang'] ?? '',
-                'harga_pekerjaan' => $f1Data['harga/fee'] ?? '',
-                'cara_pembayaran' => $f1Data['terms_of_payment'] ?? '',
-                'jangka_waktu' => (($f1Data['jangka_waktu_(mulai)'] ?? '') . ' s/d ' . ($f1Data['jangka_waktu_(s.d)'] ?? '')),
-                'lokasi' => $f1Data['lokasi_area'] ?? '',
-                'nama_direksi_pihak_pertama' => $f1Data['penandatanganan_pihak_i'] ?? '',
-                'jabatan_pihak_pertama' => $f1Data['jabatan_pihak_i'] ?? '',
-                'nama_direksi_pihak_kedua' => $f1Data['penandatanganan_pihak_ii'] ?? '',
-                'jabatan_pihak_kedua' => $f1Data['jabatan_pihak_ii'] ?? '',
-                'dibuat_oleh_(nama_pic)' => $contract->user->name ?? '',
-            ];
+        if (!$formData && $type === 'f1') {
+            return response()->json(['message' => 'Data form belum diisi.'], 404);
         }
 
-        $fields = $template->fields->sortBy('order');
+        try {
+            // Generate a signed URL for Browsershot to visit the React print page
+            $printUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+                'admin.form-templates.render-print',
+                now()->addMinutes(10),
+                ['template' => $template->id, 'data' => json_encode($formData)]
+            );
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.form-template', [
-            'template' => $template,
-            'formData' => $formData,
-            'fields' => $fields,
+            // Force 127.0.0.1 on local dev
+            if (app()->environment('local')) {
+                $printUrl = str_replace('localhost', '127.0.0.1', $printUrl);
+            }
+
+            $pdfContent = \Spatie\Browsershot\Browsershot::url($printUrl)
+                ->setNodeBinary('/opt/homebrew/bin/node')
+                ->setNpmBinary('/opt/homebrew/bin/npm')
+                ->setChromePath('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
+                ->noSandbox()
+                ->addChromiumArguments([
+                    '--disable-gpu',
+                    '--disable-dev-shm-usage',
+                    '--disable-setuid-sandbox',
+                    '--no-first-run',
+                    '--no-zygote',
+                    '--single-process',
+                    '--disable-extensions'
+                ])
+                ->timeout(180)
+                ->format('A4')
+                ->margins(0, 0, 0, 0)
+                ->showBackground()
+                ->waitForSelector('#pdf-render-complete')
+                ->setDelay(200)
+                ->pdf();
+
+
+
+
+
+
+
+            $fileName = $contract->contract_no . '_' . strtoupper($type) . '.pdf';
+            return response($pdfContent)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', $disposition . '; filename="' . $fileName . '"');
+
+        } catch (\Exception $e) {
+            Log::error('Browsershot Export Failed: ' . $e->getMessage());
+
+            // Fallback to DomPDF if Browsershot fails
+            $fields = $template->fields->sortBy('order');
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.form-template', [
+                'template' => $template,
+                'formData' => $formData,
+                'fields' => $fields,
+                'contract' => $contract,
+            ]);
+            
+            $fileName = $contract->contract_no . '_' . strtoupper($type) . '.pdf';
+            if ($disposition === 'inline') {
+                return $pdf->stream($fileName);
+            }
+            return $pdf->download($fileName);
+        }
+    }
+
+
+    /**
+     * Internal logic for F1 -> F2 data mapping
+     */
+    private function applyInheritance(array $f1Data, Contract $contract, array $existingData = []): array
+    {
+        $formData = array_merge($f1Data, $existingData);
+        
+        $inheritanceMap = [
+            'perjanjian_tentang' => ['bv_f1_title', 'f1_title', 'judul', 'perjanjian_xxxx', 'judul_kontrak'],
+            'tanggal' => ['bv_f1_date', 'f1_date', 'tanggal_perjanjian', 'tanggal'],
+            'pihak_pertama' => ['v_p1_entity', 'p1_entity', 'pihak_i_(pt.)', 'nama_pihak_1', 'pihak_i'],
+            'pihak_kedua' => ['v_p2_entity', 'p2_entity', 'pihak_ii_(pt.)', 'pihak_ii_(perorangan)', 'nama_pihak_2', 'pihak_ii'],
+            'ruang_lingkup' => ['bv_f1_tujuan', 'f1_tujuan', 'lingkup_pekerjaan', 'ruang_lingkup'],
+            'harga_pekerjaan' => ['tdv_price', 'price', 'harga/fee', 'nilai_kontrak', 'harga_fee'],
+            'cara_pembayaran' => ['tdv_top', 'top', 'terms_of_payment', 'mekanisme_pembayaran'],
+            'jangka_waktu' => ['tdv_jw', 'jw', 'masa_berlaku', 'jangka_waktu'],
+            'lokasi' => ['tdv_loc', 'loc', 'lokasi_area', 'lokasi'],
+            'nama_pihak_1' => ['v_p1_signer', 'p1_signer', 'penandatangan_pihak_i', 'signer_pihak_1'],
+            'jabatan_pihak_1' => ['v_p1_position', 'p1_position', 'jabatan_pihak_i', 'position_pihak_1'],
+            'nama_pihak_2' => ['v_p2_signer', 'p2_signer', 'penandatangan_pihak_ii', 'signer_pihak_2'],
+            'jabatan_pihak_2' => ['v_p2_position', 'p2_position', 'jabatan_pihak_ii', 'position_pihak_2'],
+            'objek_perjanjian' => ['bv_f1_tujuan', 'f1_tujuan', 'ruang_lingkup'],
+        ];
+
+        foreach ($inheritanceMap as $target => $sources) {
+            if (!isset($formData[$target]) || empty($formData[$target])) {
+                foreach ($sources as $source) {
+                    if (isset($f1Data[$source]) && !empty($f1Data[$source])) {
+                        $formData[$target] = $f1Data[$source];
+                        // Also set the uppercase version
+                        $formData[strtoupper($target)] = $f1Data[$source];
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Handle specific signature requirements for resume logic
+        if (!isset($formData['nama_pihak_1']) || empty($formData['nama_pihak_1'])) {
+             $formData['nama_pihak_1'] = $f1Data['v_p1_signer'] ?? ($f1Data['p1_signer'] ?? ($f1Data['pihak_i'] ?? ''));
+        }
+
+        // Meta context
+        if (!isset($formData['no_kontrak'])) $formData['no_kontrak'] = $contract->contract_no;
+        if (!isset($formData['no_perjanjian'])) $formData['no_perjanjian'] = $contract->contract_no;
+        if (!isset($formData['pic'])) $formData['pic'] = $contract->creator->name ?? '';
+        if (!isset($formData['dimohonkan_oleh'])) $formData['dimohonkan_oleh'] = $contract->creator->name ?? '';
+
+        return $formData;
+    }
+    /**
+     * Convert an image path/URL to Base64 to prevent network deadlocks in PDF generation.
+     */
+    private function getLogoBase64(?string $logoUrl): ?string
+    {
+        if (!$logoUrl) return null;
+
+        try {
+            $path = null;
+            if (str_starts_with($logoUrl, '/storage/')) {
+                $trimmedPath = str_replace('/storage/', '', $logoUrl);
+                $path = storage_path('app/public/' . $trimmedPath);
+            } elseif (file_exists(public_path($logoUrl))) {
+                $path = public_path($logoUrl);
+            } elseif (str_starts_with($logoUrl, 'http')) {
+                $content = file_get_contents($logoUrl);
+                $type = pathinfo(parse_url($logoUrl, PHP_URL_PATH), PATHINFO_EXTENSION) ?: 'png';
+                return 'data:image/' . $type . ';base64,' . base64_encode($content);
+            }
+
+            if ($path && file_exists($path)) {
+                $type = pathinfo($path, PATHINFO_EXTENSION);
+                $data = file_get_contents($path);
+                return 'data:image/' . $type . ';base64,' . base64_encode($data);
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning('PDF Logo Base64 failed: ' . $e->getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Upload an agreement drawing/document (Word only)
+     */
+    public function uploadAgreement(Request $request, string $id): JsonResponse
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:docx|max:10240',
+            'change_log' => 'nullable|string'
         ]);
 
-        $fileName = $contract->contract_no . '_' . strtoupper($type) . '.pdf';
-        return $pdf->download($fileName);
+        $contract = Contract::findOrFail($id);
+        $file = $request->file('file');
+
+        $lastVersion = $contract->versions()
+            ->where('document_type', 'agreement')
+            ->max('version_no') ?? 0;
+
+        $versionNo = $lastVersion + 1;
+        $path = $file->storeAs('contracts/' . $contract->id . '/agreements', "agreement_v{$versionNo}.docx", 'local');
+
+        $version = ContractVersion::create([
+            'contract_id' => $contract->id,
+            'document_type' => 'agreement',
+            'version_no' => $versionNo,
+            'file_name' => $file->getClientOriginalName(),
+            'file_path' => $path,
+            'change_log' => $request->change_log,
+            'uploaded_by' => Auth::id(),
+        ]);
+
+        ContractHistory::create([
+            'contract_id' => $contract->id,
+            'action' => 'AGREEMENT_UPLOADED',
+            'description' => "Agreement v{$versionNo} diupload: " . $file->getClientOriginalName(),
+            'actor_id' => Auth::id(),
+        ]);
+
+        $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'histories.actor', 'messages.user', 'attachments.uploader']);
+
+        return response()->json($this->formatContract($contract));
+    }
+
+
+    /**
+     * Get all agreement versions for a contract
+     */
+    public function getAgreementVersions(string $id): JsonResponse
+    {
+        $contract = Contract::findOrFail($id);
+        $versions = $contract->versions()
+            ->where('document_type', 'agreement')
+            ->orderByDesc('version_no')
+            ->with('uploader')
+            ->get();
+
+        return response()->json($versions);
+    }
+
+    /**
+     * Compare two agreement versions
+     */
+    public function compareAgreementVersions(Request $request, string $id): JsonResponse
+    {
+        $request->validate([
+            'v1' => 'required|integer',
+            'v2' => 'required|integer'
+        ]);
+
+        $contract = Contract::findOrFail($id);
+        
+        $version1 = $contract->versions()
+            ->where('document_type', 'agreement')
+            ->where('version_no', $request->v1)
+            ->firstOrFail();
+
+        $version2 = $contract->versions()
+            ->where('document_type', 'agreement')
+            ->where('version_no', $request->v2)
+            ->firstOrFail();
+
+        return response()->json([
+            'v1' => [
+                'version_no' => $version1->version_no,
+                'content' => $this->extractTextFromDocx(Storage::disk('local')->path($version1->file_path))
+            ],
+            'v2' => [
+                'version_no' => $version2->version_no,
+                'content' => $this->extractTextFromDocx(Storage::disk('local')->path($version2->file_path))
+            ]
+        ]);
+    }
+
+    /**
+     * Extract text from a docx file using ZipArchive and XML parsing
+     */
+    private function extractTextFromDocx($filePath): string
+    {
+        if (!file_exists($filePath)) return '';
+
+        $zip = new \ZipArchive();
+        if ($zip->open($filePath) === true) {
+            if (($index = $zip->locateName('word/document.xml')) !== false) {
+                $content = $zip->getFromIndex($index);
+                $zip->close();
+                
+                // Clean up XML tags to get raw text
+                // Word XML uses <w:p> for paragraphs and <w:t> for text
+                $content = str_replace(['</w:p>', '</w:r>', '<w:tab/>'], ["\n", " ", "\t"], $content);
+                $content = strip_tags($content);
+                return trim($content);
+            }
+            $zip->close();
+        }
+        return '';
     }
 }
+
+

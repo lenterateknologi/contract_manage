@@ -37,7 +37,9 @@ import PreviewModal from '@/components/contracts/PreviewModal';
 import CompareModal from '@/components/contracts/CompareModal';
 import UploadRevisionModal from '@/components/contracts/UploadRevisionModal';
 import { FormSubmissionTab } from '@/components/contracts/FormSubmissionTab';
+import AgreementTab from '@/components/contracts/AgreementTab';
 import RejectModal from '@/components/contracts/RejectModal';
+
 import SendApprovalModal from '@/components/contracts/SendApprovalModal';
 import ApprovalSteps from '@/components/contracts/ApprovalSteps';
 import ContractChat from '@/components/contracts/ContractChat';
@@ -471,7 +473,8 @@ function ContractPage({ contracts: contractsPaged, meId, meUser, initialSelected
     }, [currentView, view]);
 
     const [selected, setSelected] = useState<Contract | null>(initialSelected ?? null);
-    const [detailTab, setDetailTab] = useState<'form_template' | 'f2' | 'attachments' | 'audit' | 'chat'>('form_template');
+    const [detailTab, setDetailTab] = useState<'form_template' | 'f2' | 'agreement' | 'attachments' | 'audit' | 'chat'>('form_template');
+
     const [search, setSearch] = useState(filters?.search || '');
     
     // Multi-select faceted filters
@@ -622,8 +625,17 @@ function ContractPage({ contracts: contractsPaged, meId, meUser, initialSelected
         if (selected?.id === c.id) setSelected(c);
     }, [selected?.id]);
 
-    const openDetail = (c: Contract) => { setSelected(c); setDetailTab('form_template'); setApprovalNote(''); };
-    const closeDetail = () => { setSelected(null); setDetailTab('form_template'); };
+    const openDetail = (c: Contract) => { 
+        setSelected(c);
+        router.get(route('contracts.show', c.id), {}, { preserveState: true, preserveScroll: true });
+        setDetailTab('form_template'); 
+        setApprovalNote(''); 
+    };
+    const closeDetail = () => { 
+        setSelected(null);
+        router.get(route('contracts'), {}, { preserveState: true, preserveScroll: true });
+        setDetailTab('form_template'); 
+    };
 
     // Computed
     const stats = {
@@ -1206,6 +1218,8 @@ function ContractPage({ contracts: contractsPaged, meId, meUser, initialSelected
                                     <div className="flex border-b border-border px-4 pt-2 gap-1">
                                         {([
                                             { id: 'form_template', icon: 'fa-file-lines', label: 'F1', badge: selected.form_submissions?.find(s => s.document_type === 'f1') ? selected.form_submissions.find(s => s.document_type === 'f1')!.current_version : 0 },
+                                            { id: 'agreement', icon: 'fa-file-word', label: 'Agreement', badge: (selected.versions ?? []).filter(v => v.document_type === 'agreement').length },
+
                                             { id: 'f2', icon: 'fa-file-shield', label: 'F2', badge: selected.form_submissions?.find(s => s.document_type === 'f2') ? selected.form_submissions.find(s => s.document_type === 'f2')!.current_version : 0 },
                                             { id: 'attachments', icon: 'fa-paperclip', label: 'Lampiran', badge: selected.attachments?.length ?? 0 },
                                             { id: 'audit', icon: 'fa-list-check', label: 'Audit Trail', badge: 0 },
@@ -1238,6 +1252,14 @@ function ContractPage({ contracts: contractsPaged, meId, meUser, initialSelected
                                                 onContractUpdated={updateContract}
                                             />
                                         </div>
+
+                                        {/* Agreement Tab */}
+                                        {detailTab === 'agreement' && (
+                                            <AgreementTab 
+                                                contract={selected} 
+                                                onUpdate={updateContract}
+                                            />
+                                        )}
 
                                         {/* F2 Tab (Persistence via hidden div) */}
                                         <div style={{ display: detailTab === 'f2' ? 'block' : 'none' }}>
@@ -1681,10 +1703,12 @@ export default function ContractsIndex({
     types: initialTypes = [],
     formTemplates: initialFormTemplates = [],
     metrics: initialMetrics = null,
+    initialSelected: initialSelectedProp = null,
     filters = {}
 }: { 
     currentView?: View;
     contracts?: PaginatedData<Contract>;
+    initialSelected?: Contract | null;
     types?: ContractType[];
     formTemplates?: FormTemplateInfo[];
     metrics?: any;
@@ -1696,7 +1720,7 @@ export default function ContractsIndex({
     const [contractsPaged, setContractsPaged] = useState<PaginatedData<Contract>>(initialContractsPaged);
     const [types, setTypes] = useState<ContractType[]>(initialTypes);
     const [bootLoading, setBootLoading] = useState(initialContractsPaged.data.length === 0 && !initialMetrics);
-    const [initialSelected, setInitialSelected] = useState<Contract | null>(null);
+    const [initialSelected, setInitialSelected] = useState<Contract | null>(initialSelectedProp);
     const [metrics, setMetrics] = useState<any>(initialMetrics);
 
     useEffect(() => {
@@ -1714,7 +1738,9 @@ export default function ContractsIndex({
         const isIntentionallyEmpty = currentView === 'pending' || currentView === 'mine';
 
         if ((hasInitialData || isIntentionallyEmpty) && initialTypes.length > 0) {
-            if (initialId) {
+            if (initialSelectedProp) {
+                setInitialSelected(initialSelectedProp);
+            } else if (initialId) {
                 setInitialSelected(initialContractsPaged.data.find((c: Contract) => c.id === initialId) ?? null);
             }
             setBootLoading(false);

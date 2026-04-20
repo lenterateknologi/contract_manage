@@ -12,6 +12,9 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
+        // Clear existing users first to avoid unique constraint issues
+        User::withTrashed()->forceDelete();
+
         // Ensure roles and departments are available
         $roles = Role::pluck('id', 'name')->all();
         $depts = Department::pluck('id', 'code')->all();

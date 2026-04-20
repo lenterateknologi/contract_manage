@@ -41,7 +41,7 @@ export function ContractToolbar({
     primaryAction,
 }: ContractToolbarProps) {
     return (
-        <div className="mb-4 flex flex-col gap-4 rounded-xl border border-slate-200 bg-slate-50/50 bg-white p-4 shadow-sm">
+        <div className="mb-4 flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
                 <div className="flex max-w-md flex-1 items-center gap-3">
                     <div className="relative flex-1">

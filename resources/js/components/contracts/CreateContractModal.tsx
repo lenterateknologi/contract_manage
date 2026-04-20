@@ -11,6 +11,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
     const [title, setTitle] = useState('');
     const [desc, setDesc] = useState('');
     const [typeId, setTypeId] = useState('');
+    const [transactionType, setTransactionType] = useState('Perjanjian Baru');
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -31,6 +32,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
         fd.append('title', title);
         fd.append('description', desc);
         fd.append('contract_type_id', typeId);
+        fd.append('transaction_type', transactionType);
 
         setLoading(true);
         try {
@@ -39,6 +41,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
             setTitle('');
             setDesc('');
             setTypeId('');
+            setTransactionType('Perjanjian Baru');
         } catch (err: any) {
             if (err.response?.data?.errors) setErrors(err.response.data.errors);
             else setErrors({ general: 'Gagal membuat kontrak.' });
@@ -94,6 +97,22 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                             ))}
                         </select>
                         {errors.contract_type_id && <div className="mt-1 text-[10px] text-red-500">{errors.contract_type_id}</div>}
+                    </div>
+
+                    <div>
+                        <label className="text-muted-foreground mb-1.5 block text-[11px] font-semibold tracking-wider uppercase">
+                            Mode Transaksi <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                            value={transactionType}
+                            onChange={(e) => setTransactionType(e.target.value)}
+                            className="border-border placeholder:text-muted-foreground/30 w-full rounded-md border px-3 py-2 text-[12px] outline-none focus:border-blue-500 bg-white"
+                        >
+                            <option value="Perjanjian Baru">Perjanjian Baru</option>
+                            <option value="Addendum">Addendum</option>
+                            <option value="Amandement">Amandement</option>
+                            <option value="Perubahan Perjanjian">Perubahan Perjanjian</option>
+                        </select>
                     </div>
 
                     <div>

@@ -17,8 +17,8 @@ class WorkflowStepSeeder extends Seeder
         $admin = User::firstWhere('email', 'admin@example.com') ?? User::first();
         $adminId = $admin ? $admin->id : null;
 
-        // Clear existing steps first
-        WorkflowStep::query()->delete();
+        // Clear existing steps first (force delete to avoid unique constraint issues with soft deletes)
+        WorkflowStep::withTrashed()->forceDelete();
 
         // Get all workflows
         $workflows = Workflow::all();
@@ -45,11 +45,12 @@ class WorkflowStepSeeder extends Seeder
                     ['role' => 'Director', 'step' => 3, 'description' => 'Budget Director Release', 'dept_code' => 'MGT'],
                 ];
             } else {
-                // General Standard Workflow - Fallback to workflow department (null here) or specific ones
+                // General Standard Workflow - Mapped to BRD: "Initiator to Direksi"
                 $steps = [
-                    ['role' => 'Manager', 'step' => 1, 'description' => 'Department Head Approval', 'dept_code' => null],
-                    ['role' => 'Manager', 'step' => 2, 'description' => 'General Management Review', 'dept_code' => 'MGT'],
-                    ['role' => 'Director', 'step' => 3, 'description' => 'Board Approval', 'dept_code' => 'MGT'],
+                    ['role' => 'Manager', 'step' => 1, 'description' => 'Tax Validation Review', 'dept_code' => 'TAX', 'cond' => 'tax_required'],
+                    ['role' => 'Manager', 'step' => 2, 'description' => 'Management Operations Review', 'dept_code' => 'MGT', 'cond' => 'initiator_not_manager'],
+                    ['role' => 'Staff', 'step' => 3, 'description' => 'Legal Compliance & Document Verification', 'dept_code' => 'LGL', 'cond' => null],
+                    ['role' => 'Director', 'step' => 4, 'description' => 'Final Direksi Approval', 'dept_code' => 'MGT', 'cond' => null],
                 ];
             }
 
@@ -59,9 +60,9 @@ class WorkflowStepSeeder extends Seeder
                     'role' => $step['role'],
                     'step' => $step['step'],
                     'approver_type' => 'role',
-                    'department_id' => $step['dept_code'] ? ($depts[$step['dept_code']] ?? null) : null,
+                    'department_id' => ($step['dept_code'] ?? null) ? ($depts[$step['dept_code']] ?? null) : null,
                     'description' => $step['description'],
-                    'condition_expression' => null,
+                    'condition_expression' => $step['cond'] ?? null,
                     'step_type' => 'approval',
                     'is_active' => true,
                     'created_by' => $adminId,

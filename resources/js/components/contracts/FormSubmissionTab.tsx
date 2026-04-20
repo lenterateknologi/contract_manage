@@ -1,7 +1,12 @@
 import { contractApi } from '@/lib/contract-api';
 import { Contract } from '@/types/contracts';
 import axios from 'axios';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
+import { cn } from '@/lib/utils';
+import { InteractiveForm, FormTemplate } from '@/components/form-renderer/InteractiveForm';
+import { FormField } from '@/components/form-renderer/FormElement';
+import { Loader2, Download } from 'lucide-react';
+
 
 interface FormTemplateInfo {
     id: string;
@@ -13,17 +18,7 @@ interface FormTemplateInfo {
     fields_count: number;
 }
 
-interface FormField {
-    id: string;
-    label: string;
-    name: string;
-    type: string;
-    placeholder?: string;
-    is_required: boolean;
-    width: string;
-    options?: string[];
-    order: number;
-}
+// FormField and FormTemplate interfaces are now imported from shared components
 
 interface VersionItem {
     id: string;
@@ -70,26 +65,26 @@ const getAutofillValue = (field: FormField, contract: Contract) => {
     const name = field.name.toLowerCase();
     const label = field.label.toLowerCase();
 
-    // Title / Judul
-    if (name === 'judul' || label.includes('judul perjanjian') || label.includes('nama kontrak')) {
+    // Title / Judul (Supporting new prefixes)
+    if (name === 'judul' || name === 'judul_kontrak' || name === 'bv_f1_title' || name === 'f1_title' || label.includes('judul') || label.includes('nama kontrak')) {
         return contract.title || '';
     }
     // Number / No Kontrak
-    if (name === 'no_kontrak' || label.includes('nomor kontrak') || label.includes('no. kontrak')) {
+    if (name === 'no_kontrak' || name === 'mv_nomor' || label.includes('nomor kontrak') || label.includes('no. kontrak')) {
         return contract.contract_no || '';
     }
-    // Type / Jenis
-    if (name === 'type_perjanjian' || label.includes('tipe perjanjian') || label.includes('jenis kontrak') || label === 'type') {
-        return contract.contract_type || '';
+    // Type / Tipe Perjanjian / Jenis Kontrak
+    if (name === 'type_perjanjian' || name === 'tipe_perjanjian_detail' || label.includes('tipe perjanjian') || label.includes('jenis kontrak')) {
+        return (contract as any).contract_type?.name || (typeof contract.contract_type === 'string' ? contract.contract_type : '');
     }
     // Date formatting helper
     const formatDate = (date: string | null) => (date ? date.split(' ')[0] : '');
     // Date / Tanggal
-    if (name === 'tanggal' || label === 'tanggal' || label.includes('tgl perjanjian')) {
-        return formatDate(contract.contract_date);
+    if (name === 'tanggal' || name === 'bv_f1_date' || label === 'tanggal' || label.includes('tgl perjanjian')) {
+        return formatDate(contract.contract_date || contract.created_at);
     }
     // Jangka Waktu
-    if (name.includes('jangka_waktu_(mulai)') || label.includes('jangka waktu mulai') || label.includes('tanggal mulai')) {
+    if (name === 'tdv_jw' || name.includes('jangka_waktu_(mulai)') || label.includes('jangka waktu mulai') || label.includes('tanggal mulai')) {
         return formatDate(contract.contract_date);
     }
     if (name.includes('jangka_waktu_(s.d)') || label.includes('jangka waktu s.d') || label.includes('tanggal berakhir')) {
@@ -100,16 +95,26 @@ const getAutofillValue = (field: FormField, contract: Contract) => {
         return contract.creator?.name || '';
     }
     // Description / Tujuan / Background
-    if (name === 'tujuan/latar_belakang' || label.includes('tujuan') || label.includes('latar belakang')) {
+    if (name === 'bv_f1_tujuan' || name === 'tujuan/latar_belakang' || label.includes('tujuan') || label.includes('latar belakang')) {
         return contract.description || '';
     }
 
+    // Commercial Fields
+    if (name === 'tdv_price') return (contract as any).total_value || '';
+    if (name === 'tdv_loc') return (contract as any).location || '';
+
+    // Mode Transaksi
+    if (name === 'transaction_mode' || name === 'jenis_transaksi_pks' || label.includes('mode transaksi') || label.includes('jenis transaksi')) {
+        return (contract as any).transaction_type || '';
+    }
+
     return null;
-};
+}
 
 // ═══════════════════════════════════════════════════════════════════════
-//  F1 Form Tab — Editable form
+//  Principal Components
 // ═══════════════════════════════════════════════════════════════════════
+
 export function FormSubmissionTab({
     docType,
     selected,
@@ -121,27 +126,24 @@ export function FormSubmissionTab({
     formTemplates: FormTemplateInfo[];
     onContractUpdated: (c: Contract) => void;
 }) {
-    // If docType is 'f2', delegate to the read-only F2 summary component
-    if (docType === 'f2') {
-        return <F2SummaryTab selected={selected} formTemplates={formTemplates} />;
-    }
-
-    return <F1EditableTab selected={selected} formTemplates={formTemplates} onContractUpdated={onContractUpdated} />;
+    return <GenericFormTab docType={docType} selected={selected} formTemplates={formTemplates} onContractUpdated={onContractUpdated} />;
 }
 
-// ═══════════════════════════════════════════════════════════════════════
-//  F1 Editable Tab (original behavior)
-// ═══════════════════════════════════════════════════════════════════════
-function F1EditableTab({
+/**
+ * A generic, industrial-grade editable tab for any form document type (F1, F2, etc.)
+ * Centralizes loading, pre-filling (inheritance), and versioning.
+ */
+function GenericFormTab({
+    docType,
     selected,
     formTemplates,
     onContractUpdated,
 }: {
+    docType: 'f1' | 'f2';
     selected: Contract;
     formTemplates: FormTemplateInfo[];
     onContractUpdated: (c: Contract) => void;
 }) {
-    const docType = 'f1';
     const [fields, setFields] = useState<FormField[]>([]);
     const [formData, setFormData] = useState<Record<string, any>>({});
     const [originalData, setOriginalData] = useState<Record<string, any>>({});
@@ -150,12 +152,18 @@ function F1EditableTab({
     const [saving, setSaving] = useState(false);
     const [toast, setToast] = useState<string | null>(null);
     const [showVersions, setShowVersions] = useState(false);
+    
+    // PDF Queue States
+    const [isExporting, setIsExporting] = useState(false);
+    const [pdfJobId, setPdfJobId] = useState<string | null>(null);
+    const [pdfJobStatus, setPdfJobStatus] = useState<any>(null);
+    const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+
 
     const matchingTemplate =
         formTemplates.find((ft) => ft.contract_type_name === selected.contract_type && ft.document_type === docType) ??
         formTemplates.find((ft) => !ft.contract_type_id && ft.document_type === docType);
 
-    // Load template fields + existing submission data
     const loadData = useCallback(async () => {
         if (!matchingTemplate) {
             setLoading(false);
@@ -168,7 +176,7 @@ function F1EditableTab({
                 contractApi.formSubmissions.get(selected.id, docType),
             ]);
             const tplFields: FormField[] = tplRes.data.fields ?? [];
-            setFields(tplFields.filter((f) => f.type !== 'kop_surat' && f.type !== 'form_title'));
+            setFields(tplFields);
 
             if (subRes.submission && subRes.versions?.length > 0) {
                 const latest = subRes.versions[0];
@@ -176,16 +184,22 @@ function F1EditableTab({
                 setOriginalData(latest.form_data ?? {});
                 setVersions(subRes.versions);
             } else {
-                const initial: Record<string, any> = {};
-                tplFields.forEach((f) => {
-                    if (f.type !== 'kop_surat' && f.type !== 'form_title') {
-                        // Autofill from contract info if available
-                        const autofillValue = getAutofillValue(f, selected);
-                        initial[f.name] = autofillValue !== null ? autofillValue : '';
-                    }
-                });
-                setFormData(initial);
-                setOriginalData(initial);
+                // NEW: Use prefill_data from backend if available (Professional Inheritance)
+                if (subRes.prefill_data && Object.keys(subRes.prefill_data).length > 0) {
+                    setFormData(subRes.prefill_data);
+                    setOriginalData(subRes.prefill_data);
+                } else {
+                    // Fallback to frontend autofill
+                    const initial: Record<string, any> = {};
+                    tplFields.forEach((f) => {
+                        if (f.type !== 'kop_surat' && f.type !== 'form_title') {
+                            const autofillValue = getAutofillValue(f, selected);
+                            initial[f.name] = autofillValue !== null ? autofillValue : '';
+                        }
+                    });
+                    setFormData(initial);
+                    setOriginalData(initial);
+                }
                 setVersions([]);
             }
         } catch (e) {
@@ -200,9 +214,10 @@ function F1EditableTab({
     }, [loadData]);
 
     const isDirty = JSON.stringify(formData) !== JSON.stringify(originalData);
+    const isF2 = docType === 'f2';
 
     const handleSave = async () => {
-        if (!matchingTemplate || !isDirty) return;
+        if (!matchingTemplate || !isDirty || isF2) return;
         setSaving(true);
         try {
             const updated = await contractApi.formSubmissions.save(selected.id, {
@@ -214,9 +229,8 @@ function F1EditableTab({
             setOriginalData({ ...formData });
             setToast(`Form ${docType.toUpperCase()} berhasil disimpan.`);
             setTimeout(() => setToast(null), 3000);
-            // Reload versions
-            const subRes = await contractApi.formSubmissions.get(selected.id, docType);
-            if (subRes.versions) setVersions(subRes.versions);
+            const res = await contractApi.formSubmissions.get(selected.id, docType);
+            if (res.versions) setVersions(res.versions);
         } catch (e: any) {
             setToast('Gagal menyimpan form.');
             setTimeout(() => setToast(null), 3000);
@@ -225,19 +239,65 @@ function F1EditableTab({
         }
     };
 
-    const loadVersion = (v: VersionItem) => {
-        setFormData(v.form_data);
-        setOriginalData(v.form_data);
-        setShowVersions(false);
+    const handleDownloadPdf = async () => {
+        if (!matchingTemplate) return;
+        setIsExporting(true);
+
+        setPdfJobStatus({ status: 'pending', progress: 10 });
+
+        try {
+            // Use the locally configured 'api' instance (line 30) instead of raw axios
+            // Sending current formData ensures "logic yang sama persis" with the builder
+            // Using /admin prefix to resolve routing conflicts
+            // Explicitly sending the template ID to prevent "Template not found" errors
+            const res = await api.post(`/admin/contracts/${selected.id}/form-submissions/${docType}/export-queue`, {
+                data: JSON.stringify(formData),
+                form_template_id: matchingTemplate.id
+            });
+
+            const jobId = res.data.job_id;
+
+
+            setPdfJobId(jobId);
+
+            // Start Polling
+            const interval = setInterval(async () => {
+                try {
+                    const statusRes = await api.get(`/admin/form-templates/pdf-status/${jobId}`);
+                    const statusData = statusRes.data;
+                    setPdfJobStatus(statusData);
+
+
+
+                    if (statusData.status === 'completed') {
+                        clearInterval(interval);
+                        setIsExporting(false);
+                        setPdfJobId(null);
+                        
+                        // Switch to preview mode
+                        setPdfPreviewUrl(statusData.url);
+                    } else if (statusData.status === 'failed') {
+
+                        clearInterval(interval);
+                        setIsExporting(false);
+                        setPdfJobId(null);
+                        alert('Gagal mendownload PDF: ' + (statusData.error || 'Unknown error'));
+                    }
+                } catch (err) {
+                    console.error('Polling failed:', err);
+                }
+            }, 2000);
+
+        } catch (error: any) {
+            console.error('Queue failed:', error);
+            setIsExporting(false);
+            setPdfJobId(null);
+            const msg = error.response?.data?.message || 'Gagal antrikan PDF. Silakan coba lagi nanti.';
+            alert(msg);
+        }
+
     };
 
-    const widthMap: Record<string, string> = {
-        '1/1': '100%',
-        '1/2': 'calc(50% - 6px)',
-        '1/3': 'calc(33.33% - 8px)',
-        '2/3': 'calc(66.66% - 4px)',
-        '1/4': 'calc(25% - 9px)',
-    };
 
     if (!matchingTemplate) {
         return (
@@ -245,99 +305,118 @@ function F1EditableTab({
                 <div className="bg-muted/50 mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full">
                     <i className="fa-solid fa-file-circle-question text-muted-foreground" style={{ fontSize: 24 }} />
                 </div>
-                <h5 className="text-foreground mb-1 font-bold" style={{ fontSize: 14 }}>
-                    Belum Ada Template {docType.toUpperCase()}
-                </h5>
-                <p className="text-muted-foreground" style={{ fontSize: 12 }}>
-                    {selected.contract_type && selected.contract_type !== '—'
-                        ? `Tidak ada form ${docType.toUpperCase()} untuk tipe "${selected.contract_type}".`
-                        : 'Pilih tipe kontrak terlebih dahulu.'}
-                </p>
+                <h5 className="text-foreground mb-1 font-bold" style={{ fontSize: 14 }}>Belum Ada Template {docType.toUpperCase()}</h5>
             </div>
         );
     }
 
-    if (loading) {
-        return (
-            <div className="text-muted-foreground flex items-center justify-center gap-3 py-16" style={{ fontSize: 13 }}>
-                <i className="fa-solid fa-spinner fa-spin" /> Memuat form...
-            </div>
-        );
-    }
+    if (loading) return <div className="py-16 text-center text-xs text-muted-foreground"><i className="fa-solid fa-spinner fa-spin mr-2"/>Memuat form {docType.toUpperCase()}...</div>;
 
     const submissionInfo = selected.form_submissions?.find((s) => s.document_type === docType);
+    const templateForRenderer = {
+        ...matchingTemplate,
+        has_letterhead: true,
+        letterhead_json: { margins: { top: 10, bottom: 10, left: 15, right: 15 } },
+        fields: fields
+    } as any;
 
     return (
-        <div className="flex flex-col gap-4">
-            {/* Header */}
-            <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-8 pb-12 relative">
+             {/* PDF Preview Overlay */}
+             {pdfPreviewUrl && (
+                <div className="fixed inset-0 z-[100] flex flex-col bg-slate-900/90 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-300">
+                    <div className="flex h-16 items-center justify-between px-6 border-b border-slate-700/50 bg-slate-900/50">
+                        <div className="flex flex-col">
+                            <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
+                                <i className="fa-solid fa-file-pdf text-rose-500" /> Preview Dokumen {docType.toUpperCase()}
+                            </h3>
+                            <span className="text-[10px] font-bold text-slate-400">{selected.contract_no} — Ready for Download</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <a 
+                                href={pdfPreviewUrl} 
+                                download={`${selected.contract_no}_${docType.toUpperCase()}.pdf`}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-md px-6 py-2 text-xs font-black uppercase tracking-widest shadow-xl shadow-indigo-500/20 transition-all flex items-center gap-2"
+                            >
+                                <Download size={14} /> Download PDF
+                            </a>
+                            <button 
+                                onClick={() => setPdfPreviewUrl(null)}
+                                className="bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md px-4 py-2 text-xs font-black uppercase tracking-widest transition-all"
+                            >
+                                Tutup
+                            </button>
+                        </div>
+                    </div>
+                    <div className="flex-1 p-8 overflow-hidden flex justify-center">
+                        <div className="w-full max-w-[210mm] h-full bg-white shadow-2xl rounded-sm overflow-hidden ring-1 ring-white/10 animate-in slide-in-from-bottom-5 duration-500 delay-150 fill-mode-both">
+                            <iframe 
+                                src={`${pdfPreviewUrl}#toolbar=0&navpanes=0`} 
+                                className="w-full h-full border-none"
+                                title="PDF Preview"
+                            />
+                        </div>
+                    </div>
+                </div>
+             )}
+
+             <div className="flex items-center justify-between">
+
                 <div className="flex items-center gap-3">
-                    <h4 className="text-foreground font-bold" style={{ fontSize: 13 }}>
-                        Form {docType.toUpperCase()}
-                    </h4>
-                    {submissionInfo && (
-                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 uppercase dark:bg-emerald-900/30 dark:text-emerald-400">
-                            v{submissionInfo.current_version}
-                        </span>
-                    )}
+                    <div className="flex flex-col">
+                         <h4 className="text-foreground font-black text-xs uppercase tracking-tight">Form {docType.toUpperCase()} — {docType === 'f1' ? 'Perijinan & Kontrak' : 'Resume & Persetujuan'}</h4>
+                         <span className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">
+                            {isF2 ? 'Automated Resume (Read-Only)' : (submissionInfo ? 'Sudah Diisi' : 'Draft / Inherited Data')}
+                         </span>
+                    </div>
+                    {submissionInfo && !isF2 && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 uppercase">v{submissionInfo.current_version}</span>}
                 </div>
                 <div className="flex items-center gap-2">
-                    {versions.length > 0 && (
-                        <button
-                            onClick={() => setShowVersions(!showVersions)}
-                            className="border-border hover:bg-muted/50 text-muted-foreground flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-all"
-                        >
+                    <button onClick={loadData} className="border-border hover:bg-muted/50 text-muted-foreground flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-all" title="Refresh data dari server">
+                        <i className="fa-solid fa-arrows-rotate" />
+                    </button>
+                    {versions.length > 0 && !isF2 && (
+                        <button onClick={() => setShowVersions(!showVersions)} className="border-border hover:bg-muted/50 text-muted-foreground flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-all">
                             <i className="fa-solid fa-clock-rotate-left" /> {versions.length} versi
                         </button>
                     )}
-                    {submissionInfo && (
-                        <a
-                            href={`/api/contracts/${selected.id}/form-submissions/f1/pdf`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="border-border text-muted-foreground flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-all hover:border-red-200 hover:bg-red-50 hover:text-red-600 dark:hover:border-red-800 dark:hover:bg-red-950/20 dark:hover:text-red-400"
+                    {(submissionInfo || isF2) && (
+                        <button 
+                            onClick={handleDownloadPdf}
+                            disabled={isExporting}
+                            className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 flex items-center gap-1.5 rounded-md px-4 py-1.5 text-xs font-black uppercase tracking-widest shadow-sm transition-all hover:border-indigo-200 hover:text-indigo-600 disabled:opacity-50"
                         >
-                            <i className="fa-solid fa-file-pdf" /> Download PDF
-                        </a>
+                            {isExporting ? (
+                                <>
+                                    <Loader2 size={12} className="mr-1.5 animate-spin" />
+                                    {pdfJobStatus?.status === 'pending' ? 'Queued...' : `Processing ${pdfJobStatus?.progress || 0}%`}
+                                </>
+                            ) : (
+                                <>
+                                    <Download size={12} className="mr-1.5" /> Generate PDF
+                                </>
+
+                            )}
+                        </button>
                     )}
-                    {isDirty && (
-                        <button
-                            onClick={handleSave}
-                            disabled={saving}
-                            className="bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-1.5 rounded-md px-4 py-1.5 text-xs font-bold shadow-sm transition-all disabled:opacity-50"
-                        >
-                            {saving ? <i className="fa-solid fa-spinner fa-spin" /> : <i className="fa-solid fa-check" />}
-                            Simpan
+
+                    {!isF2 && (isDirty || !submissionInfo) && (
+                        <button onClick={handleSave} disabled={saving} className="bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-1.5 rounded-md px-4 py-1.5 text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100 transition-all disabled:opacity-50 active:scale-95">
+                            {saving ? <i className="fa-solid fa-spinner fa-spin" /> : <i className="fa-solid fa-check" />} 
+                            {submissionInfo ? 'Update Form' : 'Simpan Form'}
                         </button>
                     )}
                 </div>
             </div>
 
-            {/* Toast */}
-            {toast && (
-                <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs font-medium text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400">
-                    <i className="fa-solid fa-check-circle" /> {toast}
-                </div>
-            )}
+            {toast && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-medium text-emerald-700"><i className="fa-solid fa-check-circle mr-2" />{toast}</div>}
 
-            {/* Version History Panel */}
-            {showVersions && (
-                <div className="border-border bg-muted/20 space-y-2 rounded-xl border p-4">
-                    <h5 className="text-foreground mb-2 font-bold" style={{ fontSize: 12 }}>
-                        Riwayat Versi
-                    </h5>
+            {showVersions && !isF2 && (
+                <div className="border-border bg-muted/20 space-y-2 rounded-xl border p-4 max-w-4xl mx-auto w-full">
                     {versions.map((v) => (
-                        <div
-                            key={v.id}
-                            className="border-border bg-card hover:bg-muted/30 flex cursor-pointer items-center justify-between rounded-lg border p-3 transition-all"
-                            onClick={() => loadVersion(v)}
-                        >
+                        <div key={v.id} className="border-border bg-card hover:bg-muted/30 flex cursor-pointer items-center justify-between rounded-lg border p-3" onClick={() => { setFormData(v.form_data); setOriginalData(v.form_data); setShowVersions(false); }}>
                             <div>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-primary font-mono text-xs font-bold">v{v.version_no}</span>
-                                    <span className="text-muted-foreground text-[10px]">{v.created_at}</span>
-                                </div>
-                                {v.change_summary && <div className="text-muted-foreground mt-0.5 text-[11px]">{v.change_summary}</div>}
+                                <div className="flex items-center gap-2"><span className="text-primary font-mono text-xs font-bold">v{v.version_no}</span><span className="text-muted-foreground text-[10px]">{v.created_at}</span></div>
                                 {v.created_by && <div className="text-muted-foreground mt-0.5 text-[10px]">oleh {v.created_by.name}</div>}
                             </div>
                             <i className="fa-solid fa-arrow-right text-muted-foreground text-xs" />
@@ -346,304 +425,42 @@ function F1EditableTab({
                 </div>
             )}
 
-            {/* Template Info */}
-            <div className="flex items-center gap-3 rounded-lg border border-blue-100 bg-blue-50/50 p-3 dark:border-blue-900/30 dark:bg-blue-950/20">
-                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/40">
-                    <i className="fa-solid fa-file-lines text-blue-600 dark:text-blue-400" style={{ fontSize: 14 }} />
-                </div>
-                <div className="min-w-0">
-                    <div className="text-foreground truncate text-xs font-bold">{matchingTemplate.name}</div>
-                    <div className="text-muted-foreground text-[10px]">
-                        {fields.length} fields · {matchingTemplate.contract_type_name}
+            <div className="mx-auto w-full relative">
+                {isDirty && !isF2 && (
+                    <div className="absolute top-0 right-0 p-2">
+                        <span className="flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-amber-600 shadow-sm border border-amber-200/50">
+                            <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                            Draft Belum Disimpan
+                        </span>
                     </div>
+                )}
+                
+                <div className="py-2">
+                    <InteractiveForm 
+                        template={templateForRenderer}
+                        formData={formData}
+                        onChange={(name, val) => !isF2 && setFormData(prev => ({ ...prev, [name]: val }))}
+                        readOnly={isF2}
+                    />
+                </div>
+
+                <div className="mt-16 pt-6 border-t border-slate-100 flex justify-between items-center text-[9px] font-black uppercase tracking-widest text-slate-400">
+                    <span>Lentera Teknologi Legal System</span>
+                    <span>Form {docType.toUpperCase()} / {isF2 ? 'Automated Resume View' : 'Professional Interactive Form'}</span>
                 </div>
             </div>
 
-            {/* Form Fields */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-                {fields.map((field) => (
-                    <div key={field.id} style={{ width: widthMap[field.width] || '100%' }}>
-                        <label className="text-foreground/80 mb-1.5 block text-xs font-semibold">
-                            {field.label}
-                            {field.is_required && <span className="ml-0.5 text-red-500">*</span>}
-                        </label>
-                        {(field.type === 'text' || field.type === 'signature_box') && (
-                            <input
-                                type="text"
-                                value={formData[field.name] ?? ''}
-                                onChange={(e) => setFormData((prev) => ({ ...prev, [field.name]: e.target.value }))}
-                                placeholder={field.placeholder}
-                                className="border-border bg-card text-foreground placeholder:text-muted-foreground/50 focus:ring-primary/20 focus:border-primary w-full rounded-lg border px-3 py-2 text-xs transition-all outline-none focus:ring-2"
-                            />
-                        )}
-                        {field.type === 'number' && (
-                            <input
-                                type="number"
-                                value={formData[field.name] ?? ''}
-                                onChange={(e) => setFormData((prev) => ({ ...prev, [field.name]: e.target.value }))}
-                                placeholder={field.placeholder}
-                                className="border-border bg-card text-foreground placeholder:text-muted-foreground/50 focus:ring-primary/20 focus:border-primary w-full rounded-lg border px-3 py-2 text-xs transition-all outline-none focus:ring-2"
-                            />
-                        )}
-                        {field.type === 'date' && (
-                            <input
-                                type="date"
-                                value={formData[field.name] ?? ''}
-                                onChange={(e) => setFormData((prev) => ({ ...prev, [field.name]: e.target.value }))}
-                                className="border-border bg-card text-foreground focus:ring-primary/20 focus:border-primary w-full rounded-lg border px-3 py-2 text-xs transition-all outline-none focus:ring-2"
-                            />
-                        )}
-                        {field.type === 'textarea' && (
-                            <textarea
-                                value={formData[field.name] ?? ''}
-                                onChange={(e) => setFormData((prev) => ({ ...prev, [field.name]: e.target.value }))}
-                                placeholder={field.placeholder}
-                                rows={3}
-                                className="border-border bg-card text-foreground placeholder:text-muted-foreground/50 focus:ring-primary/20 focus:border-primary w-full resize-none rounded-lg border px-3 py-2 text-xs transition-all outline-none focus:ring-2"
-                            />
-                        )}
-                        {field.type === 'select' && (
-                            <select
-                                value={formData[field.name] ?? ''}
-                                onChange={(e) => setFormData((prev) => ({ ...prev, [field.name]: e.target.value }))}
-                                className="border-border bg-card text-foreground focus:ring-primary/20 focus:border-primary w-full rounded-lg border px-3 py-2 text-xs transition-all outline-none focus:ring-2"
-                            >
-                                <option value="">{field.placeholder || 'Pilih...'}</option>
-                                {(field.options ?? []).map((opt) => (
-                                    <option key={opt} value={opt}>
-                                        {opt}
-                                    </option>
-                                ))}
-                            </select>
-                        )}
-                        {field.type === 'checkbox' && (
-                            <label className="flex cursor-pointer items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    checked={!!formData[field.name]}
-                                    onChange={(e) => setFormData((prev) => ({ ...prev, [field.name]: e.target.checked }))}
-                                    className="border-border text-primary focus:ring-primary/20 h-4 w-4 rounded"
-                                />
-                                <span className="text-muted-foreground text-xs">{field.label}</span>
-                            </label>
-                        )}
-                    </div>
-                ))}
-            </div>
-
-            {/* Save Footer */}
-            {isDirty && (
-                <div className="border-border flex items-center justify-between border-t pt-3">
-                    <span className="flex items-center gap-1.5 text-[11px] text-amber-600 dark:text-amber-400">
-                        <i className="fa-solid fa-circle-dot" style={{ fontSize: 6 }} /> Perubahan belum disimpan
+            {!isF2 && (isDirty || !submissionInfo) && (
+                <div className="max-w-4xl mx-auto w-full flex items-center justify-between border-t border-dashed border-slate-300 pt-6">
+                    <span className="text-[10px] text-amber-600 font-black uppercase tracking-widest">
+                         <i className="fa-solid fa-triangle-exclamation mr-1.5 text-amber-500" />
+                         {submissionInfo ? "Changes detected. Click 'Update Form' to save version." : "Inherited data from F1 detected. Please review and Save."}
                     </span>
-                    <button
-                        onClick={handleSave}
-                        disabled={saving}
-                        className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-primary/20 flex items-center gap-1.5 rounded-lg px-5 py-2 text-xs font-bold shadow-lg transition-all disabled:opacity-50"
-                    >
-                        {saving ? (
-                            <>
-                                <i className="fa-solid fa-spinner fa-spin" /> Menyimpan...
-                            </>
-                        ) : (
-                            <>
-                                <i className="fa-solid fa-check" /> Simpan Form {docType.toUpperCase()}
-                            </>
-                        )}
+                    <button onClick={handleSave} disabled={saving} className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-md px-6 py-1.5 text-xs font-black uppercase tracking-widest shadow-xl transition-all hover:-translate-y-0.5 active:translate-y-0 ring-4 ring-indigo-50 dark:ring-indigo-900/20">
+                        {saving ? "Processing..." : submissionInfo ? `Update Form ${docType.toUpperCase()}` : `Simpan Form ${docType.toUpperCase()}`}
                     </button>
                 </div>
             )}
-        </div>
-    );
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-//  F2 Summary Tab — Read-only, values pulled from F1 submission
-// ═══════════════════════════════════════════════════════════════════════
-function F2SummaryTab({ selected, formTemplates }: { selected: Contract; formTemplates: FormTemplateInfo[] }) {
-    const [f1Data, setF1Data] = useState<Record<string, any>>({});
-    const [loading, setLoading] = useState(true);
-    const [f1Version, setF1Version] = useState<number>(0);
-    const [hasF1Submission, setHasF1Submission] = useState(!!selected.form_submissions?.find((s) => s.document_type === 'f1'));
-
-    const f2Template =
-        formTemplates.find((ft) => ft.contract_type_name === selected.contract_type && ft.document_type === 'f2') ??
-        formTemplates.find((ft) => !ft.contract_type_id && ft.document_type === 'f2');
-
-    // Load F1 submission data
-    const loadF1Data = useCallback(async () => {
-        setLoading(true);
-        try {
-            const subRes = await contractApi.formSubmissions.get(selected.id, 'f1');
-            if (subRes.submission && subRes.versions?.length > 0) {
-                const latest = subRes.versions[0];
-                setF1Data(latest.form_data ?? {});
-                setF1Version(subRes.submission.current_version ?? 0);
-                setHasF1Submission(true);
-            } else {
-                setF1Data({});
-                setF1Version(0);
-                setHasF1Submission(false);
-            }
-        } catch (e) {
-            console.error('Failed to load F1 data for F2 summary', e);
-        } finally {
-            setLoading(false);
-        }
-    }, [selected.id]);
-
-    useEffect(() => {
-        loadF1Data();
-    }, [loadF1Data]);
-
-    const widthMap: Record<string, string> = {
-        '1/1': '100%',
-        '1/2': 'calc(50% - 6px)',
-        '1/3': 'calc(33.33% - 8px)',
-        '2/3': 'calc(66.66% - 4px)',
-        '1/4': 'calc(25% - 9px)',
-    };
-
-    // No F1 submission yet
-    if (!hasF1Submission && !loading) {
-        return (
-            <div className="flex flex-col gap-6">
-                <div className="flex items-center justify-between">
-                    <h4 className="text-foreground font-bold" style={{ fontSize: 13 }}>
-                        Form F2 — Resume
-                    </h4>
-                    <button
-                        onClick={loadF1Data}
-                        disabled={loading}
-                        className="border-border text-muted-foreground flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-all hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 disabled:opacity-50 dark:hover:border-blue-800 dark:hover:bg-blue-950/20 dark:hover:text-blue-400"
-                    >
-                        <i className={`fa-solid fa-arrows-rotate ${loading ? 'fa-spin' : ''}`} /> Perbarui Data F1
-                    </button>
-                </div>
-                <div className="border-border bg-muted/5 rounded-xl border border-dashed py-12 text-center">
-                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-50 dark:bg-amber-950/30">
-                        <i className="fa-solid fa-file-circle-exclamation text-amber-500" style={{ fontSize: 24 }} />
-                    </div>
-                    <h5 className="text-foreground mb-1 font-bold" style={{ fontSize: 14 }}>
-                        Form F1 Belum Diisi
-                    </h5>
-                    <p className="text-muted-foreground mb-4" style={{ fontSize: 12 }}>
-                        F2 adalah resume dari data F1. Silakan isi form F1 terlebih dahulu.
-                    </p>
-                </div>
-            </div>
-        );
-    }
-
-    if (loading && !hasF1Submission) {
-        return (
-            <div className="text-muted-foreground flex items-center justify-center gap-3 py-16" style={{ fontSize: 13 }}>
-                <i className="fa-solid fa-spinner fa-spin" /> Memuat resume F2...
-            </div>
-        );
-    }
-
-    const hasData = Object.values(f1Data).some((v) => v !== '' && v !== null && v !== undefined);
-
-    return (
-        <div className="flex flex-col gap-4">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <h4 className="text-foreground font-bold" style={{ fontSize: 13 }}>
-                        Form F2 — Resume
-                    </h4>
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 uppercase dark:bg-slate-800 dark:text-slate-400">
-                        Read-Only
-                    </span>
-                    {f1Version > 0 && (
-                        <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700 uppercase dark:bg-blue-900/30 dark:text-blue-400">
-                            dari F1 v{f1Version}
-                        </span>
-                    )}
-                </div>
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={loadF1Data}
-                        disabled={loading}
-                        className="border-border text-muted-foreground flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-all hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 disabled:opacity-50 dark:hover:border-blue-800 dark:hover:bg-blue-950/20 dark:hover:text-blue-400"
-                    >
-                        <i className={`fa-solid fa-arrows-rotate ${loading ? 'fa-spin' : ''}`} /> Refresh
-                    </button>
-                    {hasData && (
-                        <a
-                            href={`/api/contracts/${selected.id}/form-submissions/f2/pdf`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="border-border text-muted-foreground flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-all hover:border-red-200 hover:bg-red-50 hover:text-red-600 dark:hover:border-red-800 dark:hover:bg-red-950/20 dark:hover:text-red-400"
-                        >
-                            <i className="fa-solid fa-file-pdf" /> Download PDF
-                        </a>
-                    )}
-                </div>
-            </div>
-
-            {/* Info Banner */}
-            <div className="flex items-center gap-3 rounded-lg border border-amber-100 bg-amber-50/50 p-3 dark:border-amber-900/30 dark:bg-amber-950/20">
-                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/40">
-                    <i className="fa-solid fa-file-shield text-amber-600 dark:text-amber-400" style={{ fontSize: 14 }} />
-                </div>
-                <div className="min-w-0">
-                    <div className="text-foreground truncate text-xs font-bold">{f2Template?.name ?? 'Resume dan Persetujuan'}</div>
-                    <div className="text-muted-foreground text-[10px]">
-                        Data diambil otomatis dari Form F1 · {F2_IMPORTANT_FIELDS.length} field penting
-                    </div>
-                </div>
-            </div>
-
-            {/* Read-only Field Grid */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-                {F2_IMPORTANT_FIELDS.map((field) => {
-                    const value = f1Data[field.key] ?? '';
-
-                    if (field.type === 'signature_box') {
-                        return (
-                            <div key={field.key} style={{ width: widthMap[field.width] || '100%' }}>
-                                <label className="text-muted-foreground mb-1.5 block text-[10px] font-bold tracking-wider uppercase">
-                                    {field.label}
-                                </label>
-                                <div className="border-border overflow-hidden rounded-lg border bg-white dark:bg-slate-950">
-                                    <div className="border-border text-muted-foreground border-b bg-slate-50 px-3 py-1.5 text-center text-[10px] font-bold tracking-tight uppercase dark:bg-slate-900">
-                                        {field.key.includes('vp') ? 'Disetujui oleh :' : 'Diketahui oleh :'}
-                                    </div>
-                                    <div className="flex h-20 flex-col items-center justify-end p-3">
-                                        <div className="text-foreground text-[11px] font-bold">{value || ''}</div>
-                                    </div>
-                                    <div className="border-border text-muted-foreground/60 border-t bg-slate-50/50 px-3 py-1 text-[9px] italic dark:bg-slate-900/50">
-                                        Tgl. ________________
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    }
-
-                    return (
-                        <div key={field.key} style={{ width: widthMap[field.width] || '100%' }}>
-                            <label className="text-muted-foreground mb-1.5 block text-[10px] font-bold tracking-wider uppercase">{field.label}</label>
-                            <div
-                                className="border-border/50 bg-muted/30 text-foreground flex min-h-[34px] w-full items-center rounded-lg border px-3 py-2 text-xs"
-                                style={{ cursor: 'default' }}
-                            >
-                                {value ? <span>{value}</span> : <span className="text-muted-foreground/40 italic">—</span>}
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-
-            {/* Footer info */}
-            <div className="border-border flex items-center justify-between border-t pt-3">
-                <span className="text-muted-foreground flex items-center gap-1.5 text-[11px]">
-                    <i className="fa-solid fa-info-circle" style={{ fontSize: 10 }} />
-                    Data F2 diambil otomatis dari Form F1. Untuk mengubah data, silakan edit pada tab F1.
-                </span>
-            </div>
         </div>
     );
 }

@@ -14,8 +14,8 @@ class WorkflowSeeder extends Seeder
      */
     public function run(): void
     {
-        // Clear existing workflows first
-        Workflow::query()->delete();
+        // Clear existing workflows first (force delete to avoid unique constraint issues with soft deletes)
+        Workflow::withTrashed()->forceDelete();
 
         $admin = User::firstWhere('email', 'admin@example.com') ?? User::first();
         $adminId = $admin ? $admin->id : null;

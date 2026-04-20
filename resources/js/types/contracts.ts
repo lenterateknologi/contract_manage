@@ -10,7 +10,8 @@ export interface UserProfile {
 
 export interface ContractVersion {
     id: string;
-    document_type: 'contract' | 'f1' | 'f2';
+    document_type: 'contract' | 'f1' | 'f2' | 'agreement';
+
     version_no: number;
     file_name: string;
     change_log: string;

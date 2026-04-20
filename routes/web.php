@@ -21,7 +21,18 @@ if (! app()->environment('production')) {
     Route::post('/email-test/send', [EmailTestController::class, 'sendTestEmail'])->name('email-test.send');
 }
 
+// ── Public Signed Routes for PDF Rendering (Browsershot) ──
+Route::get('/form-templates/render-adhoc/{key}', [FormTemplateController::class, 'renderAdhoc'])
+    ->name('admin.form-templates.render-adhoc')
+    ->middleware('signed');
+
+Route::get('/form-templates/{template}/render-print', [FormTemplateController::class, 'renderPrint'])
+    ->name('admin.form-templates.render-print')
+    ->middleware('signed');
+
+
 Route::middleware(['auth'])->group(function () {
+
     Route::get('dashboard', [ContractController::class, 'contractsView'])->defaults('view', 'dashboard')->name('dashboard');
 
     Route::get('contracts', [ContractController::class, 'contractsView'])->defaults('view', 'contracts')->name('contracts');
@@ -32,9 +43,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('f2', [ContractController::class, 'contractsView'])->defaults('view', 'f2')->name('f2');
     Route::get('expiry', [ContractController::class, 'contractsView'])->defaults('view', 'expiry')->name('expiry');
 
-    Route::get('contracts/{id}', function ($id) {
-        return Inertia::render('contracts/show', ['contractId' => $id]);
-    })->name('contracts.show');
+    Route::get('contracts/{id}', [ContractController::class, 'showView'])->name('contracts.show');
 
     // ── Contract API (under web middleware so session auth works) ──
     Route::prefix('api')->group(function () {
@@ -64,6 +73,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/contracts/{id}/form-submissions', [ContractController::class, 'saveFormSubmission']);
         Route::get('/contracts/{id}/form-submissions/{type}', [ContractController::class, 'getFormSubmission']);
         Route::get('/contracts/{id}/form-submissions/{type}/pdf', [ContractController::class, 'exportFormSubmissionPdf']);
+
+
         Route::get('/form-templates/{id}/fields', function ($id) {
             $tpl = \App\Models\FormTemplate::with(['fields' => fn($q) => $q->orderBy('order')])->findOrFail($id);
             return response()->json($tpl);
@@ -72,6 +83,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/contracts/{contractId}/messages', [ContractMessageController::class, 'index']);
         Route::post('/contracts/{contractId}/messages', [ContractMessageController::class, 'store']);
         Route::post('/contracts/{contractId}/messages/read', [ContractMessageController::class, 'markRead']);
+
+        // Agreement Data Management
+        Route::post('/contracts/{id}/agreement', [ContractController::class, 'uploadAgreement']);
+        Route::get('/contracts/{id}/agreement/versions', [ContractController::class, 'getAgreementVersions']);
+        Route::get('/contracts/{id}/agreement/compare', [ContractController::class, 'compareAgreementVersions']);
     });
 
     Route::middleware(['admin'])->prefix('admin')->group(function () {
@@ -182,8 +198,19 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/form-templates/builder/{template?}', [FormTemplateController::class, 'builder'])->name('admin.form-templates.builder');
         Route::post('/form-templates/save/{template?}', [FormTemplateController::class, 'save'])->name('admin.form-templates.save');
         Route::get('/form-templates/{template}/fill', [FormTemplateController::class, 'fill'])->name('admin.form-templates.fill');
+        Route::post('/form-templates/export-adhoc', [FormTemplateController::class, 'exportAdhoc'])->name('admin.form-templates.export-adhoc');
+        Route::post('/form-templates/export-queue', [FormTemplateController::class, 'exportAdhocQueue'])->name('admin.form-templates.export-queue');
+        Route::get('/form-templates/pdf-status/{jobId}', [FormTemplateController::class, 'checkPdfStatus'])->name('admin.form-templates.pdf-status');
         Route::post('/form-templates/{template}/export-pdf', [FormTemplateController::class, 'exportPdf'])->name('admin.form-templates.export-pdf');
+        Route::post('/form-templates/{template}/stream-pdf', [FormTemplateController::class, 'streamPdf'])->name('admin.form-templates.stream-pdf');
+
+        // Contract Form Submission Exports (using admin prefix for consistency/reliability)
+        Route::post('/contracts/{id}/form-submissions/{type}/export-queue', [ContractController::class, 'exportFormSubmissionPdfQueue'])->name('admin.contracts.export-queue');
+
         Route::delete('/form-templates/{template}', [FormTemplateController::class, 'destroy'])->name('admin.form-templates.destroy');
+
+
+
 
         Route::get('/api/templates/data', [TemplateController::class, 'getApiData'])->name('admin.templates.api.data');
     });
