@@ -18,17 +18,19 @@ class ContractStatus extends Model
 
     protected $fillable = [
         'code',
-        'name',
+        'label',
         'color',
         'bg_color',
         'icon',
         'description',
-        'sort_order',
+        'sequence',
         'is_active',
+        'created_by',
+        'updated_by',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
-        'sort_order' => 'integer',
+        'sequence' => 'integer',
     ];
 }

@@ -180,7 +180,7 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
-                className="fixed right-5 bottom-5 z-[200] flex h-12 w-12 cursor-move items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition-all select-none hover:bg-blue-700"
+                className="fixed right-5 bottom-[10%] z-[200] flex h-12 w-12 cursor-move items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition-all select-none hover:bg-blue-700"
                 style={{
                     transform: `translate(${pos.x}px, ${pos.y}px)`,
                     touchAction: 'none',
@@ -196,7 +196,7 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
 
             {/* Panel */}
             {open && (
-                <div className="fixed right-5 bottom-20 z-[199]" style={{ width: 340, animation: 'slide-up .2s ease' }}>
+                <div className="fixed right-5 z-[199]" style={{ bottom: 'calc(10% + 4rem)', width: 340, animation: 'slide-up .2s ease' }}>
                     <div className="flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl" style={{ height: 480 }}>
                         {/* Panel header */}
                         <div className="flex items-center justify-between border-b border-gray-100 bg-white px-4 py-3">

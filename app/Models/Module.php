@@ -21,13 +21,14 @@ class Module extends Model
 
     protected $fillable = [
         'id',
-        'code',
-        'title',
-        'sort_number',
-        'url',
+        'identifier',
+        'name',
+        'sequence',
+        'route',
         'icon',
         'module_group_id',
         'showed_as_menu',
+        'is_active',
         'created_by',
         'updated_by',
     ];

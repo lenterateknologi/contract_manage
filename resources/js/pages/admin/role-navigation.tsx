@@ -48,17 +48,17 @@ import { cn } from '@/lib/utils';
 // Types
 interface Module {
     id: string;
-    title: string;
-    url: string;
+    name: string;
+    route: string | null;
     icon: string | null;
     module_group_id: string | null;
-    sort_number: number;
+    sequence: number;
 }
 
 interface Group {
     id: string;
-    title: string;
-    sort_number: number;
+    name: string;
+    sequence: number;
     modules: Module[];
 }
 
@@ -102,9 +102,9 @@ const SortableModuleItem = ({ module, onRemove }: { module: Module; onRemove: (i
                 <GripVertical size={16} />
             </div>
             <div className="flex-1 min-w-0">
-                <p className="font-semibold text-slate-700 truncate text-[13.5px] tracking-tight">{module.title}</p>
+                <p className="font-semibold text-slate-700 truncate text-[13.5px] tracking-tight">{module.name}</p>
                 <p className="text-[11px] text-slate-400 flex items-center gap-1 font-medium italic">
-                    <MousePointer2 size={10} /> {module.url}
+                    <MousePointer2 size={10} /> {module.route || 'Tanpa rute'}
                 </p>
             </div>
             <button 
@@ -148,7 +148,7 @@ const SortableGroupItem = ({ group, onRemoveModule }: { group: Group; onRemoveMo
                     </div>
                     <div>
                         <h3 className="font-bold text-slate-800 tracking-tight flex items-center gap-2">
-                            {group.title}
+                            {group.name}
                             <span className="bg-slate-100 text-slate-500 text-[10px] px-1.5 py-0.5 rounded-full font-bold uppercase">
                                 {group.modules.length} Menu
                             </span>
@@ -254,8 +254,8 @@ const AvailableModuleItem = ({ module, onQuickAdd }: { module: Module; onQuickAd
                     <GripVertical size={16} />
                 </div>
                 <div className="min-w-0">
-                    <span className="text-sm font-bold text-slate-700 block truncate">{module.title}</span>
-                    <span className="text-[10px] text-slate-400 font-medium italic block">{module.url}</span>
+                    <span className="text-sm font-bold text-slate-700 block truncate">{module.name}</span>
+                    <span className="text-[10px] text-slate-400 font-medium italic block">{module.route || 'Tanpa rute'}</span>
                 </div>
             </div>
             <button 
@@ -485,10 +485,10 @@ export default function RoleNavigation({ role, navigation: initialNavigation, al
         setIsSaving(true);
         const formattedData = items.map((group, gIdx) => ({
             id: group.id,
-            sort_number: gIdx + 1,
+            sequence: gIdx + 1,
             modules: group.modules.map((module, mIdx) => ({
                 id: module.id,
-                sort_number: mIdx + 1,
+                sequence: mIdx + 1,
             }))
         }));
 
@@ -513,7 +513,16 @@ export default function RoleNavigation({ role, navigation: initialNavigation, al
             
             <div className="flex flex-col h-[calc(100vh-64px)] p-4 gap-4">
                 {/* Header Section - Compact Version */}
-                <div className="flex items-center justify-end bg-white px-5 py-3 rounded-xl border border-slate-200 shadow-sm shrink-0">
+                <div className="flex items-center justify-between bg-white px-5 py-3 rounded-xl border border-slate-200 shadow-sm shrink-0">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-primary/10 p-2 rounded-lg">
+                            <LayoutGrid className="text-primary" size={20} />
+                        </div>
+                        <div>
+                            <h1 className="font-extrabold text-slate-800 tracking-tight text-lg leading-none">Struktur Navigasi</h1>
+                            <p className="text-[11px] text-slate-500 font-medium mt-1">Mengatur menu untuk role: <span className="font-bold text-primary">{role.name}</span></p>
+                        </div>
+                    </div>
                     <div className="flex items-center gap-2">
                         <Button 
                             variant="outline" 
@@ -608,7 +617,7 @@ export default function RoleNavigation({ role, navigation: initialNavigation, al
                                         <div className="flex items-center gap-3">
                                             <GripVertical className="text-primary" size={20} />
                                             <h3 className="font-black text-slate-800 tracking-tight">
-                                                {items.find(g => g.id === activeId)?.title}
+                                                {items.find(g => g.id === activeId)?.name}
                                             </h3>
                                         </div>
                                     </div>
@@ -617,7 +626,7 @@ export default function RoleNavigation({ role, navigation: initialNavigation, al
                                         <GripVertical size={18} className="text-primary" />
                                         <div className="flex-1 min-w-0">
                                             <p className="font-black text-slate-800 truncate text-sm">
-                                                {allModules.find(m => m.id === activeId)?.title}
+                                                {allModules.find(m => m.id === activeId)?.name}
                                             </p>
                                         </div>
                                     </div>

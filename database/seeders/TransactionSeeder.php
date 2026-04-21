@@ -11,7 +11,7 @@ use App\Models\ContractVersion;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
-class ContractSeeder extends Seeder
+class TransactionSeeder extends Seeder
 {
     private array $userMap = [];
 
@@ -35,9 +35,9 @@ class ContractSeeder extends Seeder
             'eko' => User::where('email', 'eko@example.com')->first(),
         ];
 
-        // Build type lookup map
+        // Build type lookup map (using code for reliability)
         foreach (ContractType::all() as $t) {
-            $this->typeMap[strtolower($t->name)] = $t->id;
+            $this->typeMap[strtolower($t->code)] = $t->id;
         }
 
         $this->createContract1();
@@ -120,9 +120,14 @@ class ContractSeeder extends Seeder
         return $this->userMap[$name]->id;
     }
 
-    private function tid(string $name): string
+    private function tid(string $code): string
     {
-        return $this->typeMap[strtolower($name)];
+        $id = $this->typeMap[strtolower($code)] ?? null;
+        if (!$id) {
+            // Fallback for names if code not found
+            $id = ContractType::where('name', 'ilike', $code)->value('id');
+        }
+        return $id ?? ContractType::first()->id; // Fallback to first if all else fails
     }
 
     private function createContract1(): void
@@ -132,7 +137,7 @@ class ContractSeeder extends Seeder
             'title' => 'Kontrak Vendor IT Infrastructure',
             'description' => 'Pengadaan perangkat server dan jaringan untuk pusat data perusahaan.',
             'contract_date' => now()->format('Y-m-d'),
-            'contract_type_id' => $this->tid('Perjanjian Pengadaan Barang'),
+            'contract_type_id' => $this->tid('PGB'),
             'created_by' => $this->uid('ahmad'),
             'status' => 'in_review',
             'current_version' => 2,
@@ -160,7 +165,7 @@ class ContractSeeder extends Seeder
             'title' => 'MoU Kerjasama Pemasaran Regional',
             'description' => 'Nota kesepahaman untuk ekspansi pasar wilayah Jawa Timur.',
             'contract_date' => now()->subMonths(1)->format('Y-m-d'),
-            'contract_type_id' => $this->tid('Perjanjian Kerja Sama (PKS)'),
+            'contract_type_id' => $this->tid('PKS'),
             'created_by' => $this->uid('ahmad'),
             'status' => 'approved',
             'current_version' => 3,
@@ -195,7 +200,7 @@ class ContractSeeder extends Seeder
             'title' => 'Perjanjian Sewa Gudang Logistik',
             'description' => 'Kontrak sewa gudang untuk keperluan distribusi produk wilayah Barat.',
             'contract_date' => now()->subMonths(1)->format('Y-m-d'),
-            'contract_type_id' => $this->tid('Perjanjian Sewa'),
+            'contract_type_id' => $this->tid('SEWA'),
             'created_by' => $this->uid('ahmad'),
             'status' => 'revision',
             'current_version' => 1,
@@ -219,7 +224,7 @@ class ContractSeeder extends Seeder
             'title' => 'Kontrak Lisensi Software ERP',
             'description' => 'Lisensi tahunan sistem ERP untuk modul finance dan HR.',
             'contract_date' => now()->subMonths(2)->format('Y-m-d'),
-            'contract_type_id' => $this->tid('Perjanjian Jasa'),
+            'contract_type_id' => $this->tid('JASA'),
             'created_by' => $this->uid('ahmad'),
             'status' => 'draft',
             'current_version' => 1,
@@ -291,7 +296,7 @@ class ContractSeeder extends Seeder
             'title' => 'Jasa Konsultasi Keamanan Siber',
             'description' => 'Audit tahunan sistem keamanan informasi perusahaan.',
             'contract_date' => now()->subMonths(4)->format('Y-m-d'),
-            'contract_type_id' => $this->tid('Perjanjian Jasa'),
+            'contract_type_id' => $this->tid('JASA'),
             'created_by' => $this->uid('ahmad'),
             'status' => 'draft',
             'current_version' => 1,

@@ -68,8 +68,8 @@ class HandleInertiaRequests extends Middleware
         }
 
         return \App\Models\AccessModule::where('role_id', $role->id)
-            ->join('modules', 'access_modules.module_id', '=', 'modules.id')
-            ->select('modules.code', 'can_read', 'can_create', 'can_update', 'can_delete')
+            ->join('m_modules', 'm_access_modules.module_id', '=', 'm_modules.id')
+            ->select('m_modules.identifier as code', 'can_read', 'can_create', 'can_update', 'can_delete')
             ->get()
             ->keyBy('code')
             ->map(fn ($item) => [
@@ -93,22 +93,22 @@ class HandleInertiaRequests extends Middleware
         }
 
         $modules = Module::where('showed_as_menu', true)
-            ->join('access_modules', 'modules.id', '=', 'access_modules.module_id')
-            ->join('module_groups', 'access_modules.module_group_id', '=', 'module_groups.id')
-            ->leftJoin('role_module_groups', function ($join) use ($role) {
-                $join->on('module_groups.id', '=', 'role_module_groups.module_group_id')
-                    ->where('role_module_groups.role_id', '=', $role->id);
+            ->join('m_access_modules', 'm_modules.id', '=', 'm_access_modules.module_id')
+            ->join('m_module_groups', 'm_access_modules.module_group_id', '=', 'm_module_groups.id')
+            ->leftJoin('m_role_module_groups', function ($join) use ($role) {
+                $join->on('m_module_groups.id', '=', 'm_role_module_groups.module_group_id')
+                    ->where('m_role_module_groups.role_id', '=', $role->id);
             })
-            ->where('access_modules.role_id', $role->id)
-            ->where('access_modules.can_read', true)
+            ->where('m_access_modules.role_id', $role->id)
+            ->where('m_access_modules.can_read', true)
             ->select(
-                'modules.*', 
-                'module_groups.title as group_title', 
-                'access_modules.sort_number as module_sort',
-                'role_module_groups.sort_number as group_sort'
+                'm_modules.*', 
+                'm_module_groups.name as group_title', 
+                'm_access_modules.sequence as module_sort', 
+                'm_role_module_groups.sequence as group_sort'
             )
-            ->orderByRaw('COALESCE(role_module_groups.sort_number, 999)')
-            ->orderBy('access_modules.sort_number')
+            ->orderByRaw('COALESCE(m_role_module_groups.sequence, 999)')
+            ->orderBy('m_access_modules.sequence')
             ->get();
 
         return $modules->groupBy('group_title')
@@ -116,8 +116,8 @@ class HandleInertiaRequests extends Middleware
                 return [
                     'title' => $title,
                     'items' => $items->map(fn ($module) => [
-                        'title' => $module->title,
-                        'url' => $module->url,
+                        'title' => $module->name,
+                        'url' => $module->route,
                         'icon' => $module->icon,
                     ])->values()->all(),
                 ];

@@ -188,7 +188,7 @@ class ContractController extends Controller
                 $query->whereHas('approvals', function ($q) {
                     $q->where('user_id', Auth::id())
                         ->where('status', 'pending')
-                        ->whereColumn('workflow_step_id', 'contracts.workflow_step_id');
+                        ->whereColumn('workflow_step_id', 't_contracts.workflow_step_id');
                 });
                 break;
             case 'expiry':
@@ -248,7 +248,6 @@ class ContractController extends Controller
         $user = Auth::user();
         $query = Contract::query();
 
-        // If not admin, only show user's own contracts in metrics
         if ($user->role !== 'Admin') {
             $query->where('created_by', $user->id);
         }
@@ -259,11 +258,32 @@ class ContractController extends Controller
         if ($approvedContracts->count() > 0) {
             $totalDays = $approvedContracts->sum(function ($c) {
                 $firstSentAt = Approval::where('contract_id', $c->id)->oldest()->value('created_at');
-
                 return $firstSentAt ? Carbon::parse($firstSentAt)->diffInHours($c->updated_at) / 24 : 0;
             });
             $avgDays = round($totalDays / $approvedContracts->count(), 1);
         }
+
+        $monthlyTrend = Contract::leftJoin('m_contract_types', 't_contracts.contract_type_id', '=', 'm_contract_types.id')
+            ->select(
+                DB::raw("to_char(t_contracts.created_at, 'YYYY-MM') as month"),
+                'm_contract_types.name as type_name',
+                DB::raw('count(*) as count')
+            )
+            ->where('t_contracts.created_at', '>=', now()->subMonths(6))
+            ->groupBy('month', 'type_name')
+            ->orderBy('month')
+            ->get()
+            ->groupBy('month')
+            ->map(function ($items, $month) {
+                return [
+                    'month' => $month,
+                    'types' => $items->map(fn ($i) => [
+                        'name' => $i->type_name ?? 'Unspecified',
+                        'count' => (int) $i->count,
+                    ])->values(),
+                    'total' => $items->sum('count'),
+                ];
+            })->values();
 
         return [
             'metrics' => [
@@ -274,27 +294,7 @@ class ContractController extends Controller
                     ->where('updated_at', '>=', now()->startOfMonth())
                     ->count(),
             ],
-            'monthlyTrend' => Contract::leftJoin('contract_types', 'contracts.contract_type_id', '=', 'contract_types.id')
-                ->select(
-                    DB::raw("to_char(contracts.created_at, 'YYYY-MM') as month"),
-                    'contract_types.name as type_name',
-                    DB::raw('count(*) as count')
-                )
-                ->where('contracts.created_at', '>=', now()->subMonths(6))
-                ->groupBy('month', 'type_name')
-                ->orderBy('month')
-                ->get()
-                ->groupBy('month')
-                ->map(function ($items, $month) {
-                    return [
-                        'month' => $month,
-                        'types' => $items->map(fn ($i) => [
-                            'name' => $i->type_name ?? 'Unspecified',
-                            'count' => (int) $i->count,
-                        ])->values(),
-                        'total' => $items->sum('count'),
-                    ];
-                })->values(),
+            'monthlyTrend' => $monthlyTrend,
         ];
     }
 
@@ -369,7 +369,7 @@ class ContractController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'contract_type_id' => 'required|exists:contract_types,id',
+            'contract_type_id' => 'required|exists:m_contract_types,id',
             'transaction_type' => 'nullable|string|in:Perjanjian Baru,Addendum,Amandement,Perubahan Perjanjian',
             'tax_required' => 'nullable|boolean',
         ]);
@@ -412,7 +412,7 @@ class ContractController extends Controller
             'contract_no' => 'nullable|string',
             'contract_date' => 'nullable|date',
             'end_date' => 'nullable|date',
-            'contract_type_id' => 'nullable|exists:contract_types,id',
+            'contract_type_id' => 'nullable|exists:m_contract_types,id',
             'transaction_type' => 'nullable|string|in:Perjanjian Baru,Addendum,Amandement,Perubahan Perjanjian',
         ]);
 
@@ -953,7 +953,7 @@ class ContractController extends Controller
         $contract = Contract::findOrFail($id);
 
         $request->validate([
-            'form_template_id' => 'required|uuid|exists:form_templates,id',
+            'form_template_id' => 'required|uuid|exists:m_form_templates,id',
             'document_type' => 'required|in:f1,f2',
             'form_data' => 'required|array',
         ]);

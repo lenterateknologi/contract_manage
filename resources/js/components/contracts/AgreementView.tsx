@@ -193,7 +193,7 @@ function VisualDiffViewer({ contractId, v1, v2 }: { contractId: string, v1: numb
     );
 }
 
-export default function AgreementTab({ contract, onUpdate }: { contract: Contract, onUpdate: (c: Contract) => void }) {
+export default function AgreementView({ contract, onUpdate }: { contract: Contract, onUpdate: (c: Contract) => void }) {
     const [versions, setVersions] = useState<AgreementVersion[]>([]);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);

@@ -49,7 +49,7 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->string('bg_color')->nullable();
             $table->string('text_color')->nullable();
-            $table->foreignId('role_id')->nullable(); // New FK to m_roles (if numeric) or uuid
+            $table->foreignUuid('role_id')->nullable()->constrained('m_roles')->nullOnDelete();
             $table->foreignUuid('department_id')->nullable()->constrained('m_departments')->nullOnDelete();
             $table->boolean('is_active')->default(true);
             $table->rememberToken();
@@ -125,6 +125,7 @@ return new class extends Migration
             $table->string('icon')->nullable();
             $table->string('route')->nullable();
             $table->integer('sequence')->default(0);
+            $table->boolean('showed_as_menu')->default(true);
             $table->boolean('is_active')->default(true);
             $table->uuid('created_by')->nullable();
             $table->uuid('updated_by')->nullable();
@@ -137,11 +138,13 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('role_id')->constrained('m_roles')->cascadeOnDelete();
             $table->foreignUuid('module_id')->constrained('m_modules')->cascadeOnDelete();
-            $table->boolean('can_view')->default(false);
+            $table->foreignUuid('module_group_id')->nullable()->constrained('m_module_groups')->nullOnDelete();
+            $table->boolean('can_read')->default(false);
             $table->boolean('can_create')->default(false);
-            $table->boolean('can_edit')->default(false);
+            $table->boolean('can_update')->default(false);
             $table->boolean('can_delete')->default(false);
             $table->boolean('can_approve')->default(false);
+            $table->integer('sequence')->default(0);
             $table->timestamps();
             $table->softDeletes();
         });
@@ -151,6 +154,7 @@ return new class extends Migration
             $table->id();
             $table->foreignUuid('role_id')->constrained('m_roles')->cascadeOnDelete();
             $table->foreignUuid('module_group_id')->constrained('m_module_groups')->cascadeOnDelete();
+            $table->integer('sequence')->default(0);
             $table->timestamps();
         });
     }

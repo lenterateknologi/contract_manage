@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, Save, CheckSquare, Square, Check, X, LayoutGrid, Shield } from 'lucide-react';
 import React, { useMemo } from 'react';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/components/contracts/Toast';
 
 interface Props {
     role: {
@@ -15,12 +16,12 @@ interface Props {
     };
     modules: Array<{
         id: string;
-        code: string;
-        title: string;
+        identifier: string;
+        name: string;
         module_group_id: string;
         module_group: {
             id: string;
-            title: string;
+            name: string;
         };
         access?: {
             can_read: boolean;
@@ -42,6 +43,8 @@ const permissionLabels: Record<Permission, string> = {
 };
 
 export default function RoleAccess({ role, modules }: Props) {
+    const { showToast } = useToast();
+
     const form = useForm({
         accesses: modules.map(module => ({
             module_id: module.id,
@@ -56,8 +59,11 @@ export default function RoleAccess({ role, modules }: Props) {
         e.preventDefault();
         form.post(`/admin/roles/${role.id}/access`, {
             onSuccess: () => {
-                router.visit('/admin/roles');
+                showToast("Hak akses role berhasil diperbarui.", "success");
             },
+            onError: () => {
+                showToast("Gagal menyimpan hak akses.", "danger");
+            }
         });
     };
 
@@ -108,11 +114,11 @@ export default function RoleAccess({ role, modules }: Props) {
     const groupedModules = useMemo(() => {
         return modules.reduce((acc, module) => {
             const groupId = module.module_group?.id || 'other';
-            const groupTitle = module.module_group?.title || 'Lainnya';
-            if (!acc[groupId]) acc[groupId] = { title: groupTitle, modules: [] };
+            const groupName = module.module_group?.name || 'Lainnya';
+            if (!acc[groupId]) acc[groupId] = { name: groupName, modules: [] };
             acc[groupId].modules.push(module);
             return acc;
-        }, {} as Record<string, { title: string; modules: typeof modules }>);
+        }, {} as Record<string, { name: string; modules: typeof modules }>);
     }, [modules]);
 
     const isAllChecked = form.data.accesses.every(a => a.can_read && a.can_create && a.can_update && a.can_delete);
@@ -197,7 +203,7 @@ export default function RoleAccess({ role, modules }: Props) {
                                             <tr className="bg-slate-100 border-b border-t border-slate-200 group/row">
                                                 <td className="px-4 py-2 font-black text-slate-800 flex items-center gap-2">
                                                     <LayoutGrid className="h-3.5 w-3.5 text-slate-400" />
-                                                    <span className="uppercase tracking-tight text-[11px]">{group.title}</span>
+                                                    <span className="uppercase tracking-tight text-[11px]">{group.name}</span>
                                                 </td>
                                                 {PERMISSIONS.map(p => (
                                                     <td key={p} className="px-2 py-2 text-center border-l bg-slate-50/50 group-hover/row:bg-slate-100 transition-colors">
@@ -225,8 +231,8 @@ export default function RoleAccess({ role, modules }: Props) {
                                                 <tr key={module.id} className="border-b last:border-b-0 hover:bg-slate-50 transition-colors group/module">
                                                     <td className="px-4 py-2 border-r">
                                                         <div className="flex flex-col">
-                                                            <span className="font-bold text-slate-900 group-hover/module:text-primary transition-colors">{module.title}</span>
-                                                            <span className="text-[9px] font-mono text-slate-400 uppercase tracking-widest">{module.code}</span>
+                                                            <span className="font-bold text-slate-900 group-hover/module:text-primary transition-colors">{module.name}</span>
+                                                            <span className="text-[9px] font-mono text-slate-400 uppercase tracking-widest">{module.identifier}</span>
                                                         </div>
                                                     </td>
                                                     {PERMISSIONS.map(p => (

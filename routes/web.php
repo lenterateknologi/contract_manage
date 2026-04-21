@@ -36,12 +36,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('dashboard', [ContractController::class, 'contractsView'])->defaults('view', 'dashboard')->name('dashboard');
 
     Route::get('contracts', [ContractController::class, 'contractsView'])->defaults('view', 'contracts')->name('contracts');
-    Route::get('my-contracts', [ContractController::class, 'contractsView'])->defaults('view', 'mine')->name('contracts.mine');
+    Route::get('contracts/mine', [ContractController::class, 'contractsView'])->defaults('view', 'mine')->name('contracts.mine');
+    Route::get('contracts/pending', [ContractController::class, 'contractsView'])->defaults('view', 'pending')->name('pending');
+    Route::get('contracts/f1', [ContractController::class, 'contractsView'])->defaults('view', 'f1')->name('f1');
+    Route::get('contracts/f2', [ContractController::class, 'contractsView'])->defaults('view', 'f2')->name('f2');
+    Route::get('contracts/expiry', [ContractController::class, 'contractsView'])->defaults('view', 'expiry')->name('expiry');
 
-    Route::get('pending', [ContractController::class, 'contractsView'])->defaults('view', 'pending')->name('pending');
-    Route::get('f1', [ContractController::class, 'contractsView'])->defaults('view', 'f1')->name('f1');
-    Route::get('f2', [ContractController::class, 'contractsView'])->defaults('view', 'f2')->name('f2');
-    Route::get('expiry', [ContractController::class, 'contractsView'])->defaults('view', 'expiry')->name('expiry');
+    Route::get('my-contracts', [ContractController::class, 'contractsView'])->defaults('view', 'mine'); // Backward compat
 
     Route::get('contracts/{id}', [ContractController::class, 'showView'])->name('contracts.show');
 

@@ -25,16 +25,17 @@ class AccessModuleSeeder extends Seeder
         foreach ($roles as $role) {
             // Seed group relationships for each role
             $groups = ModuleGroup::all();
-            foreach ($groups as $group) {
+            foreach ($groups as $idx => $group) {
                 DB::table('m_role_module_groups')->insert([
                     'role_id' => $role->id,
                     'module_group_id' => $group->id,
+                    'sequence' => $idx + 1,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
             }
 
-            foreach ($modules as $module) {
+            foreach ($modules as $mIdx => $module) {
                 // Skip sensitive modules for non-admins
                 if ($module->identifier === 'AUDIT' && $role->name !== 'Admin') {
                     continue;
@@ -50,11 +51,13 @@ class AccessModuleSeeder extends Seeder
                         'module_id' => $module->id,
                     ],
                     [
-                        'can_view' => true,
+                        'can_read' => true,
                         'can_create' => $role->name === 'Admin' || $role->name === 'Manager',
-                        'can_edit' => $role->name === 'Admin' || $role->name === 'Manager',
+                        'can_update' => $role->name === 'Admin' || $role->name === 'Manager',
                         'can_delete' => $role->name === 'Admin',
                         'can_approve' => $role->name === 'Admin' || $role->name === 'Manager' || $role->name === 'Director',
+                        'module_group_id' => $module->module_group_id,
+                        'sequence' => $mIdx + 1,
                     ]
                 );
             }

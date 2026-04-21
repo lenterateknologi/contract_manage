@@ -41,7 +41,7 @@ class ContractFormSubmission extends Model
     public function currentVersionData(): HasOne
     {
         return $this->hasOne(ContractFormSubmissionVersion::class, 'submission_id')
-            ->whereColumn('version_no', 'contract_form_submissions.current_version');
+            ->whereColumn('version_no', 't_form_submissions.current_version');
     }
 
     public function latestVersion(): HasOne

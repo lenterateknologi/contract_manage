@@ -48,6 +48,8 @@ return new class extends Migration
             $table->string('document_type')->default('contract'); // contract, f1, f2
             $table->foreignUuid('contract_type_id')->nullable()->constrained('m_contract_types')->nullOnDelete();
             $table->string('transaction_type')->nullable();
+            $table->boolean('has_letterhead')->default(false);
+            $table->json('letterhead_json')->nullable();
             $table->boolean('is_active')->default(true);
             $table->uuid('created_by')->nullable();
             $table->uuid('updated_by')->nullable();

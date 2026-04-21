@@ -73,7 +73,7 @@ class AdminController extends Controller
     public function storeRole(Request $request)
     {
         $data = $request->validate([
-            'name' => 'required|string|max:255|unique:roles,name',
+            'name' => 'required|string|max:255|unique:m_roles,name',
             'description' => 'nullable|string',
         ]);
 
@@ -85,7 +85,7 @@ class AdminController extends Controller
     public function updateRole(Request $request, Role $role)
     {
         $data = $request->validate([
-            'name' => 'required|string|max:255|unique:roles,name,'.$role->id,
+            'name' => 'required|string|max:255|unique:m_roles,name,'.$role->id,
             'description' => 'nullable|string',
         ]);
 
@@ -106,7 +106,7 @@ class AdminController extends Controller
     {
         $modules = Module::with(['moduleGroup', 'accessModules' => function ($query) use ($role) {
             $query->where('role_id', $role->id);
-        }])->orderBy('module_group_id')->orderBy('sort_number')->get();
+        }])->orderBy('module_group_id')->orderBy('sequence')->get();
 
         $modules->transform(function ($module) {
             $module->access = $module->accessModules->first();
@@ -130,7 +130,7 @@ class AdminController extends Controller
     {
         $data = $request->validate([
             'accesses' => 'required|array',
-            'accesses.*.module_id' => 'required|uuid|exists:modules,id',
+            'accesses.*.module_id' => 'required|uuid|exists:m_modules,id',
             'accesses.*.can_read' => 'boolean',
             'accesses.*.can_create' => 'boolean',
             'accesses.*.can_update' => 'boolean',
@@ -138,7 +138,7 @@ class AdminController extends Controller
         ]);
 
         foreach ($data['accesses'] as $accessData) {
-            DB::table('access_modules')->updateOrInsert(
+            \App\Models\AccessModule::updateOrCreate(
                 [
                     'role_id' => $role->id,
                     'module_id' => $accessData['module_id'],
@@ -148,8 +148,6 @@ class AdminController extends Controller
                     'can_create' => $accessData['can_create'],
                     'can_update' => $accessData['can_update'],
                     'can_delete' => $accessData['can_delete'],
-                    'created_by' => Auth::id(),
-                    'updated_at' => now(),
                 ]
             );
         }
@@ -165,7 +163,7 @@ class AdminController extends Controller
                 ->where('module_group_id', $group->id)
                 ->first();
 
-            $group->sort_number = $config ? $config->sort_number : 999;
+            $group->sequence = $config ? $config->sequence : 999;
 
             // Get modules that belong to this group FOR THIS ROLE
             $group->modules = Module::whereHas('accessModules', function ($q) use ($role, $group) {
@@ -176,15 +174,15 @@ class AdminController extends Controller
                 $access = AccessModule::where('role_id', $role->id)
                     ->where('module_id', $module->id)
                     ->first();
-                $module->sort_number = $access ? $access->sort_number : 999;
+                $module->sequence = $access ? $access->sequence : 999;
 
                 return $module;
-            })->sortBy('sort_number')->values();
+            })->sortBy('sequence')->values();
 
             return $group;
-        })->sortBy('sort_number')->values();
+        })->sortBy('sequence')->values();
 
-        $allModules = Module::orderBy('title')->get();
+        $allModules = Module::orderBy('name')->get();
 
         return Inertia::render('admin/role-navigation', [
             'role' => $role,
@@ -201,13 +199,13 @@ class AdminController extends Controller
     public function reorderRoleNavigation(Request $request, Role $role)
     {
         $data = $request->validate([
-            'role_id' => 'required|uuid|exists:roles,id',
+            'role_id' => 'required|uuid|exists:m_roles,id',
             'groups' => 'required|array',
-            'groups.*.id' => 'required|uuid|exists:module_groups,id',
-            'groups.*.sort_number' => 'required|integer',
+            'groups.*.id' => 'required|uuid|exists:m_module_groups,id',
+            'groups.*.sequence' => 'required|integer',
             'groups.*.modules' => 'nullable|array',
-            'groups.*.modules.*.id' => 'required|uuid|exists:modules,id',
-            'groups.*.modules.*.sort_number' => 'required|integer',
+            'groups.*.modules.*.id' => 'required|uuid|exists:m_modules,id',
+            'groups.*.modules.*.sequence' => 'required|integer',
         ]);
 
         $roleId = $data['role_id'];
@@ -222,13 +220,13 @@ class AdminController extends Controller
             // Save group order for this role specifically - using query builder due to composite key
             $updatedGroups = RoleModuleGroup::where('role_id', $roleId)
                 ->where('module_group_id', $groupData['id'])
-                ->update(['sort_number' => $groupData['sort_number']]);
+                ->update(['sequence' => $groupData['sequence']]);
 
             if ($updatedGroups === 0) {
                 RoleModuleGroup::create([
                     'role_id' => $roleId,
                     'module_group_id' => $groupData['id'],
-                    'sort_number' => $groupData['sort_number'],
+                    'sequence' => $groupData['sequence'],
                 ]);
             }
 
@@ -242,7 +240,7 @@ class AdminController extends Controller
                         ->update([
                             'can_read' => true,
                             'module_group_id' => $groupData['id'],
-                            'sort_number' => $moduleData['sort_number'],
+                            'sequence' => $moduleData['sequence'],
                         ]);
 
                     if ($updated === 0) {
@@ -251,8 +249,7 @@ class AdminController extends Controller
                             'module_id' => $moduleData['id'],
                             'can_read' => true,
                             'module_group_id' => $groupData['id'],
-                            'sort_number' => $moduleData['sort_number'],
-                            'created_by' => Auth::id() ?? User::where('role', 'admin')->first()->id,
+                            'sequence' => $moduleData['sequence'],
                         ]);
                     }
                 }
@@ -265,7 +262,7 @@ class AdminController extends Controller
             ->update([
                 'can_read' => false,
                 'module_group_id' => null,
-                'sort_number' => 0,
+                'sequence' => 0,
             ]);
 
         return back();
@@ -275,13 +272,13 @@ class AdminController extends Controller
     {
         $data = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'username' => 'required|string|max:20|unique:users,username',
+            'email' => 'required|email|unique:m_users,email',
+            'username' => 'required|string|max:20|unique:m_users,username',
             'password' => 'required|string|min:8',
             'role' => 'required|string',
             'position' => 'nullable|string',
             'phone' => 'nullable|string',
-            'department_id' => 'nullable|uuid|exists:departments,id',
+            'department_id' => 'nullable|uuid|exists:m_departments,id',
             'is_active' => 'boolean',
         ]);
 
@@ -303,12 +300,12 @@ class AdminController extends Controller
     {
         $data = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,'.$user->id,
-            'username' => 'required|string|max:20|unique:users,username,'.$user->id,
+            'email' => 'required|email|unique:m_users,email,'.$user->id,
+            'username' => 'required|string|max:20|unique:m_users,username,'.$user->id,
             'role' => 'required|string',
             'position' => 'nullable|string',
             'phone' => 'nullable|string',
-            'department_id' => 'nullable|uuid|exists:departments,id',
+            'department_id' => 'nullable|uuid|exists:m_departments,id',
             'is_active' => 'boolean',
             'password' => 'nullable|string|min:8',
         ]);
@@ -359,7 +356,7 @@ class AdminController extends Controller
     public function storeContractType(Request $request)
     {
         $data = $request->validate([
-            'name' => 'required|string|max:255|unique:contract_types,name',
+            'name' => 'required|string|max:255|unique:m_contract_types,name',
             'description' => 'nullable|string',
             'type' => 'required|string|in:f1,f2',
         ]);
@@ -372,7 +369,7 @@ class AdminController extends Controller
     public function updateContractType(Request $request, ContractType $type)
     {
         $data = $request->validate([
-            'name' => 'required|string|max:255|unique:contract_types,name,'.$type->id,
+            'name' => 'required|string|max:255|unique:m_contract_types,name,'.$type->id,
             'description' => 'nullable|string',
             'type' => 'required|string|in:f1,f2',
         ]);
@@ -393,14 +390,14 @@ class AdminController extends Controller
     {
         $query = ContractStatus::query()
             ->when($request->search, function ($q, $search) {
-                $q->where('name', 'ilike', "%{$search}%")
+                $q->where('label', 'ilike', "%{$search}%")
                   ->orWhere('code', 'ilike', "%{$search}%")
                   ->orWhere('description', 'ilike', "%{$search}%");
             });
 
         return Inertia::render('admin/index', [
             'currentView' => 'contract-statuses',
-            'statuses' => $query->orderBy('sort_order')->paginate($request->input('per_page', 10))->withQueryString(),
+            'statuses' => $query->orderBy('sequence')->paginate($request->input('per_page', 10))->withQueryString(),
             'filters' => $request->only(['search']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
@@ -412,13 +409,13 @@ class AdminController extends Controller
     public function storeContractStatus(Request $request)
     {
         $data = $request->validate([
-            'code' => 'required|string|max:50|unique:contract_statuses,code',
-            'name' => 'required|string|max:255',
+            'code' => 'required|string|max:50|unique:m_contract_statuses,code',
+            'label' => 'required|string|max:255',
             'color' => 'required|string|max:20',
             'bg_color' => 'required|string|max:20',
             'icon' => 'nullable|string|max:50',
             'description' => 'nullable|string',
-            'sort_order' => 'required|integer',
+            'sequence' => 'required|integer',
             'is_active' => 'boolean',
         ]);
 
@@ -430,13 +427,13 @@ class AdminController extends Controller
     public function updateContractStatus(Request $request, ContractStatus $status)
     {
         $data = $request->validate([
-            'code' => 'required|string|max:50|unique:contract_statuses,code,'.$status->id,
-            'name' => 'required|string|max:255',
+            'code' => 'required|string|max:50|unique:m_contract_statuses,code,'.$status->id,
+            'label' => 'required|string|max:255',
             'color' => 'required|string|max:20',
             'bg_color' => 'required|string|max:20',
             'icon' => 'nullable|string|max:50',
             'description' => 'nullable|string',
-            'sort_order' => 'required|integer',
+            'sequence' => 'required|integer',
             'is_active' => 'boolean',
         ]);
 
@@ -475,7 +472,7 @@ class AdminController extends Controller
     public function storeDepartment(Request $request)
     {
         $data = $request->validate([
-            'code' => 'required|string|max:50|unique:departments,code',
+            'code' => 'required|string|max:50|unique:m_departments,code',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'is_active' => 'boolean',
@@ -492,7 +489,7 @@ class AdminController extends Controller
     public function updateDepartment(Request $request, Department $department)
     {
         $data = $request->validate([
-            'code' => 'required|string|max:50|unique:departments,code,' . $department->id,
+            'code' => 'required|string|max:50|unique:m_departments,code,' . $department->id,
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'is_active' => 'boolean',
@@ -535,7 +532,7 @@ class AdminController extends Controller
     public function storeVendor(Request $request)
     {
         $data = $request->validate([
-            'code' => 'required|string|max:50|unique:vendors,code',
+            'code' => 'required|string|max:50|unique:m_vendors,code',
             'name' => 'required|string|max:255',
             'category' => 'nullable|string|max:100',
             'email' => 'nullable|email|max:255',
@@ -561,7 +558,7 @@ class AdminController extends Controller
     public function updateVendor(Request $request, Vendor $vendor)
     {
         $data = $request->validate([
-            'code' => 'required|string|max:50|unique:vendors,code,' . $vendor->id,
+            'code' => 'required|string|max:50|unique:m_vendors,code,' . $vendor->id,
             'name' => 'required|string|max:255',
             'category' => 'nullable|string|max:100',
             'email' => 'nullable|email|max:255',
@@ -618,7 +615,7 @@ class AdminController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'contract_type' => 'required|string',
-            'department_id' => 'nullable|uuid|exists:departments,id',
+            'department_id' => 'nullable|uuid|exists:m_departments,id',
             'description' => 'nullable|string',
             'is_default' => 'boolean',
             'steps' => 'nullable|array',
@@ -626,7 +623,7 @@ class AdminController extends Controller
             'steps.*.description' => 'nullable|string',
             'steps.*.approver_type' => 'nullable|string|in:role,user',
             'steps.*.user_ids' => 'nullable|array',
-            'steps.*.department_id' => 'nullable|uuid|exists:departments,id',
+            'steps.*.department_id' => 'nullable|uuid|exists:m_departments,id',
         ]);
 
         $workflow = Workflow::create($data);
@@ -654,7 +651,7 @@ class AdminController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'contract_type' => 'required|string',
-            'department_id' => 'nullable|uuid|exists:departments,id',
+            'department_id' => 'nullable|uuid|exists:m_departments,id',
             'description' => 'nullable|string',
             'is_default' => 'boolean',
             'steps' => 'nullable|array',
@@ -662,13 +659,13 @@ class AdminController extends Controller
             'steps.*.description' => 'nullable|string',
             'steps.*.approver_type' => 'nullable|string|in:role,user',
             'steps.*.user_ids' => 'nullable|array',
-            'steps.*.department_id' => 'nullable|uuid|exists:departments,id',
+            'steps.*.department_id' => 'nullable|uuid|exists:m_departments,id',
         ]);
 
         $workflow->update($data);
 
         // Sync steps
-        $workflow->steps()->delete();
+        $workflow->steps()->forceDelete();
         if (! empty($data['steps'])) {
             foreach ($data['steps'] as $index => $stepData) {
                 $workflow->steps()->create([
@@ -716,10 +713,10 @@ class AdminController extends Controller
             'steps.*.description' => 'nullable|string',
             'steps.*.approver_type' => 'nullable|string|in:role,user',
             'steps.*.user_ids' => 'nullable|array',
-            'steps.*.department_id' => 'nullable|uuid|exists:departments,id',
+            'steps.*.department_id' => 'nullable|uuid|exists:m_departments,id',
         ]);
 
-        $workflow->steps()->delete();
+        $workflow->steps()->forceDelete();
 
         if (! empty($data['steps'])) {
             foreach ($data['steps'] as $index => $stepData) {
@@ -746,9 +743,9 @@ class AdminController extends Controller
     public function navigation()
     {
         $groups = ModuleGroup::with(['modules' => function ($query) {
-            $query->orderBy('sort_number');
+            $query->orderBy('sequence');
         }])
-            ->orderBy('sort_number')
+            ->orderBy('sequence')
             ->get();
 
         return Inertia::render('admin/index', [
@@ -761,12 +758,12 @@ class AdminController extends Controller
     {
         $query = ModuleGroup::query()
             ->when($request->search, function ($q, $search) {
-                $q->where('title', 'ilike', "%{$search}%");
+                $q->where('name', 'ilike', "%{$search}%");
             });
 
         return Inertia::render('admin/index', [
             'currentView' => 'module-groups',
-            'moduleGroups' => $query->orderBy('sort_number')->paginate($request->input('per_page', 10))->withQueryString(),
+            'moduleGroups' => $query->orderBy('sequence')->paginate($request->input('per_page', 10))->withQueryString(),
             'filters' => $request->only(['search']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#'],
@@ -779,7 +776,7 @@ class AdminController extends Controller
     {
         $query = Module::with('moduleGroup')
             ->when($request->search, function ($q, $search) {
-                $q->where('title', 'ilike', "%{$search}%")
+                $q->where('name', 'ilike', "%{$search}%")
                   ->orWhere('description', 'ilike', "%{$search}%");
             })
             ->when($request->module_group_id, function ($q, $groupId) {
@@ -788,7 +785,7 @@ class AdminController extends Controller
 
         return Inertia::render('admin/index', [
             'currentView' => 'modules',
-            'modules' => $query->orderBy('title')->paginate($request->input('per_page', 10))->withQueryString(),
+            'modules' => $query->orderBy('name')->paginate($request->input('per_page', 10))->withQueryString(),
             'moduleGroups' => ModuleGroup::all(),
             'filters' => $request->only(['search', 'module_group_id']),
             'breadcrumbs' => [
@@ -801,26 +798,26 @@ class AdminController extends Controller
     public function reorderNavigation(Request $request)
     {
         $data = $request->validate([
-            'role_id' => 'required|uuid|exists:roles,id',
+            'role_id' => 'required|uuid|exists:m_roles,id',
             'groups' => 'required|array',
-            'groups.*.id' => 'required|uuid|exists:module_groups,id',
-            'groups.*.sort_number' => 'required|integer',
+            'groups.*.id' => 'required|uuid|exists:m_module_groups,id',
+            'groups.*.sequence' => 'required|integer',
             'groups.*.modules' => 'nullable|array',
-            'groups.*.modules.*.id' => 'required|uuid|exists:modules,id',
-            'groups.*.modules.*.sort_number' => 'required|integer',
+            'groups.*.modules.*.id' => 'required|uuid|exists:m_modules,id',
+            'groups.*.modules.*.sequence' => 'required|integer',
         ]);
 
         $roleId = $data['role_id'];
 
         foreach ($data['groups'] as $groupData) {
             ModuleGroup::where('id', $groupData['id'])->update([
-                'sort_number' => $groupData['sort_number'],
+                'sequence' => $groupData['sort_number'],
             ]);
 
             if (! empty($groupData['modules'])) {
                 foreach ($groupData['modules'] as $moduleData) {
                     Module::where('id', $moduleData['id'])->update([
-                        'sort_number' => $moduleData['sort_number'],
+                        'sequence' => $moduleData['sort_number'],
                         'module_group_id' => $groupData['id'],
                     ]);
 
@@ -844,8 +841,9 @@ class AdminController extends Controller
     public function storeModuleGroup(Request $request)
     {
         $data = $request->validate([
-            'title' => 'required|string|max:255',
-            'sort_number' => 'required|integer',
+            'name' => 'required|string|max:255|unique:m_module_groups,name',
+            'sequence' => 'required|integer',
+            'icon' => 'nullable|string|max:50',
         ]);
 
         $data['created_by'] = Auth::id();
@@ -859,8 +857,9 @@ class AdminController extends Controller
     public function updateModuleGroup(Request $request, ModuleGroup $group)
     {
         $data = $request->validate([
-            'title' => 'required|string|max:255',
-            'sort_number' => 'required|integer',
+            'name' => 'required|string|max:255|unique:m_module_groups,name,' . $group->id,
+            'sequence' => 'required|integer',
+            'icon' => 'nullable|string|max:50',
         ]);
 
         $data['updated_by'] = Auth::id();
@@ -880,12 +879,12 @@ class AdminController extends Controller
     public function storeModule(Request $request)
     {
         $data = $request->validate([
-            'code' => 'required|string|max:10|unique:modules,code',
-            'title' => 'required|string|max:255',
-            'sort_number' => 'required|integer',
-            'url' => 'nullable|string',
-            'icon' => 'nullable|string',
-            'module_group_id' => 'required|uuid|exists:module_groups,id',
+            'name' => 'required|string|max:255|unique:m_modules,name',
+            'identifier' => 'required|string|max:50|unique:m_modules,identifier',
+            'module_group_id' => 'required|uuid|exists:m_module_groups,id',
+            'sequence' => 'required|integer',
+            'route' => 'nullable|string|max:255',
+            'icon' => 'nullable|string|max:50',
             'showed_as_menu' => 'boolean',
         ]);
 
@@ -900,12 +899,12 @@ class AdminController extends Controller
     public function updateModule(Request $request, Module $module)
     {
         $data = $request->validate([
-            'code' => 'required|string|max:10|unique:modules,code,'.$module->id,
-            'title' => 'required|string|max:255',
-            'sort_number' => 'required|integer',
-            'url' => 'nullable|string',
-            'icon' => 'nullable|string',
-            'module_group_id' => 'required|uuid|exists:module_groups,id',
+            'name' => 'required|string|max:255|unique:m_modules,name,'.$module->id,
+            'identifier' => 'required|string|max:50|unique:m_modules,identifier,'.$module->id,
+            'module_group_id' => 'required|uuid|exists:m_module_groups,id',
+            'sequence' => 'required|integer',
+            'route' => 'nullable|string|max:255',
+            'icon' => 'nullable|string|max:50',
             'showed_as_menu' => 'boolean',
         ]);
 

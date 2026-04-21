@@ -59,10 +59,10 @@ class FormTemplateController extends Controller
         try {
             $templateData = $request->input('template');
             $formData = $request->input('form_data', '[]');
-            
+
             $jobId = (string) Str::uuid();
             $cacheKey = 'pdf_adhoc_' . $jobId;
-            
+
             Cache::put($cacheKey, [
                 'template' => $templateData,
                 'formData' => json_decode($formData, true) ?? [],
@@ -79,10 +79,10 @@ class FormTemplateController extends Controller
             }
 
             $fileName = (Str::slug($templateData['name'] ?? 'test')) . '_' . time() . '.pdf';
-            
+
             // Queue the job
             GeneratePdfJob::dispatch($jobId, $printUrl, $fileName);
-            
+
             Cache::put('pdf_status_' . $jobId, ['status' => 'pending', 'progress' => 10], 1800);
 
             return response()->json([
@@ -118,7 +118,7 @@ class FormTemplateController extends Controller
         try {
             $templateData = $request->input('template');
             $formData = $request->input('form_data', '[]');
-            
+
             // Create a temporary "virtual" template for rendering
             $key = 'pdf_adhoc_' . Str::uuid();
             Cache::put($key, [
@@ -182,7 +182,7 @@ class FormTemplateController extends Controller
 
         // Convert the virtual template data into an object/array compatible with FormPrint
         $templateData = $data['template'];
-        
+
         // Ensure logo is Base64 encoded for the ad-hoc render too
         if (!empty($templateData['letterhead_json']['logo_url'])) {
             $logoBase64 = $this->getLogoBase64($templateData['letterhead_json']['logo_url']);
@@ -206,8 +206,8 @@ class FormTemplateController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'fields' => 'required|array|min:1',
-            'fields.*.label' => 'required|string|max:255',
+            'fields' => 'sometimes|array',
+            'fields.*.label' => 'nullable|string|max:255',
             'fields.*.type' => 'required|string',
             'fields.*.is_required' => 'boolean',
         ]);
@@ -233,9 +233,12 @@ class FormTemplateController extends Controller
 
             // First pass: Create all fields without setting parent_id
             foreach ($allFieldsData as $fieldData) {
+                $label = $fieldData['label'] ?? '';
+                $name = $fieldData['name'] ?? (!empty($label) ? Str::snake($label) : 'field_' . Str::random(6));
+
                 $field = $template->fields()->create([
-                    'label' => $fieldData['label'],
-                    'name' => $fieldData['name'] ?? Str::snake($fieldData['label']),
+                    'label' => $label,
+                    'name' => $name,
                     'type' => $fieldData['type'],
                     'container_type' => $fieldData['container_type'] ?? null,
                     'placeholder' => $fieldData['placeholder'] ?? null,
@@ -253,7 +256,7 @@ class FormTemplateController extends Controller
             foreach ($allFieldsData as $fieldData) {
                 if (! empty($fieldData['parent_id']) && isset($idMapping[$fieldData['parent_id']])) {
                     $dbId = $idMapping[$fieldData['id']];
-                    DB::table('form_fields')
+                    DB::table('m_form_fields')
                         ->where('id', $dbId)
                         ->update(['parent_id' => $idMapping[$fieldData['parent_id']]]);
                 }
@@ -316,7 +319,7 @@ class FormTemplateController extends Controller
 
         try {
             $formData = $request->input('data', '[]');
-            
+
             // Generate a signed URL for Browsershot to visit
             $printUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
                 'admin.form-templates.render-print',
@@ -365,7 +368,7 @@ class FormTemplateController extends Controller
                 ->header('Cache-Control', 'no-cache, no-store, must-revalidate');
         } catch (\Exception $e) {
             Log::error('Browsershot Export Failed: ' . $e->getMessage());
-            
+
             // Fallback to legacy Blade if Browsershot fails
             $template->load('fields');
             $fields = $template->fields->sortBy('order');
@@ -388,7 +391,7 @@ class FormTemplateController extends Controller
 
         try {
             $formData = $request->input('data', '[]');
-            
+
             $printUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
                 'admin.form-templates.render-print',
                 now()->addMinutes(10),
@@ -479,7 +482,7 @@ class FormTemplateController extends Controller
                     $trimmedPath = str_replace($localUrl . '/', '', $logoUrl);
                 }
                 $path = storage_path('app/public/' . $trimmedPath);
-                
+
                 // Fallback to public path if storage path doesn'tExist
                 if (!file_exists($path)) {
                     $path = public_path($trimmedPath);
@@ -490,7 +493,7 @@ class FormTemplateController extends Controller
 
                 $trimmedPath = str_replace('/storage/', '', $logoUrl);
                 $path = storage_path('app/public/' . $trimmedPath);
-            } 
+            }
             // Handle direct public paths
             elseif (file_exists(public_path($logoUrl))) {
                 $path = public_path($logoUrl);

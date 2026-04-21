@@ -51,14 +51,25 @@ class Workflow extends Model
 
     public static function getDefaultByContractType(?string $contractType, bool $taxRequired = false): ?self
     {
-        $query = self::where('is_default', true)
-            ->where('is_tax_involved', $taxRequired);
-        
+        // First try to find a workflow that matches both type and tax requirement
         if ($contractType) {
-            $specific = (clone $query)->where('contract_type', $contractType)->first();
-            if ($specific) return $specific;
+            $workflow = self::where('contract_type', $contractType)
+                ->where('is_tax_involved', $taxRequired)
+                ->first();
+            
+            if ($workflow) return $workflow;
+
+            // Fallback to any default for this contract type
+            $default = self::where('contract_type', $contractType)
+                ->where('is_default', true)
+                ->first();
+            
+            if ($default) return $default;
         }
 
-        return $query->first();
+        // Global fallback
+        return self::where('is_default', true)
+            ->where('is_tax_involved', $taxRequired)
+            ->first();
     }
 }

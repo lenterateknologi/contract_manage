@@ -17,11 +17,11 @@ class F2RedesignSeeder extends Seeder
         $templateName = 'F2 - RESUME DAN PERSETUJUAN';
 
         // 1. CLEANUP
-        DB::table('form_templates')->where('document_type', 'f2')->delete();
+        DB::table('m_form_templates')->where('document_type', 'f2')->delete();
 
         // 2. CREATE TEMPLATE
         $templateId = (string) Str::uuid();
-        DB::table('form_templates')->insert([
+        DB::table('m_form_templates')->insert([
             'id' => $templateId,
             'name' => $templateName,
             'description' => 'F2 Resume template with pixel-perfect boxed layout matching the official "Resume dan Persetujuan" document.',
@@ -51,7 +51,7 @@ class F2RedesignSeeder extends Seeder
                 'updated_at' => now(),
             ], $data);
             if (isset($payload['options'])) $payload['options'] = json_encode($payload['options']);
-            DB::table('form_fields')->insert($payload);
+            DB::table('m_form_fields')->insert($payload);
             return $id;
         };
 

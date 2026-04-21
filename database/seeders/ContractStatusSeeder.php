@@ -71,6 +71,15 @@ class ContractStatusSeeder extends Seeder
                 'description' => 'Kontrak yang sudah tidak aktif atau selesai.',
                 'sequence' => 6,
             ],
+            [
+                'code' => 'rejected',
+                'label' => 'Rejected',
+                'color' => '#ef4444',
+                'bg_color' => '#fef2f2',
+                'icon' => 'x-circle',
+                'description' => 'Kontrak ditolak.',
+                'sequence' => 7,
+            ],
         ];
 
         foreach ($statuses as $status) {

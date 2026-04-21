@@ -12,8 +12,7 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        // Clear existing users first to avoid unique constraint issues
-        User::withTrashed()->forceDelete();
+        // Table is already handled by migrate:fresh or updateOrCreate
 
         // Ensure roles and departments are available
         $roles = Role::pluck('id', 'name')->all();

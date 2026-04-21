@@ -382,13 +382,13 @@ export default function AdminIndex({
     const [itemToDeleteId, setItemToDeleteId] = useState<any>(null);
 
     const viewModuleMap: Record<string, string> = {
-        users: 'USERS',
-        roles: 'ROLES',
-        'contract-types': 'CTC_TYPES',
-        workflows: 'WORKFLOWS',
-        'contract-statuses': 'STS_MGMT',
-        departments: 'DEPT_MGMT',
-        vendors: 'VEN_MGMT',
+        users: 'ADMIN_USERS',
+        roles: 'ADMIN_ROLES',
+        'contract-types': 'ADMIN_TYPES',
+        workflows: 'ADMIN_WORKFLOWS',
+        'contract-statuses': 'ADMIN_STATUS',
+        departments: 'ADMIN_DEPTS',
+        vendors: 'ADMIN_VENDORS',
         'module-groups': 'NAV_MGMT',
         modules: 'NAV_MGMT',
     };
@@ -741,7 +741,7 @@ export default function AdminIndex({
                     ...baseColumns,
                     {
                         header: 'Status',
-                        accessorKey: 'name',
+                        accessorKey: 'label',
                         sortable: true,
                         cell: (row: any) => (
                             <div className="flex items-center gap-3">
@@ -752,7 +752,7 @@ export default function AdminIndex({
                                     <div className="h-3 w-3 rounded-full" style={{ backgroundColor: row.color }} />
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="text-[12px] font-semibold text-slate-900 uppercase">{row.name}</span>
+                                    <span className="text-[12px] font-semibold text-slate-900 uppercase">{row.label}</span>
                                     <span className="text-muted-foreground mt-1 text-[10px] leading-none font-medium tracking-widest uppercase">
                                         {row.code}
                                     </span>
@@ -770,7 +770,7 @@ export default function AdminIndex({
                                     style={{ color: row.color, backgroundColor: row.bg_color, borderColor: `${row.color}20` }}
                                     className="px-2.5 py-0.5 text-[10px] font-bold tracking-tight uppercase shadow-sm"
                                 >
-                                    {row.name}
+                                    {row.label}
                                 </Badge>
                                 <span className="font-mono text-[10px] text-slate-400">
                                     {row.color} / {row.bg_color}
@@ -780,7 +780,7 @@ export default function AdminIndex({
                     },
                     {
                         header: 'Urutan',
-                        accessorKey: 'sort_order',
+                        accessorKey: 'sequence',
                         sortable: true,
                         cell: (row: any) => (
                             <div className="flex w-fit items-center gap-1.5 rounded-md border border-slate-200/50 bg-slate-100/50 px-2 py-1">
@@ -788,7 +788,7 @@ export default function AdminIndex({
                                     variant="outline"
                                     className="flex h-4 min-w-[1.25rem] items-center justify-center border-none bg-white p-0 text-[10px] font-bold shadow-sm ring-1 ring-slate-200"
                                 >
-                                    {row.sort_order}
+                                    {row.sequence}
                                 </Badge>
                                 <span className="text-[9px] font-bold tracking-tighter text-slate-400 uppercase">Position</span>
                             </div>
@@ -1365,7 +1365,7 @@ export default function AdminIndex({
             <Head title={`Admin - ${viewTitle}`} />
 
             <div className="flex h-full flex-1 flex-col">
-                <div className="flex-1 overflow-auto bg-slate-50/30 p-4">
+                <div className="flex-1 overflow-hidden">
                     <DataTable
                         getRowId={getRowId}
                         searchKey={['module-groups', 'modules', 'navigation'].includes(currentView) ? 'title' : 'name'}

@@ -19,9 +19,10 @@ class AccessModule extends Model
         'can_create',
         'can_update',
         'can_delete',
+        'can_approve',
         'created_by',
         'module_group_id',
-        'sort_number',
+        'sequence',
     ];
 
     public $timestamps = true;

@@ -17,11 +17,11 @@ class F1RedesignSeeder extends Seeder
         $templateName = 'F1 - FORMULIR PERMINTAAN PERJANJIAN';
 
         // 1. TOTAL CLEANUP
-        DB::table('form_templates')->where('document_type', 'f1')->delete();
+        DB::table('m_form_templates')->where('document_type', 'f1')->delete();
 
         // 2. CREATE TEMPLATE
         $templateId = (string) Str::uuid();
-        DB::table('form_templates')->insert([
+        DB::table('m_form_templates')->insert([
             'id' => $templateId,
             'name' => $templateName,
             'description' => 'F1 Professional template with high-fidelity boxed layout and formal legal typography.',
@@ -51,7 +51,7 @@ class F1RedesignSeeder extends Seeder
                 'updated_at' => now(),
             ], $data);
             if (isset($payload['options'])) $payload['options'] = json_encode($payload['options']);
-            DB::table('form_fields')->insert($payload);
+            DB::table('m_form_fields')->insert($payload);
             return $id;
         };
 
@@ -60,31 +60,31 @@ class F1RedesignSeeder extends Seeder
             'name' => 'f1_header_grid', 'type' => 'grid_x',
             'options' => ['grid_cols' => 2, 'col_sizes' => ['180px', 'auto'], 'margin_bottom' => 20]
         ]);
-        
+
         // Logo part
         $ins(['parent_id' => $hGridId, 'name' => 'f1_logo', 'type' => 'image', 'options' => [
-            'logo_url' => '/storage/fr_logo.png', 
-            'logo_size' => 200, 
+            'logo_url' => '/storage/fr_logo.png',
+            'logo_size' => 200,
             'alignment' => 'left',
             'padding_top' => 5
         ]]);
-        
+
         // Metadata Box (The "Nomor/Topik" box)
         $mBoxId = $ins(['parent_id' => $hGridId, 'name' => 'f1_meta_box', 'type' => 'group', 'options' => [
             'border_style' => 'solid', 'border_width' => 1, 'border_color' => '#000'
         ]]);
-        
+
         $meta = [
-            ['NOMOR', ''], 
-            ['EX SOP NO.', '-'], 
-            ['TOPIK', 'PERJANJIAN / PERIJINAN / REGISTRASI'], 
-            ['SUB TOPIK', 'PERMINTAAN PEMBUATAN PERJANJIAN'], 
+            ['NOMOR', ''],
+            ['EX SOP NO.', '-'],
+            ['TOPIK', 'PERJANJIAN / PERIJINAN / REGISTRASI'],
+            ['SUB TOPIK', 'PERMINTAAN PEMBUATAN PERJANJIAN'],
             ['LAMPIRAN', '']
         ];
         foreach ($meta as $idx => $row) {
             $rgId = $ins(['parent_id' => $mBoxId, 'name' => 'f1_meta_r_'.$idx, 'type' => 'grid_x', 'options' => [
-                'grid_cols' => 3, 'col_sizes' => ['100px', '20px', 'auto'], 
-                'border_style' => $idx < 4 ? 'bottom' : 'none', 
+                'grid_cols' => 3, 'col_sizes' => ['100px', '20px', 'auto'],
+                'border_style' => $idx < 4 ? 'bottom' : 'none',
                 'border_color' => '#000', 'padding_y' => 4
             ]]);
             $ins(['parent_id' => $rgId, 'label' => $row[0], 'type' => 'static_text', 'options' => ['font_weight' => 'bold', 'font_size' => 10, 'padding_left' => 10]]);
@@ -103,8 +103,8 @@ class F1RedesignSeeder extends Seeder
         ]]);
 
         $bodyRows = [
-            ['TANGGAL PERMINTAAN', 'f1_date', 'date'], 
-            ['JUDUL / NAMA PERJANJIAN', 'f1_title', 'textfield'], 
+            ['TANGGAL PERMINTAAN', 'f1_date', 'date'],
+            ['JUDUL / NAMA PERJANJIAN', 'f1_title', 'textfield'],
             ['TUJUAN / LATAR BELAKANG KERJASAMA', 'f1_tujuan', 'textarea']
         ];
         foreach ($bodyRows as $row) {
@@ -139,7 +139,7 @@ class F1RedesignSeeder extends Seeder
             $fields = [
                 ['NAMA ENTITAS / PERUSAHAAN', 'entity'],
                 ['NAMA PENANDATANGAN KONTRAK', 'signer'],
-                ['JABATAN PENANDATANGAN', 'position'],
+                ['ALAMAT LENGKAP', 'position'],
             ];
             foreach ($fields as $row) {
                 $rgId = $ins(['name' => 'f1_pihak_'.$sec[1].'_'.$row[1], 'type' => 'grid_x', 'options' => ['grid_cols' => 3, 'col_sizes' => ['220px', '30px', 'auto'], 'padding_y' => 6]]);
@@ -154,10 +154,10 @@ class F1RedesignSeeder extends Seeder
             'font_weight' => 'bold', 'font_size' => 12, 'margin_top' => 20, 'margin_bottom' => 10, 'border_style' => 'bottom', 'border_width' => 2
         ]]);
         $detailFields = [
-            ['MASA BERLAKU / JANGKA WAKTU', 'jw'], 
-            ['LOKASI / AREA PEKERJAAN', 'loc'], 
-            ['DIMENSI / LUAS (M2)', 'luas'], 
-            ['NILAI TRANSAKSI / IMBALAN JASA', 'price'], 
+            ['MASA BERLAKU / JANGKA WAKTU', 'jw'],
+            ['LOKASI / AREA PEKERJAAN', 'loc'],
+            ['DIMENSI / LUAS (M2)', 'luas'],
+            ['NILAI TRANSAKSI / IMBALAN JASA', 'price'],
             ['MEKANISME & SYARAT PEMBAYARAN', 'top']
         ];
         foreach ($detailFields as $row) {
@@ -172,15 +172,15 @@ class F1RedesignSeeder extends Seeder
         $ins(['parent_id' => $txId, 'label' => 'ASPEK PERPAJAKAN', 'type' => 'static_text', 'options' => ['font_weight' => 'bold', 'font_size' => 11]]);
         $ins(['parent_id' => $txId, 'label' => ':', 'type' => 'static_text', 'options' => ['alignment' => 'center', 'font_weight' => 'bold']]);
         $txCont = $ins(['parent_id' => $txId, 'type' => 'grid_x', 'options' => ['grid_cols' => 2, 'gap' => 30]]);
-        
-        $ins(['parent_id' => $txCont, 'label' => 'PEMBEBANAN PPN', 'name' => 'tax_ppn', 'type' => 'select', 
+
+        $ins(['parent_id' => $txCont, 'label' => 'PEMBEBANAN PPN', 'name' => 'tax_ppn', 'type' => 'select',
             'options' => ['show_label' => true, 'font_size' => 10, 'font_weight' => 'bold', 'items' => [
                 ['label' => 'Ditanggung Pihak I', 'value' => 'Pihak I'],
                 ['label' => 'Ditanggung Pihak II', 'value' => 'Pihak II'],
                 ['label' => 'Bebas / Tidak Terutang', 'value' => 'N/A']
             ]]
         ]);
-        $ins(['parent_id' => $txCont, 'label' => 'PEMBEBANAN PPH', 'name' => 'tax_pph', 'type' => 'select', 
+        $ins(['parent_id' => $txCont, 'label' => 'PEMBEBANAN PPH', 'name' => 'tax_pph', 'type' => 'select',
             'options' => ['show_label' => true, 'font_size' => 10, 'font_weight' => 'bold', 'items' => [
                 ['label' => 'Dipotong Pihak I', 'value' => 'Pihak I'],
                 ['label' => 'Dipotong Pihak II', 'value' => 'Pihak II'],
@@ -198,12 +198,12 @@ class F1RedesignSeeder extends Seeder
         $sigFrameID = $ins(['name' => 'f1_sig_frame', 'type' => 'group', 'options' => [
             'border_style' => 'solid', 'border_width' => 1, 'margin_top' => 30
         ]]);
-        
+
         // Header
         $sigHGrid = $ins(['parent_id' => $sigFrameID, 'name' => 'f1_sig_h', 'type' => 'grid_x', 'options' => ['grid_cols' => 2, 'col_sizes' => ['1fr', '2fr']]]);
         $ins(['parent_id' => $sigHGrid, 'label' => 'PEMOHON', 'type' => 'static_text', 'options' => ['alignment' => 'center', 'font_weight' => 'bold', 'padding_y' => 6, 'border_style' => 'right']]);
         $ins(['parent_id' => $sigHGrid, 'label' => 'PERSETUJUAN PERMINTAAN', 'type' => 'static_text', 'options' => ['alignment' => 'center', 'font_weight' => 'bold', 'padding_y' => 6]]);
-        
+
         // Signature Boxes
         $sigBGrid = $ins(['parent_id' => $sigFrameID, 'name' => 'f1_sig_body', 'type' => 'grid_x', 'options' => ['grid_cols' => 3, 'border_style' => 'y']]);
         for($i=1; $i<=3; $i++) {
@@ -211,13 +211,13 @@ class F1RedesignSeeder extends Seeder
                 'min_height' => 90, 'border_style' => $i < 3 ? 'right' : 'none'
             ]]);
         }
-        
+
         // Roles
         $sigRGrid = $ins(['parent_id' => $sigFrameID, 'name' => 'f1_sig_roles', 'type' => 'grid_x', 'options' => ['grid_cols' => 3]]);
         $roles = ['DEPT. HEAD', 'VICE PRESIDENT', 'CEO / MANAGEMENT'];
         foreach($roles as $idx => $r) {
             $ins(['parent_id' => $sigRGrid, 'label' => $r, 'type' => 'static_text', 'options' => [
-                'alignment' => 'center', 'font_weight' => 'bold', 'font_size' => 10, 'padding_y' => 4, 
+                'alignment' => 'center', 'font_weight' => 'bold', 'font_size' => 10, 'padding_y' => 4,
                 'border_style' => $idx < 2 ? 'right' : 'none'
             ]]);
         }

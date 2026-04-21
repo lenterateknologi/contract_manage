@@ -36,7 +36,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             {toast && (
                 <div
                     key={toast.id}
-                    className={`fixed right-24 bottom-5 z-[200] flex items-center gap-2 rounded-lg px-4 py-2.5 text-[12px] font-medium text-white shadow-xl ${bgMap[toast.type]}`}
+                    className={`fixed right-8 bottom-24 z-[200] flex items-center gap-2 rounded-lg px-4 py-2.5 text-[12px] font-medium text-white shadow-xl ${bgMap[toast.type]}`}
                     style={{ animation: 'toast-in .18s ease' }}
                 >
                     <i className={`fa-solid ${iconMap[toast.type]} text-[13px]`} />
