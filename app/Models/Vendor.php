@@ -22,15 +22,35 @@ class Vendor extends Model
         'is_active',
         'created_by',
         'updated_by',
+        // Baru: Corporate Identity & Legal
+        'company_type',
+        'is_individual',
+        'website',
+        'pic_name',
+        'pic_position',
+        'npwp',
+        'nib',
+        'siup',
+        'director_name',
+        // Baru: Financial
+        'bank_name',
+        'bank_account_no',
+        'bank_account_name',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'is_individual' => 'boolean',
     ];
 
     public function contracts()
     {
         // One vendor can have many contracts (to be implemented later in Contract model)
         return $this->hasMany(Contract::class);
+    }
+
+    public function documents()
+    {
+        return $this->hasMany(VendorDocument::class, 'vendor_id');
     }
 }

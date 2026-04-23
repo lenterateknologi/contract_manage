@@ -21,34 +21,42 @@ class ModuleSeeder extends Seeder
         $modules = [
             // Dashboard
             ['identifier' => 'DASH', 'name' => 'Dashboard', 'route' => '/dashboard', 'icon' => 'LayoutGrid', 'group' => 'Dashboard', 'sequence' => 1],
-            ['identifier' => 'ANLTX', 'name' => 'Laporan', 'route' => '/admin/reports', 'icon' => 'BarChart3', 'group' => 'Dashboard', 'sequence' => 2],
 
             // Manajemen Kontrak
             ['identifier' => 'CONTRACTS', 'name' => 'Daftar Kontrak', 'route' => '/contracts', 'icon' => 'FileText', 'group' => 'Manajemen Kontrak', 'sequence' => 1],
-            ['identifier' => 'MY_CTC', 'name' => 'Kontrak Saya', 'route' => '/my-contracts', 'icon' => 'UserCheck', 'group' => 'Manajemen Kontrak', 'sequence' => 2],
-            ['identifier' => 'PENDING', 'name' => 'Persetujuan', 'route' => '/pending', 'icon' => 'Clock', 'group' => 'Manajemen Kontrak', 'sequence' => 3],
-            ['identifier' => 'EXPIRY', 'name' => 'Masa Berlaku', 'route' => '/expiry', 'icon' => 'History', 'group' => 'Manajemen Kontrak', 'sequence' => 4],
+            ['identifier' => 'MY_CTC', 'name' => 'Kontrak Saya', 'route' => '/contracts/mine', 'icon' => 'UserCheck', 'group' => 'Manajemen Kontrak', 'sequence' => 2],
+            ['identifier' => 'PENDING', 'name' => 'Persetujuan', 'route' => '/contracts/pending', 'icon' => 'Clock', 'group' => 'Manajemen Kontrak', 'sequence' => 3],
+            ['identifier' => 'EXPIRY', 'name' => 'Masa Berlaku', 'route' => '/contracts/expiry', 'icon' => 'History', 'group' => 'Manajemen Kontrak', 'sequence' => 4],
 
-            // Konfigurasi Sistem
-            ['identifier' => 'USERS', 'name' => 'Pengguna', 'route' => '/admin/users', 'icon' => 'Users', 'group' => 'Konfigurasi Sistem', 'sequence' => 1],
-            ['identifier' => 'ROLES', 'name' => 'Hak Akses', 'route' => '/admin/roles', 'icon' => 'ShieldCheck', 'group' => 'Konfigurasi Sistem', 'sequence' => 2],
-            ['identifier' => 'CTC_TYPES', 'name' => 'Tipe Kontrak', 'route' => '/admin/contract-types', 'icon' => 'Settings2', 'group' => 'Konfigurasi Sistem', 'sequence' => 3],
-            ['identifier' => 'WORKFLOWS', 'name' => 'Alur Kerja', 'route' => '/admin/workflows', 'icon' => 'GitBranch', 'group' => 'Konfigurasi Sistem', 'sequence' => 4],
-            ['identifier' => 'TPL_MGMT', 'name' => 'Template Kontrak', 'route' => '/admin/templates', 'icon' => 'FilePlus', 'group' => 'Konfigurasi Sistem', 'sequence' => 5],
-            ['identifier' => 'FORM_TPL', 'name' => 'Form Template', 'route' => '/admin/form-templates', 'icon' => 'FileJson', 'group' => 'Konfigurasi Sistem', 'sequence' => 6],
-            ['identifier' => 'STS_MGMT', 'name' => 'Master Status', 'route' => '/admin/contract-statuses', 'icon' => 'Tags', 'group' => 'Konfigurasi Sistem', 'sequence' => 7],
-            ['identifier' => 'DEPT_MGMT', 'name' => 'Departemen', 'route' => '/admin/departments', 'icon' => 'Building2', 'group' => 'Konfigurasi Sistem', 'sequence' => 8],
-            ['identifier' => 'VEN_MGMT', 'name' => 'Vendor', 'route' => '/admin/vendors', 'icon' => 'Truck', 'group' => 'Konfigurasi Sistem', 'sequence' => 9],
-            ['identifier' => 'AUDIT', 'name' => 'Log Aktivitas', 'route' => '/admin/audit', 'icon' => 'History', 'group' => 'Konfigurasi Sistem', 'sequence' => 10],
+            // Template Library
+            ['identifier' => 'ADMIN_TYPES', 'name' => 'Folder Kontrak', 'route' => '/admin/contract-types', 'icon' => 'FolderClosed', 'group' => 'Template Library', 'sequence' => 1],
+            ['identifier' => 'ADMIN_TEMPLATES', 'name' => 'Isi Kontrak', 'route' => '/admin/templates', 'icon' => 'FileCode', 'group' => 'Template Library', 'sequence' => 2],
+            ['identifier' => 'ADMIN_FORMS', 'name' => 'Digital Form', 'route' => '/admin/form-templates', 'icon' => 'ScanLine', 'group' => 'Template Library', 'sequence' => 3],
+
+            // Workflow Engine
+            ['identifier' => 'ADMIN_WORKFLOWS', 'name' => 'Alur Persetujuan', 'route' => '/admin/workflows', 'icon' => 'Workflow', 'group' => 'Workflow Engine', 'sequence' => 1],
+            ['identifier' => 'ADMIN_STATUS', 'name' => 'Label Status', 'route' => '/admin/contract-statuses', 'icon' => 'Tags', 'group' => 'Workflow Engine', 'sequence' => 2],
+
+            // Master Data
+            ['identifier' => 'ADMIN_USERS', 'name' => 'Database User', 'route' => '/admin/users', 'icon' => 'UserCog', 'group' => 'Master Data', 'sequence' => 1],
+            ['identifier' => 'ADMIN_ROLES', 'name' => 'Izin & Akses', 'route' => '/admin/roles', 'icon' => 'KeyRound', 'group' => 'Master Data', 'sequence' => 2],
+            ['identifier' => 'ADMIN_DEPTS', 'name' => 'Departemen', 'route' => '/admin/departments', 'icon' => 'Building2', 'group' => 'Master Data', 'sequence' => 3],
+            ['identifier' => 'ADMIN_VENDORS', 'name' => 'Rekan Vendor', 'route' => '/admin/vendors', 'icon' => 'Truck', 'group' => 'Master Data', 'sequence' => 4],
+
+            // System & Security
+            ['identifier' => 'ANLTX', 'name' => 'Laporan Analitikal', 'route' => '/admin/reports', 'icon' => 'BarChart3', 'group' => 'System & Security', 'sequence' => 1],
+            ['identifier' => 'ADMIN_NAV', 'name' => 'Struktur Navigasi', 'route' => '/admin/module-groups', 'icon' => 'Settings2', 'group' => 'System & Security', 'sequence' => 2],
         ];
 
         // Get the Admin Role
         $adminRole = Role::firstWhere('name', 'Admin');
 
         foreach ($modules as $moduleData) {
-            $createdModule = Module::updateOrCreate(
-                ['identifier' => $moduleData['identifier']],
-                [
+            $existingModule = Module::withTrashed()->where('identifier', $moduleData['identifier'])->first();
+            
+            if ($existingModule) {
+                if ($existingModule->trashed()) $existingModule->restore();
+                $existingModule->update([
                     'name' => $moduleData['name'],
                     'route' => $moduleData['route'],
                     'icon' => $moduleData['icon'],
@@ -56,25 +64,55 @@ class ModuleSeeder extends Seeder
                     'module_group_id' => $groups[$moduleData['group']] ?? null,
                     'created_by' => $adminId,
                     'updated_by' => $adminId,
-                ]
-            );
+                ]);
+                $createdModule = $existingModule;
+            } else {
+                $createdModule = Module::create([
+                    'identifier' => $moduleData['identifier'],
+                    'name' => $moduleData['name'],
+                    'route' => $moduleData['route'],
+                    'icon' => $moduleData['icon'],
+                    'sequence' => $moduleData['sequence'],
+                    'module_group_id' => $groups[$moduleData['group']] ?? null,
+                    'created_by' => $adminId,
+                    'updated_by' => $adminId,
+                ]);
+            }
 
             // Grant Admin access to everything by default
             if ($adminRole) {
-                AccessModule::updateOrCreate(
-                    [
-                        'role_id' => $adminRole->id,
-                        'module_id' => $createdModule->id,
-                    ],
-                    [
-                        'can_view' => true,
+                $existingAccess = AccessModule::where('role_id', $adminRole->id)
+                    ->where('module_id', $createdModule->id)
+                    ->first();
+
+                if ($existingAccess) {
+                    $existingAccess->update([
+                        'module_group_id' => $createdModule->module_group_id,
+                        'can_read' => true,
                         'can_create' => true,
-                        'can_edit' => true,
+                        'can_update' => true,
                         'can_delete' => true,
                         'can_approve' => true,
-                    ]
-                );
+                        'sequence' => $createdModule->sequence,
+                    ]);
+                } else {
+                    AccessModule::create([
+                        'role_id' => $adminRole->id,
+                        'module_id' => $createdModule->id,
+                        'module_group_id' => $createdModule->module_group_id,
+                        'can_read' => true,
+                        'can_create' => true,
+                        'can_update' => true,
+                        'can_delete' => true,
+                        'can_approve' => true,
+                        'sequence' => $createdModule->sequence,
+                    ]);
+                }
             }
         }
+
+        // Clean up removed modules
+        $identifiers = array_column($modules, 'identifier');
+        Module::whereNotIn('identifier', $identifiers)->delete();
     }
 }

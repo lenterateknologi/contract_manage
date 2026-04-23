@@ -1,34 +1,18 @@
-import { Head, useForm, router } from '@inertiajs/react';
-import { BreadcrumbItem } from '@/types';
+import { Head, useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Save, CheckSquare, Square, Check, X, LayoutGrid, Shield } from 'lucide-react';
+import { Save, CheckSquare, Square, Check, X, LayoutGrid, ShieldAlert } from 'lucide-react';
 import React, { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/contracts/Toast';
+import { ManagementForm, FormSection } from '@/components/admin/ManagementForm';
 
 interface Props {
-    role: {
-        id: string;
-        name: string;
-        description: string;
-    };
+    role: { id: string; name: string; description: string; };
     modules: Array<{
-        id: string;
-        identifier: string;
-        name: string;
-        module_group_id: string;
-        module_group: {
-            id: string;
-            name: string;
-        };
-        access?: {
-            can_read: boolean;
-            can_create: boolean;
-            can_update: boolean;
-            can_delete: boolean;
-        };
+        id: string; identifier: string; name: string; module_group_id: string;
+        module_group: { id: string; name: string; };
+        access?: { can_read: boolean; can_create: boolean; can_update: boolean; can_delete: boolean; };
     }>;
 }
 
@@ -36,15 +20,11 @@ const PERMISSIONS = ['can_read', 'can_create', 'can_update', 'can_delete'] as co
 type Permission = typeof PERMISSIONS[number];
 
 const permissionLabels: Record<Permission, string> = {
-    can_read: 'Read',
-    can_create: 'Create',
-    can_update: 'Update',
-    can_delete: 'Delete',
+    can_read: 'Read', can_create: 'Create', can_update: 'Update', can_delete: 'Delete',
 };
 
 export default function RoleAccess({ role, modules }: Props) {
     const { showToast } = useToast();
-
     const form = useForm({
         accesses: modules.map(module => ({
             module_id: module.id,
@@ -58,55 +38,38 @@ export default function RoleAccess({ role, modules }: Props) {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         form.post(`/admin/roles/${role.id}/access`, {
-            onSuccess: () => {
-                showToast("Hak akses role berhasil diperbarui.", "success");
-            },
-            onError: () => {
-                showToast("Gagal menyimpan hak akses.", "danger");
-            }
+            onSuccess: () => showToast("Hak akses role berhasil diperbarui.", "success"),
+            onError: () => showToast("Gagal menyimpan hak akses.", "danger")
         });
     };
 
     const updateAccess = (moduleId: string, permission: Permission, checked: boolean) => {
         form.setData('accesses', form.data.accesses.map(access =>
-            access.module_id === moduleId
-                ? { ...access, [permission]: checked }
-                : access
+            access.module_id === moduleId ? { ...access, [permission]: checked } : access
         ));
     };
 
-    // Bulk Actions
     const setAll = (checked: boolean) => {
         form.setData('accesses', form.data.accesses.map(access => ({
-            ...access,
-            can_read: checked,
-            can_create: checked,
-            can_update: checked,
-            can_delete: checked,
+            ...access, can_read: checked, can_create: checked, can_update: checked, can_delete: checked,
         })));
     };
 
     const setColumn = (permission: Permission, checked: boolean) => {
-        form.setData('accesses', form.data.accesses.map(access => ({
-            ...access,
-            [permission]: checked,
-        })));
-    };
-
-    const setGroup = (groupId: string, checked: boolean) => {
-        const groupModuleIds = modules.filter(m => m.module_group_id === groupId).map(m => m.id);
-        form.setData('accesses', form.data.accesses.map(access => 
-            groupModuleIds.includes(access.module_id)
-                ? { ...access, can_read: checked, can_create: checked, can_update: checked, can_delete: checked }
-                : access
-        ));
+        form.setData('accesses', form.data.accesses.map(access => ({ ...access, [permission]: checked })));
     };
 
     const setGroupColumn = (groupId: string, permission: Permission, checked: boolean) => {
         const groupModuleIds = modules.filter(m => m.module_group_id === groupId).map(m => m.id);
         form.setData('accesses', form.data.accesses.map(access => 
-            groupModuleIds.includes(access.module_id)
-                ? { ...access, [permission]: checked }
+            groupModuleIds.includes(access.module_id) ? { ...access, [permission]: checked } : access
+        ));
+    };
+
+    const setRow = (moduleId: string, checked: boolean) => {
+        form.setData('accesses', form.data.accesses.map(access => 
+            access.module_id === moduleId 
+                ? { ...access, can_read: checked, can_create: checked, can_update: checked, can_delete: checked } 
                 : access
         ));
     };
@@ -121,158 +84,148 @@ export default function RoleAccess({ role, modules }: Props) {
         }, {} as Record<string, { name: string; modules: typeof modules }>);
     }, [modules]);
 
-    const isAllChecked = form.data.accesses.every(a => a.can_read && a.can_create && a.can_update && a.can_delete);
-    const isColumnAllChecked = (permission: Permission) => form.data.accesses.every(a => a[permission]);
-
     return (
-        <>
-            <Head title={`Kelola Akses - ${role.name}`} />
-
-             <div className="flex h-screen flex-col bg-muted/20">
-                {/* Header Section */}
-                <div className="bg-card border-b border-border px-6 py-4 sticky top-0 z-20 shadow-sm">
-                    <div className="max-w-[1400px] mx-auto flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                             <div className="flex bg-muted/50 p-1 rounded-lg border border-border mr-4">
-                                <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="h-8 text-[10px] font-black uppercase tracking-tighter hover:bg-card hover:text-emerald-600"
-                                    onClick={() => setAll(true)}
-                                >
-                                    <CheckSquare className="h-3 w-3 mr-1.5" /> Pilih Semua
-                                </Button>
-                                <div className="w-[1px] bg-border mx-1" />
-                                <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="h-8 text-[10px] font-black uppercase tracking-tighter hover:bg-card hover:text-destructive"
-                                    onClick={() => setAll(false)}
-                                >
-                                    <Square className="h-3 w-3 mr-1.5" /> Hapus Semua
-                                </Button>
-                            </div>
-
-                            <Button onClick={handleSubmit} disabled={form.processing} className="shadow-lg shadow-primary/20 font-bold h-9 px-6 rounded-full">
-                                <Save className="h-4 w-4 mr-2" />
-                                Simpan Perubahan
-                            </Button>
-                        </div>
-                    </div>
+        <ManagementForm
+            title={`Otoritas Role: ${role.name}`}
+            subtitle="Matriks kontrol akses modul sistem"
+            onClose={() => window.history.back()}
+            onSave={handleSubmit}
+            processing={form.processing}
+            isDirty={form.isDirty}
+            isEdit={true}
+            headerActions={
+                <div className="flex bg-slate-100 p-1 rounded-none border border-slate-200 mr-2">
+                    <Button variant="ghost" size="sm" className="h-7 text-[9px] font-black uppercase tracking-tight hover:bg-white" onClick={() => setAll(true)}>
+                        <CheckSquare className="h-3 w-3 mr-1.5" /> Pilih Semua
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-7 text-[9px] font-black uppercase tracking-tight hover:bg-white" onClick={() => setAll(false)}>
+                        <Square className="h-3 w-3 mr-1.5" /> Bersihkan
+                    </Button>
                 </div>
-
-                {/* Main Content Area */}
-                 <div className="flex-1 overflow-auto p-4 md:p-6">
-                    <div className="max-w-[1400px] mx-auto space-y-4">
-                        <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
-                            <table className="w-full border-collapse text-[12px]">
-                                 <thead>
-                                    <tr className="bg-foreground text-background uppercase tracking-widest text-[10px] font-black">
-                                        <th className="px-4 py-3 text-left border-r border-background/20 font-black">Modul System</th>
-                                        {PERMISSIONS.map(p => (
-                                            <th key={p} className="px-2 py-3 text-center min-w-[100px] border-r border-background/20 last:border-r-0">
-                                                <div className="flex flex-col items-center gap-1.5">
+            }
+        >
+            <div className="grid grid-cols-1 gap-10">
+                <FormSection title="Matriks Hak Akses" subtitle="Tentukan izin spesifik untuk setiap modul operasional">
+                    <div className="border border-slate-200 overflow-hidden">
+                        <table className="w-full border-collapse">
+                            <thead>
+                                <tr className="bg-slate-900 text-white uppercase tracking-[0.2em] text-[10px] font-black">
+                                    <th className="px-5 py-4 text-left font-black border-r border-white/10">Scope Modul</th>
+                                    {PERMISSIONS.map(p => {
+                                        const isAllChecked = form.data.accesses.every(a => a[p]);
+                                        return (
+                                            <th key={p} className="px-2 py-4 text-center min-w-[120px] border-r border-white/10 last:border-r-0">
+                                                <div className="flex flex-col items-center gap-2">
                                                     <span>{permissionLabels[p]}</span>
-                                                    <div className="flex gap-1">
-                                                        <button 
-                                                            type="button"
-                                                            onClick={() => setColumn(p, true)}
-                                                            className="p-1 hover:bg-green-500 rounded transition-colors"
-                                                            title={`Pilih Semua ${permissionLabels[p]}`}
-                                                        >
-                                                            <Check className="h-2.5 w-2.5" />
-                                                        </button>
-                                                        <button 
-                                                            type="button"
-                                                            onClick={() => setColumn(p, false)}
-                                                            className="p-1 hover:bg-red-500 rounded transition-colors"
-                                                            title={`Hapus Semua ${permissionLabels[p]}`}
-                                                        >
-                                                            <X className="h-2.5 w-2.5" />
-                                                        </button>
-                                                    </div>
+                                                    <Checkbox 
+                                                        className="h-4 w-4 rounded-none border-white/30 data-[state=checked]:bg-white data-[state=checked]:border-white data-[state=checked]:text-black"
+                                                        checked={isAllChecked}
+                                                        onCheckedChange={(checked) => setColumn(p, !!checked)}
+                                                    />
                                                 </div>
                                             </th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {Object.entries(groupedModules).map(([groupId, group]) => (
+                                        );
+                                    })}
+                                    <th className="px-2 py-4 text-center min-w-[80px] bg-slate-800 border-l border-white/10">Full</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {Object.entries(groupedModules).map(([groupId, group]) => {
+                                    const groupModuleIds = group.modules.map(m => m.id);
+                                    const groupAccesses = form.data.accesses.filter(a => groupModuleIds.includes(a.module_id));
+                                    const isGroupFullControlChecked = groupAccesses.every(a => a.can_read && a.can_create && a.can_update && a.can_delete);
+
+                                    return (
                                         <React.Fragment key={groupId}>
-                                             {/* Group Row */}
-                                            <tr className="bg-muted/50 border-b border-t border-border group/row">
-                                                <td className="px-4 py-2 font-black text-foreground/80 flex items-center gap-2">
-                                                    <LayoutGrid className="h-3.5 w-3.5 text-muted-foreground/60" />
-                                                    <span className="uppercase tracking-tight text-[11px]">{group.name}</span>
+                                            {/* Group Header */}
+                                            <tr className="bg-slate-100/80 border-b border-slate-200">
+                                                <td className="px-5 py-2.5 font-black text-slate-900 flex items-center gap-3">
+                                                    <LayoutGrid className="h-3.5 w-3.5 text-slate-400" />
+                                                    <span className="uppercase tracking-widest text-[11px] font-black">{group.name}</span>
                                                 </td>
-                                                {PERMISSIONS.map(p => (
-                                                 <td key={p} className="px-2 py-2 text-center border-l border-border bg-muted/20 group-hover/row:bg-muted/40 transition-colors">
-                                                        <div className="flex justify-center gap-1">
-                                                            <button 
-                                                                type="button"
-                                                                onClick={() => setGroupColumn(groupId, p, true)}
-                                                                className="text-[9px] font-black px-1.5 py-0.5 rounded border border-border bg-card hover:bg-emerald-500/10 hover:text-emerald-500 hover:border-emerald-500/20 tracking-tighter uppercase transition-all"
-                                                            >
-                                                                Pilih
-                                                            </button>
-                                                            <button 
-                                                                type="button"
-                                                                onClick={() => setGroupColumn(groupId, p, false)}
-                                                                className="text-[9px] font-black px-1.5 py-0.5 rounded border border-border bg-card hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20 tracking-tighter uppercase transition-all"
-                                                            >
-                                                                Reset
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                ))}
-                                            </tr>
-                                            {/* Module Rows */}
-                                             {group.modules.map((module) => (
-                                                <tr key={module.id} className="border-b border-border last:border-b-0 hover:bg-muted/10 transition-colors group/module">
-                                                    <td className="px-4 py-2 border-r border-border">
-                                                        <div className="flex flex-col">
-                                                            <span className="font-bold text-foreground group-hover/module:text-primary transition-colors">{module.name}</span>
-                                                            <span className="text-[9px] font-mono text-muted-foreground/60 uppercase tracking-widest">{module.identifier}</span>
-                                                        </div>
-                                                    </td>
-                                                    {PERMISSIONS.map(p => (
-                                                         <td key={p} className={cn(
-                                                            "px-2 py-2 text-center border-r border-border last:border-r-0 transition-colors",
-                                                            form.data.accesses.find(a => a.module_id === module.id)?.[p] 
-                                                                ? "bg-emerald-500/5" 
-                                                                : "bg-transparent"
-                                                        )}>
+                                                {PERMISSIONS.map(p => {
+                                                    const isGroupColumnChecked = groupAccesses.every(a => a[p]);
+                                                    return (
+                                                        <td key={p} className="px-2 py-2 text-center border-l border-slate-200">
                                                             <div className="flex justify-center">
-                                                                <Checkbox
-                                                                    className="h-4 w-4 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                                                                    checked={form.data.accesses.find(a => a.module_id === module.id)?.[p] || false}
-                                                                    onCheckedChange={(checked) => updateAccess(module.id, p, checked as boolean)}
+                                                                <Checkbox 
+                                                                    className="h-4 w-4 rounded-none border-slate-300 data-[state=checked]:bg-black data-[state=checked]:border-black"
+                                                                    checked={isGroupColumnChecked}
+                                                                    onCheckedChange={(checked) => setGroupColumn(groupId, p, !!checked)}
                                                                 />
                                                             </div>
                                                         </td>
-                                                    ))}
-                                                </tr>
-                                            ))}
+                                                    );
+                                                })}
+                                                <td className="px-2 py-2 text-center border-l border-slate-200 bg-slate-200/50">
+                                                     <div className="flex justify-center">
+                                                        <Checkbox 
+                                                            className="h-4 w-4 rounded-none border-slate-400 data-[state=checked]:bg-black data-[state=checked]:border-black"
+                                                            checked={isGroupFullControlChecked}
+                                                            onCheckedChange={(checked) => {
+                                                                form.setData('accesses', form.data.accesses.map(access => 
+                                                                    groupModuleIds.includes(access.module_id) ? { ...access, can_read: !!checked, can_create: !!checked, can_update: !!checked, can_delete: !!checked } : access
+                                                                ));
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {/* Module Rows */}
+                                            {group.modules.map((module) => {
+                                                const moduleAccess = form.data.accesses.find(a => a.module_id === module.id);
+                                                const isRowAllChecked = moduleAccess?.can_read && moduleAccess?.can_create && moduleAccess?.can_update && moduleAccess?.can_delete;
+                                                
+                                                return (
+                                                    <tr key={module.id} className="border-b border-slate-200 last:border-b-0 hover:bg-slate-50 transition-colors group">
+                                                        <td className="px-5 py-3 border-r border-slate-200">
+                                                            <div className="flex flex-col">
+                                                                <span className="font-black text-slate-800 uppercase tracking-tight text-[11px]">{module.name}</span>
+                                                                <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider">{module.identifier}</span>
+                                                            </div>
+                                                        </td>
+                                                        {PERMISSIONS.map(p => (
+                                                            <td key={p} className={cn("px-2 py-3 text-center border-r border-slate-200 last:border-r-0", form.data.accesses.find(a => a.module_id === module.id)?.[p] ? "bg-emerald-500/5" : "bg-transparent")}>
+                                                                <div className="flex justify-center">
+                                                                    <Checkbox
+                                                                        className="h-5 w-5 rounded-none border-slate-300 data-[state=checked]:bg-black data-[state=checked]:border-black"
+                                                                        checked={form.data.accesses.find(a => a.module_id === module.id)?.[p] || false}
+                                                                        onCheckedChange={(checked) => updateAccess(module.id, p, checked as boolean)}
+                                                                    />
+                                                                </div>
+                                                            </td>
+                                                        ))}
+                                                        <td className="px-2 py-3 text-center bg-slate-50/50 group-hover:bg-slate-100 transition-colors border-l border-slate-200">
+                                                            <div className="flex justify-center">
+                                                                <Checkbox 
+                                                                    className="h-5 w-5 rounded-none border-slate-300 data-[state=checked]:bg-black data-[state=checked]:border-black"
+                                                                    checked={!!isRowAllChecked}
+                                                                    onCheckedChange={(checked) => setRow(module.id, !!checked)}
+                                                                />
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </React.Fragment>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                        
-                         {/* Summary Info */}
-                        <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 flex items-start gap-3">
-                            <Shield className="h-5 w-5 text-amber-500 mt-0.5" />
-                            <div>
-                                <h4 className="text-sm font-bold text-amber-500">Catatan Keamanan</h4>
-                                <p className="text-xs text-amber-500/80 leading-relaxed mt-1">
-                                    Setiap perubahan pada role ini akan langsung berdampak pada seluruh pengguna yang memiliki role <span className="font-bold underline">{role.name}</span>. 
-                                    Pastikan pembatasan akses telah sesuai dengan kebijakan operasional perusahaan sebelum menyimpan.
-                                </p>
-                            </div>
-                        </div>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </FormSection>
+
+                <div className="max-w-2xl bg-black p-6 flex items-start gap-4 shadow-2xl">
+                    <ShieldAlert className="h-6 w-6 text-white shrink-0 mt-1" />
+                    <div>
+                        <h4 className="text-[12px] font-black text-white uppercase tracking-widest leading-none">Protokol Keamanan Perubahan</h4>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase leading-relaxed mt-2.5">
+                            Setiap modifikasi hak akses akan langsung mengikat seluruh personil dengan role <span className="text-white underline underline-offset-4">{role.name}</span>. 
+                            Pastikan tingkat otorisasi sudah sesuai dengan batas wewenang struktural sebelum menyimpan.
+                        </p>
                     </div>
                 </div>
             </div>
-        </>
+        </ManagementForm>
     );
 }

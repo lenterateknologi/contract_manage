@@ -9,10 +9,18 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TemplateController;
 use App\Models\Contract;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-    return Inertia::render('auth/login');
+    if (Auth::check()) {
+        return redirect()->route('dashboard');
+    }
+    return Inertia::render('auth/login', [
+        'canResetPassword' => Route::has('password.request'),
+        'status' => session('status'),
+        'canTestEmail' => !app()->environment('production'),
+    ]);
 })->name('home');
 
 // Email testing (only in non-production environments)
@@ -124,9 +132,13 @@ Route::middleware(['auth'])->group(function () {
 
         // Master Vendor
         Route::get('/vendors', [AdminController::class, 'vendors'])->name('admin.vendors');
+        Route::get('/vendors/create', [AdminController::class, 'createVendor'])->name('admin.vendors.create');
         Route::post('/vendors', [AdminController::class, 'storeVendor'])->name('admin.vendors.store');
+        Route::get('/vendors/{vendor}/edit', [AdminController::class, 'editVendor'])->name('admin.vendors.edit');
         Route::put('/vendors/{vendor}', [AdminController::class, 'updateVendor'])->name('admin.vendors.update');
         Route::delete('/vendors/{vendor}', [AdminController::class, 'destroyVendor'])->name('admin.vendors.destroy');
+        Route::post('/vendors/{vendor}/documents', [AdminController::class, 'uploadVendorDocument'])->name('admin.vendors.documents.upload');
+        Route::delete('/vendors/{vendor}/documents/{document}', [AdminController::class, 'destroyVendorDocument'])->name('admin.vendors.documents.destroy');
 
         // Workflows
         Route::get('/workflows', [AdminController::class, 'workflows'])->name('admin.workflows');

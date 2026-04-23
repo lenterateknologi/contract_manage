@@ -31,6 +31,14 @@ import {
     X,
     Building2,
     Truck,
+    UserCheck,
+    FolderClosed,
+    FileCode,
+    ScanLine,
+    Workflow,
+    UserCog,
+    KeyRound,
+    ShieldAlert,
     type LucideIcon,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -51,6 +59,14 @@ const iconMap: Record<string, LucideIcon> = {
     Tags,
     Building2,
     Truck,
+    UserCheck,
+    FolderClosed,
+    FileCode,
+    ScanLine,
+    Workflow,
+    UserCog,
+    KeyRound,
+    ShieldAlert,
 };
 
 const footerNavItems: NavItem[] = [];

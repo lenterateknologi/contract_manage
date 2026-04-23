@@ -57,6 +57,7 @@ interface DataTableProps<T> {
     renderExpandedRow?: (row: T) => React.ReactNode;
     isRowExpanded?: (row: T) => boolean;
     headerActions?: React.ReactNode;
+    title?: React.ReactNode;
 
     // Controlled Search/Filter
     searchValue?: string;
@@ -82,6 +83,7 @@ export function DataTable<T extends Record<string, any>>({
     renderExpandedRow,
     isRowExpanded,
     headerActions,
+    title,
     searchValue,
     onSearchChange,
     activeFilters: controlledActiveFilters,
@@ -149,19 +151,27 @@ export function DataTable<T extends Record<string, any>>({
 
     const activeFilterCount = Object.values(activeFilters).flat().filter(Boolean).length;
 
-    const hasToolbar = searchKey || (filters && filters.length > 0) || onRefresh || headerActions || (bulkActions && selectedIds.size > 0);
+    const hasToolbar = title || searchKey || (filters && filters.length > 0) || onRefresh || headerActions || (bulkActions && selectedIds.size > 0);
 
     return (
         <div className="flex flex-col h-full bg-card border border-border overflow-hidden">
             {/* Toolbar — only rendered when there is content */}
             {hasToolbar && (
-                <div className="px-3 py-2 flex items-center gap-2 border-b border-border bg-background">
+                <div className="px-5 py-4 flex items-center gap-6 border-b border-border bg-background">
+                    {title && (
+                        <div className="flex-shrink-0">
+                            {typeof title === 'string' ? (
+                                <h2 className="text-lg font-black uppercase tracking-tight text-slate-900">{title}</h2>
+                            ) : title}
+                        </div>
+                    )}
+                    
                     {searchKey && (
-                        <div className="relative flex-1 max-w-xs">
-                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                        <div className="relative flex-1 max-w-sm">
+                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                             <Input
                                 placeholder={searchPlaceholder}
-                                className="pl-8 h-8 border-border focus:ring-primary/10 rounded-lg bg-background text-[11px] placeholder:text-muted-foreground"
+                                className="pl-10 h-10 border-slate-100 focus:border-primary/30 rounded-xl bg-slate-50/50 text-xs placeholder:text-slate-400"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />

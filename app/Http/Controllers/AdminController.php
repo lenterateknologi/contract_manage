@@ -529,6 +529,31 @@ class AdminController extends Controller
         ]);
     }
 
+    public function createVendor()
+    {
+        return Inertia::render('admin/vendors/form', [
+            'vendor' => null,
+            'breadcrumbs' => [
+                ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
+                ['title' => 'Master Vendor', 'href' => route('admin.vendors'), 'icon' => 'Truck'],
+                ['title' => 'Tambah Vendor', 'href' => '#', 'description' => 'Registrasi rekanan baru.'],
+            ],
+        ]);
+    }
+
+    public function editVendor(Vendor $vendor)
+    {
+        $vendor->load('documents');
+        return Inertia::render('admin/vendors/form', [
+            'vendor' => $vendor,
+            'breadcrumbs' => [
+                ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
+                ['title' => 'Master Vendor', 'href' => route('admin.vendors'), 'icon' => 'Truck'],
+                ['title' => 'Kelola Vendor', 'href' => '#', 'description' => 'Update profil & kelola dokumen legal.'],
+            ],
+        ]);
+    }
+
     public function storeVendor(Request $request)
     {
         $data = $request->validate([
@@ -539,22 +564,28 @@ class AdminController extends Controller
             'phone' => 'nullable|string|max:50',
             'address' => 'nullable|string',
             'is_active' => 'boolean',
+            'company_type' => 'nullable|string|max:100',
+            'is_individual' => 'boolean',
+            'website' => 'nullable|string|max:255',
+            'pic_name' => 'nullable|string|max:255',
+            'pic_position' => 'nullable|string|max:255',
+            'npwp' => 'nullable|string|max:50',
+            'nib' => 'nullable|string|max:50',
+            'siup' => 'nullable|string|max:50',
+            'director_name' => 'nullable|string|max:255',
+            'bank_name' => 'nullable|string|max:255',
+            'bank_account_no' => 'nullable|string|max:100',
+            'bank_account_name' => 'nullable|string|max:255',
         ]);
 
         $data['created_by'] = Auth::id();
         $data['updated_by'] = Auth::id();
 
-        Vendor::create($data);
+        $vendor = Vendor::create($data);
 
-        return back()->with('success', 'Vendor created successfully.');
+        return redirect()->route('admin.vendors.edit', $vendor->id)->with('success', 'Vendor created successfully. You can now attach documents.');
     }
 
-    /**
-     * Update vendor details.
-     * @param Request $request
-     * @param Vendor $vendor
-     * @return \Illuminate\Http\RedirectResponse
-     */
     public function updateVendor(Request $request, Vendor $vendor)
     {
         $data = $request->validate([
@@ -565,6 +596,18 @@ class AdminController extends Controller
             'phone' => 'nullable|string|max:50',
             'address' => 'nullable|string',
             'is_active' => 'boolean',
+            'company_type' => 'nullable|string|max:100',
+            'is_individual' => 'boolean',
+            'website' => 'nullable|string|max:255',
+            'pic_name' => 'nullable|string|max:255',
+            'pic_position' => 'nullable|string|max:255',
+            'npwp' => 'nullable|string|max:50',
+            'nib' => 'nullable|string|max:50',
+            'siup' => 'nullable|string|max:50',
+            'director_name' => 'nullable|string|max:255',
+            'bank_name' => 'nullable|string|max:255',
+            'bank_account_no' => 'nullable|string|max:100',
+            'bank_account_name' => 'nullable|string|max:255',
         ]);
 
         $data['updated_by'] = Auth::id();
@@ -572,6 +615,39 @@ class AdminController extends Controller
         $vendor->update($data);
 
         return back()->with('success', 'Vendor updated successfully.');
+    }
+
+    public function uploadVendorDocument(Request $request, Vendor $vendor)
+    {
+        $request->validate([
+            'document_file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'document_type' => 'required|string',
+            'expires_at' => 'nullable|date',
+        ]);
+
+        $file = $request->file('document_file');
+        $originalName = $file->getClientOriginalName();
+        $path = $file->storeAs("vendor_documents/{$vendor->id}", time() . "_{$originalName}", 'public');
+
+        $vendor->documents()->create([
+            'document_name' => $originalName,
+            'document_type' => $request->document_type,
+            'file_url' => '/storage/' . $path,
+            'expires_at' => $request->filled('expires_at') && $request->expires_at !== '' ? $request->expires_at : null,
+            'is_verified' => true,
+        ]);
+
+        return back()->with('success', 'Document uploaded successfully.');
+    }
+
+    public function destroyVendorDocument(Vendor $vendor, \App\Models\VendorDocument $document)
+    {
+        if ($document->vendor_id !== $vendor->id) {
+            abort(403);
+        }
+
+        $document->delete();
+        return back()->with('success', 'Document deleted successfully.');
     }
 
     public function destroyVendor(Vendor $vendor)
