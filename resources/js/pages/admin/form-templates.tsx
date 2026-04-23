@@ -88,10 +88,10 @@ export default function FormTemplates({ templates }: Props) {
                     </div>
                     
                     <Button asChild className="shadow-md shadow-primary/20">
-                        <Link href={route('admin.form-templates.builder')} target="_blank">
+                        <a href={route('admin.form-templates.builder')} target="_blank">
                             <Plus size={18} className="mr-2" />
                             Buat Template Baru
-                        </Link>
+                        </a>
                     </Button>
                 </div>
 
@@ -123,9 +123,9 @@ export default function FormTemplates({ templates }: Props) {
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end" className="w-48">
                                             <DropdownMenuItem asChild>
-                                                <Link href={route('admin.form-templates.builder', template.id)} target="_blank">
+                                                <a href={route('admin.form-templates.builder', template.id)} target="_blank" className="flex items-center px-2 py-1.5 text-sm">
                                                     <Edit2 className="mr-2 h-4 w-4" /> Edit Builder
-                                                </Link>
+                                                </a>
                                             </DropdownMenuItem>
                                             <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => {
                                                 setSelectedTemplate(template);
@@ -146,11 +146,11 @@ export default function FormTemplates({ templates }: Props) {
                                     <Badge variant="secondary" className="text-[10px] font-bold uppercase tracking-wider bg-primary/5 text-primary border-transparent">
                                         {template.fields_count} Fields
                                     </Badge>
-                                    {template.is_active ? (
-                                        <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider text-green-600 border-green-200 bg-green-50/50">Aktif</Badge>
-                                    ) : (
-                                        <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Draft</Badge>
-                                    )}
+                                     {template.is_active ? (
+                                         <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider text-primary border-primary/20 bg-primary/5">Aktif</Badge>
+                                     ) : (
+                                         <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 border-muted bg-muted/30">Draft</Badge>
+                                     )}
                                 </div>
                                 
                                 <div className="space-y-2">
@@ -162,16 +162,16 @@ export default function FormTemplates({ templates }: Props) {
                             </CardContent>
                             <CardFooter className="px-5 py-4 bg-muted/30 border-t flex gap-2">
                                 <Button size="sm" variant="ghost" className="flex-1 text-xs font-bold h-8 border border-transparent hover:border-primary/20 hover:bg-primary/5 group/btn" asChild>
-                                    <Link href={route('admin.form-templates.builder', template.id)} target="_blank">
+                                    <a href={route('admin.form-templates.builder', template.id)} target="_blank">
                                         <Settings size={14} className="mr-1.5 opacity-60 group-hover/btn:opacity-100" />
                                         Edit
-                                    </Link>
+                                    </a>
                                 </Button>
                                 <Button size="sm" className="flex-1 text-xs font-bold h-8 shadow-sm" variant="outline" asChild>
-                                    <Link href={route('admin.form-templates.builder', template.id)} target="_blank">
+                                    <a href={route('admin.form-templates.builder', template.id)} target="_blank">
                                         <Play size={14} className="mr-1.5" />
                                         Preview
-                                    </Link>
+                                    </a>
                                 </Button>
                                 {/* Removed Isi Form from here as per request */}
                             </CardFooter>
@@ -184,10 +184,10 @@ export default function FormTemplates({ templates }: Props) {
                             <h3 className="font-bold text-lg text-muted-foreground">Belum ada template form</h3>
                             <p className="text-muted-foreground text-sm mb-6">Mulai buat template digital pertamamu.</p>
                             <Button asChild>
-                                <Link href={route('admin.form-templates.builder')} target="_blank">
+                                <a href={route('admin.form-templates.builder')} target="_blank">
                                     <Plus size={18} className="mr-2" />
                                     Buat Sekarang
-                                </Link>
+                                </a>
                             </Button>
                         </Card>
                     )}

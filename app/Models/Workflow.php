@@ -25,6 +25,9 @@ class Workflow extends Model
         'is_default',
         'is_template',
         'is_tax_involved',
+        'sla_drafting_hours',
+        'sla_total_hours',
+        'sla_cutoff_hour',
         'created_by',
         'updated_by',
     ];

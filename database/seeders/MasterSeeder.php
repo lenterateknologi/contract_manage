@@ -33,7 +33,6 @@ class MasterSeeder extends Seeder
         $admin = User::updateOrCreate(
             ['email' => 'admin@example.com'],
             [
-                'id' => Str::uuid(),
                 'name' => 'Administrator',
                 'password' => Hash::make('password'),
                 'role' => 'Admin',
@@ -51,23 +50,28 @@ class MasterSeeder extends Seeder
         $directorRole = Role::where('name', 'Director')->first();
         $staffRole = Role::where('name', 'Staff')->first();
 
-        User::updateOrCreate(['email' => 'ahmad@example.com'], ['id' => Str::uuid(), 'name' => 'Ahmad Pembeli', 'password' => Hash::make('password'), 'role' => 'Staff', 'department_id' => $procId, 'role_id' => $staffRole->id]);
-        User::updateOrCreate(['email' => 'budi@example.com'], ['id' => Str::uuid(), 'name' => 'Budi Legal', 'password' => Hash::make('password'), 'role' => 'Manager', 'department_id' => $legalId, 'role_id' => $managerRole->id]);
-        User::updateOrCreate(['email' => 'citra@example.com'], ['id' => Str::uuid(), 'name' => 'Citra Tax', 'password' => Hash::make('password'), 'role' => 'Manager', 'department_id' => $taxId, 'role_id' => $managerRole->id]);
-        User::updateOrCreate(['email' => 'dian@example.com'], ['id' => Str::uuid(), 'name' => 'Dian Finance', 'password' => Hash::make('password'), 'role' => 'Manager', 'department_id' => $finId, 'role_id' => $managerRole->id]);
-        User::updateOrCreate(['email' => 'eko@example.com'], ['id' => Str::uuid(), 'name' => 'Eko Director', 'password' => Hash::make('password'), 'role' => 'Director', 'department_id' => $finId, 'role_id' => $directorRole->id]);
+        User::updateOrCreate(['email' => 'ahmad@example.com'], ['name' => 'Ahmad Pembeli', 'password' => Hash::make('password'), 'role' => 'Staff', 'department_id' => $procId, 'role_id' => $staffRole->id]);
+        User::updateOrCreate(['email' => 'budi@example.com'], ['name' => 'Budi Legal', 'password' => Hash::make('password'), 'role' => 'Manager', 'department_id' => $legalId, 'role_id' => $managerRole->id]);
+        User::updateOrCreate(['email' => 'citra@example.com'], ['name' => 'Citra Tax', 'password' => Hash::make('password'), 'role' => 'Manager', 'department_id' => $taxId, 'role_id' => $managerRole->id]);
+        User::updateOrCreate(['email' => 'dian@example.com'], ['name' => 'Dian Finance', 'password' => Hash::make('password'), 'role' => 'Manager', 'department_id' => $finId, 'role_id' => $managerRole->id]);
+        User::updateOrCreate(['email' => 'eko@example.com'], ['name' => 'Eko Director', 'password' => Hash::make('password'), 'role' => 'Director', 'department_id' => $finId, 'role_id' => $directorRole->id]);
 
         // Contract Types and Statuses are now handled by specialized seeders (ContractTypeSeeder, ContractStatusSeeder)
         // to avoid duplication and maintain historical sample data.
 
         // 7. Seed Module Groups & Modules (Navigation structure)
         $groups = [
-            ['id' => Str::uuid(), 'name' => 'Dashboard', 'icon' => 'LayoutGrid', 'sequence' => 1],
-            ['id' => Str::uuid(), 'name' => 'Kontrak', 'icon' => 'FileText', 'sequence' => 2],
-            ['id' => Str::uuid(), 'name' => 'Laporan', 'icon' => 'BarChart2', 'sequence' => 3],
-            ['id' => Str::uuid(), 'name' => 'Administrasi', 'icon' => 'ShieldCheck', 'sequence' => 4],
+            ['name' => 'Dashboard', 'icon' => 'LayoutGrid', 'sequence' => 1],
+            ['name' => 'Kontrak', 'icon' => 'FileText', 'sequence' => 2],
+            ['name' => 'Laporan', 'icon' => 'BarChart2', 'sequence' => 3],
+            ['name' => 'Administrasi', 'icon' => 'ShieldCheck', 'sequence' => 4],
         ];
-        foreach ($groups as $g) ModuleGroup::create($g);
+        foreach ($groups as $g) {
+            ModuleGroup::updateOrCreate(['name' => $g['name']], [
+                'icon' => $g['icon'],
+                'sequence' => $g['sequence']
+            ]);
+        }
 
         $mods = [
             ['name' => 'Summary', 'identifier' => 'DASHBOARD', 'group' => 'Dashboard', 'route' => '/dashboard', 'icon' => 'Home', 'seq' => 1],
@@ -96,10 +100,8 @@ class MasterSeeder extends Seeder
 
         foreach ($mods as $m) {
             $groupId = ModuleGroup::where('name', $m['group'])->value('id');
-            Module::create([
-                'id' => Str::uuid(),
+            Module::updateOrCreate(['identifier' => $m['identifier']], [
                 'name' => $m['name'],
-                'identifier' => $m['identifier'],
                 'module_group_id' => $groupId,
                 'route' => $m['route'],
                 'icon' => $m['icon'],
@@ -147,15 +149,17 @@ class MasterSeeder extends Seeder
         ];
 
         foreach ($workflowConfigs as $wf) {
-            $workflow = \App\Models\Workflow::create([
-                'id' => Str::uuid(),
+            $workflow = \App\Models\Workflow::updateOrCreate([
                 'name' => $wf['name'],
                 'contract_type' => $wf['type_name'],
+            ], [
                 'is_tax_involved' => $wf['is_tax'],
                 'is_default' => !$wf['is_tax'], // Default is the standard one
                 'is_template' => true,
                 'created_by' => $admin->id,
             ]);
+
+            $workflow->steps()->forceDelete();
 
             foreach ($wf['steps'] as $idx => $s) {
                 $deptId = Department::where('code', $s['dept'])->value('id');

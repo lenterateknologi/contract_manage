@@ -1,5 +1,7 @@
 import { ContractApproval, UserProfile } from '@/types/contracts';
 import { Avatar, StatusBadge } from './ui';
+import React, { useState, useMemo } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface Props {
     approvals: ContractApproval[];
@@ -8,6 +10,8 @@ interface Props {
 }
 
 export default function ApprovalSteps({ approvals, creator, submittedAt }: Props) {
+    const [isExpanded, setIsExpanded] = useState(false);
+
     const iconMap: Record<string, string> = {
         approved: 'fa-check',
         pending: 'fa-ellipsis',
@@ -28,38 +32,89 @@ export default function ApprovalSteps({ approvals, creator, submittedAt }: Props
     };
 
     // Use only the latest approval per sequence
-    const bySeq: Record<number, ContractApproval> = {};
-    approvals.forEach((a) => {
-        bySeq[a.sequence] = a;
-    });
-    const steps = Object.values(bySeq).sort((a, b) => a.sequence - b.sequence);
+    const steps = useMemo(() => {
+        const bySeq: Record<number, ContractApproval> = {};
+        approvals.forEach((a) => {
+            bySeq[a.sequence] = a;
+        });
+        return Object.values(bySeq).sort((a, b) => a.sequence - b.sequence);
+    }, [approvals]);
 
-    // Projected step for Drafts (if creator is Staff, they will need Manager approval first)
+    // Projected step for Drafts
     const showProjectedManager = approvals.length === 0 && (creator.role?.toLowerCase() === 'staff');
-    const projectedManagerStep = showProjectedManager ? (
-        <div key="projected" className="flex gap-2.5 relative pb-4 opacity-70">
-            <div className="bg-border absolute top-7 bottom-0 left-3 w-px" />
-            <div className="relative z-10 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border bg-muted text-muted-foreground border-border">
-                <i className="fa-solid fa-user-shield" style={{ fontSize: 8 }} />
+
+    // Logic to determine which step to show when minimized
+    const activeStepInfo = useMemo(() => {
+        // If not submitted yet, Initiator is the active step
+        if (!submittedAt) return { type: 'initiator' as const, index: -1 };
+
+        // If there are pending steps, the first pending is active
+        const pendingIdx = steps.findIndex(s => s.status === 'pending');
+        if (pendingIdx !== -1) return { type: 'step' as const, index: pendingIdx };
+
+        // If everything is approved/archived, show the last step
+        if (steps.length > 0) return { type: 'step' as const, index: steps.length - 1 };
+
+        // Fallback
+        return { type: 'initiator' as const, index: -1 };
+    }, [submittedAt, steps]);
+
+    const renderStep = (a: ContractApproval, i: number, isLast: boolean, isOnly: boolean) => (
+        <div key={a.id} className={`flex gap-2.5 ${!isLast && !isOnly ? 'relative pb-4' : ''}`}>
+            {!isLast && !isOnly && <div className="bg-border absolute top-7 bottom-0 left-3 w-px" />}
+            <div
+                className={`relative z-10 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border ${dotCls[a.status] ?? dotCls.waiting}`}
+            >
+                <i className={`fa-solid ${iconMap[a.status] ?? 'fa-minus'}`} style={{ fontSize: 8 }} />
             </div>
             <div className="flex-1 pt-0.5">
-                <div className="text-foreground text-[12px] font-semibold">
-                    Direct Supervisor <span className="text-muted-foreground text-[10px] font-normal">· Phase 1</span>
+                <div className="text-foreground text-[12px] font-semibold flex items-center gap-1.5 flex-wrap">
+                    {a.role} - {a.department_name ?? 'Matching Dept'}
+                    <span className="text-muted-foreground text-[10px] font-normal opacity-70">· Seq {a.sequence}</span>
                 </div>
-                <div className="text-muted-foreground mt-0.5 flex items-center gap-1.5 text-[11px]">
-                    <i className="fa-solid fa-circle-info opacity-50" /> Manager (Dept: {creator.department_id ? 'Matching' : 'Unknown'})
+                
+                <div className="text-muted-foreground mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px]">
+                    {a.status === 'approved' || a.status === 'rejected' ? (
+                        <div className="flex items-center gap-1.5 font-medium text-foreground/80">
+                            <Avatar user={a.approver} size="sm" /> 
+                            {a.approver?.name}
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-1.5">
+                            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-muted border border-border/50">
+                                <i className="fa-solid fa-user text-[8px] text-muted-foreground/60" />
+                            </div>
+                            <span className="opacity-70">
+                                {a.target_approvers ? `Assigned to: ${a.target_approvers}` : `Approver ${a.role}`}
+                            </span>
+                        </div>
+                    )}
                 </div>
-                <div className="text-muted-foreground mt-1 text-[10px] italic">
-                    Will be assigned upon submission
+
+                {a.note && (
+                    <div
+                        className={`text-muted-foreground bg-muted mt-1.5 rounded border-l-2 px-2.5 py-1.5 text-[11px] ${noteCls[a.status] ?? 'border-l-border/30'}`}
+                    >
+                        {a.note}
+                    </div>
+                )}
+                <div className="text-muted-foreground mt-1.5 text-[10px] flex items-center gap-1.5">
+                    {a.approved_at ? (
+                        <>
+                            <i className="fa-regular fa-clock" />
+                            {a.approved_at}
+                        </>
+                    ) : (
+                        <StatusBadge status={a.status} />
+                    )}
                 </div>
             </div>
         </div>
-    ) : null;
+    );
 
-    // Initial item for the Initiator
-    const initiatorStep = (
-        <div key="initiator" className="flex gap-2.5 relative pb-4">
-            {(steps.length > 0 || showProjectedManager) && <div className="bg-border absolute top-7 bottom-0 left-3 w-px" />}
+    const renderInitiator = (isOnly: boolean) => (
+        <div key="initiator" className={`flex gap-2.5 ${!isOnly ? 'relative pb-4' : ''}`}>
+            {!isOnly && <div className="bg-border absolute top-7 bottom-0 left-3 w-px" />}
             <div className="relative z-10 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/30">
                 <i className="fa-solid fa-paper-plane" style={{ fontSize: 8 }} />
             </div>
@@ -77,62 +132,63 @@ export default function ApprovalSteps({ approvals, creator, submittedAt }: Props
         </div>
     );
 
-    return (
-        <div>
-            {initiatorStep}
-            {projectedManagerStep}
-            {steps.map((a, i) => (
-                <div key={a.id} className={`flex gap-2.5 ${i < steps.length - 1 ? 'relative pb-4' : ''}`}>
-                    {i < steps.length - 1 && <div className="bg-border absolute top-7 bottom-0 left-3 w-px" />}
-                    <div
-                        className={`relative z-10 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border ${dotCls[a.status] ?? dotCls.waiting}`}
-                    >
-                        <i className={`fa-solid ${iconMap[a.status] ?? 'fa-minus'}`} style={{ fontSize: 8 }} />
-                    </div>
-                    <div className="flex-1 pt-0.5">
-                        <div className="text-foreground text-[12px] font-semibold flex items-center gap-1.5 flex-wrap">
-                            {a.role} - {a.department_name ?? 'Matching Dept'}
-                            <span className="text-muted-foreground text-[10px] font-normal opacity-70">· Seq {a.sequence}</span>
-                        </div>
-                        
-                        <div className="text-muted-foreground mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px]">
-                            {a.status === 'approved' || a.status === 'rejected' ? (
-                                <div className="flex items-center gap-1.5 font-medium text-foreground/80">
-                                    <Avatar user={a.approver} size="sm" /> 
-                                    {a.approver?.name}
-                                </div>
-                            ) : (
-                                <div className="flex items-center gap-1.5">
-                                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-muted border border-border/50">
-                                        <i className="fa-solid fa-user text-[8px] text-muted-foreground/60" />
-                                    </div>
-                                    <span className="opacity-70">
-                                        {a.target_approvers ? `Assigned to: ${a.target_approvers}` : `Approver ${a.role}`}
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-
-                        {a.note && (
-                            <div
-                                className={`text-muted-foreground bg-muted mt-1.5 rounded border-l-2 px-2.5 py-1.5 text-[11px] ${noteCls[a.status] ?? 'border-l-border/30'}`}
-                            >
-                                {a.note}
-                            </div>
-                        )}
-                        <div className="text-muted-foreground mt-1.5 text-[10px] flex items-center gap-1.5">
-                            {a.approved_at ? (
-                                <>
-                                    <i className="fa-regular fa-clock" />
-                                    {a.approved_at}
-                                </>
-                            ) : (
-                                <StatusBadge status={a.status} />
-                            )}
-                        </div>
-                    </div>
+    const renderProjected = () => (
+        <div key="projected" className="flex gap-2.5 relative pb-4 opacity-70">
+            <div className="bg-border absolute top-7 bottom-0 left-3 w-px" />
+            <div className="relative z-10 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border bg-muted text-muted-foreground border-border">
+                <i className="fa-solid fa-user-shield" style={{ fontSize: 8 }} />
+            </div>
+            <div className="flex-1 pt-0.5">
+                <div className="text-foreground text-[12px] font-semibold">
+                    Direct Supervisor <span className="text-muted-foreground text-[10px] font-normal">· Phase 1</span>
                 </div>
-            ))}
+                <div className="text-muted-foreground mt-0.5 flex items-center gap-1.5 text-[11px]">
+                    <i className="fa-solid fa-circle-info opacity-50" /> Manager (Dept: {creator.department_id ? 'Matching' : 'Unknown'})
+                </div>
+                <div className="text-muted-foreground mt-1 text-[10px] italic">
+                    Will be assigned upon submission
+                </div>
+            </div>
+        </div>
+    );
+
+    const hasMultipleItems = steps.length > 0 || showProjectedManager;
+
+    return (
+        <div className="space-y-4">
+            <div className="relative">
+                {isExpanded ? (
+                    <>
+                        {renderInitiator(false)}
+                        {showProjectedManager && renderProjected()}
+                        {steps.map((a, i) => renderStep(a, i, i === steps.length - 1, false))}
+                    </>
+                ) : (
+                    <>
+                        {activeStepInfo.type === 'initiator' 
+                            ? renderInitiator(true) 
+                            : steps[activeStepInfo.index] && renderStep(steps[activeStepInfo.index], activeStepInfo.index, true, true)
+                        }
+                    </>
+                )}
+            </div>
+
+            {hasMultipleItems && (
+                <button
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className="text-primary hover:bg-primary/5 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-primary/20 py-2 text-[11px] font-bold tracking-wider uppercase transition-all"
+                >
+                    {isExpanded ? (
+                        <>
+                            <ChevronUp size={14} /> Minimalkan Alur
+                        </>
+                    ) : (
+                        <>
+                            <ChevronDown size={14} /> Lihat Seluruh Alur ({steps.length + 1} Tahap)
+                        </>
+                    )}
+                </button>
+            )}
         </div>
     );
 }

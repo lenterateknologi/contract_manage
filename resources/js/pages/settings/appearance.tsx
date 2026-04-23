@@ -1,28 +1,30 @@
 import { Head } from '@inertiajs/react';
+import { Palette } from 'lucide-react';
 
 import AppearanceTabs from '@/components/appearance-tabs';
-import HeadingSmall from '@/components/heading-small';
-import { type BreadcrumbItem } from '@/types';
-
-import AppLayout from '@/layouts/app-layout';
 import SettingsLayout from '@/layouts/settings/layout';
-
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Appearance settings',
-        href: '/settings/appearance',
-    },
-];
 
 export default function Appearance() {
     return (
         <>
-            <Head title="Appearance settings" />
+            <Head title="Tampilan" />
 
             <SettingsLayout>
                 <div className="space-y-6">
-                    <HeadingSmall title="Appearance settings" description="Update your account's appearance settings" />
-                    <AppearanceTabs />
+                    <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+                        <div className="border-b border-border bg-muted/30 px-6 py-4 flex items-center justify-between">
+                            <h3 className="text-sm font-black text-foreground uppercase tracking-widest">Tema & Tampilan</h3>
+                            <Palette size={16} className="text-muted-foreground/60" />
+                        </div>
+                        
+                        <div className="p-8">
+                            <div className="mb-6">
+                                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1.5">Mode Tampilan</p>
+                                <p className="text-[11px] text-muted-foreground/60 font-medium">Pilih preferensi tema yang paling nyaman untuk mata Anda.</p>
+                            </div>
+                            <AppearanceTabs />
+                        </div>
+                    </div>
                 </div>
             </SettingsLayout>
         </>

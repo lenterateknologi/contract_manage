@@ -18,9 +18,60 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
+        $user = $request->user();
+        
+        // Fetch recent contracts created by user or where user is an approver
+        $recentContracts = \App\Models\Contract::where('created_by', $user->id)
+            ->orWhereHas('approvals', fn($q) => $q->where('user_id', $user->id))
+            ->with(['contractType', 'creator', 'workflow', 'approvals'])
+            ->latest()
+            ->take(10)
+            ->get()
+            ->map(fn($c) => [
+                'id' => $c->id,
+                'contract_no' => $c->contract_no,
+                'title' => $c->title,
+                'type' => $c->contractType?->name,
+                'status' => $c->status,
+                'progress' => $c->progressData(),
+                'time_ago' => $c->created_at->diffForHumans(),
+            ]);
+
+        // Fetch colleagues (collaborators) from the same department
+        $collaborators = \App\Models\User::where('department_id', $user->department_id)
+            ->where('id', '!=', $user->id)
+            ->take(8)
+            ->get()
+            ->map(fn($u) => [
+                'id' => $u->id,
+                'name' => $u->name,
+                'initials' => $u->initials,
+                'bg_color' => $u->bg_color,
+                'text_color' => $u->text_color,
+            ]);
+
         return Inertia::render('settings/profile', [
-            'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
+            'mustVerifyEmail' => $user instanceof MustVerifyEmail,
             'status' => $request->session()->get('status'),
+            'department' => $user->department?->name ?? 'N/A',
+            'recentContracts' => $recentContracts,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'username' => $user->username,
+                'phone' => $user->phone,
+                'position' => $user->position,
+                'company' => $user->company,
+                'location' => $user->location,
+                'group' => $user->group,
+                'region' => $user->region,
+                'bio' => $user->bio,
+                'role' => $user->role,
+                'initials' => $user->initials,
+                'bg_color' => $user->bg_color,
+                'text_color' => $user->text_color,
+            ],
         ]);
     }
 

@@ -64,6 +64,7 @@ class ContractController extends Controller
             'currentView' => $view,
             'contracts' => $contracts,
             'types' => ContractType::all(),
+            'users' => User::orderBy('name')->get()->map(fn($u) => $this->formatUser($u)),
             'formTemplates' => \App\Models\FormTemplate::where('is_active', true)->with('contractType')->get()->map(fn ($ft) => [
                 'id' => $ft->id,
                 'name' => $ft->name,
@@ -150,6 +151,7 @@ class ContractController extends Controller
             'contracts' => $contracts,
             'initialSelected' => $this->formatContract($contract),
             'types' => ContractType::all(),
+            'users' => User::orderBy('name')->get()->map(fn($u) => $this->formatUser($u)),
             'formTemplates' => \App\Models\FormTemplate::where('is_active', true)->with('contractType')->get()->map(fn ($ft) => [
                 'id' => $ft->id,
                 'name' => $ft->name,
@@ -372,6 +374,7 @@ class ContractController extends Controller
             'contract_type_id' => 'required|exists:m_contract_types,id',
             'transaction_type' => 'nullable|string|in:Perjanjian Baru,Addendum,Amandement,Perubahan Perjanjian',
             'tax_required' => 'nullable|boolean',
+            'initiated_by_id' => 'nullable|uuid|exists:m_users,id',
         ]);
 
         return DB::transaction(function () use ($validated) {
@@ -385,6 +388,7 @@ class ContractController extends Controller
                 'transaction_type' => $validated['transaction_type'] ?? 'Perjanjian Baru',
                 'status' => 'draft',
                 'created_by' => $userId,
+                'initiated_by_id' => $validated['initiated_by_id'] ?? $userId,
                 'metadata' => [
                     'tax_required' => $validated['tax_required'] ?? false,
                 ]
@@ -414,6 +418,7 @@ class ContractController extends Controller
             'end_date' => 'nullable|date',
             'contract_type_id' => 'nullable|exists:m_contract_types,id',
             'transaction_type' => 'nullable|string|in:Perjanjian Baru,Addendum,Amandement,Perubahan Perjanjian',
+            'initiated_by_id' => 'nullable|uuid|exists:m_users,id',
         ]);
 
         $contract->update($validated);
@@ -798,6 +803,8 @@ class ContractController extends Controller
             'created_at' => $c->created_at->toDateString(),
             'submitted_at' => $c->submitted_at ? $c->submitted_at->format('Y-m-d H:i') : null,
             'creator' => $this->formatUser($c->creator),
+            'initiator' => $this->formatUser($c->initiator),
+            'initiated_by_id' => $c->initiated_by_id,
             'progress' => $progress,
             'workflow_id' => $c->workflow_id,
             'workflow_step_id' => $c->workflow_step_id,
@@ -878,8 +885,8 @@ class ContractController extends Controller
             
             // Resolve Department Name
             $deptName = $step->department?->name;
-            if (!$deptName && $step->step === 1 && $c->creator?->department) {
-                $deptName = $c->creator->department->name;
+            if (!$deptName && $step->step === 1 && $c->initiator?->department) {
+                $deptName = $c->initiator->department->name;
             }
 
             // Resolve Specific Names (if any)

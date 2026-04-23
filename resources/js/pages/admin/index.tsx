@@ -21,6 +21,7 @@ import {
     Users,
     Users as UsersIcon,
     AlertTriangle,
+    Clock,
 } from 'lucide-react';
 import React, { FormEvent, useCallback, useMemo, useState } from 'react';
 
@@ -137,13 +138,13 @@ function SortableStepItem({
         <div
             ref={setNodeRef}
             style={style}
-            className="group/step relative flex items-start gap-5 overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] transition-all duration-300 hover:shadow-[0_8px_30px_-10px_rgba(0,0,0,0.12)]"
+            className="group/step relative flex items-start gap-5 overflow-hidden rounded-2xl border border-border bg-card p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] transition-all duration-300 hover:shadow-[0_8px_30px_-10px_rgba(0,0,0,0.2)]"
         >
-            <div className="absolute top-0 left-0 h-full w-1 bg-slate-900 opacity-0 transition-opacity group-hover/step:opacity-100" />
+            <div className="absolute top-0 left-0 h-full w-1 bg-primary opacity-0 transition-opacity group-hover/step:opacity-100" />
             <div
                 {...attributes}
                 {...listeners}
-                className="flex h-8 w-8 shrink-0 cursor-grab items-center justify-center rounded-xl bg-slate-900 text-[11px] font-black text-white shadow-lg shadow-slate-200 transition-transform hover:bg-slate-800 active:scale-95 active:cursor-grabbing"
+                className="flex h-8 w-8 shrink-0 cursor-grab items-center justify-center rounded-xl bg-primary text-[11px] font-black text-primary-foreground shadow-lg shadow-primary/20 transition-transform hover:bg-primary/90 active:scale-95 active:cursor-grabbing"
             >
                 <GripVertical size={12} className="mr-0.5 opacity-40" />
                 {idx + 1}
@@ -151,14 +152,14 @@ function SortableStepItem({
 
             <div className="grid flex-1 grid-cols-12 gap-3">
                 <div className="col-span-3 space-y-1">
-                    <Label className="text-[9px] font-black tracking-widest text-slate-400 uppercase">Tipe Otoritas</Label>
-                    <div className="flex h-7 rounded-lg border border-slate-200 bg-slate-100 p-0.5">
+                    <Label className="text-[9px] font-black tracking-widest text-muted-foreground uppercase">Tipe Otoritas</Label>
+                    <div className="flex h-7 rounded-lg border border-border bg-muted p-0.5">
                         <button
                             type="button"
                             onClick={() => updateLocalStep(idx, { approver_type: 'role', user_ids: [] })}
                             className={cn(
                                 'flex flex-1 items-center justify-center gap-1 rounded text-[8px] font-bold uppercase transition-all',
-                                step.approver_type === 'role' ? 'text-primary bg-white shadow-sm' : 'text-slate-500 hover:text-slate-800',
+                                step.approver_type === 'role' ? 'text-primary bg-card shadow-sm' : 'text-muted-foreground hover:text-foreground',
                             )}
                         >
                             <Shield size={9} /> Role
@@ -168,7 +169,7 @@ function SortableStepItem({
                             onClick={() => updateLocalStep(idx, { approver_type: 'user' })}
                             className={cn(
                                 'flex flex-1 items-center justify-center gap-1 rounded text-[8px] font-bold uppercase transition-all',
-                                step.approver_type === 'user' ? 'text-primary bg-white shadow-sm' : 'text-slate-500 hover:text-slate-800',
+                                step.approver_type === 'user' ? 'text-primary bg-card shadow-sm' : 'text-muted-foreground hover:text-foreground',
                             )}
                         >
                             <UsersIcon size={9} /> User
@@ -180,21 +181,21 @@ function SortableStepItem({
                     {step.approver_type === 'role' ? (
                         <>
                             <div className="space-y-1">
-                                <Label className="flex justify-between text-[9px] font-black tracking-widest text-slate-400 uppercase">
+                                <Label className="flex justify-between text-[9px] font-black tracking-widest text-muted-foreground uppercase">
                                     Pilih Spesifik Role
                                     {step.selected_role && <span className="text-primary font-bold normal-case">{step.selected_role}</span>}
                                 </Label>
                                 <Select value={step.selected_role} onValueChange={(val) => updateLocalStep(idx, { selected_role: val })}>
-                                    <SelectTrigger className="hover:border-primary/30 h-8 rounded-lg border-slate-200 bg-white px-3 text-[11px] font-bold text-slate-800 transition-colors">
+                                    <SelectTrigger className="hover:border-primary/30 h-8 rounded-lg border-border bg-card px-3 text-[11px] font-bold text-foreground transition-colors">
                                         <SelectValue placeholder="Cari & Pilih Role..." />
                                     </SelectTrigger>
-                                    <SelectContent className="p-0">
-                                        <div className="border-b bg-slate-50/50 p-2">
+                                    <SelectContent className="p-0 border-border bg-popover">
+                                        <div className="border-b border-border bg-muted/30 p-2">
                                             <div className="relative">
-                                                <Search className="absolute top-2 left-2.5 h-3.5 w-3.5 text-slate-400" />
+                                                <Search className="absolute top-2 left-2.5 h-3.5 w-3.5 text-muted-foreground/50" />
                                                 <Input
                                                     placeholder="Cari role..."
-                                                    className="h-7 rounded-md border-slate-200 bg-white pl-8 text-[11px] shadow-sm"
+                                                    className="h-7 rounded-md border-border bg-background pl-8 text-[11px] shadow-sm"
                                                     value={roleSearchText}
                                                     onChange={(e) => setRoleSearchText(e.target.value)}
                                                     onClick={(e) => e.stopPropagation()}
@@ -208,7 +209,7 @@ function SortableStepItem({
                                                 </SelectItem>
                                             ))}
                                             {filteredRoles.length === 0 && (
-                                                <div className="p-4 text-center text-[10px] font-bold tracking-widest text-slate-400 uppercase">
+                                                <div className="p-4 text-center text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
                                                     Tidak ada role
                                                 </div>
                                             )}
@@ -238,25 +239,25 @@ function SortableStepItem({
                         </>
                     ) : (
                         <div className="space-y-1.5">
-                            <Label className="text-[9px] font-black tracking-widest text-slate-400 uppercase">Pilih User (Filter & Search)</Label>
+                            <Label className="text-[9px] font-black tracking-widest text-muted-foreground uppercase">Pilih User (Filter & Search)</Label>
 
                             <div className="flex gap-2">
                                 <div className="relative flex-1">
-                                    <Search className="absolute top-2 left-3 h-3.5 w-3.5 text-slate-400" />
+                                    <Search className="absolute top-2 left-3 h-3.5 w-3.5 text-muted-foreground/50" />
                                     <Input
                                         placeholder="Cari berdasarkan nama atau email..."
-                                        className="focus-visible:ring-primary/20 h-8 rounded-lg border-slate-200 bg-white pl-9 text-[11px] shadow-sm"
+                                        className="focus-visible:ring-primary/20 h-8 rounded-lg border-border bg-card pl-9 text-[11px] shadow-sm"
                                         value={userSearchText}
                                         onChange={(e) => setUserSearchText(e.target.value)}
                                     />
                                 </div>
                                 <Select value={userRoleFilter} onValueChange={setUserRoleFilter}>
-                                    <SelectTrigger className="h-8 w-[140px] rounded-lg border-slate-200 bg-slate-50 px-3 text-[10px] font-bold tracking-tight uppercase transition-colors hover:bg-slate-100">
-                                        <Filter className="mr-1.5 h-3 w-3 text-slate-400" />
+                                    <SelectTrigger className="h-8 w-[140px] rounded-lg border-border bg-muted px-3 text-[10px] font-bold tracking-tight uppercase transition-colors hover:bg-muted/80">
+                                        <Filter className="mr-1.5 h-3 w-3 text-muted-foreground/50" />
                                         <SelectValue placeholder="Filter Role" />
                                     </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all" className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                                    <SelectContent className="border-border bg-popover">
+                                        <SelectItem value="all" className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                                             Show All Roles
                                         </SelectItem>
                                         {roles?.map((r) => (
@@ -268,15 +269,15 @@ function SortableStepItem({
                                 </Select>
                             </div>
 
-                            <div className="grid max-h-[160px] grid-cols-2 gap-2 overflow-y-auto rounded-xl border border-slate-100 bg-slate-50/50 p-2 shadow-inner sm:grid-cols-3">
+                            <div className="grid max-h-[160px] grid-cols-2 gap-2 overflow-y-auto rounded-xl border border-border bg-muted/30 p-2 shadow-inner sm:grid-cols-3">
                                 {filteredUsers.map((u) => (
                                     <label
                                         key={u.id}
                                         className={cn(
                                             'group/u inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-[10px] font-bold transition-all duration-200',
                                             step.user_ids?.includes(u.id)
-                                                ? 'bg-primary border-primary shadow-primary/10 scale-[1.02] text-white shadow-md'
-                                                : 'hover:border-primary/40 border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:shadow-sm',
+                                                ? 'bg-primary border-primary shadow-primary/10 scale-[1.02] text-primary-foreground shadow-md'
+                                                : 'hover:border-primary/40 border-border bg-card text-foreground/80 hover:bg-muted/50 hover:shadow-sm',
                                         )}
                                     >
                                         <Checkbox
@@ -298,7 +299,7 @@ function SortableStepItem({
                                             <span
                                                 className={cn(
                                                     'truncate text-[8px] font-medium opacity-60',
-                                                    step.user_ids?.includes(u.id) ? 'text-white' : 'text-slate-400',
+                                                    step.user_ids?.includes(u.id) ? 'text-primary-foreground' : 'text-muted-foreground',
                                                 )}
                                             >
                                                 {u.email}
@@ -308,8 +309,8 @@ function SortableStepItem({
                                 ))}
                                 {filteredUsers.length === 0 && (
                                     <div className="col-span-full flex flex-col items-center gap-2 py-8 text-center">
-                                        <UsersIcon size={20} className="text-slate-200" />
-                                        <div className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">User tidak ditemukan</div>
+                                        <UsersIcon size={20} className="text-muted-foreground/30" />
+                                        <div className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">User tidak ditemukan</div>
                                     </div>
                                 )}
                             </div>
@@ -323,7 +324,7 @@ function SortableStepItem({
                 variant="ghost"
                 size="icon"
                 onClick={() => removeLocalStep(idx)}
-                className="mt-3 h-8 w-8 shrink-0 rounded-lg text-slate-300 hover:bg-red-50 hover:text-red-500"
+                className="mt-3 h-8 w-8 shrink-0 rounded-lg text-muted-foreground/40 hover:bg-destructive/10 hover:text-destructive"
             >
                 <Trash2 size={13} />
             </Button>
@@ -506,7 +507,7 @@ export default function AdminIndex({
                 header: 'ID',
                 accessorKey: 'id',
                 className: 'w-[100px]',
-                cell: (row) => <span className="font-mono text-[10px] text-slate-400 uppercase tabular-nums">{String(row.id).substring(0, 8)}</span>,
+                cell: (row) => <span className="font-mono text-[10px] text-muted-foreground uppercase tabular-nums">{String(row.id).substring(0, 8)}</span>,
             },
         ];
 
@@ -520,10 +521,10 @@ export default function AdminIndex({
                         sortable: true,
                         cell: (row: any) => (
                             <div className="flex flex-col">
-                                <span className="font-semibold text-slate-900">{row.name}</span>
+                                <span className="font-semibold text-foreground">{row.name}</span>
                                 <div className="text-muted-foreground mt-0.5 flex items-center gap-1.5 text-[11px]">
                                     <span>{row.email}</span>
-                                    <span className="h-1 w-1 rounded-full bg-slate-300" />
+                                    <span className="h-1 w-1 rounded-full bg-border" />
                                     <span className="font-mono">{row.username}</span>
                                 </div>
                                 {row.department && (
@@ -550,7 +551,7 @@ export default function AdminIndex({
                                     </Badge>
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="text-[11px] leading-none font-black tracking-tight text-slate-700 uppercase">
+                                    <span className="text-[11px] leading-none font-black tracking-tight text-foreground/80 uppercase">
                                         {row.position || '-'}
                                     </span>
                                     <span className="text-muted-foreground mt-1 text-[10px] font-bold uppercase opacity-60">{row.phone || '-'}</span>
@@ -577,7 +578,7 @@ export default function AdminIndex({
             case 'roles':
                 return [
                     ...baseColumns,
-                    { header: 'Nama Role', accessorKey: 'name', sortable: true, className: 'font-semibold text-slate-900 uppercase text-[12px]' },
+                    { header: 'Nama Role', accessorKey: 'name', sortable: true, className: 'font-semibold text-foreground uppercase text-[12px]' },
                     {
                         header: 'Deskripsi',
                         accessorKey: 'description',
@@ -587,7 +588,7 @@ export default function AdminIndex({
             case 'contract-types':
                 return [
                     ...baseColumns,
-                    { header: 'Tipe Kontrak', accessorKey: 'name', sortable: true, className: 'font-semibold text-slate-900 uppercase text-[12px]' },
+                    { header: 'Tipe Kontrak', accessorKey: 'name', sortable: true, className: 'font-semibold text-foreground uppercase text-[12px]' },
                     {
                         header: 'Tipe Alur (F1/F2)',
                         accessorKey: 'type',
@@ -619,11 +620,11 @@ export default function AdminIndex({
                         cell: (row: any) => (
                             <div className="flex flex-col">
                                 <div className="flex items-center gap-2">
-                                    <span className="text-[12px] font-semibold text-slate-900 uppercase">{row.name}</span>
+                                    <span className="text-[12px] font-semibold text-foreground uppercase">{row.name}</span>
                                     {row.is_default && (
                                         <Badge
                                             variant="outline"
-                                            className="border-none bg-slate-950 px-1.5 py-0 text-[8px] font-bold text-white uppercase shadow-sm"
+                                            className="border-none bg-foreground px-1.5 py-0 text-[8px] font-bold text-background uppercase shadow-sm"
                                         >
                                             Default
                                         </Badge>
@@ -635,7 +636,7 @@ export default function AdminIndex({
                                     </span>
                                     {row.department && (
                                         <>
-                                            <span className="h-1 w-1 rounded-full bg-slate-300" />
+                                            <span className="h-1 w-1 rounded-full bg-border" />
                                             <span className="text-primary text-[9px] font-black uppercase">{row.department.name}</span>
                                         </>
                                     )}
@@ -652,19 +653,19 @@ export default function AdminIndex({
                                     {row.steps?.slice(0, 3).map((step: any, i: number) => (
                                         <div
                                             key={i}
-                                            className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-[9px] font-bold text-slate-800 uppercase ring-2 ring-white"
+                                            className="flex h-6 w-6 items-center justify-center rounded-full border border-border bg-muted text-[9px] font-bold text-foreground/80 uppercase ring-2 ring-background"
                                         >
                                             {step.role?.charAt(0)}
                                         </div>
                                     ))}
                                     {row.steps?.length > 3 && (
-                                        <div className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-700 bg-slate-800 text-[9px] font-bold text-white shadow-sm ring-2 ring-white">
+                                        <div className="flex h-6 w-6 items-center justify-center rounded-full border border-border bg-foreground text-[9px] font-bold text-background shadow-sm ring-2 ring-background">
                                             +{row.steps.length - 3}
                                         </div>
                                     )}
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="text-[11px] font-bold tracking-tight text-slate-700 uppercase">
+                                    <span className="text-[11px] font-bold tracking-tight text-foreground/80 uppercase">
                                         {row.steps?.length || 0} Approval Steps
                                     </span>
                                     <span className="text-muted-foreground text-[10px] font-medium uppercase">Sequence Configured</span>
@@ -682,10 +683,10 @@ export default function AdminIndex({
                         sortable: true,
                         cell: (row: any) => (
                             <div className="flex items-center gap-3">
-                                <div className="flex h-6 w-8 items-center justify-center rounded border border-slate-200 bg-slate-100 text-[10px] font-bold text-slate-600 tabular-nums">
+                                <div className="flex h-6 w-8 items-center justify-center rounded border border-border bg-muted text-[10px] font-bold text-foreground/60 tabular-nums">
                                     #{row.sort_number}
                                 </div>
-                                <span className="text-[12px] font-semibold text-slate-900 uppercase">{row.title}</span>
+                                <span className="text-[12px] font-semibold text-foreground uppercase">{row.title}</span>
                             </div>
                         ),
                     },
@@ -704,7 +705,7 @@ export default function AdminIndex({
                         sortable: true,
                         cell: (row: any) => (
                             <div className="flex items-center gap-3">
-                                <div className="flex h-8 w-8 items-center justify-center rounded border border-slate-200 bg-slate-50 text-[10px] font-bold text-slate-400">
+                                <div className="flex h-8 w-8 items-center justify-center rounded border border-border bg-muted text-[10px] font-bold text-muted-foreground">
                                     {row.icon ? (
                                         <i className={cn('fa-solid flex h-4 w-4 items-center justify-center', row.icon)} />
                                     ) : (
@@ -712,7 +713,7 @@ export default function AdminIndex({
                                     )}
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="text-[12px] font-semibold text-slate-900 uppercase">{row.title}</span>
+                                    <span className="text-[12px] font-semibold text-foreground uppercase">{row.title}</span>
                                     <span className="text-muted-foreground mt-1 text-[10px] leading-none font-medium tracking-widest uppercase">
                                         {row.code}
                                     </span>
@@ -727,7 +728,7 @@ export default function AdminIndex({
                             <div className="flex items-center gap-2">
                                 <Badge
                                     variant="outline"
-                                    className="rounded border border-slate-200 bg-slate-100 text-[9px] font-bold tracking-tight text-slate-500 uppercase"
+                                    className="rounded border border-border bg-muted text-[9px] font-bold tracking-tight text-muted-foreground uppercase"
                                 >
                                     {ensureArray(moduleGroups).find((mg: any) => mg.id === row.module_group_id)?.title || 'No Group'}
                                 </Badge>
@@ -746,13 +747,13 @@ export default function AdminIndex({
                         cell: (row: any) => (
                             <div className="flex items-center gap-3">
                                 <div
-                                    className="flex h-6 w-6 items-center justify-center rounded-lg border border-slate-200 shadow-sm"
+                                    className="flex h-6 w-6 items-center justify-center rounded-lg border border-border shadow-sm"
                                     style={{ backgroundColor: row.bg_color }}
                                 >
                                     <div className="h-3 w-3 rounded-full" style={{ backgroundColor: row.color }} />
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="text-[12px] font-semibold text-slate-900 uppercase">{row.label}</span>
+                                    <span className="text-[12px] font-semibold text-foreground uppercase">{row.label}</span>
                                     <span className="text-muted-foreground mt-1 text-[10px] leading-none font-medium tracking-widest uppercase">
                                         {row.code}
                                     </span>
@@ -783,14 +784,14 @@ export default function AdminIndex({
                         accessorKey: 'sequence',
                         sortable: true,
                         cell: (row: any) => (
-                            <div className="flex w-fit items-center gap-1.5 rounded-md border border-slate-200/50 bg-slate-100/50 px-2 py-1">
+                            <div className="flex w-fit items-center gap-1.5 rounded-md border border-border/50 bg-muted/50 px-2 py-1">
                                 <Badge
                                     variant="outline"
-                                    className="flex h-4 min-w-[1.25rem] items-center justify-center border-none bg-white p-0 text-[10px] font-bold shadow-sm ring-1 ring-slate-200"
+                                    className="flex h-4 min-w-[1.25rem] items-center justify-center border-none bg-background p-0 text-[10px] font-bold shadow-sm ring-1 ring-border"
                                 >
                                     {row.sequence}
                                 </Badge>
-                                <span className="text-[9px] font-bold tracking-tighter text-slate-400 uppercase">Position</span>
+                                <span className="text-[9px] font-bold tracking-tighter text-muted-foreground uppercase">Position</span>
                             </div>
                         ),
                     },
@@ -803,7 +804,7 @@ export default function AdminIndex({
                         header: 'Nama Departemen',
                         accessorKey: 'name',
                         sortable: true,
-                        className: 'font-semibold text-slate-900 uppercase text-[12px]',
+                        className: 'font-semibold text-foreground uppercase text-[12px]',
                     },
                     {
                         header: 'Deskripsi',
@@ -830,7 +831,7 @@ export default function AdminIndex({
                 return [
                     ...baseColumns,
                     { header: 'Kode', accessorKey: 'code', sortable: true, className: 'font-bold text-slate-500 uppercase text-[11px]' },
-                    { header: 'Nama Vendor', accessorKey: 'name', sortable: true, className: 'font-semibold text-slate-900 uppercase text-[12px]' },
+                    { header: 'Nama Vendor', accessorKey: 'name', sortable: true, className: 'font-semibold text-foreground uppercase text-[12px]' },
                     {
                         header: 'Kategori',
                         accessorKey: 'category',
@@ -1105,6 +1106,9 @@ export default function AdminIndex({
         department_id: '',
         description: '',
         is_default: true as boolean,
+        sla_drafting_hours: 72,
+        sla_total_hours: 240,
+        sla_cutoff_hour: 16,
     });
 
     const moduleGroupForm = useForm({
@@ -1194,6 +1198,9 @@ export default function AdminIndex({
                 department_id: item.department_id || '',
                 description: item.description || '',
                 is_default: !!item.is_default,
+                sla_drafting_hours: item.sla_drafting_hours || 72,
+                sla_total_hours: item.sla_total_hours || 240,
+                sla_cutoff_hour: item.sla_cutoff_hour || 16,
             });
         } else if (currentView === 'contract-statuses') {
             statusForm.setData({
@@ -1442,7 +1449,7 @@ export default function AdminIndex({
                                             <GitBranch size={16} />
                                         </div>
                                         <div>
-                                            <h4 className="text-[13px] leading-none font-black text-slate-900">Alur Approval</h4>
+                                            <h4 className="text-[13px] leading-none font-black text-foreground">Alur Approval</h4>
                                             <p className="mt-1 text-[9px] font-bold tracking-widest text-slate-400 uppercase">
                                                 Kelola urutan dan otoritas persetujuan
                                             </p>
@@ -1805,6 +1812,65 @@ export default function AdminIndex({
                                         <Label htmlFor="wf-default" className="cursor-pointer text-[11px] font-bold text-slate-600">
                                             Set sebagai alur kerja default untuk tipe ini
                                         </Label>
+                                    </div>
+
+                                    <div className="mt-4 space-y-4 border-t pt-4">
+                                        <div className="flex items-center gap-2">
+                                            <div className="bg-primary flex h-5 w-5 items-center justify-center rounded text-white shadow-sm">
+                                                <Clock size={10} className="stroke-[3]" />
+                                            </div>
+                                            <span className="text-[11px] font-black tracking-widest text-slate-800 uppercase">SLA & Kecepatan Kerja</span>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-1.5">
+                                                <div className="flex items-center justify-between">
+                                                    <Label className="text-[10px] font-bold text-slate-500 uppercase">SLA Drafting (Jam)</Label>
+                                                    <span className="text-[10px] font-bold text-primary">{Math.floor(workflowForm.data.sla_drafting_hours / 24)} Hari</span>
+                                                </div>
+                                                <Input
+                                                    type="number"
+                                                    value={workflowForm.data.sla_drafting_hours}
+                                                    onChange={(e) => workflowForm.setData('sla_drafting_hours', parseInt(e.target.value))}
+                                                    className="h-9 rounded-lg font-mono text-[12px] font-bold"
+                                                    placeholder="Contoh: 72"
+                                                />
+                                                <p className="text-[9px] text-slate-400">Total jam kerja untuk tahap draf.</p>
+                                            </div>
+
+                                            <div className="space-y-1.5">
+                                                <div className="flex items-center justify-between">
+                                                    <Label className="text-[10px] font-bold text-slate-500 uppercase">Total SLA (Jam)</Label>
+                                                    <span className="text-[10px] font-bold text-primary">{Math.floor(workflowForm.data.sla_total_hours / 24)} Hari</span>
+                                                </div>
+                                                <Input
+                                                    type="number"
+                                                    value={workflowForm.data.sla_total_hours}
+                                                    onChange={(e) => workflowForm.setData('sla_total_hours', parseInt(e.target.value))}
+                                                    className="h-9 rounded-lg font-mono text-[12px] font-bold"
+                                                    placeholder="Contoh: 240"
+                                                />
+                                                <p className="text-[9px] text-slate-400">Total SLA sampai tanda tangan.</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-1.5 rounded-xl bg-slate-50 p-3 ring-1 ring-slate-100">
+                                            <div className="flex items-center justify-between px-1">
+                                                <Label className="text-[10px] font-bold text-slate-500 uppercase">Cut-off Time (WIB)</Label>
+                                                <span className="bg-slate-200 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold">{workflowForm.data.sla_cutoff_hour}:00</span>
+                                            </div>
+                                            <Input
+                                                type="number"
+                                                min="0"
+                                                max="23"
+                                                value={workflowForm.data.sla_cutoff_hour}
+                                                onChange={(e) => workflowForm.setData('sla_cutoff_hour', parseInt(e.target.value))}
+                                                className="h-9 border-slate-200 bg-white rounded-lg font-mono text-[12px] font-bold"
+                                            />
+                                            <p className="px-1 text-[9px] leading-tight text-slate-400 italic">
+                                                Jika data masuk lewat dari jam ini, perhitungan hari kerja dimulai esok harinya.
+                                            </p>
+                                        </div>
                                     </div>
                                 </>
                             )}

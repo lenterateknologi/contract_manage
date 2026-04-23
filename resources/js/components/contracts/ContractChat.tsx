@@ -2,6 +2,11 @@ import { contractApi } from '@/lib/contract-api';
 import { Contract, ContractMessage } from '@/types/contracts';
 import React, { useEffect, useRef, useState } from 'react';
 import { Avatar } from './ui';
+import { MessageSquare, Calendar, Send, Clock, User } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 interface Props {
     contract: Contract;
@@ -14,75 +19,42 @@ function MsgBubble({ msg, isMe }: { msg: ContractMessage; isMe: boolean }) {
     const name = msg.user?.name ?? 'Unknown';
     const role = msg.user?.role ?? '';
 
-    if (isMe)
-        return (
-            <div className="mb-1 flex flex-col items-end gap-1">
-                <div className="mr-1 flex items-center gap-1.5">
-                    <span className="text-[10px] font-bold text-blue-600">You</span>
-                    {role && (
-                        <span className="rounded-md border border-gray-100 bg-gray-50 px-1.5 py-0.5 text-[10px] font-medium text-gray-400">
-                            {role}
-                        </span>
-                    )}
-                </div>
-                <div className="group relative max-w-[85%]">
-                    <div
-                        className="rounded-[18px_18px_4px_18px] px-3.5 py-2.5 text-[12.5px] leading-relaxed text-white shadow-sm select-text"
-                        style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' }}
-                    >
-                        {msg.message}
-                    </div>
-                    <div className="absolute right-0 -bottom-4 z-10 rounded border border-gray-100 bg-white/90 px-1.5 py-0.5 text-[9px] font-bold text-gray-400 opacity-0 shadow-sm backdrop-blur-sm transition-opacity group-hover:opacity-100">
-                        {msg.created_at}
-                    </div>
-                </div>
-                <div className="mt-0.5 mr-1 flex items-center gap-1">
-                    <span className="text-[10px] font-medium text-gray-400">{time}</span>
-                    {msg.read_by.length > 1 && (
-                        <i className="fa-solid fa-check-double text-[9px] text-blue-500" title={`Dibaca oleh ${msg.read_by.length} orang`} />
-                    )}
-                </div>
-            </div>
-        );
-
     return (
-        <div className="mb-1 flex items-start gap-2.5">
-            <Avatar user={msg.user} size="sm" className="mt-5" />
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <div className="flex items-center gap-1.5">
-                    <span className="truncate text-[10px] font-bold text-gray-700">{name}</span>
-                    {role && (
-                        <span className="rounded-md border border-gray-100 bg-gray-50 px-1.5 py-0.5 text-[10px] font-medium text-gray-400">
-                            {role}
-                        </span>
+        <div className={cn("mb-1 flex flex-col gap-1", isMe ? "items-end" : "items-start")}>
+            <div className={cn("flex items-center gap-1.5 px-1", isMe ? "flex-row-reverse" : "flex-row")}>
+                <span className={cn("text-[10px] font-bold", isMe ? "text-primary" : "text-foreground")}>
+                    {isMe ? "You" : name}
+                </span>
+                {role && (
+                    <span className="rounded-md border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                        {role}
+                    </span>
+                )}
+            </div>
+            <div className={cn("group relative max-w-[85%]", isMe ? "text-right" : "text-left")}>
+                <div
+                    className={cn(
+                        "px-3.5 py-2.5 text-[12.5px] leading-relaxed shadow-sm select-text",
+                        isMe 
+                            ? "bg-primary text-primary-foreground rounded-[18px_18px_4px_18px]" 
+                            : "bg-card text-foreground border border-border rounded-[18px_18px_18px_4px]"
                     )}
+                >
+                    {msg.message}
                 </div>
-                <div className="group relative w-fit max-w-[88%]">
-                    <div
-                        className="rounded-[18px_18px_18px_4px] border border-gray-100 px-3.5 py-2.5 text-[12.5px] leading-relaxed shadow-sm select-text"
-                        style={{ background: '#f9fafb', color: '#1f2937' }}
-                    >
-                        {msg.message}
-                    </div>
-                    <div className="absolute -bottom-4 left-0 z-10 rounded border border-gray-100 bg-white/90 px-1.5 py-0.5 text-[9px] font-bold text-gray-400 opacity-0 shadow-sm backdrop-blur-sm transition-opacity group-hover:opacity-100">
-                        {msg.created_at}
-                    </div>
+                <div className={cn(
+                    "absolute -bottom-4 z-10 rounded border border-border bg-background/90 px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground opacity-0 shadow-sm backdrop-blur-sm transition-opacity group-hover:opacity-100",
+                    isMe ? "right-0" : "left-0"
+                )}>
+                    {msg.created_at}
                 </div>
-                <span className="mt-0.5 ml-1 text-[10px] font-medium text-gray-400">{time}</span>
             </div>
-        </div>
-    );
-}
-
-function DateSeparator({ date }: { date: string }) {
-    return (
-        <div className="relative my-6 flex items-center justify-center">
-            <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-100"></div>
+            <div className={cn("mt-0.5 flex items-center gap-1 px-1", isMe ? "flex-row-reverse" : "flex-row")}>
+                <span className="text-[10px] font-medium text-muted-foreground">{time}</span>
+                {isMe && msg.read_by.length > 1 && (
+                    <i className="fa-solid fa-check-double text-[9px] text-primary" title={`Dibaca oleh ${msg.read_by.length} orang`} />
+                )}
             </div>
-            <span className="relative rounded-full border border-gray-100 bg-white px-4 py-1.5 text-[10px] font-bold tracking-widest text-gray-400 uppercase shadow-sm">
-                {date}
-            </span>
         </div>
     );
 }
@@ -115,92 +87,84 @@ export default function ContractChat({ contract, meId, onNewMessage }: Props) {
         }
     };
 
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            send();
+        }
+    };
+
+    const groupedMessages = filteredMsgs.reduce((acc, msg) => {
+        const date = msg.created_at.split(' ')[0];
+        if (!acc[date]) acc[date] = [];
+        acc[date].push(msg);
+        return acc;
+    }, {} as Record<string, ContractMessage[]>);
+
     return (
-        <div className="flex flex-col" style={{ height: 340 }}>
-            {/* Search Header */}
-            <div className="mb-2 flex items-center justify-between">
-                {showSearch ? (
-                    <div className="flex flex-1 items-center gap-2 rounded-lg border border-gray-100 bg-gray-50 px-2 py-1 transition-all">
-                        <i className="fa-solid fa-magnifying-glass text-[10px] text-gray-400" />
-                        <input
-                            autoFocus
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Cari pesan..."
-                            className="flex-1 border-none bg-transparent text-[12px] placeholder-gray-400 outline-none"
-                        />
-                        <button
-                            onClick={() => {
-                                setShowSearch(false);
-                                setSearch('');
-                            }}
-                            className="text-gray-400 transition-colors hover:text-gray-600"
-                        >
-                            <i className="fa-solid fa-xmark text-[10px]" />
-                        </button>
-                    </div>
-                ) : (
-                    <div className="flex-1" />
-                )}
-                {!showSearch && (
-                    <button onClick={() => setShowSearch(true)} className="text-muted-foreground hover:text-primary p-1 transition-colors">
-                        <i className="fa-solid fa-magnifying-glass text-[11px]" />
-                    </button>
-                )}
+        <div className="flex flex-col h-[500px] bg-card border border-border rounded-xl overflow-hidden animate-in fade-in duration-500">
+            {/* Header */}
+            <div className="p-4 border-b border-border bg-muted/50 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <h3 className="text-xs font-black tracking-[0.2em] text-foreground uppercase flex items-center gap-2">
+                         <MessageSquare size={14} className="text-primary" /> Discussion Channel
+                    </h3>
+                </div>
+                <Badge variant="outline" className="text-[9px] font-bold border-border text-muted-foreground uppercase tracking-tighter">
+                    {msgs.length} Messages
+                </Badge>
             </div>
 
-            <div className="flex flex-1 flex-col gap-2 overflow-y-auto pr-1 pb-2" style={{ scrollbarWidth: 'thin' }}>
-                {filteredMsgs.length === 0 ? (
-                    <div className="pt-8 text-center text-[12px] text-gray-400">
-                        <i className="fa-solid fa-comments mb-2 block text-2xl" />
-                        {search ? 'Tidak ada pesan yang cocok.' : 'Belum ada diskusi untuk kontrak ini.'}
-                    </div>
-                ) : (
-                    (() => {
-                        let lastDate = '';
-                        return filteredMsgs.map((m) => {
-                            const mDateStr = m.created_at.split(' ')[0];
-                            let separator = null;
-                            if (mDateStr !== lastDate) {
-                                lastDate = mDateStr;
-                                let label = mDateStr;
-                                const d = new Date(mDateStr);
-                                const now = new Date();
-                                const yesterday = new Date();
-                                yesterday.setDate(now.getDate() - 1);
+            {/* Discussion Area */}
+            <ScrollArea className="flex-1 p-4 bg-muted/10">
+                <div className="flex flex-col gap-6">
+                    {filteredMsgs.length === 0 ? (
+                        <div className="pt-20 text-center flex flex-col items-center gap-3 opacity-20">
+                            <MessageSquare size={48} strokeWidth={1} />
+                            <p className="text-sm font-bold uppercase tracking-widest">No conversation yet</p>
+                        </div>
+                    ) : (
+                        Object.entries(groupedMessages).map(([day, dayMessages]) => (
+                            <div key={day} className="flex flex-col gap-4">
+                                {/* Date Separator */}
+                                <div className="flex items-center gap-4">
+                                    <div className="h-px flex-1 bg-border" />
+                                    <span className="text-[10px] font-bold text-muted-foreground bg-card border border-border rounded-full px-3 py-1 flex items-center gap-1.5 uppercase tracking-widest whitespace-nowrap shadow-sm">
+                                        <Calendar size={10} /> {day}
+                                    </span>
+                                    <div className="h-px flex-1 bg-border" />
+                                </div>
+                                {dayMessages.map((m) => (
+                                    <MsgBubble key={m.id} msg={m} isMe={m.user_id === meId} />
+                                ))}
+                            </div>
+                        ))
+                    )}
+                    <div ref={endRef} />
+                </div>
+            </ScrollArea>
 
-                                if (mDateStr === now.toISOString().split('T')[0]) label = 'Hari ini';
-                                else if (mDateStr === yesterday.toISOString().split('T')[0]) label = 'Kemarin';
-                                else label = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-
-                                separator = <DateSeparator key={`sep-${mDateStr}`} date={label} />;
-                            }
-                            return (
-                                <React.Fragment key={m.id}>
-                                    {separator}
-                                    <MsgBubble msg={m} isMe={m.user_id === meId} />
-                                </React.Fragment>
-                            );
-                        });
-                    })()
-                )}
-                <div ref={endRef} />
-            </div>
-            <div className="mt-auto flex gap-2 border-t border-gray-100 pt-3">
-                <input
+            {/* Input area */}
+            <div className="p-4 border-t border-border bg-card flex items-end gap-2 group">
+                <textarea 
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    placeholder="Tulis pesan..."
-                    onKeyDown={(e) => e.key === 'Enter' && send()}
-                    className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-[12px] placeholder-gray-300 outline-none focus:border-blue-500"
+                    onKeyDown={handleKeyDown}
+                    placeholder="Ketik pesan diskusi..."
+                    rows={1}
+                    className="flex-1 bg-muted/50 border-none focus:ring-0 text-sm resize-none py-2.5 px-4 min-h-[44px] max-h-[120px] rounded-xl scrollbar-hide text-foreground placeholder:text-muted-foreground"
                 />
-                <button
+                <Button 
+                    size="icon" 
+                    className={cn(
+                        "h-11 w-11 shrink-0 rounded-xl transition-all",
+                        input.trim() ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "bg-muted text-muted-foreground/30"
+                    )}
                     onClick={send}
-                    disabled={sending || !input.trim()}
-                    className="rounded-lg bg-blue-600 px-3 py-2 text-[12px] text-white hover:bg-blue-700 disabled:opacity-50"
+                    disabled={!input.trim() || sending}
                 >
-                    <i className="fa-solid fa-paper-plane text-[11px]" />
-                </button>
+                    <Send size={18} />
+                </Button>
             </div>
         </div>
     );

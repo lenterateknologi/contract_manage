@@ -105,55 +105,55 @@ export default function FormFilling({ template }: Props) {
     }, [formData, showPreview]);
 
     return (
-        <div className="font-inter flex h-screen flex-col bg-[#f8fafc] overflow-hidden">
+         <div className="font-inter flex h-screen flex-col bg-muted/20 overflow-hidden">
             <Head title={`Fill Form: ${template.name}`} />
 
-            <header className="sticky top-0 z-50 flex h-14 shrink-0 items-center justify-between border-b border-slate-200/60 bg-white/80 backdrop-blur-md px-6 shadow-sm">
+             <header className="sticky top-0 z-50 flex h-14 shrink-0 items-center justify-between border-b border-border bg-card/80 backdrop-blur-md px-6 shadow-sm">
                 <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" asChild className="h-9 w-9 rounded-full hover:bg-slate-100/80">
-                        <Link href={route('admin.form-templates.index')}>
-                            <ArrowLeft size={18} className="text-slate-600" />
-                        </Link>
-                    </Button>
-                    <div className="flex flex-col">
-                        <h1 className="text-xs font-black tracking-tighter text-slate-800 uppercase">{template.name}</h1>
-                        <span className="text-[8px] leading-none font-black tracking-[0.2em] text-indigo-500 uppercase">Interactive Form Filling</span>
-                    </div>
+                     <Button variant="ghost" size="icon" asChild className="h-9 w-9 rounded-full hover:bg-muted">
+                         <Link href={route('admin.form-templates.index')}>
+                             <ArrowLeft size={18} className="text-muted-foreground" />
+                         </Link>
+                     </Button>
+                     <div className="flex flex-col">
+                         <h1 className="text-xs font-black tracking-tighter text-foreground uppercase">{template.name}</h1>
+                         <span className="text-[8px] leading-none font-black tracking-[0.2em] text-primary uppercase">Interactive Form Filling</span>
+                     </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <div className="hidden items-center gap-1 rounded-full border border-slate-200 bg-slate-50/50 p-1 md:flex">
-                        <Button
-                            variant={!showPreview ? "default" : "ghost"}
-                            size="sm"
-                            onClick={() => setShowPreview(false)}
-                            className={cn(
-                                "h-7 px-3 text-[9px] font-black tracking-widest uppercase transition-all",
-                                !showPreview ? "bg-indigo-600 shadow-sm" : "text-slate-500 hover:bg-slate-100"
-                            )}
-                        >
-                            <LayoutIcon size={12} className="mr-1.5" /> Editor
-                        </Button>
-                        <Button
-                            variant={showPreview ? "default" : "ghost"}
-                            size="sm"
-                            onClick={() => setShowPreview(true)}
-                            className={cn(
-                                "h-7 px-3 text-[9px] font-black tracking-widest uppercase transition-all",
-                                showPreview ? "bg-indigo-600 shadow-sm" : "text-slate-500 hover:bg-slate-100"
-                            )}
-                        >
-                            <Eye size={12} className="mr-1.5" /> Preview PDF
-                        </Button>
-                    </div>
+                     <div className="hidden items-center gap-1 rounded-full border border-border bg-muted/50 p-1 md:flex">
+                         <Button
+                             variant={!showPreview ? "default" : "ghost"}
+                             size="sm"
+                             onClick={() => setShowPreview(false)}
+                             className={cn(
+                                 "h-7 px-3 text-[9px] font-black tracking-widest uppercase transition-all",
+                                 !showPreview ? "bg-primary shadow-sm" : "text-muted-foreground hover:bg-muted"
+                             )}
+                         >
+                             <LayoutIcon size={12} className="mr-1.5" /> Editor
+                         </Button>
+                         <Button
+                             variant={showPreview ? "default" : "ghost"}
+                             size="sm"
+                             onClick={() => setShowPreview(true)}
+                             className={cn(
+                                 "h-7 px-3 text-[9px] font-black tracking-widest uppercase transition-all",
+                                 showPreview ? "bg-primary shadow-sm" : "text-muted-foreground hover:bg-muted"
+                             )}
+                         >
+                             <Eye size={12} className="mr-1.5" /> Preview PDF
+                         </Button>
+                     </div>
 
-                    <div className="h-6 w-px bg-slate-200 mx-1 hidden md:block" />
-
-                    <Button
-                        onClick={handleDownloadPdf}
-                        disabled={isExporting}
-                        className="h-9 bg-slate-900 px-6 text-[10px] font-black tracking-widest uppercase shadow-[0_4px_12px_rgba(15,23,42,0.2)] transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-50"
-                    >
+                     <div className="h-6 w-px bg-border mx-1 hidden md:block" />
+ 
+                     <Button
+                         onClick={handleDownloadPdf}
+                         disabled={isExporting}
+                         className="h-9 bg-primary px-6 text-[10px] font-black tracking-widest uppercase shadow-[0_4px_12px_rgba(var(--primary),0.2)] dark:shadow-none transition-all hover:bg-primary/90 active:scale-95 disabled:opacity-50"
+                     >
                         {isExporting ? (
                             'Exporting...'
                         ) : (
@@ -176,43 +176,43 @@ export default function FormFilling({ template }: Props) {
                     </div>
                 </ScrollArea>
 
-                {showPreview && (
-                    <div className="flex flex-1 flex-col border-l border-slate-200 bg-slate-100/50 transition-all duration-500 animate-in slide-in-from-right-10">
-                        <div className="flex h-10 items-center justify-between border-b border-slate-200 bg-white px-4">
-                            <span className="text-[9px] font-black tracking-widest text-slate-400 uppercase flex items-center gap-2">
-                                <FileText size={12} /> Live PDF Stream
-                            </span>
-                            <div className="flex items-center gap-2 text-[9px] font-bold text-slate-400 uppercase">
-                                <span>A4 Portrait</span>
-                                <span className="h-3 w-px bg-slate-200" />
-                                <span>Scale: Fit</span>
-                            </div>
-                        </div>
+                 {showPreview && (
+                     <div className="flex flex-1 flex-col border-l border-border bg-muted/50 transition-all duration-500 animate-in slide-in-from-right-10">
+                         <div className="flex h-10 items-center justify-between border-b border-border bg-card px-4">
+                             <span className="text-[9px] font-black tracking-widest text-muted-foreground uppercase flex items-center gap-2">
+                                 <FileText size={12} /> Live PDF Stream
+                             </span>
+                             <div className="flex items-center gap-2 text-[9px] font-bold text-muted-foreground uppercase">
+                                 <span>A4 Portrait</span>
+                                 <span className="h-3 w-px bg-border" />
+                                 <span>Scale: Fit</span>
+                             </div>
+                         </div>
                         <div className="flex flex-1 items-center justify-center p-4 lg:p-8">
-                             {isPreviewLoading && !previewUrl && (
-                                <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50 backdrop-blur-sm">
-                                    <div className="flex flex-col items-center gap-3">
-                                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600">Generating Preview...</span>
-                                    </div>
-                                </div>
-                             )}
+                              {isPreviewLoading && !previewUrl && (
+                                 <div className="absolute inset-0 z-10 flex items-center justify-center bg-card/50 backdrop-blur-sm">
+                                     <div className="flex flex-col items-center gap-3">
+                                         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                                         <span className="text-[10px] font-black uppercase tracking-widest text-primary">Generating Preview...</span>
+                                     </div>
+                                 </div>
+                              )}
 
-                             {previewUrl ? (
-                                <iframe 
-                                    src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=0`} 
-                                    className="h-full w-full max-w-[210mm] border-none shadow-2xl bg-white"
-                                    title="PDF Preview"
-                                />
-                             ) : (
-                                <div className="flex h-full w-full max-w-[180mm] flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50/50">
-                                    <div className="rounded-full bg-slate-200/50 p-4 mb-4">
-                                        <FileText size={40} className="text-slate-400" />
-                                    </div>
-                                    <h3 className="text-xs font-black text-slate-600 uppercase tracking-widest mb-1">Live PDF Preview</h3>
-                                    <p className="text-[10px] text-slate-400 font-bold max-w-[200px] text-center uppercase tracking-tight">Ketik di form samping untuk memicu preview...</p>
-                                </div>
-                             )}
+                              {previewUrl ? (
+                                 <iframe 
+                                     src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=0`} 
+                                     className="h-full w-full max-w-[210mm] border-none shadow-2xl bg-white"
+                                     title="PDF Preview"
+                                 />
+                              ) : (
+                                 <div className="flex h-full w-full max-w-[180mm] flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-card/50">
+                                     <div className="rounded-full bg-muted p-4 mb-4">
+                                         <FileText size={40} className="text-muted-foreground/40" />
+                                     </div>
+                                     <h3 className="text-xs font-black text-foreground uppercase tracking-widest mb-1">Live PDF Preview</h3>
+                                     <p className="text-[10px] text-muted-foreground font-bold max-w-[200px] text-center uppercase tracking-tight">Ketik di form samping untuk memicu preview...</p>
+                                 </div>
+                              )}
                         </div>
                     </div>
                 )}

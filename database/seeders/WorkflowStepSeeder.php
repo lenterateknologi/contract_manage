@@ -6,6 +6,7 @@ use Illuminate\Database\Seeder;
 use App\Models\WorkflowStep;
 use App\Models\Workflow;
 use App\Models\User;
+use App\Models\Department;
 
 class WorkflowStepSeeder extends Seeder
 {
@@ -14,57 +15,110 @@ class WorkflowStepSeeder extends Seeder
      */
     public function run(): void
     {
-        $admin = User::firstWhere('email', 'admin@example.com') ?? User::first();
+        $admin = User::firstWhere('role', 'Admin') ?? User::first();
         $adminId = $admin ? $admin->id : null;
 
-        // Clear existing steps first (force delete to avoid unique constraint issues with soft deletes)
+        // Clear existing steps first
         WorkflowStep::withTrashed()->forceDelete();
 
         // Get all workflows
         $workflows = Workflow::all();
-        $depts = \App\Models\Department::pluck('id', 'code')->all();
+        $depts = Department::pluck('id', 'code')->all();
 
-        // Get a specific user for demonstration (e.g., Legal Staff)
-        // Note: User has 'role' column as string
-        $legalStaff = User::where('role', 'Staff')
-            ->whereHas('department', fn($q) => $q->where('code', 'LGL'))
-            ->first();
+        // Find specific roles/users for steps
+        $legalDeptId = $depts['LGL'] ?? null;
+        $mgtDeptId = $depts['MGT'] ?? null;
 
         foreach ($workflows as $workflow) {
-            $isTax = $workflow->is_tax_involved;
-            
             $steps = [
-                ['role' => 'Manager', 'step' => 1, 'description' => 'Direct Supervisor Review', 'dept_code' => null, 'cond' => 'initiator_is_staff'],
+                // STEP 1: Manager Staff (Hanya jika pembuat adalah Staff)
+                [
+                    'role' => 'Manager',
+                    'step' => 1,
+                    'description' => 'Persetujuan Atasan Langsung (Internal Dept)',
+                    'department_id' => null, // Dynamic: Resolves to Initiator's Dept Manager
+                    'condition_expression' => 'initiator_is_staff',
+                    'step_type' => 'approval'
+                ],
+                // STEP 2: Legal Drafting (Fase Drafting - Menghasilkan F2 & Memo)
+                [
+                    'role' => 'Staff',
+                    'step' => 2,
+                    'description' => 'Drafting: Pembuatan F2 & Perjanjian',
+                    'department_id' => $legalDeptId,
+                    'condition_expression' => null,
+                    'step_type' => 'drafting'
+                ],
+                // STEP 3: Management (Director Approval)
+                [
+                    'role' => 'Director',
+                    'step' => 3,
+                    'description' => 'Persetujuan Direksi / Management',
+                    'department_id' => $mgtDeptId,
+                    'condition_expression' => null,
+                    'step_type' => 'approval'
+                ],
+                // STEP 4: Legal Review (Post-Director)
+                [
+                    'role' => 'Staff',
+                    'step' => 4,
+                    'description' => 'Review Legal: Verifikasi Draft Pasca Direksi',
+                    'department_id' => $legalDeptId,
+                    'condition_expression' => null,
+                    'step_type' => 'approval'
+                ],
+                // STEP 5: Manager Legal
+                [
+                    'role' => 'Manager',
+                    'step' => 5,
+                    'description' => 'Validasi Akhir Manager Legal',
+                    'department_id' => $legalDeptId,
+                    'condition_expression' => null,
+                    'step_type' => 'approval'
+                ],
+                // STEP 6: Initiator Confirmation
+                [
+                    'role' => 'Initiator',
+                    'step' => 6,
+                    'description' => 'Konfirmasi Penandatangan oleh User',
+                    'department_id' => null, // Special logic for "Initiator"
+                    'condition_expression' => null,
+                    'step_type' => 'approval'
+                ],
+                // STEP 7: Manager Initiator
+                [
+                    'role' => 'Manager',
+                    'step' => 7,
+                    'description' => 'Final Sign-off Atasan Initiator',
+                    'department_id' => null, // Dynamic: Initiator's Manager
+                    'condition_expression' => null,
+                    'step_type' => 'approval'
+                ],
+                // STEP 8: Legal Archiving
+                [
+                    'role' => 'Staff',
+                    'step' => 8,
+                    'description' => 'Arsip & Penyelesaian Administrasi',
+                    'department_id' => $legalDeptId,
+                    'condition_expression' => null,
+                    'step_type' => 'approval'
+                ],
             ];
 
-            $currentStep = 2;
-
-            if ($isTax) {
-                $steps[] = ['role' => 'Manager', 'step' => $currentStep++, 'description' => 'Tax Validation Review', 'dept_code' => 'TAX', 'cond' => null];
-            }
-
-            $steps[] = ['role' => 'Manager', 'step' => $currentStep++, 'description' => 'Management Operations Review', 'dept_code' => 'MGT', 'cond' => 'initiator_not_manager'];
-            $steps[] = ['role' => 'Staff', 'step' => $currentStep++, 'description' => 'Legal Compliance & Document Verification', 'dept_code' => 'LGL', 'cond' => null, 'approver_type' => 'user', 'user_id' => $legalStaff ? $legalStaff->id : null];
-            $steps[] = ['role' => 'Director', 'step' => $currentStep++, 'description' => 'Final Direksi Approval', 'dept_code' => 'MGT', 'cond' => null];
-
-            foreach ($steps as $step) {
-                $ws = WorkflowStep::create([
+            foreach ($steps as $data) {
+                WorkflowStep::create([
                     'workflow_id' => $workflow->id,
-                    'role' => $step['role'],
-                    'step' => $step['step'],
-                    'approver_type' => $step['approver_type'] ?? 'role',
-                    'department_id' => ($step['dept_code'] ?? null) ? ($depts[$step['dept_code']] ?? null) : null,
-                    'description' => $step['description'],
-                    'condition_expression' => $step['cond'] ?? null,
-                    'step_type' => 'approval',
+                    'role' => $data['role'],
+                    'step' => $data['step'],
+                    'approver_type' => 'role',
+                    'department_id' => $data['department_id'],
+                    'description' => $data['description'],
+                    'condition_expression' => $data['condition_expression'],
+                    'step_type' => $data['step_type'],
                     'is_active' => true,
                     'created_by' => $adminId,
                     'updated_by' => $adminId,
                 ]);
-
-                if (isset($step['user_id']) && $step['user_id']) {
-                    $ws->users()->attach($step['user_id']);
-                }
             }
         }
     }

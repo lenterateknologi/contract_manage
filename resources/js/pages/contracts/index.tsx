@@ -30,45 +30,6 @@ import { BreadcrumbItem } from '@/types';
 
 type View = 'dashboard' | 'contracts' | 'pending' | 'audit' | 'f1' | 'f2' | 'profile' | 'mine' | 'expiry';
 
-// ─── Table header cell ───────────────────────────────────────────────
-function Th({ children, style }: { children?: React.ReactNode; style?: React.CSSProperties }) {
-    return (
-        <th
-            style={{
-                padding: '12px 14px',
-                textAlign: 'left',
-                fontSize: 11,
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                color: 'var(--muted-foreground)',
-                borderBottom: '1px solid var(--border)',
-                whiteSpace: 'nowrap',
-                background: 'var(--muted)/30',
-                ...style,
-            }}
-        >
-            {children}
-        </th>
-    );
-}
-function Td({ children, className, style }: { children?: React.ReactNode; className?: string; style?: React.CSSProperties }) {
-    return (
-        <td
-            style={{
-                padding: '12px 14px',
-                fontSize: 13,
-                borderBottom: '1px solid var(--border)',
-                verticalAlign: 'middle',
-                ...style,
-            }}
-            className={className}
-        >
-            {children}
-        </td>
-    );
-}
-
 function ProgressCell({ c }: { c: Contract }) {
     const { done, total, pct } = c.progress;
     return (
@@ -126,7 +87,7 @@ function Pagination({ data, filters }: { data: PaginatedData<Contract>; filters:
                 </div>
 
                 <div className="border-border flex items-center gap-2 border-l pl-4">
-                    <span className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase">Show</span>
+                    <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">Show</span>
                     <select
                         value={data.per_page}
                         onChange={(e) => {
@@ -136,7 +97,7 @@ function Pagination({ data, filters }: { data: PaginatedData<Contract>; filters:
                                 preserveScroll: true,
                             } as any);
                         }}
-                        className="bg-muted/50 border-border focus:border-primary/50 rounded border px-1.5 py-0.5 text-[10px] font-bold outline-none"
+                        className="bg-muted/50 border-border focus:border-primary/50 rounded border px-1.5 py-0.5 text-[10px] font-semibold outline-none"
                     >
                         {[10, 25, 50, 100].map((v) => (
                             <option key={v} value={v}>
@@ -158,10 +119,10 @@ function Pagination({ data, filters }: { data: PaginatedData<Contract>; filters:
                             onClick={() => link.url && router.get(link.url, {}, { preserveState: true, preserveScroll: true })}
                             disabled={!link.url}
                             className={cn(
-                                'h-8 shrink-0 rounded border px-3 text-[10px] font-black tracking-tighter uppercase transition-all',
+                                'h-8 shrink-0 rounded border px-3 text-[11px] font-bold tracking-tight uppercase transition-all',
                                 link.active
-                                    ? 'border-slate-950 bg-slate-950 text-white shadow-sm'
-                                    : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-900 active:scale-95',
+                                    ? 'border-primary bg-primary text-primary-foreground shadow-sm'
+                                    : 'border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground active:scale-95',
                                 !link.url && 'cursor-not-allowed opacity-30 grayscale',
                             )}
                         >
@@ -173,6 +134,64 @@ function Pagination({ data, filters }: { data: PaginatedData<Contract>; filters:
         </div>
     );
 }
+
+const SLACountdown = ({ deadline, status }: { deadline: string | null; status: string }) => {
+    const [timeLeft, setTimeLeft] = useState<string>('');
+    const [urgency, setUrgency] = useState<'normal' | 'warning' | 'danger'>('normal');
+
+    useEffect(() => {
+        if (!deadline || status === 'archived' || status === 'approved') {
+            setTimeLeft('-');
+            return;
+        }
+
+        const tick = () => {
+            const now = new Date().getTime();
+            const target = new Date(deadline).getTime();
+            const diff = target - now;
+
+            if (diff <= 0) {
+                setTimeLeft('OVERDUE');
+                setUrgency('danger');
+                return;
+            }
+
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+            if (days > 0) {
+                setTimeLeft(`${days}d ${hours}h`);
+                setUrgency(days < 1 ? 'warning' : 'normal');
+            } else {
+                setTimeLeft(`${hours}h ${minutes}m`);
+                setUrgency(hours < 4 ? 'danger' : 'warning');
+            }
+        };
+
+        tick();
+        const timer = setInterval(tick, 1000 * 60); // Check every minute to be efficient
+        return () => clearInterval(timer);
+    }, [deadline, status]);
+
+    if (!deadline || status === 'archived' || status === 'approved') return <span className="text-muted-foreground text-[10px]">—</span>;
+
+    return (
+        <div
+            className={cn(
+                'flex w-fit items-center gap-1.5 rounded-md px-2 py-0.5 font-mono text-[10px] font-bold tracking-tight ring-1',
+                urgency === 'danger'
+                    ? 'animate-pulse bg-rose-50 text-rose-600 ring-rose-200'
+                    : urgency === 'warning'
+                      ? 'bg-amber-50 text-amber-600 ring-amber-200'
+                      : 'bg-emerald-50 text-emerald-600 ring-emerald-200',
+            )}
+        >
+            <Clock size={10} className={urgency === 'danger' ? 'animate-spin-slow' : ''} />
+            {timeLeft}
+        </div>
+    );
+};
 
 function DashboardMetrics({ metrics }: { metrics: any }) {
     if (!metrics) return null;
@@ -197,7 +216,7 @@ function DashboardMetrics({ metrics }: { metrics: any }) {
         { bg: 'bg-emerald-400', stroke: 'stroke-emerald-400' },
         { bg: 'bg-amber-400', stroke: 'stroke-amber-400' },
         { bg: 'bg-rose-400', stroke: 'stroke-rose-400' },
-        { bg: 'bg-indigo-400', stroke: 'stroke-indigo-400' }
+        { bg: 'bg-indigo-400', stroke: 'stroke-indigo-400' },
     ];
 
     const allTypes = Array.from(new Set(monthlyTrend?.flatMap((m: any) => m.types.map((t: any) => t.name)) || []));
@@ -264,20 +283,20 @@ function DashboardMetrics({ metrics }: { metrics: any }) {
                                                         />
                                                     );
                                                 })}
-                                                
+
                                                 {/* Tooltip on Hover */}
-                                                <div className="pointer-events-none absolute -top-12 left-1/2 z-20 -translate-x-1/2 scale-95 rounded-lg bg-slate-900 px-3 py-1.5 text-[10px] font-black whitespace-nowrap text-white opacity-0 shadow-xl transition-all group-hover:scale-100 group-hover:opacity-100">
+                                                <div className="bg-popover text-popover-foreground border-border pointer-events-none absolute -top-12 left-1/2 z-20 -translate-x-1/2 scale-95 rounded-lg border px-3 py-1.5 text-[10px] font-black whitespace-nowrap opacity-0 shadow-xl transition-all group-hover:scale-100 group-hover:opacity-100">
                                                     <div className="flex flex-col gap-0.5">
-                                                        <div className="text-[9px] font-bold tracking-widest text-slate-400 uppercase">
+                                                        <div className="text-muted-foreground text-[9px] font-bold tracking-widest uppercase">
                                                             {mo.month}
                                                         </div>
-                                                        <div className="text-white">{mo.total} Kontrak Total</div>
+                                                        <div className="text-foreground">{mo.total} Kontrak Total</div>
                                                     </div>
-                                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-900" />
+                                                    <div className="border-t-border absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent" />
                                                 </div>
                                             </div>
                                             <div className="absolute -bottom-7 flex flex-col items-center">
-                                                <span className="group-hover:text-primary text-[10px] font-black tracking-tighter whitespace-nowrap text-slate-400 uppercase transition-colors">
+                                                <span className="group-hover:text-primary text-muted-foreground text-[10px] font-black tracking-tighter whitespace-nowrap uppercase transition-colors">
                                                     {mo.month}
                                                 </span>
                                             </div>
@@ -291,12 +310,7 @@ function DashboardMetrics({ metrics }: { metrics: any }) {
                     <div className="mt-8 flex flex-wrap justify-center gap-4 px-4">
                         {Array.from(new Set(monthlyTrend?.flatMap((m: any) => m.types.map((t: any) => t.name)) || [])).map((name: any, idx) => (
                             <div key={name} className="flex items-center gap-2">
-                                <div
-                                    className={cn(
-                                        'h-2 w-2 rounded-full',
-                                        CHART_COLORS[idx % CHART_COLORS.length].bg,
-                                    )}
-                                />
+                                <div className={cn('h-2 w-2 rounded-full', CHART_COLORS[idx % CHART_COLORS.length].bg)} />
                                 <span className="text-muted-foreground text-[10px] font-bold uppercase">{name}</span>
                             </div>
                         ))}
@@ -318,8 +332,8 @@ function MetricCard({ title, value, icon, color }: { title: string; value: strin
         <div className="bg-card border-border hover:bg-muted/5 group relative overflow-hidden rounded-xl border p-5 transition-colors">
             <div className="relative z-10 flex items-start justify-between">
                 <div className="space-y-1">
-                    <p className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">{title}</p>
-                    <p className="text-2xl leading-tight font-black text-gray-900">{value}</p>
+                    <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">{title}</p>
+                    {/* <p className="text-2xl leading-tight font-bold text-foreground">{value}</p> */}
                 </div>
                 <div className={cn('border-border/10 flex h-10 w-10 items-center justify-center rounded-lg border', bgMap[color])}>
                     <i className={cn('fa-solid', icon)} style={{ fontSize: 16 }} />
@@ -400,12 +414,12 @@ function ProfileView({ meUser, showToast }: { meUser: any; showToast: any }) {
                         <div>
                             <label className="text-muted-foreground mb-1.5 ml-1 block text-xs font-bold uppercase">Alamat Email</label>
                             <div className="relative">
-                                <i className="fa-solid fa-envelope absolute top-1/2 left-3 -translate-y-1/2 text-xs text-gray-300" />
+                                <i className="fa-solid fa-envelope text-muted-foreground/30 absolute top-1/2 left-3 -translate-y-1/2 text-xs" />
                                 <input
                                     type="email"
                                     value={pData.email}
                                     onChange={(e) => setPData('email', e.target.value)}
-                                    className="bg-muted/50 border-border focus:bg-card w-full rounded-lg border py-2.5 pr-3 pl-9 text-sm transition-all outline-none focus:border-blue-500"
+                                    className="bg-muted/30 border-border focus:bg-card text-foreground focus:border-primary w-full rounded-lg border py-2.5 pr-3 pl-9 text-sm transition-all outline-none"
                                 />
                             </div>
                         </div>
@@ -465,7 +479,7 @@ function ProfileView({ meUser, showToast }: { meUser: any; showToast: any }) {
                         <button
                             type="submit"
                             disabled={qProcessing}
-                            className="mt-4 w-full rounded-lg bg-gray-900 py-3 text-sm font-bold text-white shadow-lg shadow-gray-100 transition-all hover:bg-black hover:shadow-gray-200 active:scale-[0.98] disabled:opacity-50"
+                            className="bg-primary text-primary-foreground shadow-primary/20 hover:bg-primary/90 hover:shadow-primary/30 mt-4 w-full rounded-lg py-3 text-sm font-bold shadow-lg transition-all active:scale-[0.98] disabled:opacity-50"
                         >
                             {qProcessing ? <i className="fa-solid fa-spinner fa-spin mr-2" /> : <i className="fa-solid fa-lock-open mr-2" />}
                             {qProcessing ? 'Memperbarui...' : 'Update Password'}
@@ -498,6 +512,7 @@ function ContractPage({
     metrics,
     filters,
     formTemplates = [],
+    users = [],
 }: {
     contracts: PaginatedData<Contract>;
     meId: string;
@@ -508,6 +523,7 @@ function ContractPage({
     metrics: any;
     filters: { search?: string; status?: string; contract_type_id?: string; per_page?: number };
     formTemplates?: FormTemplateInfo[];
+    users?: any[];
 }) {
     const contracts = contractsPaged.data;
     const { showToast } = useToast();
@@ -580,6 +596,7 @@ function ContractPage({
     const [revType, setRevType] = useState<'contract' | 'f1' | 'f2'>('f1');
     const [rejectOpen, setRejectOpen] = useState(false);
     const [sendOpen, setSendOpen] = useState(false);
+    const [actionMenuOpen, setActionMenuOpen] = useState(false);
 
     const [previewOpen, setPreviewOpen] = useState(false);
     const [previewTitle, setPreviewTitle] = useState('');
@@ -594,6 +611,14 @@ function ContractPage({
     const [deleteOpen, setDeleteOpen] = useState(false);
     const [processing, setProcessing] = useState(false);
 
+    // Click outside to close action menu
+    useEffect(() => {
+        if (!actionMenuOpen) return;
+        const handle = () => setActionMenuOpen(false);
+        window.addEventListener('click', handle);
+        return () => window.removeEventListener('click', handle);
+    }, [actionMenuOpen]);
+
     // ─── Columns Definition ─────────────────────────────────────────
     const columns = useMemo<Column<Contract>[]>(() => {
         const baseColumns: Column<Contract>[] = [
@@ -601,7 +626,7 @@ function ContractPage({
                 header: 'No. Kontrak',
                 accessorKey: 'contract_no',
                 sortable: true,
-                className: 'font-mono text-[11px] font-bold uppercase tracking-wider text-slate-500',
+                className: 'font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground',
             },
             {
                 header: 'Judul Kontrak',
@@ -609,8 +634,8 @@ function ContractPage({
                 sortable: true,
                 cell: (c) => (
                     <div className="flex flex-col">
-                        <span className="line-clamp-1 font-bold text-slate-900">{c.title}</span>
-                        <span className="text-[10px] font-medium tracking-tight text-slate-400 uppercase">{c.contract_type}</span>
+                        <span className="text-foreground line-clamp-1 font-bold">{c.title}</span>
+                        <span className="text-muted-foreground text-[10px] font-medium tracking-tight uppercase">{c.contract_type}</span>
                     </div>
                 ),
             },
@@ -620,7 +645,7 @@ function ContractPage({
                 cell: (c) => (
                     <div className="flex items-center gap-2">
                         <Avatar user={c.creator} size="sm" />
-                        <span className="text-[12px] font-medium text-slate-700">{c.creator?.name}</span>
+                        <span className="text-foreground/80 text-[12px] font-medium">{c.creator?.name}</span>
                     </div>
                 ),
             },
@@ -634,7 +659,7 @@ function ContractPage({
                 accessorKey: 'current_version',
                 className: 'w-[80px]',
                 cell: (c) => (
-                    <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] font-bold text-slate-500 uppercase">
+                    <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase">
                         v{c.current_version}
                     </span>
                 ),
@@ -643,6 +668,30 @@ function ContractPage({
                 header: 'Progress',
                 accessorKey: 'progress.pct',
                 cell: (c) => <ProgressCell c={c} />,
+            },
+            {
+                header: 'Fase',
+                accessorKey: 'workflow_phase',
+                cell: (c) => (
+                    <div className="flex flex-col gap-1">
+                        <span
+                            className={cn(
+                                'w-fit rounded-full px-1.5 py-0.5 text-[9px] font-black tracking-widest uppercase',
+                                c.workflow_phase === 'Drafting' ? 'bg-sky-100 text-sky-700' : 'bg-indigo-100 text-indigo-700',
+                            )}
+                        >
+                            {c.workflow_phase}
+                        </span>
+                        {c.initiated_by && c.initiated_by.id !== c.creator?.id && (
+                            <span className="text-[8px] font-bold text-amber-600 italic">via Legal Helper</span>
+                        )}
+                    </div>
+                ),
+            },
+            {
+                header: 'SLA Sisa',
+                accessorKey: 'sla_deadline',
+                cell: (c) => <SLACountdown deadline={c.sla_deadline ?? null} status={c.status} />,
             },
         ];
 
@@ -657,7 +706,7 @@ function ContractPage({
         baseColumns.push({
             header: 'Tgl Dibuat',
             accessorKey: 'created_at',
-            className: 'text-slate-400 text-[11px] font-medium',
+            className: 'text-muted-foreground text-[11px] font-medium',
             cell: (c) => c.created_at,
         });
 
@@ -671,7 +720,7 @@ function ContractPage({
                     e.stopPropagation();
                     openDetail(c);
                 }}
-                className="hover:text-primary hover:border-primary/30 flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 shadow-sm transition-all active:scale-95"
+                className="hover:text-primary hover:border-primary/30 border-border bg-card text-muted-foreground flex h-8 w-8 items-center justify-center rounded-lg border shadow-sm transition-all active:scale-95"
                 title="Lihat Detail"
             >
                 <i className="fa-solid fa-eye text-[11px]" />
@@ -923,7 +972,7 @@ function ContractPage({
         <>
             <Head title={SL[view]} />
 
-            <div className="flex min-h-0 flex-1 flex-col gap-6 bg-slate-50/50 p-6">
+            <div className="bg-background/50 flex min-h-0 flex-1 flex-col gap-6 p-6">
                 {/* ── View Content ── */}
                 {view === 'profile' && !selected && <ProfileView meUser={meUser} showToast={showToast} />}
 
@@ -1112,22 +1161,22 @@ function ContractPage({
                     !selected && (
                         <div className="-mx-6 -mb-6 flex min-w-0 flex-1 flex-col overflow-hidden border-t border-slate-200/60 bg-slate-50/20">
                             {/* Top Action Bar (Premium Ecommerce Style) */}
-                            <div className="flex flex-col justify-between gap-3 border-b border-slate-100 bg-white px-5 py-3 lg:flex-row lg:items-center">
+                            <div className="border-border bg-card flex flex-col justify-between gap-3 border-b px-5 py-3 lg:flex-row lg:items-center">
                                 <div className="flex flex-col gap-0.5">
-                                    <h2 className="text-sm leading-none font-black tracking-tight text-slate-900 capitalize">{SL[view]}</h2>
-                                    <p className="text-[10px] font-medium tracking-widest text-slate-400 uppercase">
+                                    <h2 className="text-foreground text-sm leading-none font-bold tracking-tight capitalize">{SL[view]}</h2>
+                                    <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
                                         {contractsPaged.total} Total Transaksi
                                     </p>
                                 </div>
 
                                 <div className="flex flex-wrap items-center gap-2">
                                     <div className="group relative w-full md:w-60">
-                                        <Search className="group-focus-within:text-primary absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-slate-400 transition-colors" />
+                                        <Search className="group-focus-within:text-primary text-muted-foreground absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 transition-colors" />
                                         <Input
                                             value={search}
                                             onChange={(e) => setSearch(e.target.value)}
                                             placeholder="Cari nomor atau judul..."
-                                            className="focus:border-primary/30 focus:ring-primary/5 h-9 rounded-xl border-slate-200 bg-slate-50/50 pl-9 text-[11px] font-medium transition-all hover:bg-slate-50 focus:ring-2"
+                                            className="focus:border-primary/30 focus:ring-primary/5 border-border bg-muted/50 hover:bg-muted h-9 rounded-xl pl-9 text-[11px] font-medium transition-all focus:ring-2"
                                         />
                                     </div>
 
@@ -1135,16 +1184,18 @@ function ContractPage({
                                         variant="outline"
                                         onClick={() => setFilterOpen(true)}
                                         className={cn(
-                                            'flex h-9 items-center gap-2 rounded-xl border-slate-200 px-4 text-[10px] font-black tracking-[0.15em] uppercase transition-all active:scale-95',
+                                            'border-border flex h-9 items-center gap-2 rounded-xl px-4 text-[10px] font-bold tracking-wider uppercase transition-all active:scale-95',
                                             statusFilter.length > 0 || typeFilter.length > 0
                                                 ? 'bg-primary text-primary-foreground border-primary shadow-primary/20 hover:bg-primary/90 shadow-md'
-                                                : 'bg-white text-slate-600 shadow-sm hover:bg-slate-50',
+                                                : 'bg-background text-muted-foreground hover:bg-muted shadow-sm',
                                         )}
                                     >
                                         <Filter
                                             className={cn(
                                                 'h-3.5 w-3.5',
-                                                statusFilter.length > 0 || typeFilter.length > 0 ? 'text-white' : 'text-slate-400',
+                                                statusFilter.length > 0 || typeFilter.length > 0
+                                                    ? 'text-primary-foreground'
+                                                    : 'text-muted-foreground',
                                             )}
                                         />
                                         <span>Filter</span>
@@ -1155,14 +1206,14 @@ function ContractPage({
                                         )}
                                     </Button>
 
-                                    <div className="flex h-9 gap-0.5 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-0.5 shadow-inner">
+                                    <div className="border-border bg-muted/50 flex h-9 gap-0.5 overflow-hidden rounded-xl border p-0.5 shadow-inner">
                                         <button
                                             onClick={() => setLayout('list')}
                                             className={cn(
                                                 'flex w-8 items-center justify-center rounded-lg transition-all duration-200',
                                                 layout === 'list'
-                                                    ? 'text-primary bg-white shadow-sm'
-                                                    : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600',
+                                                    ? 'text-primary bg-background shadow-sm'
+                                                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                                             )}
                                         >
                                             <ListIcon size={14} strokeWidth={2.5} />
@@ -1172,8 +1223,8 @@ function ContractPage({
                                             className={cn(
                                                 'flex w-8 items-center justify-center rounded-lg transition-all duration-200',
                                                 layout === 'card'
-                                                    ? 'text-primary bg-white shadow-sm'
-                                                    : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600',
+                                                    ? 'text-primary bg-background shadow-sm'
+                                                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                                             )}
                                         >
                                             <LayoutGrid size={14} strokeWidth={2.5} />
@@ -1182,10 +1233,10 @@ function ContractPage({
 
                                     {canCreate && (
                                         <Button
-                                            className="h-9 gap-2 rounded-xl bg-slate-950 px-5 text-[10px] font-black tracking-widest text-white uppercase shadow-lg shadow-slate-200 transition-all hover:bg-black active:scale-95"
+                                            className="bg-foreground text-background shadow-muted h-9 gap-2 rounded-xl px-5 text-[10px] font-bold tracking-wider uppercase shadow-lg transition-all hover:opacity-90 active:scale-95"
                                             onClick={() => setCreateOpen(true)}
                                         >
-                                            <Plus className="h-3.5 w-3.5" strokeWidth={3} />
+                                            <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
                                             Buat Kontrak
                                         </Button>
                                     )}
@@ -1308,32 +1359,34 @@ function ContractPage({
                                         />
                                     </div>
                                 ) : (
-                                    <div className="flex flex-col gap-6 p-6 overflow-y-auto">
+                                    <div className="flex flex-col gap-6 overflow-y-auto p-6">
                                         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                                             {contractsPaged.data.map((c) => (
                                                 <div
                                                     key={c.id}
                                                     onClick={() => openDetail(c)}
-                                                    className="hover:border-primary/40 group hover:bg-primary/5 animate-in fade-in slide-in-from-bottom-2 cursor-pointer rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-md"
+                                                    className="hover:border-primary/40 group hover:bg-primary/5 animate-in fade-in slide-in-from-bottom-2 border-border bg-card cursor-pointer rounded-xl border p-5 shadow-sm transition-all duration-300 hover:shadow-md"
                                                 >
                                                     <div className="mb-4 flex items-start justify-between">
-                                                        <span className="rounded-md border border-slate-200/50 bg-slate-100 px-2 py-1 font-mono text-[10px] font-bold tracking-wider text-slate-600 uppercase">
+                                                        <span className="border-border/50 bg-muted text-muted-foreground rounded-md border px-2 py-1 font-mono text-[10px] font-bold tracking-wider uppercase">
                                                             {c.contract_no}
                                                         </span>
                                                         <StatusBadge status={c.status} />
                                                     </div>
-                                                    <h3 className="group-hover:text-primary mb-2 line-clamp-1 text-[15px] font-bold text-slate-900 transition-colors">
+                                                    <h3 className="group-hover:text-primary text-foreground mb-2 line-clamp-1 text-[15px] font-bold transition-colors">
                                                         {c.title}
                                                     </h3>
-                                                    <p className="mb-5 line-clamp-2 text-[12px] leading-relaxed text-slate-500">
+                                                    <p className="text-muted-foreground mb-5 line-clamp-2 text-[12px] leading-relaxed">
                                                         {c.description || '—'}
                                                     </p>
 
                                                     <div className="mb-5 flex items-center gap-3">
-                                                        <Avatar user={c.creator} size="sm" className="shadow-sm ring-2 ring-white" />
+                                                        <Avatar user={c.creator} size="sm" className="ring-background shadow-sm ring-2" />
                                                         <div className="min-w-0 flex-1">
-                                                            <div className="truncate text-[12px] font-semibold text-slate-900">{c.creator?.name}</div>
-                                                            <div className="flex items-center gap-1 text-[10px] text-slate-400">
+                                                            <div className="text-foreground truncate text-[12px] font-semibold">
+                                                                {c.creator?.name}
+                                                            </div>
+                                                            <div className="text-muted-foreground flex items-center gap-1 text-[10px]">
                                                                 <Clock size={10} /> {c.created_at}
                                                             </div>
                                                         </div>
@@ -1359,11 +1412,11 @@ function ContractPage({
                                             ))}
                                         </div>
                                         {contractsPaged.data.length === 0 && (
-                                            <div className="rounded-2xl border border-slate-200 bg-white p-20 text-center text-slate-400 shadow-sm">
-                                                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-slate-100 bg-slate-50">
-                                                    <Inbox size={32} className="text-slate-300" />
+                                            <div className="border-border bg-card text-muted-foreground rounded-2xl border p-20 text-center shadow-sm">
+                                                <div className="border-border bg-muted mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border">
+                                                    <Inbox size={32} className="text-muted-foreground/50" />
                                                 </div>
-                                                <h3 className="mb-1 text-lg font-bold text-slate-900">Tidak ada kontrak</h3>
+                                                <h3 className="text-foreground mb-1 text-lg font-bold">Tidak ada kontrak</h3>
                                                 <p className="text-sm">Tidak ada kontrak yang sesuai dengan kriteria filter Anda.</p>
                                                 <Button
                                                     variant="outline"
@@ -1398,189 +1451,180 @@ function ContractPage({
                     </div>
                 )}
 
-
-                {/* ── Detail ── */}
+                {/* Detail */}
                 {selected && (
-                    <div>
+                    <div className="w-full">
                         {/* Breadcrumb */}
                         <nav className="text-muted-foreground flex items-center gap-1.5" style={{ fontSize: 12, marginBottom: 16 }}>
                             <a style={{ color: 'var(--primary)', cursor: 'pointer' }} onClick={closeDetail}>
                                 Kontrak
                             </a>
-                            <i className="fa-solid fa-chevron-right text-gray-300" style={{ fontSize: 12 }} />
+                            <i className="fa-solid fa-chevron-right text-border" style={{ fontSize: 12 }} />
                             <span className="text-muted-foreground">{selected.contract_no}</span>
                         </nav>
 
-                        {/* Header */}
-                        <div className="flex items-start justify-between" style={{ marginBottom: 16 }}>
-                            <div>
-                                <h2 className="font-bold text-gray-900" style={{ fontSize: 16 }}>
-                                    {selected.title}
-                                </h2>
-                                <p className="text-gray-400" style={{ fontSize: 11, marginTop: 2 }}>
-                                    {selected.contract_no} · {selected.status.replace('_', ' ').toUpperCase()}
-                                </p>
-                            </div>
-                            <div className="flex gap-2">
-                                {selected.status === 'draft' && (
-                                    <>
-                                        {(canUpdate || meUser?.role === 'Admin') && (
-                                            <>
+                        {/* Grid */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 16 }}>
+                            {/* Left */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                                {/* Tabs Card */}
+                                <div className="bg-card border-border overflow-hidden rounded-xl border">
+                                    <div className="border-border flex items-center justify-between border-b px-4">
+                                        <div className="flex gap-1 pt-2">
+                                            {(
+                                                [
+                                                    {
+                                                        id: 'form_template',
+                                                        icon: 'fa-file-lines',
+                                                        label: 'F1',
+                                                        badge: selected.form_submissions?.find((s) => s.document_type === 'f1')
+                                                            ? selected.form_submissions.find((s) => s.document_type === 'f1')!.current_version
+                                                            : 0,
+                                                    },
+                                                    {
+                                                        id: 'agreement',
+                                                        icon: 'fa-file-word',
+                                                        label: 'Agreement',
+                                                        badge: (selected.versions ?? []).filter((v) => v.document_type === 'agreement').length,
+                                                    },
+
+                                                    {
+                                                        id: 'f2',
+                                                        icon: 'fa-file-shield',
+                                                        label: 'F2',
+                                                        badge: selected.form_submissions?.find((s) => s.document_type === 'f2')
+                                                            ? selected.form_submissions.find((s) => s.document_type === 'f2')!.current_version
+                                                            : 0,
+                                                    },
+                                                    {
+                                                        id: 'attachments',
+                                                        icon: 'fa-paperclip',
+                                                        label: 'Lampiran',
+                                                        badge: selected.attachments?.length ?? 0,
+                                                    },
+                                                    { id: 'audit', icon: 'fa-list-check', label: 'Audit Trail', badge: 0 },
+                                                    {
+                                                        id: 'chat',
+                                                        icon: 'fa-comments',
+                                                        label: 'Diskusi',
+                                                        badge: (selected.messages ?? []).filter((m) => !m.read_by.includes(meId)).length,
+                                                    },
+                                                ] as const
+                                            ).map((tab) => (
+                                                <button
+                                                    key={tab.id}
+                                                    onClick={() => setDetailTab(tab.id as any)}
+                                                    style={{
+                                                        fontSize: 12,
+                                                        fontWeight: 500,
+                                                        padding: '8px 12px',
+                                                        color: detailTab === tab.id ? 'var(--primary)' : 'var(--muted-foreground)',
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        borderBottom: detailTab === tab.id ? '2px solid var(--primary)' : '2px solid transparent',
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 6,
+                                                        marginBottom: -1,
+                                                        transition: 'color .15s',
+                                                    }}
+                                                >
+                                                    <i className={`fa-solid ${tab.icon}`} />
+                                                    <span className="hidden md:inline">{tab.label}</span>
+                                                    {tab.badge > 0 && (
+                                                        <span
+                                                            style={{
+                                                                fontSize: 12,
+                                                                fontWeight: 700,
+                                                                background: 'var(--primary)',
+                                                                color: 'var(--primary-foreground)',
+                                                                padding: '1px 6px',
+                                                                borderRadius: 99,
+                                                                lineHeight: 1.4,
+                                                            }}
+                                                        >
+                                                            {tab.badge}
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                            {selected.status === 'draft' && (canUpdate || meUser?.role === 'Admin') && (
                                                 <button
                                                     onClick={handleSendForApproval}
                                                     style={{
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         gap: 6,
-                                                        padding: '6px 12px',
-                                                        background: '#2563eb',
-                                                        color: '#fff',
-                                                        fontSize: 12,
-                                                        fontWeight: 500,
+                                                        padding: '6px 14px',
+                                                        background: 'var(--primary)',
+                                                        color: 'var(--primary-foreground)',
+                                                        fontSize: 11,
+                                                        fontWeight: 700,
                                                         borderRadius: 6,
                                                         border: 'none',
                                                         cursor: 'pointer',
+                                                        transition: 'all 0.2s',
+                                                        textTransform: 'uppercase',
+                                                        letterSpacing: '0.05em',
                                                     }}
-                                                    onMouseOver={(e) => ((e.currentTarget as any).style.background = '#1d4ed8')}
-                                                    onMouseOut={(e) => ((e.currentTarget as any).style.background = '#2563eb')}
+                                                    className="shadow-sm hover:opacity-90 active:scale-95"
                                                 >
-                                                    <i className="fa-solid fa-paper-plane" style={{ fontSize: 11 }} /> Kirim
+                                                    <i className="fa-solid fa-paper-plane" style={{ fontSize: 10 }} />
+                                                    <span className="hidden md:inline">Kirim</span>
                                                 </button>
-                                            </>
-                                        )}
-                                        {canDelete && (
-                                            <button
-                                                onClick={() => setDeleteOpen(true)}
-                                                style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: 6,
-                                                    padding: '6px 12px',
-                                                    background: 'var(--destructive)',
-                                                    color: 'var(--destructive-foreground)',
-                                                    fontSize: 12,
-                                                    fontWeight: 500,
-                                                    borderRadius: 6,
-                                                    border: 'none',
-                                                    cursor: 'pointer',
-                                                }}
-                                            >
-                                                <i className="fa-solid fa-trash-can" style={{ fontSize: 11 }} /> Hapus
-                                            </button>
-                                        )}
-                                    </>
-                                )}
-                                {/* <button onClick={() => handleDownload(selected.id, selected.versions.find(v => v.version_no === selected.current_version)?.file_name)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid #e5e7eb', fontSize: 12, fontWeight: 500, borderRadius: 6, background: 'none', cursor: 'pointer', color: '#374151' }}>
-                                    <i className="fa-solid fa-download" style={{ fontSize: 11 }} /> Download
-                                </button>
-                                {canUpdate && (
-                                    <button onClick={() => setRevOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid #e5e7eb', fontSize: 12, fontWeight: 500, borderRadius: 6, background: 'none', cursor: 'pointer', color: '#374151' }}>
-                                        <i className="fa-solid fa-upload" style={{ fontSize: 11 }} /> Upload Revisi
-                                    </button>
-                                )} */}
-                            </div>
-                        </div>
+                                            )}
 
-                        {/* Grid */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 16 }}>
-                            {/* Left */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                                {/* Info Card - Inline Editable for Draft */}
-                                <DraftEditableInfoCard
-                                    selected={selected}
-                                    types={types}
-                                    formTemplates={formTemplates}
-                                    canUpdate={!!canUpdate}
-                                    onUpdate={handleUpdate}
-                                    processing={processing}
-                                    setPreviewTitle={setPreviewTitle}
-                                    setPreviewUrl={setPreviewUrl}
-                                    setPreviewHasFile={setPreviewHasFile}
-                                    setPreviewOpen={setPreviewOpen}
-                                />
-
-                                {/* Tabs Card */}
-                                <div className="bg-card border-border overflow-hidden rounded-xl border">
-                                    <div className="border-border flex gap-1 border-b px-4 pt-2">
-                                        {(
-                                            [
-                                                {
-                                                    id: 'form_template',
-                                                    icon: 'fa-file-lines',
-                                                    label: 'F1',
-                                                    badge: selected.form_submissions?.find((s) => s.document_type === 'f1')
-                                                        ? selected.form_submissions.find((s) => s.document_type === 'f1')!.current_version
-                                                        : 0,
-                                                },
-                                                {
-                                                    id: 'agreement',
-                                                    icon: 'fa-file-word',
-                                                    label: 'Agreement',
-                                                    badge: (selected.versions ?? []).filter((v) => v.document_type === 'agreement').length,
-                                                },
-
-                                                {
-                                                    id: 'f2',
-                                                    icon: 'fa-file-shield',
-                                                    label: 'F2',
-                                                    badge: selected.form_submissions?.find((s) => s.document_type === 'f2')
-                                                        ? selected.form_submissions.find((s) => s.document_type === 'f2')!.current_version
-                                                        : 0,
-                                                },
-                                                {
-                                                    id: 'attachments',
-                                                    icon: 'fa-paperclip',
-                                                    label: 'Lampiran',
-                                                    badge: selected.attachments?.length ?? 0,
-                                                },
-                                                { id: 'audit', icon: 'fa-list-check', label: 'Audit Trail', badge: 0 },
-                                                {
-                                                    id: 'chat',
-                                                    icon: 'fa-comments',
-                                                    label: 'Diskusi',
-                                                    badge: (selected.messages ?? []).filter((m) => !m.read_by.includes(meId)).length,
-                                                },
-                                            ] as const
-                                        ).map((tab) => (
-                                            <button
-                                                key={tab.id}
-                                                onClick={() => setDetailTab(tab.id as any)}
-                                                style={{
-                                                    fontSize: 12,
-                                                    fontWeight: 500,
-                                                    padding: '8px 12px',
-                                                    color: detailTab === tab.id ? 'var(--primary)' : 'var(--muted-foreground)',
-                                                    background: 'none',
-                                                    border: 'none',
-                                                    borderBottom: detailTab === tab.id ? '2px solid var(--primary)' : '2px solid transparent',
-                                                    cursor: 'pointer',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: 6,
-                                                    marginBottom: -1,
-                                                    transition: 'color .15s',
-                                                }}
-                                            >
-                                                <i className={`fa-solid ${tab.icon}`} /> {tab.label}
-                                                {tab.badge > 0 && (
-                                                    <span
-                                                        style={{
-                                                            fontSize: 12,
-                                                            fontWeight: 700,
-                                                            background: 'var(--primary)',
-                                                            color: 'var(--primary-foreground)',
-                                                            padding: '1px 6px',
-                                                            borderRadius: 99,
-                                                            lineHeight: 1.4,
+                                            {canDelete && (
+                                                <div className="relative">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setActionMenuOpen(!actionMenuOpen);
                                                         }}
+                                                        style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            width: 32,
+                                                            height: 32,
+                                                            borderRadius: 6,
+                                                            border: 'none',
+                                                            background: 'none',
+                                                            cursor: 'pointer',
+                                                            color: 'var(--muted-foreground)',
+                                                            transition: 'all 0.2s',
+                                                        }}
+                                                        className="hover:bg-muted active:scale-95"
+                                                        title="More Actions"
                                                     >
-                                                        {tab.badge}
-                                                    </span>
-                                                )}
-                                            </button>
-                                        ))}
+                                                        <i className="fa-solid fa-ellipsis" style={{ fontSize: 14 }} />
+                                                    </button>
+
+                                                    {actionMenuOpen && (
+                                                        <div
+                                                            className="bg-card border-border animate-in fade-in slide-in-from-top-1 absolute top-full right-0 z-50 mt-1 min-w-[120px] rounded-lg border p-1 shadow-xl"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        >
+                                                            <button
+                                                                onClick={() => {
+                                                                    setDeleteOpen(true);
+                                                                    setActionMenuOpen(false);
+                                                                }}
+                                                                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-[11px] font-semibold text-rose-600 transition-colors hover:bg-rose-50"
+                                                            >
+                                                                <i className="fa-solid fa-trash-can" style={{ fontSize: 10 }} /> Hapus Kontrak
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div style={{ padding: 16 }}>
+                                    <div style={{ padding: 0 }}>
                                         {/* F1 Tab (Persistence via hidden div) */}
                                         <div style={{ display: detailTab === 'form_template' ? 'block' : 'none' }}>
                                             <FormSubmissionTab
@@ -1647,7 +1691,7 @@ function ContractPage({
                                                                 }}
                                                             />
                                                             <div>
-                                                                <div className="font-medium" style={{ fontSize: 12 }}>
+                                                                <div className="text-foreground font-medium" style={{ fontSize: 12 }}>
                                                                     {h.description}
                                                                 </div>
                                                                 <div
@@ -1674,6 +1718,20 @@ function ContractPage({
 
                             {/* Right */}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                                {/* Informas Kontrak (Moved to Sidebar Top) */}
+                                <DraftEditableInfoCard
+                                    selected={selected}
+                                    types={types}
+                                    formTemplates={formTemplates}
+                                    canUpdate={!!canUpdate}
+                                    onUpdate={handleUpdate}
+                                    processing={processing}
+                                    setPreviewTitle={setPreviewTitle}
+                                    setPreviewUrl={setPreviewUrl}
+                                    setPreviewHasFile={setPreviewHasFile}
+                                    setPreviewOpen={setPreviewOpen}
+                                />
+
                                 {/* Approval Flow */}
                                 <div className="bg-card border-border overflow-hidden rounded-xl border">
                                     <div
@@ -1795,7 +1853,7 @@ function ContractPage({
             </div>
 
             {/* ── Modals ── */}
-            <CreateContractModal open={createOpen} onClose={() => setCreateOpen(false)} onSubmit={handleCreate} types={types} />
+            <CreateContractModal open={createOpen} onClose={() => setCreateOpen(false)} onSubmit={handleCreate} types={types} users={users} />
             <UploadRevisionModal open={revOpen} onClose={() => setRevOpen(false)} onSubmit={handleRevision} initialType={revType} />
             <RejectModal open={rejectOpen} onClose={() => setRejectOpen(false)} onSubmit={handleReject} />
             <SendApprovalModal
@@ -1876,6 +1934,7 @@ function DraftEditableInfoCard({
         const t = types.find((x) => x.name === selected.contract_type);
         return t ? String(t.id) : '';
     });
+    const [minimized, setMinimized] = useState(false);
 
     useEffect(() => {
         setTitle(selected.title);
@@ -1895,7 +1954,7 @@ function DraftEditableInfoCard({
     };
 
     const inputCls =
-        'w-full bg-white dark:bg-muted/30 border border-border rounded-lg px-3 py-1.5 text-sm outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all';
+        'w-full bg-background border border-border rounded-lg px-3 py-1.5 text-sm text-foreground outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all';
 
     const f2Version = selected.versions?.filter((x) => x.document_type === 'f2').sort((a, b) => b.version_no - a.version_no)[0];
 
@@ -1916,185 +1975,212 @@ function DraftEditableInfoCard({
                         </span>
                     )}
                 </div>
-                {isDraft && hasChanges && (
-                    <button
-                        onClick={handleSave}
-                        disabled={processing || !title.trim()}
-                        className="bg-primary text-primary-foreground shadow-primary/20 hover:shadow-primary/30 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold shadow-md transition-all active:scale-95 disabled:opacity-50"
-                    >
-                        {processing ? (
-                            <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: 10 }} />
-                        ) : (
-                            <i className="fa-solid fa-save" style={{ fontSize: 10 }} />
-                        )}
-                        Simpan
-                    </button>
-                )}
+                <div className="flex items-center gap-2">
+                    {isDraft && hasChanges && (
+                        <button
+                            onClick={handleSave}
+                            disabled={processing || !title.trim()}
+                            className="bg-primary text-primary-foreground shadow-primary/20 hover:shadow-primary/30 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold shadow-md transition-all active:scale-95 disabled:opacity-50"
+                        >
+                            {processing ? (
+                                <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: 10 }} />
+                            ) : (
+                                <i className="fa-solid fa-save" style={{ fontSize: 10 }} />
+                            )}
+                            Simpan
+                        </button>
+                    )}
+                    {!(isDraft && hasChanges) && (
+                        <button
+                            onClick={() => setMinimized(!minimized)}
+                            className="text-muted-foreground hover:bg-muted h-7 w-7 rounded-md transition-all active:scale-95"
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                border: 'none',
+                                background: 'none',
+                            }}
+                        >
+                            <i
+                                className={`fa-solid fa-chevron-${minimized ? 'down' : 'up'}`}
+                                style={{ fontSize: 12, transition: 'transform 0.2s' }}
+                            />
+                        </button>
+                    )}
+                </div>
             </div>
-            <div style={{ padding: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                {/* Title - full width if draft */}
-                {isDraft ? (
+            {!minimized && (
+                <div style={{ padding: 16, display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
+                    {/* Title - full width if draft */}
+                    {isDraft ? (
+                        <div style={{ gridColumn: '1/-1' }}>
+                            <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
+                                Judul Kontrak
+                            </div>
+                            <input
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
+                                placeholder="Nama kontrak..."
+                                className={inputCls + ' font-medium'}
+                            />
+                        </div>
+                    ) : null}
+
+                    {/* No. Kontrak */}
+                    <div>
+                        <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
+                            No. Kontrak
+                        </div>
+                        <span className="bg-muted text-foreground/80 rounded px-2 py-0.5 font-mono" style={{ fontSize: 12 }}>
+                            {selected.contract_no}
+                        </span>
+                    </div>
+
+                    {/* Status */}
+                    <div>
+                        <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
+                            Status
+                        </div>
+                        <StatusBadge status={selected.status} />
+                    </div>
+
+                    {/* Tipe Kontrak */}
+                    <div>
+                        <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
+                            Tipe Kontrak
+                        </div>
+                        {isDraft ? (
+                            <select value={typeId} onChange={(e) => setTypeId(e.target.value)} className={inputCls}>
+                                <option value="">Pilih Tipe</option>
+                                {types.map((t) => (
+                                    <option key={t.id} value={t.id}>
+                                        {t.name}
+                                    </option>
+                                ))}
+                            </select>
+                        ) : (
+                            <span className="rounded-full border border-blue-100 bg-blue-50 px-2 py-0.5 text-xs font-bold tracking-wider text-blue-700 uppercase dark:border-blue-900/30 dark:bg-blue-900/20 dark:text-blue-400">
+                                {selected.contract_type}
+                            </span>
+                        )}
+                    </div>
+
+                    {/* Dibuat Oleh */}
+                    <div>
+                        <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
+                            Dibuat Oleh
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <Avatar user={selected.creator} size="sm" />
+                            <span style={{ fontSize: 12 }}>{selected.creator?.name}</span>
+                        </div>
+                    </div>
+
+                    {/* Tgl Dibuat */}
+                    <div>
+                        <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
+                            Tgl Dibuat
+                        </div>
+                        <span style={{ fontSize: 12 }}>{selected.created_at}</span>
+                    </div>
+
+                    {/* Form Template */}
+                    <div>
+                        <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
+                            Form Template
+                        </div>
+                        {tpl ? (
+                            <div className="flex items-center gap-2">
+                                <span className="text-primary max-w-[160px] truncate font-medium" style={{ fontSize: 12 }} title={tpl.name}>
+                                    {tpl.name}
+                                </span>
+                                <span className="text-muted-foreground" style={{ fontSize: 10 }}>
+                                    ({tpl.fields_count} fields)
+                                </span>
+                            </div>
+                        ) : (
+                            <span className="text-muted-foreground italic" style={{ fontSize: 12 }}>
+                                Belum ada template
+                            </span>
+                        )}
+                    </div>
+
+                    {/* Dokumen F2 */}
+                    <div>
+                        <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
+                            Dokumen F2
+                        </div>
+                        {f2Version ? (
+                            <div className="flex items-center gap-2">
+                                <div className="flex flex-col">
+                                    <span className="text-primary font-mono font-bold" style={{ fontSize: 12 }}>
+                                        v{f2Version.version_no}
+                                    </span>
+                                    <span
+                                        className="text-muted-foreground max-w-[140px] truncate"
+                                        style={{ fontSize: 12 }}
+                                        title={f2Version.file_name}
+                                    >
+                                        {f2Version.file_name}
+                                    </span>
+                                </div>
+                                <div className="flex gap-1">
+                                    <button
+                                        onClick={() => {
+                                            setPreviewTitle('F2 - v' + f2Version.version_no);
+                                            setPreviewUrl(contractApi.pdfPreviewUrl(selected.id, f2Version.version_no, 'f2'));
+                                            setPreviewHasFile(f2Version.has_file);
+                                            setPreviewOpen(true);
+                                        }}
+                                        className="bg-muted/50 border-border/50 text-muted-foreground hover:bg-card flex h-5 w-5 items-center justify-center rounded border shadow-sm transition-all hover:text-cyan-600"
+                                    >
+                                        <i className="fa-solid fa-eye" style={{ fontSize: 12 }} />
+                                    </button>
+                                    <a
+                                        href={contractApi.downloadUrl(selected.id, 'f2', f2Version.version_no)}
+                                        download
+                                        className="bg-muted/50 border-border/50 text-muted-foreground hover:bg-card flex h-5 w-5 items-center justify-center rounded border shadow-sm transition-all hover:text-cyan-600"
+                                    >
+                                        <i className="fa-solid fa-download" style={{ fontSize: 12 }} />
+                                    </a>
+                                </div>
+                            </div>
+                        ) : (
+                            <span className="text-muted-foreground italic" style={{ fontSize: 12 }}>
+                                -
+                            </span>
+                        )}
+                    </div>
+
+                    {/* Total Versi */}
+                    <div>
+                        <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
+                            Total Versi
+                        </div>
+                        <span style={{ fontSize: 12 }}>{selected.versions?.length ?? 0} versi</span>
+                    </div>
+
+                    {/* Deskripsi - full width */}
                     <div style={{ gridColumn: '1/-1' }}>
                         <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
-                            Judul Kontrak
+                            Deskripsi
                         </div>
-                        <input
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Nama kontrak..."
-                            className={inputCls + ' font-medium'}
-                        />
-                    </div>
-                ) : null}
-
-                {/* No. Kontrak */}
-                <div>
-                    <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
-                        No. Kontrak
-                    </div>
-                    <span className="bg-muted text-foreground/80 rounded px-2 py-0.5 font-mono" style={{ fontSize: 12 }}>
-                        {selected.contract_no}
-                    </span>
-                </div>
-
-                {/* Status */}
-                <div>
-                    <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
-                        Status
-                    </div>
-                    <StatusBadge status={selected.status} />
-                </div>
-
-                {/* Tipe Kontrak */}
-                <div>
-                    <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
-                        Tipe Kontrak
-                    </div>
-                    {isDraft ? (
-                        <select value={typeId} onChange={(e) => setTypeId(e.target.value)} className={inputCls}>
-                            <option value="">Pilih Tipe</option>
-                            {types.map((t) => (
-                                <option key={t.id} value={t.id}>
-                                    {t.name}
-                                </option>
-                            ))}
-                        </select>
-                    ) : (
-                        <span className="rounded-full border border-blue-100 bg-blue-50 px-2 py-0.5 text-xs font-bold tracking-wider text-blue-700 uppercase dark:border-blue-900/30 dark:bg-blue-900/20 dark:text-blue-400">
-                            {selected.contract_type}
-                        </span>
-                    )}
-                </div>
-
-                {/* Dibuat Oleh */}
-                <div>
-                    <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
-                        Dibuat Oleh
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <Avatar user={selected.creator} size="sm" />
-                        <span style={{ fontSize: 12 }}>{selected.creator?.name}</span>
+                        {isDraft ? (
+                            <textarea
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                rows={3}
+                                placeholder="Deskripsi kontrak (opsional)..."
+                                className={inputCls + ' resize-none'}
+                            />
+                        ) : (
+                            <div style={{ fontSize: 12 }}>{selected.description || <span className="text-muted-foreground italic">-</span>}</div>
+                        )}
                     </div>
                 </div>
-
-                {/* Tgl Dibuat */}
-                <div>
-                    <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
-                        Tgl Dibuat
-                    </div>
-                    <span style={{ fontSize: 12 }}>{selected.created_at}</span>
-                </div>
-
-                {/* Form Template */}
-                <div>
-                    <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
-                        Form Template
-                    </div>
-                    {tpl ? (
-                        <div className="flex items-center gap-2">
-                            <span className="max-w-[160px] truncate font-medium text-blue-600" style={{ fontSize: 12 }} title={tpl.name}>
-                                {tpl.name}
-                            </span>
-                            <span className="text-muted-foreground" style={{ fontSize: 10 }}>
-                                ({tpl.fields_count} fields)
-                            </span>
-                        </div>
-                    ) : (
-                        <span className="text-muted-foreground italic" style={{ fontSize: 12 }}>
-                            Belum ada template
-                        </span>
-                    )}
-                </div>
-
-                {/* Dokumen F2 */}
-                <div>
-                    <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
-                        Dokumen F2
-                    </div>
-                    {f2Version ? (
-                        <div className="flex items-center gap-2">
-                            <div className="flex flex-col">
-                                <span className="font-mono font-bold text-cyan-600" style={{ fontSize: 12 }}>
-                                    v{f2Version.version_no}
-                                </span>
-                                <span className="text-muted-foreground max-w-[140px] truncate" style={{ fontSize: 12 }} title={f2Version.file_name}>
-                                    {f2Version.file_name}
-                                </span>
-                            </div>
-                            <div className="flex gap-1">
-                                <button
-                                    onClick={() => {
-                                        setPreviewTitle('F2 - v' + f2Version.version_no);
-                                        setPreviewUrl(contractApi.pdfPreviewUrl(selected.id, f2Version.version_no, 'f2'));
-                                        setPreviewHasFile(f2Version.has_file);
-                                        setPreviewOpen(true);
-                                    }}
-                                    className="bg-muted/50 border-border/50 text-muted-foreground hover:bg-card flex h-5 w-5 items-center justify-center rounded border shadow-sm transition-all hover:text-cyan-600"
-                                >
-                                    <i className="fa-solid fa-eye" style={{ fontSize: 12 }} />
-                                </button>
-                                <a
-                                    href={contractApi.downloadUrl(selected.id, 'f2', f2Version.version_no)}
-                                    download
-                                    className="bg-muted/50 border-border/50 text-muted-foreground hover:bg-card flex h-5 w-5 items-center justify-center rounded border shadow-sm transition-all hover:text-cyan-600"
-                                >
-                                    <i className="fa-solid fa-download" style={{ fontSize: 12 }} />
-                                </a>
-                            </div>
-                        </div>
-                    ) : (
-                        <span className="text-muted-foreground italic" style={{ fontSize: 12 }}>
-                            -
-                        </span>
-                    )}
-                </div>
-
-                {/* Total Versi */}
-                <div>
-                    <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
-                        Total Versi
-                    </div>
-                    <span style={{ fontSize: 12 }}>{selected.versions?.length ?? 0} versi</span>
-                </div>
-
-                {/* Deskripsi - full width */}
-                <div style={{ gridColumn: '1/-1' }}>
-                    <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
-                        Deskripsi
-                    </div>
-                    {isDraft ? (
-                        <textarea
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            rows={3}
-                            placeholder="Deskripsi kontrak (opsional)..."
-                            className={inputCls + ' resize-none'}
-                        />
-                    ) : (
-                        <div style={{ fontSize: 12 }}>{selected.description || <span className="text-muted-foreground italic">-</span>}</div>
-                    )}
-                </div>
-            </div>
+            )}
         </div>
     );
 }
@@ -2137,7 +2223,7 @@ function EditContractModal({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
             <div className="bg-card border-border scale-in-center w-full max-w-lg overflow-hidden rounded-2xl border shadow-2xl">
                 <div className="border-border/50 flex items-center justify-between border-b" style={{ padding: '16px 20px' }}>
-                    <h3 className="font-bold text-gray-900" style={{ fontSize: 16 }}>
+                    <h3 className="text-foreground font-bold" style={{ fontSize: 16 }}>
                         Edit Informasi Kontrak
                     </h3>
                     <button
@@ -2245,7 +2331,7 @@ function DeleteConfirmModal({
                     <div className="bg-destructive/10 text-destructive mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
                         <i className="fa-solid fa-trash-can" style={{ fontSize: 24 }} />
                     </div>
-                    <h3 className="mb-2 font-bold text-gray-900" style={{ fontSize: 18 }}>
+                    <h3 className="text-foreground mb-2 font-bold" style={{ fontSize: 18 }}>
                         Hapus Kontrak?
                     </h3>
                     <p className="text-muted-foreground text-sm leading-relaxed">
@@ -2296,6 +2382,7 @@ export default function ContractsIndex({
     metrics: initialMetrics = null,
     initialSelected: initialSelectedProp = null,
     filters = {},
+    users = [],
 }: {
     currentView?: View;
     contracts?: PaginatedData<Contract>;
@@ -2304,6 +2391,7 @@ export default function ContractsIndex({
     formTemplates?: FormTemplateInfo[];
     metrics?: any;
     filters?: any;
+    users?: any[];
 }) {
     const { auth, contractId: initialId } = usePage<{ auth: { user: any }; contractId?: string }>().props;
     const meId = auth?.user?.id ?? '';
@@ -2381,6 +2469,7 @@ export default function ContractsIndex({
                         currentView={currentView}
                         metrics={metrics}
                         filters={filters}
+                        users={users}
                     />
                 )}
             </ToastProvider>

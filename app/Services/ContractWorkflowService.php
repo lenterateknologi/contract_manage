@@ -13,50 +13,28 @@ use Illuminate\Support\Facades\Auth;
 
 class ContractWorkflowService
 {
-    public function sendForApproval(Contract $contract, string $workflowId = null, array $customSteps = null): Contract
+    protected $slaService;
+
+    public function __construct(SLAService $slaService)
     {
-        // Resolve tax requirement
+        $this->slaService = $slaService;
+    }
+
+    public function sendForApproval(Contract $contract, ?string $workflowId = null, ?array $customSteps = null): Contract
+    {
+        // Resolve metadata info
         $metadata = request()->input('metadata', []);
-        $taxRequired = $metadata['tax_required'] ?? ($contract->metadata['tax_required'] ?? false);
+        $topic = $metadata['topic'] ?? ($contract->metadata['topic'] ?? 'perjanjian');
+        $now = now();
 
-        // Update metadata if provided (for branching flags)
-        $contract->update(['metadata' => array_merge($contract->metadata ?? [], $metadata)]);
-        $contract = $contract->fresh(); // Refresh to get updated metadata
-
+        // Get the workflow first to use its SLA settings
         $workflow = null;
-
         if ($workflowId) {
             $workflow = Workflow::find($workflowId);
-        } elseif ($customSteps) {
-            // Create ad-hoc workflow
-            $workflow = Workflow::create([
-                'contract_type' => $contract->contract_type_id ? ContractType::find($contract->contract_type_id)->name : 'General',
-                'name' => 'Custom Request for ' . $contract->contract_no,
-                'description' => 'Automatically generated for custom approval flow',
-                'is_default' => false,
-                'is_template' => false,
-                'created_by' => Auth::id(),
-                'updated_by' => Auth::id(),
-            ]);
-
-            foreach ($customSteps as $index => $stepData) {
-                $step = $workflow->steps()->create([
-                    'step' => $index + 1,
-                    'role' => $stepData['role'] ?? 'Approval Step',
-                    'approver_type' => !empty($stepData['user_ids']) ? 'user' : 'role',
-                    'description' => $stepData['description'] ?? "Approval step " . ($index + 1),
-                    'created_by' => Auth::id(),
-                    'updated_by' => Auth::id(),
-                ]);
-
-                if (!empty($stepData['user_ids'])) {
-                    $step->users()->sync($stepData['user_ids']);
-                }
-            }
         }
 
-        // Fallback to default if no workflow selected and no custom steps
         if (!$workflow) {
+            $taxRequired = $metadata['tax_required'] ?? ($contract->metadata['tax_required'] ?? false);
             $typeStr = $contract->contract_type ?: ($contract->contractType ? $contract->contractType->name : 'General');
             $workflow = Workflow::getDefaultByContractType($typeStr, (bool) $taxRequired);
         }
@@ -65,6 +43,31 @@ class ContractWorkflowService
             throw new \Exception('No workflow found and no default available for this contract type.');
         }
 
+        // Calculate Deadlines using Workflow-specific SLA settings
+        $draftingHours = $workflow->sla_drafting_hours ?: 72; // fallback to 3 days
+        $totalHours = $workflow->sla_total_hours ?: 240;      // fallback to 10 days
+        $cutoffHour = $workflow->sla_cutoff_hour ?: 16;       // fallback to 16:00
+
+        $draftingDeadline = $this->slaService->calculateBusinessDeadline($now, $draftingHours, $cutoffHour);
+        $totalDeadline = null;
+        if (strtolower($topic) !== 'review') {
+            $totalDeadline = $this->slaService->calculateBusinessDeadline($now, $totalHours, $cutoffHour);
+        }
+
+        // Update metadata with SLA and flags
+        $metadata = array_merge($contract->metadata ?? [], $metadata, [
+            'tax_required' => $metadata['tax_required'] ?? ($contract->metadata['tax_required'] ?? false),
+            'topic' => $topic,
+            'drafting_deadline' => $draftingDeadline->toIso8601String(),
+            'total_deadline' => $totalDeadline ? $totalDeadline->toIso8601String() : null,
+            'current_phase' => 'drafting',
+        ]);
+
+        $contract->update(['metadata' => $metadata]);
+        $contract = $contract->fresh();
+
+        // Clear any existing approvals before starting fresh
+        $contract->approvals()->delete();
 
         // Get first workflow step
         $firstStep = $workflow->steps()->orderBy('step')->first();
@@ -89,6 +92,11 @@ class ContractWorkflowService
         // Create approval record for the first step
         $this->createApprovalForStep($contract, $firstStep);
 
+        // Notification for Helper Mode
+        if ($contract->initiated_by_id && $contract->initiated_by_id !== $contract->created_by) {
+            $contract->initiator->notify(new \App\Notifications\ContractAssignedNotification($contract));
+        }
+
         // Log the action
         $contract->histories()->create([
             'action' => 'CONTRACT_SENT',
@@ -107,12 +115,20 @@ class ContractWorkflowService
         // Determine approvers
         if ($step->approver_type === 'user') {
             $approvers = $step->users;
+        } elseif (strtolower($step->role) === 'initiator') {
+            // Special handling for the original initiator (proxy owner)
+            $approvers = collect([$contract->initiator]);
+        } elseif (strtolower($step->role) === 'manager' && $step->department_id === null) {
+            // Resolution for "Manager Staff" or "Manager Initiator" (Department dynamic based on Initiator)
+            $query = User::where('role', 'Manager')
+                ->where('department_id', $contract->initiator->department_id);
+            $approvers = $query->get();
         } else {
             // Find all users with the required role and in the same department
             $query = User::where('role', $step->role);
             
             // Prioritize step-level department, then fallback to initiator's department if not specified
-            $targetDeptId = $step->department_id ?: $contract->creator->department_id;
+            $targetDeptId = $step->department_id ?: $contract->initiator->department_id;
             
             if ($targetDeptId) {
                 $query->where('department_id', $targetDeptId);
@@ -140,7 +156,7 @@ class ContractWorkflowService
     /**
      * Approve a contract (handles approval and moves to next step if all approved)
      */
-    public function approveContract(Contract $contract, Approval $approval, string $comment = null): Contract
+    public function approveContract(Contract $contract, Approval $approval, ?string $comment = null): Contract
     {
         // Mark this approval as approved
         $approval->approve($comment);
@@ -171,6 +187,15 @@ class ContractWorkflowService
 
                 // Create approvals for next step
                 $this->createApprovalForStep($contract, $nextStep);
+
+                // Handle Phase Transition (Drafting -> Agreement)
+                // If the step just approved was 'Legal', we move to 'agreement' phase
+                if (str_contains(strtolower($approval->role), 'legal')) {
+                    $metadata = $contract->metadata ?? [];
+                    $metadata['current_phase'] = 'agreement';
+                    $metadata['drafting_finished_at'] = now()->toIso8601String();
+                    $contract->update(['metadata' => $metadata]);
+                }
 
                 // Log the transition
                 $contract->histories()->create([
@@ -209,7 +234,7 @@ class ContractWorkflowService
             'status' => 'revision',
             'workflow_step_id' => null,
         ]);
-        
+
         $description = "Rejected by {$approval->approver_name} ({$approval->role}): {$reason}. Sent back to Initiator for revision.";
 
         // Reject all other pending approvals for this step
@@ -251,18 +276,33 @@ class ContractWorkflowService
     private function shouldExecuteStep(Contract $contract, WorkflowStep $step): bool
     {
         $condition = $step->condition_expression ?? '';
-        
+
         // Condition: Direct Supervisor Review (only if initiator is Staff)
         if (str_contains($condition, 'initiator_is_staff')) {
-            $roleName = $contract->creator->role ?? ''; 
+            $roleName = $contract->initiator->role ?? ''; 
+            
+            // Bypass logic: Skip Step 1 if submitted by Legal/Admin for others (Helper Mode)
+            $creator = Auth::user();
+            $isLegal = $creator && (str_contains(strtolower($creator->department?->name ?? ''), 'legal') || $creator->role === 'Admin');
+            $isHelper = $contract->initiated_by_id && $contract->initiated_by_id !== $contract->created_by;
+            
+            if ($isLegal && $isHelper) {
+                return false; // Bypass departmental review
+            }
+
             return strtolower($roleName) === 'staff';
+        }
+
+        // Condition: Skip if initiator is Legal (used for Manager step)
+        if (str_contains($condition, 'initiator_not_legal')) {
+            $deptName = $contract->initiator->department->name ?? '';
+            return !str_contains(strtolower($deptName), 'legal');
         }
 
         // Condition: Skip Management if Initiator is already Management/Direksi
         if (str_contains($condition, 'initiator_not_manager')) {
-            $roleName = $contract->creator->role ?? '';
+            $roleName = $contract->initiator->role ?? '';
             // If the creator is NOT a manager or director, they need management approval
-            // Positions that count as manager here: 'Manager', 'Director', 'Direktur'
             $exemptRoles = ['manager', 'director', 'direktur', 'direksi', 'admin'];
             return !in_array(strtolower($roleName), $exemptRoles);
         }

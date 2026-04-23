@@ -19,12 +19,13 @@ class TransactionSeeder extends Seeder
 
     public function run(): void
     {
-        // Wipe existing data
-        ContractMessage::query()->delete();
-        ContractHistory::query()->delete();
-        ContractVersion::query()->delete();
-        ContractAttachment::query()->delete();
-        Contract::query()->delete();
+        // Wipe existing data - Use forceDelete because unique constraints (like contract_no) 
+        // often don't ignore soft-deleted records.
+        ContractMessage::query()->forceDelete();
+        ContractHistory::query()->forceDelete();
+        ContractVersion::query()->forceDelete();
+        ContractAttachment::query()->forceDelete();
+        Contract::query()->forceDelete();
 
         // Build a lookup map: email => user model
         $this->userMap = [

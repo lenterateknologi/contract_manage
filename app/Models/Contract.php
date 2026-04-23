@@ -31,6 +31,24 @@ class Contract extends Model
         'workflow_step_id',
         'metadata',
         'submitted_at',
+        'initiated_by_id',
+        // F1 & F2 Template Fields
+        'kop_topik',
+        'kop_sub_topik',
+        'kop_lampiran',
+        'f1_tujuan',
+        'f1_sifat',
+        'p1_entity',
+        'p1_signer',
+        'p1_address',
+        'p2_entity',
+        'p2_signer',
+        'p2_address',
+        'f2_scope',
+        'f2_price',
+        'f2_payment',
+        'f2_tenure',
+        'f2_location',
     ];
 
     protected $casts = [
@@ -51,6 +69,13 @@ class Contract extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function initiator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'initiated_by_id')->withDefault(function ($user, $contract) {
+            return $contract->creator;
+        });
     }
 
     public function versions(): HasMany

@@ -30,17 +30,17 @@ export function FilterChips({
     if (!hasStatus && !hasType) return null;
 
     return (
-        <div className="mt-1 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-1">
-            <span className="mr-1 text-[10px] font-black tracking-widest text-slate-400 uppercase">Active Filters:</span>
+        <div className="mt-1 flex flex-wrap items-center gap-2 border-t border-border pt-1">
+            <span className="mr-1 text-[10px] font-black tracking-widest text-muted-foreground uppercase">Active Filters:</span>
 
             {Array.isArray(statusFilter)
                 ? statusFilter.map((s) => (
                       <Badge
                           key={`status-${s}`}
                           variant="secondary"
-                          className="h-8 gap-1 border-slate-200 bg-white pr-1 pl-2.5 font-medium text-slate-600 shadow-sm hover:bg-slate-50"
+                          className="h-8 gap-1 border-border bg-card pr-1 pl-2.5 font-medium text-foreground shadow-sm hover:bg-muted"
                       >
-                          <span className="mr-1 text-[10px] font-bold text-slate-400 uppercase">Status:</span>
+                          <span className="mr-1 text-[10px] font-bold text-muted-foreground uppercase">Status:</span>
                           <span className="text-[11px] whitespace-nowrap">
                               {s === 'in_review' ? 'Dalam Tinjauan' : s.charAt(0).toUpperCase() + s.slice(1)}
                           </span>
@@ -55,7 +55,7 @@ export function FilterChips({
                                   handleFilterChange({ status: val });
                               }}
                           >
-                              <Trash2 className="h-3 w-3 text-slate-400" />
+                              <Trash2 className="h-3 w-3 text-muted-foreground" />
                           </Button>
                       </Badge>
                   ))
@@ -63,9 +63,9 @@ export function FilterChips({
                   statusFilter !== undefined && (
                       <Badge
                           variant="secondary"
-                          className="h-8 gap-1 border-slate-200 bg-white pr-1 pl-2.5 font-medium text-slate-600 shadow-sm hover:bg-slate-50"
+                          className="h-8 gap-1 border-border bg-card pr-1 pl-2.5 font-medium text-foreground shadow-sm hover:bg-muted"
                       >
-                          <span className="mr-1 text-[10px] font-bold text-slate-400 uppercase">Status:</span>
+                          <span className="mr-1 text-[10px] font-bold text-muted-foreground uppercase">Status:</span>
                           <span className="text-[11px] whitespace-nowrap">
                               {statusFilter === 'in_review' ? 'Dalam Tinjauan' : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)}
                           </span>
@@ -90,9 +90,9 @@ export function FilterChips({
                           <Badge
                               key={`type-${tId}`}
                               variant="secondary"
-                              className="h-8 gap-1 border-slate-200 bg-white pr-1 pl-2.5 font-medium text-slate-600 shadow-sm hover:bg-slate-50"
+                              className="h-8 gap-1 border-border bg-card pr-1 pl-2.5 font-medium text-foreground shadow-sm hover:bg-muted"
                           >
-                              <span className="mr-1 text-[10px] font-bold text-slate-400 uppercase">Tipe:</span>
+                              <span className="mr-1 text-[10px] font-bold text-muted-foreground uppercase">Tipe:</span>
                               <span className="text-[11px] whitespace-nowrap">{type?.name || tId}</span>
                               <Button
                                   variant="ghost"
@@ -114,9 +114,9 @@ export function FilterChips({
                   typeFilter !== undefined && (
                       <Badge
                           variant="secondary"
-                          className="h-8 gap-1 border-slate-200 bg-white pr-1 pl-2.5 font-medium text-slate-600 shadow-sm hover:bg-slate-50"
+                          className="h-8 gap-1 border-border bg-card pr-1 pl-2.5 font-medium text-foreground shadow-sm hover:bg-muted"
                       >
-                          <span className="mr-1 text-[10px] font-bold text-slate-400 uppercase">Tipe:</span>
+                          <span className="mr-1 text-[10px] font-bold text-muted-foreground uppercase">Tipe:</span>
                           <span className="text-[11px] whitespace-nowrap">{types.find((t) => t.id === typeFilter)?.name || typeFilter}</span>
                           <Button
                               variant="ghost"
@@ -135,9 +135,9 @@ export function FilterChips({
                 <Badge
                     key={`adv-${rule.id}`}
                     variant="secondary"
-                    className="h-8 gap-1 border-slate-200 bg-white pr-1 pl-2.5 font-medium text-slate-600 shadow-sm hover:bg-slate-50"
+                    className="h-8 gap-1 border-border bg-card pr-1 pl-2.5 font-medium text-foreground shadow-sm hover:bg-muted"
                 >
-                    <span className="mr-1 text-[10px] font-bold text-slate-400 uppercase">{rule.field.split('.').pop()?.replace('_', ' ')}:</span>
+                    <span className="mr-1 text-[10px] font-bold text-muted-foreground uppercase">{rule.field.split('.').pop()?.replace('_', ' ')}:</span>
                     <span className="text-[11px] whitespace-nowrap">{Array.isArray(rule.value) ? rule.value.join(' - ') : rule.value}</span>
                     <Button
                         variant="ghost"

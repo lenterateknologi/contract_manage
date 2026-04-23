@@ -152,16 +152,16 @@ export function DataTable<T extends Record<string, any>>({
     const hasToolbar = searchKey || (filters && filters.length > 0) || onRefresh || headerActions || (bulkActions && selectedIds.size > 0);
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full bg-card border border-border overflow-hidden">
             {/* Toolbar — only rendered when there is content */}
             {hasToolbar && (
-                <div className="px-3 py-2 flex items-center gap-2 border-b border-slate-100 bg-white">
+                <div className="px-3 py-2 flex items-center gap-2 border-b border-border bg-background">
                     {searchKey && (
                         <div className="relative flex-1 max-w-xs">
-                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                             <Input
                                 placeholder={searchPlaceholder}
-                                className="pl-8 h-8 border-slate-200 focus:ring-primary/10 rounded-lg bg-slate-50 text-[11px] placeholder:text-slate-400"
+                                className="pl-8 h-8 border-border focus:ring-primary/10 rounded-lg bg-background text-[11px] placeholder:text-muted-foreground"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
@@ -175,23 +175,23 @@ export function DataTable<T extends Record<string, any>>({
                                         className={cn(
                                             "relative inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border text-[10px] font-bold uppercase tracking-wide transition-all duration-200",
                                             activeFilterCount > 0
-                                                ? "border-primary/40 bg-primary/8 text-primary shadow-sm shadow-primary/10"
-                                                : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700 hover:bg-slate-50"
+                                                ? "border-primary/40 bg-primary/10 text-primary shadow-sm shadow-primary/10"
+                                                : "border-border bg-background text-muted-foreground hover:border-border hover:text-foreground hover:bg-muted"
                                         )}
                                     >
                                         <SlidersHorizontal className="h-3 w-3" />
                                         Filter
                                         {activeFilterCount > 0 && (
-                                            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-black text-white shadow">
+                                            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-black text-primary-foreground shadow">
                                                 {activeFilterCount}
                                             </span>
                                         )}
                                     </button>
                                 </DialogTrigger>
 
-                                <DialogContent className="max-w-sm p-0 overflow-hidden rounded-2xl border-none shadow-2xl gap-0">
+                                <DialogContent className="max-w-sm p-0 overflow-hidden rounded-2xl border border-border shadow-2xl gap-0 bg-card">
                                     {/* Dark header */}
-                                    <div className="relative bg-slate-950 px-6 py-5 text-white overflow-hidden">
+                                    <div className="relative bg-muted px-6 py-5 text-foreground overflow-hidden">
                                         <div className="pointer-events-none absolute -top-4 -right-4 opacity-10">
                                             <SlidersHorizontal className="h-24 w-24 rotate-12" />
                                         </div>
@@ -199,13 +199,13 @@ export function DataTable<T extends Record<string, any>>({
                                             <div className="bg-primary h-7 w-1.5 rounded-full" />
                                             Filter Data
                                         </DialogTitle>
-                                        <DialogDescription className="mt-1 text-[11px] font-medium text-slate-400">
+                                        <DialogDescription className="mt-1 text-[11px] font-medium text-muted-foreground">
                                             Saring data berdasarkan kategori di bawah ini
                                         </DialogDescription>
                                         {activeFilterCount > 0 && (
                                             <button
                                                 onClick={handleResetAll}
-                                                className="absolute top-4 right-4 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/10 hover:bg-red-500/30 text-[10px] font-bold uppercase tracking-wide text-slate-300 hover:text-red-300 transition-all"
+                                                className="absolute top-4 right-4 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-background/50 hover:bg-destructive/20 text-[10px] font-bold uppercase tracking-wide text-muted-foreground hover:text-destructive transition-all"
                                             >
                                                 <X size={10} strokeWidth={3} />
                                                 Reset
@@ -218,8 +218,8 @@ export function DataTable<T extends Record<string, any>>({
                                         {filters.map((category) => (
                                             <div key={category.key}>
                                                 <div className="flex items-center gap-2 mb-3">
-                                                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">{category.label}</span>
-                                                    <div className="h-px flex-1 bg-slate-100" />
+                                                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground">{category.label}</span>
+                                                    <div className="h-px flex-1 bg-border" />
                                                 </div>
                                                 <div className="flex flex-wrap gap-2">
                                                     {category.options.map((opt) => {
@@ -233,8 +233,8 @@ export function DataTable<T extends Record<string, any>>({
                                                                 className={cn(
                                                                     "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-semibold transition-all duration-150",
                                                                     isSelected
-                                                                        ? "border-primary bg-primary text-white shadow-sm shadow-primary/20"
-                                                                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                                                                        ? "border-primary bg-primary text-primary-foreground shadow-sm shadow-primary/20"
+                                                                        : "border-border bg-background text-muted-foreground hover:border-border hover:bg-muted"
                                                                 )}
                                                             >
                                                                 {isSelected && <Check size={9} strokeWidth={3.5} />}
@@ -248,15 +248,15 @@ export function DataTable<T extends Record<string, any>>({
                                     </div>
 
                                     {/* Footer */}
-                                    <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/60 flex items-center justify-between gap-3">
-                                        <p className="text-[10px] text-slate-400 font-medium">
+                                    <div className="px-6 py-4 border-t border-border bg-muted/30 flex items-center justify-between gap-3">
+                                        <p className="text-[10px] text-muted-foreground font-medium">
                                             {activeFilterCount > 0 ? `${activeFilterCount} filter aktif` : 'Belum ada filter aktif'}
                                         </p>
                                         <div className="flex items-center gap-2">
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                className="h-8 px-4 text-[11px] font-semibold text-slate-500"
+                                                className="h-8 px-4 text-[11px] font-semibold text-muted-foreground"
                                                 onClick={() => setIsFilterDialogOpen(false)}
                                             >
                                                 Tutup
@@ -275,7 +275,7 @@ export function DataTable<T extends Record<string, any>>({
                         )}
 
                         {onRefresh && (
-                            <Button variant="ghost" size="icon" onClick={onRefresh} disabled={loading} className="h-8 w-8 text-slate-400 hover:text-slate-700">
+                            <Button variant="ghost" size="icon" onClick={onRefresh} disabled={loading} className="h-8 w-8 text-muted-foreground hover:text-foreground">
                                 <RefreshCcw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
                             </Button>
                         )}
@@ -284,7 +284,7 @@ export function DataTable<T extends Record<string, any>>({
 
                         {bulkActions && selectedIds.size > 0 && (
                             <div className="flex items-center gap-1.5 animate-in fade-in">
-                                <div className="h-5 w-px bg-slate-200" />
+                                <div className="h-5 w-px bg-border" />
                                 {bulkActions(data.filter(row => selectedIds.has(getRowId(row))))}
                             </div>
                         )}
@@ -293,21 +293,21 @@ export function DataTable<T extends Record<string, any>>({
             )}
 
             {/* Table */}
-            <div className="flex-1 overflow-auto relative">
+            <div className="flex-1 overflow-auto relative bg-background">
                 {loading && (
-                    <div className="absolute inset-0 bg-white/70 z-20 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-background/70 z-20 flex items-center justify-center">
                         <Loader2 className="h-6 w-6 text-primary animate-spin" />
                     </div>
                 )}
 
                 <table className="w-full text-left border-collapse min-w-[600px]">
-                    <thead className="sticky top-0 z-10 bg-slate-100/80 border-b border-slate-200">
+                    <thead className="sticky top-0 z-10 bg-muted/50 border-b border-border">
                         <tr>
                             {columns.map((col, i) => (
                                 <th
                                     key={i}
                                     className={cn(
-                                        "px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-slate-600",
+                                        "px-4 py-3.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground",
                                         col.thClassName
                                     )}
                                 >
@@ -326,16 +326,16 @@ export function DataTable<T extends Record<string, any>>({
                                     </div>
                                 </th>
                             ))}
-                            {rowActions && <th className="px-4 py-2.5 text-right text-[10px] font-black uppercase tracking-wider text-slate-600">Aksi</th>}
+                            {rowActions && <th className="px-4 py-3.5 text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Aksi</th>}
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-border">
                         {processedData.length === 0 && !loading ? (
                             <tr>
                                 <td colSpan={columns.length + (rowActions ? 2 : 1)} className="py-16 text-center">
                                     <div className="flex flex-col items-center gap-2 opacity-30">
                                         <Inbox size={32} strokeWidth={1.5} />
-                                        <span className="text-sm font-semibold text-slate-700">Tidak ada data</span>
+                                        <span className="text-sm font-semibold text-foreground">Tidak ada data</span>
                                     </div>
                                 </td>
                             </tr>
@@ -345,12 +345,12 @@ export function DataTable<T extends Record<string, any>>({
                                     <tr
                                         onClick={() => onRowClick?.(row)}
                                         className={cn(
-                                            "hover:bg-slate-50 transition-colors group cursor-pointer",
+                                            "hover:bg-muted/30 transition-colors group cursor-pointer",
                                             (selectedRowId === getRowId(row) || (isRowExpanded && isRowExpanded(row))) && "bg-primary/5"
                                         )}
                                     >
                                         {columns.map((col, j) => (
-                                            <td key={j} className={cn("px-4 py-2.5 text-[12px] text-slate-700", col.className)}>
+                                            <td key={j} className={cn("px-4 py-3 text-[12px] text-foreground font-medium", col.className)}>
                                                 {col.cell ? col.cell(row) : (String(row[col.accessorKey]) || '-')}
                                             </td>
                                         ))}
@@ -364,7 +364,7 @@ export function DataTable<T extends Record<string, any>>({
                                     </tr>
                                     {renderExpandedRow && isRowExpanded?.(row) && (
                                         <tr>
-                                            <td colSpan={columns.length + (rowActions ? 2 : 1)} className="p-0 border-b border-slate-200">
+                                            <td colSpan={columns.length + (rowActions ? 2 : 1)} className="p-0 border-b border-border">
                                                 {renderExpandedRow(row)}
                                             </td>
                                         </tr>
@@ -378,19 +378,19 @@ export function DataTable<T extends Record<string, any>>({
 
             {/* Pagination */}
             {pagination && (
-                <div className="mt-auto flex flex-col items-center justify-between gap-4 border-t border-slate-100 px-4 py-6 sm:flex-row w-full">
+                <div className="mt-auto flex flex-col items-center justify-between gap-4 border-t border-border px-4 py-6 sm:flex-row w-full bg-card">
                     <div className="flex items-center gap-4">
-                        <div className="text-slate-400 text-[10px] font-bold tracking-widest whitespace-nowrap uppercase">
-                            Showing <span className="text-slate-900">{pagination.from}</span> to <span className="text-slate-900">{pagination.to}</span> of{' '}
-                            <span className="text-slate-900">{pagination.total}</span> Results
+                        <div className="text-muted-foreground text-[10px] font-bold tracking-widest whitespace-nowrap uppercase">
+                            Showing <span className="text-foreground">{pagination.from}</span> to <span className="text-foreground">{pagination.to}</span> of{' '}
+                            <span className="text-foreground">{pagination.total}</span> Results
                         </div>
 
-                        <div className="border-slate-200 flex items-center gap-2 border-l pl-4">
-                            <span className="text-slate-400 text-[10px] font-bold tracking-widest uppercase">Show</span>
+                        <div className="border-border flex items-center gap-2 border-l pl-4">
+                            <span className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase">Show</span>
                             <select
                                 value={pagination.perPage}
                                 onChange={(e) => pagination.onPerPageChange(Number(e.target.value))}
-                                className="bg-slate-50 border-slate-200 focus:border-primary/50 rounded border px-1.5 py-0.5 text-[10px] font-bold outline-none"
+                                className="bg-background border-border text-foreground focus:border-primary/50 rounded border px-1.5 py-0.5 text-[10px] font-bold outline-none"
                             >
                                 {[10, 25, 50, 100].map(v => <option key={v} value={v}>{v}</option>)}
                             </select>
@@ -403,7 +403,7 @@ export function DataTable<T extends Record<string, any>>({
                             onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
                             className={cn(
                                 "h-8 shrink-0 rounded border px-3 text-[10px] font-black tracking-tighter uppercase transition-all",
-                                "border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-900 active:scale-95",
+                                "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground active:scale-95",
                                 pagination.currentPage === 1 && "cursor-not-allowed opacity-30 grayscale"
                             )}
                         >
@@ -424,8 +424,8 @@ export function DataTable<T extends Record<string, any>>({
                                     className={cn(
                                         "h-8 shrink-0 rounded border px-3 text-[10px] font-black tracking-tighter uppercase transition-all",
                                         isActive
-                                            ? "border-slate-950 bg-slate-950 text-white shadow-sm"
-                                            : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-900 active:scale-95"
+                                            ? "border-foreground bg-foreground text-background shadow-sm"
+                                            : "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground active:scale-95"
                                     )}
                                 >
                                     {pageNum}
@@ -438,7 +438,7 @@ export function DataTable<T extends Record<string, any>>({
                             onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
                             className={cn(
                                 "h-8 shrink-0 rounded border px-3 text-[10px] font-black tracking-tighter uppercase transition-all",
-                                "border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-900 active:scale-95",
+                                "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground active:scale-95",
                                 pagination.currentPage === pagination.lastPage && "cursor-not-allowed opacity-30 grayscale"
                             )}
                         >

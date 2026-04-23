@@ -15,12 +15,15 @@ class F1RedesignSeeder extends Seeder
         if (!$admin) return;
 
         $templateName = 'F1 - FORMULIR PERMINTAAN PERJANJIAN';
+        $templateId = "515493da-f5a3-453b-bf52-e5f379bef933";
 
         // 1. TOTAL CLEANUP
-        DB::table('m_form_templates')->where('document_type', 'f1')->delete();
+        DB::table('m_form_fields')->where('form_template_id', $templateId)->delete();
+        DB::table('m_form_templates')->where('id', $templateId)->delete();
+        
+        echo ">>> CLEANED UP EXISTING F1 TEMPLATE\n";
 
         // 2. CREATE TEMPLATE
-        $templateId = (string) Str::uuid();
         DB::table('m_form_templates')->insert([
             'id' => $templateId,
             'name' => $templateName,
@@ -34,200 +37,587 @@ class F1RedesignSeeder extends Seeder
             'updated_at' => now(),
         ]);
 
-        $order = 0;
+        $fields = [
+            [
+                "id" => "019db402-e36c-719f-9bab-b96a82dc9eab",
+                "name" => "f1_header_grid",
+                "type" => "grid_x",
+                "width" => "100",
+                "is_required" => false,
+                "options" => [
+                    "grid_cols" => 2,
+                    "col_sizes" => ["180px", "auto"],
+                    "margin_bottom" => 20
+                ],
+                "order" => 0,
+                "children" => [
+                    [
+                        "id" => "019db402-e36e-7282-990b-79d58c8116f1",
+                        "name" => "f1_logo",
+                        "type" => "image",
+                        "width" => "100",
+                        "is_required" => false,
+                        "options" => [
+                            "logo_url" => "/storage/fr_logo.png",
+                            "logo_size" => 200,
+                            "alignment" => "left",
+                            "padding_top" => 5
+                        ],
+                        "order" => 1,
+                        "children" => []
+                    ],
+                    [
+                        "id" => "019db402-e373-719b-a70b-d02e083bc0ee",
+                        "name" => "f1_meta_box",
+                        "type" => "group",
+                        "width" => "100",
+                        "is_required" => false,
+                        "options" => [
+                            "border_style" => "solid",
+                            "border_width" => 1,
+                            "border_color" => "#000"
+                        ],
+                        "order" => 2,
+                        "children" => [
+                            [
+                                "id" => "019db402-e377-72cd-99ad-e2a38633c2af",
+                                "label" => "NOMOR",
+                                "name" => "meta_nomor",
+                                "type" => "labeled_value",
+                                "width" => "100",
+                                "is_required" => false,
+                                "options" => [
+                                    "label_width" => "100px",
+                                    "show_colon" => true,
+                                    "padding_all" => 4,
+                                    "border_style" => "bottom",
+                                    "border_color" => "#000",
+                                    "font_size" => 10,
+                                    "field_style" => "none",
+                                    "font_weight_label" => "bold"
+                                ],
+                                "order" => 3,
+                                "children" => []
+                            ],
+                            [
+                                "id" => "019db402-e37d-7245-9ffe-c3bba73bbd09",
+                                "label" => "TOPIK",
+                                "name" => "meta_topik",
+                                "type" => "labeled_value",
+                                "width" => "100",
+                                "is_required" => false,
+                                "options" => [
+                                    "label_width" => "100px",
+                                    "show_colon" => true,
+                                    "padding_all" => 4,
+                                    "border_style" => "bottom",
+                                    "border_color" => "#000",
+                                    "font_size" => 10,
+                                    "field_style" => "none",
+                                    "font_weight_label" => "bold"
+                                ],
+                                "order" => 4,
+                                "children" => []
+                            ],
+                            [
+                                "id" => "019db402-e386-70ee-b363-a00c958ff017",
+                                "label" => "SUB TOPIK",
+                                "name" => "meta_sub_topik",
+                                "type" => "labeled_value",
+                                "width" => "100",
+                                "is_required" => false,
+                                "options" => [
+                                    "label_width" => "100px",
+                                    "show_colon" => true,
+                                    "padding_all" => 4,
+                                    "border_style" => "bottom",
+                                    "border_color" => "#000",
+                                    "font_size" => 10,
+                                    "field_style" => "none",
+                                    "font_weight_label" => "bold"
+                                ],
+                                "order" => 5,
+                                "children" => []
+                            ],
+                            [
+                                "id" => "019db402-e38b-7219-ba6e-d1c8d6dafda8",
+                                "label" => "LAMPIRAN",
+                                "name" => "meta_lampiran",
+                                "type" => "labeled_value",
+                                "width" => "100",
+                                "is_required" => false,
+                                "options" => [
+                                    "label_width" => "100px",
+                                    "show_colon" => true,
+                                    "padding_all" => 4,
+                                    "border_style" => "none",
+                                    "border_color" => "#000",
+                                    "font_size" => 10,
+                                    "field_style" => "none",
+                                    "font_weight_label" => "bold"
+                                ],
+                                "order" => 6,
+                                "children" => []
+                            ]
+                        ]
+                    ]
+                ]
+            ],
+            [
+                "id" => "019db402-e38e-7150-aa99-f46e37de616a",
+                "label" => "FORMULIR PERMINTAAN PEMBUATAN PERJANJIAN",
+                "name" => "f1_main_title",
+                "type" => "static_text",
+                "width" => "100",
+                "is_required" => false,
+                "options" => [
+                    "font_size" => 14,
+                    "font_weight" => "bold",
+                    "alignment" => "center",
+                    "padding_y" => 10,
+                    "margin_bottom" => 20
+                ],
+                "order" => 7,
+                "children" => []
+            ],
+            [
+                "id" => "05CEB701-B2B3-4F97-84AA-FE4E26B9B0CF",
+                "label" => "I. INFORMASI DASAR PERJANJIAN",
+                "name" => "f1_main_title_copy",
+                "type" => "static_text",
+                "width" => "100",
+                "is_required" => false,
+                "options" => [
+                    "font_size" => 12,
+                    "font_weight" => "bold",
+                    "alignment" => "left",
+                    "padding_y" => 10,
+                    "margin_bottom" => 0
+                ],
+                "order" => 8,
+                "children" => []
+            ],
+            [
+                "id" => "019db402-e391-7201-b6b2-a8820fb9e923",
+                "label" => "TANGGAL PERMINTAAN",
+                "name" => "bv_f1_date",
+                "type" => "labeled_value",
+                "width" => "100",
+                "is_required" => false,
+                "options" => [
+                    "value_type" => "date",
+                    "label_width" => "220px",
+                    "show_colon" => true,
+                    "field_style" => "dashed_bottom",
+                    "font_size" => 11.5
+                ],
+                "order" => 9,
+                "children" => []
+            ],
+            [
+                "id" => "019db402-e395-705d-8b97-36578079638d",
+                "label" => "JUDUL / NAMA PERJANJIAN",
+                "name" => "bv_f1_title",
+                "type" => "labeled_value",
+                "width" => "100",
+                "is_required" => false,
+                "options" => [
+                    "value_type" => "textfield",
+                    "label_width" => "220px",
+                    "show_colon" => true,
+                    "field_style" => "dashed_bottom",
+                    "font_size" => 11.5
+                ],
+                "order" => 10,
+                "children" => []
+            ],
+            [
+                "id" => "019db402-e397-701e-a5b9-805b2367985b",
+                "label" => "TUJUAN / LATAR BELAKANG KERJASAMA",
+                "name" => "bv_f1_tujuan",
+                "type" => "labeled_value",
+                "width" => "100",
+                "is_required" => false,
+                "options" => [
+                    "value_type" => "textarea",
+                    "label_width" => "220px",
+                    "show_colon" => true,
+                    "field_style" => "dashed_bottom",
+                    "font_size" => 11.5,
+                    "min_height" => 60
+                ],
+                "order" => 11,
+                "children" => []
+            ],
+            [
+                "id" => "019db402-e398-72c5-8fc1-cf49d3a8497e",
+                "label" => "SIFAT PERJANJIAN",
+                "name" => "f1_sifat_row",
+                "type" => "labeled_value",
+                "width" => "100",
+                "is_required" => false,
+                "options" => [
+                    "value_type" => "searchable_select",
+                    "label_width" => "220px",
+                    "show_colon" => true,
+                    "placeholder" => "Pilih Sifat Perjanjian...",
+                    "items" => [
+                        ["label" => "BARU", "value" => "BARU"],
+                        ["label" => "PERPANJANGAN", "value" => "PERPANJANGAN"],
+                        ["label" => "ADDENDUM / REVIEW / PERALIHAN", "value" => "ADDENDUM / REVIEW / PERALIHAN"]
+                    ]
+                ],
+                "order" => 12,
+                "children" => []
+            ],
+            [
+                "id" => "59314872-6073-4EB6-9449-31A57657A34E",
+                "label" => "II. IDENTITAS PIHAK PERTAMA (INTERNAL)",
+                "name" => "f1_main_title_copy_copy",
+                "type" => "static_text",
+                "width" => "100",
+                "is_required" => false,
+                "options" => [
+                    "font_size" => 12,
+                    "font_weight" => "bold",
+                    "alignment" => "left",
+                    "padding_y" => 10,
+                    "margin_bottom" => 0,
+                    "margin_top" => 20
+                ],
+                "order" => 13,
+                "children" => []
+            ],
+            [
+                "id" => "019db402-e39d-7059-95ca-cf29811c2d23",
+                "label" => "NAMA ENTITAS / PERUSAHAAN",
+                "name" => "v_p1_entity",
+                "type" => "labeled_value",
+                "width" => "100",
+                "is_required" => false,
+                "options" => [
+                    "value_type" => "textfield",
+                    "label_width" => "220px",
+                    "show_colon" => true,
+                    "field_style" => "dashed_bottom",
+                    "font_size" => 11.5
+                ],
+                "order" => 14,
+                "children" => []
+            ],
+            [
+                "id" => "019db402-e39e-7349-a6a2-b2a75179e617",
+                "label" => "NAMA PENANDATANGAN KONTRAK",
+                "name" => "v_p1_signer",
+                "type" => "labeled_value",
+                "width" => "100",
+                "is_required" => false,
+                "options" => [
+                    "value_type" => "textfield",
+                    "label_width" => "220px",
+                    "show_colon" => true,
+                    "field_style" => "dashed_bottom",
+                    "font_size" => 11.5
+                ],
+                "order" => 15,
+                "children" => []
+            ],
+            [
+                "id" => "019db402-e39e-7349-a6a2-b2a75215d2c1",
+                "label" => "ALAMAT LENGKAP",
+                "name" => "v_p1_position",
+                "type" => "labeled_value",
+                "width" => "100",
+                "is_required" => false,
+                "options" => [
+                    "value_type" => "textfield",
+                    "label_width" => "220px",
+                    "show_colon" => true,
+                    "field_style" => "dashed_bottom",
+                    "font_size" => 11.5
+                ],
+                "order" => 16,
+                "children" => []
+            ],
+            [
+                "id" => "D4F26FCD-CD07-4FC1-8291-10A5615909D2",
+                "label" => "III. IDENTITAS PIHAK KEDUA (EKSTERNAL)",
+                "name" => "f1_main_title_copy_copy_copy",
+                "type" => "static_text",
+                "width" => "100",
+                "is_required" => false,
+                "options" => [
+                    "font_size" => 12,
+                    "font_weight" => "bold",
+                    "alignment" => "left",
+                    "padding_y" => 10,
+                    "margin_bottom" => 0,
+                    "margin_top" => 20
+                ],
+                "order" => 17,
+                "children" => []
+            ],
+            [
+                "id" => "019db402-e39f-7334-9985-5dca6cebef02",
+                "label" => "NAMA ENTITAS / PERUSAHAAN",
+                "name" => "v_p2_entity",
+                "type" => "labeled_value",
+                "width" => "100",
+                "is_required" => false,
+                "options" => [
+                    "value_type" => "textfield",
+                    "label_width" => "220px",
+                    "show_colon" => true,
+                    "field_style" => "dashed_bottom",
+                    "font_size" => 11.5
+                ],
+                "order" => 18,
+                "children" => []
+            ],
+            [
+                "id" => "019db402-e3a0-701b-bdda-0a7f27f2ef4b",
+                "label" => "NAMA PENANDATANGAN KONTRAK",
+                "name" => "v_p2_signer",
+                "type" => "labeled_value",
+                "width" => "100",
+                "is_required" => false,
+                "options" => [
+                    "value_type" => "textfield",
+                    "label_width" => "220px",
+                    "show_colon" => true,
+                    "field_style" => "dashed_bottom",
+                    "font_size" => 11.5
+                ],
+                "order" => 19,
+                "children" => []
+            ],
+            [
+                "id" => "019db402-e3a0-701b-bdda-0a7f28b674f5",
+                "label" => "ALAMAT LENGKAP",
+                "name" => "v_p2_position",
+                "type" => "labeled_value",
+                "width" => "100",
+                "is_required" => false,
+                "options" => [
+                    "value_type" => "textfield",
+                    "label_width" => "220px",
+                    "show_colon" => true,
+                    "field_style" => "dashed_bottom",
+                    "font_size" => 11.5
+                ],
+                "order" => 20,
+                "children" => []
+            ],
+            [
+                "id" => "D1C308B0-2CCE-4F5B-97DD-74EE31112E5D",
+                "label" => "IV. DETAIL KOMERSIAL & OPERASIONAL",
+                "name" => "f1_main_title_copy_copy_copy_copy",
+                "type" => "static_text",
+                "width" => "100",
+                "is_required" => false,
+                "options" => [
+                    "font_size" => 12,
+                    "font_weight" => "bold",
+                    "alignment" => "left",
+                    "padding_y" => 10,
+                    "margin_bottom" => 0,
+                    "margin_top" => 20
+                ],
+                "order" => 21,
+                "children" => []
+            ],
+            [
+                "id" => "019db402-e3a1-7338-bc44-31824cbe9d09",
+                "label" => "MASA BERLAKU / JANGKA WAKTU",
+                "name" => "tdv_jw",
+                "type" => "labeled_value",
+                "width" => "100",
+                "is_required" => false,
+                "options" => [
+                    "value_type" => "textfield",
+                    "label_width" => "220px",
+                    "show_colon" => true,
+                    "field_style" => "dashed_bottom",
+                    "font_size" => 11.5
+                ],
+                "order" => 22,
+                "children" => []
+            ],
+            [
+                "id" => "019db402-e3a3-72bf-9e0c-ab80b5f5353d",
+                "label" => "LOKASI / AREA PEKERJAAN",
+                "name" => "tdv_loc",
+                "type" => "labeled_value",
+                "width" => "100",
+                "is_required" => false,
+                "options" => [
+                    "value_type" => "textfield",
+                    "label_width" => "220px",
+                    "show_colon" => true,
+                    "field_style" => "dashed_bottom",
+                    "font_size" => 11.5
+                ],
+                "order" => 23,
+                "children" => []
+            ],
+            [
+                "id" => "019db402-e3a4-7330-baba-9071a7ac022b",
+                "label" => "DIMENSI / LUAS (M2)",
+                "name" => "tdv_luas",
+                "type" => "labeled_value",
+                "width" => "100",
+                "is_required" => false,
+                "options" => [
+                    "value_type" => "textfield",
+                    "label_width" => "220px",
+                    "show_colon" => true,
+                    "field_style" => "dashed_bottom",
+                    "font_size" => 11.5
+                ],
+                "order" => 24,
+                "children" => []
+            ],
+            [
+                "id" => "019db402-e3a5-7335-9f3d-890dbab3f90f",
+                "label" => "NILAI TRANSAKSI / IMBALAN JASA",
+                "name" => "tdv_price",
+                "type" => "labeled_value",
+                "width" => "100",
+                "is_required" => false,
+                "options" => [
+                    "value_type" => "textfield",
+                    "label_width" => "220px",
+                    "show_colon" => true,
+                    "field_style" => "dashed_bottom",
+                    "font_size" => 11.5
+                ],
+                "order" => 25,
+                "children" => []
+            ],
+            [
+                "id" => "019db402-e3a5-7335-9f3d-890dbb84fcd9",
+                "label" => "MEKANISME & SYARAT PEMBAYARAN",
+                "name" => "tdv_top",
+                "type" => "labeled_value",
+                "width" => "100",
+                "is_required" => false,
+                "options" => [
+                    "value_type" => "textfield",
+                    "label_width" => "220px",
+                    "show_colon" => true,
+                    "field_style" => "dashed_bottom",
+                    "font_size" => 11.5
+                ],
+                "order" => 26,
+                "children" => []
+            ],
+            [
+                "id" => "CEB061AD-5E7E-4AAA-AFB5-A20EBF0A3802",
+                "label" => "PEMBEBANAN PPN",
+                "name" => "tax_ppn",
+                "type" => "labeled_value",
+                "width" => "100",
+                "is_required" => false,
+                "options" => [
+                    "value_type" => "select",
+                    "label_width" => "220px",
+                    "show_colon" => true,
+                    "font_size" => 11,
+                    "font_weight_label" => "bold",
+                    "items" => [
+                        ["label" => "Ditanggung Pihak I", "value" => "Pihak I"],
+                        ["label" => "Ditanggung Pihak II", "value" => "Pihak II"],
+                        ["label" => "Bebas / Tidak Terutang", "value" => "N/A"]
+                    ]
+                ],
+                "order" => 27,
+                "children" => []
+            ],
+            [
+                "id" => "019db402-e3a7-7333-8891-f102717ef00e",
+                "label" => "PEMBEBANAN PPH",
+                "name" => "tax_pph",
+                "type" => "labeled_value",
+                "width" => "100",
+                "is_required" => false,
+                "options" => [
+                    "value_type" => "select",
+                    "label_width" => "220px",
+                    "show_colon" => true,
+                    "font_size" => 11,
+                    "font_weight_label" => "bold",
+                    "items" => [
+                        ["label" => "Dipotong Pihak I", "value" => "Pihak I"],
+                        ["label" => "Dipotong Pihak II", "value" => "Pihak II"],
+                        ["label" => "N/A", "value" => "N/A"]
+                    ]
+                ],
+                "order" => 28,
+                "children" => []
+            ],
+            [
+                "id" => "019db402-e3a9-7181-b049-8e97b450cd9c",
+                "label" => "RINGKASAN KLAUSUL PENTING",
+                "name" => "kl_field",
+                "type" => "labeled_value",
+                "width" => "100",
+                "is_required" => false,
+                "options" => [
+                    "value_type" => "textarea",
+                    "label_width" => "220px",
+                    "show_colon" => true,
+                    "min_height" => 100,
+                    "font_size" => 11,
+                    "font_weight_label" => "bold",
+                    "field_style" => "dashed_bottom"
+                ],
+                "order" => 29,
+                "children" => []
+            ]
+        ];
 
-        // HELPER
-        $ins = function($data) use ($templateId, &$order) {
-            $id = (string) Str::uuid();
-            $payload = array_merge([
-                'id' => $id,
-                'form_template_id' => $templateId,
+        $this->seedFields($fields, $templateId, null);
+
+        echo ">>> F1 NEW TEMPLATE SEEDER COMPLETED\n";
+    }
+
+    private function seedFields(array $fields, $templateId, $parentId)
+    {
+        foreach ($fields as $field) {
+            $children = $field['children'] ?? [];
+            unset($field['children']);
+            
+            // Format options
+            if (isset($field['options'])) {
+                $field['options'] = json_encode($field['options']);
+            }
+            if (isset($field['validation_rules'])) {
+                $field['validation_rules'] = json_encode($field['validation_rules']);
+            }
+
+            // Defensive ID handling
+            $originalId = $field['id'] ?? (string) Str::uuid();
+            $id = Str::isUuid($originalId) ? $originalId : (string) Str::uuid();
+
+            $currentData = array_merge([
                 'label' => '',
-                'name' => 'f1_' . Str::random(12),
-                'order' => $order++,
+                'placeholder' => '',
                 'width' => '100',
                 'is_required' => false,
+                'form_template_id' => $templateId,
+                'parent_id' => $parentId,
                 'created_at' => now(),
                 'updated_at' => now(),
-            ], $data);
-            if (isset($payload['options'])) $payload['options'] = json_encode($payload['options']);
-            DB::table('m_form_fields')->insert($payload);
-            return $id;
-        };
+            ], $field);
 
-        // 3. HEADER
-        $hGridId = $ins([
-            'name' => 'f1_header_grid', 'type' => 'grid_x',
-            'options' => ['grid_cols' => 2, 'col_sizes' => ['180px', 'auto'], 'margin_bottom' => 20]
-        ]);
+            // Ensure ID is UUID
+            $currentData['id'] = $id;
 
-        // Logo part
-        $ins(['parent_id' => $hGridId, 'name' => 'f1_logo', 'type' => 'image', 'options' => [
-            'logo_url' => '/storage/fr_logo.png',
-            'logo_size' => 200,
-            'alignment' => 'left',
-            'padding_top' => 5
-        ]]);
+            DB::table('m_form_fields')->insert($currentData);
 
-        // Metadata Box (The "Nomor/Topik" box)
-        $mBoxId = $ins(['parent_id' => $hGridId, 'name' => 'f1_meta_box', 'type' => 'group', 'options' => [
-            'border_style' => 'solid', 'border_width' => 1, 'border_color' => '#000'
-        ]]);
-
-        $meta = [
-            ['NOMOR', ''],
-            ['EX SOP NO.', '-'],
-            ['TOPIK', 'PERJANJIAN / PERIJINAN / REGISTRASI'],
-            ['SUB TOPIK', 'PERMINTAAN PEMBUATAN PERJANJIAN'],
-            ['LAMPIRAN', '']
-        ];
-        foreach ($meta as $idx => $row) {
-            $rgId = $ins(['parent_id' => $mBoxId, 'name' => 'f1_meta_r_'.$idx, 'type' => 'grid_x', 'options' => [
-                'grid_cols' => 3, 'col_sizes' => ['100px', '20px', 'auto'],
-                'border_style' => $idx < 4 ? 'bottom' : 'none',
-                'border_color' => '#000', 'padding_y' => 4
-            ]]);
-            $ins(['parent_id' => $rgId, 'label' => $row[0], 'type' => 'static_text', 'options' => ['font_weight' => 'bold', 'font_size' => 10, 'padding_left' => 10]]);
-            $ins(['parent_id' => $rgId, 'label' => ':', 'type' => 'static_text', 'options' => ['font_weight' => 'bold', 'alignment' => 'center', 'font_size' => 10]]);
-            $ins(['parent_id' => $rgId, 'label' => $row[1], 'name' => 'meta_'.Str::slug($row[0], '_'), 'type' => 'textfield', 'options' => ['font_size' => 10, 'field_style' => 'dashed_bottom']]);
-        }
-
-        // MAIN TITLE
-        $ins(['label' => "FORMULIR PERMINTAAN PEMBUATAN PERJANJIAN", 'name' => 'f1_main_title', 'type' => 'static_text', 'options' => [
-            'font_size' => 14, 'font_weight' => 'bold', 'alignment' => 'center', 'padding_y' => 10, 'margin_bottom' => 20
-        ]]);
-
-        // 4. SECTION I: INFORMASI DASAR
-        $ins(['label' => "I. INFORMASI DASAR PERJANJIAN", 'name' => 'sec_i_title', 'type' => 'static_text', 'options' => [
-            'font_weight' => 'bold', 'font_size' => 12, 'margin_bottom' => 10, 'border_style' => 'bottom', 'border_width' => 2
-        ]]);
-
-        $bodyRows = [
-            ['TANGGAL PERMINTAAN', 'f1_date', 'date'],
-            ['JUDUL / NAMA PERJANJIAN', 'f1_title', 'textfield'],
-            ['TUJUAN / LATAR BELAKANG KERJASAMA', 'f1_tujuan', 'textarea']
-        ];
-        foreach ($bodyRows as $row) {
-            $bgId = $ins(['name' => 'f1_row_'.$row[1], 'type' => 'grid_x', 'options' => ['grid_cols' => 3, 'col_sizes' => ['220px', '30px', 'auto'], 'padding_y' => 8]]);
-            $ins(['parent_id' => $bgId, 'label' => $row[0], 'type' => 'static_text', 'options' => ['font_weight' => 'bold', 'font_size' => 11]]);
-            $ins(['parent_id' => $bgId, 'label' => ':', 'type' => 'static_text', 'options' => ['alignment' => 'center', 'font_weight' => 'bold']]);
-            $ins(['parent_id' => $bgId, 'name' => 'bv_'.$row[1], 'type' => $row[2], 'options' => ['field_style' => 'dashed_bottom', 'font_size' => 11.5, 'min_height' => $row[2] == 'textarea' ? 60 : null]]);
-        }
-
-        // Sifat Perjanjian
-        $sfId = $ins(['name' => 'f1_sifat_row', 'type' => 'grid_x', 'options' => ['grid_cols' => 3, 'col_sizes' => ['220px', '30px', 'auto'], 'padding_y' => 8, 'margin_bottom' => 5]]);
-        $ins(['parent_id' => $sfId, 'label' => 'SIFAT PERJANJIAN', 'type' => 'static_text', 'options' => ['font_weight' => 'bold', 'font_size' => 11]]);
-        $ins(['parent_id' => $sfId, 'label' => ':', 'type' => 'static_text', 'options' => ['alignment' => 'center', 'font_weight' => 'bold']]);
-        $ins(['parent_id' => $sfId, 'name' => 'sifat_perjanjian', 'type' => 'searchable_select', 'options' => [
-            'placeholder' => 'Pilih Sifat Perjanjian...',
-            'items' => [
-                ['label' => 'BARU', 'value' => 'BARU'],
-                ['label' => 'PERPANJANGAN', 'value' => 'PERPANJANGAN'],
-                ['label' => 'ADDENDUM / REVIEW / PERALIHAN', 'value' => 'ADDENDUM / REVIEW / PERALIHAN']
-            ]
-        ]]);
-
-        // 5. SECTION II & III: IDENTITAS PIHAK
-        $pihakSections = [
-            ['II. IDENTITAS PIHAK PERTAMA (INTERNAL)', 'p1'],
-            ['III. IDENTITAS PIHAK KEDUA (EKSTERNAL)', 'p2']
-        ];
-        foreach($pihakSections as $sec) {
-            $ins(['label' => $sec[0], 'type' => 'static_text', 'options' => [
-                'font_weight' => 'bold', 'font_size' => 12, 'margin_top' => 20, 'margin_bottom' => 10, 'border_style' => 'bottom', 'border_width' => 2
-            ]]);
-            $fields = [
-                ['NAMA ENTITAS / PERUSAHAAN', 'entity'],
-                ['NAMA PENANDATANGAN KONTRAK', 'signer'],
-                ['ALAMAT LENGKAP', 'position'],
-            ];
-            foreach ($fields as $row) {
-                $rgId = $ins(['name' => 'f1_pihak_'.$sec[1].'_'.$row[1], 'type' => 'grid_x', 'options' => ['grid_cols' => 3, 'col_sizes' => ['220px', '30px', 'auto'], 'padding_y' => 6]]);
-                $ins(['parent_id' => $rgId, 'label' => $row[0], 'type' => 'static_text', 'options' => ['font_weight' => 'bold', 'font_size' => 11]]);
-                $ins(['parent_id' => $rgId, 'label' => ':', 'type' => 'static_text', 'options' => ['alignment' => 'center', 'font_weight' => 'bold']]);
-                $ins(['parent_id' => $rgId, 'name' => 'v_'.$sec[1].'_'.$row[1], 'type' => 'textfield', 'options' => ['field_style' => 'dashed_bottom', 'font_size' => 11.5]]);
+            if (!empty($children)) {
+                $this->seedFields($children, $templateId, $id);
             }
         }
-
-        // 6. SECTION IV: DETAIL KOMERSIAL
-        $ins(['label' => "IV. DETAIL KOMERSIAL & OPERASIONAL", 'name' => 'sec_iv_title', 'type' => 'static_text', 'options' => [
-            'font_weight' => 'bold', 'font_size' => 12, 'margin_top' => 20, 'margin_bottom' => 10, 'border_style' => 'bottom', 'border_width' => 2
-        ]]);
-        $detailFields = [
-            ['MASA BERLAKU / JANGKA WAKTU', 'jw'],
-            ['LOKASI / AREA PEKERJAAN', 'loc'],
-            ['DIMENSI / LUAS (M2)', 'luas'],
-            ['NILAI TRANSAKSI / IMBALAN JASA', 'price'],
-            ['MEKANISME & SYARAT PEMBAYARAN', 'top']
-        ];
-        foreach ($detailFields as $row) {
-            $rgId = $ins(['name' => 'f1_detail_'.$row[1], 'type' => 'grid_x', 'options' => ['grid_cols' => 3, 'col_sizes' => ['220px', '30px', 'auto'], 'padding_y' => 6]]);
-            $ins(['parent_id' => $rgId, 'label' => $row[0], 'type' => 'static_text', 'options' => ['font_weight' => 'bold', 'font_size' => 11]]);
-            $ins(['parent_id' => $rgId, 'label' => ':', 'type' => 'static_text', 'options' => ['alignment' => 'center', 'font_weight' => 'bold']]);
-            $ins(['parent_id' => $rgId, 'name' => 'tdv_'.$row[1], 'type' => 'textfield', 'options' => ['field_style' => 'dashed_bottom', 'font_size' => 11.5]]);
-        }
-
-        // Perpajakan
-        $txId = $ins(['name' => 'f1_tax_row', 'type' => 'grid_x', 'options' => ['grid_cols' => 3, 'col_sizes' => ['220px', '30px', 'auto'], 'padding_y' => 10]]);
-        $ins(['parent_id' => $txId, 'label' => 'ASPEK PERPAJAKAN', 'type' => 'static_text', 'options' => ['font_weight' => 'bold', 'font_size' => 11]]);
-        $ins(['parent_id' => $txId, 'label' => ':', 'type' => 'static_text', 'options' => ['alignment' => 'center', 'font_weight' => 'bold']]);
-        $txCont = $ins(['parent_id' => $txId, 'type' => 'grid_x', 'options' => ['grid_cols' => 2, 'gap' => 30]]);
-
-        $ins(['parent_id' => $txCont, 'label' => 'PEMBEBANAN PPN', 'name' => 'tax_ppn', 'type' => 'select',
-            'options' => ['show_label' => true, 'font_size' => 10, 'font_weight' => 'bold', 'items' => [
-                ['label' => 'Ditanggung Pihak I', 'value' => 'Pihak I'],
-                ['label' => 'Ditanggung Pihak II', 'value' => 'Pihak II'],
-                ['label' => 'Bebas / Tidak Terutang', 'value' => 'N/A']
-            ]]
-        ]);
-        $ins(['parent_id' => $txCont, 'label' => 'PEMBEBANAN PPH', 'name' => 'tax_pph', 'type' => 'select',
-            'options' => ['show_label' => true, 'font_size' => 10, 'font_weight' => 'bold', 'items' => [
-                ['label' => 'Dipotong Pihak I', 'value' => 'Pihak I'],
-                ['label' => 'Dipotong Pihak II', 'value' => 'Pihak II'],
-                ['label' => 'N/A', 'value' => 'N/A']
-            ]]
-        ]);
-
-        // Klausul
-        $klId = $ins(['name' => 'f1_klausul_row', 'type' => 'grid_x', 'options' => ['grid_cols' => 3, 'col_sizes' => ['220px', '30px', 'auto'], 'margin_top' => 10, 'padding_y' => 6]]);
-        $ins(['parent_id' => $klId, 'label' => 'RINGKASAN KLAUSUL PENTING', 'type' => 'static_text', 'options' => ['font_weight' => 'bold', 'font_size' => 11]]);
-        $ins(['parent_id' => $klId, 'label' => ':', 'type' => 'static_text', 'options' => ['alignment' => 'center', 'font_weight' => 'bold']]);
-        $ins(['parent_id' => $klId, 'name' => 'kl_field', 'type' => 'textarea', 'options' => ['min_height' => 100, 'border_style' => 'solid', 'padding_all' => 10, 'font_size' => 11.5, 'background_color' => '#fcfcfc']]);
-
-        // 7. SIGNATURE FRAME (Modern 3-Column)
-        $sigFrameID = $ins(['name' => 'f1_sig_frame', 'type' => 'group', 'options' => [
-            'border_style' => 'solid', 'border_width' => 1, 'margin_top' => 30
-        ]]);
-
-        // Header
-        $sigHGrid = $ins(['parent_id' => $sigFrameID, 'name' => 'f1_sig_h', 'type' => 'grid_x', 'options' => ['grid_cols' => 2, 'col_sizes' => ['1fr', '2fr']]]);
-        $ins(['parent_id' => $sigHGrid, 'label' => 'PEMOHON', 'type' => 'static_text', 'options' => ['alignment' => 'center', 'font_weight' => 'bold', 'padding_y' => 6, 'border_style' => 'right']]);
-        $ins(['parent_id' => $sigHGrid, 'label' => 'PERSETUJUAN PERMINTAAN', 'type' => 'static_text', 'options' => ['alignment' => 'center', 'font_weight' => 'bold', 'padding_y' => 6]]);
-
-        // Signature Boxes
-        $sigBGrid = $ins(['parent_id' => $sigFrameID, 'name' => 'f1_sig_body', 'type' => 'grid_x', 'options' => ['grid_cols' => 3, 'border_style' => 'y']]);
-        for($i=1; $i<=3; $i++) {
-            $ins(['parent_id' => $sigBGrid, 'name' => 'sig_f1_box_'.$i, 'type' => 'group', 'options' => [
-                'min_height' => 90, 'border_style' => $i < 3 ? 'right' : 'none'
-            ]]);
-        }
-
-        // Roles
-        $sigRGrid = $ins(['parent_id' => $sigFrameID, 'name' => 'f1_sig_roles', 'type' => 'grid_x', 'options' => ['grid_cols' => 3]]);
-        $roles = ['DEPT. HEAD', 'VICE PRESIDENT', 'CEO / MANAGEMENT'];
-        foreach($roles as $idx => $r) {
-            $ins(['parent_id' => $sigRGrid, 'label' => $r, 'type' => 'static_text', 'options' => [
-                'alignment' => 'center', 'font_weight' => 'bold', 'font_size' => 10, 'padding_y' => 4,
-                'border_style' => $idx < 2 ? 'right' : 'none'
-            ]]);
-        }
-
-        // 8. FOOTER & NOTES
-        $footerId = $ins(['name' => 'f1_footer_group', 'type' => 'group', 'options' => ['margin_top' => 20]]);
-        $ins(['parent_id' => $footerId, 'label' => "Dokumen Lampiran Wajib (Jika ada):\n- Akte & TDP Perusahaan\n- SIUP & NPWP Terupdate\n- KTP Direksi Penandatangan\n- Dokumen QCF/Bidding Terlampir", 'type' => 'static_text', 'options' => [
-            'font_size' => 10, 'line_height' => 1.5, 'padding_top' => 10, 'color' => '#64748b'
-        ]]);
-
-        echo ">>> F1 PROFESSIONAL REDESIGN SEEDER COMPLETED\n";
     }
 }

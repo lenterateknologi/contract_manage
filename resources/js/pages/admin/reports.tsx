@@ -7,6 +7,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import { cn } from '@/lib/utils';
 import { StatusBadge } from '@/components/contracts/ui';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Admin', href: '/admin/users' },
@@ -104,18 +106,18 @@ export default function ReportsPage() {
                 <div className="px-6 py-4 bg-card border-b border-border shadow-sm space-y-4">
                     <div className="flex flex-wrap items-center gap-4">
                         <div className="flex items-center gap-2">
-                            <label className="text-[10px] font-bold uppercase text-muted-foreground">Periode</label>
+                            <label className="text-[10px] font-bold uppercase text-muted-foreground/60">Periode</label>
                             <div className="flex items-center gap-1">
                                 <input 
                                     type="date" 
-                                    className="bg-muted/50 border border-border rounded px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-primary/20"
+                                    className="bg-muted/50 border border-border rounded px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-primary/20 text-foreground"
                                     value={filters.start_date}
                                     onChange={(e) => handleFilterChange('start_date', e.target.value)}
                                 />
                                 <span className="text-muted-foreground">—</span>
                                 <input 
                                     type="date" 
-                                    className="bg-muted/50 border border-border rounded px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-primary/20"
+                                    className="bg-muted/50 border border-border rounded px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-primary/20 text-foreground"
                                     value={filters.end_date}
                                     onChange={(e) => handleFilterChange('end_date', e.target.value)}
                                 />
@@ -150,10 +152,10 @@ export default function ReportsPage() {
                         />
 
                         <div className="flex items-center gap-2 ml-auto">
-                            <Button variant="ghost" className="h-9 text-[10px] font-bold uppercase px-3 hover:bg-muted" onClick={resetFilters}>
+                            <Button variant="ghost" className="h-9 text-[10px] font-bold uppercase px-3 hover:bg-muted text-muted-foreground" onClick={resetFilters}>
                                 Reset
                             </Button>
-                            <Button className="h-9 text-[10px] font-bold uppercase px-4" onClick={applyFilters}>
+                            <Button className="h-9 text-[10px] font-bold uppercase px-4 bg-primary text-primary-foreground" onClick={applyFilters}>
                                 <Filter className="h-3 w-3 mr-2" />
                                 Terapkan Filter
                             </Button>
@@ -238,13 +240,13 @@ function MultiSelect({ label, options, selected, onToggle, onSelectAll, onClearA
             <div 
                 className={cn(
                     "flex items-center justify-between gap-3 px-3 py-1.5 border rounded-lg cursor-pointer transition-all min-w-[140px] hover:bg-muted/30",
-                    selected.length > 0 ? "border-primary/50 bg-primary/5 shadow-sm" : "border-border bg-muted/50"
+                    selected.length > 0 ? "border-primary/30 bg-primary/5 shadow-sm" : "border-border bg-muted/20"
                 )}
                 onClick={() => setOpen(!open)}
             >
                 <div className="flex flex-col">
-                    <span className="text-[9px] font-bold text-muted-foreground uppercase leading-none mb-1">{label}</span>
-                    <span className="text-xs font-semibold truncate max-w-[100px]">
+                    <span className="text-[9px] font-bold text-muted-foreground/60 uppercase leading-none mb-1">{label}</span>
+                    <span className="text-xs font-semibold truncate max-w-[100px] text-foreground">
                         {selected.length === 0 ? 'Semua' : selected.length === options.length ? 'Semua terpilih' : `${selected.length} Item`}
                     </span>
                 </div>
@@ -253,14 +255,13 @@ function MultiSelect({ label, options, selected, onToggle, onSelectAll, onClearA
 
             {open && (
                 <div className="absolute top-full left-0 mt-2 w-72 bg-card border border-border rounded-xl shadow-xl z-50 flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
-                    {/* Search & Bulk Actions */}
                     <div className="p-2 border-b border-border/50 bg-muted/20 space-y-2">
                         <div className="relative">
                             <i className="fa-solid fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground" />
                             <input 
                                 type="text"
                                 placeholder={`Cari ${label}...`}
-                                className="w-full bg-background border border-border rounded-md pl-8 pr-3 py-1.5 text-xs outline-none focus:ring-1 focus:ring-primary/20"
+                                className="w-full bg-background border border-border rounded-md pl-8 pr-3 py-1.5 text-xs outline-none focus:ring-1 focus:ring-primary/20 text-foreground"
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 autoFocus
@@ -294,13 +295,13 @@ function MultiSelect({ label, options, selected, onToggle, onSelectAll, onClearA
                                         key={opt.id} 
                                         className={cn(
                                             "flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer text-xs font-medium transition-colors hover:bg-muted/50",
-                                            selected.includes(opt.id) && "text-primary bg-primary/5 font-bold"
+                                            selected.includes(opt.id) ? "text-primary bg-primary/10 font-bold" : "text-foreground/80"
                                         )}
                                         onClick={() => onToggle(opt.id)}
                                     >
                                         <div className={cn(
                                             "w-4 h-4 border rounded flex items-center justify-center transition-colors",
-                                            selected.includes(opt.id) ? "bg-primary border-primary text-white" : "border-border"
+                                            selected.includes(opt.id) ? "bg-primary border-primary text-primary-foreground" : "border-border bg-muted/20"
                                         )}>
                                             {selected.includes(opt.id) && <Check className="h-2.5 w-2.5" strokeWidth={4} />}
                                         </div>
@@ -319,38 +320,38 @@ function MultiSelect({ label, options, selected, onToggle, onSelectAll, onClearA
 function ContractRegistryTable({ contracts }: { contracts: any[] }) {
     if (contracts.length === 0) return <EmptyState label="kontrak" />;
     return (
-        <table className="w-full text-[13px] border-collapse bg-white">
-            <thead className="sticky top-0 bg-white border-b-2 border-slate-200 z-10">
+        <table className="w-full text-[13px] border-collapse bg-background">
+            <thead className="sticky top-0 bg-background border-b border-border z-10">
                 <tr>
-                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-slate-500">No. Kontrak</th>
-                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-slate-500">Judul</th>
-                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-slate-500">Tipe</th>
-                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-slate-500">Pembuat</th>
-                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-slate-500">Tgl Dibuat</th>
-                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-slate-500 text-center">Status</th>
-                    <th className="text-right font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-slate-500">Usia</th>
-                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-slate-500">Pending Di</th>
+                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-muted-foreground/60">No. Kontrak</th>
+                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-muted-foreground/60">Judul</th>
+                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-muted-foreground/60">Tipe</th>
+                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-muted-foreground/60">Pembuat</th>
+                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-muted-foreground/60">Tgl Dibuat</th>
+                    <th className="font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-muted-foreground/60 text-center">Status</th>
+                    <th className="text-right font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-muted-foreground/60">Usia</th>
+                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-muted-foreground/60">Pending Di</th>
                 </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-border">
                 {contracts.map((c) => (
-                    <tr key={c.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="py-4 px-6 font-mono text-[11px] text-slate-500 whitespace-nowrap">{c.contract_no}</td>
-                        <td className="py-4 px-6 font-bold text-slate-900">{c.title}</td>
-                        <td className="py-4 px-6 text-slate-600">{c.type || '—'}</td>
-                        <td className="py-4 px-6 text-slate-600">{c.creator}</td>
-                        <td className="py-4 px-6 text-slate-600 whitespace-nowrap">
+                    <tr key={c.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="py-4 px-6 font-mono text-[11px] text-muted-foreground whitespace-nowrap">{c.contract_no}</td>
+                        <td className="py-4 px-6 font-bold text-foreground">{c.title}</td>
+                        <td className="py-4 px-6 text-muted-foreground/80">{c.type || '—'}</td>
+                        <td className="py-4 px-6 text-muted-foreground/80">{c.creator}</td>
+                        <td className="py-4 px-6 text-muted-foreground/80 whitespace-nowrap">
                             {new Date(c.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
                         </td>
                         <td className="py-4 px-6 text-center">
-                            <span className="inline-block px-2 py-0.5 border border-slate-300 rounded text-[10px] font-bold uppercase tracking-tight text-slate-700">
+                            <span className="inline-block px-2 py-0.5 border border-border rounded text-[10px] font-bold uppercase tracking-tight text-foreground/70">
                                 {c.status}
                             </span>
                         </td>
-                        <td className="py-4 px-6 text-right font-medium text-slate-600 whitespace-nowrap">{formatRelativeTime(c.created_at)}</td>
+                        <td className="py-4 px-6 text-right font-medium text-muted-foreground/80 whitespace-nowrap">{formatRelativeTime(c.created_at)}</td>
                         <td className="py-4 px-6">
-                            <span className="text-[11px] font-bold text-slate-800 flex items-center gap-1.5">
-                                <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                            <span className="text-[11px] font-bold text-foreground/80 flex items-center gap-1.5">
+                                <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
                                 {c.current_step}
                             </span>
                         </td>
@@ -364,37 +365,37 @@ function ContractRegistryTable({ contracts }: { contracts: any[] }) {
 function AuditTrailTable({ histories }: { histories: any[] }) {
     if (histories.length === 0) return <EmptyState label="riwayat audit" />;
     return (
-        <table className="w-full text-[13px] border-collapse bg-white">
-            <thead className="sticky top-0 bg-white border-b-2 border-slate-200 z-10">
+        <table className="w-full text-[13px] border-collapse bg-background">
+            <thead className="sticky top-0 bg-background border-b border-border z-10">
                 <tr>
-                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-slate-500">Waktu</th>
-                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-slate-500">Kontrak</th>
-                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-slate-500">Aksi</th>
-                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-slate-500">Deskripsi</th>
-                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-slate-500 border-l border-slate-100">Aktor</th>
+                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-muted-foreground/60">Waktu</th>
+                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-muted-foreground/60">Kontrak</th>
+                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-muted-foreground/60">Aksi</th>
+                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-muted-foreground/60">Deskripsi</th>
+                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-muted-foreground/60 border-l border-border">Aktor</th>
                 </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-border">
                 {histories.map((h) => (
-                    <tr key={h.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="py-4 px-6 text-slate-500 font-mono text-[11px]">
+                    <tr key={h.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="py-4 px-6 text-muted-foreground font-mono text-[11px]">
                             {new Date(h.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </td>
                         <td className="py-4 px-6">
                             <div className="flex flex-col">
-                                <span className="text-[10px] font-mono text-slate-400">{h.contract_no}</span>
-                                <span className="text-xs font-bold text-slate-900">{h.contract_title}</span>
+                                <span className="text-[10px] font-mono text-muted-foreground/60">{h.contract_no}</span>
+                                <span className="text-xs font-bold text-foreground">{h.contract_title}</span>
                             </div>
                         </td>
                         <td className="py-4 px-6">
-                            <span className="text-[11px] font-bold uppercase text-slate-700 tracking-tight">
+                            <span className="text-[11px] font-bold uppercase text-muted-foreground tracking-tight">
                                 {h.action}
                             </span>
                         </td>
-                        <td className="py-4 px-6 text-slate-600 text-[12px] leading-relaxed max-w-sm">{h.description}</td>
-                        <td className="py-4 px-6 border-l border-slate-50 bg-slate-50/30">
+                        <td className="py-4 px-6 text-muted-foreground/80 text-[12px] leading-relaxed max-w-sm">{h.description}</td>
+                        <td className="py-4 px-6 border-l border-border bg-muted/10">
                             <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-slate-800 uppercase tracking-tighter border-b border-slate-300">
+                                <span className="text-xs font-bold text-foreground/80 uppercase tracking-tighter border-b border-border">
                                     {h.actor}
                                 </span>
                             </div>
@@ -408,8 +409,8 @@ function AuditTrailTable({ histories }: { histories: any[] }) {
 
 function EmptyState({ label }: { label: string }) {
     return (
-        <div className="flex h-full flex-col items-center justify-center text-muted-foreground py-20 gap-4">
-            <FileText className="h-12 w-12 opacity-10" />
+        <div className="flex h-full flex-col items-center justify-center text-muted-foreground/40 py-20 gap-4">
+            <FileText className="h-12 w-12 opacity-20" />
             <span className="text-sm font-medium tracking-tight">Tidak ada {label} ditemukan dengan filter ini.</span>
         </div>
     );

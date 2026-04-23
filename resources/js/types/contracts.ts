@@ -117,6 +117,12 @@ export interface Contract {
     messages?: ContractMessage[];
     attachments?: ContractAttachment[];
     form_submissions?: ContractFormSubmissionInfo[];
+    initiated_by?: UserProfile;
+    workflow_phase?: string;
+    sla_deadline?: string | null;
+    sla_total_deadline?: string | null;
+    sla_is_overdue?: boolean;
+    sla_total_overdue?: boolean;
 }
 
 export type ContractStatus = 'draft' | 'in_review' | 'revision' | 'approved' | 'locked' | 'archived';

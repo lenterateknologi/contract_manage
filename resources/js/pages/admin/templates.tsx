@@ -292,14 +292,14 @@ export default function Templates({ folders, templates }: Props) {
                     </DropdownMenu>
                 </div>
 
-                {/* Fixed Sidebar for Tree Navigation */}
-                <div className="w-64 border-r bg-muted/10 p-4 overflow-y-auto shrink-0 select-none">
-                    <div className="flex items-center justify-between mb-4 px-2">
-                         <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Struktur Folder</h3>
-                         <Button variant="ghost" size="icon" className="h-4 w-4 text-muted-foreground" onClick={() => setIsFolderModalOpen(true)}>
-                            <FolderPlus size={12} />
-                         </Button>
-                    </div>
+                 {/* Fixed Sidebar for Tree Navigation */}
+                 <div className="w-64 border-r border-border bg-muted/10 p-4 overflow-y-auto shrink-0 select-none">
+                     <div className="flex items-center justify-between mb-4 px-2">
+                          <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Struktur Folder</h3>
+                          <Button variant="ghost" size="icon" className="h-4 w-4 text-muted-foreground" onClick={() => setIsFolderModalOpen(true)}>
+                             <FolderPlus size={12} />
+                          </Button>
+                     </div>
                     <div className="space-y-0.5">
                         <div 
                             className={cn(
@@ -327,8 +327,8 @@ export default function Templates({ folders, templates }: Props) {
 
                 {/* Main Content Area */}
                 <div className="flex-1 flex flex-col min-w-0">
-                    {/* Toolbar */}
-                    <div className="h-14 border-b px-6 flex items-center justify-between gap-4 bg-card shrink-0">
+                     {/* Toolbar */}
+                     <div className="h-14 border-b border-border px-6 flex items-center justify-between gap-4 bg-card shrink-0">
                         <div className="flex items-center gap-2 overflow-hidden">
                             <Button 
                                 variant="ghost" 
@@ -347,20 +347,20 @@ export default function Templates({ folders, templates }: Props) {
                                 >
                                     Templates
                                 </span>
-                                {folderPath.map((f, i) => (
-                                    <React.Fragment key={f.id}>
-                                        <ChevronRight size={14} className="mx-1 text-muted-foreground shrink-0" />
-                                        <span 
-                                            className={cn(
-                                                "cursor-pointer hover:text-primary transition-colors truncate",
-                                                i === folderPath.length - 1 ? "text-primary" : ""
-                                            )}
-                                            onClick={() => setCurrentFolderId(f.id)}
-                                        >
-                                            {f.name}
-                                        </span>
-                                    </React.Fragment>
-                                ))}
+                                 {folderPath.map((f, i) => (
+                                     <React.Fragment key={f.id}>
+                                         <ChevronRight size={14} className="mx-1 text-muted-foreground/60 shrink-0" />
+                                         <span 
+                                             className={cn(
+                                                 "cursor-pointer hover:text-primary transition-colors truncate",
+                                                 i === folderPath.length - 1 ? "text-primary" : "text-foreground/80"
+                                             )}
+                                             onClick={() => setCurrentFolderId(f.id)}
+                                         >
+                                             {f.name}
+                                         </span>
+                                     </React.Fragment>
+                                 ))}
                             </nav>
                         </div>
 
@@ -405,13 +405,13 @@ export default function Templates({ folders, templates }: Props) {
                                     onClick={() => setCurrentFolderId(folder.id)}
                                     onContextMenu={(e) => handleContextMenu(e, 'folder', folder.id, folder.name)}
                                 >
-                                    <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/10 rounded-lg flex items-center justify-center text-blue-500 dark:text-blue-400 shrink-0 shadow-sm border border-blue-100/50">
-                                        <Folder size={20} fill="currentColor" fillOpacity={0.1} />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h4 className="font-bold text-xs truncate leading-tight tracking-tight">{folder.name}</h4>
-                                        <p className="text-[10px] font-medium text-muted-foreground opacity-60">{folder.templates_count} items</p>
-                                    </div>
+                                     <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center text-blue-500 shrink-0 shadow-sm border border-blue-500/20">
+                                         <Folder size={20} fill="currentColor" fillOpacity={0.1} />
+                                     </div>
+                                     <div className="flex-1 min-w-0">
+                                         <h4 className="font-bold text-xs truncate leading-tight tracking-tight text-foreground/90">{folder.name}</h4>
+                                         <p className="text-[10px] font-medium text-muted-foreground/60">{folder.templates_count} items</p>
+                                     </div>
                                     
                                     <Button 
                                         variant="ghost" 
@@ -435,34 +435,34 @@ export default function Templates({ folders, templates }: Props) {
                                     onContextMenu={(e) => handleContextMenu(e, 'template', template.id, template.name)}
                                 >
                                     <div className="p-3 flex items-center gap-3 border-b border-muted/50">
-                                        <div className="w-10 h-10 bg-orange-50 dark:bg-orange-900/10 rounded-lg flex items-center justify-center text-orange-500 dark:text-orange-400 shrink-0 shadow-sm border border-orange-100/50">
-                                            <FileText size={20} />
-                                        </div>
+                                         <div className="w-10 h-10 bg-orange-500/10 rounded-lg flex items-center justify-center text-orange-500 shrink-0 shadow-sm border border-orange-500/20">
+                                             <FileText size={20} />
+                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <h4 className="font-bold text-xs truncate leading-tight tracking-tight">{template.name}</h4>
                                             <p className="text-[10px] font-semibold text-muted-foreground uppercase opacity-60 tracking-wider">
                                                 {template.file_type} • {formatSize(template.file_size)}
                                             </p>
                                         </div>
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
-                                            className="h-7 w-7 opacity-0 group-hover:opacity-100 shrink-0 transition-opacity"
-                                            onClick={(e) => { e.stopPropagation(); handleContextMenu(e as any, 'template', template.id, template.name); }}
-                                        >
-                                            <MoreHorizontal size={12} />
-                                        </Button>
+                                         <Button 
+                                             variant="ghost" 
+                                             size="icon" 
+                                             className="h-7 w-7 opacity-0 group-hover:opacity-100 shrink-0 transition-opacity text-muted-foreground"
+                                             onClick={(e) => { e.stopPropagation(); handleContextMenu(e as any, 'template', template.id, template.name); }}
+                                         >
+                                             <MoreHorizontal size={12} />
+                                         </Button>
                                     </div>
-                                    <div className="px-3 py-1.5 bg-muted/20 flex justify-between items-center bg-gray-50/50 dark:bg-gray-900/20">
-                                        <span className="text-[9px] font-medium text-muted-foreground truncate max-w-[80px]">By {template.creator?.name || 'Admin'}</span>
-                                        <a 
-                                            href={route('admin.templates.download', template.id)} 
-                                            className="text-[9px] font-black text-primary hover:text-primary/80 transition-colors tracking-tighter"
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            UNDUH
-                                        </a>
-                                    </div>
+                                     <div className="px-3 py-1.5 bg-muted/20 flex justify-between items-center">
+                                         <span className="text-[9px] font-medium text-muted-foreground/60 truncate max-w-[80px]">By {template.creator?.name || 'Admin'}</span>
+                                         <a 
+                                             href={route('admin.templates.download', template.id)} 
+                                             className="text-[9px] font-black text-primary hover:text-primary/80 transition-colors tracking-tighter"
+                                             onClick={(e) => e.stopPropagation()}
+                                         >
+                                             UNDUH
+                                         </a>
+                                     </div>
                                 </div>
                             ))}
 
@@ -644,10 +644,10 @@ export default function Templates({ folders, templates }: Props) {
                                     />
                                     <div className="space-y-1">
                                          <Upload size={18} className="mx-auto text-muted-foreground group-hover/field:text-primary transition-colors" />
-                                         <p className="text-[10px] font-bold group-hover/field:text-primary/80 transition-colors">
-                                             {uploadData.file ? uploadData.file.name : "Klik atau seret file ke sini"}
-                                         </p>
-                                         <p className="text-[9px] text-muted-foreground opacity-60 uppercase tracking-tighter">MAX 10MB • .DOCX, .PDF, .XLSX</p>
+                                          <p className="text-[10px] font-bold group-hover/field:text-primary transition-colors text-foreground/80">
+                                              {uploadData.file ? uploadData.file.name : "Klik atau seret file ke sini"}
+                                          </p>
+                                          <p className="text-[9px] text-muted-foreground/60 uppercase tracking-tighter">MAX 10MB • .DOCX, .PDF, .XLSX</p>
                                     </div>
                                 </div>
                             </div>

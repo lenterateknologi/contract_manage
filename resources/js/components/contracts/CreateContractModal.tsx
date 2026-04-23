@@ -1,22 +1,37 @@
-import { useState } from 'react';
+import { usePage } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
 
 interface Props {
     open: boolean;
     onClose: () => void;
     onSubmit: (data: FormData) => Promise<void>;
     types?: any[];
+    users?: any[];
 }
 
-export default function CreateContractModal({ open, onClose, onSubmit, types = [] }: Props) {
+export default function CreateContractModal({ open, onClose, onSubmit, types = [], users = [] }: Props) {
+    const { auth } = usePage().props as any;
     const [title, setTitle] = useState('');
     const [desc, setDesc] = useState('');
     const [typeId, setTypeId] = useState('');
     const [transactionType, setTransactionType] = useState('Perjanjian Baru');
     const [taxRequired, setTaxRequired] = useState(false);
+    const [initiatedById, setInitiatedById] = useState('');
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
+    // Reset directed_by when modal opens
+    useEffect(() => {
+        if (open && auth?.user) {
+            setInitiatedById(auth.user.id);
+        }
+    }, [open, auth]);
+
     if (!open) return null;
+
+    const isLegalOrAdmin = auth?.user?.role === 'Admin' || 
+                          auth?.user?.department?.name?.toLowerCase().includes('legal') ||
+                          auth?.user?.role?.toLowerCase().includes('legal');
 
     const handleSubmit = async () => {
         setErrors({});
@@ -35,6 +50,9 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
         fd.append('contract_type_id', typeId);
         fd.append('transaction_type', transactionType);
         fd.append('tax_required', taxRequired ? '1' : '0');
+        if (initiatedById) {
+            fd.append('initiated_by_id', initiatedById);
+        }
 
         setLoading(true);
         try {
@@ -45,6 +63,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
             setTypeId('');
             setTransactionType('Perjanjian Baru');
             setTaxRequired(false);
+            setInitiatedById(auth?.user?.id || '');
         } catch (err: any) {
             if (err.response?.data?.errors) setErrors(err.response.data.errors);
             else setErrors({ general: 'Gagal membuat kontrak.' });
@@ -72,6 +91,31 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                 </div>
 
                 <div className="max-h-[80vh] space-y-5 overflow-y-auto p-5">
+                    {isLegalOrAdmin && (
+                        <div className="bg-indigo-50/50 border border-indigo-100 rounded-lg p-4 mb-2">
+                            <label className="text-indigo-900 mb-1.5 block text-[11px] font-black tracking-wider uppercase">
+                                <i className="fa-solid fa-user-shield mr-1.5" /> Dibuat Untuk (Initiator)
+                            </label>
+                            <select
+                                value={initiatedById}
+                                onChange={(e) => setInitiatedById(e.target.value)}
+                                className="border-indigo-200 bg-white placeholder:text-muted-foreground/30 w-full rounded-md border px-3 py-2 text-[12px] outline-none focus:border-indigo-500 font-bold"
+                            >
+                                <option value={auth.user.id}>Diri Sendiri ({auth.user.name})</option>
+                                <optgroup label="Pilih User Lain (Legal Helper Mode)">
+                                    {users.filter(u => u.id !== auth.user.id).map((u) => (
+                                        <option key={u.id} value={u.id}>
+                                            {u.name} — {u.role} ({u.department_name || 'No Dept'})
+                                        </option>
+                                    ))}
+                                </optgroup>
+                            </select>
+                            <p className="mt-2 text-[10px] text-indigo-600/70 italic leading-relaxed">
+                                <strong>Legal Helper:</strong> Jika Anda memilih user lain, workflow akan disesuaikan dengan departemen mereka, dan beberapa tahap review awal dapat dilewati secara otomatis.
+                            </p>
+                        </div>
+                    )}
+
                     <div>
                         <label className="text-muted-foreground mb-1.5 block text-[11px] font-semibold tracking-wider uppercase">
                             Nama Kontrak <span className="text-red-500">*</span>
@@ -80,7 +124,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             placeholder="Masukkan nama kontrak"
-                            className="border-border placeholder:text-muted-foreground/30 w-full rounded-md border px-3 py-2 text-[12px] outline-none focus:border-blue-500"
+                            className="border-border placeholder:text-muted-foreground/30 w-full rounded-md border px-3 py-2 text-[12px] outline-none focus:border-indigo-500"
                         />
                         {errors.title && <div className="mt-1 text-[10px] text-red-500">{errors.title}</div>}
                     </div>
@@ -93,7 +137,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                             <select
                                 value={typeId}
                                 onChange={(e) => setTypeId(e.target.value)}
-                                className="border-border placeholder:text-muted-foreground/30 w-full rounded-md border px-3 py-2 text-[12px] outline-none focus:border-blue-500 bg-white"
+                                className="border-border placeholder:text-muted-foreground/30 w-full rounded-md border px-3 py-2 text-[12px] outline-none focus:border-indigo-500 bg-white"
                             >
                                 <option value="">Pilih Tipe</option>
                                 {types.map((t) => (
@@ -110,7 +154,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                             <select
                                 value={transactionType}
                                 onChange={(e) => setTransactionType(e.target.value)}
-                                className="border-border placeholder:text-muted-foreground/30 w-full rounded-md border px-3 py-2 text-[12px] outline-none focus:border-blue-500 bg-white"
+                                className="border-border placeholder:text-muted-foreground/30 w-full rounded-md border px-3 py-2 text-[12px] outline-none focus:border-indigo-500 bg-white"
                             >
                                 <option value="Perjanjian Baru">Perjanjian Baru</option>
                                 <option value="Addendum">Addendum</option>
@@ -129,14 +173,14 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                             onChange={(e) => setDesc(e.target.value)}
                             rows={3}
                             placeholder="Deskripsi singkat kontrak..."
-                            className="border-border placeholder:text-muted-foreground/30 w-full rounded-md border px-3 py-2 text-[12px] outline-none focus:border-blue-500"
+                            className="border-border placeholder:text-muted-foreground/30 w-full rounded-md border px-3 py-2 text-[12px] outline-none focus:border-indigo-500"
                         />
                     </div>
 
                     <div className="bg-slate-50 border border-slate-100 rounded-lg p-4 flex items-center justify-between">
                         <div className="flex flex-col">
-                            <span className="text-[11px] font-black uppercase tracking-widest text-slate-700">Pajak (Tax Review)</span>
-                            <span className="text-[10px] text-slate-500 font-medium">Apakah kontrak ini memerlukan review pajak?</span>
+                            <span className="text-[11px] font-black uppercase tracking-widest text-foreground/80">Pajak (Tax Review)</span>
+                            <span className="text-[10px] text-muted-foreground font-medium">Apakah kontrak ini memerlukan review pajak?</span>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
                             <input 

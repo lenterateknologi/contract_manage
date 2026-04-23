@@ -140,20 +140,22 @@ class UserSeeder extends Seeder
             
             // If no manager, create one
             if (!$hasManager) {
-                User::create([
-                    'name' => fake()->name(),
-                    'email' => "manager.".strtolower($dept->code)."@example.com",
-                    'username' => '2000'.str_pad(mt_rand(1, 999999), 12, '0', STR_PAD_LEFT),
-                    'password' => Hash::make('password'),
-                    'role' => 'Manager',
-                    'position' => 'Manager of ' . $dept->name,
-                    'phone' => fake()->phoneNumber(),
-                    'department_id' => $dept->id,
-                    'initials' => 'M' . substr($dept->code, 0, 1),
-                    'bg_color' => '#f1f5f9',
-                    'text_color' => '#0f172a',
-                    'is_active' => true,
-                ]);
+                User::updateOrCreate(
+                    ['email' => "manager.".strtolower($dept->code)."@example.com"],
+                    [
+                        'name' => fake()->name(),
+                        'username' => '2000'.str_pad(mt_rand(1, 999999), 12, '0', STR_PAD_LEFT),
+                        'password' => Hash::make('password'),
+                        'role' => 'Manager',
+                        'position' => 'Manager of ' . $dept->name,
+                        'phone' => fake()->phoneNumber(),
+                        'department_id' => $dept->id,
+                        'initials' => 'M' . substr($dept->code, 0, 1),
+                        'bg_color' => '#f1f5f9',
+                        'text_color' => '#0f172a',
+                        'is_active' => true,
+                    ]
+                );
             }
 
             // Create 3-5 staff members per department
@@ -162,20 +164,22 @@ class UserSeeder extends Seeder
                 $name = fake()->name();
                 $initials = collect(explode(' ', $name))->map(fn ($n) => strtoupper(substr($n, 0, 1)))->take(2)->join('');
                 
-                User::create([
-                    'name' => $name,
-                    'email' => "staff{$i}.".strtolower($dept->code)."@example.com",
-                    'username' => '3000' . str_pad(mt_rand(1, 99999999), 12, '0', STR_PAD_LEFT),
-                    'password' => Hash::make('password'),
-                    'role' => 'Staff',
-                    'position' => 'Staff of ' . $dept->name,
-                    'phone' => fake()->phoneNumber(),
-                    'department_id' => $dept->id,
-                    'initials' => $initials,
-                    'bg_color' => fake()->hexColor(),
-                    'text_color' => '#ffffff',
-                    'is_active' => true,
-                ]);
+                User::updateOrCreate(
+                    ['email' => "staff{$i}.".strtolower($dept->code)."@example.com"],
+                    [
+                        'name' => $name,
+                        'username' => '3000' . str_pad(mt_rand(1, 99999999), 12, '0', STR_PAD_LEFT),
+                        'password' => Hash::make('password'),
+                        'role' => 'Staff',
+                        'position' => 'Staff of ' . $dept->name,
+                        'phone' => fake()->phoneNumber(),
+                        'department_id' => $dept->id,
+                        'initials' => $initials,
+                        'bg_color' => fake()->hexColor(),
+                        'text_color' => '#ffffff',
+                        'is_active' => true,
+                    ]
+                );
             }
         }
     }

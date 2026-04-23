@@ -1,10 +1,10 @@
-import React, { useMemo } from 'react';
-import { FormElement, FormField } from './FormElement';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import React, { useMemo } from 'react';
+import { Plus } from 'lucide-react';
+import { FormElement, FormField } from './FormElement';
 
 export interface FormTemplate {
-    id: string;
+    id?: string;
     name: string;
     description: string | null;
     has_letterhead: boolean;
@@ -12,26 +12,40 @@ export interface FormTemplate {
     fields: FormField[];
 }
 
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+
 interface InteractiveFormProps {
     template: FormTemplate;
     formData: Record<string, any>;
     onChange?: (name: string, value: any) => void;
     readOnly?: boolean;
+    isBuilder?: boolean;
     className?: string;
+    onRemove?: (id: string) => void;
+    onDuplicate?: (id: string) => void;
+    onSelect?: (id: string, e?: React.MouseEvent) => void;
+    onMove?: (id: string, direction: 'up' | 'down') => void;
+    selectedFieldIds?: string[];
 }
 
-export const InteractiveForm: React.FC<InteractiveFormProps> = ({
-    template,
-    formData,
-    onChange,
-    readOnly = false,
+export const InteractiveForm: React.FC<InteractiveFormProps> = ({ 
+    template, 
+    formData, 
+    onChange, 
+    readOnly = false, 
+    isBuilder = false, 
     className,
+    onRemove,
+    onDuplicate,
+    onSelect,
+    onMove,
+    selectedFieldIds = []
 }) => {
     const rootFields = useMemo(() => {
-        return (template?.fields || [])
-            .filter((f) => !f.parent_id)
-            .sort((a, b) => a.order - b.order);
+        return (template?.fields || []).filter((f) => !f.parent_id).sort((a, b) => a.order - b.order);
     }, [template.fields]);
+
+    const allFieldIds = useMemo(() => (template.fields || []).map(f => f.id), [template.fields]);
 
     const updateValue = (name: string, value: any) => {
         if (onChange) {
@@ -40,10 +54,10 @@ export const InteractiveForm: React.FC<InteractiveFormProps> = ({
     };
 
     return (
-        <div 
+        <div
             className={cn(
-                "flex flex-col border border-slate-200 bg-white text-slate-950 shadow-2xl ring-1 ring-slate-200 transition-all mx-auto w-full max-w-[210mm] min-h-[297mm]",
-                className
+                'border-border bg-card text-foreground ring-border mx-auto flex min-h-[297mm] w-full max-w-[210mm] flex-col border shadow-2xl ring-1 transition-all',
+                className,
             )}
             style={{
                 paddingTop: `${template.letterhead_json?.margins?.top ?? 15}mm`,
@@ -51,26 +65,54 @@ export const InteractiveForm: React.FC<InteractiveFormProps> = ({
                 paddingLeft: `${template.letterhead_json?.margins?.left ?? 15}mm`,
                 paddingRight: `${template.letterhead_json?.margins?.right ?? 15}mm`,
             }}
+            onClick={(e) => {
+                // If user clicks the background paper itself, clear selection
+                if (isBuilder && e.target === e.currentTarget) {
+                    onSelect?.('');
+                }
+            }}
         >
-            <div className="flex-1 relative">
-                {rootFields.map((field) => (
-                    <FormElement
-                        key={field.id}
-                        field={field}
-                        allFields={template.fields}
-                        value={formData[field.name]}
-                        onChange={(val: any) => updateValue(field.name, val)}
-                        previewData={formData}
-                        updateValue={updateValue}
-                        readOnly={readOnly}
-                    />
-                ))}
+            <div className="relative flex-1">
+                {isBuilder && rootFields.length === 0 && (
+                    <div className="flex h-[200mm] w-full flex-col items-center justify-center gap-4 rounded-2xl border-4 border-dashed border-slate-100 bg-slate-50/50">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-slate-200">
+                             <Plus className="text-primary" size={32} />
+                        </div>
+                        <div className="text-center">
+                            <h3 className="text-sm font-black tracking-widest text-slate-400 uppercase">Kanvas Kosong</h3>
+                            <p className="text-[10px] text-slate-400 font-medium">Tarik elemen dari kiri ke sini untuk mulai membangun</p>
+                        </div>
+                    </div>
+                )}
+                
+                <SortableContext items={allFieldIds} strategy={verticalListSortingStrategy}>
+                    {rootFields.map((field) => (
+                        <FormElement
+                            key={field.id}
+                            field={field}
+                            allFields={template.fields}
+                            value={formData[field.name]}
+                            onChange={(val: any) => updateValue(field.name, val)}
+                            previewData={formData}
+                            updateValue={updateValue}
+                            readOnly={readOnly}
+                            isBuilder={isBuilder}
+                            onRemove={onRemove}
+                            onDuplicate={onDuplicate}
+                            onSelect={onSelect}
+                            onMove={onMove}
+                            isSelected={selectedFieldIds.includes(field.id)}
+                        />
+                    ))}
+                </SortableContext>
             </div>
-            
+
             {/* Standardized Footer for Visual Consistency */}
-            <div className="mt-16 pt-8 border-t border-slate-100 flex justify-between items-center text-[9px] font-black uppercase tracking-widest text-slate-300">
+            <div className="border-border text-muted-foreground/40 mt-16 flex items-center justify-between border-t pt-8 text-[9px] font-black tracking-widest uppercase">
                 <span>Lentera Teknologi Legal System</span>
-                <span>{template.name} / {readOnly ? 'Verified Copy' : 'Interactive Form'}</span>
+                <span>
+                    {template.name} / {readOnly ? 'Verified Copy' : 'Interactive Form'}
+                </span>
             </div>
         </div>
     );

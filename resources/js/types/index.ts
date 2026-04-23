@@ -41,9 +41,16 @@ export interface User {
     id: string;
     name: string;
     email: string;
+    username?: string;
+    phone?: string;
+    position?: string;
+    initials?: string;
+    role?: string;
+    bg_color?: string;
+    text_color?: string;
     avatar?: string;
     email_verified_at: string | null;
     created_at: string;
     updated_at: string;
-    [key: string]: unknown; // This allows for additional properties...
+    [key: string]: unknown;
 }

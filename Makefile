@@ -36,3 +36,5 @@ clear-cache: ## Clear all application caches
 	$(ARTISAN) config:clear
 	$(ARTISAN) view:clear
 	@echo "Caches cleared."
+
+
