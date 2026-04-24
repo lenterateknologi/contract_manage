@@ -1,5 +1,7 @@
 import { usePage } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
+import { SearchableSelect } from '@/components/ui/SearchableSelect';
+
 
 interface Props {
     open: boolean;
@@ -31,9 +33,9 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
 
     if (!open) return null;
 
-    const isLegalOrAdmin = auth?.user?.role === 'Admin' || 
-                          auth?.user?.department?.name?.toLowerCase().includes('legal') ||
-                          auth?.user?.role?.toLowerCase().includes('legal');
+    const isLegalOrAdmin = auth?.user?.role === 'Admin' ||
+        auth?.user?.department?.name?.toLowerCase().includes('legal') ||
+        auth?.user?.role?.toLowerCase().includes('legal');
 
     const handleSubmit = async () => {
         setErrors({});
@@ -157,16 +159,12 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                             <label className="text-muted-foreground mb-1.5 block text-[11px] font-semibold tracking-wider uppercase">
                                 Pihak Kedua (Vendor)
                             </label>
-                            <select
+                            <SearchableSelect
+                                options={vendors}
                                 value={vendorId}
-                                onChange={(e) => setVendorId(e.target.value)}
-                                className="border-border placeholder:text-muted-foreground/30 w-full rounded-md border px-3 py-2 text-[12px] outline-none focus:border-indigo-500 bg-white font-bold text-indigo-600"
-                            >
-                                <option value="">Pilih Vendor</option>
-                                {vendors.map((v) => (
-                                    <option key={v.id} value={v.id}>{v.name}</option>
-                                ))}
-                            </select>
+                                onChange={setVendorId}
+                                placeholder="Pilih Vendor"
+                            />
                             <p className="mt-1 text-[9px] text-muted-foreground italic">Pilih vendor untuk autofill Pihak Kedua</p>
                         </div>
                     </div>
@@ -208,9 +206,9 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                             <span className="text-[10px] text-muted-foreground font-medium">Apakah kontrak ini memerlukan review pajak?</span>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
-                            <input 
-                                type="checkbox" 
-                                checked={taxRequired} 
+                            <input
+                                type="checkbox"
+                                checked={taxRequired}
                                 onChange={(e) => setTaxRequired(e.target.checked)}
                                 className="sr-only peer"
                             />
