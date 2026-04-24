@@ -1,10 +1,12 @@
 import { FormField } from '@/components/form-renderer/FormElement';
 import { InteractiveForm } from '@/components/form-renderer/InteractiveForm';
 import { contractApi } from '@/lib/contract-api';
+import { cn } from '@/lib/utils';
 import { Contract } from '@/types/contracts';
 import axios from 'axios';
-import { Download, Loader2 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useToast } from '@/components/contracts/Toast';
+import { Download, History, Loader2 } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface FormTemplateInfo {
     id: string;
@@ -113,11 +115,42 @@ const getAutofillValue = (field: FormField, contract: Contract) => {
         return (contract as any).transaction_type || '';
     }
 
-    // Party Representatives (F2 Specific Mapping)
-    if (name === 'nama_pihak_1') return contract.creator?.name || '';
-    if (name === 'jabatan_pihak_1') return (contract.metadata as any)?.jabatan_pihak_1 || 'Direktur';
-    if (name === 'nama_pihak_2') return (contract as any).vendor?.pic_name || (contract.metadata as any)?.nama_pihak_2 || '';
-    if (name === 'jabatan_pihak_2') return (contract as any).vendor?.pic_position || (contract.metadata as any)?.jabatan_pihak_2 || 'Kuasa Direksi';
+    // Party Representatives (F1 & F2 Mapping)
+    // PIHAK PERTAMA (Internal / User)
+    const p1Names = ['nama_pihak_1', 'perwakilan_pihak_1', 'nama_perwakilan_1', 'nama_pihak_pertama'];
+    const p1Positions = ['jabatan_pihak_1', 'jabatan_perwakilan_1', 'jabatan_pihak_pertama'];
+    const p1Companies = ['nama_perusahaan_1', 'pihak_pertama', 'nama_pihak_1_perusahaan'];
+
+    if (p1Names.some(n => name.includes(n)) || label.includes('nama pihak pertama') || label === 'nama (pihak 1)') {
+        return contract.initiator?.name || contract.creator?.name || '';
+    }
+    if (p1Positions.some(n => name.includes(n)) || label.includes('jabatan pihak pertama') || label === 'jabatan (pihak 1)') {
+        return (contract.metadata as any)?.jabatan_pihak_1 || contract.initiator?.role || contract.creator?.role || 'Direktur';
+    }
+    if (p1Companies.some(n => name.includes(n)) || label.includes('perusahaan pihak pertama')) {
+        return 'PT. Lentera Teknologi'; // Default company name if not specifically in metadata
+    }
+
+    // PIHAK KEDUA (Vendor / Partner)
+    const p2Names = ['nama_pihak_2', 'perwakilan_pihak_2', 'nama_perwakilan_2', 'nama_pihak_kedua', 'nama_vendor'];
+    const p2Positions = ['jabatan_pihak_2', 'jabatan_perwakilan_2', 'jabatan_pihak_kedua', 'jabatan_vendor'];
+    const p2Companies = ['nama_perusahaan_2', 'pihak_kedua', 'nama_pihak_2_perusahaan', 'vendor_name'];
+    const p2Address = ['alamat_pihak_2', 'alamat_vendor', 'alamat_perusahaan_2'];
+
+    const vendor = (contract as any).vendor;
+
+    if (p2Names.some(n => name.includes(n)) || label.includes('nama pihak kedua') || label === 'nama (pihak 2)') {
+        return vendor?.pic_name || (contract.metadata as any)?.nama_pihak_2 || '';
+    }
+    if (p2Positions.some(n => name.includes(n)) || label.includes('jabatan pihak kedua') || label === 'jabatan (pihak 2)') {
+        return vendor?.pic_position || (contract.metadata as any)?.jabatan_pihak_2 || 'Kuasa Direksi';
+    }
+    if (p2Companies.some(n => name.includes(n)) || label.includes('perusahaan pihak kedua') || label === 'nama vendor') {
+        return vendor?.name || (contract.metadata as any)?.nama_perusahaan_2 || '';
+    }
+    if (p2Address.some(n => name.includes(n)) || label.includes('alamat pihak kedua') || label.includes('alamat vendor')) {
+        return vendor?.address || (contract.metadata as any)?.alamat_pihak_2 || '';
+    }
 
     // General Metadata Fallback (If name matches metadata key)
     if (contract.metadata && (contract.metadata as any)[field.name]) {
@@ -160,14 +193,30 @@ function GenericFormTab({
     formTemplates: FormTemplateInfo[];
     onContractUpdated: (c: Contract) => void;
 }) {
+    const { showToast } = useToast();
     const [fields, setFields] = useState<FormField[]>([]);
     const [formData, setFormData] = useState<Record<string, any>>({});
     const [originalData, setOriginalData] = useState<Record<string, any>>({});
     const [versions, setVersions] = useState<VersionItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [toast, setToast] = useState<string | null>(null);
     const [showVersions, setShowVersions] = useState(false);
+    const [showMoreActions, setShowMoreActions] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setShowVersions(false);
+                setShowMoreActions(false);
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showVersions, showMoreActions]);
 
     // PDF Queue States
     const [isExporting, setIsExporting] = useState(false);
@@ -178,6 +227,30 @@ function GenericFormTab({
     const matchingTemplate =
         formTemplates.find((ft) => ft.contract_type_name === selected.contract_type && ft.document_type === docType) ??
         formTemplates.find((ft) => !ft.contract_type_id && ft.document_type === docType);
+
+    const filteredVersions = versions.filter((v) => {
+        if (!searchQuery) return true;
+        const q = searchQuery.toLowerCase();
+        return (
+            v.version_no.toString().includes(q) ||
+            v.created_by?.name?.toLowerCase().includes(q) ||
+            v.created_at.toLowerCase().includes(q)
+        );
+    });
+
+    const handleSync = () => {
+        const synced = { ...formData };
+        fields.forEach((f) => {
+            if (f.type !== 'kop_surat' && f.type !== 'form_title') {
+                const val = getAutofillValue(f, selected);
+                if (val !== null) {
+                    synced[f.name] = val;
+                }
+            }
+        });
+        setFormData(synced);
+        showToast('Data sinkron dengan informasi kontrak & vendor.', 'success');
+    };
 
     const loadData = useCallback(async () => {
         if (!matchingTemplate) {
@@ -232,7 +305,7 @@ function GenericFormTab({
     const isF2 = docType === 'f2';
 
     const handleSave = async () => {
-        if (!matchingTemplate || !isDirty || isF2) return;
+        if (!matchingTemplate || !isDirty) return;
         setSaving(true);
         try {
             const updated = await contractApi.formSubmissions.save(selected.id, {
@@ -242,13 +315,11 @@ function GenericFormTab({
             });
             onContractUpdated(updated);
             setOriginalData({ ...formData });
-            setToast(`Form ${docType.toUpperCase()} berhasil disimpan.`);
-            setTimeout(() => setToast(null), 3000);
+            showToast(`Form ${docType.toUpperCase()} berhasil disimpan.`, 'success');
             const res = await contractApi.formSubmissions.get(selected.id, docType);
             if (res.versions) setVersions(res.versions);
         } catch (e: any) {
-            setToast('Gagal menyimpan form.');
-            setTimeout(() => setToast(null), 3000);
+            showToast('Gagal menyimpan form.', 'danger');
         } finally {
             setSaving(false);
         }
@@ -372,104 +443,164 @@ function GenericFormTab({
                 </div>
             )}
 
-            <div className="border-border bg-muted/50 flex items-center justify-between border-b p-4">
-                <div className="flex items-center gap-3">
+            <div className="border-border/60 sticky top-0 z-40 flex h-[72px] shrink-0 items-center justify-between border-b bg-white/50 px-6 backdrop-blur-sm">
+                <div className="flex items-center gap-4">
                     <div className="flex flex-col">
-                        <h4 className="text-foreground text-xs font-bold tracking-tight uppercase">
-                            Form {docType.toUpperCase()} — {docType === 'f1' ? 'Perijinan & Kontrak' : 'Resume & Persetujuan'}
-                        </h4>
-                        <span className="text-[10px] font-bold tracking-widest text-indigo-500 uppercase">
-                            {isF2 ? 'Automated Resume (Read-Only)' : submissionInfo ? 'Sudah Diisi' : 'Draft / Inherited Data'}
+                        <div className="flex items-center gap-2">
+                            <div className="h-4 w-1 rounded-full bg-slate-900" />
+                            <h4 className="text-[11px] leading-none font-black tracking-tighter text-slate-900 uppercase">
+                                {docType === 'f1' ? 'Formulir F1 (Internal)' : 'Formulir F2 (Resume)'}
+                            </h4>
+                            <span className="animate-in fade-in zoom-in rounded bg-slate-950 px-1.5 py-0.5 text-[8px] font-black tracking-widest text-white uppercase duration-500">
+                                V{submissionInfo?.current_version || 1}
+                            </span>
+                        </div>
+                        <span
+                            className={cn(
+                                'mt-1.5 text-[9px] font-black tracking-[0.2em] uppercase',
+                                submissionInfo ? 'text-emerald-500' : 'text-indigo-500',
+                            )}
+                        >
+                            {docType === 'f1' ? (submissionInfo ? 'Sudah Diisi' : 'Draft / Inherited Data') : (submissionInfo ? 'Resume Disimpan' : 'Resume & Persetujuan (Editable)')}
                         </span>
                     </div>
-                    {submissionInfo && !isF2 && (
-                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 uppercase">
-                            v{submissionInfo.current_version}
-                        </span>
-                    )}
                 </div>
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={loadData}
-                        className="border-border hover:bg-muted/50 text-muted-foreground flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-all"
-                        title="Refresh data dari server"
-                    >
-                        <i className="fa-solid fa-arrows-rotate" />
-                    </button>
-                    {versions.length > 0 && !isF2 && (
-                        <button
-                            onClick={() => setShowVersions(!showVersions)}
-                            className="border-border hover:bg-muted/50 text-muted-foreground flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-all"
-                        >
-                            <i className="fa-solid fa-clock-rotate-left" /> {versions.length} versi
-                        </button>
-                    )}
-                    {(submissionInfo || isF2) && (
-                        <button
-                            onClick={handleDownloadPdf}
-                            disabled={isExporting}
-                            className="bg-background hover:bg-muted text-foreground border-border flex items-center gap-1.5 rounded-md border px-4 py-1.5 text-xs font-bold tracking-widest uppercase shadow-sm transition-all hover:border-indigo-200 hover:text-indigo-600 disabled:opacity-50"
-                        >
-                            {isExporting ? (
-                                <>
-                                    <Loader2 size={12} className="mr-1.5 animate-spin" />
-                                    {pdfJobStatus?.status === 'pending' ? 'Queued...' : `Processing ${pdfJobStatus?.progress || 0}%`}
-                                </>
-                            ) : (
-                                <>
-                                    <Download size={12} className="mr-1.5" /> Generate PDF
-                                </>
-                            )}
-                        </button>
-                    )}
+                <div className="flex items-center gap-2.5" ref={dropdownRef}>
+                    <div className="relative">
+                            <button
+                                onClick={() => setShowVersions(!showVersions)}
+                                className={cn(
+                                    "border-border flex h-8 items-center gap-1.5 rounded-xl border bg-white px-3 text-[9px] font-black tracking-widest uppercase shadow-sm transition-all active:scale-95",
+                                    showVersions ? "bg-slate-900 border-slate-900 text-white" : "text-slate-600 hover:bg-slate-50"
+                                )}
+                            >
+                                <History size={11} className={cn('text-indigo-500', showVersions && 'text-white')} />
+                                {versions.length || 0} <span className={cn("opacity-40", showVersions && "opacity-60")}>VERSIONS</span>
+                                <i className={cn("fa-solid fa-chevron-down ml-1 text-[8px] transition-transform", showVersions && "rotate-180")} />
+                            </button>
 
-                    {!isF2 && (isDirty || !submissionInfo) && (
+                            {showVersions && (
+                                <div className="absolute left-0 top-full z-[999] mt-2 w-72 origin-top-left rounded-xl border border-slate-200 bg-white p-1 shadow-2xl shadow-slate-200/50 animate-in fade-in zoom-in-95 duration-200 outline-none">
+                                    <div className="border-b border-slate-100 p-2">
+                                        <div className="relative">
+                                            <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-400" />
+                                            <input
+                                                autoFocus
+                                                type="text"
+                                                placeholder="Cari versi..."
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                                className="w-full rounded-lg border border-slate-100 bg-slate-50 py-1.5 pl-8 pr-3 text-[11px] font-bold outline-none focus:border-indigo-200 focus:bg-white transition-all"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="max-h-[300px] overflow-y-auto py-1">
+                                        {filteredVersions.length > 0 ? (
+                                            filteredVersions.map((v) => (
+                                                <button
+                                                    key={v.id}
+                                                    onClick={() => {
+                                                        setFormData(v.form_data);
+                                                        setOriginalData(v.form_data);
+                                                        setShowVersions(false);
+                                                    }}
+                                                    className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition-all hover:bg-slate-50 group"
+                                                >
+                                                    <div className="flex flex-col">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="flex h-5 w-5 items-center justify-center rounded-md bg-slate-100 text-[10px] font-black text-slate-600 group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
+                                                                {v.version_no}
+                                                            </span>
+                                                            <span className="text-[11px] font-bold text-slate-800">Version {v.version_no}</span>
+                                                        </div>
+                                                        <span className="mt-1 text-[9px] font-medium text-slate-400 uppercase tracking-tight">
+                                                            {v.created_at} · {v.created_by?.name || 'System'}
+                                                        </span>
+                                                    </div>
+                                                    <i className="fa-solid fa-arrow-right text-[10px] text-slate-300 opacity-0 transition-all -translate-x-2 group-hover:translate-x-0 group-hover:opacity-100" />
+                                                </button>
+                                            ))
+                                        ) : (
+                                            <div className="py-8 text-center">
+                                                <i className="fa-solid fa-folder-open mb-2 block text-slate-200 text-xl" />
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase">Tidak ada versi ditemukan</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                    <div className="relative">
                         <button
-                            onClick={handleSave}
-                            disabled={saving}
-                            className="flex items-center gap-1.5 rounded-md bg-indigo-600 px-4 py-1.5 text-xs font-bold tracking-widest text-white uppercase shadow-lg shadow-indigo-100 transition-all hover:bg-indigo-700 active:scale-95 disabled:opacity-50"
+                            onClick={() => setShowMoreActions(!showMoreActions)}
+                            className={cn(
+                                "border-border flex h-8 w-8 items-center justify-center rounded-xl border bg-white shadow-sm transition-all active:scale-95",
+                                showMoreActions ? "bg-slate-900 border-slate-900 text-white" : "text-slate-600 hover:bg-slate-50"
+                            )}
                         >
-                            {saving ? <i className="fa-solid fa-spinner fa-spin" /> : <i className="fa-solid fa-check" />}
-                            {submissionInfo ? 'Update Form' : 'Simpan Form'}
+                            <i className="fa-solid fa-ellipsis-vertical text-[10px]" />
                         </button>
-                    )}
+
+                        {showMoreActions && (
+                            <div className="absolute right-0 top-full z-[999] mt-2 w-56 origin-top-right rounded-xl border border-slate-200 bg-white p-1 shadow-2xl shadow-slate-200/50 animate-in fade-in zoom-in-95 duration-200 outline-none">
+                                <button
+                                    onClick={() => { loadData(); setShowMoreActions(false); }}
+                                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[10px] font-bold text-slate-600 transition-all hover:bg-slate-50 hover:text-slate-900"
+                                >
+                                    <i className="fa-solid fa-arrows-rotate w-4 text-[10px] opacity-40" />
+                                    REFRESH DATA
+                                </button>
+
+                                <button
+                                    onClick={() => { handleSync(); setShowMoreActions(false); }}
+                                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[10px] font-bold text-indigo-600 transition-all hover:bg-indigo-50"
+                                >
+                                    <i className="fa-solid fa-sync w-4 text-[10px] opacity-60" />
+                                    SYCHRONIZE DATA
+                                </button>
+
+                                <a
+                                    href={`/admin/contracts/${selected.id}/form-submissions/${docType}/compare`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={() => setShowMoreActions(false)}
+                                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[10px] font-bold text-orange-600 transition-all hover:bg-orange-50"
+                                >
+                                    <i className="fa-solid fa-columns w-4 text-[10px] opacity-60" />
+                                    COMPARE VERSIONS
+                                </a >
+
+                                {(submissionInfo || isF2) && (
+                                    <button
+                                        onClick={() => { handleDownloadPdf(); setShowMoreActions(false); }}
+                                        disabled={isExporting}
+                                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[10px] font-bold text-slate-600 transition-all hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50"
+                                    >
+                                        {isExporting ? <Loader2 size={12} className="animate-spin opacity-40" /> : <Download size={12} className="opacity-40" />}
+                                        EXPORT PDF DOCUMENT
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    <button
+                        onClick={handleSave}
+                        disabled={saving}
+                        className="flex h-8 items-center gap-2 rounded-xl bg-slate-900 px-5 text-[9px] font-black tracking-widest text-white uppercase shadow-lg shadow-slate-200 transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-50"
+                    >
+                        {saving ? <i className="fa-solid fa-spinner fa-spin" /> : <i className="fa-solid fa-check" />}
+                        {submissionInfo ? 'Update Form' : 'Simpan Data'}
+                    </button>
                 </div>
             </div>
 
-            {toast && (
-                <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-medium text-emerald-700">
-                    <i className="fa-solid fa-check-circle mr-2" />
-                    {toast}
-                </div>
-            )}
 
-            {showVersions && !isF2 && (
-                <div className="border-border bg-muted/20 mx-auto w-full max-w-4xl space-y-2 rounded-xl border p-4">
-                    {versions.map((v) => (
-                        <div
-                            key={v.id}
-                            className="border-border bg-card hover:bg-muted/30 flex cursor-pointer items-center justify-between rounded-lg border p-3"
-                            onClick={() => {
-                                setFormData(v.form_data);
-                                setOriginalData(v.form_data);
-                                setShowVersions(false);
-                            }}
-                        >
-                            <div>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-primary font-mono text-xs font-bold">v{v.version_no}</span>
-                                    <span className="text-muted-foreground text-[10px]">{v.created_at}</span>
-                                </div>
-                                {v.created_by && <div className="text-muted-foreground mt-0.5 text-[10px]">oleh {v.created_by.name}</div>}
-                            </div>
-                            <i className="fa-solid fa-arrow-right text-muted-foreground text-xs" />
-                        </div>
-                    ))}
-                </div>
-            )}
+
 
             <div className="relative mx-auto w-full">
-                {isDirty && !isF2 && (
+                {isDirty && (
                     <div className="absolute top-0 right-0 m-2 p-2">
                         <span className="flex items-center gap-1.5 rounded-full border border-amber-200/50 bg-amber-50 px-2.5 py-1 text-[9px] font-bold tracking-wider text-amber-600 uppercase shadow-sm">
                             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
@@ -482,36 +613,11 @@ function GenericFormTab({
                     <InteractiveForm
                         template={templateForRenderer}
                         formData={formData}
-                        onChange={(name, val) => !isF2 && setFormData((prev) => ({ ...prev, [name]: val }))}
-                        readOnly={isF2}
+                        onChange={(name, val) => setFormData((prev) => ({ ...prev, [name]: val }))}
+                        readOnly={false}
                     />
                 </div>
-
-                <div className="border-border text-muted-foreground/50 mt-16 flex items-center justify-between border-t pt-6 text-[9px] font-bold tracking-widest uppercase">
-                    <span>Lentera Teknologi Legal System</span>
-                    <span>
-                        Form {docType.toUpperCase()} / {isF2 ? 'Automated Resume View' : 'Professional Interactive Form'}
-                    </span>
-                </div>
             </div>
-
-            {!isF2 && (isDirty || !submissionInfo) && (
-                <div className="border-border mx-auto flex w-full max-w-4xl items-center justify-between border-t border-dashed pt-6">
-                    <span className="text-[10px] font-bold tracking-widest text-amber-600 uppercase">
-                        <i className="fa-solid fa-triangle-exclamation mr-1.5 text-amber-500" />
-                        {submissionInfo
-                            ? "Changes detected. Click 'Update Form' to save version."
-                            : 'Inherited data from F1 detected. Please review and Save.'}
-                    </span>
-                    <button
-                        onClick={handleSave}
-                        disabled={saving}
-                        className="bg-primary hover:bg-primary/90 text-primary-foreground ring-primary/10 rounded-md px-6 py-1.5 text-xs font-bold tracking-widest uppercase shadow-xl ring-4 transition-all hover:-translate-y-0.5 active:translate-y-0"
-                    >
-                        {saving ? 'Processing...' : submissionInfo ? `Update Form ${docType.toUpperCase()}` : `Simpan Form ${docType.toUpperCase()}`}
-                    </button>
-                </div>
-            )}
         </div>
     );
 }

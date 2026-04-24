@@ -96,7 +96,10 @@ Route::middleware(['auth'])->group(function () {
         // Agreement Data Management
         Route::post('/contracts/{id}/agreement', [ContractController::class, 'uploadAgreement']);
         Route::get('/contracts/{id}/agreement/versions', [ContractController::class, 'getAgreementVersions']);
-        Route::get('/contracts/{id}/agreement/compare', [ContractController::class, 'compareAgreementVersions']);
+
+        // Audit Trail
+        Route::get('/contracts/{id}/audit-trail', [ContractController::class, 'getAuditTrail']);
+        Route::get('/contracts/{id}/audit-trail/pdf', [ContractController::class, 'exportAuditPdf'])->name('contracts.audit.pdf');
     });
 
     Route::middleware(['admin'])->prefix('admin')->group(function () {
@@ -219,11 +222,15 @@ Route::middleware(['auth'])->group(function () {
 
         // Contract Form Submission Exports (using admin prefix for consistency/reliability)
         Route::post('/contracts/{id}/form-submissions/{type}/export-queue', [ContractController::class, 'exportFormSubmissionPdfQueue'])->name('admin.contracts.export-queue');
+        Route::get('/contracts/{id}/form-submissions/{type}/compare', [ContractController::class, 'compareFormVersions'])->name('admin.contracts.form-submissions.compare');
+        Route::get('/contracts/{id}/agreement/compare', [ContractController::class, 'compareAgreementVersions'])->name('admin.contracts.agreement.compare');
 
         Route::delete('/form-templates/{template}', [FormTemplateController::class, 'destroy'])->name('admin.form-templates.destroy');
 
 
 
+
+        Route::get('/api/contracts/message-attachment/{messageId}', [ContractMessageController::class, 'downloadAttachment'])->name('contracts.message-attachment');
 
         Route::get('/api/templates/data', [TemplateController::class, 'getApiData'])->name('admin.templates.api.data');
     });

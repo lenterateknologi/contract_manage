@@ -21,6 +21,8 @@ class ContractMessageController extends Controller
             'message'    => $m->message,
             'read_by'    => $m->read_by ?? [],
             'created_at' => $m->created_at->format('Y-m-d H:i'),
+            'attachment_url' => $m->attachment_path ? asset('storage/' . $m->attachment_path) : null,
+            'attachment_name' => $m->attachment_name,
             'user'       => $m->user ? [
                 'id'         => $m->user->id,
                 'name'       => $m->user->name,
@@ -34,16 +36,34 @@ class ContractMessageController extends Controller
 
     public function store(Request $request, string $contractId): JsonResponse
     {
-        $request->validate(['message' => 'required|string']);
+        $request->validate([
+            'message' => 'nullable|string',
+            'attachment' => 'nullable|file|max:10240', // 10MB limit
+        ]);
+
+        if (!$request->message && !$request->hasFile('attachment')) {
+            return response()->json(['message' => 'Pesan atau lampiran harus diisi.'], 422);
+        }
 
         $contract = Contract::findOrFail($contractId);
         $userId   = Auth::id();
 
+        $attachmentPath = null;
+        $attachmentName = null;
+
+        if ($request->hasFile('attachment')) {
+            $file = $request->file('attachment');
+            $attachmentName = $file->getClientOriginalName();
+            $attachmentPath = $file->store('chat_attachments', 'public');
+        }
+
         $msg = ContractMessage::create([
             'contract_id' => $contract->id,
             'user_id'     => $userId,
-            'message'     => $request->message,
+            'message'     => $request->message ?? '',
             'read_by'     => [$userId],
+            'attachment_path' => $attachmentPath,
+            'attachment_name' => $attachmentName,
         ]);
 
         $msg->load('user');
@@ -52,7 +72,9 @@ class ContractMessageController extends Controller
             'id'         => $msg->id,
             'user_id'    => $msg->user_id,
             'message'    => $msg->message,
-            'read_by'    => $msg->read_by,
+            'attachment_url' => $msg->attachment_path ? asset('storage/' . $msg->attachment_path) : null,
+            'attachment_name' => $msg->attachment_name,
+            'read_by'     => $msg->read_by,
             'created_at' => $msg->created_at->format('Y-m-d H:i'),
             'user'       => $msg->user ? [
                 'id'         => $msg->user->id,
@@ -81,5 +103,22 @@ class ContractMessageController extends Controller
         }
 
         return response()->json(['marked' => $messages->count()]);
+    }
+
+    public function downloadAttachment(string $messageId): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    {
+        $msg = ContractMessage::findOrFail($messageId);
+        if (!$msg->attachment_path) abort(404);
+
+        $path = storage_path('app/public/' . $msg->attachment_path);
+        if (!file_exists($path)) abort(404);
+
+        $mime = \Illuminate\Support\Facades\File::mimeType($path);
+
+        // Force inline disposition for PDF and common docs to allow browser preview
+        return response()->file($path, [
+            'Content-Type' => $mime,
+            'Content-Disposition' => 'inline; filename="' . $msg->attachment_name . '"'
+        ]);
     }
 }

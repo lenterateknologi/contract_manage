@@ -13,12 +13,19 @@ class ContractMessage extends Model
 
     use HasUuids, SoftDeletes;
     protected $fillable = [
-        'contract_id', 'user_id', 'message', 'read_by',
+        'contract_id', 'user_id', 'message', 'read_by', 'attachment_path', 'attachment_name',
     ];
 
     protected $casts = [
         'read_by' => 'array',
     ];
+
+    protected $appends = ['attachment_url'];
+
+    public function getAttachmentUrlAttribute()
+    {
+        return $this->attachment_path ? route('contracts.message-attachment', ['messageId' => $this->id]) : null;
+    }
 
     public function contract(): BelongsTo
     {

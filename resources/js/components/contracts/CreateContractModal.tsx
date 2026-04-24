@@ -7,9 +7,10 @@ interface Props {
     onSubmit: (data: FormData) => Promise<void>;
     types?: any[];
     users?: any[];
+    vendors?: any[];
 }
 
-export default function CreateContractModal({ open, onClose, onSubmit, types = [], users = [] }: Props) {
+export default function CreateContractModal({ open, onClose, onSubmit, types = [], users = [], vendors = [] }: Props) {
     const { auth } = usePage().props as any;
     const [title, setTitle] = useState('');
     const [desc, setDesc] = useState('');
@@ -17,6 +18,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
     const [transactionType, setTransactionType] = useState('Perjanjian Baru');
     const [taxRequired, setTaxRequired] = useState(false);
     const [initiatedById, setInitiatedById] = useState('');
+    const [vendorId, setVendorId] = useState('');
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -53,6 +55,9 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
         if (initiatedById) {
             fd.append('initiated_by_id', initiatedById);
         }
+        if (vendorId) {
+            fd.append('vendor_id', vendorId);
+        }
 
         setLoading(true);
         try {
@@ -64,6 +69,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
             setTransactionType('Perjanjian Baru');
             setTaxRequired(false);
             setInitiatedById(auth?.user?.id || '');
+            setVendorId('');
         } catch (err: any) {
             if (err.response?.data?.errors) setErrors(err.response.data.errors);
             else setErrors({ general: 'Gagal membuat kontrak.' });
@@ -149,7 +155,26 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
 
                         <div>
                             <label className="text-muted-foreground mb-1.5 block text-[11px] font-semibold tracking-wider uppercase">
-                                Mode Transaksi <span className="text-red-500">*</span>
+                                Pihak Kedua (Vendor)
+                            </label>
+                            <select
+                                value={vendorId}
+                                onChange={(e) => setVendorId(e.target.value)}
+                                className="border-border placeholder:text-muted-foreground/30 w-full rounded-md border px-3 py-2 text-[12px] outline-none focus:border-indigo-500 bg-white font-bold text-indigo-600"
+                            >
+                                <option value="">Pilih Vendor</option>
+                                {vendors.map((v) => (
+                                    <option key={v.id} value={v.id}>{v.name}</option>
+                                ))}
+                            </select>
+                            <p className="mt-1 text-[9px] text-muted-foreground italic">Pilih vendor untuk autofill Pihak Kedua</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4">
+                        <div>
+                            <label className="text-muted-foreground mb-1.5 block text-[11px] font-semibold tracking-wider uppercase">
+                                Tipe Perjanjian <span className="text-red-500">*</span>
                             </label>
                             <select
                                 value={transactionType}

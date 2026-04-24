@@ -1,4 +1,5 @@
 import AgreementView from '@/components/contracts/AgreementView';
+import ContractAuditTrail from '@/components/contracts/ContractAuditTrail';
 import CompareModal from '@/components/contracts/CompareModal';
 import CreateContractModal from '@/components/contracts/CreateContractModal';
 import FloatingChat from '@/components/contracts/FloatingChat';
@@ -147,6 +148,7 @@ function ContractPage({
     filters,
     formTemplates = [],
     users = [],
+    vendors = [],
 }: {
     contracts: PaginatedData<Contract>;
     meId: string;
@@ -158,6 +160,7 @@ function ContractPage({
     filters: { search?: string; status?: string; contract_type_id?: string; per_page?: number };
     formTemplates?: any[];
     users?: any[];
+    vendors?: any[];
 }) {
     const contracts = contractsPaged.data;
     const { showToast } = useToast();
@@ -359,26 +362,14 @@ function ContractPage({
                                         {detailTab === 'form_template' && <FormSubmissionTab docType="f1" selected={selected} formTemplates={formTemplates} onContractUpdated={updateContract} />}
                                         {detailTab === 'f2' && <FormSubmissionTab docType="f2" selected={selected} formTemplates={formTemplates} onContractUpdated={updateContract} />}
                                         {detailTab === 'agreement' && <AgreementView contract={selected} onUpdate={updateContract} />}
-                                        {detailTab === 'attachments' && <ContractAttachments contract={selected} onUpdated={updateContract} showToast={showToast} onPreview={(at) => { setPreviewTitle(at.label); setPreviewUrl(contractApi.attachmentDownloadUrl(selected.id, at.id)); setPreviewHasFile(true); setPreviewOpen(true); }} />}
-                                        {detailTab === 'audit' && (
-                                            <div className="flex flex-col gap-4">
-                                                {(selected as any).history?.map((h: any) => (
-                                                    <div key={h.id} className="flex gap-4">
-                                                        <div className="w-1 h-1 rounded-full mt-1.5" style={{ background: 'var(--primary)' }} />
-                                                        <div>
-                                                            <div className="text-foreground font-medium text-sm">{h.description}</div>
-                                                            <div className="text-muted-foreground text-xs mt-1">{h.actor?.name} · {h.created_at}</div>
-                                                        </div>
-                                                    </div>
-                                                )) || <div className="text-center text-muted-foreground text-xs py-8">Belum ada riwayat audit.</div>}
-                                            </div>
-                                        )}
+                                        {detailTab === 'attachments' && <ContractAttachments contract={selected} onUpdated={updateContract} showToast={showToast} />}
+                                        {detailTab === 'audit' && <ContractAuditTrail contract={selected} />}
                                         {detailTab === 'chat' && <ContractChat contract={selected} meId={meId} onNewMessage={updateContract} />}
                                     </div>
                                 </div>
                             </div>
                             <div className="flex flex-col gap-6">
-                                <DraftEditableInfoCard selected={selected} types={types} formTemplates={formTemplates} canUpdate={!!canUpdate} onUpdate={handleUpdate} processing={processing} setPreviewTitle={setPreviewTitle} setPreviewUrl={setPreviewUrl} setPreviewHasFile={setPreviewHasFile} setPreviewOpen={setPreviewOpen} />
+                                <DraftEditableInfoCard selected={selected} types={types} vendors={vendors} formTemplates={formTemplates} canUpdate={!!canUpdate} onUpdate={handleUpdate} processing={processing} setPreviewTitle={setPreviewTitle} setPreviewUrl={setPreviewUrl} setPreviewHasFile={setPreviewHasFile} setPreviewOpen={setPreviewOpen} />
                                 <div className="bg-card border-border overflow-hidden rounded-xl border shadow-sm">
                                     <div className="border-border/50 flex items-center gap-2 border-b p-4 font-bold text-xs uppercase tracking-widest bg-slate-50/50"><i className="fa-solid fa-arrow-right-arrow-left" /> Alur Approval</div>
                                     <div className="p-4"><ApprovalSteps approvals={selected.approvals} creator={selected.creator} submittedAt={selected.submitted_at ?? undefined} /></div>
@@ -449,10 +440,10 @@ function ContractPage({
                 )}
             </div>
 
-            <CreateContractModal open={createOpen} onClose={() => setCreateOpen(false)} onSubmit={handleCreate} types={types} users={users} />
+            <CreateContractModal open={createOpen} onClose={() => setCreateOpen(false)} onSubmit={handleCreate} types={types} users={users} vendors={vendors} />
             <RejectModal open={rejectOpen} onClose={() => setRejectOpen(false)} onSubmit={handleReject} />
             <SendApprovalModal open={sendOpen} onClose={() => setSendOpen(false)} onSubmit={handleSendSubmit} contractType={selected?.contract_type ?? undefined} />
-            <EditContractModal open={editOpen} onClose={() => setEditOpen(false)} onSubmit={handleUpdate} contract={selected} types={types} processing={processing} />
+            <EditContractModal open={editOpen} onClose={() => setEditOpen(false)} onSubmit={handleUpdate} contract={selected} types={types} vendors={vendors} processing={processing} />
             <FilterDialog open={filterOpen} onOpenChange={setFilterOpen} types={types} activeFilters={{ status: statusFilter, contract_type_id: typeFilter }} onFilterChange={(fs) => { if (fs.status) setStatusFilter(fs.status); if (fs.contract_type_id) setTypeFilter(fs.contract_type_id); handleFilterChange(fs); }} onClearAll={() => { setStatusFilter([]); setTypeFilter([]); handleFilterChange({ status: [], contract_type_id: [] }); }} />
             <ConfirmationModal open={deleteOpen} onClose={() => setDeleteOpen(false)} onConfirm={handleDelete} title="Hapus Kontrak?" description="Seluruh data dokumen, riwayat, dan chat terkait kontrak ini akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan." processing={processing} />
             <PreviewModal open={previewOpen} onClose={() => setPreviewOpen(false)} title={previewTitle} url={previewUrl} hasFile={previewHasFile} />
@@ -470,6 +461,7 @@ export default function ContractsIndex({
     initialSelected: initialSelectedProp = null,
     filters = {},
     users = [],
+    vendors = [],
 }: any) {
     const { auth, contractId: initialId } = usePage<{ auth: { user: any }; contractId?: string }>().props;
     const meId = auth?.user?.id ?? '';
@@ -542,7 +534,7 @@ export default function ContractsIndex({
                         <span>Memuat data kontrak...</span>
                     </div>
                 ) : (
-                    <ContractPage contracts={contractsPaged} meId={meId} meUser={meUser} initialSelected={initialSelected} types={types} formTemplates={initialFormTemplates} currentView={currentView} metrics={metrics} filters={filters} users={users} />
+                    <ContractPage contracts={contractsPaged} meId={meId} meUser={meUser} initialSelected={initialSelected} types={types} vendors={vendors} formTemplates={initialFormTemplates} currentView={currentView} metrics={metrics} filters={filters} users={users} />
                 )}
             </ToastProvider>
         </>

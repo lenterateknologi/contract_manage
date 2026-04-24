@@ -49,6 +49,7 @@ class Contract extends Model
         'f2_payment',
         'f2_tenure',
         'f2_location',
+        'vendor_id',
     ];
 
     protected $casts = [
@@ -111,6 +112,11 @@ class Contract extends Model
     public function workflowStep(): BelongsTo
     {
         return $this->belongsTo(WorkflowStep::class);
+    }
+
+    public function vendor(): BelongsTo
+    {
+        return $this->belongsTo(Vendor::class, 'vendor_id');
     }
 
     public function currentVersionModel(): ?ContractVersion

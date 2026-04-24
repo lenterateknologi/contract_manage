@@ -1,12 +1,34 @@
 import { contractApi } from '@/lib/contract-api';
+import { cn } from '@/lib/utils';
 import { Contract, ContractAttachment } from '@/types/contracts';
-import React, { useRef, useState } from 'react';
+import axios from 'axios';
+import { renderAsync } from 'docx-preview';
+import { Loader2 } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface Props {
     contract: Contract;
     onUpdated: (c: Contract) => void;
     showToast: (msg: string, type: 'success' | 'danger') => void;
 }
+
+const DOCX_STYLES = `
+    .docx-wrapper {
+        background: white !important;
+        padding: 20px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+    }
+    .docx-wrapper > section.docx {
+        box-shadow: none !important;
+        margin-bottom: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+        width: 100% !important;
+    }
+    .docx { background: white !important; }
+`;
 
 const CATEGORIES = [
     {
@@ -32,11 +54,43 @@ const CATEGORIES = [
     },
 ];
 
-export default function ContractAttachments({ contract, onUpdated, showToast, onPreview }: Props & { onPreview: (at: ContractAttachment) => void }) {
+export default function ContractAttachments({ contract, onUpdated, showToast }: Props) {
     const [uploading, setUploading] = useState<string | null>(null);
     const fileRef = useRef<HTMLInputElement>(null);
     const [activeLabel, setActiveLabel] = useState<string | null>(null);
     const [activeCat, setActiveCat] = useState<string | null>(null);
+    const [previewAt, setPreviewAt] = useState<ContractAttachment | null>(null);
+    const [previewLoading, setPreviewLoading] = useState(false);
+    const previewContainerRef = useRef<HTMLDivElement>(null);
+
+    // Reactive Preview Logic
+    useEffect(() => {
+        if (!previewAt) return;
+
+        const fileName = (previewAt.file_name || '').toLowerCase();
+        const isDocx = fileName.endsWith('.docx');
+
+        if (isDocx) {
+            const fetchAndRender = async () => {
+                setPreviewLoading(true);
+                try {
+                    const res = await axios.get(`/api/contracts/${contract.id}/attachment/${previewAt.id}`, {
+                        responseType: 'blob',
+                    });
+
+                    if (previewContainerRef.current) {
+                        previewContainerRef.current.innerHTML = '';
+                        await renderAsync(res.data, previewContainerRef.current);
+                    }
+                } catch (err) {
+                    console.error('Docx preview failed', err);
+                } finally {
+                    setPreviewLoading(false);
+                }
+            };
+            fetchAndRender();
+        }
+    }, [previewAt, contract.id]);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -73,17 +127,79 @@ export default function ContractAttachments({ contract, onUpdated, showToast, on
 
     const getAttachment = (label: string) => contract.attachments?.find((a) => a.label === label);
 
-    return (
-        <div className="space-y-8">
-            <input type="file" ref={fileRef} className="hidden" onChange={handleFileChange} />
+    if (previewAt) {
+        return (
+            <div className="bg-card animate-in fade-in flex flex-1 flex-col overflow-hidden duration-500">
+                <style>{DOCX_STYLES}</style>
+                {/* High-Fidelity HUD for Attachment Preview */}
+                <div className="border-border/60 flex h-[72px] shrink-0 items-center justify-between border-b bg-white/50 px-6 backdrop-blur-sm">
+                    <div className="flex items-center gap-4">
+                        <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                                <div className="h-4 w-1 rounded-full bg-orange-500" />
+                                <h4 className="text-[11px] leading-none font-black tracking-tighter text-slate-900 uppercase">{previewAt.label}</h4>
+                                <span className="animate-in fade-in zoom-in rounded bg-slate-950 px-1.5 py-0.5 text-[8px] font-black tracking-widest text-white uppercase duration-500">
+                                    {previewAt.category || 'Attachment'}
+                                </span>
+                            </div>
+                            <span className="mt-1.5 text-[9px] font-black tracking-[0.2em] text-orange-500 uppercase">
+                                {previewAt.file_name} &bull; Document Preview
+                            </span>
+                        </div>
+                    </div>
 
+                    <div className="flex items-center gap-2.5">
+                        <button
+                            onClick={() => setPreviewAt(null)}
+                            className="border-border flex h-8 items-center gap-2 rounded-xl border bg-white px-4 text-[9px] font-black tracking-widest text-slate-600 uppercase shadow-sm transition-all hover:bg-slate-50 active:scale-95"
+                        >
+                            <i className="fa-solid fa-arrow-left text-[10px]" /> BACK TO LIST
+                        </button>
+
+                        <a
+                            href={contractApi.attachmentDownloadUrl(contract.id, previewAt.id)}
+                            download
+                            className="border-border flex h-8 items-center gap-2 rounded-xl border bg-white px-4 text-[9px] font-black tracking-widest text-slate-900 uppercase shadow-sm transition-all hover:border-slate-300 hover:bg-slate-50 active:scale-95"
+                        >
+                            <i className="fa-solid fa-download text-[10px] text-slate-400" /> DOWNLOAD
+                        </a>
+                    </div>
+                </div>
+
+                <div className="flex flex-1 justify-center bg-white p-8">
+                    <div className="relative mb-20 min-h-[80vh] w-full max-w-[210mm] overflow-hidden rounded-sm bg-white shadow-2xl ring-1 ring-slate-200">
+                        {previewLoading && (
+                            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 backdrop-blur-sm">
+                                <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+                            </div>
+                        )}
+
+                        {previewAt.file_name.toLowerCase().endsWith('.docx') ? (
+                            <div ref={previewContainerRef} className="docx-container contract-doc w-full p-12 text-left" />
+                        ) : (
+                            <iframe
+                                src={`/api/contracts/${contract.id}/attachment-pdf/${previewAt.id}#toolbar=0&navpanes=0&view=FitH`}
+                                className="absolute top-0 left-[-3%] h-full w-[106%] border-none bg-white"
+                                title="Attachment Preview"
+                                style={{ backgroundColor: 'white' }}
+                            />
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="animate-in fade-in space-y-8 duration-500">
+            <input type="file" ref={fileRef} className="hidden" onChange={handleFileChange} />
             {CATEGORIES.map((cat) => (
                 <div key={cat.id}>
-                    <h6 className="text-foreground mb-3 flex items-center gap-2 text-[12px] font-bold">
-                        <div className="bg-primary h-1.5 w-1.5 rounded-full" />
+                    <h6 className="text-foreground/80 mb-4 flex items-center gap-2 text-[10px] font-black tracking-widest uppercase">
+                        <div className="h-1.5 w-1.5 rounded-full bg-slate-900" />
                         {cat.label}
                     </h6>
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-2">
                         {cat.items.map((label) => {
                             const at = getAttachment(label);
                             const isUp = uploading === label;
@@ -91,49 +207,65 @@ export default function ContractAttachments({ contract, onUpdated, showToast, on
                             return (
                                 <div
                                     key={label}
-                                    className={`flex items-center justify-between rounded-lg border p-3 transition-all ${at ? 'bg-primary/5 border-primary/20 dark:bg-primary/10 dark:border-primary/20' : 'bg-card border-border'}`}
+                                    onClick={() => at && setPreviewAt(at)}
+                                    className={cn(
+                                        'group relative flex items-center justify-between rounded-xl border p-3.5 transition-all outline-none',
+                                        at
+                                            ? 'cursor-pointer border-slate-200 bg-white hover:border-slate-300 hover:shadow-md'
+                                            : 'border-slate-200/60 bg-slate-50/30',
+                                    )}
                                 >
-                                    <div className="flex min-w-0 items-center gap-3">
+                                    <div className="flex min-w-0 items-center gap-3.5">
                                         <div
-                                            className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg ${at ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}
+                                            className={cn(
+                                                'flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl transition-colors',
+                                                at
+                                                    ? 'bg-slate-100 text-slate-900 group-hover:bg-slate-900 group-hover:text-white'
+                                                    : 'bg-slate-100 text-slate-300',
+                                            )}
                                         >
-                                            <i className={at ? 'fa-solid fa-file-circle-check' : 'fa-regular fa-file'} />
+                                            <i className={cn('text-[14px]', at ? 'fa-solid fa-file-circle-check' : 'fa-regular fa-file')} />
                                         </div>
                                         <div className="min-w-0">
-                                            <div className="text-foreground/80 truncate text-[12px] font-medium" title={label}>
+                                            <div
+                                                className={cn(
+                                                    'truncate text-[11px] font-bold tracking-tight',
+                                                    at ? 'text-slate-900' : 'text-slate-400',
+                                                )}
+                                                title={label}
+                                            >
                                                 {label}
                                             </div>
                                             {at ? (
-                                                <div className="text-muted-foreground mt-0.5 truncate text-[10px]">
+                                                <div className="mt-0.5 truncate text-[9px] font-medium tracking-tight text-slate-400 uppercase">
                                                     {at.file_name} · {at.created_at}
                                                 </div>
                                             ) : (
-                                                <div className="text-muted-foreground/50 mt-0.5 text-[10px]">Belum ada dokumen</div>
+                                                <div className="mt-0.5 text-[9px] font-medium tracking-widest text-slate-300 uppercase italic">
+                                                    Belum ada dokumen
+                                                </div>
                                             )}
                                         </div>
                                     </div>
 
-                                    <div className="ml-3 flex flex-shrink-0 items-center gap-1.25">
+                                    <div className="ml-3 flex flex-shrink-0 items-center gap-1.5">
                                         {at ? (
                                             <>
-                                                <button
-                                                    onClick={() => onPreview(at)}
-                                                    className="hover:bg-primary/10 text-primary/70 hover:text-primary flex h-7 w-7 items-center justify-center rounded-md transition-colors"
-                                                    title="Preview"
-                                                >
-                                                    <i className="fa-solid fa-eye text-[11px]" />
-                                                </button>
                                                 <a
                                                     href={contractApi.attachmentDownloadUrl(contract.id, at.id)}
                                                     download
-                                                    className="hover:bg-primary/10 text-primary/70 hover:text-primary flex h-7 w-7 items-center justify-center rounded-md transition-colors"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    className="border-border flex h-8 w-8 items-center justify-center rounded-lg border bg-white shadow-sm transition-all hover:bg-slate-900 hover:text-white active:scale-95"
                                                     title="Download"
                                                 >
                                                     <i className="fa-solid fa-download text-[11px]" />
                                                 </a>
                                                 <button
-                                                    onClick={() => handleDelete(at.id, label)}
-                                                    className="hover:bg-destructive/10 text-destructive/70 hover:text-destructive flex h-7 w-7 items-center justify-center rounded-md transition-colors"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDelete(at.id, label);
+                                                    }}
+                                                    className="border-border flex h-8 w-8 items-center justify-center rounded-lg border bg-white text-rose-600 shadow-sm transition-all hover:bg-rose-600 hover:text-white active:scale-95"
                                                     title="Delete"
                                                 >
                                                     <i className="fa-solid fa-trash-can text-[11px]" />
@@ -142,14 +274,19 @@ export default function ContractAttachments({ contract, onUpdated, showToast, on
                                         ) : (
                                             <button
                                                 disabled={!!uploading}
-                                                onClick={() => {
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
                                                     setActiveLabel(label);
                                                     setActiveCat(cat.id);
                                                     fileRef.current?.click();
                                                 }}
-                                                className="bg-muted hover:bg-primary text-muted-foreground hover:text-primary-foreground flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[10px] font-semibold transition-all disabled:opacity-50"
+                                                className="border-border flex h-8 items-center gap-1.5 rounded-lg border bg-white px-3 text-[9px] font-black tracking-widest text-slate-400 uppercase shadow-sm transition-all hover:bg-slate-900 hover:text-white active:scale-95 disabled:opacity-50"
                                             >
-                                                {isUp ? <i className="fa-solid fa-spinner fa-spin" /> : <i className="fa-solid fa-plus" />}
+                                                {isUp ? (
+                                                    <i className="fa-solid fa-spinner fa-spin" />
+                                                ) : (
+                                                    <i className="fa-solid fa-plus text-[10px]" />
+                                                )}
                                                 Upload
                                             </button>
                                         )}

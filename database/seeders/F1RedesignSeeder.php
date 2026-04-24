@@ -199,7 +199,7 @@ class F1RedesignSeeder extends Seeder
             ],
             [
                 "id" => "019db402-e391-7201-b6b2-a8820fb9e923",
-                "label" => "TANGGAL PERMINTAAN",
+                "label" => "Tgl Dibuat",
                 "name" => "bv_f1_date",
                 "type" => "labeled_value",
                 "width" => "100",
@@ -216,7 +216,7 @@ class F1RedesignSeeder extends Seeder
             ],
             [
                 "id" => "019db402-e395-705d-8b97-36578079638d",
-                "label" => "JUDUL / NAMA PERJANJIAN",
+                "label" => "Judul Kontrak",
                 "name" => "bv_f1_title",
                 "type" => "labeled_value",
                 "width" => "100",
@@ -251,7 +251,7 @@ class F1RedesignSeeder extends Seeder
             ],
             [
                 "id" => "019db402-e398-72c5-8fc1-cf49d3a8497e",
-                "label" => "SIFAT PERJANJIAN",
+                "label" => "Tipe Perjanjian",
                 "name" => "f1_sifat_row",
                 "type" => "labeled_value",
                 "width" => "100",
@@ -260,7 +260,7 @@ class F1RedesignSeeder extends Seeder
                     "value_type" => "searchable_select",
                     "label_width" => "220px",
                     "show_colon" => true,
-                    "placeholder" => "Pilih Sifat Perjanjian...",
+                    "placeholder" => "Pilih Tipe Perjanjian...",
                     "items" => [
                         ["label" => "BARU", "value" => "BARU"],
                         ["label" => "PERPANJANGAN", "value" => "PERPANJANGAN"],

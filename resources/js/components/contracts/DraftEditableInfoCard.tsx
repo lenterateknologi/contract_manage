@@ -16,6 +16,7 @@ export interface FormTemplateInfo {
 interface DraftEditableInfoCardProps {
     selected: Contract;
     types: ContractType[];
+    vendors: any[];
     formTemplates: FormTemplateInfo[];
     canUpdate: boolean;
     onUpdate: (data: any) => void;
@@ -29,6 +30,7 @@ interface DraftEditableInfoCardProps {
 export function DraftEditableInfoCard({
     selected,
     types,
+    vendors = [],
     formTemplates,
     canUpdate,
     onUpdate,
@@ -45,6 +47,7 @@ export function DraftEditableInfoCard({
         const t = types.find((x) => x.name === selected.contract_type);
         return t ? String(t.id) : '';
     });
+    const [vendorId, setVendorId] = useState(selected.vendor_id || '');
     const [minimized, setMinimized] = useState(false);
 
     useEffect(() => {
@@ -52,16 +55,17 @@ export function DraftEditableInfoCard({
         setDescription(selected.description || '');
         const t = types.find((x) => x.name === selected.contract_type);
         setTypeId(t ? String(t.id) : '');
-    }, [selected.id, selected.title, selected.description, selected.contract_type, types]);
+        setVendorId(selected.vendor_id || '');
+    }, [selected.id, selected.title, selected.description, selected.contract_type, selected.vendor_id, types]);
 
     const hasChanges = useMemo(() => {
         const origType = types.find((x) => x.name === selected.contract_type);
         const origTypeId = origType ? String(origType.id) : '';
-        return title !== selected.title || description !== (selected.description || '') || typeId !== origTypeId;
-    }, [title, description, typeId, selected, types]);
+        return title !== selected.title || description !== (selected.description || '') || typeId !== origTypeId || vendorId !== (selected.vendor_id || '');
+    }, [title, description, typeId, vendorId, selected, types]);
 
     const handleSave = () => {
-        onUpdate({ title, description, contract_type_id: typeId || undefined });
+        onUpdate({ title, description, contract_type_id: typeId || undefined, vendor_id: vendorId || undefined });
     };
 
     const inputCls =
@@ -169,6 +173,35 @@ export function DraftEditableInfoCard({
                         ) : (
                             <span className="rounded-full border border-blue-100 bg-blue-50 px-2 py-0.5 text-xs font-bold tracking-wider text-blue-700 uppercase dark:border-blue-900/30 dark:bg-blue-900/20 dark:text-blue-400">
                                 {selected.contract_type}
+                            </span>
+                        )}
+                    </div>
+
+                    <div>
+                        <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
+                            Tipe Perjanjian
+                        </div>
+                        <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-xs font-bold tracking-wider text-emerald-700 uppercase dark:border-emerald-900/30 dark:bg-emerald-900/20 dark:text-emerald-400">
+                            {selected.transaction_type || 'Perjanjian Baru'}
+                        </span>
+                    </div>
+
+                    <div>
+                        <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
+                            Pihak Kedua (Vendor)
+                        </div>
+                        {isDraft ? (
+                            <select value={vendorId} onChange={(e) => setVendorId(e.target.value)} className={inputCls + ' font-bold text-indigo-600'}>
+                                <option value="">Pilih Vendor</option>
+                                {vendors.map((v) => (
+                                    <option key={v.id} value={v.id}>
+                                        {v.name}
+                                    </option>
+                                ))}
+                            </select>
+                        ) : (
+                            <span className="rounded-full border border-indigo-100 bg-indigo-50 px-2 py-0.5 text-xs font-bold tracking-wider text-indigo-700 uppercase dark:border-indigo-900/30 dark:bg-indigo-900/20 dark:text-indigo-400">
+                                {(selected as any).vendor?.name || '-'}
                             </span>
                         )}
                     </div>

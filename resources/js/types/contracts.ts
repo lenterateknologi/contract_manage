@@ -96,6 +96,7 @@ export interface Contract {
     end_date: string | null;
     contract_type: string | null;
     contract_type_id?: string;
+    transaction_type?: string;
     created_by: string;
     status: ContractStatus;
     current_version: number;
@@ -117,12 +118,20 @@ export interface Contract {
     messages?: ContractMessage[];
     attachments?: ContractAttachment[];
     form_submissions?: ContractFormSubmissionInfo[];
-    initiated_by?: UserProfile;
+    initiator?: UserProfile;
     workflow_phase?: string;
     sla_deadline?: string | null;
     sla_total_deadline?: string | null;
     sla_is_overdue?: boolean;
     sla_total_overdue?: boolean;
+    vendor_id?: string;
+    vendor?: {
+        id: string;
+        name: string;
+        pic_name?: string;
+        pic_position?: string;
+        address?: string;
+    };
 }
 
 export type ContractStatus = 'draft' | 'in_review' | 'revision' | 'approved' | 'locked' | 'archived';

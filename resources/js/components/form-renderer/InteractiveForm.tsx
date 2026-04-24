@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
-import React, { useMemo } from 'react';
 import { Plus } from 'lucide-react';
+import React, { useMemo } from 'react';
 import { FormElement, FormField } from './FormElement';
 
 export interface FormTemplate {
@@ -26,26 +26,30 @@ interface InteractiveFormProps {
     onSelect?: (id: string, e?: React.MouseEvent) => void;
     onMove?: (id: string, direction: 'up' | 'down') => void;
     selectedFieldIds?: string[];
+    diffData?: Record<string, 'added' | 'removed' | 'modified'>;
+    comparisonData?: Record<string, any>;
 }
 
-export const InteractiveForm: React.FC<InteractiveFormProps> = ({ 
-    template, 
-    formData, 
-    onChange, 
-    readOnly = false, 
-    isBuilder = false, 
+export const InteractiveForm: React.FC<InteractiveFormProps> = ({
+    template,
+    formData,
+    onChange,
+    readOnly = false,
+    isBuilder = false,
     className,
     onRemove,
     onDuplicate,
     onSelect,
     onMove,
-    selectedFieldIds = []
+    selectedFieldIds = [],
+    diffData = {},
+    comparisonData = {},
 }) => {
     const rootFields = useMemo(() => {
         return (template?.fields || []).filter((f) => !f.parent_id).sort((a, b) => a.order - b.order);
     }, [template.fields]);
 
-    const allFieldIds = useMemo(() => (template.fields || []).map(f => f.id), [template.fields]);
+    const allFieldIds = useMemo(() => (template.fields || []).map((f) => f.id), [template.fields]);
 
     const updateValue = (name: string, value: any) => {
         if (onChange) {
@@ -76,15 +80,15 @@ export const InteractiveForm: React.FC<InteractiveFormProps> = ({
                 {isBuilder && rootFields.length === 0 && (
                     <div className="flex h-[200mm] w-full flex-col items-center justify-center gap-4 rounded-2xl border-4 border-dashed border-slate-100 bg-slate-50/50">
                         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-slate-200">
-                             <Plus className="text-primary" size={32} />
+                            <Plus className="text-primary" size={32} />
                         </div>
                         <div className="text-center">
                             <h3 className="text-sm font-black tracking-widest text-slate-400 uppercase">Kanvas Kosong</h3>
-                            <p className="text-[10px] text-slate-400 font-medium">Tarik elemen dari kiri ke sini untuk mulai membangun</p>
+                            <p className="text-[10px] font-medium text-slate-400">Tarik elemen dari kiri ke sini untuk mulai membangun</p>
                         </div>
                     </div>
                 )}
-                
+
                 <SortableContext items={allFieldIds} strategy={verticalListSortingStrategy}>
                     {rootFields.map((field) => (
                         <FormElement
@@ -102,17 +106,13 @@ export const InteractiveForm: React.FC<InteractiveFormProps> = ({
                             onSelect={onSelect}
                             onMove={onMove}
                             isSelected={selectedFieldIds.includes(field.id)}
+                            diffStatus={diffData[field.name]}
+                            comparisonValue={comparisonData[field.name]}
+                            diffData={diffData}
+                            comparisonData={comparisonData}
                         />
                     ))}
                 </SortableContext>
-            </div>
-
-            {/* Standardized Footer for Visual Consistency */}
-            <div className="border-border text-muted-foreground/40 mt-16 flex items-center justify-between border-t pt-8 text-[9px] font-black tracking-widest uppercase">
-                <span>Lentera Teknologi Legal System</span>
-                <span>
-                    {template.name} / {readOnly ? 'Verified Copy' : 'Interactive Form'}
-                </span>
             </div>
         </div>
     );

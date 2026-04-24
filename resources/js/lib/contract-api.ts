@@ -39,8 +39,12 @@ export const contractApi = {
     attachmentPdfPreviewUrl: (id: string, atId: string) => `/api/contracts/${id}/attachment-pdf/${atId}`,
     messages: {
         list: (contractId: string) => api.get(`/api/contracts/${contractId}/messages`).then((r) => r.data),
-        send: (contractId: string, message: string) =>
-            api.post(`/api/contracts/${contractId}/messages`, { message }).then((r) => r.data),
+        send: (contractId: string, message: string, file?: File) => {
+            const fd = new FormData();
+            fd.append('message', message);
+            if (file) fd.append('attachment', file);
+            return api.post(`/api/contracts/${contractId}/messages`, fd).then((r) => r.data);
+        },
         markRead: (contractId: string) =>
             api.post(`/api/contracts/${contractId}/messages/read`).then((r) => r.data),
     },
@@ -50,5 +54,12 @@ export const contractApi = {
         get: (contractId: string, type: string): Promise<any> =>
             api.get(`/api/contracts/${contractId}/form-submissions/${type}`).then((r) => r.data),
         pdfUrl: (contractId: string, type: string) => `/api/contracts/${contractId}/form-submissions/${type}/pdf`,
+    },
+    auditTrail: {
+        list: (id: string, params?: any): Promise<any[]> => api.get(`/api/contracts/${id}/audit-trail`, { params }).then((r) => r.data),
+        exportPdfUrl: (id: string, params?: any) => {
+            const qs = new URLSearchParams(params).toString();
+            return `/api/contracts/${id}/audit-trail/pdf${qs ? '?' + qs : ''}`;
+        },
     },
 };

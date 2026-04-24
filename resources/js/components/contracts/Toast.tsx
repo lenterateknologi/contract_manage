@@ -27,7 +27,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         if (timerRef.current) window.clearTimeout(timerRef.current);
     }, []);
 
-    const bgMap = { success: 'bg-green-600', danger: 'bg-red-600', info: 'bg-gray-800' };
+    const bgMap = { success: 'bg-emerald-600', danger: 'bg-rose-600', info: 'bg-slate-900' };
     const iconMap = { success: 'fa-circle-check', danger: 'fa-circle-xmark', info: 'fa-circle-info' };
 
     return (
@@ -36,11 +36,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             {toast && (
                 <div
                     key={toast.id}
-                    className={`fixed right-8 bottom-24 z-[200] flex items-center gap-2 rounded-lg px-4 py-2.5 text-[12px] font-medium text-white shadow-xl ${bgMap[toast.type]}`}
-                    style={{ animation: 'toast-in .18s ease' }}
+                    className="animate-in slide-in-from-bottom-5 fixed bottom-10 left-1/2 z-[1000] flex -translate-x-1/2 items-center gap-3 rounded-2xl border border-white/20 bg-slate-900/90 px-6 py-3.5 text-[10px] font-black tracking-widest text-white shadow-2xl shadow-slate-900/20 backdrop-blur-xl duration-300"
                 >
-                    <i className={`fa-solid ${iconMap[toast.type]} text-[13px]`} />
-                    {toast.msg}
+                    <i className={`fa-solid ${iconMap[toast.type]} text-[12px] ${toast.type === 'success' ? 'text-emerald-400' : 'text-rose-400'}`} />
+                    <span className="uppercase">{toast.msg}</span>
                 </div>
             )}
         </ToastContext.Provider>

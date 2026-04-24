@@ -36,6 +36,10 @@ interface FormElementProps {
     onSelect?: (id: string, e?: React.MouseEvent) => void;
     onMove?: (id: string, direction: 'up' | 'down') => void;
     isSelected?: boolean;
+    diffStatus?: 'added' | 'removed' | 'modified';
+    comparisonValue?: any;
+    diffData?: Record<string, 'added' | 'removed' | 'modified'>;
+    comparisonData?: Record<string, any>;
 }
 
 export const FormElement: React.FC<FormElementProps> = ({
@@ -52,7 +56,53 @@ export const FormElement: React.FC<FormElementProps> = ({
     onSelect,
     onMove,
     isSelected = false,
+    diffStatus,
+    comparisonValue,
+    diffData = {},
+    comparisonData = {},
 }) => {
+    // Basic word-level diff utility
+    const renderDiff = (oldText: string = '', newText: string = '', type: 'removed' | 'added' | 'modified') => {
+        // Clean up text - treat "—" as empty
+        const cleanOld = (oldText === '—' || !oldText) ? '' : String(oldText);
+        const cleanNew = (newText === '—' || !newText) ? '' : String(newText);
+
+        if (type === 'removed') {
+            return (
+                <span className="text-rose-900 bg-rose-50/50 line-through decoration-rose-400 decoration-2 italic">
+                    {cleanOld || '—'}
+                </span>
+            );
+        }
+        if (type === 'added') {
+            return (
+                <span className="text-emerald-950 bg-emerald-100/50 px-1 rounded font-bold underline decoration-emerald-300 underline-offset-2">
+                    {cleanNew}
+                </span>
+            );
+        }
+
+        // Modified: Show BOTH old (strikethrough) and new (highlight)
+        return (
+            <span className="inline-flex flex-wrap gap-x-2 items-center">
+                <span className="text-rose-950/40 line-through decoration-rose-300 decoration-1 text-[0.85em]">{cleanOld || '—'}</span>
+                <span className="text-emerald-950 bg-emerald-100/50 px-1 rounded font-bold underline decoration-emerald-300 underline-offset-2">{cleanNew}</span>
+            </span>
+        );
+    };
+
+    const renderValue = (val: any) => {
+        const displayVal = (val === null || val === undefined || val === '') ? '—' : val;
+        
+        if (diffStatus) {
+            return renderDiff(comparisonValue, val, diffStatus);
+        }
+
+        if (field.type === 'signature') {
+            return <div className="p-4 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 font-bold uppercase text-[10px] tracking-widest text-center">Digital Signature Field</div>;
+        }
+        return displayVal;
+    };
     const {
         attributes,
         listeners,
@@ -114,6 +164,10 @@ export const FormElement: React.FC<FormElementProps> = ({
                 field={child}
                 allFields={allFields}
                 value={previewData[child.name]}
+                comparisonValue={comparisonData[child.name]}
+                diffStatus={diffData[child.name]}
+                diffData={diffData}
+                comparisonData={comparisonData}
                 onChange={(val: any) => updateValue(child.name, val)}
                 previewData={previewData}
                 updateValue={updateValue}
@@ -256,7 +310,7 @@ export const FormElement: React.FC<FormElementProps> = ({
                                     fontStyle: field.options?.font_style || undefined,
                                 }}
                             >
-                                {value || '—'}
+                                {renderValue(value)}
                             </span>
                         </div>
                     );
@@ -313,7 +367,7 @@ export const FormElement: React.FC<FormElementProps> = ({
                                 className={cn(commonTextStyles, "text-foreground border-b border-dotted border-border flex-1 min-h-[1.2rem] block")}
                                 style={getTypographyStyle()}
                             >
-                                {value || '—'}
+                                {renderValue(value)}
                             </span>
                         </div>
                     );
@@ -421,7 +475,7 @@ export const FormElement: React.FC<FormElementProps> = ({
                                         </span>
                                     </div>
                                 ))}
-                                {options.length === 0 && <span className={cn(commonTextStyles, "text-foreground")}>{value || '—'}</span>}
+                                {options.length === 0 && <span className={cn(commonTextStyles, "text-foreground")}>{renderValue(value)}</span>}
                             </div>
                         </div>
                     );
@@ -478,7 +532,7 @@ export const FormElement: React.FC<FormElementProps> = ({
                                 className={cn(commonTextStyles, "text-foreground border-b border-dotted border-border flex-1 min-h-[1.2rem]")}
                                 style={getTypographyStyle()}
                             >
-                                {selectOptions.find((o: any) => o.value === value)?.label || value || '—'}
+                                {renderValue(selectOptions.find((o: any) => o.value === value)?.label || value)}
                             </span>
                         </div>
                     );
@@ -653,7 +707,7 @@ export const FormElement: React.FC<FormElementProps> = ({
                                 className={cn(commonTextStyles, "text-foreground border-b border-dotted border-border flex-1 min-h-[1.2rem]")}
                                 style={getTypographyStyle()}
                             >
-                                {value || '—'}
+                                {renderValue(value)}
                             </span>
                         </div>
                     );
@@ -755,7 +809,10 @@ export const FormElement: React.FC<FormElementProps> = ({
             className={cn(
                 'relative transition-all duration-200',
                 isBuilder && 'group/element',
-                isBuilder && isSelected && 'z-10'
+                isBuilder && isSelected && 'z-10',
+                diffStatus === 'added' && 'bg-emerald-50/70 ring-2 ring-emerald-200 rounded-lg',
+                diffStatus === 'removed' && 'bg-rose-50/70 ring-2 ring-rose-200 rounded-lg',
+                diffStatus === 'modified' && 'bg-amber-50/70 ring-2 ring-amber-200 rounded-lg',
             )}
             onClick={(e) => {
                 if (isBuilder) {
@@ -764,6 +821,16 @@ export const FormElement: React.FC<FormElementProps> = ({
                 }
             }}
         >
+            {diffStatus && (
+                <div className={cn(
+                    "absolute -top-2 -right-1 z-[60] px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-tighter shadow-sm",
+                    diffStatus === 'added' && "bg-emerald-600 text-white",
+                    diffStatus === 'removed' && "bg-rose-600 text-white",
+                    diffStatus === 'modified' && "bg-amber-600 text-white",
+                )}>
+                    {diffStatus}
+                </div>
+            )}
             <div style={{ ...getPaddingStyle(), position: 'relative' }}>
                 {/* Visual Block Wrapper for Builder Mode */}
                 {isBuilder && (

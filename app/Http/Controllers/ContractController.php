@@ -15,6 +15,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Services\ContractWorkflowService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -25,6 +26,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use App\Jobs\GeneratePdfJob;
 use Illuminate\Support\Facades\Cache;
+use App\Models\Vendor;
 use Illuminate\Support\Facades\URL;
 
 use Illuminate\Validation\ValidationException;
@@ -65,6 +67,13 @@ class ContractController extends Controller
             'contracts' => $contracts,
             'types' => ContractType::all(),
             'users' => User::orderBy('name')->get()->map(fn($u) => $this->formatUser($u)),
+            'vendors' => Vendor::where('is_active', true)->orderBy('name')->get()->map(fn($v) => [
+                'id' => $v->id,
+                'name' => $v->name,
+                'pic_name' => $v->pic_name,
+                'pic_position' => $v->pic_position,
+                'address' => $v->address,
+            ]),
             'formTemplates' => \App\Models\FormTemplate::where('is_active', true)->with('contractType')->get()->map(fn ($ft) => [
                 'id' => $ft->id,
                 'name' => $ft->name,
@@ -152,6 +161,13 @@ class ContractController extends Controller
             'initialSelected' => $this->formatContract($contract),
             'types' => ContractType::all(),
             'users' => User::orderBy('name')->get()->map(fn($u) => $this->formatUser($u)),
+            'vendors' => Vendor::where('is_active', true)->orderBy('name')->get()->map(fn($v) => [
+                'id' => $v->id,
+                'name' => $v->name,
+                'pic_name' => $v->pic_name,
+                'pic_position' => $v->pic_position,
+                'address' => $v->address,
+            ]),
             'formTemplates' => \App\Models\FormTemplate::where('is_active', true)->with('contractType')->get()->map(fn ($ft) => [
                 'id' => $ft->id,
                 'name' => $ft->name,
@@ -178,7 +194,7 @@ class ContractController extends Controller
         $query = Contract::with([
             'creator', 'contractType', 'approvals.approver', 'approvals.workflowStep',
             'workflow.steps', 'versions.uploader', 'histories.actor', 'messages.user',
-            'attachments.uploader', 'formSubmissions',
+            'attachments.uploader', 'formSubmissions', 'vendor', 'initiator'
         ])->orderByDesc('created_at');
 
         // Apply View Filter
@@ -375,6 +391,7 @@ class ContractController extends Controller
             'transaction_type' => 'nullable|string|in:Perjanjian Baru,Addendum,Amandement,Perubahan Perjanjian',
             'tax_required' => 'nullable|boolean',
             'initiated_by_id' => 'nullable|uuid|exists:m_users,id',
+            'vendor_id' => 'nullable|uuid|exists:m_vendors,id',
         ]);
 
         return DB::transaction(function () use ($validated) {
@@ -389,6 +406,7 @@ class ContractController extends Controller
                 'status' => 'draft',
                 'created_by' => $userId,
                 'initiated_by_id' => $validated['initiated_by_id'] ?? $userId,
+                'vendor_id' => $validated['vendor_id'] ?? null,
                 'metadata' => [
                     'tax_required' => $validated['tax_required'] ?? false,
                 ]
@@ -419,6 +437,7 @@ class ContractController extends Controller
             'contract_type_id' => 'nullable|exists:m_contract_types,id',
             'transaction_type' => 'nullable|string|in:Perjanjian Baru,Addendum,Amandement,Perubahan Perjanjian',
             'initiated_by_id' => 'nullable|uuid|exists:m_users,id',
+            'vendor_id' => 'nullable|uuid|exists:m_vendors,id',
         ]);
 
         $contract->update($validated);
@@ -597,7 +616,17 @@ class ContractController extends Controller
         $attachment = $contract->attachments()->findOrFail($atId);
 
         if ($attachment->file_path && Storage::disk('local')->exists($attachment->file_path)) {
-            return response()->download(Storage::disk('local')->path($attachment->file_path), $attachment->file_name);
+            $path = Storage::disk('local')->path($attachment->file_path);
+            $mime = match (strtolower(pathinfo($path, PATHINFO_EXTENSION))) {
+                'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'doc' => 'application/msword',
+                'pdf' => 'application/pdf',
+                default => 'application/octet-stream'
+            };
+
+            return response()->file($path, [
+                'Content-Type' => $mime,
+            ]);
         }
 
         return response()->json(['message' => 'File not found.'], 404);
@@ -798,6 +827,14 @@ class ContractController extends Controller
             'contract_type_id' => $c->contract_type_id,
             'created_by' => $c->created_by,
             'transaction_type' => $c->transaction_type,
+            'vendor_id' => $c->vendor_id,
+            'vendor' => $c->vendor ? [
+                'id' => $c->vendor->id,
+                'name' => $c->vendor->name,
+                'pic_name' => $c->vendor->pic_name,
+                'pic_position' => $c->vendor->pic_position,
+                'address' => $c->vendor->address,
+            ] : null,
             'status' => $c->status,
             'current_version' => $c->current_version,
             'created_at' => $c->created_at->toDateString(),
@@ -848,6 +885,8 @@ class ContractController extends Controller
                 'message' => $m->message,
                 'read_by' => $m->read_by ?? [],
                 'created_at' => $m->created_at->format('Y-m-d H:i'),
+                'attachment_url' => $m->attachment_url,
+                'attachment_name' => $m->attachment_name,
                 'user' => $this->formatUser($m->user),
             ]),
             'attachments' => $c->attachments->map(fn ($at) => [
@@ -999,9 +1038,21 @@ class ContractController extends Controller
                         $changes[] = $key;
                     }
                 }
+                
                 if (!empty($changes)) {
-                    $changeSummary = 'Perubahan pada: ' . implode(', ', array_slice($changes, 0, 10));
-                    if (count($changes) > 10) $changeSummary .= ' (dan ' . (count($changes) - 10) . ' lainnya)';
+                    // Fetch readable labels for the changed keys
+                    $fieldLabels = DB::table('m_form_fields')
+                        ->where('form_template_id', $submission->form_template_id)
+                        ->whereIn('name', $changes)
+                        ->pluck('label', 'name')
+                        ->toArray();
+
+                    $readableChanges = array_map(function($key) use ($fieldLabels) {
+                        return $fieldLabels[$key] ?? $key;
+                    }, $changes);
+
+                    $changeSummary = 'Perubahan pada: ' . implode(', ', array_slice($readableChanges, 0, 10));
+                    if (count($readableChanges) > 10) $changeSummary .= ' (dan ' . (count($readableChanges) - 10) . ' lainnya)';
                 }
             }
         }
@@ -1055,6 +1106,68 @@ class ContractController extends Controller
         $contract->load(['versions.uploader', 'approvals.user', 'approvals.workflowStep', 'creator', 'histories.actor', 'messages.user', 'attachments.uploader', 'contractType', 'workflow.steps', 'workflowStep', 'formSubmissions']);
 
         return response()->json($this->formatContract($contract));
+    }
+
+    /**
+     * Get the audit trail (history) for a contract with filtering.
+     */
+    public function getAuditTrail(string $id, Request $request): JsonResponse
+    {
+        $contract = Contract::findOrFail($id);
+
+        $query = $contract->histories()->with('actor')->orderBy('created_at', 'desc');
+
+        // Apply Filters
+        if ($request->action) {
+            $query->where('action', $request->action);
+        }
+
+        if ($request->actor_id) {
+            $query->where('actor_id', $request->actor_id);
+        }
+
+        if ($request->date_from) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        if ($request->date_to) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        if ($request->search) {
+            $query->where('description', 'like', '%' . $request->search . '%');
+        }
+
+        return response()->json($query->get()->map(function($h) {
+            return [
+                'id' => $h->id,
+                'action' => $h->action,
+                'description' => $h->description,
+                'actor' => $h->actor ? [
+                    'id' => $h->actor->id,
+                    'name' => $h->actor->name,
+                ] : null,
+                'created_at' => $h->created_at->format('d/m/Y H:i'),
+            ];
+        }));
+    }
+
+    /**
+     * Export the audit trail as a PDF.
+     */
+    public function exportAuditPdf(string $id, Request $request)
+    {
+        $contract = Contract::with(['creator', 'contractType'])->findOrFail($id);
+        $histories = $contract->histories()->with('actor')->orderBy('created_at', 'asc')->get();
+
+        $pdf = Pdf::loadView('pdf.contract-audit', [
+            'contract' => $contract,
+            'histories' => $histories,
+            'generated_at' => now()->format('d M Y H:i'),
+            'generated_by' => Auth::user()->name,
+        ]);
+
+        return $pdf->download("Audit_Trail_{$contract->contract_no}.pdf");
     }
 
     /**
@@ -1324,7 +1437,7 @@ class ContractController extends Controller
             'perjanjian_tentang' => ['bv_f1_title', 'f1_title', 'judul', 'perjanjian_xxxx', 'judul_kontrak'],
             'tanggal' => ['bv_f1_date', 'f1_date', 'tanggal_perjanjian', 'tanggal'],
             'pihak_pertama' => ['v_p1_entity', 'p1_entity', 'pihak_i_(pt.)', 'nama_pihak_1', 'pihak_i'],
-            'pihak_kedua' => ['v_p2_entity', 'p2_entity', 'pihak_ii_(pt.)', 'pihak_ii_(perorangan)', 'nama_pihak_2', 'pihak_ii'],
+            'pihak_kedua' => ['v_p2_entity', 'p2_entity', 'pihak_ii_(pt.)', 'pihak_ii_(perorangan)', 'nama_pihak_2', 'pihak_ii', 'vendor_name'],
             'ruang_lingkup' => ['bv_f1_tujuan', 'f1_tujuan', 'lingkup_pekerjaan', 'ruang_lingkup'],
             'harga_pekerjaan' => ['tdv_price', 'price', 'harga/fee', 'nilai_kontrak', 'harga_fee'],
             'cara_pembayaran' => ['tdv_top', 'top', 'terms_of_payment', 'mekanisme_pembayaran'],
@@ -1350,16 +1463,34 @@ class ContractController extends Controller
             }
         }
 
-        // Handle specific signature requirements for resume logic
-        if (!isset($formData['nama_pihak_1']) || empty($formData['nama_pihak_1'])) {
-             $formData['nama_pihak_1'] = $f1Data['v_p1_signer'] ?? ($f1Data['p1_signer'] ?? ($f1Data['pihak_i'] ?? ''));
+        // Logic for Pihak Pertama (Company Default)
+        if (empty($formData['pihak_pertama'])) {
+            $formData['pihak_pertama'] = 'PT. Lentera Teknologi';
+        }
+
+        // Logic for Pihak Pertama (Initiator / User Login context)
+        if (empty($formData['nama_pihak_1'])) {
+             $formData['nama_pihak_1'] = $contract->initiator->name ?? ($contract->creator->name ?? '');
+        }
+        if (empty($formData['jabatan_pihak_1'])) {
+             $formData['jabatan_pihak_1'] = $contract->initiator->role ?? ($contract->creator->role ?? 'Direktur');
+        }
+
+        // Logic for Pihak Kedua (Vendor Sync)
+        if ($contract->vendor_id && $contract->vendor) {
+            $v = $contract->vendor;
+            if (empty($formData['pihak_kedua'])) $formData['pihak_kedua'] = $v->name;
+            if (empty($formData['nama_pihak_2'])) $formData['nama_pihak_2'] = $v->pic_name;
+            if (empty($formData['jabatan_pihak_2'])) $formData['jabatan_pihak_2'] = $v->pic_position;
+            if (empty($formData['alamat_pihak_2'])) $formData['alamat_pihak_2'] = $v->address;
+            if (empty($formData['vendor_name'])) $formData['vendor_name'] = $v->name;
         }
 
         // Meta context
-        if (!isset($formData['no_kontrak'])) $formData['no_kontrak'] = $contract->contract_no;
-        if (!isset($formData['no_perjanjian'])) $formData['no_perjanjian'] = $contract->contract_no;
-        if (!isset($formData['pic'])) $formData['pic'] = $contract->creator->name ?? '';
-        if (!isset($formData['dimohonkan_oleh'])) $formData['dimohonkan_oleh'] = $contract->creator->name ?? '';
+        if (empty($formData['no_kontrak'])) $formData['no_kontrak'] = $contract->contract_no;
+        if (empty($formData['no_perjanjian'])) $formData['no_perjanjian'] = $contract->contract_no;
+        if (empty($formData['pic'])) $formData['pic'] = $contract->initiator->name ?? ($contract->creator->name ?? '');
+        if (empty($formData['dimohonkan_oleh'])) $formData['dimohonkan_oleh'] = $contract->initiator->name ?? ($contract->creator->name ?? '');
 
         return $formData;
     }
@@ -1393,6 +1524,53 @@ class ContractController extends Controller
         }
 
         return null;
+    }
+    
+    public function compareFormVersions(string $id, string $type)
+    {
+        $contract = Contract::findOrFail($id);
+        
+        // Find matching template (same logic as GenericFormTab)
+        $matchingTemplate = \App\Models\FormTemplate::where('document_type', $type)
+            ->where(function($q) use ($contract) {
+                $q->where('contract_type_id', $contract->contract_type_id)
+                  ->orWhereNull('contract_type_id');
+            })
+            ->orderByRaw('contract_type_id IS NULL ASC')
+            ->first();
+
+        $submission = \App\Models\ContractFormSubmission::where('contract_id', $contract->id)
+            ->where('document_type', $type)
+            ->first();
+
+        $versions = [];
+        if ($submission) {
+            $versions = $submission->versions()->orderByDesc('version_no')->get()->map(fn ($v) => [
+                'id' => $v->id,
+                'version_no' => $v->version_no,
+                'form_data' => $v->form_data,
+                'created_at' => $v->created_at->format('Y-m-d H:i'),
+                'created_by' => $v->createdBy ? $v->createdBy->name : '-',
+            ]);
+        }
+
+        return Inertia::render('admin/contracts/compare-forms', [
+            'contract' => $this->formatContract($contract),
+            'docType' => $type,
+            'template' => $matchingTemplate ? [
+                'id' => $matchingTemplate->id,
+                'name' => $matchingTemplate->name,
+                'description' => $matchingTemplate->description,
+                'has_letterhead' => $matchingTemplate->has_letterhead,
+                'letterhead_json' => $matchingTemplate->letterhead_json,
+                'fields' => $matchingTemplate->fields
+            ] : null,
+            'versions' => $versions,
+            'breadcrumbs' => [
+                ['title' => 'Manajemen Kontrak', 'href' => route('contracts'), 'icon' => 'FileText'],
+                ['title' => 'Compare Forms', 'href' => '#', 'icon' => 'Columns'],
+            ],
+        ]);
     }
 
     /**
@@ -1456,34 +1634,29 @@ class ContractController extends Controller
     /**
      * Compare two agreement versions
      */
-    public function compareAgreementVersions(Request $request, string $id): JsonResponse
+    public function compareAgreementVersions(Request $request, string $id): \Inertia\Response
     {
-        $request->validate([
-            'v1' => 'required|integer',
-            'v2' => 'required|integer'
-        ]);
-
         $contract = Contract::findOrFail($id);
         
-        $version1 = $contract->versions()
+        $versions = $contract->versions()
             ->where('document_type', 'agreement')
-            ->where('version_no', $request->v1)
-            ->firstOrFail();
+            ->orderByDesc('version_no')
+            ->get()
+            ->map(fn ($v) => [
+                'id' => $v->id,
+                'version_no' => $v->version_no,
+                'file_name' => $v->file_name,
+                'created_at' => $v->created_at->format('Y-m-d H:i'),
+                'uploader' => [
+                    'name' => $v->uploader ? $v->uploader->name : $v->created_by,
+                ],
+            ]);
 
-        $version2 = $contract->versions()
-            ->where('document_type', 'agreement')
-            ->where('version_no', $request->v2)
-            ->firstOrFail();
-
-        return response()->json([
-            'v1' => [
-                'version_no' => $version1->version_no,
-                'content' => $this->extractTextFromDocx(Storage::disk('local')->path($version1->file_path))
-            ],
-            'v2' => [
-                'version_no' => $version2->version_no,
-                'content' => $this->extractTextFromDocx(Storage::disk('local')->path($version2->file_path))
-            ]
+        return Inertia::render('admin/contracts/compare-agreements', [
+            'contract' => $this->formatContract($contract),
+            'versions' => $versions,
+            'initialV1' => (int) $request->v1,
+            'initialV2' => (int) $request->v2,
         ]);
     }
 
