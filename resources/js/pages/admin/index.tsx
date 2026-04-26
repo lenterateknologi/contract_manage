@@ -14,6 +14,7 @@ import { ContractTypeManagement } from '@/components/admin/ContractTypeManagemen
 import { StatusManagement } from '@/components/admin/StatusManagement';
 import { NavigationManagement } from '@/components/admin/NavigationManagement';
 import { VendorManagement } from '@/components/admin/VendorManagement';
+import NumberingFormatManagement from '@/components/admin/NumberingFormatManagement';
 import AppLayout from '@/layouts/app-layout';
 
 interface PaginatedData<T> {
@@ -36,6 +37,7 @@ interface Props {
     statuses?: any;
     departments?: any;
     vendors?: any;
+    formats?: any;
     groups?: any;
     modules?: any;
     moduleGroups?: any;
@@ -59,6 +61,7 @@ export default function AdminIndex({
     statuses,
     departments,
     vendors,
+    formats,
     groups,
     modules,
     moduleGroups,
@@ -76,6 +79,7 @@ export default function AdminIndex({
         vendors: 'Master Vendor',
         'module-groups': 'Grup Modul',
         modules: 'Modul & Menu',
+        'numbering-formats': 'Pengaturan Penomoran',
     };
 
     const viewTitle = viewTitleMap[currentView] || 'Administrasi Sistem';
@@ -116,6 +120,8 @@ export default function AdminIndex({
                 return <NavigationManagement groups={navigationsArray} modules={modules} isModuleView={true} filters={filters} />;
             case 'vendors':
                 return <VendorManagement vendors={vendors} filters={filters} />;
+            case 'numbering-formats':
+                return <NumberingFormatManagement formats={formats} />;
             default:
                 return (
                     <div className="h-full flex items-center justify-center text-slate-400 uppercase font-black tracking-widest text-xs">

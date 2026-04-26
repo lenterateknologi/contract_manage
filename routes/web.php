@@ -38,6 +38,10 @@ Route::get('/form-templates/{template}/render-print', [FormTemplateController::c
     ->name('admin.form-templates.render-print')
     ->middleware('signed');
 
+Route::get('/api/contracts/{id}/audit-trail/document/print', [ContractController::class, 'renderAuditDocument'])
+    ->name('contracts.audit.document.print')
+    ->middleware('signed');
+
 
 Route::middleware(['auth'])->group(function () {
 
@@ -77,6 +81,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/contracts/{id}/attachment/{atId}', [ContractController::class, 'attachmentFile'])->name('contracts.attachment-file');
         Route::get('/contracts/{id}/pdf/{versionNo}', [ContractController::class, 'pdfPreview'])->name('contracts.pdf-preview');
         Route::get('/contracts/{id}/attachment-pdf/{atId}', [ContractController::class, 'attachmentPdfPreview'])->name('contracts.attachment-pdf-preview');
+        Route::get('/contracts/{id}/vendor-document/{docId}', [ContractController::class, 'vendorDocumentFile'])->name('contracts.vendor-document-file');
+        Route::get('/contracts/{id}/vendor-document-pdf/{docId}', [ContractController::class, 'vendorDocumentPdfPreview'])->name('contracts.vendor-document-pdf-preview');
 
         // Form Submissions (F1/F2)
         Route::post('/contracts/{id}/form-submissions', [ContractController::class, 'saveFormSubmission']);
@@ -99,7 +105,9 @@ Route::middleware(['auth'])->group(function () {
 
         // Audit Trail
         Route::get('/contracts/{id}/audit-trail', [ContractController::class, 'getAuditTrail']);
+        Route::get('/contracts/{id}/audit-trail/document', [ContractController::class, 'renderAuditDocument'])->name('contracts.audit.document');
         Route::get('/contracts/{id}/audit-trail/pdf', [ContractController::class, 'exportAuditPdf'])->name('contracts.audit.pdf');
+        Route::get('/contracts/{id}/audit-trail/pdf/queue', [ContractController::class, 'exportAuditPdfQueue'])->name('contracts.audit.pdf.queue');
     });
 
     Route::middleware(['admin'])->prefix('admin')->group(function () {
@@ -125,7 +133,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/contract-statuses', [AdminController::class, 'contractStatuses'])->name('admin.contract-statuses');
         Route::post('/contract-statuses', [AdminController::class, 'storeContractStatus'])->name('admin.contract-statuses.store');
         Route::put('/contract-statuses/{status}', [AdminController::class, 'updateContractStatus'])->name('admin.contract-statuses.update');
-        Route::delete('/contract-statuses/{status}', [AdminController::class, 'destroyContractStatus'])->name('admin.contract-statuses.destroy');
+        Route::delete('/contract-statuses/{status}', [AdminController::class, 'destroyContractStatus'])->name('admin.contract-statuses.delete');
+
+        Route::get('/numbering-formats', [AdminController::class, 'numberingFormats'])->name('admin.numbering-formats');
+        Route::put('/numbering-formats/{format}', [AdminController::class, 'updateNumberingFormat'])->name('admin.numbering-formats.update');
 
         // Master Departemen
         Route::get('/departments', [AdminController::class, 'departments'])->name('admin.departments');

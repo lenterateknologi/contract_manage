@@ -30,6 +30,7 @@ import { DashboardMetrics } from '@/components/contracts/DashboardMetrics';
 import { ProfileView } from '@/components/contracts/ProfileView';
 import { EditContractModal } from '@/components/contracts/EditContractModal';
 import { DraftEditableInfoCard } from '@/components/contracts/DraftEditableInfoCard';
+import { ContractReferenceCard } from '@/components/contracts/ContractReferenceCard';
 
 type View = 'dashboard' | 'contracts' | 'pending' | 'audit' | 'f1' | 'f2' | 'profile' | 'mine' | 'expiry';
 
@@ -314,13 +315,22 @@ function ContractPage({
             <div className="bg-background/50 flex min-h-0 flex-1 flex-col gap-6 p-6">
                 {selected ? (
                     <div className="flex flex-1 flex-col gap-6">
-                        <div className="flex items-center justify-between">
-                            <button onClick={closeDetail} className="text-muted-foreground hover:text-foreground flex items-center gap-2 text-sm font-bold uppercase transition-colors">
-                                <i className="fa-solid fa-arrow-left" /> Kembali
-                            </button>
-                            <div className="flex items-center gap-3">
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex flex-col gap-2">
+                                <button onClick={closeDetail} className="text-muted-foreground hover:text-foreground flex w-fit items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-colors mb-1">
+                                    <i className="fa-solid fa-arrow-left" /> Kembali
+                                </button>
+                                <div className="flex flex-wrap items-center gap-3">
+                                    <h2 className="text-2xl font-black tracking-tight text-foreground">{selected.title}</h2>
+                                    <StatusBadge status={selected.status} />
+                                    <span className="bg-slate-100 text-slate-500 rounded-md px-2 py-0.5 font-mono text-[11px] font-bold ring-1 ring-slate-200">
+                                        {selected.contract_no || 'NO NUMBER'}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
                                 {canUpdate && selected.status === 'draft' && (
-                                    <button onClick={() => setEditOpen(true)} className="bg-card border-border hover:bg-muted inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-xs font-bold transition-all active:scale-95">
+                                    <button onClick={() => setEditOpen(true)} className="bg-card border-border hover:bg-muted inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-xs font-bold transition-all active:scale-95 shadow-sm">
                                         <i className="fa-solid fa-pen-to-square" /> Edit Kontrak
                                     </button>
                                 )}
@@ -329,7 +339,7 @@ function ContractPage({
                                         <i className="fa-solid fa-paper-plane" /> Kirim Approval
                                     </button>
                                 )}
-                                <button onClick={() => setDeleteOpen(true)} className="hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 border-border bg-card text-muted-foreground inline-flex h-9 w-9 items-center justify-center rounded-lg border transition-all active:scale-95">
+                                <button onClick={() => setDeleteOpen(true)} className="hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 border-border bg-card text-muted-foreground inline-flex h-9 w-9 items-center justify-center rounded-lg border transition-all active:scale-95 shadow-sm">
                                     <i className="fa-solid fa-trash-can" />
                                 </button>
                             </div>
@@ -370,6 +380,7 @@ function ContractPage({
                             </div>
                             <div className="flex flex-col gap-6">
                                 <DraftEditableInfoCard selected={selected} types={types} vendors={vendors} formTemplates={formTemplates} canUpdate={!!canUpdate} onUpdate={handleUpdate} processing={processing} setPreviewTitle={setPreviewTitle} setPreviewUrl={setPreviewUrl} setPreviewHasFile={setPreviewHasFile} setPreviewOpen={setPreviewOpen} />
+                                <ContractReferenceCard selected={selected} canUpdate={!!canUpdate} onUpdate={handleUpdate} processing={processing} />
                                 <div className="bg-card border-border overflow-hidden rounded-xl border shadow-sm">
                                     <div className="border-border/50 flex items-center gap-2 border-b p-4 font-bold text-xs uppercase tracking-widest bg-slate-50/50"><i className="fa-solid fa-arrow-right-arrow-left" /> Alur Approval</div>
                                     <div className="p-4"><ApprovalSteps approvals={selected.approvals} creator={selected.creator} submittedAt={selected.submitted_at ?? undefined} /></div>
@@ -522,7 +533,7 @@ export default function ContractsIndex({
             
             setBootLoading(false);
         }).catch(() => setBootLoading(false));
-    }, [initialContractsPaged, initialTypes, initialId, currentView, initialSelectedProp]);
+    }, [initialContractsPaged?.total, initialTypes?.length, initialId, currentView, initialSelectedProp?.id]);
 
     return (
         <>

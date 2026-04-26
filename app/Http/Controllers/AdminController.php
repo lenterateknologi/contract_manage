@@ -997,4 +997,30 @@ class AdminController extends Controller
 
         return back()->with('success', 'Module deleted successfully.');
     }
+
+    public function numberingFormats(Request $request)
+    {
+        return Inertia::render('admin/index', [
+            'currentView' => 'numbering-formats',
+            'formats' => \App\Models\NumberingFormat::all(),
+            'breadcrumbs' => [
+                ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
+                ['title' => 'Pengaturan Penomoran', 'href' => route('admin.numbering-formats'), 'description' => 'Kelola format nomor otomatis untuk dokumen.', 'icon' => 'Hash'],
+            ],
+        ]);
+    }
+
+    public function updateNumberingFormat(Request $request, \App\Models\NumberingFormat $format)
+    {
+        $data = $request->validate([
+            'format_pattern' => 'required|string',
+            'current_number' => 'required|integer',
+            'padding' => 'required|integer|min:1|max:10',
+            'is_active' => 'boolean',
+        ]);
+
+        $format->update($data);
+
+        return back()->with('success', 'Numbering format updated successfully.');
+    }
 }

@@ -74,7 +74,11 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
             const fetchAndRender = async () => {
                 setPreviewLoading(true);
                 try {
-                    const res = await axios.get(`/api/contracts/${contract.id}/attachment/${previewAt.id}`, {
+                    const url = (previewAt as any).is_vendor_doc 
+                        ? contractApi.vendorDocumentPdfPreviewUrl(contract.id, previewAt.id)
+                        : `/api/contracts/${contract.id}/attachment/${previewAt.id}`; // Original doc endpoint for conversion logic
+                    
+                    const res = await axios.get(url, {
                         responseType: 'blob',
                     });
 
@@ -125,7 +129,44 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
         }
     };
 
-    const getAttachment = (label: string) => contract.attachments?.find((a) => a.label === label);
+    const getAttachment = (label: string) => {
+        // 1. Direct contract attachments
+        const direct = contract.attachments?.find((a) => a.label === label);
+        if (direct) return direct;
+
+        // 2. Virtual vendor documents (mapping by common keywords)
+        if (contract.vendor?.documents) {
+            const normalizedLabel = label.toLowerCase();
+            const vendorDoc = contract.vendor.documents.find(d => {
+                const name = (d.name || '').toLowerCase();
+                const type = (d.type || '').toLowerCase();
+                
+                // Smart mapping for common legal docs
+                if (normalizedLabel.includes('akte') && (name.includes('akte') || type.includes('akte'))) return true;
+                if (normalizedLabel.includes('tdp') && (name.includes('tdp') || type.includes('tdp'))) return true;
+                if (normalizedLabel.includes('siup') && (name.includes('siup') || type.includes('siup'))) return true;
+                if (normalizedLabel.includes('npwp') && (name.includes('npwp') || type.includes('npwp'))) return true;
+                if (normalizedLabel.includes('domicile') && (name.includes('domisili') || type.includes('domisili') || name.includes('domicile'))) return true;
+                if (normalizedLabel.includes('ktp') && (name.includes('ktp') || name.includes('identitas'))) return true;
+                
+                return name === normalizedLabel || type === normalizedLabel;
+            });
+
+            if (vendorDoc) {
+                return {
+                    id: vendorDoc.id,
+                    label: label,
+                    category: 'Vendor Document',
+                    file_name: vendorDoc.name,
+                    file_path: '', // Not used for virtuals
+                    is_vendor_doc: true, // Marker
+                    created_at: 'Synced from Vendor'
+                } as any;
+            }
+        }
+
+        return null;
+    };
 
     if (previewAt) {
         return (
@@ -157,7 +198,9 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                         </button>
 
                         <a
-                            href={contractApi.attachmentDownloadUrl(contract.id, previewAt.id)}
+                            href={(previewAt as any).is_vendor_doc 
+                                ? contractApi.vendorDocumentDownloadUrl(contract.id, previewAt.id)
+                                : contractApi.attachmentDownloadUrl(contract.id, previewAt.id)}
                             download
                             className="border-border flex h-8 items-center gap-2 rounded-xl border bg-white px-4 text-[9px] font-black tracking-widest text-slate-900 uppercase shadow-sm transition-all hover:border-slate-300 hover:bg-slate-50 active:scale-95"
                         >
@@ -178,7 +221,9 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                             <div ref={previewContainerRef} className="docx-container contract-doc w-full p-12 text-left" />
                         ) : (
                             <iframe
-                                src={`/api/contracts/${contract.id}/attachment-pdf/${previewAt.id}#toolbar=0&navpanes=0&view=FitH`}
+                                src={(previewAt as any).is_vendor_doc
+                                    ? `${contractApi.vendorDocumentPdfPreviewUrl(contract.id, previewAt.id)}#toolbar=0&navpanes=0&view=FitH`
+                                    : `${contractApi.attachmentPdfPreviewUrl(contract.id, previewAt.id)}#toolbar=0&navpanes=0&view=FitH`}
                                 className="absolute top-0 left-[-3%] h-full w-[106%] border-none bg-white"
                                 title="Attachment Preview"
                                 style={{ backgroundColor: 'white' }}
@@ -252,7 +297,9 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                                         {at ? (
                                             <>
                                                 <a
-                                                    href={contractApi.attachmentDownloadUrl(contract.id, at.id)}
+                                                    href={(at as any).is_vendor_doc
+                                                        ? contractApi.vendorDocumentDownloadUrl(contract.id, at.id)
+                                                        : contractApi.attachmentDownloadUrl(contract.id, at.id)}
                                                     download
                                                     onClick={(e) => e.stopPropagation()}
                                                     className="border-border flex h-8 w-8 items-center justify-center rounded-lg border bg-white shadow-sm transition-all hover:bg-slate-900 hover:text-white active:scale-95"
@@ -260,16 +307,18 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                                                 >
                                                     <i className="fa-solid fa-download text-[11px]" />
                                                 </a>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleDelete(at.id, label);
-                                                    }}
-                                                    className="border-border flex h-8 w-8 items-center justify-center rounded-lg border bg-white text-rose-600 shadow-sm transition-all hover:bg-rose-600 hover:text-white active:scale-95"
-                                                    title="Delete"
-                                                >
-                                                    <i className="fa-solid fa-trash-can text-[11px]" />
-                                                </button>
+                                                {!(at as any).is_vendor_doc && (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDelete(at.id, label);
+                                                        }}
+                                                        className="border-border flex h-8 w-8 items-center justify-center rounded-lg border bg-white text-rose-600 shadow-sm transition-all hover:bg-rose-600 hover:text-white active:scale-95"
+                                                        title="Delete"
+                                                    >
+                                                        <i className="fa-solid fa-trash-can text-[11px]" />
+                                                    </button>
+                                                )}
                                             </>
                                         ) : (
                                             <button

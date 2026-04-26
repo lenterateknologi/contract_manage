@@ -37,25 +37,22 @@ const api = axios.create({
 // ── F2 important field keys (from F1 data) ──────────────────────────
 // These are the F1 field names (snake_case) that should appear in the F2 summary.
 const F2_IMPORTANT_FIELDS: { key: string; label: string; width: string; type?: string }[] = [
-    { key: 'judul', label: 'Judul Perjanjian', width: '1/1' },
-    { key: 'type_perjanjian', label: 'Type Perjanjian', width: '1/2' },
-    { key: 'tanggal', label: 'Tanggal', width: '1/2' },
-    { key: 'pihak_i_(pt.)', label: 'Pihak I (PT.)', width: '1/2' },
-    { key: 'pihak_ii_(pt.)', label: 'Pihak II (PT.)', width: '1/2' },
-    { key: 'penandatanganan_pihak_i', label: 'Penandatangan Pihak I', width: '1/2' },
-    { key: 'penandatanganan_pihak_ii', label: 'Penandatangan Pihak II', width: '1/2' },
-    { key: 'tujuan/latar_belakang', label: 'Tujuan / Latar Belakang', width: '1/1' },
-    { key: 'jangka_waktu_(mulai)', label: 'Jangka Waktu (Mulai)', width: '1/2' },
-    { key: 'jangka_waktu_(s.d)', label: 'Jangka Waktu (s.d)', width: '1/2' },
-    { key: 'lokasi_area', label: 'Lokasi Area', width: '1/1' },
-    { key: 'harga/fee', label: 'Harga / Fee', width: '1/2' },
-    { key: 'terms_of_payment', label: 'Terms of Payment', width: '1/2' },
-    { key: 'ppn', label: 'PPN', width: '1/2' },
-    { key: 'pph', label: 'PPh', width: '1/2' },
+    { key: 'meta_judul_kontrak', label: 'Judul Perjanjian', width: '1/1' },
+    { key: 'meta_tipe_perjanjian', label: 'Tipe Perjanjian', width: '1/2' },
+    { key: 'meta_tgl_dibuat', label: 'Tanggal', width: '1/2' },
+    { key: 'meta_p1_entity', label: 'Pihak I (PT.)', width: '1/2' },
+    { key: 'meta_p2_entity', label: 'Pihak II (PT.)', width: '1/2' },
+    { key: 'meta_p1_signer_position', label: 'Penandatangan Pihak I', width: '1/2' },
+    { key: 'meta_p2_signer_position', label: 'Penandatangan Pihak II', width: '1/2' },
+    { key: 'meta_ringkasan_klausul', label: 'Ringkasan Klausul', width: '1/1' },
+    { key: 'meta_masa_berlaku', label: 'Masa Berlaku', width: '1/2' },
+    { key: 'meta_lokasi', label: 'Lokasi Area', width: '1/1' },
+    { key: 'meta_nilai_transaksi', label: 'Harga / Nilai', width: '1/2' },
+    { key: 'meta_mekanisme_pembayaran', label: 'Mekanisme Bayar', width: '1/2' },
     // Signature boxes
-    { key: 'dibuat_oleh_(nama_pic)', label: 'PIC', width: '1/3', type: 'signature_box' },
-    { key: 'diketahui_oleh_(manager_legal)', label: 'Manager Legal', width: '1/3', type: 'signature_box' },
-    { key: 'diketahui_oleh_(vp_legal)', label: 'VP Legal / Management', width: '1/3', type: 'signature_box' },
+    { key: 'meta_pic', label: 'PIC', width: '1/3', type: 'signature_box' },
+    { key: 'meta_manager_legal', label: 'Manager Legal', width: '1/3', type: 'signature_box' },
+    { key: 'meta_vp_legal', label: 'VP Legal / Management', width: '1/3', type: 'signature_box' },
 ];
 
 /**
@@ -65,94 +62,86 @@ const getAutofillValue = (field: FormField, contract: Contract) => {
     const name = field.name.toLowerCase();
     const label = field.label.toLowerCase();
 
-    // Title / Judul (Supporting new prefixes)
-    if (
-        name === 'judul' ||
-        name === 'judul_kontrak' ||
-        name === 'bv_f1_title' ||
-        name === 'f1_title' ||
-        label.includes('judul') ||
-        label.includes('nama kontrak')
-    ) {
-        return contract.title || '';
-    }
-    // Number / No Kontrak
-    if (name === 'no_kontrak' || name === 'mv_nomor' || label.includes('nomor kontrak') || label.includes('no. kontrak')) {
+    // 1. Identification / Metadata
+    if (name === 'meta_nomor' || name === 'no_kontrak' || label.includes('nomor kontrak')) {
         return contract.contract_no || '';
     }
-    // Type / Tipe Perjanjian / Jenis Kontrak
-    if (name === 'type_perjanjian' || name === 'tipe_perjanjian_detail' || label.includes('tipe perjanjian') || label.includes('jenis kontrak')) {
+    if (name === 'meta_judul_kontrak' || name === 'judul' || label.includes('judul kontrak')) {
+        return contract.title || '';
+    }
+    if (name === 'meta_topik' || label === 'topik') {
         return (contract as any).contract_type?.name || (typeof contract.contract_type === 'string' ? contract.contract_type : '');
     }
-    // Date formatting helper
+    if (name === 'meta_sub_topik' || label.includes('sub topik')) {
+        return (contract as any).kop_sub_topik || '';
+    }
+    if (name === 'meta_lampiran' || label.includes('lampiran')) {
+        const vendor = (contract as any).vendor;
+        if (vendor?.documents?.length > 0) {
+            return vendor.documents.map((d: any, i: number) => `${i + 1}. ${d.name}`).join(', ');
+        }
+    }
+
+    // 2. Dates
     const formatDate = (date: string | null) => (date ? date.split(' ')[0] : '');
-    // Date / Tanggal
-    if (name === 'tanggal' || name === 'bv_f1_date' || label === 'tanggal' || label.includes('tgl perjanjian')) {
+    if (name === 'meta_tgl_dibuat' || name === 'tanggal' || label.includes('tgl dibuat')) {
         return formatDate(contract.contract_date || contract.created_at);
     }
-    // Jangka Waktu
-    if (name === 'tdv_jw' || name.includes('jangka_waktu_(mulai)') || label.includes('jangka waktu mulai') || label.includes('tanggal mulai')) {
+    if (name === 'meta_masa_berlaku' || label.includes('masa berlaku')) {
+        if (contract.contract_date && contract.end_date) {
+            return `${formatDate(contract.contract_date)} s/d ${formatDate(contract.end_date)}`;
+        }
         return formatDate(contract.contract_date);
     }
-    if (name.includes('jangka_waktu_(s.d)') || label.includes('jangka waktu s.d') || label.includes('tanggal berakhir')) {
-        return formatDate(contract.end_date);
-    }
-    // PIC / Dibuat Oleh
-    if (name.includes('pic') || name.includes('dibuat_oleh') || label.includes('pic') || label.includes('dibuat oleh')) {
-        return contract.creator?.name || '';
-    }
-    // Description / Tujuan / Background
-    if (name === 'bv_f1_tujuan' || name === 'tujuan/latar_belakang' || label.includes('tujuan') || label.includes('latar belakang')) {
-        return contract.description || '';
+
+    // 3. Pihak Pertama (P1) - Internal
+    if (name.includes('p1') || name.includes('pertama')) {
+        if (name === 'meta_p1_entity' || label.includes('entitas') || label.includes('perusahaan')) {
+            return 'PT. Lentera Teknologi';
+        }
+        if (name === 'meta_p1_signer' || label.includes('penandatangan')) {
+            return contract.p1_signer || contract.initiator?.name || '';
+        }
+        if (name === 'meta_p1_signer_position' || label.includes('jabatan')) {
+            return contract.p1_signer_position || contract.initiator?.role || 'Direktur';
+        }
+        if (name === 'meta_p1_alamat' || label.includes('alamat')) {
+            return 'The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan';
+        }
     }
 
-    // Commercial Fields
-    if (name === 'tdv_price') return (contract as any).total_value || '';
-    if (name === 'tdv_loc') return (contract as any).location || '';
-
-    // Mode Transaksi
-    if (name === 'transaction_mode' || name === 'jenis_transaksi_pks' || label.includes('mode transaksi') || label.includes('jenis transaksi')) {
-        return (contract as any).transaction_type || '';
+    // 4. Pihak Kedua (P2) - Vendor
+    if (name.includes('p2') || name.includes('kedua') || name.includes('vendor')) {
+        const vendor = (contract as any).vendor;
+        if (name === 'meta_p2_entity' || label.includes('entitas') || label.includes('perusahaan')) {
+            return vendor?.name || contract.p2_entity || '';
+        }
+        if (name === 'meta_p2_signer' || label.includes('penandatangan')) {
+            return vendor?.pic_name || contract.p2_signer || '';
+        }
+        if (name === 'meta_p2_signer_position' || label.includes('jabatan')) {
+            return vendor?.pic_position || contract.p2_signer_position || '';
+        }
+        if (name === 'meta_p2_alamat' || label.includes('alamat')) {
+            return vendor?.address || contract.p2_address || '';
+        }
     }
 
-    // Party Representatives (F1 & F2 Mapping)
-    // PIHAK PERTAMA (Internal / User)
-    const p1Names = ['nama_pihak_1', 'perwakilan_pihak_1', 'nama_perwakilan_1', 'nama_pihak_pertama'];
-    const p1Positions = ['jabatan_pihak_1', 'jabatan_perwakilan_1', 'jabatan_pihak_pertama'];
-    const p1Companies = ['nama_perusahaan_1', 'pihak_pertama', 'nama_pihak_1_perusahaan'];
-
-    if (p1Names.some(n => name.includes(n)) || label.includes('nama pihak pertama') || label === 'nama (pihak 1)') {
-        return contract.initiator?.name || contract.creator?.name || '';
+    // 5. Commercial
+    if (name === 'meta_tipe_perjanjian' || name === 'f1_sifat_row' || label.includes('tipe perjanjian')) {
+        return (contract as any).transaction_type || 'Perjanjian Baru';
     }
-    if (p1Positions.some(n => name.includes(n)) || label.includes('jabatan pihak pertama') || label === 'jabatan (pihak 1)') {
-        return (contract.metadata as any)?.jabatan_pihak_1 || contract.initiator?.role || contract.creator?.role || 'Direktur';
+    if (name === 'meta_lokasi' || label.includes('lokasi')) {
+        return (contract as any).location || '';
     }
-    if (p1Companies.some(n => name.includes(n)) || label.includes('perusahaan pihak pertama')) {
-        return 'PT. Lentera Teknologi'; // Default company name if not specifically in metadata
+    if (name === 'meta_nilai_transaksi' || label.includes('nilai')) {
+        return (contract as any).total_value || '';
+    }
+    if (name === 'meta_mekanisme_pembayaran' || label.includes('mekanisme')) {
+        return (contract as any).payment_terms || '';
     }
 
-    // PIHAK KEDUA (Vendor / Partner)
-    const p2Names = ['nama_pihak_2', 'perwakilan_pihak_2', 'nama_perwakilan_2', 'nama_pihak_kedua', 'nama_vendor'];
-    const p2Positions = ['jabatan_pihak_2', 'jabatan_perwakilan_2', 'jabatan_pihak_kedua', 'jabatan_vendor'];
-    const p2Companies = ['nama_perusahaan_2', 'pihak_kedua', 'nama_pihak_2_perusahaan', 'vendor_name'];
-    const p2Address = ['alamat_pihak_2', 'alamat_vendor', 'alamat_perusahaan_2'];
-
-    const vendor = (contract as any).vendor;
-
-    if (p2Names.some(n => name.includes(n)) || label.includes('nama pihak kedua') || label === 'nama (pihak 2)') {
-        return vendor?.pic_name || (contract.metadata as any)?.nama_pihak_2 || '';
-    }
-    if (p2Positions.some(n => name.includes(n)) || label.includes('jabatan pihak kedua') || label === 'jabatan (pihak 2)') {
-        return vendor?.pic_position || (contract.metadata as any)?.jabatan_pihak_2 || 'Kuasa Direksi';
-    }
-    if (p2Companies.some(n => name.includes(n)) || label.includes('perusahaan pihak kedua') || label === 'nama vendor') {
-        return vendor?.name || (contract.metadata as any)?.nama_perusahaan_2 || '';
-    }
-    if (p2Address.some(n => name.includes(n)) || label.includes('alamat pihak kedua') || label.includes('alamat vendor')) {
-        return vendor?.address || (contract.metadata as any)?.alamat_pihak_2 || '';
-    }
-
-    // General Metadata Fallback (If name matches metadata key)
+    // Fallback
     if (contract.metadata && (contract.metadata as any)[field.name]) {
         return (contract.metadata as any)[field.name];
     }
@@ -193,7 +182,7 @@ function GenericFormTab({
     formTemplates: FormTemplateInfo[];
     onContractUpdated: (c: Contract) => void;
 }) {
-    const { showToast } = useToast();
+    const { showToast, showProgress, hideProgress } = useToast();
     const [fields, setFields] = useState<FormField[]>([]);
     const [formData, setFormData] = useState<Record<string, any>>({});
     const [originalData, setOriginalData] = useState<Record<string, any>>({});
@@ -231,11 +220,7 @@ function GenericFormTab({
     const filteredVersions = versions.filter((v) => {
         if (!searchQuery) return true;
         const q = searchQuery.toLowerCase();
-        return (
-            v.version_no.toString().includes(q) ||
-            v.created_by?.name?.toLowerCase().includes(q) ||
-            v.created_at.toLowerCase().includes(q)
-        );
+        return v.version_no.toString().includes(q) || v.created_by?.name?.toLowerCase().includes(q) || v.created_at.toLowerCase().includes(q);
     });
 
     const handleSync = () => {
@@ -268,11 +253,22 @@ function GenericFormTab({
 
             if (subRes.submission && subRes.versions?.length > 0) {
                 const latest = subRes.versions[0];
-                setFormData(latest.form_data ?? {});
-                setOriginalData(latest.form_data ?? {});
+                const savedData = latest.form_data ?? {};
+
+                // For F2: always merge prefill_data (passthrough identity fields like v_p2_entity)
+                // UNDER saved data so user-entered values are not overwritten.
+                // This ensures {{v_p1_entity}}, {{v_p2_entity}}, etc. resolve in static_text.
+                if (docType === 'f2' && subRes.prefill_data && Object.keys(subRes.prefill_data).length > 0) {
+                    const merged = { ...subRes.prefill_data, ...savedData };
+                    setFormData(merged);
+                    setOriginalData(merged);
+                } else {
+                    setFormData(savedData);
+                    setOriginalData(savedData);
+                }
                 setVersions(subRes.versions);
             } else {
-                // NEW: Use prefill_data from backend if available (Professional Inheritance)
+                // No submission yet — use prefill_data from backend if available
                 if (subRes.prefill_data && Object.keys(subRes.prefill_data).length > 0) {
                     setFormData(subRes.prefill_data);
                     setOriginalData(subRes.prefill_data);
@@ -325,20 +321,48 @@ function GenericFormTab({
         }
     };
 
-    const handleDownloadPdf = async () => {
+    const handleExportPdf = async () => {
         if (!matchingTemplate) return;
         setIsExporting(true);
+        setPdfJobStatus({ progress: 0, status: 'pending' });
 
-        setPdfJobStatus({ status: 'pending', progress: 10 });
+        // Open window immediately to avoid pop-up blocker
+        const win = window.open('about:blank', '_blank');
+        (window as any)._pdfWindow = win;
+        if (win) {
+            win.document.write(`
+                <html>
+                    <head>
+                        <title>Mempersiapkan Dokumen...</title>
+                        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+                        <style>
+                            body { font-family: 'Inter', sans-serif; background: #f8fafc; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; color: #1e293b; }
+                            .card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); text-align: center; border: 1px solid #e2e8f0; max-width: 400px; }
+                            .loader { width: 48px; height: 48px; border: 5px solid #f1f5f9; border-top: 5px solid #0f172a; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 24px; }
+                            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                            h2 { font-size: 14px; font-weight: 900; letter-spacing: 0.15em; text-transform: uppercase; margin: 0 0 12px; }
+                            p { font-size: 11px; color: #64748b; font-weight: 500; line-height: 1.6; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="card">
+                            <div class="loader"></div>
+                            <h2>Mempersiapkan Dokumen</h2>
+                            <p>Mohon tunggu sebentar, file sedang diproses di server. Halaman ini akan otomatis beralih ke dokumen setelah siap.</p>
+                        </div>
+                    </body>
+                </html>
+            `);
+            win.document.close();
+        }
 
         try {
-            // Use the locally configured 'api' instance (line 30) instead of raw axios
-            // Sending current formData ensures "logic yang sama persis" with the builder
-            // Using /admin prefix to resolve routing conflicts
-            // Explicitly sending the template ID to prevent "Template not found" errors
-            const res = await api.post(`/admin/contracts/${selected.id}/form-submissions/${docType}/export-queue`, {
+            const res = await axios.post(`/admin/contracts/${selected.id}/form-submissions/${docType}/export-queue`, {
                 data: JSON.stringify(formData),
                 form_template_id: matchingTemplate.id,
+            }, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                withCredentials: true
             });
 
             const jobId = res.data.job_id;
@@ -348,21 +372,38 @@ function GenericFormTab({
             // Start Polling
             const interval = setInterval(async () => {
                 try {
-                    const statusRes = await api.get(`/admin/form-templates/pdf-status/${jobId}`);
+                    const statusRes = await axios.get(`/admin/form-templates/pdf-status/${jobId}`, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                        withCredentials: true
+                    });
                     const statusData = statusRes.data;
                     setPdfJobStatus(statusData);
+
+                    // Update Progress Toast
+                    showProgress(jobId, `Mempersiapkan Dokumen ${docType.toUpperCase()}...`, statusData.progress || 0);
 
                     if (statusData.status === 'completed') {
                         clearInterval(interval);
                         setIsExporting(false);
                         setPdfJobId(null);
 
-                        // Switch to preview mode
-                        setPdfPreviewUrl(statusData.url);
+                        // Update the already opened window
+                        if ((window as any)._pdfWindow) {
+                            (window as any)._pdfWindow.location.href = statusData.url;
+                            (window as any)._pdfWindow = null;
+                        } else {
+                            // Fallback if window was closed or not opened
+                            window.open(statusData.url, '_blank');
+                        }
+                        
+                        setIsExporting(false);
+                        setPdfJobId(null);
+                        hideProgress(jobId);
                     } else if (statusData.status === 'failed') {
                         clearInterval(interval);
                         setIsExporting(false);
                         setPdfJobId(null);
+                        hideProgress(jobId);
                         alert('Gagal mendownload PDF: ' + (statusData.error || 'Unknown error'));
                     }
                 } catch (err) {
@@ -461,91 +502,100 @@ function GenericFormTab({
                                 submissionInfo ? 'text-emerald-500' : 'text-indigo-500',
                             )}
                         >
-                            {docType === 'f1' ? (submissionInfo ? 'Sudah Diisi' : 'Draft / Inherited Data') : (submissionInfo ? 'Resume Disimpan' : 'Resume & Persetujuan (Editable)')}
+                            {docType === 'f1'
+                                ? submissionInfo
+                                    ? 'Sudah Diisi'
+                                    : 'Draft / Inherited Data'
+                                : submissionInfo
+                                  ? 'Resume Disimpan'
+                                  : 'Resume & Persetujuan (Editable)'}
                         </span>
                     </div>
                 </div>
                 <div className="flex items-center gap-2.5" ref={dropdownRef}>
                     <div className="relative">
-                            <button
-                                onClick={() => setShowVersions(!showVersions)}
-                                className={cn(
-                                    "border-border flex h-8 items-center gap-1.5 rounded-xl border bg-white px-3 text-[9px] font-black tracking-widest uppercase shadow-sm transition-all active:scale-95",
-                                    showVersions ? "bg-slate-900 border-slate-900 text-white" : "text-slate-600 hover:bg-slate-50"
-                                )}
-                            >
-                                <History size={11} className={cn('text-indigo-500', showVersions && 'text-white')} />
-                                {versions.length || 0} <span className={cn("opacity-40", showVersions && "opacity-60")}>VERSIONS</span>
-                                <i className={cn("fa-solid fa-chevron-down ml-1 text-[8px] transition-transform", showVersions && "rotate-180")} />
-                            </button>
+                        <button
+                            onClick={() => setShowVersions(!showVersions)}
+                            className={cn(
+                                'border-border flex h-8 items-center gap-1.5 rounded-xl border bg-white px-3 text-[9px] font-black tracking-widest uppercase shadow-sm transition-all active:scale-95',
+                                showVersions ? 'border-slate-900 bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50',
+                            )}
+                        >
+                            <History size={11} className={cn('text-indigo-500', showVersions && 'text-white')} />
+                            {versions.length || 0} <span className={cn('opacity-40', showVersions && 'opacity-60')}>VERSIONS</span>
+                            <i className={cn('fa-solid fa-chevron-down ml-1 text-[8px] transition-transform', showVersions && 'rotate-180')} />
+                        </button>
 
-                            {showVersions && (
-                                <div className="absolute left-0 top-full z-[999] mt-2 w-72 origin-top-left rounded-xl border border-slate-200 bg-white p-1 shadow-2xl shadow-slate-200/50 animate-in fade-in zoom-in-95 duration-200 outline-none">
-                                    <div className="border-b border-slate-100 p-2">
-                                        <div className="relative">
-                                            <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-400" />
-                                            <input
-                                                autoFocus
-                                                type="text"
-                                                placeholder="Cari versi..."
-                                                value={searchQuery}
-                                                onChange={(e) => setSearchQuery(e.target.value)}
-                                                className="w-full rounded-lg border border-slate-100 bg-slate-50 py-1.5 pl-8 pr-3 text-[11px] font-bold outline-none focus:border-indigo-200 focus:bg-white transition-all"
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="max-h-[300px] overflow-y-auto py-1">
-                                        {filteredVersions.length > 0 ? (
-                                            filteredVersions.map((v) => (
-                                                <button
-                                                    key={v.id}
-                                                    onClick={() => {
-                                                        setFormData(v.form_data);
-                                                        setOriginalData(v.form_data);
-                                                        setShowVersions(false);
-                                                    }}
-                                                    className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition-all hover:bg-slate-50 group"
-                                                >
-                                                    <div className="flex flex-col">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="flex h-5 w-5 items-center justify-center rounded-md bg-slate-100 text-[10px] font-black text-slate-600 group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
-                                                                {v.version_no}
-                                                            </span>
-                                                            <span className="text-[11px] font-bold text-slate-800">Version {v.version_no}</span>
-                                                        </div>
-                                                        <span className="mt-1 text-[9px] font-medium text-slate-400 uppercase tracking-tight">
-                                                            {v.created_at} · {v.created_by?.name || 'System'}
-                                                        </span>
-                                                    </div>
-                                                    <i className="fa-solid fa-arrow-right text-[10px] text-slate-300 opacity-0 transition-all -translate-x-2 group-hover:translate-x-0 group-hover:opacity-100" />
-                                                </button>
-                                            ))
-                                        ) : (
-                                            <div className="py-8 text-center">
-                                                <i className="fa-solid fa-folder-open mb-2 block text-slate-200 text-xl" />
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase">Tidak ada versi ditemukan</span>
-                                            </div>
-                                        )}
+                        {showVersions && (
+                            <div className="animate-in fade-in zoom-in-95 absolute top-full left-0 z-[999] mt-2 w-72 origin-top-left rounded-xl border border-slate-200 bg-white p-1 shadow-2xl shadow-slate-200/50 duration-200 outline-none">
+                                <div className="border-b border-slate-100 p-2">
+                                    <div className="relative">
+                                        <i className="fa-solid fa-magnifying-glass absolute top-1/2 left-3 -translate-y-1/2 text-[10px] text-slate-400" />
+                                        <input
+                                            autoFocus
+                                            type="text"
+                                            placeholder="Cari versi..."
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            className="w-full rounded-lg border border-slate-100 bg-slate-50 py-1.5 pr-3 pl-8 text-[11px] font-bold transition-all outline-none focus:border-indigo-200 focus:bg-white"
+                                        />
                                     </div>
                                 </div>
-                            )}
-                        </div>
+                                <div className="max-h-[300px] overflow-y-auto py-1">
+                                    {filteredVersions.length > 0 ? (
+                                        filteredVersions.map((v) => (
+                                            <button
+                                                key={v.id}
+                                                onClick={() => {
+                                                    setFormData(v.form_data);
+                                                    setOriginalData(v.form_data);
+                                                    setShowVersions(false);
+                                                }}
+                                                className="group flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition-all hover:bg-slate-50"
+                                            >
+                                                <div className="flex flex-col">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="flex h-5 w-5 items-center justify-center rounded-md bg-slate-100 text-[10px] font-black text-slate-600 transition-colors group-hover:bg-indigo-100 group-hover:text-indigo-600">
+                                                            {v.version_no}
+                                                        </span>
+                                                        <span className="text-[11px] font-bold text-slate-800">Version {v.version_no}</span>
+                                                    </div>
+                                                    <span className="mt-1 text-[9px] font-medium tracking-tight text-slate-400 uppercase">
+                                                        {v.created_at} · {v.created_by?.name || 'System'}
+                                                    </span>
+                                                </div>
+                                                <i className="fa-solid fa-arrow-right -translate-x-2 text-[10px] text-slate-300 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100" />
+                                            </button>
+                                        ))
+                                    ) : (
+                                        <div className="py-8 text-center">
+                                            <i className="fa-solid fa-folder-open mb-2 block text-xl text-slate-200" />
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase">Tidak ada versi ditemukan</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
 
                     <div className="relative">
                         <button
                             onClick={() => setShowMoreActions(!showMoreActions)}
                             className={cn(
-                                "border-border flex h-8 w-8 items-center justify-center rounded-xl border bg-white shadow-sm transition-all active:scale-95",
-                                showMoreActions ? "bg-slate-900 border-slate-900 text-white" : "text-slate-600 hover:bg-slate-50"
+                                'border-border flex h-8 w-8 items-center justify-center rounded-xl border bg-white shadow-sm transition-all active:scale-95',
+                                showMoreActions ? 'border-slate-900 bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50',
                             )}
                         >
                             <i className="fa-solid fa-ellipsis-vertical text-[10px]" />
                         </button>
 
                         {showMoreActions && (
-                            <div className="absolute right-0 top-full z-[999] mt-2 w-56 origin-top-right rounded-xl border border-slate-200 bg-white p-1 shadow-2xl shadow-slate-200/50 animate-in fade-in zoom-in-95 duration-200 outline-none">
+                            <div className="animate-in fade-in zoom-in-95 absolute top-full right-0 z-[999] mt-2 w-56 origin-top-right rounded-xl border border-slate-200 bg-white p-1 shadow-2xl shadow-slate-200/50 duration-200 outline-none">
                                 <button
-                                    onClick={() => { loadData(); setShowMoreActions(false); }}
+                                    onClick={() => {
+                                        loadData();
+                                        setShowMoreActions(false);
+                                    }}
                                     className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[10px] font-bold text-slate-600 transition-all hover:bg-slate-50 hover:text-slate-900"
                                 >
                                     <i className="fa-solid fa-arrows-rotate w-4 text-[10px] opacity-40" />
@@ -553,7 +603,10 @@ function GenericFormTab({
                                 </button>
 
                                 <button
-                                    onClick={() => { handleSync(); setShowMoreActions(false); }}
+                                    onClick={() => {
+                                        handleSync();
+                                        setShowMoreActions(false);
+                                    }}
                                     className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[10px] font-bold text-indigo-600 transition-all hover:bg-indigo-50"
                                 >
                                     <i className="fa-solid fa-sync w-4 text-[10px] opacity-60" />
@@ -569,15 +622,22 @@ function GenericFormTab({
                                 >
                                     <i className="fa-solid fa-columns w-4 text-[10px] opacity-60" />
                                     COMPARE VERSIONS
-                                </a >
+                                </a>
 
-                                {(submissionInfo || isF2) && (
+                                {(submissionInfo || docType === 'f1' || docType === 'f2') && (
                                     <button
-                                        onClick={() => { handleDownloadPdf(); setShowMoreActions(false); }}
+                                        onClick={() => {
+                                            handleExportPdf();
+                                            setShowMoreActions(false);
+                                        }}
                                         disabled={isExporting}
                                         className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[10px] font-bold text-slate-600 transition-all hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50"
                                     >
-                                        {isExporting ? <Loader2 size={12} className="animate-spin opacity-40" /> : <Download size={12} className="opacity-40" />}
+                                        {isExporting ? (
+                                            <Loader2 size={12} className="animate-spin opacity-40" />
+                                        ) : (
+                                            <Download size={12} className="opacity-40" />
+                                        )}
                                         EXPORT PDF DOCUMENT
                                     </button>
                                 )}
@@ -596,25 +656,23 @@ function GenericFormTab({
                 </div>
             </div>
 
-
-
-
-            <div className="relative mx-auto w-full">
+            <div className="relative flex-1 overflow-y-auto bg-slate-50/50">
                 {isDirty && (
-                    <div className="absolute top-0 right-0 m-2 p-2">
-                        <span className="flex items-center gap-1.5 rounded-full border border-amber-200/50 bg-amber-50 px-2.5 py-1 text-[9px] font-bold tracking-wider text-amber-600 uppercase shadow-sm">
+                    <div className="sticky top-0 right-0 z-50 flex justify-end p-4 pointer-events-none">
+                        <span className="flex items-center gap-1.5 rounded-full border border-amber-200/50 bg-amber-50 px-2.5 py-1 text-[9px] font-bold tracking-wider text-amber-600 uppercase shadow-md backdrop-blur-sm pointer-events-auto transition-all hover:scale-105">
                             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
                             Draft Belum Disimpan
                         </span>
                     </div>
                 )}
 
-                <div className="py-2">
+                <div className="py-12 px-4 flex justify-center">
                     <InteractiveForm
                         template={templateForRenderer}
                         formData={formData}
                         onChange={(name, val) => setFormData((prev) => ({ ...prev, [name]: val }))}
                         readOnly={false}
+                        className="shadow-2xl shadow-slate-200/50"
                     />
                 </div>
             </div>

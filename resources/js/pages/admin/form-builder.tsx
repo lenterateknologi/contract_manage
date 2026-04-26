@@ -1,4 +1,5 @@
 import { InteractiveForm } from '@/components/form-renderer/InteractiveForm';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -45,6 +46,7 @@ import {
     Save,
     Trash2,
     Type,
+    AlignJustify,
 } from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
 
@@ -147,6 +149,22 @@ const FIELD_TYPES: any[] = [
                     field_style: 'dashed_bottom',
                 },
             },
+            {
+                value: 'textfield',
+                label: 'Input Teks (Satu Baris)',
+                icon: Type,
+                defaultLabel: 'Input Teks',
+                defaultPlaceholder: 'Masukkan teks...',
+                defaultOptions: { field_style: 'dashed_bottom' },
+            },
+            {
+                value: 'textarea',
+                label: 'Input Teks (Multi Baris)',
+                icon: FileText,
+                defaultLabel: 'Input Panjang',
+                defaultPlaceholder: 'Masukkan teks detail...',
+                defaultOptions: { field_style: 'solid', min_height: 80 },
+            },
         ],
     },
     {
@@ -237,6 +255,24 @@ function FormBuilder({ template }: Props) {
     const [pdfJobStatus, setPdfJobStatus] = useState<any>(null);
     const [leftPanelTab, setLeftPanelTab] = useState<'library' | 'structure' | 'json'>('library');
 
+    // Custom Dialog State (replaces native alert/confirm)
+    const [dialog, setDialog] = useState<{
+        open: boolean;
+        title: string;
+        description: string;
+        variant: 'danger' | 'warning' | 'info';
+        confirmText?: string;
+        onConfirm: () => void;
+    }>({
+        open: false,
+        title: '',
+        description: '',
+        variant: 'danger',
+        onConfirm: () => {},
+    });
+    const closeDialog = () => setDialog((d) => ({ ...d, open: false }));
+    const openDialog = (opts: Omit<typeof dialog, 'open'>) => setDialog({ ...opts, open: true });
+
     // --- ACTIONS & MOVEMENT ---
     const moveField = (id: string, direction: 'up' | 'down' | 'in' | 'out') => {
         // Redirect simple up/down to the batch handler if multiple selected
@@ -295,48 +331,44 @@ function FormBuilder({ template }: Props) {
         let newFields = [...data.fields];
         // Sort selected IDs by their current order in the fields array
         const sortedSelectedIds = [...selectedFieldIds].sort((a, b) => {
-            const fieldA = newFields.find(f => f.id === a);
-            const fieldB = newFields.find(f => f.id === b);
+            const fieldA = newFields.find((f) => f.id === a);
+            const fieldB = newFields.find((f) => f.id === b);
             return (fieldA?.order || 0) - (fieldB?.order || 0);
         });
 
         if (direction === 'up') {
             const firstId = sortedSelectedIds[0];
-            const firstField = newFields.find(f => f.id === firstId);
+            const firstField = newFields.find((f) => f.id === firstId);
             if (!firstField) return;
 
             // Find siblings in the same parent
-            const siblings = newFields
-                .filter(f => f.parent_id === firstField.parent_id)
-                .sort((a, b) => a.order - b.order);
-            
-            const firstIndexInSiblings = siblings.findIndex(s => s.id === firstId);
+            const siblings = newFields.filter((f) => f.parent_id === firstField.parent_id).sort((a, b) => a.order - b.order);
+
+            const firstIndexInSiblings = siblings.findIndex((s) => s.id === firstId);
             if (firstIndexInSiblings > 0) {
                 const neighbor = siblings[firstIndexInSiblings - 1];
                 // Move selected group items to just before neighbor
                 const neighborOrder = neighbor.order;
                 sortedSelectedIds.forEach((id, i) => {
-                    const f = newFields.find(field => field.id === id);
-                    if (f) f.order = neighborOrder - 0.5 + (i * 0.1);
+                    const f = newFields.find((field) => field.id === id);
+                    if (f) f.order = neighborOrder - 0.5 + i * 0.1;
                 });
             }
         } else {
             const lastId = sortedSelectedIds[sortedSelectedIds.length - 1];
-            const lastField = newFields.find(f => f.id === lastId);
+            const lastField = newFields.find((f) => f.id === lastId);
             if (!lastField) return;
 
-            const siblings = newFields
-                .filter(f => f.parent_id === lastField.parent_id)
-                .sort((a, b) => a.order - b.order);
-            
-            const lastIndexInSiblings = siblings.findIndex(s => s.id === lastId);
+            const siblings = newFields.filter((f) => f.parent_id === lastField.parent_id).sort((a, b) => a.order - b.order);
+
+            const lastIndexInSiblings = siblings.findIndex((s) => s.id === lastId);
             if (lastIndexInSiblings < siblings.length - 1) {
                 const neighbor = siblings[lastIndexInSiblings + 1];
                 // Move selected group items to just after neighbor
                 const neighborOrder = neighbor.order;
                 sortedSelectedIds.forEach((id, i) => {
-                    const f = newFields.find(field => field.id === id);
-                    if (f) f.order = neighborOrder + 0.5 + (i * 0.1);
+                    const f = newFields.find((field) => field.id === id);
+                    if (f) f.order = neighborOrder + 0.5 + i * 0.1;
                 });
             }
         }
@@ -354,7 +386,7 @@ function FormBuilder({ template }: Props) {
             if (e.key === 'Escape') {
                 setContextMenu(null);
             }
-            
+
             // Movement Shortcuts
             if (selectedFieldIds.length > 0 && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
                 if (e.key === 'ArrowUp') {
@@ -667,18 +699,34 @@ function FormBuilder({ template }: Props) {
     };
 
     const removeField = (id: string) => {
-        if (!window.confirm('Hapus elemen ini?')) return;
-        const newFields = data.fields.filter((f) => f.id !== id && f.parent_id !== id);
-        setData(
-            'fields',
-            newFields.map((f, i) => ({ ...f, order: i })),
-        );
-        if (selectedFieldId === id) setSelectedFieldIds([]);
+        openDialog({
+            title: 'Hapus Elemen',
+            description: 'Yakin ingin menghapus elemen ini? Tindakan ini tidak dapat dibatalkan.',
+            variant: 'danger',
+            confirmText: 'Ya, Hapus',
+            onConfirm: () => {
+                const newFields = data.fields.filter((f) => f.id !== id && f.parent_id !== id);
+                setData(
+                    'fields',
+                    newFields.map((f, i) => ({ ...f, order: i })),
+                );
+                if (selectedFieldId === id) setSelectedFieldIds([]);
+                closeDialog();
+            },
+        });
     };
 
     const handleDuplicateField = (targetId: string) => {
-        if (!window.confirm('Duplikat elemen ini?')) return;
-        duplicateField(targetId);
+        openDialog({
+            title: 'Duplikat Elemen',
+            description: 'Duplikat elemen ini dan semua isinya?',
+            variant: 'warning',
+            confirmText: 'Ya, Duplikat',
+            onConfirm: () => {
+                duplicateField(targetId);
+                closeDialog();
+            },
+        });
     };
 
     const updateField = (id: string, key: keyof FormField, value: any) => {
@@ -715,7 +763,13 @@ function FormBuilder({ template }: Props) {
                         clearInterval(interval);
                         setSaving(false);
                         setPdfJobId(null);
-                        alert('Gagal mendownload PDF: ' + (statusData.error || 'Unknown error'));
+                        openDialog({
+                            title: 'Gagal Export PDF',
+                            description: 'Gagal mendownload PDF: ' + (statusData.error || 'Unknown error'),
+                            variant: 'warning',
+                            confirmText: 'Tutup',
+                            onConfirm: closeDialog,
+                        });
                     }
                 } catch (err) {
                     console.error('Polling failed:', err);
@@ -725,7 +779,13 @@ function FormBuilder({ template }: Props) {
             console.error('Queue failed:', error);
             setSaving(false);
             setPdfJobId(null);
-            alert('Gagal antrikan PDF. Pastikan server antrian (queue) berjalan.');
+            openDialog({
+                title: 'Gagal Antrikan PDF',
+                description: 'Gagal antrikan PDF. Pastikan server antrian (queue) berjalan.',
+                variant: 'warning',
+                confirmText: 'Tutup',
+                onConfirm: closeDialog,
+            });
         }
     };
 
@@ -813,7 +873,13 @@ function FormBuilder({ template }: Props) {
 
     const handleApplyJson = () => {
         if (jsonError) {
-            alert('Cannot apply: Fix JSON errors first.');
+            openDialog({
+                title: 'JSON Tidak Valid',
+                description: 'Perbaiki error JSON terlebih dahulu sebelum menerapkan perubahan.',
+                variant: 'warning',
+                confirmText: 'Tutup',
+                onConfirm: closeDialog,
+            });
             return;
         }
         try {
@@ -835,7 +901,13 @@ function FormBuilder({ template }: Props) {
             const flatFields = flatten(parsed);
             setData('fields', flatFields);
         } catch (e: any) {
-            alert('Error parsing JSON: ' + e.message);
+            openDialog({
+                title: 'Error Parsing JSON',
+                description: 'Error parsing JSON: ' + e.message,
+                variant: 'warning',
+                confirmText: 'Tutup',
+                onConfirm: closeDialog,
+            });
         }
     };
 
@@ -844,6 +916,17 @@ function FormBuilder({ template }: Props) {
     return (
         <div className="font-inter bg-muted/10 text-foreground flex h-screen flex-col overflow-hidden">
             <Head title={template.id ? `Edit ${template.name}` : 'Form Builder'} />
+
+            {/* Custom Dialog — replaces all native alert/confirm */}
+            <ConfirmationModal
+                open={dialog.open}
+                onClose={closeDialog}
+                onConfirm={dialog.onConfirm}
+                title={dialog.title}
+                description={dialog.description}
+                variant={dialog.variant}
+                confirmText={dialog.confirmText}
+            />
 
             <form onSubmit={handleSave} className="flex h-full flex-col overflow-hidden">
                 <header className="border-border bg-card z-50 flex h-14 shrink-0 items-center justify-between border-b px-6 shadow-sm">
@@ -1086,8 +1169,8 @@ function FormBuilder({ template }: Props) {
                             </div>
 
                             <ScrollArea className="flex-1 bg-slate-900/5">
-                                <div 
-                                    className="flex min-h-full items-start justify-center px-12 py-20 cursor-default"
+                                <div
+                                    className="flex min-h-full cursor-default items-start justify-center px-12 py-20"
                                     onClick={(e) => {
                                         if (e.target === e.currentTarget) {
                                             handleSelectField('', {} as any);
@@ -1217,15 +1300,15 @@ function FormBuilder({ template }: Props) {
                                                         <div className="grid grid-cols-2 gap-4">
                                                             <div className="space-y-1.5">
                                                                 <Label className="text-muted-foreground text-[8px] font-bold uppercase">
-                                                                    Padding Top (px)
+                                                                    Margin Left (px)
                                                                 </Label>
                                                                 <Input
                                                                     type="number"
-                                                                    value={selectedField.options?.padding_top ?? 0}
+                                                                    value={selectedField.options?.margin_left ?? 0}
                                                                     onChange={(e) =>
                                                                         updateField(selectedField.id, 'options', {
                                                                             ...selectedField.options,
-                                                                            padding_top: parseInt(e.target.value) || 0,
+                                                                            margin_left: parseInt(e.target.value) || 0,
                                                                         })
                                                                     }
                                                                     className="h-8 text-[11px] font-bold"
@@ -1233,21 +1316,73 @@ function FormBuilder({ template }: Props) {
                                                             </div>
                                                             <div className="space-y-1.5">
                                                                 <Label className="text-muted-foreground text-[8px] font-bold uppercase">
-                                                                    Padding Bottom (px)
+                                                                    Margin Right (px)
                                                                 </Label>
                                                                 <Input
                                                                     type="number"
-                                                                    value={selectedField.options?.padding_bottom ?? 0}
+                                                                    value={selectedField.options?.margin_right ?? 0}
                                                                     onChange={(e) =>
                                                                         updateField(selectedField.id, 'options', {
                                                                             ...selectedField.options,
-                                                                            padding_bottom: parseInt(e.target.value) || 0,
+                                                                            margin_right: parseInt(e.target.value) || 0,
                                                                         })
                                                                     }
                                                                     className="h-8 text-[11px] font-bold"
                                                                 />
                                                             </div>
                                                         </div>
+
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <div className="space-y-1.5">
+                                                                <Label className="text-muted-foreground text-[8px] font-bold uppercase transition-colors group-hover:text-primary">
+                                                                    Spacing Before (px)
+                                                                </Label>
+                                                                <Input
+                                                                    type="number"
+                                                                    value={selectedField.options?.spacing_before ?? 0}
+                                                                    onChange={(e) =>
+                                                                        updateField(selectedField.id, 'options', {
+                                                                            ...selectedField.options,
+                                                                            spacing_before: parseInt(e.target.value) || 0,
+                                                                        })
+                                                                    }
+                                                                    className="h-8 text-[11px] font-bold focus:ring-primary/20"
+                                                                />
+                                                            </div>
+                                                            <div className="space-y-1.5">
+                                                                <Label className="text-muted-foreground text-[8px] font-bold uppercase transition-colors group-hover:text-primary">
+                                                                    Spacing After (px)
+                                                                </Label>
+                                                                <Input
+                                                                    type="number"
+                                                                    value={selectedField.options?.spacing_after ?? 0}
+                                                                    onChange={(e) =>
+                                                                        updateField(selectedField.id, 'options', {
+                                                                            ...selectedField.options,
+                                                                            spacing_after: parseInt(e.target.value) || 0,
+                                                                        })
+                                                                    }
+                                                                    className="h-8 text-[11px] font-bold focus:ring-primary/20"
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        {['static_text', 'labeled_value'].includes(selectedField.type) && (
+                                                            <div className="space-y-1.5">
+                                                                <Label className="text-muted-foreground text-[8px] font-bold uppercase">First Line Indent (px)</Label>
+                                                                <Input
+                                                                    type="number"
+                                                                    value={selectedField.options?.first_line_indent ?? 0}
+                                                                    onChange={(e) =>
+                                                                        updateField(selectedField.id, 'options', {
+                                                                            ...selectedField.options,
+                                                                            first_line_indent: parseInt(e.target.value) || 0,
+                                                                        })
+                                                                    }
+                                                                    className="h-8 text-[11px] font-bold"
+                                                                />
+                                                            </div>
+                                                        )}
 
                                                         <div className="space-y-1.5">
                                                             <Label className="text-[9px] font-black tracking-widest uppercase">Block Width</Label>
@@ -1289,7 +1424,7 @@ function FormBuilder({ template }: Props) {
                                                                             font_family: e.target.value,
                                                                         })
                                                                     }
-                                                                    className="h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-[10px] font-bold shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                                                    className="border-input bg-background focus-visible:ring-ring h-8 w-full rounded-md border px-2 py-1 text-[10px] font-bold shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none"
                                                                 >
                                                                     <option value="sans-serif">Modern (Sans)</option>
                                                                     <option value="serif">Formal (Serif)</option>
@@ -1318,7 +1453,7 @@ function FormBuilder({ template }: Props) {
                                                                 </div>
                                                                 <div className="space-y-1.5">
                                                                     <Label className="text-muted-foreground text-[8px] font-bold uppercase">
-                                                                        Weight
+                                                                        Weight (Selection / Value)
                                                                     </Label>
                                                                     <div className="flex gap-1">
                                                                         {[
@@ -1349,29 +1484,65 @@ function FormBuilder({ template }: Props) {
                                                                 </div>
                                                             </div>
 
+                                                            {selectedField.type === 'labeled_value' && (
+                                                                <div className="space-y-1.5">
+                                                                    <Label className="text-muted-foreground text-[8px] font-bold uppercase">
+                                                                        Label Weight
+                                                                    </Label>
+                                                                    <div className="flex gap-1">
+                                                                        {[
+                                                                            { l: 'N', v: 'normal' },
+                                                                            { l: 'B', v: 'bold' },
+                                                                            { l: 'BL', v: '900' },
+                                                                        ].map((w) => (
+                                                                            <Button
+                                                                                key={w.v}
+                                                                                type="button"
+                                                                                variant={
+                                                                                    (selectedField.options?.font_weight_label || 'bold') === w.v
+                                                                                        ? 'default'
+                                                                                        : 'outline'
+                                                                                }
+                                                                                className="h-8 w-8 text-[10px] font-black"
+                                                                                onClick={() =>
+                                                                                    updateField(selectedField.id, 'options', {
+                                                                                        ...selectedField.options,
+                                                                                        font_weight_label: w.v,
+                                                                                    })
+                                                                                }
+                                                                            >
+                                                                                {w.l}
+                                                                            </Button>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
                                                             <div className="space-y-1.5">
                                                                 <Label className="text-muted-foreground text-[8px] font-bold uppercase">
-                                                                    Alignment
+                                                                    Text Alignment
                                                                 </Label>
-                                                                <div className="grid grid-cols-3 gap-1">
+                                                                <div className="grid grid-cols-4 gap-1">
                                                                     {[
                                                                         { label: 'Left', value: 'left', icon: AlignLeft },
                                                                         { label: 'Center', value: 'center', icon: AlignCenter },
                                                                         { label: 'Right', value: 'right', icon: AlignRight },
+                                                                        { label: 'Justify', value: 'justify', icon: List },
                                                                     ].map((a) => (
                                                                         <Button
                                                                             key={a.value}
                                                                             type="button"
                                                                             variant={
-                                                                                (selectedField.options?.alignment || 'left') === a.value
+                                                                                (selectedField.options?.text_align || selectedField.options?.alignment || 'left') === a.value
                                                                                     ? 'default'
                                                                                     : 'outline'
                                                                             }
-                                                                            className="h-8 gap-2 text-[8px] font-black uppercase"
+                                                                            className="h-8 gap-1.5 p-0 text-[7px] font-black uppercase"
                                                                             onClick={() =>
                                                                                 updateField(selectedField.id, 'options', {
                                                                                     ...selectedField.options,
-                                                                                    alignment: a.value,
+                                                                                    text_align: a.value,
+                                                                                    alignment: a.value, // Keep legacy for compat
                                                                                 })
                                                                             }
                                                                         >
@@ -1383,23 +1554,16 @@ function FormBuilder({ template }: Props) {
                                                             </div>
 
                                                             <div className="flex items-center justify-between gap-4">
-                                                                <Label className="text-[9px] font-black tracking-widest uppercase">
-                                                                    Styling
-                                                                </Label>
-                                                                <div className="flex gap-1">
+                                                                <Label className="text-[9px] font-black tracking-widest uppercase">Styling</Label>
+                                                                <div className="flex flex-wrap gap-1">
                                                                     <Button
                                                                         type="button"
-                                                                        variant={
-                                                                            selectedField.options?.font_style === 'italic' ? 'default' : 'outline'
-                                                                        }
-                                                                        className="h-8 px-3 text-[9px] font-black uppercase italic"
+                                                                        variant={selectedField.options?.font_style === 'italic' ? 'default' : 'outline'}
+                                                                        className="h-8 px-2 text-[8px] font-black uppercase italic"
                                                                         onClick={() =>
                                                                             updateField(selectedField.id, 'options', {
                                                                                 ...selectedField.options,
-                                                                                font_style:
-                                                                                    selectedField.options?.font_style === 'italic'
-                                                                                        ? 'normal'
-                                                                                        : 'italic',
+                                                                                font_style: selectedField.options?.font_style === 'italic' ? 'normal' : 'italic',
                                                                             })
                                                                         }
                                                                     >
@@ -1407,22 +1571,123 @@ function FormBuilder({ template }: Props) {
                                                                     </Button>
                                                                     <Button
                                                                         type="button"
-                                                                        variant={
-                                                                            selectedField.options?.text_transform === 'uppercase' ? 'default' : 'outline'
-                                                                        }
-                                                                        className="h-8 px-3 text-[9px] font-black uppercase"
+                                                                        variant={selectedField.options?.text_decoration === 'underline' ? 'default' : 'outline'}
+                                                                        className="h-8 px-2 text-[8px] font-black uppercase underline underline-offset-2"
                                                                         onClick={() =>
                                                                             updateField(selectedField.id, 'options', {
                                                                                 ...selectedField.options,
-                                                                                text_transform:
-                                                                                    selectedField.options?.text_transform === 'uppercase'
-                                                                                        ? 'none'
-                                                                                        : 'uppercase',
+                                                                                text_decoration: selectedField.options?.text_decoration === 'underline' ? 'none' : 'underline',
                                                                             })
                                                                         }
                                                                     >
-                                                                        Abc
+                                                                        Underline
                                                                     </Button>
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant={selectedField.options?.text_transform === 'uppercase' ? 'default' : 'outline'}
+                                                                        className="h-8 px-2 text-[8px] font-black uppercase"
+                                                                        onClick={() =>
+                                                                            updateField(selectedField.id, 'options', {
+                                                                                ...selectedField.options,
+                                                                                text_transform: selectedField.options?.text_transform === 'uppercase' ? 'none' : 'uppercase',
+                                                                            })
+                                                                        }
+                                                                    >
+                                                                        Caps
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* List & Numbering (Legal Support) */}
+                                                    {['static_text'].includes(selectedField.type) && (
+                                                        <div className="border-border space-y-4 border-t pt-4">
+                                                            <div className="flex items-center gap-2">
+                                                                <List size={12} className="text-muted-foreground" />
+                                                                <h4 className="text-[9px] font-black tracking-widest uppercase text-emerald-600">List & Numbering</h4>
+                                                            </div>
+                                                            
+                                                            <div className="space-y-1.5">
+                                                                <Label className="text-muted-foreground text-[8px] font-bold uppercase">List Type</Label>
+                                                                <div className="flex gap-1">
+                                                                    {[
+                                                                        { l: 'None', v: 'none' },
+                                                                        { l: 'Number', v: 'number' },
+                                                                        { l: 'Bullet', v: 'bullet' },
+                                                                        { l: 'Legal', v: 'legal' }
+                                                                    ].map((t) => (
+                                                                        <Button
+                                                                            key={t.v}
+                                                                            type="button"
+                                                                            variant={ (selectedField.options?.list_type || 'none') === t.v ? 'default' : 'outline' }
+                                                                            className="h-7 flex-1 text-[8px] font-black uppercase"
+                                                                            onClick={() => updateField(selectedField.id, 'options', {
+                                                                                ...selectedField.options,
+                                                                                list_type: t.v,
+                                                                                number_format: t.v === 'legal' ? 'Pasal {n}' : (t.v === 'number' ? '{n}.' : '')
+                                                                            })}
+                                                                        >
+                                                                            {t.l}
+                                                                        </Button>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+
+                                                            {(selectedField.options?.list_type === 'number' || selectedField.options?.list_type === 'legal') && (
+                                                                <div className="space-y-1.5 animate-in slide-in-from-top-1">
+                                                                    <Label className="text-muted-foreground text-[8px] font-bold uppercase">Format (use {"{n}"})</Label>
+                                                                    <Input
+                                                                        value={selectedField.options?.number_format || ''}
+                                                                        onChange={(e) => updateField(selectedField.id, 'options', {
+                                                                            ...selectedField.options,
+                                                                            number_format: e.target.value
+                                                                        })}
+                                                                        className="h-8 text-[11px] font-bold"
+                                                                        placeholder="e.g. Pasal {n}"
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Borders (Container Support) */}
+                                                    {['group', 'grid_x', 'grid_y', 'static_text'].includes(selectedField.type) && (
+                                                        <div className="border-border space-y-4 border-t pt-4">
+                                                            <div className="flex items-center gap-2">
+                                                                <Grid size={12} className="text-muted-foreground" />
+                                                                <h4 className="text-[9px] font-black tracking-widest uppercase">Borders</h4>
+                                                            </div>
+
+                                                            <div className="grid grid-cols-2 gap-4">
+                                                                <div className="space-y-1.5">
+                                                                    <Label className="text-muted-foreground text-[8px] font-bold uppercase">Style</Label>
+                                                                    <select
+                                                                        value={selectedField.options?.border_style || 'none'}
+                                                                        onChange={(e) => updateField(selectedField.id, 'options', {
+                                                                            ...selectedField.options,
+                                                                            border_style: e.target.value
+                                                                        })}
+                                                                        className="border-input bg-background focus-visible:ring-ring h-8 w-full rounded-md border px-2 py-1 text-[10px] font-bold shadow-sm"
+                                                                    >
+                                                                        <option value="none">None</option>
+                                                                        <option value="solid">Solid</option>
+                                                                        <option value="dashed">Dashed</option>
+                                                                        <option value="dotted">Dotted</option>
+                                                                    </select>
+                                                                </div>
+                                                                <div className="space-y-1.5">
+                                                                    <Label className="text-muted-foreground text-[8px] font-bold uppercase">Width (px)</Label>
+                                                                    <Input
+                                                                        type="number"
+                                                                        disabled={selectedField.options?.border_style === 'none'}
+                                                                        value={selectedField.options?.border_width ?? 1}
+                                                                        onChange={(e) => updateField(selectedField.id, 'options', {
+                                                                            ...selectedField.options,
+                                                                            border_width: parseInt(e.target.value) || 0
+                                                                        })}
+                                                                        className="h-8 text-[11px] font-bold"
+                                                                    />
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -1436,6 +1701,7 @@ function FormBuilder({ template }: Props) {
                                                                 </Label>
                                                                 <div className="grid grid-cols-3 gap-1">
                                                                     {[
+                                                                        { label: 'Text', value: 'textfield' },
                                                                         { label: 'Long Text', value: 'textarea' },
                                                                         { label: 'Number', value: 'number' },
                                                                         { label: 'Date', value: 'date' },
@@ -1477,6 +1743,36 @@ function FormBuilder({ template }: Props) {
                                                                     }
                                                                     className="h-8 text-[11px] font-bold"
                                                                 />
+                                                            </div>
+                                                            <div className="space-y-1.5 pt-2 border-t border-primary/10">
+                                                                <Label className="text-primary text-[9px] font-black tracking-wider uppercase">
+                                                                    Input Field Style
+                                                                </Label>
+                                                                <div className="grid grid-cols-2 gap-1">
+                                                                    {[
+                                                                        { label: 'Box Style', value: 'box' },
+                                                                        { label: 'Dashed Underline', value: 'dashed_bottom' },
+                                                                    ].map((s) => (
+                                                                        <Button
+                                                                            key={s.value}
+                                                                            type="button"
+                                                                            variant={
+                                                                                (selectedField.options?.field_style || 'box') === s.value
+                                                                                    ? 'default'
+                                                                                    : 'outline'
+                                                                            }
+                                                                            className="h-7 px-1 text-[8px] font-black uppercase"
+                                                                            onClick={() =>
+                                                                                updateField(selectedField.id, 'options', {
+                                                                                    ...selectedField.options,
+                                                                                    field_style: s.value,
+                                                                                })
+                                                                            }
+                                                                        >
+                                                                            {s.label}
+                                                                        </Button>
+                                                                    ))}
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     )}
@@ -1527,6 +1823,67 @@ function FormBuilder({ template }: Props) {
                                                         </div>
                                                     )}
 
+                                                    {['group', 'grid_x', 'grid_y'].includes(selectedField.type) && (
+                                                        <div className="border-border space-y-4 border-t pt-4">
+                                                            <div className="flex items-center gap-2">
+                                                                <AlignJustify size={12} className="text-muted-foreground" />
+                                                                <h4 className="text-[9px] font-black tracking-widest uppercase text-indigo-600">Alignment & Distribution</h4>
+                                                            </div>
+                                                            
+                                                            <div className="space-y-1.5">
+                                                                <Label className="text-muted-foreground text-[8px] font-bold uppercase">Justify Content (Space)</Label>
+                                                                <div className="grid grid-cols-3 gap-1">
+                                                                    {[
+                                                                        { l: 'Start', v: 'flex-start' },
+                                                                        { l: 'Center', v: 'center' },
+                                                                        { l: 'End', v: 'flex-end' },
+                                                                        { l: 'Between', v: 'space-between' },
+                                                                        { l: 'Around', v: 'space-around' },
+                                                                        { l: 'Evenly', v: 'space-evenly' }
+                                                                    ].map((t) => (
+                                                                        <Button
+                                                                            key={t.v}
+                                                                            type="button"
+                                                                            variant={ (selectedField.options?.justify_content || 'flex-start') === t.v ? 'default' : 'outline' }
+                                                                            className="h-7 text-[7px] font-black uppercase"
+                                                                            onClick={() => updateField(selectedField.id, 'options', {
+                                                                                ...selectedField.options,
+                                                                                justify_content: t.v
+                                                                            })}
+                                                                        >
+                                                                            {t.l}
+                                                                        </Button>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="space-y-1.5">
+                                                                <Label className="text-muted-foreground text-[8px] font-bold uppercase">Align Items</Label>
+                                                                <div className="grid grid-cols-2 gap-1">
+                                                                    {[
+                                                                        { l: 'Start', v: 'flex-start' },
+                                                                        { l: 'Center', v: 'center' },
+                                                                        { l: 'End', v: 'flex-end' },
+                                                                        { l: 'Stretch', v: 'stretch' }
+                                                                    ].map((t) => (
+                                                                        <Button
+                                                                            key={t.v}
+                                                                            type="button"
+                                                                            variant={ (selectedField.options?.align_items || 'flex-start') === t.v ? 'default' : 'outline' }
+                                                                            className="h-7 text-[7px] font-black uppercase"
+                                                                            onClick={() => updateField(selectedField.id, 'options', {
+                                                                                ...selectedField.options,
+                                                                                align_items: t.v
+                                                                            })}
+                                                                        >
+                                                                            {t.l}
+                                                                        </Button>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
                                                     {selectedField.type === 'image' && (
                                                         <div className="space-y-4">
                                                             <div className="space-y-1.5">
@@ -1543,7 +1900,21 @@ function FormBuilder({ template }: Props) {
                                                                 />
                                                             </div>
                                                             <div className="space-y-1.5">
-                                                                <Label className="text-[9px] font-black uppercase">Alignment</Label>
+                                                                <Label className="text-[9px] font-black uppercase">Size (px)</Label>
+                                                                <Input
+                                                                    type="number"
+                                                                    value={selectedField.options?.size || 120}
+                                                                    onChange={(e) =>
+                                                                        updateField(selectedField.id, 'options', {
+                                                                            ...selectedField.options,
+                                                                            size: parseInt(e.target.value) || 0,
+                                                                        })
+                                                                    }
+                                                                    className="h-8 text-[10px]"
+                                                                />
+                                                            </div>
+                                                            <div className="space-y-1.5">
+                                                                <Label className="text-[9px] font-black uppercase">Horizontal Alignment</Label>
                                                                 <div className="grid grid-cols-3 gap-1">
                                                                     {['left', 'center', 'right'].map((a) => (
                                                                         <Button
@@ -1563,6 +1934,35 @@ function FormBuilder({ template }: Props) {
                                                                             }
                                                                         >
                                                                             {a}
+                                                                        </Button>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                            <div className="space-y-1.5">
+                                                                <Label className="text-[9px] font-black uppercase">Vertical Alignment</Label>
+                                                                <div className="grid grid-cols-3 gap-1">
+                                                                    {[
+                                                                        { l: 'Top', v: 'top' },
+                                                                        { l: 'Middle', v: 'middle' },
+                                                                        { l: 'Bottom', v: 'bottom' }
+                                                                    ].map((a) => (
+                                                                        <Button
+                                                                            key={a.v}
+                                                                            type="button"
+                                                                            variant={
+                                                                                (selectedField.options?.v_alignment || 'top') === a.v
+                                                                                    ? 'default'
+                                                                                    : 'outline'
+                                                                            }
+                                                                            className="h-7 text-[8px] font-black uppercase"
+                                                                            onClick={() =>
+                                                                                updateField(selectedField.id, 'options', {
+                                                                                    ...selectedField.options,
+                                                                                    v_alignment: a.v,
+                                                                                })
+                                                                            }
+                                                                        >
+                                                                            {a.l}
                                                                         </Button>
                                                                     ))}
                                                                 </div>

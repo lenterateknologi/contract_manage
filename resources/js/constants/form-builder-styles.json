@@ -1,0 +1,107 @@
+{
+  "text_style": [
+    {
+      "property": "font_family",
+      "type": "enum",
+      "default_value": "Times New Roman",
+      "available_values": ["Times New Roman", "Arial", "Calibri", "Courier New", "Georgia"]
+    },
+    {
+      "property": "font_size",
+      "type": "number",
+      "default_value": 12,
+      "min": 8,
+      "max": 72
+    },
+    {
+      "property": "font_weight",
+      "type": "enum",
+      "default_value": "normal",
+      "available_values": ["normal", "bold"]
+    },
+    {
+      "property": "font_style",
+      "type": "enum",
+      "default_value": "normal",
+      "available_values": ["normal", "italic"]
+    },
+    {
+      "property": "text_decoration",
+      "type": "enum",
+      "default_value": "none",
+      "available_values": ["none", "underline", "line-through"]
+    },
+    {
+      "property": "text_transform",
+      "type": "enum",
+      "default_value": "none",
+      "available_values": ["none", "uppercase", "lowercase", "capitalize"]
+    },
+    {
+      "property": "color",
+      "type": "string",
+      "default_value": "#000000"
+    }
+  ],
+  "paragraph_style": [
+    {
+      "property": "text_align",
+      "type": "enum",
+      "default_value": "justify",
+      "available_values": ["left", "right", "center", "justify"]
+    },
+    {
+      "property": "line_height",
+      "type": "number",
+      "default_value": 1.5,
+      "min": 1,
+      "max": 3
+    },
+    {
+      "property": "spacing_before",
+      "type": "number",
+      "default_value": 0
+    },
+    {
+      "property": "spacing_after",
+      "type": "number",
+      "default_value": 8
+    },
+    {
+      "property": "first_line_indent",
+      "type": "number",
+      "default_value": 24
+    }
+  ],
+  "border_style": [
+    {
+      "property": "border_width",
+      "type": "number",
+      "default_value": 0
+    },
+    {
+      "property": "border_color",
+      "type": "string",
+      "default_value": "#000000"
+    },
+    {
+      "property": "border_style",
+      "type": "enum",
+      "default_value": "none",
+      "available_values": ["none", "solid", "dashed", "dotted"]
+    }
+  ],
+  "list_style": [
+    {
+      "property": "list_type",
+      "type": "enum",
+      "default_value": "none",
+      "available_values": ["none", "number", "bullet", "legal"]
+    },
+    {
+      "property": "number_format",
+      "type": "string",
+      "default_value": "Pasal {n}"
+    }
+  ]
+}

@@ -67,12 +67,17 @@ class ContractController extends Controller
             'contracts' => $contracts,
             'types' => ContractType::all(),
             'users' => User::orderBy('name')->get()->map(fn($u) => $this->formatUser($u)),
-            'vendors' => Vendor::where('is_active', true)->orderBy('name')->get()->map(fn($v) => [
+            'vendors' => Vendor::with('documents')->where('is_active', true)->orderBy('name')->get()->map(fn($v) => [
                 'id' => $v->id,
                 'name' => $v->name,
                 'pic_name' => $v->pic_name,
                 'pic_position' => $v->pic_position,
                 'address' => $v->address,
+                'documents' => $v->documents->map(fn($d) => [
+                    'id' => $d->id,
+                    'name' => $d->document_name,
+                    'type' => $d->document_type,
+                ]),
             ]),
             'formTemplates' => \App\Models\FormTemplate::where('is_active', true)->with('contractType')->get()->map(fn ($ft) => [
                 'id' => $ft->id,
@@ -144,7 +149,7 @@ class ContractController extends Controller
             'workflow.steps', 'versions.uploader', 'histories.actor', 'messages.user',
             'attachments.uploader', 'formSubmissions',
         ])->findOrFail($id);
-        
+
         // Authorization: Only Admin or Creator can view drafts
         if ($contract->status === 'draft' && $contract->created_by !== Auth::id() && Auth::user()->role !== 'Admin') {
             abort(403, 'Halaman tidak tersedia');
@@ -194,7 +199,7 @@ class ContractController extends Controller
         $query = Contract::with([
             'creator', 'contractType', 'approvals.approver', 'approvals.workflowStep',
             'workflow.steps', 'versions.uploader', 'histories.actor', 'messages.user',
-            'attachments.uploader', 'formSubmissions', 'vendor', 'initiator'
+            'attachments.uploader', 'formSubmissions', 'vendor.documents', 'initiator'
         ])->orderByDesc('created_at');
 
         // Apply View Filter
@@ -334,8 +339,9 @@ class ContractController extends Controller
             'attachments.uploader',
             'contractType',
             'formSubmissions',
+            'vendor.documents'
         ])->findOrFail($id);
-        
+
         // Authorization: Only Admin or Creator can view drafts
         if ($contract->status === 'draft' && $contract->created_by !== Auth::id() && Auth::user()->role !== 'Admin') {
             abort(403, 'Halaman tidak tersedia');
@@ -392,21 +398,48 @@ class ContractController extends Controller
             'tax_required' => 'nullable|boolean',
             'initiated_by_id' => 'nullable|uuid|exists:m_users,id',
             'vendor_id' => 'nullable|uuid|exists:m_vendors,id',
+            'kop_sub_topik' => 'nullable|string',
+            'p1_entity' => 'nullable|string',
+            'p1_signer' => 'nullable|string',
+            'p1_signer_position' => 'nullable|string',
+            'p1_address' => 'nullable|string',
+            'p2_entity' => 'nullable|string',
+            'p2_signer' => 'nullable|string',
+            'p2_signer_position' => 'nullable|string',
+            'p2_address' => 'nullable|string',
         ]);
 
         return DB::transaction(function () use ($validated) {
             $userId = Auth::id();
+            $initiatorId = $validated['initiated_by_id'] ?? $userId;
+            $initiator = \App\Models\User::with('department')->find($initiatorId);
+            $contractType = \App\Models\ContractType::find($validated['contract_type_id']);
+
+            $contract_no = \App\Models\NumberingFormat::generateNextNumber('contract', [
+                'kode_departemen' => $initiator->department->code ?? 'GEN',
+                'kode_perjanjian' => $contractType->code ?? 'KTR',
+            ]);
 
             $contract = Contract::create([
-                'contract_no' => 'CTR-'.date('Y').'-'.strtoupper(Str::random(5)),
+                'contract_no' => $contract_no,
                 'title' => $validated['title'],
                 'description' => $validated['description'] ?? '—',
                 'contract_type_id' => $validated['contract_type_id'],
                 'transaction_type' => $validated['transaction_type'] ?? 'Perjanjian Baru',
                 'status' => 'draft',
                 'created_by' => $userId,
-                'initiated_by_id' => $validated['initiated_by_id'] ?? $userId,
+                'initiated_by_id' => $initiatorId,
                 'vendor_id' => $validated['vendor_id'] ?? null,
+                'kop_sub_topik' => $validated['kop_sub_topik'] ?? null,
+                'parent_id' => $validated['parent_id'] ?? null,
+                'p1_entity' => $validated['p1_entity'] ?? null,
+                'p1_signer' => $validated['p1_signer'] ?? null,
+                'p1_signer_position' => $validated['p1_signer_position'] ?? null,
+                'p1_address' => $validated['p1_address'] ?? null,
+                'p2_entity' => $validated['p2_entity'] ?? null,
+                'p2_signer' => $validated['p2_signer'] ?? null,
+                'p2_signer_position' => $validated['p2_signer_position'] ?? null,
+                'p2_address' => $validated['p2_address'] ?? null,
                 'metadata' => [
                     'tax_required' => $validated['tax_required'] ?? false,
                 ]
@@ -429,18 +462,34 @@ class ContractController extends Controller
         }
 
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'contract_no' => 'nullable|string',
-            'contract_date' => 'nullable|date',
-            'end_date' => 'nullable|date',
-            'contract_type_id' => 'nullable|exists:m_contract_types,id',
+            'title'            => 'required|string|max:255',
+            'description'      => 'nullable|string',
+            'contract_type_id' => 'nullable|uuid|exists:m_contract_types,id',
+            'contract_no'      => 'nullable|string',
+            'contract_date'    => 'nullable|date',
+            'end_date'         => 'nullable|date',
             'transaction_type' => 'nullable|string|in:Perjanjian Baru,Addendum,Amandement,Perubahan Perjanjian',
-            'initiated_by_id' => 'nullable|uuid|exists:m_users,id',
-            'vendor_id' => 'nullable|uuid|exists:m_vendors,id',
+            'initiated_by_id'  => 'nullable|uuid|exists:m_users,id',
+            'vendor_id'        => 'nullable|uuid|exists:m_vendors,id',
+            'kop_sub_topik'    => 'nullable|string',
+            'parent_id'        => 'nullable|exists:t_contracts,id',
+            'p1_entity'        => 'nullable|string',
+            'p1_signer'        => 'nullable|string',
+            'p1_signer_position' => 'nullable|string',
+            'p1_address'       => 'nullable|string',
+            'p2_entity'        => 'nullable|string',
+            'p2_signer'        => 'nullable|string',
+            'p2_signer_position' => 'nullable|string',
+            'p2_address'       => 'nullable|string',
         ]);
 
         $contract->update($validated);
+
+        // Sync contract_type (string label) when contract_type_id is provided
+        if (!empty($validated['contract_type_id'])) {
+            $contract->contract_type = $contract->contractType?->name ?? $contract->contract_type;
+            $contract->save();
+        }
 
         ContractHistory::create([
             'contract_id' => $contract->id,
@@ -449,7 +498,7 @@ class ContractController extends Controller
             'actor_id' => Auth::id(),
         ]);
 
-        return response()->json($this->formatContract($contract->fresh()));
+        return response()->json($this->formatContract($contract->fresh(['contractType', 'vendor', 'creator', 'initiator'])));
     }
 
     public function destroy(string $id): JsonResponse
@@ -751,6 +800,60 @@ class ContractController extends Controller
         return response()->json(['message' => 'Failed to generate PDF.'], 500);
     }
 
+    public function vendorDocumentFile(string $id, string $docId): mixed
+    {
+        $contract = Contract::findOrFail($id);
+        if (!$contract->vendor_id) abort(404);
+        
+        $document = \App\Models\VendorDocument::where('vendor_id', $contract->vendor_id)->findOrFail($docId);
+
+        if (!Storage::disk('public')->exists($document->file_url)) {
+            abort(404, 'File not found');
+        }
+
+        return response()->download(Storage::disk('public')->path($document->file_url), $document->document_name);
+    }
+
+    public function vendorDocumentPdfPreview(string $id, string $docId): mixed
+    {
+        $contract = Contract::findOrFail($id);
+        if (!$contract->vendor_id) abort(404);
+
+        $document = \App\Models\VendorDocument::where('vendor_id', $contract->vendor_id)->findOrFail($docId);
+
+        if (!Storage::disk('public')->exists($document->file_url)) {
+            return response()->json(['message' => 'File not found.'], 404);
+        }
+
+        $sourcePath = Storage::disk('public')->path($document->file_url);
+        $pdfDir = Storage::disk('local')->path("vendors/{$contract->vendor_id}/documents/pdfs");
+        $pdfPath = $pdfDir.'/'.pathinfo($document->file_url, PATHINFO_FILENAME).'.pdf';
+
+        if (! file_exists($pdfDir)) {
+            mkdir($pdfDir, 0755, true);
+        }
+
+        if (! file_exists($pdfPath)) {
+            if (strtolower(pathinfo($document->file_url, PATHINFO_EXTENSION)) === 'pdf') {
+                copy($sourcePath, $pdfPath);
+            } else {
+                $soffice = '/Applications/LibreOffice.app/Contents/MacOS/soffice';
+                $userDir = 'file://'.sys_get_temp_dir().'/soffice_user_vendor_'.md5($docId);
+                $command = "export HOME=/tmp && \"{$soffice}\" -env:UserInstallation={$userDir} --headless --convert-to pdf --outdir \"{$pdfDir}\" \"{$sourcePath}\" 2>&1";
+                shell_exec($command);
+            }
+        }
+
+        if (file_exists($pdfPath)) {
+            return response()->file($pdfPath, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="'.basename($pdfPath).'"',
+            ]);
+        }
+
+        return response()->json(['message' => 'Failed to generate PDF.'], 500);
+    }
+
     public function uploadAttachment(Request $request, string $id): JsonResponse
     {
         $request->validate([
@@ -827,6 +930,14 @@ class ContractController extends Controller
             'contract_type_id' => $c->contract_type_id,
             'created_by' => $c->created_by,
             'transaction_type' => $c->transaction_type,
+            'p1_entity' => $c->p1_entity,
+            'p1_signer' => $c->p1_signer,
+            'p1_signer_position' => $c->p1_signer_position,
+            'p1_address' => $c->p1_address,
+            'p2_entity' => $c->p2_entity,
+            'p2_signer' => $c->p2_signer,
+            'p2_signer_position' => $c->p2_signer_position,
+            'p2_address' => $c->p2_address,
             'vendor_id' => $c->vendor_id,
             'vendor' => $c->vendor ? [
                 'id' => $c->vendor->id,
@@ -834,6 +945,11 @@ class ContractController extends Controller
                 'pic_name' => $c->vendor->pic_name,
                 'pic_position' => $c->vendor->pic_position,
                 'address' => $c->vendor->address,
+                'documents' => $c->vendor->documents->map(fn($d) => [
+                    'id' => $d->id,
+                    'name' => $d->document_name,
+                    'type' => $d->document_type,
+                ]),
             ] : null,
             'status' => $c->status,
             'current_version' => $c->current_version,
@@ -842,6 +958,13 @@ class ContractController extends Controller
             'creator' => $this->formatUser($c->creator),
             'initiator' => $this->formatUser($c->initiator),
             'initiated_by_id' => $c->initiated_by_id,
+            'kop_sub_topik' => $c->kop_sub_topik,
+            'parent_id' => $c->parent_id,
+            'parent' => $c->parent ? [
+                'id' => $c->parent->id,
+                'contract_no' => $c->parent->contract_no,
+                'title' => $c->parent->title,
+            ] : null,
             'progress' => $progress,
             'workflow_id' => $c->workflow_id,
             'workflow_step_id' => $c->workflow_step_id,
@@ -921,7 +1044,7 @@ class ContractController extends Controller
 
         foreach ($workflowSteps as $step) {
             $approvals = $c->approvals->where('workflow_step_id', $step->id);
-            
+
             // Resolve Department Name
             $deptName = $step->department?->name;
             if (!$deptName && $step->step === 1 && $c->initiator?->department) {
@@ -1038,7 +1161,7 @@ class ContractController extends Controller
                         $changes[] = $key;
                     }
                 }
-                
+
                 if (!empty($changes)) {
                     // Fetch readable labels for the changed keys
                     $fieldLabels = DB::table('m_form_fields')
@@ -1072,18 +1195,49 @@ class ContractController extends Controller
 
         // Sync critical fields from F1 to Contract main table
         if ($docType === 'f1') {
-            $syncFields = [
-                'transaction_mode' => 'transaction_type',
-                'jenis_transaksi_pks' => 'transaction_type',
-                'contract_title' => 'title',
-                'judul_kontrak' => 'title',
-            ];
             $updates = [];
-            foreach ($syncFields as $formField => $contractField) {
-                if (isset($formData[$formField]) && !empty($formData[$formField])) {
-                    $updates[$contractField] = $formData[$formField];
+
+            // --- Tipe Perjanjian (transaction_type) ---
+            foreach (['meta_tipe_perjanjian', 'f1_sifat_row', 'transaction_mode', 'transaction_type'] as $key) {
+                if (!empty($formData[$key])) {
+                    $updates['transaction_type'] = $formData[$key];
+                    break;
                 }
             }
+
+            // --- Judul Kontrak (title) ---
+            foreach (['meta_judul_kontrak', 'bv_f1_title', 'judul', 'contract_title'] as $key) {
+                if (!empty($formData[$key])) {
+                    $updates['title'] = $formData[$key];
+                    break;
+                }
+            }
+
+            // --- Tanggal Kontrak (contract_date) ---
+            foreach (['meta_tgl_dibuat', 'bv_f1_date'] as $key) {
+                if (!empty($formData[$key])) {
+                    $updates['contract_date'] = $formData[$key];
+                    break;
+                }
+            }
+
+            // --- Sub Topik (kop_sub_topik) ---
+            if (!empty($formData['meta_sub_topik'])) {
+                $updates['kop_sub_topik'] = $formData['meta_sub_topik'];
+            }
+
+            // --- Pihak Pertama identity ---
+            if (!empty($formData['meta_p1_entity']))          $updates['p1_entity']          = $formData['meta_p1_entity'];
+            if (!empty($formData['meta_p1_signer']))          $updates['p1_signer']          = $formData['meta_p1_signer'];
+            if (!empty($formData['meta_p1_signer_position'])) $updates['p1_signer_position'] = $formData['meta_p1_signer_position'];
+            if (!empty($formData['meta_p1_alamat']))          $updates['p1_address']         = $formData['meta_p1_alamat'];
+
+            // --- Pihak Kedua identity ---
+            if (!empty($formData['meta_p2_entity']))          $updates['p2_entity']          = $formData['meta_p2_entity'];
+            if (!empty($formData['meta_p2_signer']))          $updates['p2_signer']          = $formData['meta_p2_signer'];
+            if (!empty($formData['meta_p2_signer_position'])) $updates['p2_signer_position'] = $formData['meta_p2_signer_position'];
+            if (!empty($formData['meta_p2_alamat']))          $updates['p2_address']         = $formData['meta_p2_alamat'];
+
             if (!empty($updates)) {
                 $contract->update($updates);
             }
@@ -1153,21 +1307,158 @@ class ContractController extends Controller
     }
 
     /**
+     * Export Audit Trail to PDF via Background Queue.
+     */
+    public function exportAuditPdfQueue(string $id, Request $request)
+    {
+        Log::info("Audit PDF Queue Request: id={$id}");
+        $contract = Contract::findOrFail($id);
+
+        try {
+            $jobId = (string) Str::uuid();
+
+            // Generate the signed URL for the print view
+            $printUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+                'contracts.audit.document.print',
+                now()->addMinutes(30),
+                [
+                    'id' => $id,
+                    'search' => $request->search,
+                    'actor_id' => $request->actor_id,
+                    'date_from' => $request->date_from,
+                    'date_to' => $request->date_to
+                ]
+            );
+
+            // Force 127.0.0.1 on local dev
+            if (app()->environment('local')) {
+                $printUrl = str_replace('localhost', '127.0.0.1', $printUrl);
+            }
+
+            // Safe filename
+            $safeNo = Str::slug($contract->contract_no ?: 'contract');
+            $fileName = 'Audit_Trail_' . $safeNo . '_' . time() . '.pdf';
+
+            Log::info("Dispatching Audit PDF Job: {$jobId}");
+
+            // Queue the job using existing GeneratePdfJob
+            GeneratePdfJob::dispatch($jobId, $printUrl, $fileName);
+
+            Cache::put('pdf_status_' . $jobId, ['status' => 'pending', 'progress' => 10], 1800);
+
+            return response()->json([
+                'success' => true,
+                'job_id' => $jobId
+            ]);
+
+        } catch (\Exception $e) {
+            Log::critical("Audit PDF Queue Failure: " . $e->getMessage());
+            return response()->json(['message' => 'Gagal antrikan PDF: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Export the audit trail as a PDF.
      */
     public function exportAuditPdf(string $id, Request $request)
     {
-        $contract = Contract::with(['creator', 'contractType'])->findOrFail($id);
-        $histories = $contract->histories()->with('actor')->orderBy('created_at', 'asc')->get();
+        set_time_limit(180);
+        $contract = Contract::findOrFail($id);
 
-        $pdf = Pdf::loadView('pdf.contract-audit', [
-            'contract' => $contract,
+        try {
+            // Generate a signed URL for Browsershot to visit the React audit page
+            // We use the specialized .print route which is outside auth
+            $printUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+                'contracts.audit.document.print',
+                now()->addMinutes(15),
+                ['id' => $id, 'search' => $request->search, 'actor_id' => $request->actor_id, 'date_from' => $request->date_from, 'date_to' => $request->date_to]
+            );
+
+            // Force 127.0.0.1 on local dev to avoid localhost resolution delays
+            if (app()->environment('local')) {
+                $printUrl = str_replace('localhost', '127.0.0.1', $printUrl);
+            }
+
+            // High-Fidelity PDF rendering via Browsershot
+            $pdfContent = \Spatie\Browsershot\Browsershot::url($printUrl)
+                ->setNodeBinary('/opt/homebrew/bin/node')
+                ->setNpmBinary('/opt/homebrew/bin/npm')
+                ->setChromePath('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
+                ->noSandbox()
+                ->addChromiumArguments([
+                    '--disable-gpu',
+                    '--disable-dev-shm-usage',
+                    '--disable-setuid-sandbox',
+                    '--no-first-run',
+                    '--no-zygote',
+                    '--single-process',
+                    '--disable-extensions'
+                ])
+                ->timeout(180)
+                ->format('A4')
+                ->margins(0, 0, 0, 0)
+                ->showBackground()
+                ->displayHeaderFooter(false)
+                ->setDelay(500)
+                ->pdf();
+
+            return response($pdfContent)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'attachment; filename="Audit_Trail_' . Str::slug($contract->contract_no) . '.pdf"')
+                ->header('Cache-Control', 'no-cache, no-store, must-revalidate');
+
+        } catch (\Exception $e) {
+            Log::error('Audit Trail Browsershot Export Failed: ' . $e->getMessage());
+
+            // Fallback to legacy PDF if Browsershot fails
+            $contract->load(['creator', 'contractType']);
+
+            $query = $contract->histories()->with('actor');
+            if ($request->filled('search')) $query->where('description', 'like', '%' . $request->search . '%');
+            if ($request->filled('actor_id')) $query->where('actor_id', $request->actor_id);
+            if ($request->filled('date_from')) $query->whereDate('created_at', '>=', $request->date_from);
+            if ($request->filled('date_to')) $query->whereDate('created_at', '<=', $request->date_to);
+            $histories = $query->orderBy('created_at', 'asc')->get();
+
+            $pdf = Pdf::loadView('pdf.contract-audit', [
+                'contract' => $contract,
+                'histories' => $histories,
+                'generated_at' => now()->format('d M Y H:i'),
+                'generated_by' => Auth::user()->name,
+            ]);
+            return $pdf->download("Audit_Trail_{$contract->contract_no}.pdf");
+        }
+    }
+
+    public function renderAuditDocument(string $id, Request $request)
+    {
+        $contract = Contract::with(['vendor', 'contractType', 'creator', 'initiator'])->findOrFail($id);
+
+        $query = $contract->histories()->with('actor');
+
+        if ($request->filled('search')) {
+            $query->where('description', 'like', '%' . $request->search . '%');
+        }
+
+        if ($request->filled('actor_id')) {
+            $query->where('actor_id', $request->actor_id);
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        $histories = $query->orderBy('created_at', 'asc')->get();
+
+        return Inertia::render('contracts/AuditTrailDocument', [
+            'contract' => $this->formatContract($contract),
             'histories' => $histories,
-            'generated_at' => now()->format('d M Y H:i'),
-            'generated_by' => Auth::user()->name,
+            'filters' => $request->only(['search', 'actor_id', 'date_from', 'date_to']),
         ]);
-
-        return $pdf->download("Audit_Trail_{$contract->contract_no}.pdf");
     }
 
     /**
@@ -1175,7 +1466,7 @@ class ContractController extends Controller
      */
     public function getFormSubmission(string $id, string $type): JsonResponse
     {
-        $contract = Contract::findOrFail($id);
+        $contract = Contract::with(['contractType', 'vendor', 'initiator', 'creator'])->findOrFail($id);
 
         $submission = ContractFormSubmission::where('contract_id', $contract->id)
             ->where('document_type', $type)
@@ -1194,18 +1485,22 @@ class ContractController extends Controller
                 'created_at' => $v->created_at->format('Y-m-d H:i'),
             ]);
         } else {
-            // Apply Smart Inheritance for NEW submissions if type is F2
-            if ($type === 'f2') {
-                $f1Submission = ContractFormSubmission::where('contract_id', $contract->id)
-                    ->where('document_type', 'f1')
-                    ->first();
-                
-                if ($f1Submission) {
-                    $latestF1 = $f1Submission->versions()->orderByDesc('version_no')->first();
-                    $f1Data = $latestF1 ? ($latestF1->form_data ?? []) : [];
-                    $prefillData = $this->applyInheritance($f1Data, $contract);
-                }
+            // No submission yet — prefill_data will be generated below
+        }
+
+        // For F2: ALWAYS generate prefill_data (used for static_text placeholder resolution
+        // and initial form fill). Frontend merges this under saved form_data.
+        if ($type === 'f2') {
+            $f1Submission = ContractFormSubmission::where('contract_id', $contract->id)
+                ->where('document_type', 'f1')
+                ->first();
+
+            $f1Data = [];
+            if ($f1Submission) {
+                $latestF1 = $f1Submission->versions()->orderByDesc('version_no')->first();
+                $f1Data = $latestF1 ? ($latestF1->form_data ?? []) : [];
             }
+            $prefillData = $this->applyInheritance($f1Data, $contract);
         }
 
         return response()->json([
@@ -1266,17 +1561,17 @@ class ContractController extends Controller
             $f1Submission = ContractFormSubmission::where('contract_id', $contract->id)
                 ->where('document_type', 'f1')
                 ->first();
-            
+
             $latestF1 = $f1Submission ? $f1Submission->versions()->orderByDesc('version_no')->first() : null;
             $f1Data = $latestF1 ? ($latestF1->form_data ?? []) : [];
-            
+
             $formData = $this->applyInheritance($f1Data, $contract, $formData);
         }
 
         try {
             $jobId = (string) Str::uuid();
             $cacheKey = 'pdf_adhoc_' . $jobId;
-            
+
             Log::info("Prepping PDF Cache: {$cacheKey}");
             Cache::put($cacheKey, [
                 'template' => $template->toArray() + ['fields' => $template->fields->toArray()],
@@ -1296,11 +1591,11 @@ class ContractController extends Controller
             // Safe filename (slugified contract number to avoid slash issues)
             $safeNo = $contract->contract_no ? Str::slug($contract->contract_no) : 'contract';
             $fileName = $safeNo . '_' . strtoupper($type) . '_' . time() . '.pdf';
-            
+
             Log::info("Dispatching PDF Job: {$jobId} for file: {$fileName}");
             // Queue the job
             GeneratePdfJob::dispatch($jobId, $printUrl, $fileName);
-            
+
             Cache::put('pdf_status_' . $jobId, ['status' => 'pending', 'progress' => 10], 1800);
 
             return response()->json([
@@ -1348,10 +1643,10 @@ class ContractController extends Controller
             $f1Submission = ContractFormSubmission::where('contract_id', $contract->id)
                 ->where('document_type', 'f1')
                 ->first();
-            
+
             $latestF1 = $f1Submission ? $f1Submission->versions()->orderByDesc('version_no')->first() : null;
             $f1Data = $latestF1 ? ($latestF1->form_data ?? []) : [];
-            
+
             $formData = $this->applyInheritance($f1Data, $contract, $formData);
         }
 
@@ -1416,7 +1711,7 @@ class ContractController extends Controller
                 'fields' => $fields,
                 'contract' => $contract,
             ]);
-            
+
             $fileName = $contract->contract_no . '_' . strtoupper($type) . '.pdf';
             if ($disposition === 'inline') {
                 return $pdf->stream($fileName);
@@ -1427,70 +1722,69 @@ class ContractController extends Controller
 
 
     /**
-     * Internal logic for F1 -> F2 data mapping
+     * Internal logic for F1 -> F2 data mapping.
+     * Keys = F2 field names (or placeholder variable names used in static_text templates).
+     * Values = exact F1 field names to copy from.
      */
     private function applyInheritance(array $f1Data, Contract $contract, array $existingData = []): array
     {
         $formData = array_merge($f1Data, $existingData);
-        
+
+        // ── F2 labeled_value fields ← F1 field names ────────────────
         $inheritanceMap = [
-            'perjanjian_tentang' => ['bv_f1_title', 'f1_title', 'judul', 'perjanjian_xxxx', 'judul_kontrak'],
-            'tanggal' => ['bv_f1_date', 'f1_date', 'tanggal_perjanjian', 'tanggal'],
-            'pihak_pertama' => ['v_p1_entity', 'p1_entity', 'pihak_i_(pt.)', 'nama_pihak_1', 'pihak_i'],
-            'pihak_kedua' => ['v_p2_entity', 'p2_entity', 'pihak_ii_(pt.)', 'pihak_ii_(perorangan)', 'nama_pihak_2', 'pihak_ii', 'vendor_name'],
-            'ruang_lingkup' => ['bv_f1_tujuan', 'f1_tujuan', 'lingkup_pekerjaan', 'ruang_lingkup'],
-            'harga_pekerjaan' => ['tdv_price', 'price', 'harga/fee', 'nilai_kontrak', 'harga_fee'],
-            'cara_pembayaran' => ['tdv_top', 'top', 'terms_of_payment', 'mekanisme_pembayaran'],
-            'jangka_waktu' => ['tdv_jw', 'jw', 'masa_berlaku', 'jangka_waktu'],
-            'lokasi' => ['tdv_loc', 'loc', 'lokasi_area', 'lokasi'],
-            'nama_pihak_1' => ['v_p1_signer', 'p1_signer', 'penandatangan_pihak_i', 'signer_pihak_1'],
-            'jabatan_pihak_1' => ['v_p1_position', 'p1_position', 'jabatan_pihak_i', 'position_pihak_1'],
-            'nama_pihak_2' => ['v_p2_signer', 'p2_signer', 'penandatangan_pihak_ii', 'signer_pihak_2'],
-            'jabatan_pihak_2' => ['v_p2_position', 'p2_position', 'jabatan_pihak_ii', 'position_pihak_2'],
-            'objek_perjanjian' => ['bv_f1_tujuan', 'f1_tujuan', 'ruang_lingkup'],
+            'meta_perjanjian_tentang' => 'meta_judul_kontrak',
+            'meta_f2_scope'           => 'meta_ringkasan_klausul',
+            'meta_f2_price'           => 'meta_nilai_transaksi',
+            'meta_f2_payment'         => 'meta_mekanisme_pembayaran',
+            'meta_f2_tenure'          => 'meta_masa_berlaku',
+            'meta_f2_location'        => 'meta_lokasi',
+            // Legacy Mappings
+            'perjanjian_tentang'      => 'meta_judul_kontrak',
+            'f2_scope'                => 'meta_ringkasan_klausul',
         ];
 
-        foreach ($inheritanceMap as $target => $sources) {
-            if (!isset($formData[$target]) || empty($formData[$target])) {
-                foreach ($sources as $source) {
-                    if (isset($f1Data[$source]) && !empty($f1Data[$source])) {
-                        $formData[$target] = $f1Data[$source];
-                        // Also set the uppercase version
-                        $formData[strtoupper($target)] = $f1Data[$source];
-                        break;
-                    }
-                }
+        foreach ($inheritanceMap as $f2Field => $f1Field) {
+            if (empty($formData[$f2Field]) && !empty($f1Data[$f1Field])) {
+                $formData[$f2Field] = $f1Data[$f1Field];
             }
         }
 
-        // Logic for Pihak Pertama (Company Default)
-        if (empty($formData['pihak_pertama'])) {
-            $formData['pihak_pertama'] = 'PT. Lentera Teknologi';
+        // ── Passthrough: Copy F1 identity fields directly so static_text
+        // placeholders like {{meta_p2_entity}} resolve in the F2 renderer ──
+        $f1PassthroughFields = [
+            'meta_p1_entity', 'meta_p1_signer', 'meta_p1_signer_position', 'meta_p1_alamat',
+            'meta_p2_entity', 'meta_p2_signer', 'meta_p2_signer_position', 'meta_p2_alamat',
+            'meta_judul_kontrak', 'meta_tgl_dibuat', 'meta_tipe_perjanjian', 'meta_nomor',
+            'meta_topik', 'meta_sub_topik', 'meta_ringkasan_klausul',
+            // Legacy passthrough
+            'v_p1_entity', 'v_p2_entity'
+        ];
+        foreach ($f1PassthroughFields as $key) {
+            if (empty($formData[$key]) && !empty($f1Data[$key])) {
+                $formData[$key] = $f1Data[$key];
+            }
         }
 
-        // Logic for Pihak Pertama (Initiator / User Login context)
-        if (empty($formData['nama_pihak_1'])) {
-             $formData['nama_pihak_1'] = $contract->initiator->name ?? ($contract->creator->name ?? '');
-        }
-        if (empty($formData['jabatan_pihak_1'])) {
-             $formData['jabatan_pihak_1'] = $contract->initiator->role ?? ($contract->creator->role ?? 'Direktur');
-        }
+        // ── Pihak Pertama defaults ─────────────────────────────────────────
+        if (empty($formData['meta_p1_entity']))   $formData['meta_p1_entity']   = 'PT. Lentera Teknologi';
+        if (empty($formData['meta_p1_signer']))   $formData['meta_p1_signer']   = $contract->initiator?->name ?? $contract->creator?->name ?? '';
+        if (empty($formData['meta_p1_signer_position'])) $formData['meta_p1_signer_position'] = $contract->initiator?->role ?? $contract->creator?->role ?? 'Direktur';
+        if (empty($formData['meta_p1_alamat']))   $formData['meta_p1_alamat']   = 'The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan';
 
-        // Logic for Pihak Kedua (Vendor Sync)
+        // ── Pihak Kedua from Vendor master data ────────────────────────────
         if ($contract->vendor_id && $contract->vendor) {
             $v = $contract->vendor;
-            if (empty($formData['pihak_kedua'])) $formData['pihak_kedua'] = $v->name;
-            if (empty($formData['nama_pihak_2'])) $formData['nama_pihak_2'] = $v->pic_name;
-            if (empty($formData['jabatan_pihak_2'])) $formData['jabatan_pihak_2'] = $v->pic_position;
-            if (empty($formData['alamat_pihak_2'])) $formData['alamat_pihak_2'] = $v->address;
-            if (empty($formData['vendor_name'])) $formData['vendor_name'] = $v->name;
+            if (empty($formData['meta_p2_entity']))          $formData['meta_p2_entity']          = $v->name;
+            if (empty($formData['meta_p2_signer']))          $formData['meta_p2_signer']          = $v->pic_name;
+            if (empty($formData['meta_p2_signer_position'])) $formData['meta_p2_signer_position'] = $v->pic_position;
+            if (empty($formData['meta_p2_alamat']))          $formData['meta_p2_alamat']          = $v->address;
         }
 
-        // Meta context
-        if (empty($formData['no_kontrak'])) $formData['no_kontrak'] = $contract->contract_no;
-        if (empty($formData['no_perjanjian'])) $formData['no_perjanjian'] = $contract->contract_no;
-        if (empty($formData['pic'])) $formData['pic'] = $contract->initiator->name ?? ($contract->creator->name ?? '');
-        if (empty($formData['dimohonkan_oleh'])) $formData['dimohonkan_oleh'] = $contract->initiator->name ?? ($contract->creator->name ?? '');
+        // ── Meta context ───────────────────────────────────────────────────
+        if (empty($formData['meta_nomor']))       $formData['meta_nomor']       = $contract->contract_no;
+        if (empty($formData['meta_topik']))       $formData['meta_topik']       = $contract->contractType?->name ?? $contract->contract_type ?? '';
+        if (empty($formData['meta_tipe_perjanjian'])) $formData['meta_tipe_perjanjian'] = $contract->transaction_type ?? 'Perjanjian Baru';
+        if (empty($formData['meta_tgl_dibuat']))  $formData['meta_tgl_dibuat']  = $contract->contract_date ? $contract->contract_date->toDateString() : now()->toDateString();
 
         return $formData;
     }
@@ -1525,11 +1819,11 @@ class ContractController extends Controller
 
         return null;
     }
-    
+
     public function compareFormVersions(string $id, string $type)
     {
         $contract = Contract::findOrFail($id);
-        
+
         // Find matching template (same logic as GenericFormTab)
         $matchingTemplate = \App\Models\FormTemplate::where('document_type', $type)
             ->where(function($q) use ($contract) {
@@ -1637,7 +1931,7 @@ class ContractController extends Controller
     public function compareAgreementVersions(Request $request, string $id): \Inertia\Response
     {
         $contract = Contract::findOrFail($id);
-        
+
         $versions = $contract->versions()
             ->where('document_type', 'agreement')
             ->orderByDesc('version_no')
@@ -1672,7 +1966,7 @@ class ContractController extends Controller
             if (($index = $zip->locateName('word/document.xml')) !== false) {
                 $content = $zip->getFromIndex($index);
                 $zip->close();
-                
+
                 // Clean up XML tags to get raw text
                 // Word XML uses <w:p> for paragraphs and <w:t> for text
                 $content = str_replace(['</w:p>', '</w:r>', '<w:tab/>'], ["\n", " ", "\t"], $content);
