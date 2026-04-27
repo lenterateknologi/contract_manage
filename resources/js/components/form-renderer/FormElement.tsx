@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { ChevronDown, Copy, GripVertical, Plus, Trash2 } from 'lucide-react';
-import React from 'react';
+import React, { useState } from 'react';
 
 export interface FormField {
     id: string;
@@ -106,7 +106,14 @@ export const FormElement: React.FC<FormElementProps> = ({
             }
         }
 
-        const displayVal = val;
+        let displayVal = val;
+
+        // Lookup label for select types in labeled_value or similar
+        const vType = field.options?.value_type;
+        if (vType === 'select' || vType === 'searchable_select') {
+            const item = (field.options?.items || []).find((i: any) => i.value === val);
+            if (item) displayVal = item.label;
+        }
 
         if (diffStatus) {
             return renderDiff(comparisonValue, val, diffStatus);
@@ -650,7 +657,7 @@ export const FormElement: React.FC<FormElementProps> = ({
                                     )}
                                     style={getTypographyStyle()}
                                 >
-                                    <span className={cn(selectedLabel ? 'text-foreground' : 'text-muted-foreground/60 font-medium italic')}>
+                                    <span className={cn('truncate text-left', selectedLabel ? 'text-foreground' : 'text-muted-foreground/60 font-medium italic')}>
                                         {selectedLabel || field.placeholder || 'Pilih...'}
                                     </span>
                                     <i
@@ -664,7 +671,7 @@ export const FormElement: React.FC<FormElementProps> = ({
                                 {isDropdownOpen && (
                                     <>
                                         <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)} />
-                                        <div className="border-border bg-popover animate-in fade-in zoom-in-95 absolute top-full right-0 left-0 z-50 mt-1 flex max-h-60 flex-col overflow-hidden rounded-xl border shadow-2xl duration-200">
+                                        <div className="border-border bg-popover animate-in fade-in zoom-in-95 absolute top-full right-0 z-50 mt-1 flex max-h-60 w-full min-w-[240px] flex-col overflow-hidden rounded-xl border shadow-2xl duration-200">
                                             <div className="bg-popover border-border sticky top-0 z-10 border-b p-2">
                                                 <div className="relative">
                                                     <i className="fa-solid fa-magnifying-glass text-muted-foreground/50 absolute top-1/2 left-3 -translate-y-1/2 text-[10px]" />
@@ -691,15 +698,15 @@ export const FormElement: React.FC<FormElementProps> = ({
                                                                 setSearchQuery('');
                                                             }}
                                                             className={cn(
-                                                                'flex w-full items-center justify-between px-3 py-2 text-left text-[11px] font-bold transition-all',
+                                                                'flex w-full items-center justify-between px-3 py-1.5 text-left text-[11px] font-bold transition-all',
                                                                 value === opt.value
                                                                     ? 'bg-primary/10 text-primary'
                                                                     : 'text-foreground/70 hover:bg-muted',
                                                             )}
                                                             style={getTypographyStyle()}
                                                         >
-                                                            {opt.label}
-                                                            {value === opt.value && <i className="fa-solid fa-check text-[10px]" />}
+                                                            <span className="truncate">{opt.label}</span>
+                                                            {value === opt.value && <i className="fa-solid fa-check text-primary shrink-0 ml-2 text-[10px]" />}
                                                         </button>
                                                     ))
                                                 ) : (
@@ -835,19 +842,89 @@ export const FormElement: React.FC<FormElementProps> = ({
                                         ...getTypographyStyle(),
                                     }}
                                 />
-                            ) : valueType === 'select' || valueType === 'searchable_select' ? (
-                                <div
+                            ) : valueType === 'select' ? (
+                                <select
+                                    value={value || ''}
+                                    onChange={(e) => onChange?.(e.target.value)}
                                     className={cn(
-                                        'flex h-8 w-full items-center justify-between transition-all',
+                                        'flex h-8 w-full text-[11px] font-bold transition-all',
                                         isDashed
-                                            ? 'border-border focus:border-primary rounded-none border-t-0 border-r-0 border-b border-l-0 border-dashed bg-transparent px-0'
-                                            : 'border-border bg-muted/20 focus:border-primary rounded-lg border px-3',
+                                            ? 'border-border focus:border-primary rounded-none border-t-0 border-r-0 border-b border-l-0 border-dashed bg-transparent shadow-none ring-0 outline-none focus:ring-0'
+                                            : 'border-border bg-muted/20 focus:ring-primary/20 focus:border-primary rounded-lg border px-3 focus:ring-1',
                                     )}
+                                    style={getTypographyStyle()}
                                 >
-                                    <span className="text-foreground overflow-hidden text-[11px] font-bold text-ellipsis whitespace-nowrap">
-                                        {value || field.options?.placeholder || 'Pilih...'}
-                                    </span>
-                                    <ChevronDown size={12} className="text-muted-foreground ml-2 shrink-0" />
+                                    <option value="">{field.placeholder || 'Pilih...'}</option>
+                                    {(field.options?.items || []).map((opt: any) => (
+                                        <option key={opt.value} value={opt.value}>
+                                            {opt.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            ) : valueType === 'searchable_select' ? (
+                                <div className="relative flex-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => !readOnly && setIsDropdownOpen(!isDropdownOpen)}
+                                        className={cn(
+                                            'border-border flex h-8 w-full items-center justify-between transition-all focus:outline-none',
+                                            isDashed
+                                                ? 'rounded-none border-t-0 border-r-0 border-b border-l-0 border-dashed bg-transparent px-0'
+                                                : 'bg-muted/20 focus:ring-primary/20 focus:border-primary rounded-lg border px-3 focus:ring-1',
+                                            !value && 'opacity-80',
+                                        )}
+                                        style={getTypographyStyle()}
+                                    >
+                                        <span className="text-foreground truncate text-left text-[11px] font-bold">
+                                            {(field.options?.items || []).find((o: any) => o.value === value)?.label || field.placeholder || 'Pilih...'}
+                                        </span>
+                                        <ChevronDown size={12} className={cn('text-muted-foreground ml-2 shrink-0 transition-transform', isDropdownOpen && 'rotate-180')} />
+                                    </button>
+
+                                    {isDropdownOpen && (
+                                        <>
+                                            <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)} />
+                                            <div className="border-border bg-popover animate-in fade-in zoom-in-95 absolute top-full right-0 left-0 z-50 mt-1 flex max-h-60 flex-col overflow-hidden rounded-xl border shadow-2xl duration-200">
+                                                <div className="bg-popover border-border sticky top-0 z-10 border-b p-2">
+                                                    <div className="relative">
+                                                        <i className="fa-solid fa-magnifying-glass text-muted-foreground/50 absolute top-1/2 left-3 -translate-y-1/2 text-[10px]" />
+                                                        <input
+                                                            autoFocus
+                                                            placeholder="Cari..."
+                                                            value={searchQuery}
+                                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                                            className="bg-muted/50 border-border focus:border-primary w-full rounded-md border py-1.5 pr-3 pl-8 text-[11px] font-bold outline-none"
+                                                            style={getTypographyStyle()}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="overflow-y-auto py-1">
+                                                    {(field.options?.items || [])
+                                                        .filter((o: any) => o.label.toLowerCase().includes(searchQuery.toLowerCase()))
+                                                        .map((opt: any) => (
+                                                            <button
+                                                                key={opt.value}
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    onChange?.(opt.value);
+                                                                    setIsDropdownOpen(false);
+                                                                    setSearchQuery('');
+                                                                }}
+                                                                className={cn(
+                                                                    'flex w-full items-center justify-between px-3 py-1.5 text-left text-[11px] font-bold transition-all',
+                                                                    value === opt.value ? 'bg-primary/10 text-primary' : 'text-foreground/70 hover:bg-muted',
+                                                                )}
+                                                                style={getTypographyStyle()}
+                                                            >
+                                                                <span className="truncate">{opt.label}</span>
+                                                                {value === opt.value && <i className="fa-solid fa-check text-primary shrink-0 ml-2 text-[10px]" />}
+                                                            </button>
+                                                        ))}
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             ) : valueType === 'checkbox' ? (
                                 <div className="flex h-8 items-center">

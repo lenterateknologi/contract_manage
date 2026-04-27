@@ -172,6 +172,29 @@
                     {{ $displayValue }}
                 </span>
             </div>
+        @elseif($type === 'labeled_value')
+            @php
+                $labelWidth = $options['label_width'] ?? '150px';
+                $valueType = $options['value_type'] ?? 'textfield';
+                $showColon = ($options['show_colon'] ?? true) !== false;
+                
+                $displayValue = $value;
+                if (in_array($valueType, ['select', 'searchable_select'])) {
+                    $selected = collect($options['items'] ?? [])->firstWhere('value', $value);
+                    $displayValue = $selected['label'] ?? ($value ?: '—');
+                }
+            @endphp
+            <div class="flex w-full items-baseline gap-2 py-1">
+                @if(!empty($resolvedLabel))
+                    <span class="text-slate-500 shrink-0 text-[10px] font-black tracking-tight uppercase"
+                          style="width: {{ $labelWidth }}">
+                        {{ $resolvedLabel }}{{ $showColon ? ' :' : '' }}
+                    </span>
+                @endif
+                <span class="text-[11px] font-bold leading-relaxed text-slate-900 border-b border-dotted border-slate-200 flex-1 min-h-[1.2rem]">
+                    {{ $displayValue ?: '—' }}
+                </span>
+            </div>
 
         @elseif($type === 'signature_box')
             <div class="flex flex-col gap-1 w-full max-w-[180px] py-2">

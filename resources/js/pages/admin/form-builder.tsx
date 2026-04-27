@@ -133,12 +133,12 @@ const FIELD_TYPES: any[] = [
         ],
     },
     {
-        category: 'Form Inputs',
+        category: 'Form inputs',
         color: 'bg-black',
         items: [
             {
                 value: 'labeled_value',
-                label: 'Label & Input (Key:Value)',
+                label: 'Label & input (Key:Value)',
                 icon: Type,
                 defaultLabel: 'Nama Field',
                 defaultPlaceholder: '...',
@@ -153,19 +153,27 @@ const FIELD_TYPES: any[] = [
             },
             {
                 value: 'textfield',
-                label: 'Input Teks (Satu Baris)',
+                label: 'input Teks (Satu Baris)',
                 icon: Type,
-                defaultLabel: 'Input Teks',
+                defaultLabel: 'input Teks',
                 defaultPlaceholder: 'Masukkan teks...',
                 defaultOptions: { field_style: 'dashed_bottom', font_size: 11, font_family: "'Inter', sans-serif" },
             },
             {
                 value: 'textarea',
-                label: 'Input Teks (Multi Baris)',
+                label: 'input Teks (Multi Baris)',
                 icon: FileText,
-                defaultLabel: 'Input Panjang',
+                defaultLabel: 'input Panjang',
                 defaultPlaceholder: 'Masukkan teks detail...',
                 defaultOptions: { field_style: 'solid', min_height: 80, font_size: 11, font_family: "'Inter', sans-serif" },
+            },
+            {
+                value: 'searchable_select',
+                label: 'Select V2 (Searchable)',
+                icon: List,
+                defaultLabel: 'Menu Pilihan',
+                defaultPlaceholder: 'Pilih...',
+                defaultOptions: { items: [], font_size: 11, font_family: "'Inter', sans-serif" },
             },
         ],
     },
@@ -1720,6 +1728,7 @@ function FormBuilder({ template }: Props) {
                                                                         { label: 'Number', value: 'number' },
                                                                         { label: 'Date', value: 'date' },
                                                                         { label: 'Select', value: 'select' },
+                                                                         { label: 'Select V2', value: 'searchable_select' },
                                                                     ].map((t) => (
                                                                         <Button
                                                                             key={t.value}
@@ -1760,7 +1769,7 @@ function FormBuilder({ template }: Props) {
                                                             </div>
                                                             <div className="space-y-1.5 pt-2 border-t border-primary/10">
                                                                 <Label className="text-primary text-[9px] font-black tracking-wider uppercase">
-                                                                    Input Field Style
+                                                                    input Field Style
                                                                 </Label>
                                                                 <div className="grid grid-cols-2 gap-1">
                                                                     {[
@@ -1788,6 +1797,72 @@ function FormBuilder({ template }: Props) {
                                                                     ))}
                                                                 </div>
                                                             </div>
+
+                                                            {['select', 'searchable_select'].includes(selectedField.options?.value_type) && (
+                                                                <div className="space-y-4 pt-4 border-t border-primary/10">
+                                                                    <div className="flex items-center justify-between">
+                                                                        <Label className="text-primary text-[9px] font-black tracking-wider uppercase">Dropdown Options</Label>
+                                                                        <Button
+                                                                            type="button"
+                                                                            variant="outline"
+                                                                            className="h-6 gap-1 px-1.5 text-[8px] font-black uppercase ring-1 ring-primary/20"
+                                                                            onClick={() => {
+                                                                                const currentItems = selectedField.options?.items || [];
+                                                                                updateField(selectedField.id, 'options', {
+                                                                                    ...selectedField.options,
+                                                                                    items: [...currentItems, { label: `Option ${currentItems.length + 1}`, value: `val_${currentItems.length + 1}` }]
+                                                                                });
+                                                                            }}
+                                                                        >
+                                                                            <Plus size={10} /> Add Item
+                                                                        </Button>
+                                                                    </div>
+                                                                    <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1 scrollbar-thin">
+                                                                        {(selectedField.options?.items || []).map((item: any, idx: number) => (
+                                                                            <div key={idx} className="flex gap-1 items-center bg-white/50 p-1.5 rounded-lg border border-primary/5 group/opt">
+                                                                                <div className="flex-1 space-y-0">
+                                                                                    <input
+                                                                                        value={item.label}
+                                                                                        onChange={(e) => {
+                                                                                            const newItems = [...selectedField.options.items];
+                                                                                            newItems[idx] = { ...newItems[idx], label: e.target.value };
+                                                                                            updateField(selectedField.id, 'options', { ...selectedField.options, items: newItems });
+                                                                                        }}
+                                                                                        className="h-5 w-full text-[8px] font-semibold border-none bg-transparent focus:ring-0 px-1 placeholder:opacity-50 outline-none block"
+                                                                                        placeholder="Label (User sees)"
+                                                                                    />
+                                                                                    <input
+                                                                                        value={item.value}
+                                                                                        onChange={(e) => {
+                                                                                            const newItems = [...selectedField.options.items];
+                                                                                            newItems[idx] = { ...newItems[idx], value: e.target.value };
+                                                                                            updateField(selectedField.id, 'options', { ...selectedField.options, items: newItems });
+                                                                                        }}
+                                                                                        className="h-4 w-full text-[7px] font-mono border-none bg-transparent focus:ring-0 px-1 text-slate-400 placeholder:opacity-40 outline-none block"
+                                                                                        placeholder="Value (Saved to DB)"
+                                                                                    />
+                                                                                </div>
+                                                                                <Button
+                                                                                    type="button"
+                                                                                    variant="ghost"
+                                                                                    className="h-7 w-7 p-0 text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                                                                                    onClick={() => {
+                                                                                        const newItems = selectedField.options.items.filter((_: any, i: number) => i !== idx);
+                                                                                        updateField(selectedField.id, 'options', { ...selectedField.options, items: newItems });
+                                                                                    }}
+                                                                                >
+                                                                                    <Trash2 size={10} />
+                                                                                </Button>
+                                                                            </div>
+                                                                        ))}
+                                                                        {(selectedField.options?.items || []).length === 0 && (
+                                                                            <div className="text-center py-4 border-2 border-dashed border-slate-100 rounded-lg">
+                                                                                <p className="text-[8px] font-bold text-slate-300 uppercase tracking-tight">No options defined</p>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     )}
 
