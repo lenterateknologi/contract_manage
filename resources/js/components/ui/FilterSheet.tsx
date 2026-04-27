@@ -197,8 +197,10 @@ function DateRangeCategory({
     // We expect keys like 'created_from' and 'created_to' for a category with base key 'created'
     const fromKey = `${category.key}_from`;
     const toKey = `${category.key}_to`;
-    const fromVal = activeFilters[fromKey] || '';
-    const toVal = activeFilters[toKey] || '';
+    const fromValRaw = activeFilters[fromKey] || '';
+    const toValRaw = activeFilters[toKey] || '';
+    const fromVal = typeof fromValRaw === 'string' ? fromValRaw.split('T')[0] : '';
+    const toVal = typeof toValRaw === 'string' ? toValRaw.split('T')[0] : '';
 
     const hasValue = fromVal || toVal;
 

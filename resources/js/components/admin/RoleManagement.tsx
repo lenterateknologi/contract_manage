@@ -8,6 +8,7 @@ import { router, useForm } from '@inertiajs/react';
 import { Key, LayoutGrid, Plus, ShieldCheck, Trash2 } from 'lucide-react';
 import React, { useMemo } from 'react';
 import { FormSection, ManagementForm } from './ManagementForm';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 
 interface RoleManagementProps {
     roles: any;
@@ -19,6 +20,7 @@ export function RoleManagement({ roles, filters }: RoleManagementProps) {
     const { canCreate, canUpdate, canDelete } = usePermissions('ADMIN_ROLES');
     const [isFormView, setIsFormView] = React.useState(false);
     const [editingRole, setEditingRole] = React.useState<any>(null);
+    const [isConfirmOpen, setIsConfirmOpen] = React.useState(false);
 
     const form = useForm({
         name: '',
@@ -58,7 +60,7 @@ export function RoleManagement({ roles, filters }: RoleManagementProps) {
                         </div>
                         <div className="flex flex-col">
                             <span className="text-[11px] font-black uppercase tracking-tight text-slate-900 leading-none mb-1">{row.name}</span>
-                            <span className="text-[9px] font-medium text-slate-400 uppercase tracking-wider leading-none">Register: {new Date(row.created_at).toLocaleDateString('id-ID')}</span>
+                            <span className="text-[9px] font-medium text-slate-400 uppercase tracking-wider leading-none">Terdaftar: {new Date(row.created_at).toLocaleDateString('id-ID')}</span>
                         </div>
                     </div>
                 ),
@@ -145,9 +147,7 @@ export function RoleManagement({ roles, filters }: RoleManagementProps) {
                         <Button
                             type="button"
                             variant="ghost"
-                            onClick={() => {
-                                if (confirm('Hapus role?')) router.delete(`/admin/roles/${editingRole.id}`, { onSuccess: closeForm });
-                            }}
+                            onClick={() => setIsConfirmOpen(true)}
                             className="h-8 rounded-none px-4 text-[10px] font-black tracking-widest text-rose-600 uppercase transition-all hover:bg-rose-50"
                         >
                             <Trash2 size={14} className="mr-2" /> Hapus Role
@@ -155,6 +155,22 @@ export function RoleManagement({ roles, filters }: RoleManagementProps) {
                     )
                 }
             >
+                <ConfirmationModal 
+                    open={isConfirmOpen}
+                    onClose={() => setIsConfirmOpen(false)}
+                    onConfirm={() => {
+                        setIsConfirmOpen(false);
+                        router.delete(`/admin/roles/${editingRole.id}`, { 
+                            onSuccess: () => {
+                                closeForm();
+                                showToast('Role telah dihapus', 'success');
+                            }
+                        });
+                    }}
+                    title="Hapus Role Otoritas"
+                    description={`Apakah Anda yakin ingin menghapus role ${editingRole?.name}? Seluruh mapping hak akses untuk role ini akan dihapus permanen.`}
+                    confirmText="Hapus Role"
+                />
                 <div className="grid grid-cols-1 gap-10 md:grid-cols-12">
                     <div className="md:col-span-8 space-y-10">
                         <div className="space-y-4">
@@ -190,7 +206,7 @@ export function RoleManagement({ roles, filters }: RoleManagementProps) {
                                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Pusat Otoritas</span>
                             </div>
                             <div className="space-y-4 border-y border-slate-200 border-dashed py-4 mb-4">
-                                <span className="text-[12px] font-black uppercase text-slate-900 block">{form.data.name || 'ROLE NAME'}</span>
+                                <span className="text-[12px] font-black uppercase text-slate-900 block">{form.data.name || 'NAMA ROLE'}</span>
                                 <p className="text-[9px] font-medium text-slate-400 uppercase leading-relaxed tracking-wider italic">
                                     {form.data.description || 'Deskripsi belum diatur untuk role ini...'}
                                 </p>

@@ -20,27 +20,27 @@ class ReportController extends Controller
 
         // Apply filters
         if ($request->filled('date_from')) {
-            $query->where('created_at', '>=', $request->date_from);
+            $query->where('t_contracts.created_at', '>=', $request->date_from);
         }
         if ($request->filled('date_to')) {
-            $query->where('created_at', '<=', $request->date_to . ' 23:59:59');
+            $query->where('t_contracts.created_at', '<=', $request->date_to . ' 23:59:59');
         }
 
         // Multi-select filters - only apply if not empty
         $typeIds = $request->input('contract_type_ids');
         if (is_array($typeIds) && count($typeIds) > 0) {
-            $query->whereIn('contract_type_id', $typeIds);
+            $query->whereIn('t_contracts.contract_type_id', $typeIds);
         }
 
         $creatorIds = $request->input('creator_ids');
         if (is_array($creatorIds) && count($creatorIds) > 0) {
-            $query->whereIn('created_by', $creatorIds);
+            $query->whereIn('t_contracts.created_by', $creatorIds);
         }
 
         $involvedIds = $request->input('involved_ids');
         if (is_array($involvedIds) && count($involvedIds) > 0) {
             $query->where(function ($q) use ($involvedIds) {
-                $q->whereIn('created_by', $involvedIds)
+                $q->whereIn('t_contracts.created_by', $involvedIds)
                     ->orWhereHas('approvals', function ($aq) use ($involvedIds) {
                         $aq->whereIn('user_id', $involvedIds);
                     });
@@ -75,7 +75,7 @@ class ReportController extends Controller
 
         // Contract Registry List
         $contractsList = (clone $query)->with(['creator', 'contractType', 'approvals.approver'])
-            ->orderByDesc('created_at')
+            ->orderByDesc('t_contracts.created_at')
             ->get()
             ->map(function ($c) {
                 return [
@@ -156,34 +156,34 @@ class ReportController extends Controller
 
         // Apply filters
         if ($request->filled('date_from')) {
-            $query->where('created_at', '>=', $request->date_from);
+            $query->where('t_contracts.created_at', '>=', $request->date_from);
         }
         if ($request->filled('date_to')) {
-            $query->where('created_at', '<=', $request->date_to . ' 23:59:59');
+            $query->where('t_contracts.created_at', '<=', $request->date_to . ' 23:59:59');
         }
 
         // Multi-select filters
         $typeIds = $request->input('contract_type_ids');
         if (is_array($typeIds) && count($typeIds) > 0) {
-            $query->whereIn('contract_type_id', $typeIds);
+            $query->whereIn('t_contracts.contract_type_id', $typeIds);
         }
 
         $creatorIds = $request->input('creator_ids');
         if (is_array($creatorIds) && count($creatorIds) > 0) {
-            $query->whereIn('created_by', $creatorIds);
+            $query->whereIn('t_contracts.created_by', $creatorIds);
         }
 
         $involvedIds = $request->input('involved_ids');
         if (is_array($involvedIds) && count($involvedIds) > 0) {
             $query->where(function ($q) use ($involvedIds) {
-                $q->whereIn('created_by', $involvedIds)
+                $q->whereIn('t_contracts.created_by', $involvedIds)
                     ->orWhereHas('approvals', function ($aq) use ($involvedIds) {
                         $aq->whereIn('user_id', $involvedIds);
                     });
             });
         }
 
-        $contracts = $query->orderByDesc('created_at')->get();
+        $contracts = $query->orderByDesc('t_contracts.created_at')->get();
 
         $headers = [
             'Content-Type' => 'text/csv',
@@ -233,27 +233,27 @@ class ReportController extends Controller
 
         // Apply filters
         if ($request->filled('date_from')) {
-            $query->where('created_at', '>=', $request->date_from);
+            $query->where('t_contracts.created_at', '>=', $request->date_from);
         }
         if ($request->filled('date_to')) {
-            $query->where('created_at', '<=', $request->date_to . ' 23:59:59');
+            $query->where('t_contracts.created_at', '<=', $request->date_to . ' 23:59:59');
         }
 
         // Multi-select filters
         $typeIds = $request->input('contract_type_ids');
         if (is_array($typeIds) && count($typeIds) > 0) {
-            $query->whereIn('contract_type_id', $typeIds);
+            $query->whereIn('t_contracts.contract_type_id', $typeIds);
         }
 
         $creatorIds = $request->input('creator_ids');
         if (is_array($creatorIds) && count($creatorIds) > 0) {
-            $query->whereIn('created_by', $creatorIds);
+            $query->whereIn('t_contracts.created_by', $creatorIds);
         }
 
         $involvedIds = $request->input('involved_ids');
         if (is_array($involvedIds) && count($involvedIds) > 0) {
             $query->where(function ($q) use ($involvedIds) {
-                $q->whereIn('created_by', $involvedIds)
+                $q->whereIn('t_contracts.created_by', $involvedIds)
                     ->orWhereHas('approvals', function ($aq) use ($involvedIds) {
                         $aq->whereIn('user_id', $involvedIds);
                     });

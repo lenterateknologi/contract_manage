@@ -31,7 +31,7 @@ export function ManagementForm({
             {/* Flat Sticky Header */}
             <div className="sticky top-0 z-30 flex h-12 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4">
                 <div className="flex items-center gap-4">
-                    <button onClick={onClose} className="text-slate-400 transition-colors hover:text-black" title="Back to list">
+                    <button onClick={onClose} className="text-slate-400 transition-colors hover:text-black" title="Kembali ke daftar">
                         <ArrowLeft size={18} strokeWidth={3} />
                     </button>
                     <div className="h-4 w-px bg-slate-200" />

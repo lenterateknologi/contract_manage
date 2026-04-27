@@ -36,7 +36,7 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
 
     const columns = useMemo<Column<any>[]>(() => [
         {
-            header: 'Visual Identifier',
+            header: 'Identitas Visual Status',
             accessorKey: 'label',
             sortable: true,
             cell: (row) => (
@@ -46,13 +46,13 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                     </div>
                     <div className="flex flex-col">
                         <span className="font-black text-slate-900 uppercase tracking-tight text-[11px] leading-none">{row.label}</span>
-                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">CODE: {row.code}</span>
+                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">KODE: {row.code}</span>
                     </div>
                 </div>
             )
         },
         {
-            header: 'Preview Badge',
+            header: 'Pratinjau Badge',
             accessorKey: 'color',
             cell: (row) => (
                 <Badge variant="outline" style={{ color: row.color, backgroundColor: row.bg_color, borderColor: `${row.color}30` }} className="px-4 py-1 text-[9px] font-black tracking-[0.2em] uppercase rounded-none border-2">
@@ -61,7 +61,7 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
             )
         },
         {
-            header: 'Execution Order',
+            header: 'Urutan Eksekusi',
             accessorKey: 'sequence',
             className: 'w-[150px]',
             cell: (row) => (
@@ -72,14 +72,14 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
             )
         },
         {
-            header: 'System Status',
+            header: 'Status Sistem',
             accessorKey: 'is_active',
             cell: (row) => (
                 <div className="flex items-center gap-2">
                     {row.is_active ? (
-                        <Badge className="bg-emerald-500 text-white rounded-none text-[8px] font-black tracking-widest uppercase">OPERATIONAL</Badge>
+                        <Badge className="bg-emerald-500 text-white rounded-none text-[8px] font-black tracking-widest uppercase">OPERASIONAL</Badge>
                     ) : (
-                        <Badge className="bg-slate-200 text-slate-500 rounded-none text-[8px] font-black tracking-widest uppercase">DISABLED</Badge>
+                        <Badge className="bg-slate-200 text-slate-500 rounded-none text-[8px] font-black tracking-widest uppercase">NON-AKTIF</Badge>
                     )}
                 </div>
             )
@@ -243,7 +243,7 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                         <div className="h-px flex-1 bg-slate-400" />
                         <div className="flex items-center gap-2 text-black">
                             <CheckCircle2 size={20} />
-                            <span className="text-[11px] font-black uppercase tracking-[0.4em]">CONFIGURATION FINALIZED</span>
+                            <span className="text-[11px] font-black uppercase tracking-[0.4em]">KONFIGURASI TERSIMPAN</span>
                         </div>
                         <div className="h-px flex-1 bg-slate-400" />
                     </div>

@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/components/contracts/Toast';
 import { ManagementForm, FormSection, FormDangerZone } from './ManagementForm';
 import { Checkbox } from '@/components/ui/checkbox';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 
 interface UserManagementProps {
     users: any;
@@ -25,6 +26,7 @@ export function UserManagement({ users, roles, departments, filters }: UserManag
     const { canCreate, canUpdate, canDelete } = usePermissions('ADMIN_USERS');
     const [isFormView, setIsFormView] = React.useState(false);
     const [editingUser, setEditingUser] = React.useState<any>(null);
+    const [isConfirmOpen, setIsConfirmOpen] = React.useState(false);
 
     const form = useForm({
         name: '',
@@ -187,15 +189,7 @@ export function UserManagement({ users, roles, departments, filters }: UserManag
     };
 
     const handleDelete = () => {
-        if (!editingUser) return;
-        if (confirm(`Hapus user ${editingUser.name}? Seluruh data akses akan dicabut.`)) {
-            router.delete(`/admin/users/${editingUser.id}`, {
-                onSuccess: () => {
-                    closeForm();
-                    showToast('User telah dihapus dari sistem', 'success');
-                },
-            });
-        }
+        setIsConfirmOpen(true);
     };
 
     if (isFormView) {
@@ -221,6 +215,22 @@ export function UserManagement({ users, roles, departments, filters }: UserManag
                     )
                 }
             >
+                <ConfirmationModal 
+                    open={isConfirmOpen}
+                    onClose={() => setIsConfirmOpen(false)}
+                    onConfirm={() => {
+                        setIsConfirmOpen(false);
+                        router.delete(`/admin/users/${editingUser.id}`, { 
+                            onSuccess: () => {
+                                closeForm();
+                                showToast('User telah dihapus dari sistem', 'success');
+                            }
+                        });
+                    }}
+                    title="Hapus Data Pengguna"
+                    description={`Apakah Anda yakin ingin menghapus user ${editingUser?.name}? Seluruh data akses dan riwayat aktivitas user ini akan dicabut.`}
+                    confirmText="Hapus User"
+                />
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
                     {/* Main Column */}
                     <div className="md:col-span-8 space-y-10">

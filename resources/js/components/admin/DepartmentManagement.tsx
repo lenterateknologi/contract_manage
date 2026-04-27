@@ -11,6 +11,7 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { useToast } from '@/components/contracts/Toast';
 import { cn } from '@/lib/utils';
 import { ManagementForm, FormSection, FormDangerZone } from './ManagementForm';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 
 interface DepartmentManagementProps {
     departments: any;
@@ -22,6 +23,7 @@ export function DepartmentManagement({ departments, filters }: DepartmentManagem
     const { canCreate, canUpdate, canDelete } = usePermissions('ADMIN_DEPTS');
     const [isFormView, setIsFormView] = React.useState(false);
     const [editingDept, setEditingDept] = React.useState<any>(null);
+    const [isConfirmOpen, setIsConfirmOpen] = React.useState(false);
 
     const form = useForm({
         code: '',
@@ -90,7 +92,7 @@ export function DepartmentManagement({ departments, filters }: DepartmentManagem
                         "text-[9px] font-black uppercase tracking-widest",
                         row.is_active ? "text-emerald-700" : "text-slate-400"
                     )}>
-                        {row.is_active ? 'VISIBLE' : 'HIDDEN'}
+                        {row.is_active ? 'TERLIHAT' : 'DISEMBUNYIKAN'}
                     </span>
                 </div>
             )
@@ -147,7 +149,7 @@ export function DepartmentManagement({ departments, filters }: DepartmentManagem
                         <Button 
                             type="button" 
                             variant="ghost" 
-                            onClick={() => { if(confirm('Hapus departemen?')) router.delete(`/admin/departments/${editingDept.id}`, { onSuccess: closeForm }) }}
+                            onClick={() => setIsConfirmOpen(true)}
                             className="h-8 hover:bg-rose-50 text-rose-600 rounded-none px-4 text-[10px] font-black uppercase tracking-widest transition-all"
                         >
                             <Trash2 size={14} className="mr-2" /> Hapus Data
@@ -155,6 +157,22 @@ export function DepartmentManagement({ departments, filters }: DepartmentManagem
                     )
                 }
             >
+                <ConfirmationModal 
+                    open={isConfirmOpen}
+                    onClose={() => setIsConfirmOpen(false)}
+                    onConfirm={() => {
+                        setIsConfirmOpen(false);
+                        router.delete(`/admin/departments/${editingDept.id}`, { 
+                            onSuccess: () => {
+                                closeForm();
+                                showToast('Departemen telah dihapus', 'success');
+                            }
+                        });
+                    }}
+                    title="Konfirmasi Penghapusan"
+                    description={`Apakah Anda yakin ingin menghapus departemen ${editingDept?.name}? Tindakan ini tidak dapat dibatalkan.`}
+                    confirmText="Hapus Departemen"
+                />
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
                     <div className="md:col-span-8 space-y-10">
                         <div className="space-y-4">
@@ -180,7 +198,7 @@ export function DepartmentManagement({ departments, filters }: DepartmentManagem
                          <div className="border border-slate-200 p-6 bg-slate-50/50">
                             <div className="flex items-center gap-3 mb-6">
                                 <span className={cn("text-[9px] font-black uppercase tracking-widest", form.data.is_active ? "text-emerald-600" : "text-rose-600")}>
-                                     {form.data.is_active ? 'Unit Aktif' : 'Unit Hidden'}
+                                     {form.data.is_active ? 'Unit Aktif' : 'Unit Tersembunyi'}
                                 </span>
                                 <Checkbox 
                                     checked={form.data.is_active} 

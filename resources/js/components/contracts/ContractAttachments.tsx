@@ -5,6 +5,7 @@ import axios from 'axios';
 import { renderAsync } from 'docx-preview';
 import { Loader2 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 
 interface Props {
     contract: Contract;
@@ -62,6 +63,7 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
     const [previewAt, setPreviewAt] = useState<ContractAttachment | null>(null);
     const [previewLoading, setPreviewLoading] = useState(false);
     const previewContainerRef = useRef<HTMLDivElement>(null);
+    const [confirmDelete, setConfirmDelete] = useState<{id: string, label: string} | null>(null);
 
     // Reactive Preview Logic
     useEffect(() => {
@@ -119,13 +121,19 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
     };
 
     const handleDelete = async (atId: string, label: string) => {
-        if (!confirm(`Hapus lampiran ${label}?`)) return;
+        setConfirmDelete({ id: atId, label });
+    };
+
+    const execDelete = async () => {
+        if (!confirmDelete) return;
         try {
-            const updated = await contractApi.deleteAttachment(contract.id, atId);
+            const updated = await contractApi.deleteAttachment(contract.id, confirmDelete.id);
             onUpdated(updated);
-            showToast(`Berhasil menghapus ${label}`, 'success');
+            showToast(`Berhasil menghapus ${confirmDelete.label}`, 'success');
         } catch {
-            showToast(`Gagal menghapus ${label}`, 'danger');
+            showToast(`Gagal menghapus ${confirmDelete.label}`, 'danger');
+        } finally {
+            setConfirmDelete(null);
         }
     };
 
@@ -346,6 +354,15 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                     </div>
                 </div>
             ))}
+
+            <ConfirmationModal 
+                open={!!confirmDelete}
+                onClose={() => setConfirmDelete(null)}
+                onConfirm={execDelete}
+                title="Hapus Lampiran"
+                description={`Apakah Anda yakin ingin menghapus lampiran "${confirmDelete?.label}"? Berkas yang telah dihapus tidak dapat dipulihkan.`}
+                confirmText="Hapus Berkas"
+            />
         </div>
     );
 }

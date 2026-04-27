@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
 import { Contract, ContractType } from '@/types/contracts';
+import { useEffect, useState } from 'react';
 
 interface EditContractModalProps {
     open: boolean;
@@ -11,31 +11,25 @@ interface EditContractModalProps {
     processing: boolean;
 }
 
-export function EditContractModal({
-    open,
-    onClose,
-    onSubmit,
-    contract,
-    types,
-    vendors = [],
-    processing,
-}: EditContractModalProps) {
+export function EditContractModal({ open, onClose, onSubmit, contract, types, vendors = [], processing }: EditContractModalProps) {
     const [title, setTitle] = useState('');
     const [contractNo, setContractNo] = useState('');
     const [description, setDescription] = useState('');
     const [date, setDate] = useState('');
     const [typeId, setTypeId] = useState('');
     const [vendorId, setVendorId] = useState('');
+    const [crownNo, setCrownNo] = useState('');
 
     useEffect(() => {
         if (open && contract) {
             setTitle(contract.title);
             setContractNo(contract.contract_no);
             setDescription(contract.description || '');
-            setDate(contract.contract_date || '');
+            setDate(contract.contract_date ? contract.contract_date.split('T')[0] : '');
             const t = types.find((x) => x.name === contract.contract_type);
             setTypeId(t ? String(t.id) : '');
             setVendorId((contract as any).vendor_id || '');
+            setCrownNo(contract.crown_no || '');
         }
     }, [open, contract, types]);
 
@@ -66,25 +60,42 @@ export function EditContractModal({
                                 className="bg-muted/30 border-border focus:border-primary/50 w-full rounded-lg border px-3 py-2 text-sm font-medium transition-all outline-none"
                             />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="text-muted-foreground mb-1.5 block text-xs font-bold uppercase">No. Kontrak</label>
+                        <div>
+                            <label className="text-muted-foreground mb-1.5 block text-xs font-bold uppercase">No. Pengajuan</label>
+                            <input
+                                value={contractNo}
+                                onChange={(e) => setContractNo(e.target.value)}
+                                placeholder="CTR/2026/..."
+                                className="bg-muted/30 border-border focus:border-primary/50 w-full rounded-lg border px-3 py-2 font-mono text-sm transition-all outline-none"
+                            />
+                        </div>
+                        <div>
+                            <label className="mb-1.5 block text-xs font-black text-indigo-600 uppercase">No. Kontrak (Crown)</label>
+                            <div className="relative">
                                 <input
-                                    value={contractNo}
-                                    onChange={(e) => setContractNo(e.target.value)}
-                                    placeholder="CTR/2026/..."
-                                    className="bg-muted/30 border-border focus:border-primary/50 w-full rounded-lg border px-3 py-2 font-mono text-sm transition-all outline-none"
+                                    value={crownNo}
+                                    onChange={(e) => setCrownNo(e.target.value)}
+                                    placeholder="..."
+                                    className="w-full rounded-lg border border-indigo-100 bg-indigo-50/50 px-3 py-2 pr-8 text-sm font-bold text-indigo-700 transition-all outline-none focus:border-indigo-500"
                                 />
+                                {crownNo && (
+                                    <button
+                                        onClick={() => setCrownNo('')}
+                                        className="text-muted-foreground absolute top-1/2 right-2 -translate-y-1/2 transition-colors hover:text-red-500"
+                                    >
+                                        <i className="fa-solid fa-circle-xmark text-[14px]" />
+                                    </button>
+                                )}
                             </div>
-                            <div>
-                                <label className="text-muted-foreground mb-1.5 block text-xs font-bold uppercase">Tanggal</label>
-                                <input
-                                    type="date"
-                                    value={date}
-                                    onChange={(e) => setDate(e.target.value)}
-                                    className="bg-muted/30 border-border focus:border-primary/50 w-full rounded-lg border px-3 py-2 text-sm transition-all outline-none"
-                                />
-                            </div>
+                        </div>
+                        <div>
+                            <label className="text-muted-foreground mb-1.5 block text-xs font-bold uppercase">Tanggal</label>
+                            <input
+                                type="date"
+                                value={date}
+                                onChange={(e) => setDate(e.target.value)}
+                                className="bg-muted/30 border-border focus:border-primary/50 w-full rounded-lg border px-3 py-2 text-sm transition-all outline-none"
+                            />
                         </div>
                         <div>
                             <label className="text-muted-foreground mb-1.5 block text-xs font-bold uppercase">Tipe Kontrak</label>
@@ -106,7 +117,7 @@ export function EditContractModal({
                             <select
                                 value={vendorId}
                                 onChange={(e) => setVendorId(e.target.value)}
-                                className="bg-muted/30 border-border focus:border-primary/50 w-full rounded-lg border px-3 py-2 text-sm transition-all outline-none font-bold text-indigo-600"
+                                className="bg-muted/30 border-border focus:border-primary/50 w-full rounded-lg border px-3 py-2 text-sm font-bold text-indigo-600 transition-all outline-none"
                             >
                                 <option value="">Pilih Vendor</option>
                                 {vendors.map((v) => (
@@ -135,7 +146,17 @@ export function EditContractModal({
                             Batal
                         </button>
                         <button
-                            onClick={() => onSubmit({ title, contract_no: contractNo, description, contract_date: date, contract_type_id: typeId, vendor_id: vendorId })}
+                            onClick={() =>
+                                onSubmit({
+                                    title,
+                                    contract_no: contractNo,
+                                    crown_no: crownNo,
+                                    description,
+                                    contract_date: date,
+                                    contract_type_id: typeId,
+                                    vendor_id: vendorId,
+                                })
+                            }
                             disabled={processing || !title}
                             className="bg-primary text-primary-foreground shadow-primary/20 hover:shadow-primary/30 flex-1 rounded-xl py-2.5 text-sm font-bold shadow-lg transition-all active:scale-[0.98] disabled:opacity-50"
                         >

@@ -49,6 +49,7 @@ export function DraftEditableInfoCard({
     const [vendorId, setVendorId] = useState(selected.vendor_id || '');
     const [transactionType, setTransactionType] = useState(selected.transaction_type || 'Perjanjian Baru');
     const [kopSubTopik, setKopSubTopik] = useState((selected as any).kop_sub_topik || '');
+    const [crownNo, setCrownNo] = useState(selected.crown_no || '');
     const [minimized, setMinimized] = useState(false);
 
     useEffect(() => {
@@ -59,6 +60,7 @@ export function DraftEditableInfoCard({
         setVendorId(selected.vendor_id || '');
         setTransactionType(selected.transaction_type || 'Perjanjian Baru');
         setKopSubTopik((selected as any).kop_sub_topik || '');
+        setCrownNo(selected.crown_no || '');
     }, [
         selected.id,
         selected.title,
@@ -66,6 +68,7 @@ export function DraftEditableInfoCard({
         selected.contract_type,
         selected.vendor_id,
         selected.transaction_type,
+        selected.crown_no,
         (selected as any).kop_sub_topik,
         types,
     ]);
@@ -79,9 +82,10 @@ export function DraftEditableInfoCard({
             typeId !== origTypeId ||
             vendorId !== (selected.vendor_id || '') ||
             transactionType !== (selected.transaction_type || 'Perjanjian Baru') ||
+            crownNo !== (selected.crown_no || '') ||
             kopSubTopik !== ((selected as any).kop_sub_topik || '')
         );
-    }, [title, description, typeId, vendorId, transactionType, kopSubTopik, selected, types]);
+    }, [title, description, typeId, vendorId, transactionType, crownNo, kopSubTopik, selected, types]);
 
     const handleSave = () => {
         onUpdate({
@@ -91,6 +95,7 @@ export function DraftEditableInfoCard({
             vendor_id: vendorId || undefined,
             transaction_type: transactionType,
             kop_sub_topik: kopSubTopik,
+            crown_no: crownNo,
         });
     };
 
@@ -167,13 +172,53 @@ export function DraftEditableInfoCard({
                         </div>
                     ) : null}
 
-                    <div>
-                        <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
-                            No. Kontrak
+                    <div className="flex flex-col gap-4">
+                        <div>
+                            <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
+                                No. Pengajuan
+                            </div>
+                            <span
+                                className="rounded border border-slate-200 bg-slate-100 px-2 py-0.5 font-mono font-bold text-slate-500"
+                                style={{ fontSize: 12 }}
+                            >
+                                {selected.contract_no}
+                            </span>
                         </div>
-                        <span className="bg-muted text-foreground/80 rounded px-2 py-0.5 font-mono" style={{ fontSize: 12 }}>
-                            {selected.contract_no}
-                        </span>
+                        <div>
+                            <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
+                                No. Kontrak
+                            </div>
+                            {isDraft ? (
+                                <div className="group relative">
+                                    <input
+                                        value={crownNo}
+                                        onChange={(e) => setCrownNo(e.target.value)}
+                                        placeholder="..."
+                                        className={inputCls + ' pr-8 font-bold text-indigo-600'}
+                                    />
+                                    {crownNo && (
+                                        <button
+                                            onClick={() => setCrownNo('')}
+                                            className="text-muted-foreground absolute top-1/2 right-2 -translate-y-1/2 transition-colors hover:text-red-500"
+                                            title="Hapus nomor"
+                                        >
+                                            <i className="fa-solid fa-circle-xmark text-[14px]" />
+                                        </button>
+                                    )}
+                                </div>
+                            ) : (
+                                <span
+                                    className={
+                                        selected.crown_no
+                                            ? 'rounded border border-indigo-100 bg-indigo-50 px-2 py-0.5 font-mono font-bold text-indigo-700'
+                                            : 'text-muted-foreground italic'
+                                    }
+                                    style={{ fontSize: 12 }}
+                                >
+                                    {selected.crown_no || 'Not Set'}
+                                </span>
+                            )}
+                        </div>
                     </div>
 
                     <div>
@@ -213,6 +258,7 @@ export function DraftEditableInfoCard({
                                 <option value="Addendum">Addendum</option>
                                 <option value="Amandement">Amandement</option>
                                 <option value="Perubahan Perjanjian">Perubahan Perjanjian</option>
+                                <option value="General">General</option>
                             </select>
                         ) : (
                             <span style={{ fontSize: 12 }}>{selected.transaction_type || 'Perjanjian Baru'}</span>
@@ -224,11 +270,7 @@ export function DraftEditableInfoCard({
                             Pihak Kedua (Vendor)
                         </div>
                         {isDraft ? (
-                            <select
-                                value={vendorId}
-                                onChange={(e) => setVendorId(e.target.value)}
-                                className={inputCls}
-                            >
+                            <select value={vendorId} onChange={(e) => setVendorId(e.target.value)} className={inputCls}>
                                 <option value="">Pilih Vendor</option>
                                 {vendors.map((v) => (
                                     <option key={v.id} value={v.id}>

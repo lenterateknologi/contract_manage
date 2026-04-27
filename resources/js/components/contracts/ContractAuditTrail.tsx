@@ -11,7 +11,7 @@ interface Props {
 }
 
 export default function ContractAuditTrail({ contract }: Props) {
-    const { showProgress, hideProgress } = useToast();
+    const { showToast, showProgress, hideProgress } = useToast();
     const [histories, setHistories] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState({
@@ -136,7 +136,7 @@ export default function ContractAuditTrail({ contract }: Props) {
                         setIsExporting(false);
                         setPdfJobId(null);
                         hideProgress(jobId);
-                        alert('Export PDF gagal: ' + (statusData.error || 'Unknown error'));
+                        showToast('Export PDF gagal: ' + (statusData.error || 'Unknown error'), 'danger');
                         
                         if ((window as any)._auditWindow) {
                             (window as any)._auditWindow.close();
@@ -150,7 +150,7 @@ export default function ContractAuditTrail({ contract }: Props) {
         } catch (err: any) {
             console.error('Export failed', err);
             setIsExporting(false);
-            alert('Gagal mengekspor PDF.');
+            showToast('Gagal mengekspor PDF.', 'danger');
         }
     };
 

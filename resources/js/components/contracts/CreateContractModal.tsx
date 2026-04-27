@@ -183,6 +183,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                                 <option value="Addendum">Addendum</option>
                                 <option value="Amandement">Amandement</option>
                                 <option value="Perubahan Perjanjian">Perubahan Perjanjian</option>
+                                <option value="General">General</option>
                             </select>
                         </div>
                     </div>

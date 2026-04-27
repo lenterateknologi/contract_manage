@@ -2,8 +2,9 @@ import { cn } from '@/lib/utils';
 import { Contract } from '@/types/contracts';
 import axios from 'axios';
 import { renderAsync } from 'docx-preview';
-import { Diff, Download, FileText, History, Loader2, Upload } from 'lucide-react'; // Using Lucide but will use FontAwesome where needed to match F1/F2
+import { Diff, Download, FileText, History, Loader2, Upload } from 'lucide-react'; 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useToast } from '@/components/contracts/Toast';
 
 interface AgreementVersion {
     id: string;
@@ -17,6 +18,7 @@ interface AgreementVersion {
 }
 
 export default function AgreementView({ contract, onUpdate }: { contract: Contract; onUpdate: (c: Contract) => void }) {
+    const { showToast } = useToast();
     const [versions, setVersions] = useState<AgreementVersion[]>([]);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
@@ -71,7 +73,7 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
         if (!file) return;
 
         if (!file.name.endsWith('.docx')) {
-            alert('Hanya file .docx yang diijinkan.');
+            showToast('Hanya file .docx yang diijinkan.', 'danger');
             return;
         }
 
@@ -88,7 +90,7 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
             await loadVersions(true);
         } catch (err) {
             console.error('Upload failed', err);
-            alert('Gagal mengupload agreement.');
+            showToast('Gagal mengupload agreement.', 'danger');
         } finally {
             setUploading(false);
         }

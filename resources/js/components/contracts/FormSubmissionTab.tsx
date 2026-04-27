@@ -63,8 +63,11 @@ const getAutofillValue = (field: FormField, contract: Contract) => {
     const label = field.label.toLowerCase();
 
     // 1. Identification / Metadata
-    if (name === 'meta_nomor' || name === 'no_kontrak' || label.includes('nomor kontrak')) {
+    if (name === 'meta_nomor_pengajuan' || name === 'no_pengajuan' || label.includes('nomor pengajuan') || label.includes('nomor :')) {
         return contract.contract_no || '';
+    }
+    if (name === 'meta_nomor_kontrak' || name === 'no_kontrak' || label.includes('nomor kontrak') || label.includes('crown')) {
+        return (contract as any).crown_no || '';
     }
     if (name === 'meta_judul_kontrak' || name === 'judul' || label.includes('judul kontrak')) {
         return contract.title || '';
@@ -78,14 +81,21 @@ const getAutofillValue = (field: FormField, contract: Contract) => {
     if (name === 'meta_lampiran' || label.includes('lampiran')) {
         const vendor = (contract as any).vendor;
         if (vendor?.documents?.length > 0) {
-            return vendor.documents.map((d: any, i: number) => `${i + 1}. ${d.name}`).join(', ');
+            const docs = vendor.documents;
+            if (docs.length > 3) {
+                const firstThree = docs.slice(0, 3).map((d: any, i: number) => `${i + 1}. ${d.name}`).join(', ');
+                return `${firstThree}, dan +${docs.length - 3} dokumen lainnya`;
+            }
+            return docs.map((d: any, i: number) => `${i + 1}. ${d.name}`).join(', ');
         }
     }
 
     // 2. Dates
     const formatDate = (date: string | null) => (date ? date.split(' ')[0] : '');
     if (name === 'meta_tgl_dibuat' || name === 'tanggal' || label.includes('tgl dibuat')) {
-        return formatDate(contract.contract_date || contract.created_at);
+        // Use current date if no date is set or if explicitly requested "update by current time"
+        const targetDate = contract.contract_date || contract.created_at || new Date().toISOString();
+        return formatDate(targetDate);
     }
     if (name === 'meta_masa_berlaku' || label.includes('masa berlaku')) {
         if (contract.contract_date && contract.end_date) {
@@ -404,7 +414,7 @@ function GenericFormTab({
                         setIsExporting(false);
                         setPdfJobId(null);
                         hideProgress(jobId);
-                        alert('Gagal mendownload PDF: ' + (statusData.error || 'Unknown error'));
+                        showToast('Gagal mendownload PDF: ' + (statusData.error || 'Unknown error'), 'danger');
                     }
                 } catch (err) {
                     console.error('Polling failed:', err);
@@ -415,7 +425,7 @@ function GenericFormTab({
             setIsExporting(false);
             setPdfJobId(null);
             const msg = error.response?.data?.message || 'Gagal antrikan PDF. Silakan coba lagi nanti.';
-            alert(msg);
+            showToast(msg, 'danger');
         }
     };
 

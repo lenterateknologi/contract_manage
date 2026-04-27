@@ -12,6 +12,7 @@ import { LayoutGrid, Pencil, Plus, Trash2, Link } from 'lucide-react';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useToast } from '@/components/contracts/Toast';
 import { cn } from '@/lib/utils';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 
 interface NavigationManagementProps {
     groups: any;
@@ -25,6 +26,7 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
     const { canCreate, canUpdate, canDelete } = usePermissions('NAV_MGMT');
     const [isModalOpen, setIsModalOpen] = React.useState(false);
     const [editingItem, setEditingItem] = React.useState<any>(null);
+    const [confirmDelete, setConfirmDelete] = React.useState<{id: string, name: string} | null>(null);
 
     const groupForm = useForm({
         name: '',
@@ -184,12 +186,27 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
                 rowActions={(row) => (
                     <div className="flex items-center gap-1">
                         {canUpdate && <Button variant="ghost" size="icon" onClick={() => openEdit(row)} className="h-8 w-8 text-slate-400 hover:text-primary"><Pencil size={12} /></Button>}
-                        {canDelete && <Button variant="ghost" size="icon" onClick={() => { 
-                            const path = isModuleView ? 'modules' : 'module-groups';
-                            if(confirm(`Hapus ${isModuleView ? 'modul' : 'grup'} ini?`)) router.delete(`/admin/${path}/${row.id}`) 
-                        }} className="h-8 w-8 text-slate-400 hover:text-rose-600"><Trash2 size={12} /></Button>}
+                        {canDelete && <Button variant="ghost" size="icon" onClick={() => setConfirmDelete({id: row.id, name: row.name})} className="h-8 w-8 text-slate-400 hover:text-rose-600"><Trash2 size={12} /></Button>}
                     </div>
                 )}
+            />
+
+            <ConfirmationModal 
+                open={!!confirmDelete}
+                onClose={() => setConfirmDelete(null)}
+                onConfirm={() => {
+                    if (!confirmDelete) return;
+                    const path = isModuleView ? 'modules' : 'module-groups';
+                    router.delete(`/admin/${path}/${confirmDelete.id}`, {
+                        onSuccess: () => {
+                            setConfirmDelete(null);
+                            showToast(`${isModuleView ? 'Modul' : 'Grup'} telah dihapus`, 'success');
+                        }
+                    });
+                }}
+                title={`Hapus ${isModuleView ? 'Modul' : 'Grup'}`}
+                description={`Apakah Anda yakin ingin menghapus ${isModuleView ? 'modul' : 'grup'} "${confirmDelete?.name}"? Tindakan ini dapat berdampak pada navigasi admin.`}
+                confirmText="Ya, Hapus"
             />
 
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>

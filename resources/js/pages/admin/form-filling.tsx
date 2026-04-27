@@ -10,6 +10,7 @@ import axios from 'axios';
 import { ArrowLeft, Download, FileText, Layout as LayoutIcon, Eye } from 'lucide-react';
 import React, { useMemo, useState, useEffect } from 'react';
 import { InteractiveForm, FormTemplate } from '@/components/form-renderer/InteractiveForm';
+import { useToast } from '@/components/contracts/Toast';
 
 // FormTemplate interface is now imported from InteractiveForm
 
@@ -27,6 +28,7 @@ const WIDTH_OPTIONS = Array.from({ length: 20 }, (_, i) => {
 });
 
 export default function FormFilling({ template }: Props) {
+    const { showToast } = useToast();
     const [formData, setFormData] = useState<Record<string, any>>({});
     const [isExporting, setIsExporting] = useState(false);
 
@@ -61,7 +63,7 @@ export default function FormFilling({ template }: Props) {
             a.remove();
         } catch (error) {
             console.error('Export failed', error);
-            alert('Terjadi kesalahan saat mengekspor PDF.');
+            showToast('Terjadi kesalahan saat mengekspor PDF.', 'danger');
         } finally {
             setIsExporting(false);
         }

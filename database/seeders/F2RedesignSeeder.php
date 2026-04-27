@@ -254,34 +254,34 @@ class F2RedesignSeeder extends Seeder
                     "text_transform" => "none"
                 ],
                 "order" => 14
-            ],
-            // SIGNATURES - Preserved for workflow functionality
-            [
-                "id" => (string) Str::uuid(),
-                "name" => "f2_signatures", "type" => "grid_x", "width" => "100",
-                "options" => ["grid_cols" => 3, "col_sizes" => ["1fr", "1fr", "1fr"], "margin_bottom" => 10],
-                "order" => 15,
-                "children" => [
-                    [
-                        "id" => (string) Str::uuid(),
-                        "label" => "DIBUAT OLEH (PIC)", "name" => "meta_sig_pic", "type" => "signature_box", "width" => "100",
-                        "options" => ["font_family" => $interFont, "font_size" => 11, "font_weight" => "bold"],
-                        "order" => 16
-                    ],
-                    [
-                        "id" => (string) Str::uuid(),
-                        "label" => "DIKETAHUI (MANAGER)", "name" => "meta_sig_manager", "type" => "signature_box", "width" => "100",
-                        "options" => ["font_family" => $interFont, "font_size" => 11, "font_weight" => "bold"],
-                        "order" => 17
-                    ],
-                    [
-                        "id" => (string) Str::uuid(),
-                        "label" => "DISETUJUI (VP LEGAL)", "name" => "meta_sig_vp", "type" => "signature_box", "width" => "100",
-                        "options" => ["font_family" => $interFont, "font_size" => 11, "font_weight" => "bold"],
-                        "order" => 18
-                    ]
-                ]
             ]
+            // SIGNATURES - Preserved for workflow functionality
+            // [
+            //     "id" => (string) Str::uuid(),
+            //     "name" => "f2_signatures", "type" => "grid_x", "width" => "100",
+            //     "options" => ["grid_cols" => 3, "col_sizes" => ["1fr", "1fr", "1fr"], "margin_bottom" => 10],
+            //     "order" => 15,
+            //     "children" => [
+            //         [
+            //             "id" => (string) Str::uuid(),
+            //             "label" => "DIBUAT OLEH (PIC)", "name" => "meta_sig_pic", "type" => "signature_box", "width" => "100",
+            //             "options" => ["font_family" => $interFont, "font_size" => 11, "font_weight" => "bold"],
+            //             "order" => 16
+            //         ],
+            //         [
+            //             "id" => (string) Str::uuid(),
+            //             "label" => "DIKETAHUI (MANAGER)", "name" => "meta_sig_manager", "type" => "signature_box", "width" => "100",
+            //             "options" => ["font_family" => $interFont, "font_size" => 11, "font_weight" => "bold"],
+            //             "order" => 17
+            //         ],
+            //         [
+            //             "id" => (string) Str::uuid(),
+            //             "label" => "DISETUJUI (VP LEGAL)", "name" => "meta_sig_vp", "type" => "signature_box", "width" => "100",
+            //             "options" => ["font_family" => $interFont, "font_size" => 11, "font_weight" => "bold"],
+            //             "order" => 18
+            //         ]
+            //     ]
+            // ]
         ];
 
         $this->seedFields($fields, $templateId, null);

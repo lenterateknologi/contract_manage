@@ -91,6 +91,7 @@ export interface ContractFormSubmissionInfo {
 export interface Contract {
     id: string;
     contract_no: string;
+    crown_no?: string | null;
     title: string;
     description: string;
     contract_date: string | null;

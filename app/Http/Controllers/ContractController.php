@@ -149,7 +149,7 @@ class ContractController extends Controller
         $contract = Contract::with([
             'creator', 'contractType', 'approvals.approver', 'approvals.workflowStep',
             'workflow.steps', 'versions.uploader', 'histories.actor', 'messages.user',
-            'attachments.uploader', 'formSubmissions',
+            'attachments.uploader', 'formSubmissions', 'vendor.documents'
         ])->findOrFail($id);
 
         // Authorization: Only Admin or Creator can view drafts
@@ -430,8 +430,9 @@ class ContractController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'crown_no' => 'nullable|string|max:255',
             'contract_type_id' => 'required|exists:m_contract_types,id',
-            'transaction_type' => 'nullable|string|in:Perjanjian Baru,Addendum,Amandement,Perubahan Perjanjian',
+            'transaction_type' => 'nullable|string|in:Perjanjian Baru,Addendum,Amandement,Perubahan Perjanjian,General',
             'tax_required' => 'nullable|boolean',
             'initiated_by_id' => 'nullable|uuid|exists:m_users,id',
             'vendor_id' => 'nullable|uuid|exists:m_vendors,id',
@@ -460,6 +461,7 @@ class ContractController extends Controller
             $contract = Contract::create([
                 'contract_no' => $contract_no,
                 'title' => $validated['title'],
+                'crown_no' => $validated['crown_no'] ?? null,
                 'description' => $validated['description'] ?? '—',
                 'contract_type_id' => $validated['contract_type_id'],
                 'transaction_type' => $validated['transaction_type'] ?? 'Perjanjian Baru',
@@ -505,7 +507,8 @@ class ContractController extends Controller
             'contract_no'      => 'nullable|string',
             'contract_date'    => 'nullable|date',
             'end_date'         => 'nullable|date',
-            'transaction_type' => 'nullable|string|in:Perjanjian Baru,Addendum,Amandement,Perubahan Perjanjian',
+            'crown_no'         => 'nullable|string|max:255',
+            'transaction_type' => 'nullable|string|in:Perjanjian Baru,Addendum,Amandement,Perubahan Perjanjian,General',
             'initiated_by_id'  => 'nullable|uuid|exists:m_users,id',
             'vendor_id'        => 'nullable|uuid|exists:m_vendors,id',
             'kop_sub_topik'    => 'nullable|string',
@@ -958,6 +961,7 @@ class ContractController extends Controller
         return [
             'id' => $c->id,
             'contract_no' => $c->contract_no,
+            'crown_no' => $c->crown_no,
             'title' => $c->title,
             'description' => $c->description,
             'contract_type' => $c->contract_type,

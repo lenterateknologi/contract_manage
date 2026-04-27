@@ -120,7 +120,7 @@ export function VendorManagement({ vendors, filters }: VendorManagementProps) {
                             )} />
                         ))}
                    </div>
-                   <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Compliance Score: {Math.round(((row.documents_count || 3) / 5) * 100)}%</span>
+                   <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Skor Kepatuhan: {Math.round(((row.documents_count || 3) / 5) * 100)}%</span>
                 </div>
             )
         },

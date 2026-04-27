@@ -91,7 +91,8 @@ class TransactionSeeder extends Seeder
             $user = $userNames[$userIdx];
             
             $c = Contract::create([
-                'contract_no' => 'CTR-RAND-' . str_pad($i + 1, 3, '0', STR_PAD_LEFT),
+                'contract_no' => 'REQ-CMS-' . str_pad($i + 1, 3, '0', STR_PAD_LEFT),
+                'crown_no' => 'CTR-CROW-' . str_pad($i + 1, 3, '0', STR_PAD_LEFT),
                 'title' => $titles[array_rand($titles)] . ' (#' . ($i + 1) . ')',
                 'description' => 'Data random seeder untuk pengujian visual analytics.',
                 'contract_date' => $createdAt->format('Y-m-d'),
@@ -134,7 +135,8 @@ class TransactionSeeder extends Seeder
     private function createContract1(): void
     {
         $c = Contract::create([
-            'contract_no' => 'CTR-2025-001',
+            'contract_no' => 'REQ-2025-001',
+            'crown_no' => 'CTR-2025-001',
             'title' => 'Kontrak Vendor IT Infrastructure',
             'description' => 'Pengadaan perangkat server dan jaringan untuk pusat data perusahaan.',
             'contract_date' => now()->format('Y-m-d'),
@@ -162,7 +164,8 @@ class TransactionSeeder extends Seeder
     private function createContract2(): void
     {
         $c = Contract::create([
-            'contract_no' => 'CTR-2025-002',
+            'contract_no' => 'REQ-2025-002',
+            'crown_no' => 'CTR-2025-002',
             'title' => 'MoU Kerjasama Pemasaran Regional',
             'description' => 'Nota kesepahaman untuk ekspansi pasar wilayah Jawa Timur.',
             'contract_date' => now()->subMonths(1)->format('Y-m-d'),
