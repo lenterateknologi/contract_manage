@@ -1,14 +1,15 @@
 import { Head } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem } from '@/types';
-import { FileText, Download, Table, Calendar, Users, Filter, Check, ChevronDown, History } from 'lucide-react';
+import { FileText, Download, Table, Calendar, Users, Filter, Check, ChevronDown, History, BarChart3, Search, ListFilter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import axios from 'axios';
 import { cn } from '@/lib/utils';
 import { StatusBadge } from '@/components/contracts/ui';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { FilterSheet, FilterCategory } from '@/components/ui/FilterSheet';
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Admin', href: '/admin/users' },
@@ -20,23 +21,31 @@ interface ReportData {
     histories: any[];
     users: { id: string; name: string }[];
     types: { id: string; name: string }[];
+    metrics: {
+        avgCycleTime: number;
+        totalContracts: number;
+        pendingApprovals: number;
+        approvedThisMonth: number;
+    };
+    statusDistribution: { status: string; count: number }[];
 }
 
 export default function ReportsPage() {
     const [data, setData] = useState<ReportData | null>(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'contracts' | 'audit'>('contracts');
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
     
-    // Filters state
-    const [filters, setFilters] = useState({
-        start_date: '',
-        end_date: '',
-        contract_type_ids: [] as string[],
-        creator_ids: [] as string[],
-        involved_ids: [] as string[]
+    // Filters state - using unified keys
+    const [activeFilters, setActiveFilters] = useState<Record<string, any>>({
+        date_from: '',
+        date_to: '',
+        contract_type_ids: [],
+        creator_ids: [],
+        involved_ids: []
     });
 
-    const fetchData = (currentFilters = filters) => {
+    const fetchData = (currentFilters = activeFilters) => {
         setLoading(true);
         axios.post('/admin/api/reports/data', currentFilters).then(res => {
             setData(res.data);
@@ -49,42 +58,75 @@ export default function ReportsPage() {
     }, []);
 
     const handleFilterChange = (key: string, value: any) => {
-        setFilters(prev => ({ ...prev, [key]: value }));
+        setActiveFilters(prev => {
+            const next = { ...prev };
+            if (Array.isArray(prev[key])) {
+                next[key] = prev[key].includes(String(value))
+                    ? prev[key].filter((v: any) => v !== String(value))
+                    : [...prev[key], String(value)];
+            } else {
+                next[key] = value;
+            }
+            return next;
+        });
     };
 
-    const toggleMultiFilter = (key: string, id: string) => {
-        const current = (filters as any)[key] as string[];
-        const next = current.includes(id) 
-            ? current.filter(x => x !== id)
-            : [...current, id];
-        handleFilterChange(key, next);
+    const applyFilters = () => {
+        fetchData(activeFilters);
+        setIsFilterOpen(false);
     };
-
-    const applyFilters = () => fetchData();
 
     const resetFilters = () => {
         const clear = { 
-            start_date: '', 
-            end_date: '', 
+            date_from: '', 
+            date_to: '', 
             contract_type_ids: [], 
             creator_ids: [], 
             involved_ids: [] 
         };
-        setFilters(clear);
+        setActiveFilters(clear);
         fetchData(clear);
     };
 
     const exportCsv = () => {
         const params = new URLSearchParams();
-        if (filters.start_date) params.append('start_date', filters.start_date);
-        if (filters.end_date) params.append('end_date', filters.end_date);
-        filters.contract_type_ids.forEach(id => params.append('contract_type_ids[]', id));
-        filters.creator_ids.forEach(id => params.append('creator_ids[]', id));
-        filters.involved_ids.forEach(id => params.append('involved_ids[]', id));
+        if (activeFilters.date_from) params.append('date_from', activeFilters.date_from);
+        if (activeFilters.date_to) params.append('date_to', activeFilters.date_to);
+        activeFilters.contract_type_ids.forEach((id: string) => params.append('contract_type_ids[]', id));
+        activeFilters.creator_ids.forEach((id: string) => params.append('creator_ids[]', id));
+        activeFilters.involved_ids.forEach((id: string) => params.append('involved_ids[]', id));
         
         const endpoint = activeTab === 'contracts' ? '/admin/api/reports/export' : '/admin/api/reports/audit/export';
         window.location.href = `${endpoint}?${params.toString()}`;
     };
+
+    const filterCategories: FilterCategory[] = useMemo(() => [
+        {
+            label: 'Rentang Waktu',
+            key: 'date',
+            type: 'date-range'
+        },
+        {
+            label: 'Tipe Kontrak',
+            key: 'contract_type_ids',
+            type: 'searchable',
+            options: data?.types.map(t => ({ label: t.name, value: t.id })) || []
+        },
+        {
+            label: 'User Pembuat',
+            key: 'creator_ids',
+            type: 'searchable',
+            options: data?.users.map(u => ({ label: u.name, value: u.id })) || []
+        },
+        {
+            label: 'Pihak Terkait',
+            key: 'involved_ids',
+            type: 'searchable',
+            options: data?.users.map(u => ({ label: u.name, value: u.id })) || []
+        }
+    ], [data]);
+
+    const activeFilterCount = Object.values(activeFilters).flat().filter(v => v !== '' && v !== null).length;
 
     if (loading && !data) {
         return (
@@ -98,262 +140,183 @@ export default function ReportsPage() {
     }
 
     return (
-        <>
+        <div className="flex h-full flex-col flex-1 overflow-hidden bg-white">
             <Head title="Audit & Pelaporan" />
-            
-            <div className="flex h-full flex-col flex-1 divide-y divide-border overflow-hidden">
-                {/* Unified Filter Bar */}
-                <div className="px-6 py-4 bg-card border-b border-border shadow-sm space-y-4">
-                    <div className="flex flex-wrap items-center gap-4">
-                        <div className="flex items-center gap-2">
-                            <label className="text-[10px] font-bold uppercase text-muted-foreground/60">Periode</label>
-                            <div className="flex items-center gap-1">
-                                <input 
-                                    type="date" 
-                                    className="bg-muted/50 border border-border rounded px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-primary/20 text-foreground"
-                                    value={filters.start_date}
-                                    onChange={(e) => handleFilterChange('start_date', e.target.value)}
-                                />
-                                <span className="text-muted-foreground">—</span>
-                                <input 
-                                    type="date" 
-                                    className="bg-muted/50 border border-border rounded px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-primary/20 text-foreground"
-                                    value={filters.end_date}
-                                    onChange={(e) => handleFilterChange('end_date', e.target.value)}
-                                />
-                            </div>
-                        </div>
-
-                        <MultiSelect 
-                            label="Tipe" 
-                            options={data?.types || []} 
-                            selected={filters.contract_type_ids} 
-                            onToggle={(id) => toggleMultiFilter('contract_type_ids', id)}
-                            onSelectAll={() => handleFilterChange('contract_type_ids', data?.types.map(t => t.id) || [])}
-                            onClearAll={() => handleFilterChange('contract_type_ids', [])}
-                        />
-                        
-                        <MultiSelect 
-                            label="Pembuat" 
-                            options={data?.users || []} 
-                            selected={filters.creator_ids} 
-                            onToggle={(id) => toggleMultiFilter('creator_ids', id)}
-                            onSelectAll={() => handleFilterChange('creator_ids', data?.users.map(u => u.id) || [])}
-                            onClearAll={() => handleFilterChange('creator_ids', [])}
-                        />
-
-                        <MultiSelect 
-                            label="Terlibat" 
-                            options={data?.users || []} 
-                            selected={filters.involved_ids} 
-                            onToggle={(id) => toggleMultiFilter('involved_ids', id)}
-                            onSelectAll={() => handleFilterChange('involved_ids', data?.users.map(u => u.id) || [])}
-                            onClearAll={() => handleFilterChange('involved_ids', [])}
-                        />
-
-                        <div className="flex items-center gap-2 ml-auto">
-                            <Button variant="ghost" className="h-9 text-[10px] font-bold uppercase px-3 hover:bg-muted text-muted-foreground" onClick={resetFilters}>
-                                Reset
-                            </Button>
-                            <Button className="h-9 text-[10px] font-bold uppercase px-4 bg-primary text-primary-foreground" onClick={applyFilters}>
-                                <Filter className="h-3 w-3 mr-2" />
-                                Terapkan Filter
-                            </Button>
-                            <Button variant="secondary" className="gap-2 h-9 text-[10px] font-bold uppercase px-4" onClick={exportCsv}>
-                                <Download className="h-3.5 w-3.5" />
-                                Ekspor CSV
-                            </Button>
-                        </div>
+            {/* Unified Industrial Header */}
+            <div className="px-5 py-5 border-b border-slate-200 bg-slate-50/50 space-y-5">
+                <div className="flex items-center justify-between">
+                    <div className="flex flex-col gap-0.5">
+                        <h1 className="text-[13px] font-black uppercase tracking-[0.3em] text-slate-900 flex items-center gap-2">
+                            <BarChart3 size={16} className="text-slate-900" />
+                            Laporan & Statistik
+                        </h1>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest pl-6">Data operasional dan jejak audit sistem</p>
                     </div>
 
-                    {/* Tabs Switcher */}
-                    <div className="flex items-center gap-6 border-b border-border/50">
-                        <button 
+                    {data?.metrics && (
+                        <div className="flex items-center gap-px bg-slate-200 border border-slate-200 overflow-hidden">
+                            <MetricCard label="Total Kontrak" value={data.metrics.totalContracts} />
+                            <MetricCard label="Pending Approval" value={data.metrics.pendingApprovals} color="text-amber-500" />
+                            <MetricCard label="Approved (MoM)" value={data.metrics.approvedThisMonth} color="text-green-600" />
+                            <MetricCard label="Cycle Time (Days)" value={data.metrics.avgCycleTime} unit="d" />
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex items-center justify-between border-t border-slate-100 pt-4">
+                    <div className="flex items-center gap-4">
+                        <Button 
+                            onClick={() => setIsFilterOpen(true)}
                             className={cn(
-                                "pb-2 text-[11px] font-bold uppercase tracking-wider transition-colors relative",
-                                activeTab === 'contracts' ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                                "h-9 rounded-none text-[10px] font-black uppercase tracking-[0.2em] px-5 transition-all border",
+                                activeFilterCount > 0 
+                                    ? "bg-black text-white border-black hover:bg-slate-800" 
+                                    : "bg-white text-slate-600 border-slate-200 hover:border-black hover:bg-slate-50 hover:text-black"
                             )}
-                            onClick={() => setActiveTab('contracts')}
                         >
-                            Daftar Kontrak
-                            {activeTab === 'contracts' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
-                        </button>
-                        <button 
-                            className={cn(
-                                "pb-2 text-[11px] font-bold uppercase tracking-wider transition-colors relative",
-                                activeTab === 'audit' ? "text-primary" : "text-muted-foreground hover:text-foreground"
-                            )}
-                            onClick={() => setActiveTab('audit')}
+                            <ListFilter size={14} className="mr-2" />
+                            FILTER {activeFilterCount > 0 && `(${activeFilterCount})`}
+                        </Button>
+
+                        {activeFilterCount > 0 && (
+                            <button 
+                                onClick={resetFilters}
+                                className="text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-rose-600 transition-colors flex items-center gap-1.5"
+                            >
+                                <History size={12} />
+                                RESET FILTER
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="flex items-center gap-2 h-9">
+                        <Button 
+                            variant="outline" 
+                            className="h-full rounded-none border-slate-200 text-[10px] font-black uppercase tracking-widest px-6 hover:border-black active:bg-slate-50 transition-all flex items-center gap-2" 
+                            onClick={exportCsv}
                         >
-                            Jejak Audit (History)
-                            {activeTab === 'audit' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
-                        </button>
+                            <Download size={14} />
+                            EXPORT CSV
+                        </Button>
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-auto bg-background relative flex flex-col">
-                    {loading && (
-                        <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] z-20 flex items-center justify-center">
-                            <i className="fa-solid fa-spinner fa-spin text-primary text-2xl" />
-                        </div>
-                    )}
-
-                    {activeTab === 'contracts' ? (
-                        <ContractRegistryTable contracts={data?.contracts || []} />
-                    ) : (
-                        <AuditTrailTable histories={data?.histories || []} />
-                    )}
+                {/* Tabs Switcher */}
+                <div className="flex items-center gap-8 border-b border-slate-200 -mb-5">
+                    <button 
+                        className={cn(
+                            "pb-3 text-[10px] font-black uppercase tracking-[0.2em] transition-all relative px-2",
+                            activeTab === 'contracts' ? "text-black" : "text-slate-400 hover:text-slate-600"
+                        )}
+                        onClick={() => setActiveTab('contracts')}
+                    >
+                        Database Kontrak
+                        {activeTab === 'contracts' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-black" />}
+                    </button>
+                    <button 
+                        className={cn(
+                            "pb-3 text-[10px] font-black uppercase tracking-[0.2em] transition-all relative px-2",
+                            activeTab === 'audit' ? "text-black" : "text-slate-400 hover:text-slate-600"
+                        )}
+                        onClick={() => setActiveTab('audit')}
+                    >
+                        Audit Trail History
+                        {activeTab === 'audit' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-black" />}
+                    </button>
                 </div>
             </div>
-        </>
+
+            <div className="flex-1 overflow-auto bg-background relative flex flex-col">
+                {loading && (
+                    <div className="absolute inset-0 bg-background/50 backdrop-blur-[1px] z-20 flex items-center justify-center">
+                        <i className="fa-solid fa-spinner fa-spin text-primary text-2xl" />
+                    </div>
+                )}
+
+                {activeTab === 'contracts' ? (
+                    <ContractRegistryTable contracts={data?.contracts || []} />
+                ) : (
+                    <AuditTrailTable histories={data?.histories || []} />
+                )}
+            </div>
+
+            <FilterSheet 
+                isOpen={isFilterOpen}
+                onOpenChange={setIsFilterOpen}
+                title="FILTER LAPORAN"
+                description="Sesuaikan kriteria data untuk rekapitulasi dan audit trail."
+                categories={filterCategories}
+                activeFilters={activeFilters}
+                onFilterChange={handleFilterChange}
+                onReset={resetFilters}
+                applyText="TERAPKAN FILTER"
+            />
+        </div>
     );
 }
 
 // ─── Sub-Components ──────────────────────────────────────────────────
 
-function MultiSelect({ label, options, selected, onToggle, onSelectAll, onClearAll }: { 
-    label: string, 
-    options: any[], 
-    selected: string[], 
-    onToggle: (id: string) => void,
-    onSelectAll?: () => void,
-    onClearAll?: () => void
-}) {
-    const [open, setOpen] = useState(false);
-    const [search, setSearch] = useState('');
-    const ref = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const handleClickOutside = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    const filteredOptions = options.filter(opt => 
-        opt.name.toLowerCase().includes(search.toLowerCase())
-    );
-
-    return (
-        <div className="relative" ref={ref}>
-            <div 
-                className={cn(
-                    "flex items-center justify-between gap-3 px-3 py-1.5 border rounded-lg cursor-pointer transition-all min-w-[140px] hover:bg-muted/30",
-                    selected.length > 0 ? "border-primary/30 bg-primary/5 shadow-sm" : "border-border bg-muted/20"
-                )}
-                onClick={() => setOpen(!open)}
-            >
-                <div className="flex flex-col">
-                    <span className="text-[9px] font-bold text-muted-foreground/60 uppercase leading-none mb-1">{label}</span>
-                    <span className="text-xs font-semibold truncate max-w-[100px] text-foreground">
-                        {selected.length === 0 ? 'Semua' : selected.length === options.length ? 'Semua terpilih' : `${selected.length} Item`}
-                    </span>
-                </div>
-                <ChevronDown className={cn("h-3 w-3 text-muted-foreground transition-transform", open && "rotate-180")} />
-            </div>
-
-            {open && (
-                <div className="absolute top-full left-0 mt-2 w-72 bg-card border border-border rounded-xl shadow-xl z-50 flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
-                    <div className="p-2 border-b border-border/50 bg-muted/20 space-y-2">
-                        <div className="relative">
-                            <i className="fa-solid fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground" />
-                            <input 
-                                type="text"
-                                placeholder={`Cari ${label}...`}
-                                className="w-full bg-background border border-border rounded-md pl-8 pr-3 py-1.5 text-xs outline-none focus:ring-1 focus:ring-primary/20 text-foreground"
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                autoFocus
-                            />
-                        </div>
-                        <div className="flex items-center justify-between px-1">
-                            <button 
-                                className="text-[10px] font-bold text-primary hover:underline uppercase"
-                                onClick={(e) => { e.stopPropagation(); onSelectAll?.(); }}
-                            >
-                                Pilih Semua
-                            </button>
-                            <button 
-                                className="text-[10px] font-bold text-muted-foreground hover:text-destructive uppercase"
-                                onClick={(e) => { e.stopPropagation(); onClearAll?.(); }}
-                            >
-                                Hapus
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="p-1 max-h-[250px] overflow-y-auto">
-                        {filteredOptions.length === 0 ? (
-                            <div className="py-4 text-center text-[10px] text-muted-foreground italic">
-                                Tidak ada hasil
-                            </div>
-                        ) : (
-                            <div className="space-y-0.5">
-                                {filteredOptions.map(opt => (
-                                    <div 
-                                        key={opt.id} 
-                                        className={cn(
-                                            "flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer text-xs font-medium transition-colors hover:bg-muted/50",
-                                            selected.includes(opt.id) ? "text-primary bg-primary/10 font-bold" : "text-foreground/80"
-                                        )}
-                                        onClick={() => onToggle(opt.id)}
-                                    >
-                                        <div className={cn(
-                                            "w-4 h-4 border rounded flex items-center justify-center transition-colors",
-                                            selected.includes(opt.id) ? "bg-primary border-primary text-primary-foreground" : "border-border bg-muted/20"
-                                        )}>
-                                            {selected.includes(opt.id) && <Check className="h-2.5 w-2.5" strokeWidth={4} />}
-                                        </div>
-                                        {opt.name}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-}
-
 function ContractRegistryTable({ contracts }: { contracts: any[] }) {
     if (contracts.length === 0) return <EmptyState label="kontrak" />;
     return (
-        <table className="w-full text-[13px] border-collapse bg-background">
-            <thead className="sticky top-0 bg-background border-b border-border z-10">
+        <table className="w-full text-[12px] border-collapse bg-white">
+            <thead className="sticky top-0 bg-white border-b border-slate-200 z-10 shadow-[0_4px_12px_rgba(0,0,0,0.02)]">
                 <tr>
-                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-muted-foreground/60">No. Kontrak</th>
-                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-muted-foreground/60">Judul</th>
-                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-muted-foreground/60">Tipe</th>
-                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-muted-foreground/60">Pembuat</th>
-                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-muted-foreground/60">Tgl Dibuat</th>
-                    <th className="font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-muted-foreground/60 text-center">Status</th>
-                    <th className="text-right font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-muted-foreground/60">Usia</th>
-                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-muted-foreground/60">Pending Di</th>
+                    <th className="text-left py-3.5 px-5 uppercase text-[9px] font-black tracking-[0.2em] text-slate-400">Parameter</th>
+                    <th className="text-left py-3.5 px-5 uppercase text-[9px] font-black tracking-[0.2em] text-slate-400">Judul Rekap</th>
+                    <th className="text-left py-3.5 px-5 uppercase text-[9px] font-black tracking-[0.2em] text-slate-400 whitespace-nowrap">Tipe</th>
+                    <th className="text-left py-3.5 px-5 uppercase text-[9px] font-black tracking-[0.2em] text-slate-400 whitespace-nowrap">Pemilik</th>
+                    <th className="text-left py-3.5 px-5 uppercase text-[9px] font-black tracking-[0.2em] text-slate-400 whitespace-nowrap">Registrasi</th>
+                    <th className="py-3.5 px-5 uppercase text-[9px] font-black tracking-[0.2em] text-slate-400 text-center">Status</th>
+                    <th className="text-right py-3.5 px-5 uppercase text-[9px] font-black tracking-[0.2em] text-slate-400 whitespace-nowrap">Aging</th>
+                    <th className="text-left py-3.5 px-5 uppercase text-[9px] font-black tracking-[0.2em] text-slate-400 whitespace-nowrap">Stage</th>
                 </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className="divide-y divide-slate-100">
                 {contracts.map((c) => (
-                    <tr key={c.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="py-4 px-6 font-mono text-[11px] text-muted-foreground whitespace-nowrap">{c.contract_no}</td>
-                        <td className="py-4 px-6 font-bold text-foreground">{c.title}</td>
-                        <td className="py-4 px-6 text-muted-foreground/80">{c.type || '—'}</td>
-                        <td className="py-4 px-6 text-muted-foreground/80">{c.creator}</td>
-                        <td className="py-4 px-6 text-muted-foreground/80 whitespace-nowrap">
-                            {new Date(c.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    <tr key={c.id} className="hover:bg-slate-50/80 transition-colors group">
+                        <td className="py-3 px-5">
+                             <span className="font-mono text-[9px] font-black text-slate-400 group-hover:text-slate-900 transition-colors">{c.contract_no}</span>
                         </td>
-                        <td className="py-4 px-6 text-center">
-                            <span className="inline-block px-2 py-0.5 border border-border rounded text-[10px] font-bold uppercase tracking-tight text-foreground/70">
-                                {c.status}
+                        <td className="py-3 px-5">
+                             <span className="text-[10px] font-black uppercase tracking-tight text-slate-800 leading-tight block truncate max-w-[180px]">
+                                {c.title}
+                             </span>
+                        </td>
+                        <td className="py-3 px-5 uppercase text-[9px] font-bold text-slate-400 tracking-tighter whitespace-nowrap">{c.type || 'N/A'}</td>
+                        <td className="py-3 px-5 uppercase text-[9px] font-bold text-slate-500 tracking-tight whitespace-nowrap">{c.creator}</td>
+                        <td className="py-3 px-5">
+                            <span className="font-mono text-[9px] font-black text-slate-400 uppercase">
+                                {new Date(c.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })}
                             </span>
                         </td>
-                        <td className="py-4 px-6 text-right font-medium text-muted-foreground/80 whitespace-nowrap">{formatRelativeTime(c.created_at)}</td>
-                        <td className="py-4 px-6">
-                            <span className="text-[11px] font-bold text-foreground/80 flex items-center gap-1.5">
-                                <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
-                                {c.current_step}
-                            </span>
+                        <td className="py-3 px-5">
+                            <div className="flex items-center justify-center gap-1.5">
+                                <div className={cn(
+                                    "w-1 h-1 rounded-full",
+                                    c.status === 'approved' ? "bg-emerald-500" : 
+                                    c.status === 'pending' ? "bg-amber-500" : 
+                                    c.status === 'rejected' ? "bg-rose-500" : "bg-slate-300"
+                                )} />
+                                <span className={cn(
+                                    "text-[9px] font-black uppercase tracking-widest",
+                                    c.status === 'approved' ? "text-emerald-700" : 
+                                    c.status === 'pending' ? "text-amber-700" : 
+                                    c.status === 'rejected' ? "text-rose-700" : "text-slate-500"
+                                )}>
+                                    {c.status}
+                                </span>
+                            </div>
+                        </td>
+                        <td className="py-3 px-5 text-right font-mono text-[9px] font-black text-slate-400 uppercase whitespace-nowrap leading-none">{formatRelativeTime(c.created_at)}</td>
+                        <td className="py-3 px-5">
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-1 h-1 rounded-full bg-slate-300 group-hover:bg-black transition-colors" />
+                                <span className="text-[9px] font-bold text-slate-600 uppercase tracking-tight whitespace-nowrap">
+                                    {c.current_step}
+                                </span>
+                            </div>
                         </td>
                     </tr>
                 ))}
@@ -365,45 +328,68 @@ function ContractRegistryTable({ contracts }: { contracts: any[] }) {
 function AuditTrailTable({ histories }: { histories: any[] }) {
     if (histories.length === 0) return <EmptyState label="riwayat audit" />;
     return (
-        <table className="w-full text-[13px] border-collapse bg-background">
-            <thead className="sticky top-0 bg-background border-b border-border z-10">
-                <tr>
-                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-muted-foreground/60">Waktu</th>
-                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-muted-foreground/60">Kontrak</th>
-                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-muted-foreground/60">Aksi</th>
-                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-muted-foreground/60">Deskripsi</th>
-                    <th className="text-left font-bold py-3 px-6 uppercase text-[10px] tracking-widest text-muted-foreground/60 border-l border-border">Aktor</th>
-                </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-                {histories.map((h) => (
-                    <tr key={h.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="py-4 px-6 text-muted-foreground font-mono text-[11px]">
-                            {new Date(h.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                        </td>
-                        <td className="py-4 px-6">
-                            <div className="flex flex-col">
-                                <span className="text-[10px] font-mono text-muted-foreground/60">{h.contract_no}</span>
-                                <span className="text-xs font-bold text-foreground">{h.contract_title}</span>
+        <div className="flex-1 overflow-auto bg-slate-50/50 font-mono text-[11px] p-6 selection:bg-emerald-100">
+            <div className="w-full space-y-0.5">
+                <div className="flex items-center gap-6 text-slate-400 font-black uppercase tracking-[0.3em] text-[8px] mb-6 border-b border-slate-200 pb-3">
+                    <div className="w-28 text-left">TIMESTAMP</div>
+                    <div className="w-24 text-left">REF_ID</div>
+                    <div className="w-32 text-left">ACTION_EVENT</div>
+                    <div className="flex-1 text-left">TRANSACTION_LOG_DATA</div>
+                    <div className="w-40 text-right">AUTHOR_ENTITY</div>
+                </div>
+                
+                {histories.map((h, idx) => {
+                    const actionType = h.action.toLowerCase();
+                    const isAlert = actionType.includes('reject') || actionType.includes('delete') || actionType.includes('cancel');
+                    const isSuccess = actionType.includes('approve') || actionType.includes('create') || actionType.includes('submit');
+                    const isSystem = actionType.includes('system') || actionType.includes('update');
+                    
+                    return (
+                        <div key={h.id} className="flex gap-6 group hover:bg-white py-2 px-3 -mx-3 transition-all border border-transparent hover:border-slate-200 hover:shadow-sm">
+                            <div className="w-28 text-slate-400 shrink-0 tabular-nums">
+                                <span className="text-slate-600 font-medium">{new Date(h.created_at).toLocaleTimeString('id-ID', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                                <span className="opacity-0 group-hover:opacity-100 ml-2 text-[7px] text-slate-400">{new Date(h.created_at).toLocaleDateString()}</span>
                             </div>
-                        </td>
-                        <td className="py-4 px-6">
-                            <span className="text-[11px] font-bold uppercase text-muted-foreground tracking-tight">
-                                {h.action}
-                            </span>
-                        </td>
-                        <td className="py-4 px-6 text-muted-foreground/80 text-[12px] leading-relaxed max-w-sm">{h.description}</td>
-                        <td className="py-4 px-6 border-l border-border bg-muted/10">
-                            <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-foreground/80 uppercase tracking-tighter border-b border-border">
-                                    {h.actor}
+                            
+                            <div className="w-24 shrink-0 font-bold text-slate-900 tracking-tighter">
+                                <span className="text-slate-300 mr-0.5">#</span>
+                                {h.contract_no.split('/').pop()}
+                            </div>
+
+                            <div className="w-32 shrink-0">
+                                <span className={cn(
+                                    "px-2 py-0.5 text-[9px] font-black uppercase tracking-widest block text-center border",
+                                    isAlert ? "bg-rose-50 text-rose-700 border-rose-100" :
+                                    isSuccess ? "bg-emerald-50 text-emerald-700 border-emerald-100" :
+                                    isSystem ? "bg-blue-50 text-blue-700 border-blue-100" :
+                                    "bg-slate-100 text-slate-600 border-slate-200"
+                                )}>
+                                    {h.action}
                                 </span>
                             </div>
-                        </td>
-                    </tr>
-                ))}
-            </tbody>
-        </table>
+
+                            <div className="flex-1 text-slate-500 leading-relaxed">
+                                <span className="text-slate-300 font-black mr-2 text-[8px] tracking-tighter">LOG::</span>
+                                <span className="text-slate-700 font-medium">{h.description}</span>
+                            </div>
+
+                            <div className="w-40 shrink-0 text-right flex items-center justify-end gap-2 text-slate-400">
+                                <div className="h-px w-4 bg-slate-200" />
+                                <span className="text-slate-900 font-bold uppercase tracking-tighter italic">@{h.actor.split(' ')[0]}</span>
+                            </div>
+                        </div>
+                    );
+                })}
+                
+                <div className="pt-12 text-center">
+                    <div className="inline-flex items-center gap-4">
+                        <div className="h-px w-10 bg-slate-200" />
+                        <span className="text-slate-300 font-black text-[8px] uppercase tracking-[0.5em]">SYSTEM_TRANS_LOG_END</span>
+                        <div className="h-px w-10 bg-slate-200" />
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 }
 
@@ -432,4 +418,18 @@ function formatRelativeTime(dateString: string) {
     if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} minggu lalu`;
     if (diffInDays < 365) return `${Math.floor(diffInDays / 30)} bulan lalu`;
     return `${Math.floor(diffInDays / 365)} tahun lalu`;
+}
+
+function MetricCard({ label, value, color = "text-slate-900", unit = "" }: { label: string, value: number, color?: string, unit?: string }) {
+    return (
+        <div className="bg-white px-4 py-2 min-w-[110px] flex flex-col gap-0.5 border-none">
+            <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none">{label}</span>
+            <div className="flex items-baseline gap-0.5">
+                <span className={cn("text-[14px] font-black tracking-tighter leading-none", color)}>
+                    {value}
+                </span>
+                {unit && <span className="text-[8px] font-bold text-slate-400 uppercase">{unit}</span>}
+            </div>
+        </div>
+    );
 }

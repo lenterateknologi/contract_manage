@@ -444,7 +444,7 @@ function GenericFormTab({
     const templateForRenderer = {
         ...matchingTemplate,
         has_letterhead: true,
-        letterhead_json: { margins: { top: 10, bottom: 10, left: 15, right: 15 } },
+        letterhead_json: { margins: { top: 15, bottom: 15, left: 15, right: 15 } },
         fields: fields,
     } as any;
 
@@ -484,12 +484,12 @@ function GenericFormTab({
                 </div>
             )}
 
-            <div className="border-border/60 sticky top-0 z-40 flex h-[72px] shrink-0 items-center justify-between border-b bg-white/50 px-6 backdrop-blur-sm">
+            <div className="border-border/60 sticky top-0 z-40 flex h-[60px] shrink-0 items-center justify-between border-b bg-white/50 px-6 backdrop-blur-sm">
                 <div className="flex items-center gap-4">
                     <div className="flex flex-col">
                         <div className="flex items-center gap-2">
                             <div className="h-4 w-1 rounded-full bg-slate-900" />
-                            <h4 className="text-[11px] leading-none font-black tracking-tighter text-slate-900 uppercase">
+                            <h4 className="text-[10px] leading-none font-black tracking-tighter text-slate-900 uppercase">
                                 {docType === 'f1' ? 'Formulir F1 (Internal)' : 'Formulir F2 (Resume)'}
                             </h4>
                             <span className="animate-in fade-in zoom-in rounded bg-slate-950 px-1.5 py-0.5 text-[8px] font-black tracking-widest text-white uppercase duration-500">
@@ -498,7 +498,7 @@ function GenericFormTab({
                         </div>
                         <span
                             className={cn(
-                                'mt-1.5 text-[9px] font-black tracking-[0.2em] uppercase',
+                                'mt-1 text-[8px] font-black tracking-[0.2em] uppercase',
                                 submissionInfo ? 'text-emerald-500' : 'text-indigo-500',
                             )}
                         >
@@ -517,7 +517,7 @@ function GenericFormTab({
                         <button
                             onClick={() => setShowVersions(!showVersions)}
                             className={cn(
-                                'border-border flex h-8 items-center gap-1.5 rounded-xl border bg-white px-3 text-[9px] font-black tracking-widest uppercase shadow-sm transition-all active:scale-95',
+                                'border-border flex h-7 items-center gap-1.5 rounded-xl border bg-white px-3 text-[9px] font-black tracking-widest uppercase shadow-sm transition-all active:scale-95',
                                 showVersions ? 'border-slate-900 bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50',
                             )}
                         >
@@ -582,7 +582,7 @@ function GenericFormTab({
                         <button
                             onClick={() => setShowMoreActions(!showMoreActions)}
                             className={cn(
-                                'border-border flex h-8 w-8 items-center justify-center rounded-xl border bg-white shadow-sm transition-all active:scale-95',
+                                'border-border flex h-7 w-7 items-center justify-center rounded-xl border bg-white shadow-sm transition-all active:scale-95',
                                 showMoreActions ? 'border-slate-900 bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50',
                             )}
                         >
@@ -648,7 +648,7 @@ function GenericFormTab({
                     <button
                         onClick={handleSave}
                         disabled={saving}
-                        className="flex h-8 items-center gap-2 rounded-xl bg-slate-900 px-5 text-[9px] font-black tracking-widest text-white uppercase shadow-lg shadow-slate-200 transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-50"
+                        className="flex h-7 items-center gap-2 rounded-xl bg-slate-900 px-5 text-[9px] font-black tracking-widest text-white uppercase shadow-lg shadow-slate-200 transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-50"
                     >
                         {saving ? <i className="fa-solid fa-spinner fa-spin" /> : <i className="fa-solid fa-check" />}
                         {submissionInfo ? 'Update Form' : 'Simpan Data'}
@@ -666,7 +666,7 @@ function GenericFormTab({
                     </div>
                 )}
 
-                <div className="py-12 px-4 flex justify-center">
+                <div className="py-6 px-4 flex justify-center">
                     <InteractiveForm
                         template={templateForRenderer}
                         formData={formData}

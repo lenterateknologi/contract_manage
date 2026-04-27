@@ -115,7 +115,6 @@ class ContractMessageController extends Controller
 
         $mime = \Illuminate\Support\Facades\File::mimeType($path);
 
-        // Force inline disposition for PDF and common docs to allow browser preview
         return response()->file($path, [
             'Content-Type' => $mime,
             'Content-Disposition' => 'inline; filename="' . $msg->attachment_name . '"'

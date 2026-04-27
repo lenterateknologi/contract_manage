@@ -17,6 +17,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Badge } from './badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from './dialog';
+import { FilterSheet } from './FilterSheet';
 
 export interface Column<T> {
     header: string;
@@ -37,7 +38,8 @@ interface DataTableProps<T> {
     filters?: {
         label: string;
         key: string;
-        options: { label: string; value: any }[];
+        type?: 'grid' | 'searchable' | 'date-range';
+        options?: { label: string; value: any }[];
     }[];
     rowActions?: (row: T) => React.ReactNode;
     bulkActions?: (selectedRows: T[]) => React.ReactNode;
@@ -154,14 +156,14 @@ export function DataTable<T extends Record<string, any>>({
     const hasToolbar = title || searchKey || (filters && filters.length > 0) || onRefresh || headerActions || (bulkActions && selectedIds.size > 0);
 
     return (
-        <div className="flex flex-col h-full bg-card border border-border overflow-hidden">
+        <div className="flex flex-col h-full bg-white overflow-hidden shadow-none">
             {/* Toolbar — only rendered when there is content */}
             {hasToolbar && (
-                <div className="px-5 py-4 flex items-center gap-6 border-b border-border bg-background">
+                <div className="px-4 py-3 flex items-center gap-4 border-b border-slate-100 bg-white">
                     {title && (
                         <div className="flex-shrink-0">
                             {typeof title === 'string' ? (
-                                <h2 className="text-lg font-black uppercase tracking-tight text-slate-900">{title}</h2>
+                                <h2 className="text-[12px] font-black uppercase tracking-widest text-slate-900">{title}</h2>
                             ) : title}
                         </div>
                     )}
@@ -179,113 +181,44 @@ export function DataTable<T extends Record<string, any>>({
                     )}
                     <div className="flex items-center gap-1.5 ml-auto">
                         {filters && filters.length > 0 && (
-                            <Dialog open={isFilterDialogOpen} onOpenChange={setIsFilterDialogOpen}>
-                                <DialogTrigger asChild>
-                                    <button
-                                        className={cn(
-                                            "relative inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border text-[10px] font-bold uppercase tracking-wide transition-all duration-200",
-                                            activeFilterCount > 0
-                                                ? "border-primary/40 bg-primary/10 text-primary shadow-sm shadow-primary/10"
-                                                : "border-border bg-background text-muted-foreground hover:border-border hover:text-foreground hover:bg-muted"
-                                        )}
-                                    >
-                                        <SlidersHorizontal className="h-3 w-3" />
-                                        Filter
-                                        {activeFilterCount > 0 && (
-                                            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-black text-primary-foreground shadow">
-                                                {activeFilterCount}
-                                            </span>
-                                        )}
-                                    </button>
-                                </DialogTrigger>
+                            <>
+                                <button
+                                    onClick={() => setIsFilterDialogOpen(true)}
+                                    className={cn(
+                                        "relative inline-flex items-center gap-2 h-9 px-4 rounded-none border text-[11px] font-black uppercase tracking-tight transition-all active:scale-95 shadow-sm",
+                                        activeFilterCount > 0
+                                            ? "border-black bg-black text-white"
+                                            : "border-slate-200 bg-white text-slate-600 hover:border-black hover:text-black"
+                                    )}
+                                >
+                                    <SlidersHorizontal className="h-3.5 w-3.5" />
+                                    Filter
+                                    {activeFilterCount > 0 && (
+                                        <span className={cn(
+                                            "flex h-4 w-4 items-center justify-center rounded-none text-[8px] font-black border",
+                                            activeFilterCount > 0 ? "bg-white text-black border-white" : "bg-black text-white border-black"
+                                        )}>
+                                            {activeFilterCount}
+                                        </span>
+                                    )}
+                                </button>
 
-                                <DialogContent className="max-w-sm p-0 overflow-hidden rounded-2xl border border-border shadow-2xl gap-0 bg-card">
-                                    {/* Dark header */}
-                                    <div className="relative bg-muted px-6 py-5 text-foreground overflow-hidden">
-                                        <div className="pointer-events-none absolute -top-4 -right-4 opacity-10">
-                                            <SlidersHorizontal className="h-24 w-24 rotate-12" />
-                                        </div>
-                                        <DialogTitle className="flex items-center gap-2 text-base font-black tracking-tight">
-                                            <div className="bg-primary h-7 w-1.5 rounded-full" />
-                                            Filter Data
-                                        </DialogTitle>
-                                        <DialogDescription className="mt-1 text-[11px] font-medium text-muted-foreground">
-                                            Saring data berdasarkan kategori di bawah ini
-                                        </DialogDescription>
-                                        {activeFilterCount > 0 && (
-                                            <button
-                                                onClick={handleResetAll}
-                                                className="absolute top-4 right-4 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-background/50 hover:bg-destructive/20 text-[10px] font-bold uppercase tracking-wide text-muted-foreground hover:text-destructive transition-all"
-                                            >
-                                                <X size={10} strokeWidth={3} />
-                                                Reset
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    {/* Filter body */}
-                                    <div className="px-6 py-5 space-y-6 max-h-[55vh] overflow-auto">
-                                        {filters.map((category) => (
-                                            <div key={category.key}>
-                                                <div className="flex items-center gap-2 mb-3">
-                                                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground">{category.label}</span>
-                                                    <div className="h-px flex-1 bg-border" />
-                                                </div>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {category.options.map((opt) => {
-                                                        const isSelected = Array.isArray(activeFilters[category.key])
-                                                            ? activeFilters[category.key].includes(opt.value)
-                                                            : activeFilters[category.key] === opt.value;
-                                                        return (
-                                                            <button
-                                                                key={String(opt.value)}
-                                                                onClick={() => toggleFilterValue(category.key, opt.value)}
-                                                                className={cn(
-                                                                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-semibold transition-all duration-150",
-                                                                    isSelected
-                                                                        ? "border-primary bg-primary text-primary-foreground shadow-sm shadow-primary/20"
-                                                                        : "border-border bg-background text-muted-foreground hover:border-border hover:bg-muted"
-                                                                )}
-                                                            >
-                                                                {isSelected && <Check size={9} strokeWidth={3.5} />}
-                                                                {opt.label}
-                                                            </button>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    {/* Footer */}
-                                    <div className="px-6 py-4 border-t border-border bg-muted/30 flex items-center justify-between gap-3">
-                                        <p className="text-[10px] text-muted-foreground font-medium">
-                                            {activeFilterCount > 0 ? `${activeFilterCount} filter aktif` : 'Belum ada filter aktif'}
-                                        </p>
-                                        <div className="flex items-center gap-2">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-8 px-4 text-[11px] font-semibold text-muted-foreground"
-                                                onClick={() => setIsFilterDialogOpen(false)}
-                                            >
-                                                Tutup
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                className="h-8 px-5 text-[11px] font-bold rounded-lg"
-                                                onClick={() => setIsFilterDialogOpen(false)}
-                                            >
-                                                Terapkan
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </DialogContent>
-                            </Dialog>
+                                <FilterSheet
+                                    isOpen={isFilterDialogOpen}
+                                    onOpenChange={setIsFilterDialogOpen}
+                                    title="Filter Data"
+                                    description="Sesuaikan parameter untuk memfilter hasil pada tabel."
+                                    categories={filters as any}
+                                    activeFilters={activeFilters}
+                                    onFilterChange={toggleFilterValue}
+                                    onReset={handleResetAll}
+                                    totalResults={pagination?.total}
+                                />
+                            </>
                         )}
 
                         {onRefresh && (
-                            <Button variant="ghost" size="icon" onClick={onRefresh} disabled={loading} className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                            <Button variant="ghost" size="icon" onClick={onRefresh} disabled={loading} className="h-8 w-8 text-slate-400 hover:text-black hover:bg-slate-50">
                                 <RefreshCcw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
                             </Button>
                         )}
@@ -293,8 +226,8 @@ export function DataTable<T extends Record<string, any>>({
                         {headerActions && <div className="flex items-center gap-1.5">{headerActions}</div>}
 
                         {bulkActions && selectedIds.size > 0 && (
-                            <div className="flex items-center gap-1.5 animate-in fade-in">
-                                <div className="h-5 w-px bg-border" />
+                            <div className="flex items-center gap-3 animate-in fade-in">
+                                <div className="h-4 w-px bg-slate-200" />
                                 {bulkActions(data.filter(row => selectedIds.has(getRowId(row))))}
                             </div>
                         )}
@@ -303,21 +236,21 @@ export function DataTable<T extends Record<string, any>>({
             )}
 
             {/* Table */}
-            <div className="flex-1 overflow-auto relative bg-background">
+            <div className="flex-1 overflow-auto relative bg-white">
                 {loading && (
-                    <div className="absolute inset-0 bg-background/70 z-20 flex items-center justify-center">
-                        <Loader2 className="h-6 w-6 text-primary animate-spin" />
+                    <div className="absolute inset-0 bg-white/70 z-20 flex items-center justify-center">
+                        <Loader2 className="h-5 w-5 text-black animate-spin" />
                     </div>
                 )}
 
                 <table className="w-full text-left border-collapse min-w-[600px]">
-                    <thead className="sticky top-0 z-10 bg-muted/50 border-b border-border">
+                    <thead className="sticky top-0 z-10 bg-slate-50/80 backdrop-blur-sm border-b border-slate-100">
                         <tr>
                             {columns.map((col, i) => (
                                 <th
                                     key={i}
                                     className={cn(
-                                        "px-4 py-3.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground",
+                                        "px-4 py-2 text-[9px] font-black uppercase tracking-[0.1em] text-slate-400",
                                         col.thClassName
                                     )}
                                 >
@@ -326,26 +259,26 @@ export function DataTable<T extends Record<string, any>>({
                                         {col.sortable && (
                                             <button
                                                 onClick={() => handleSort(col.accessorKey as string)}
-                                                className="opacity-0 group-hover/th:opacity-60 transition-opacity hover:opacity-100"
+                                                className="opacity-0 group-hover/th:opacity-100 transition-opacity"
                                             >
                                                 {sortConfig.key === col.accessorKey ? (
-                                                    sortConfig.direction === 'asc' ? <ChevronUp size={11} /> : <ChevronDown size={11} />
-                                                ) : <ChevronsUpDown size={11} />}
+                                                    sortConfig.direction === 'asc' ? <ChevronUp size={10} className="text-black" /> : <ChevronDown size={10} className="text-black" />
+                                                ) : <ChevronsUpDown size={10} />}
                                             </button>
                                         )}
                                     </div>
                                 </th>
                             ))}
-                            {rowActions && <th className="px-4 py-3.5 text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Aksi</th>}
+                            {rowActions && <th className="px-4 py-2 text-right text-[9px] font-black uppercase tracking-[0.1em] text-slate-400">Aksi</th>}
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-border">
+                    <tbody className="divide-y divide-slate-50">
                         {processedData.length === 0 && !loading ? (
                             <tr>
-                                <td colSpan={columns.length + (rowActions ? 2 : 1)} className="py-16 text-center">
-                                    <div className="flex flex-col items-center gap-2 opacity-30">
-                                        <Inbox size={32} strokeWidth={1.5} />
-                                        <span className="text-sm font-semibold text-foreground">Tidak ada data</span>
+                                <td colSpan={columns.length + (rowActions ? 2 : 1)} className="py-20 text-center">
+                                    <div className="flex flex-col items-center gap-3 opacity-20">
+                                        <Inbox size={40} strokeWidth={1} />
+                                        <span className="text-[11px] font-black uppercase tracking-widest">Database Kosong</span>
                                     </div>
                                 </td>
                             </tr>
@@ -355,17 +288,17 @@ export function DataTable<T extends Record<string, any>>({
                                     <tr
                                         onClick={() => onRowClick?.(row)}
                                         className={cn(
-                                            "hover:bg-muted/30 transition-colors group cursor-pointer",
-                                            (selectedRowId === getRowId(row) || (isRowExpanded && isRowExpanded(row))) && "bg-primary/5"
+                                            "hover:bg-slate-50/50 transition-colors group cursor-pointer border-l-2 border-l-transparent",
+                                            (selectedRowId === getRowId(row) || (isRowExpanded && isRowExpanded(row))) && "bg-slate-50 border-l-black"
                                         )}
                                     >
                                         {columns.map((col, j) => (
-                                            <td key={j} className={cn("px-4 py-3 text-[12px] text-foreground font-medium", col.className)}>
-                                                {col.cell ? col.cell(row) : (String(row[col.accessorKey]) || '-')}
+                                            <td key={j} className={cn("px-4 py-2 text-[11px] text-slate-700 font-medium tracking-tight", col.className)}>
+                                                {col.cell ? col.cell(row) : (String(row[col.accessorKey]) || '—')}
                                             </td>
                                         ))}
                                         {rowActions && (
-                                            <td className="px-4 py-2.5 text-right" onClick={e => e.stopPropagation()}>
+                                            <td className="px-4 py-1.5 text-right" onClick={e => e.stopPropagation()}>
                                                 <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                     {rowActions(row)}
                                                 </div>
@@ -374,7 +307,7 @@ export function DataTable<T extends Record<string, any>>({
                                     </tr>
                                     {renderExpandedRow && isRowExpanded?.(row) && (
                                         <tr>
-                                            <td colSpan={columns.length + (rowActions ? 2 : 1)} className="p-0 border-b border-border">
+                                            <td colSpan={columns.length + (rowActions ? 2 : 1)} className="p-0 border-b border-slate-100 bg-slate-50/30">
                                                 {renderExpandedRow(row)}
                                             </td>
                                         </tr>
@@ -386,70 +319,70 @@ export function DataTable<T extends Record<string, any>>({
                 </table>
             </div>
 
-            {/* Pagination */}
+            {/* Pagination — Unified Industrial Style */}
             {pagination && (
-                <div className="mt-auto flex flex-col items-center justify-between gap-4 border-t border-border px-4 py-6 sm:flex-row w-full bg-card">
-                    <div className="flex items-center gap-4">
-                        <div className="text-muted-foreground text-[10px] font-bold tracking-widest whitespace-nowrap uppercase">
-                            Showing <span className="text-foreground">{pagination.from}</span> to <span className="text-foreground">{pagination.to}</span> of{' '}
-                            <span className="text-foreground">{pagination.total}</span> Results
+                <div className="mt-auto flex flex-col items-center justify-between gap-4 border-t border-slate-100 px-4 py-4 sm:flex-row w-full bg-white">
+                    <div className="flex items-center gap-5">
+                        <div className="text-slate-400 text-[10px] font-bold tracking-widest uppercase">
+                            Showing <span className="text-black">{pagination.from}</span> to <span className="text-black">{pagination.to}</span> of{' '}
+                            <span className="text-black">{pagination.total}</span> Results
                         </div>
 
-                        <div className="border-border flex items-center gap-2 border-l pl-4">
-                            <span className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase">Show</span>
+                        <div className="flex items-center gap-2 border-l border-slate-100 pl-5">
+                            <span className="text-slate-400 text-[9px] font-black uppercase tracking-tighter">Rows per page</span>
                             <select
                                 value={pagination.perPage}
                                 onChange={(e) => pagination.onPerPageChange(Number(e.target.value))}
-                                className="bg-background border-border text-foreground focus:border-primary/50 rounded border px-1.5 py-0.5 text-[10px] font-bold outline-none"
+                                className="bg-slate-50 border-none text-black font-black focus:ring-0 rounded px-2 py-1 text-[10px] outline-none cursor-pointer"
                             >
                                 {[10, 25, 50, 100].map(v => <option key={v} value={v}>{v}</option>)}
                             </select>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1.5">
                         <button
                             disabled={pagination.currentPage === 1}
                             onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
                             className={cn(
-                                "h-8 shrink-0 rounded border px-3 text-[10px] font-black tracking-tighter uppercase transition-all",
-                                "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground active:scale-95",
-                                pagination.currentPage === 1 && "cursor-not-allowed opacity-30 grayscale"
+                                "h-8 px-4 rounded-none border text-[10px] font-black uppercase transition-all tracking-tighter",
+                                "border-slate-100 bg-white text-slate-400 hover:text-black hover:border-black active:scale-95 disabled:opacity-20 disabled:pointer-events-none"
                             )}
                         >
                             Prev
                         </button>
 
-                        {Array.from({ length: Math.min(pagination.lastPage, 5) }, (_, i) => {
-                            let pageNum = i + 1;
-                            if (pagination.lastPage > 5 && pagination.currentPage > 3) {
-                                pageNum = pagination.currentPage - 3 + i;
-                                if (pageNum > pagination.lastPage) pageNum = pagination.lastPage - (4 - i);
-                            }
-                            const isActive = pagination.currentPage === pageNum;
-                            return (
-                                <button
-                                    key={pageNum}
-                                    onClick={() => pagination.onPageChange(pageNum)}
-                                    className={cn(
-                                        "h-8 shrink-0 rounded border px-3 text-[10px] font-black tracking-tighter uppercase transition-all",
-                                        isActive
-                                            ? "border-foreground bg-foreground text-background shadow-sm"
-                                            : "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground active:scale-95"
-                                    )}
-                                >
-                                    {pageNum}
-                                </button>
-                            );
-                        })}
+                        <div className="flex items-center gap-1 mx-2">
+                             {Array.from({ length: Math.min(pagination.lastPage, 5) }, (_, i) => {
+                                let pageNum = i + 1;
+                                if (pagination.lastPage > 5 && pagination.currentPage > 3) {
+                                    pageNum = pagination.currentPage - 3 + i;
+                                    if (pageNum > pagination.lastPage) pageNum = pagination.lastPage - (4 - i);
+                                }
+                                const isActive = pagination.currentPage === pageNum;
+                                return (
+                                    <button
+                                        key={pageNum}
+                                        onClick={() => pagination.onPageChange(pageNum)}
+                                        className={cn(
+                                            "h-8 min-w-[32px] rounded-none text-[10px] font-black transition-all",
+                                            isActive
+                                                ? "bg-black text-white"
+                                                : "bg-white text-slate-400 hover:text-black"
+                                        )}
+                                    >
+                                        {pageNum}
+                                    </button>
+                                );
+                            })}
+                        </div>
 
                         <button
                             disabled={pagination.currentPage === pagination.lastPage}
                             onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
                             className={cn(
-                                "h-8 shrink-0 rounded border px-3 text-[10px] font-black tracking-tighter uppercase transition-all",
-                                "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground active:scale-95",
-                                pagination.currentPage === pagination.lastPage && "cursor-not-allowed opacity-30 grayscale"
+                                "h-8 px-4 rounded-none border text-[10px] font-black uppercase transition-all tracking-tighter",
+                                "border-slate-100 bg-white text-slate-400 hover:text-black hover:border-black active:scale-95 disabled:opacity-20 disabled:pointer-events-none"
                             )}
                         >
                             Next

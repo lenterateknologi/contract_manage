@@ -107,14 +107,14 @@ const FIELD_TYPES: any[] = [
                 label: 'Teks / Judul',
                 icon: Heading1,
                 defaultLabel: 'KLIK UNTUK EDIT JUDUL',
-                defaultOptions: { font_size: 14, font_weight: 'bold' },
+                defaultOptions: { font_size: 14, font_weight: 'bold', font_family: "'Inter', sans-serif" },
             },
             {
                 value: 'image',
                 label: 'Gambar / Logo',
                 icon: ImageIcon,
                 defaultLabel: 'Logo',
-                defaultOptions: { logo_size: 150, alignment: 'left' },
+                defaultOptions: { logo_size: 150, alignment: 'left', font_family: "'Inter', sans-serif" },
             },
             {
                 value: 'group',
@@ -147,6 +147,8 @@ const FIELD_TYPES: any[] = [
                     label_width: '180',
                     show_colon: true,
                     field_style: 'dashed_bottom',
+                    font_size: 11,
+                    font_family: "'Inter', sans-serif",
                 },
             },
             {
@@ -155,7 +157,7 @@ const FIELD_TYPES: any[] = [
                 icon: Type,
                 defaultLabel: 'Input Teks',
                 defaultPlaceholder: 'Masukkan teks...',
-                defaultOptions: { field_style: 'dashed_bottom' },
+                defaultOptions: { field_style: 'dashed_bottom', font_size: 11, font_family: "'Inter', sans-serif" },
             },
             {
                 value: 'textarea',
@@ -163,7 +165,7 @@ const FIELD_TYPES: any[] = [
                 icon: FileText,
                 defaultLabel: 'Input Panjang',
                 defaultPlaceholder: 'Masukkan teks detail...',
-                defaultOptions: { field_style: 'solid', min_height: 80 },
+                defaultOptions: { field_style: 'solid', min_height: 80, font_size: 11, font_family: "'Inter', sans-serif" },
             },
         ],
     },
@@ -177,6 +179,7 @@ const FIELD_TYPES: any[] = [
                 icon: FileSignature,
                 defaultLabel: 'Diketahui oleh :',
                 defaultPlaceholder: '[nama personil]',
+                defaultOptions: { font_size: 11, font_weight: 'bold', font_family: "'Inter', sans-serif" },
             },
         ],
     },
@@ -212,6 +215,11 @@ function FormBuilder({ template }: Props) {
                 }
                 type = 'static_text';
             }
+            
+            // Standardize font defaults during migration
+            if (!options.font_family) options.font_family = "'Inter', sans-serif";
+            if (!options.font_size) options.font_size = (type === 'static_text') ? 14 : 11;
+            if (!options.font_weight) options.font_weight = 'bold';
 
             return {
                 ...f,
@@ -595,7 +603,10 @@ function FormBuilder({ template }: Props) {
             placeholder: (typeInfo as any)?.defaultPlaceholder || '',
             is_required: false,
             width: '100',
-            options: typeValue === 'select' || typeValue === 'radio' ? ['Option 1', 'Option 2'] : null,
+            options: {
+                ...(typeValue === 'select' || typeValue === 'radio' ? { items: [{ label: 'Option 1', value: '1' }] } : {}),
+                ...(typeInfo as any)?.defaultOptions || {},
+            },
             order: data.fields.length,
         };
         const newFields = [...data.fields, newField];
@@ -617,7 +628,10 @@ function FormBuilder({ template }: Props) {
             placeholder: (typeInfo as any)?.defaultPlaceholder || '',
             is_required: false,
             width: targetField.width,
-            options: typeValue === 'select' || typeValue === 'radio' ? ['Option 1', 'Option 2'] : null,
+            options: {
+                ...(typeValue === 'select' || typeValue === 'radio' ? { items: [{ label: 'Option 1', value: '1' }] } : {}),
+                ...(typeInfo as any)?.defaultOptions || {},
+            },
             order: targetField.order + 0.5, // Temp order to facilitate sorting
         };
 

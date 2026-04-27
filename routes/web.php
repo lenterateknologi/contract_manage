@@ -237,6 +237,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/contracts/{id}/agreement/compare', [ContractController::class, 'compareAgreementVersions'])->name('admin.contracts.agreement.compare');
 
         Route::delete('/form-templates/{template}', [FormTemplateController::class, 'destroy'])->name('admin.form-templates.destroy');
+        Route::post('/form-templates/{template}/duplicate', [FormTemplateController::class, 'duplicate'])->name('admin.form-templates.duplicate');
+        Route::patch('/form-templates/{template}/metadata', [FormTemplateController::class, 'updateMetadata'])->name('admin.form-templates.metadata.update');
 
 
 

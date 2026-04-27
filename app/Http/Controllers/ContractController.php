@@ -88,7 +88,9 @@ class ContractController extends Controller
                 'contract_type_name' => $ft->contractType?->name,
                 'fields_count' => $ft->fields()->count(),
             ]),
-            'filters' => array_merge($request->only(['search', 'status', 'contract_type_id']), [
+            'departments' => \App\Models\Department::orderBy('name')->get(),
+            'roles' => \App\Models\Role::orderBy('name')->get(),
+            'filters' => array_merge($request->only(['search', 'status', 'contract_type_id', 'role_id', 'department_id', 'created_from', 'created_to']), [
                 'per_page' => $request->integer('per_page', 10),
             ]),
         ];
@@ -131,7 +133,7 @@ class ContractController extends Controller
         }
 
         if ($view === 'dashboard') {
-            $data['metrics'] = $this->getDashboardMetrics();
+            $data['metrics'] = $this->getDashboardMetrics($request);
         }
 
         $data['breadcrumbs'] = [
@@ -197,9 +199,9 @@ class ContractController extends Controller
     private function getFilteredContractsQuery(Request $request, string $view = 'contracts')
     {
         $query = Contract::with([
-            'creator', 'contractType', 'approvals.approver', 'approvals.workflowStep',
+            'creator.department', 'contractType', 'approvals.approver', 'approvals.workflowStep',
             'workflow.steps', 'versions.uploader', 'histories.actor', 'messages.user',
-            'attachments.uploader', 'formSubmissions', 'vendor.documents', 'initiator'
+            'attachments.uploader', 'formSubmissions', 'vendor.documents', 'initiator.department'
         ])->orderByDesc('created_at');
 
         // Apply View Filter
@@ -263,19 +265,52 @@ class ContractController extends Controller
             }
         }
 
+        // Apply Department Filter
+        if ($request->filled('department_id')) {
+            $query->where(function($q) use ($request) {
+                $q->whereHas('initiator', function($sq) use ($request) {
+                    if (is_array($request->department_id)) $sq->whereIn('department_id', $request->department_id);
+                    else $sq->where('department_id', $request->department_id);
+                })
+                ->orWhere(function($sq) use ($request) {
+                    $sq->whereNull('initiated_by_id')
+                       ->whereHas('creator', function($ssq) use ($request) {
+                           if (is_array($request->department_id)) $ssq->whereIn('department_id', $request->department_id);
+                           else $ssq->where('department_id', $request->department_id);
+                       });
+                });
+            });
+        }
+
+        // Apply Date Range Filter
+        if ($request->filled('created_from')) {
+            $query->whereDate('created_at', '>=', $request->created_from);
+        }
+        if ($request->filled('created_to')) {
+            $query->whereDate('created_at', '<=', $request->created_to);
+        }
+
         return $query;
     }
 
-    private function getDashboardMetrics()
+    private function getDashboardMetrics(Request $request)
     {
         $user = Auth::user();
-        $query = Contract::query();
+        $baseQuery = Contract::query();
 
-        if ($user->role !== 'Admin') {
-            $query->where('created_by', $user->id);
+        // Apply shared filters
+        if ($request->filled('role_id')) {
+            $baseQuery->whereHas('creator', fn($q) => $q->where('role_id', $request->role_id));
+        }
+        if ($request->filled('department_id')) {
+            $baseQuery->whereHas('creator', fn($q) => $q->where('department_id', $request->department_id));
         }
 
-        $approvedContracts = (clone $query)->where('status', 'approved')->get();
+        if ($user->role !== 'Admin') {
+            $baseQuery->where('created_by', $user->id);
+        }
+
+        $approvedContracts = (clone $baseQuery)->where('status', 'approved')->get();
         $avgDays = 0;
 
         if ($approvedContracts->count() > 0) {
@@ -286,7 +321,7 @@ class ContractController extends Controller
             $avgDays = round($totalDays / $approvedContracts->count(), 1);
         }
 
-        $monthlyTrend = Contract::leftJoin('m_contract_types', 't_contracts.contract_type_id', '=', 'm_contract_types.id')
+        $monthlyTrend = (clone $baseQuery)->leftJoin('m_contract_types', 't_contracts.contract_type_id', '=', 'm_contract_types.id')
             ->select(
                 DB::raw("to_char(t_contracts.created_at, 'YYYY-MM') as month"),
                 'm_contract_types.name as type_name',
@@ -311,9 +346,9 @@ class ContractController extends Controller
         return [
             'metrics' => [
                 'avgCycleTime' => $avgDays,
-                'totalContracts' => $query->count(),
+                'totalContracts' => $baseQuery->count(),
                 'pendingApprovals' => Approval::where('user_id', Auth::id())->where('status', 'pending')->count(),
-                'approvedThisMonth' => (clone $query)->where('status', 'approved')
+                'approvedThisMonth' => (clone $baseQuery)->where('status', 'approved')
                     ->where('updated_at', '>=', now()->startOfMonth())
                     ->count(),
             ],
@@ -350,9 +385,11 @@ class ContractController extends Controller
         return response()->json($this->formatContract($contract));
     }
 
-    public function getWorkflows(): JsonResponse
+    public function getWorkflows(Request $request): JsonResponse
     {
-        return response()->json(Workflow::where('is_template', true)->with('steps')->get());
+        $contractType = $request->query('contract_type');
+        $workflows = $this->workflowService->getAvailableWorkflows(Auth::user(), $contractType);
+        return response()->json($workflows);
     }
 
     public function getUsers(): JsonResponse
@@ -953,8 +990,8 @@ class ContractController extends Controller
             ] : null,
             'status' => $c->status,
             'current_version' => $c->current_version,
-            'created_at' => $c->created_at->toDateString(),
-            'submitted_at' => $c->submitted_at ? $c->submitted_at->format('Y-m-d H:i') : null,
+            'created_at' => $c->created_at->format('d/m/Y'),
+            'submitted_at' => $c->submitted_at ? $c->submitted_at->format('d/m/Y H:i') : null,
             'creator' => $this->formatUser($c->creator),
             'initiator' => $this->formatUser($c->initiator),
             'initiated_by_id' => $c->initiated_by_id,
@@ -1107,6 +1144,7 @@ class ContractController extends Controller
             'initials' => $user->initials,
             'role' => $user->role,
             'department_id' => $user->department_id,
+            'department_name' => $user->department?->name,
             'bg_color' => $user->bg_color,
             'text_color' => $user->text_color,
         ];

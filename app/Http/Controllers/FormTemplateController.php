@@ -23,6 +23,7 @@ class FormTemplateController extends Controller
     {
         return Inertia::render('admin/form-templates', [
             'templates' => FormTemplate::withCount('fields')->get(),
+            'contract_types' => \App\Models\ContractType::all(),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#'],
                 ['title' => 'Form Template', 'href' => route('admin.form-templates.index')],
@@ -462,6 +463,63 @@ class FormTemplateController extends Controller
 
         return back()->with('success', 'Template form berhasil dihapus.');
     }
+    
+    /**
+     * Duplicate a form template with all its fields.
+     */
+    public function duplicate(FormTemplate $template)
+    {
+        return DB::transaction(function () use ($template) {
+            $newTemplate = $template->replicate();
+            $newTemplate->name = $template->name . ' (Copy)';
+            $newTemplate->created_by = Auth::id();
+            $newTemplate->updated_by = Auth::id();
+            $newTemplate->save();
+
+            // Load all fields to preserve hierarchy
+            $fields = $template->fields()->get();
+            $idMapping = [];
+
+            // First pass: Create new fields
+            foreach ($fields as $field) {
+                $newField = $field->replicate();
+                $newField->form_template_id = $newTemplate->id;
+                $newField->save();
+                $idMapping[$field->id] = $newField->id;
+            }
+
+            // Second pass: Update parent IDs
+            foreach ($fields as $field) {
+                if ($field->parent_id && isset($idMapping[$field->parent_id])) {
+                    $newFieldId = $idMapping[$field->id];
+                    DB::table('m_form_fields')
+                        ->where('id', $newFieldId)
+                        ->update(['parent_id' => $idMapping[$field->parent_id]]);
+                }
+            }
+
+            return redirect()->route('admin.form-templates.index')->with('success', 'Template berhasil diduplikasi.');
+        });
+    }
+
+    /**
+     * Update only the metadata of a template.
+     */
+    public function updateMetadata(Request $request, FormTemplate $template)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'document_type' => 'nullable|string|max:50',
+            'contract_type_id' => 'nullable|exists:m_contract_types,id',
+            'is_active' => 'boolean',
+        ]);
+
+        $template->update($request->only(['name', 'description', 'document_type', 'contract_type_id', 'is_active']));
+
+        return back()->with('success', 'Informasi template berhasil diperbarui.');
+    }
+
     /**
      * Convert an image path/URL to Base64 to prevent network deadlocks in PDF generation.
      */

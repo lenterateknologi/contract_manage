@@ -55,14 +55,22 @@ class AdminController extends Controller
     {
         $query = Role::query()
             ->when($request->search, function ($q, $search) {
-                $q->where('name', 'ilike', "%{$search}%")
-                  ->orWhere('description', 'ilike', "%{$search}%");
+                $q->where(function($qq) use ($search) {
+                    $qq->where('name', 'ilike', "%{$search}%")
+                       ->orWhere('description', 'ilike', "%{$search}%");
+                });
+            })
+            ->when($request->created_from, function ($q, $from) {
+                $q->whereDate('created_at', '>=', $from);
+            })
+            ->when($request->created_to, function ($q, $to) {
+                $q->whereDate('created_at', '<=', $to);
             });
 
         return Inertia::render('admin/index', [
             'currentView' => 'roles',
             'roles' => $query->orderBy('name')->paginate($request->input('per_page', 10))->withQueryString(),
-            'filters' => $request->only(['search']),
+            'filters' => $request->only(['search', 'created_from', 'created_to']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Manajemen Role', 'href' => route('admin.roles'), 'description' => 'Pengaturan peran dan otorisasi.', 'icon' => 'ShieldCheck'],
@@ -337,15 +345,14 @@ class AdminController extends Controller
             ->when($request->search, function ($q, $search) {
                 $q->where('name', 'ilike', "%{$search}%")
                   ->orWhere('description', 'ilike', "%{$search}%");
-            })
-            ->when($request->type, function ($q, $type) {
-                $q->whereIn('type', (array)$type);
             });
 
         return Inertia::render('admin/index', [
             'currentView' => 'contract-types',
             'types' => $query->orderBy('name')->paginate($request->input('per_page', 10))->withQueryString(),
-            'filters' => $request->only(['search', 'type']),
+            'formTemplates' => \App\Models\FormTemplate::where('is_active', true)->orderBy('name')->get(),
+            'contractTemplates' => \App\Models\ContractTemplate::orderBy('name')->get(),
+            'filters' => $request->only(['search']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Tipe Kontrak', 'href' => route('admin.contract-types'), 'description' => 'Definisi kategori dan template dokumen.', 'icon' => 'FileText'],
@@ -358,7 +365,12 @@ class AdminController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255|unique:m_contract_types,name',
             'description' => 'nullable|string',
-            'type' => 'required|string|in:f1,f2',
+            'f1_input_mechanism' => 'required|string|in:manual,digital,folder',
+            'f1_form_template_id' => 'nullable|uuid|exists:m_form_templates,id',
+            'f1_contract_template_id' => 'nullable|uuid|exists:m_contract_templates,id',
+            'f2_input_mechanism' => 'required|string|in:manual,digital,folder',
+            'f2_form_template_id' => 'nullable|uuid|exists:m_form_templates,id',
+            'f2_contract_template_id' => 'nullable|uuid|exists:m_contract_templates,id',
         ]);
 
         ContractType::create($data);
@@ -371,7 +383,12 @@ class AdminController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255|unique:m_contract_types,name,'.$type->id,
             'description' => 'nullable|string',
-            'type' => 'required|string|in:f1,f2',
+            'f1_input_mechanism' => 'required|string|in:manual,digital,folder',
+            'f1_form_template_id' => 'nullable|uuid|exists:m_form_templates,id',
+            'f1_contract_template_id' => 'nullable|uuid|exists:m_contract_templates,id',
+            'f2_input_mechanism' => 'required|string|in:manual,digital,folder',
+            'f2_form_template_id' => 'nullable|uuid|exists:m_form_templates,id',
+            'f2_contract_template_id' => 'nullable|uuid|exists:m_contract_templates,id',
         ]);
 
         $type->update($data);
@@ -453,15 +470,21 @@ class AdminController extends Controller
     {
         $query = Department::query()
             ->when($request->search, function ($q, $search) {
-                $q->where('name', 'ilike', "%{$search}%")
-                  ->orWhere('code', 'ilike', "%{$search}%")
-                  ->orWhere('description', 'ilike', "%{$search}%");
+                $q->where(function($qq) use ($search) {
+                    $qq->where('name', 'ilike', "%{$search}%")
+                       ->orWhere('code', 'ilike', "%{$search}%")
+                       ->orWhere('description', 'ilike', "%{$search}%");
+                });
+            })
+            ->when($request->is_active, function ($q, $active) {
+                $bools = collect((array)$active)->map(fn($v) => filter_var($v, FILTER_VALIDATE_BOOLEAN))->toArray();
+                $q->whereIn('is_active', $bools);
             });
 
         return Inertia::render('admin/index', [
             'currentView' => 'departments',
             'departments' => $query->orderBy('name')->paginate($request->input('per_page', 10))->withQueryString(),
-            'filters' => $request->only(['search']),
+            'filters' => $request->only(['search', 'is_active']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Master Departemen', 'href' => route('admin.departments'), 'description' => 'Kelola divisi dan struktur organisasi.', 'icon' => 'Building2'],
@@ -513,15 +536,25 @@ class AdminController extends Controller
     {
         $query = Vendor::query()
             ->when($request->search, function ($q, $search) {
-                $q->where('name', 'ilike', "%{$search}%")
-                  ->orWhere('code', 'ilike', "%{$search}%")
-                  ->orWhere('category', 'ilike', "%{$search}%");
+                $q->where(function($qq) use ($search) {
+                    $qq->where('name', 'ilike', "%{$search}%")
+                       ->orWhere('code', 'ilike', "%{$search}%")
+                       ->orWhere('category', 'ilike', "%{$search}%")
+                       ->orWhere('email', 'ilike', "%{$search}%");
+                });
+            })
+            ->when($request->category, function ($q, $category) {
+                $q->whereIn('category', (array)$category);
+            })
+            ->when($request->is_active, function ($q, $active) {
+                $bools = collect((array)$active)->map(fn($v) => filter_var($v, FILTER_VALIDATE_BOOLEAN))->toArray();
+                $q->whereIn('is_active', $bools);
             });
 
         return Inertia::render('admin/index', [
             'currentView' => 'vendors',
             'vendors' => $query->orderBy('name')->paginate($request->input('per_page', 10))->withQueryString(),
-            'filters' => $request->only(['search']),
+            'filters' => $request->only(['search', 'category', 'is_active']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Master Vendor', 'href' => route('admin.vendors'), 'description' => 'Kelola database pihak ketiga dan mitra.', 'icon' => 'Truck'],
@@ -659,16 +692,13 @@ class AdminController extends Controller
 
     public function workflows(Request $request)
     {
-        $query = Workflow::with(['steps.users', 'department'])
+        $query = Workflow::with(['steps.approverRoles', 'steps.approverDepartments', 'steps.approverUsers', 'initiatorRolesData', 'initiatorDepartmentsData', 'initiatorUsersData'])
             ->when($request->search, function ($q, $search) {
                 $q->where('name', 'ilike', "%{$search}%")
                   ->orWhere('description', 'ilike', "%{$search}%");
             })
             ->when($request->contract_type, function ($q, $type) {
                 $q->whereIn('contract_type', (array)$type);
-            })
-            ->when($request->department_id, function ($q, $deptId) {
-                $q->whereIn('department_id', (array)$deptId);
             });
 
         return Inertia::render('admin/index', [
@@ -678,7 +708,8 @@ class AdminController extends Controller
             'departments' => Department::all(),
             'roles' => Role::all(),
             'users' => User::all(),
-            'filters' => $request->only(['search', 'contract_type', 'department_id']),
+            'contractStatuses' => ContractStatus::orderBy('sequence')->get(),
+            'filters' => $request->only(['search', 'contract_type']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Alur Kerja (Workflows)', 'href' => route('admin.workflows'), 'description' => 'Konfigurasi tahapan persetujuan.', 'icon' => 'GitBranch'],
@@ -688,76 +719,186 @@ class AdminController extends Controller
 
     public function storeWorkflow(Request $request)
     {
+        Log::info('Incoming Workflow Store Request', $request->all());
+
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'contract_type' => 'required|string',
-            'department_id' => 'nullable|uuid|exists:m_departments,id',
             'description' => 'nullable|string',
             'is_default' => 'boolean',
+            'initiator_type' => 'nullable|string|in:all,role,user',
+            'initiator_roles' => 'nullable|array',
+            'initiator_users' => 'nullable|array',
+            'initiator_departments' => 'nullable|array',
             'steps' => 'nullable|array',
-            'steps.*.role' => 'required|string',
+            'steps.*.role' => 'nullable',
             'steps.*.description' => 'nullable|string',
             'steps.*.approver_type' => 'nullable|string|in:role,user',
             'steps.*.user_ids' => 'nullable|array',
-            'steps.*.department_id' => 'nullable|uuid|exists:m_departments,id',
+            'steps.*.department_ids' => 'nullable|array',
+            'steps.*.status_id' => 'nullable|string',
         ]);
 
-        $workflow = Workflow::create($data);
+        try {
+            return DB::transaction(function() use ($data) {
+                $workflowData = collect($data)->except(['initiator_roles', 'initiator_users', 'initiator_departments', 'steps'])->toArray();
+                $workflow = Workflow::create($workflowData);
 
-        if (! empty($data['steps'])) {
-            foreach ($data['steps'] as $index => $stepData) {
-                $workflow->steps()->create([
-                    'role' => $stepData['role'],
-                    'approver_type' => $stepData['approver_type'] ?? 'role',
-                    'user_ids' => $stepData['user_ids'] ?? null,
-                    'description' => $stepData['description'] ?? '',
-                    'department_id' => $stepData['department_id'] ?? null,
-                    'step' => $index + 1,
-                    'created_by' => Auth::id(),
-                    'updated_by' => Auth::id(),
-                ]);
-            }
+                // Sync Initiators
+                if (!empty($data['initiator_roles'])) {
+                    foreach ($data['initiator_roles'] as $role) {
+                        $workflow->initiatorRolesData()->create(['role_name' => $role]);
+                    }
+                }
+                if (!empty($data['initiator_departments'])) {
+                    foreach ($data['initiator_departments'] as $deptId) {
+                        $workflow->initiatorDepartmentsData()->create(['department_id' => $deptId]);
+                    }
+                }
+                if (!empty($data['initiator_users'])) {
+                    foreach ($data['initiator_users'] as $userId) {
+                        $workflow->initiatorUsersData()->create(['user_id' => $userId]);
+                    }
+                }
+
+                if (! empty($data['steps'])) {
+                    foreach ($data['steps'] as $index => $stepData) {
+                        $step = $workflow->steps()->create([
+                            'approver_type' => $stepData['approver_type'] ?? 'role',
+                            'description' => $stepData['description'] ?? '',
+                            'status_id' => $stepData['status_id'] ?? null,
+                            'step' => $index + 1,
+                            'created_by' => Auth::id(),
+                            'updated_by' => Auth::id(),
+                            'is_active' => true,
+                        ]);
+
+                        if (!empty($stepData['role'])) {
+                            foreach ((array)$stepData['role'] as $role) {
+                                $step->approverRoles()->create(['role_name' => $role]);
+                            }
+                        }
+                        if (!empty($stepData['department_ids'])) {
+                            foreach ((array)$stepData['department_ids'] as $deptId) {
+                                $step->approverDepartments()->create(['department_id' => $deptId]);
+                            }
+                        }
+                        if (!empty($stepData['user_ids'])) {
+                            foreach ((array)$stepData['user_ids'] as $userId) {
+                                $step->approverUsers()->create(['user_id' => $userId]);
+                            }
+                        }
+                    }
+                }
+
+                return back()->with('success', 'Workflow created successfully.');
+            });
+        } catch (\Exception $e) {
+            Log::error('Workflow Store Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return back()->withErrors(['error' => 'Gagal menyimpan alur kerja: ' . $e->getMessage()]);
         }
-
-        return back()->with('success', 'Workflow created successfully.');
     }
 
     public function updateWorkflow(Request $request, Workflow $workflow)
     {
+        Log::info('Incoming Workflow Update Request', $request->all());
+
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'contract_type' => 'required|string',
-            'department_id' => 'nullable|uuid|exists:m_departments,id',
             'description' => 'nullable|string',
             'is_default' => 'boolean',
+            'initiator_type' => 'nullable|string|in:all,role,user',
+            'initiator_roles' => 'nullable|array',
+            'initiator_users' => 'nullable|array',
+            'initiator_departments' => 'nullable|array',
             'steps' => 'nullable|array',
-            'steps.*.role' => 'required|string',
+            'steps.*.role' => 'nullable',
             'steps.*.description' => 'nullable|string',
             'steps.*.approver_type' => 'nullable|string|in:role,user',
             'steps.*.user_ids' => 'nullable|array',
-            'steps.*.department_id' => 'nullable|uuid|exists:m_departments,id',
+            'steps.*.department_ids' => 'nullable|array',
+            'steps.*.status_id' => 'nullable|string',
         ]);
 
-        $workflow->update($data);
+        try {
+            return DB::transaction(function() use ($data, $workflow) {
+                $workflowData = collect($data)->except(['initiator_roles', 'initiator_users', 'initiator_departments', 'steps'])->toArray();
+                $workflow->update($workflowData);
 
-        // Sync steps
-        $workflow->steps()->forceDelete();
-        if (! empty($data['steps'])) {
-            foreach ($data['steps'] as $index => $stepData) {
-                $workflow->steps()->create([
-                    'role' => $stepData['role'],
-                    'approver_type' => $stepData['approver_type'] ?? 'role',
-                    'user_ids' => $stepData['user_ids'] ?? null,
-                    'description' => $stepData['description'] ?? '',
-                    'department_id' => $stepData['department_id'] ?? null,
-                    'step' => $index + 1,
-                    'created_by' => Auth::id(),
-                    'updated_by' => Auth::id(),
-                ]);
-            }
+                // Sync Initiators
+                $workflow->initiatorRolesData()->delete();
+                if (!empty($data['initiator_roles'])) {
+                    foreach ($data['initiator_roles'] as $role) {
+                        $workflow->initiatorRolesData()->create(['role_name' => $role]);
+                    }
+                }
+                
+                $workflow->initiatorDepartmentsData()->delete();
+                if (!empty($data['initiator_departments'])) {
+                    foreach ($data['initiator_departments'] as $deptId) {
+                        $workflow->initiatorDepartmentsData()->create(['department_id' => $deptId]);
+                    }
+                }
+
+                $workflow->initiatorUsersData()->delete();
+                if (!empty($data['initiator_users'])) {
+                    foreach ($data['initiator_users'] as $userId) {
+                        $workflow->initiatorUsersData()->create(['user_id' => $userId]);
+                    }
+                }
+
+                // Sync steps - Detailed Cleanup
+                $oldSteps = $workflow->steps()->get();
+                foreach ($oldSteps as $s) {
+                    $s->approverRoles()->delete();
+                    $s->approverDepartments()->delete();
+                    $s->approverUsers()->delete();
+                    $s->forceDelete();
+                }
+
+                if (! empty($data['steps'])) {
+                    foreach ($data['steps'] as $index => $stepData) {
+                        $step = $workflow->steps()->create([
+                            'approver_type' => $stepData['approver_type'] ?? 'role',
+                            'description' => $stepData['description'] ?? '',
+                            'status_id' => $stepData['status_id'] ?? null,
+                            'step' => $index + 1,
+                            'created_by' => Auth::id(),
+                            'updated_by' => Auth::id(),
+                            'is_active' => true,
+                        ]);
+
+                        if (!empty($stepData['role'])) {
+                            foreach ((array)$stepData['role'] as $role) {
+                                $step->approverRoles()->create(['role_name' => $role]);
+                            }
+                        }
+                        
+                        if (!empty($stepData['department_ids'])) {
+                            foreach ((array)$stepData['department_ids'] as $deptId) {
+                                $step->approverDepartments()->create(['department_id' => $deptId]);
+                            }
+                        }
+                        
+                        if (!empty($stepData['user_ids'])) {
+                            foreach ((array)$stepData['user_ids'] as $userId) {
+                                $step->approverUsers()->create(['user_id' => $userId]);
+                            }
+                        }
+                    }
+                }
+
+                return back()->with('success', 'Workflow updated successfully.');
+            });
+        } catch (\Exception $e) {
+            Log::error('Workflow Update Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return back()->withErrors(['error' => 'Gagal memperbarui alur kerja: ' . $e->getMessage()]);
         }
-
-        return back()->with('success', 'Workflow updated successfully.');
     }
 
     public function destroyWorkflow(Workflow $workflow)
@@ -784,7 +925,7 @@ class AdminController extends Controller
     {
         $data = $request->validate([
             'steps' => 'nullable|array',
-            'steps.*.role' => 'required|string',
+            'steps.*.role' => 'required',
             'steps.*.selected_role' => 'nullable|string',
             'steps.*.description' => 'nullable|string',
             'steps.*.approver_type' => 'nullable|string|in:role,user',
@@ -792,22 +933,32 @@ class AdminController extends Controller
             'steps.*.department_id' => 'nullable|uuid|exists:m_departments,id',
         ]);
 
-        $workflow->steps()->forceDelete();
+        $workflow->steps()->each(function($s) {
+            $s->approverRoles()->delete();
+            $s->approverDepartments()->detach();
+            $s->approverUsers()->detach();
+            $s->forceDelete();
+        });
 
         if (! empty($data['steps'])) {
             foreach ($data['steps'] as $index => $stepData) {
                 $step = $workflow->steps()->create([
-                    'role' => ($stepData['approver_type'] ?? 'role') === 'role' ? ($stepData['selected_role'] ?? $stepData['role']) : $stepData['role'],
                     'approver_type' => $stepData['approver_type'] ?? 'role',
-                    'description' => ($stepData['approver_type'] ?? 'role') === 'role' ? ($stepData['selected_role'] ?? $stepData['role']) : $stepData['role'],
-                    'department_id' => $stepData['department_id'] ?? null,
+                    'description' => $stepData['description'] ?? '',
                     'step' => $index + 1,
                     'created_by' => Auth::id(),
                     'updated_by' => Auth::id(),
                 ]);
 
-                if (($stepData['approver_type'] ?? 'role') === 'user' && ! empty($stepData['user_ids'])) {
-                    $step->users()->sync($stepData['user_ids']);
+                if (($stepData['approver_type'] ?? 'role') === 'role') {
+                    $roleName = $stepData['selected_role'] ?? (is_array($stepData['role']) ? $stepData['role'][0] : $stepData['role']);
+                    $step->approverRoles()->create(['role_name' => $roleName]);
+                } else if (! empty($stepData['user_ids'])) {
+                     $step->approverUsers()->sync($stepData['user_ids']);
+                }
+
+                if (!empty($stepData['department_id'])) {
+                    $step->approverDepartments()->sync([$stepData['department_id']]);
                 }
             }
         }

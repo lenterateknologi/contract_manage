@@ -19,11 +19,11 @@ class ReportController extends Controller
         $query = Contract::query();
 
         // Apply filters
-        if ($request->filled('start_date')) {
-            $query->where('created_at', '>=', $request->start_date);
+        if ($request->filled('date_from')) {
+            $query->where('created_at', '>=', $request->date_from);
         }
-        if ($request->filled('end_date')) {
-            $query->where('created_at', '<=', $request->end_date . ' 23:59:59');
+        if ($request->filled('date_to')) {
+            $query->where('created_at', '<=', $request->date_to . ' 23:59:59');
         }
 
         // Multi-select filters - only apply if not empty
@@ -155,11 +155,11 @@ class ReportController extends Controller
         $query = Contract::with(['creator', 'contractType']);
 
         // Apply filters
-        if ($request->filled('start_date')) {
-            $query->where('created_at', '>=', $request->start_date);
+        if ($request->filled('date_from')) {
+            $query->where('created_at', '>=', $request->date_from);
         }
-        if ($request->filled('end_date')) {
-            $query->where('created_at', '<=', $request->end_date . ' 23:59:59');
+        if ($request->filled('date_to')) {
+            $query->where('created_at', '<=', $request->date_to . ' 23:59:59');
         }
 
         // Multi-select filters
@@ -232,11 +232,11 @@ class ReportController extends Controller
         $query = Contract::query();
 
         // Apply filters
-        if ($request->filled('start_date')) {
-            $query->where('created_at', '>=', $request->start_date);
+        if ($request->filled('date_from')) {
+            $query->where('created_at', '>=', $request->date_from);
         }
-        if ($request->filled('end_date')) {
-            $query->where('created_at', '<=', $request->end_date . ' 23:59:59');
+        if ($request->filled('date_to')) {
+            $query->where('created_at', '<=', $request->date_to . ' 23:59:59');
         }
 
         // Multi-select filters

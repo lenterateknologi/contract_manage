@@ -334,4 +334,30 @@ class ContractWorkflowService
             ->with('workflow', 'workflowStep', 'approvals')
             ->get();
     }
+
+    /**
+     * Get workflows available for a specific user to initiate
+     */
+    public function getAvailableWorkflows(User $user, ?string $contractType = null): Collection
+    {
+        $query = Workflow::where('is_active', true);
+        
+        if ($contractType) {
+            $query->where('contract_type', $contractType);
+        }
+
+        return $query->where(function ($q) use ($user) {
+                $q->where('initiator_type', 'all')
+                    ->orWhere(function ($sq) use ($user) {
+                        $sq->where('initiator_type', 'role')
+                           ->whereJsonContains('initiator_roles', $user->role);
+                    })
+                    ->orWhere(function ($sq) use ($user) {
+                        $sq->where('initiator_type', 'user')
+                           ->whereJsonContains('initiator_users', $user->id);
+                    });
+            })
+            ->with('steps')
+            ->get();
+    }
 }

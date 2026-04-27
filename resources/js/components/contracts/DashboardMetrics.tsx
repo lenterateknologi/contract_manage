@@ -1,46 +1,76 @@
-import React from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { Clock } from 'lucide-react';
+import { router } from '@inertiajs/react';
+import { BarChart3, Clock, FileText, Filter, Shield, X } from 'lucide-react';
+import React from 'react';
+import { Area, Bar, ComposedChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
-interface MetricCardProps {
-    title: string;
-    value: string;
-    icon: string;
-    color: 'blue' | 'green' | 'amber' | 'purple';
+// Data Tetap Sama
+const workflowVelocity = [
+    { stage: 'Penyusunan', days: 1.2, color: '#94a3b8' },
+    { stage: 'Tinjauan Hukum', days: 4.8, color: '#ef4444' },
+    { stage: 'Tinjauan Keuangan', days: 2.1, color: '#3b82f6' },
+    { stage: 'Tanda Tangan Direktur', days: 1.5, color: '#10b981' },
+];
+
+const contractCategories = [
+    { name: 'Perjanjian Vendor', value: 45, color: '#2563eb' },
+    { name: 'Kontrak Penjualan', value: 30, color: '#6366f1' },
+    { name: 'Kerahasiaan (NDA)', value: 15, color: '#f59e0b' },
+    { name: 'Ketenagakerjaan', value: 10, color: '#94a3b8' },
+];
+
+const throughputData = [
+    { month: 'Jan', received: 110, completed: 95 },
+    { month: 'Feb', received: 130, completed: 120 },
+    { month: 'Mar', received: 120, completed: 115 },
+    { month: 'Apr', received: 160, completed: 140 },
+    { month: 'Mei', received: 190, completed: 185 },
+    { month: 'Jun', received: 170, completed: 160 },
+    { month: 'Jul', received: 210, completed: 195 },
+];
+
+interface MetricProps {
+    label: string;
+    value: string | number;
+    subValue: string;
+    icon: React.ReactNode;
+    color: string;
 }
 
-function MetricCard({ title, value, icon, color }: MetricCardProps) {
-    const bgMap = {
-        blue: 'bg-blue-500/10 text-blue-600 border-blue-200/50',
-        green: 'bg-green-500/10 text-green-600 border-green-200/50',
-        amber: 'bg-amber-500/10 text-amber-600 border-amber-200/50',
-        purple: 'bg-purple-500/10 text-purple-600 border-purple-200/50',
-    };
-    
+function SimpleMetricCard({ label, value, subValue, icon, color }: MetricProps) {
     return (
-        <div className="bg-card border-border hover:bg-muted/5 group relative overflow-hidden rounded-xl border p-5 transition-colors">
-            <div className="relative z-10 flex items-start justify-between">
-                <div className="space-y-1">
-                    <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">{title}</p>
-                    <p className="text-2xl leading-tight font-bold text-foreground">{value}</p>
+        <Card className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-none">
+            <div className="flex items-center gap-4 p-5">
+                <div className={cn('flex h-12 w-12 items-center justify-center rounded-xl', color)}>
+                    {icon}
                 </div>
-                <div className={cn('border-border/10 flex h-10 w-10 items-center justify-center rounded-lg border', bgMap[color])}>
-                    <i className={cn('fa-solid', icon)} style={{ fontSize: 16 }} />
+                <div className="flex flex-col">
+                    <p className="text-[10px] font-bold tracking-widest text-slate-400 uppercase leading-none mb-1.5">{label}</p>
+                    <div className="flex items-baseline gap-1.5">
+                        <span className="text-xl font-bold tracking-tight text-slate-800">{value}</span>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase">{subValue}</span>
+                    </div>
                 </div>
             </div>
-        </div>
+        </Card>
     );
 }
 
-export function DashboardMetrics({ metrics }: { metrics: any }) {
+export function DashboardMetrics({ 
+    metrics, 
+    roles = [], 
+    departments = [], 
+    filters = {} 
+}: { 
+    metrics: any;
+    roles?: any[];
+    departments?: any[];
+    filters?: any;
+}) {
     if (!metrics) return null;
-    const { metrics: m, monthlyTrend } = metrics;
-
-    const allCounts = Array.isArray(monthlyTrend) ? monthlyTrend.flatMap((mo: any) => mo.types?.map((ti: any) => ti.count) || []) : [0];
-    const rawMax = Math.max(...allCounts, 5);
-    const yMax = Math.ceil(rawMax / 5) * 5 || 5;
-    const steps = 5;
-    const yLabels = Array.from({ length: steps + 1 }, (_, i) => Math.round(yMax - i * (yMax / steps)));
+    const { metrics: m } = metrics;
 
     const metricsData = m || {
         avgCycleTime: 0,
@@ -49,82 +79,234 @@ export function DashboardMetrics({ metrics }: { metrics: any }) {
         approvedThisMonth: 0,
     };
 
-    const CHART_COLORS = [
-        { bg: 'bg-sky-400', stroke: 'stroke-sky-400' },
-        { bg: 'bg-emerald-400', stroke: 'stroke-emerald-400' },
-        { bg: 'bg-amber-400', stroke: 'stroke-amber-400' },
-        { bg: 'bg-rose-400', stroke: 'stroke-rose-400' },
-        { bg: 'bg-indigo-400', stroke: 'stroke-indigo-400' },
-    ];
+    const handleFilterChange = (key: string, value: string) => {
+        const newFilters = { ...filters, [key]: value };
+        if (!value) delete newFilters[key];
+        
+        router.get(route(route().current() as string), newFilters, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+
+    const clearFilters = () => {
+        router.get(route(route().current() as string), { view: 'dashboard' }, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
 
     return (
-        <div className="animate-in fade-in slide-in-from-top-4 mb-8 space-y-6 duration-700">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <MetricCard title="Rata-rata SLA" value={`${metricsData.avgCycleTime} Hari`} icon="fa-clock" color="blue" />
-                <MetricCard title="Total Kontrak" value={String(metricsData.totalContracts)} icon="fa-file-signature" color="green" />
-                <MetricCard title="Approval Pending" value={String(metricsData.pendingApprovals)} icon="fa-triangle-exclamation" color="amber" />
-                <MetricCard title="Approved (Bulan Ini)" value={String(metricsData.approvedThisMonth)} icon="fa-calendar-check" color="purple" />
+        <div className="animate-in fade-in slide-in-from-top-4 space-y-6 duration-500">
+            
+            {/* Filter Dashboard */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white p-4 rounded-2xl border border-slate-100 mb-6">
+                <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400">
+                        <Filter size={16} />
+                    </div>
+                    <span className="text-[11px] font-bold text-slate-700 uppercase tracking-widest">Filter Laporan</span>
+                </div>
+                
+                <div className="flex flex-wrap items-center gap-3">
+                    {/* Filter Role */}
+                    <select 
+                        value={filters.role_id || ''}
+                        onChange={(e) => handleFilterChange('role_id', e.target.value)}
+                        className="h-9 rounded-xl border-slate-100 bg-slate-50 px-3 text-[11px] font-bold text-slate-600 outline-none transition-all focus:ring-2 focus:ring-blue-100 min-w-[140px]"
+                    >
+                        <option value="">Semua Peran</option>
+                        {roles.map((role: any) => (
+                            <option key={role.id} value={role.id}>{role.name}</option>
+                        ))}
+                    </select>
+
+                    {/* Filter Departemen */}
+                    <select 
+                        value={filters.department_id || ''}
+                        onChange={(e) => handleFilterChange('department_id', e.target.value)}
+                        className="h-9 rounded-xl border-slate-100 bg-slate-50 px-3 text-[11px] font-bold text-slate-600 outline-none transition-all focus:ring-2 focus:ring-blue-100 min-w-[160px]"
+                    >
+                        <option value="">Semua Departemen</option>
+                        {departments.map((dept: any) => (
+                            <option key={dept.id} value={dept.id}>{dept.name}</option>
+                        ))}
+                    </select>
+
+                    {(filters.role_id || filters.department_id) && (
+                        <button 
+                            onClick={clearFilters}
+                            className="flex h-9 items-center gap-2 rounded-xl bg-rose-50 px-4 text-[10px] font-bold text-rose-600 transition-all hover:bg-rose-100"
+                        >
+                            <X size={14} /> BERSIHKAN
+                        </button>
+                    )}
+                </div>
             </div>
 
-            <div className="bg-card border-border flex flex-col overflow-hidden rounded-xl border">
-                <div className="border-border bg-muted/20 flex items-center justify-between border-b px-5 py-4 font-semibold">
-                    <div className="flex items-center gap-2">
-                        <i className="fa-solid fa-chart-line text-muted-foreground mr-1" />
-                        <span style={{ fontSize: 13 }}>Tren Pertumbuhan Kontrak</span>
-                    </div>
-                </div>
-                <div className="flex min-h-[380px] flex-col justify-end p-6">
-                    <div className="relative flex h-[220px] items-end gap-2">
-                        <div className="text-muted-foreground/60 border-border/50 flex h-full min-w-[24px] flex-col justify-between border-r pr-2 pb-6 text-[10px] font-bold select-none">
-                            {yLabels.map((v) => (
-                                <span key={v} className="flex h-0 items-center justify-end">{v}</span>
+            {/* Kartu Ringkasan (Simple Style) */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <SimpleMetricCard
+                    label="Bank Kontrak"
+                    value={metricsData.totalContracts}
+                    subValue="Aktif"
+                    icon={<FileText size={20} />}
+                    color="bg-blue-50 text-blue-600"
+                />
+                <SimpleMetricCard
+                    label="Antrean Tugas"
+                    value={metricsData.pendingApprovals}
+                    subValue="Menunggu"
+                    icon={<Clock size={20} />}
+                    color="bg-amber-50 text-amber-500"
+                />
+                <SimpleMetricCard
+                    label="Output Bulanan"
+                    value={metricsData.approvedThisMonth}
+                    subValue="Selesai"
+                    icon={<Shield size={20} />}
+                    color="bg-emerald-50 text-emerald-600"
+                />
+                <SimpleMetricCard
+                    label="Waktu Siklus"
+                    value={metricsData.avgCycleTime}
+                    subValue="Hari"
+                    icon={<BarChart3 size={20} />}
+                    color="bg-slate-100 text-slate-600"
+                />
+            </div>
+
+            {/* Konten Analitik (Simple Style) */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+                {/* Analisis Kecepatan Tahapan */}
+                <Card className="rounded-2xl border border-slate-100 bg-white shadow-none lg:col-span-12">
+                    <CardHeader className="px-6 py-6">
+                        <div className="space-y-1">
+                            <CardTitle className="text-sm font-bold tracking-tight text-slate-800 uppercase">
+                                Jalur Kritis | Kecepatan Tahapan
+                            </CardTitle>
+                            <p className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">Analisis hambatan real-time</p>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="px-6 pb-6">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+                            {workflowVelocity.map((stage) => (
+                                <div
+                                    key={stage.stage}
+                                    className="space-y-3 rounded-xl border border-slate-50 bg-slate-50/30 p-4"
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[10px] font-bold tracking-widest text-slate-500 uppercase">{stage.stage}</span>
+                                        <Badge className="bg-white text-slate-500 border-slate-100 shadow-none text-[9px] font-bold h-5 px-1.5">
+                                            {stage.days}h
+                                        </Badge>
+                                    </div>
+                                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                                        <div
+                                            className="h-full rounded-full"
+                                            style={{
+                                                width: `${Math.min((stage.days / 6) * 100, 100)}%`,
+                                                backgroundColor: stage.color,
+                                            }}
+                                        />
+                                    </div>
+                                    <p className="text-[9px] font-medium text-slate-400">Rata-rata Hari</p>
+                                </div>
                             ))}
                         </div>
-                        <div className="relative flex h-full flex-1 items-end justify-around px-8 pb-6">
-                            <div className="pointer-events-none absolute inset-x-0 top-0 bottom-6 flex flex-col justify-between">
-                                {yLabels.map((_, i) => (
-                                    <div key={i} className="border-muted-foreground/5 last:border-muted-foreground/10 w-full border-t" />
-                                ))}
-                            </div>
-                            {Array.isArray(monthlyTrend) &&
-                                monthlyTrend.map((mo: any) => (
-                                    <div key={mo.month} className="group relative z-10 mx-2 flex h-full flex-1 flex-col items-center justify-end gap-4">
-                                        <div className="relative flex h-full w-full items-end justify-center gap-1.5">
-                                            {mo.types.map((t: any, idx: number) => {
-                                                const typePct = (t.count / yMax) * 100;
-                                                return (
-                                                    <div
-                                                        key={t.name}
-                                                        className={cn('w-full max-w-[14px] min-w-[8px] cursor-help rounded-t-sm transition-all duration-300 hover:opacity-80', CHART_COLORS[idx % CHART_COLORS.length].bg)}
-                                                        style={{ height: `${typePct}%`, minHeight: t.count > 0 ? 4 : 0 }}
-                                                        title={`${t.name}: ${t.count}`}
-                                                    />
-                                                );
-                                            })}
-                                            <div className="bg-popover text-popover-foreground border-border pointer-events-none absolute -top-12 left-1/2 z-20 -translate-x-1/2 scale-95 rounded-lg border px-3 py-1.5 text-[10px] font-black whitespace-nowrap opacity-0 shadow-xl transition-all group-hover:scale-100 group-hover:opacity-100">
-                                                <div className="flex flex-col gap-0.5">
-                                                    <div className="text-muted-foreground text-[9px] font-bold tracking-widest uppercase">{mo.month}</div>
-                                                    <div className="text-foreground">{mo.total} Kontrak Total</div>
-                                                </div>
-                                                <div className="border-t-border absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent" />
-                                            </div>
-                                        </div>
-                                        <div className="absolute -bottom-7 flex flex-col items-center">
-                                            <span className="group-hover:text-primary text-muted-foreground text-[10px] font-black tracking-tighter whitespace-nowrap uppercase transition-colors">{mo.month}</span>
-                                        </div>
-                                    </div>
-                                ))}
+                    </CardContent>
+                </Card>
+
+                {/* Throughput Sistem */}
+                <Card className="flex flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-none lg:col-span-8">
+                    <CardHeader className="flex flex-row items-center justify-between px-6 py-6">
+                        <div className="space-y-1">
+                            <CardTitle className="text-sm font-bold tracking-tight text-slate-800 uppercase">Throughput Sistem</CardTitle>
+                            <p className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">Masuk vs Selesai</p>
                         </div>
-                    </div>
-                    <div className="mt-8 flex flex-wrap justify-center gap-4 px-4">
-                        {Array.from(new Set(monthlyTrend?.flatMap((m: any) => m.types.map((t: any) => t.name)) || [])).map((name: any, idx) => (
-                            <div key={name} className="flex items-center gap-2">
-                                <div className={cn('h-2 w-2 rounded-full', CHART_COLORS[idx % CHART_COLORS.length].bg)} />
-                                <span className="text-muted-foreground text-[10px] font-bold uppercase">{name}</span>
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
+                                <div className="h-2 w-2 rounded-full bg-slate-200" />
+                                <span className="text-[9px] font-bold text-slate-400 uppercase">Diterima</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="h-2 w-2 rounded-full bg-blue-500" />
+                                <span className="text-[9px] font-bold text-slate-800 uppercase">Selesai</span>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="h-[220px] px-6 pb-6">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <ComposedChart data={throughputData}>
+                                <XAxis
+                                    dataKey="month"
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }}
+                                />
+                                <YAxis hide />
+                                <Tooltip
+                                    cursor={{ fill: 'transparent' }}
+                                    content={({ active, payload }) => {
+                                        if (active && payload) {
+                                            return (
+                                                <div className="rounded-xl border border-slate-100 bg-white p-3 shadow-none">
+                                                    <p className="mb-2 text-[10px] font-bold text-slate-800 uppercase">
+                                                        {payload[0].payload.month}
+                                                    </p>
+                                                    <div className="space-y-1">
+                                                        <div className="flex items-center justify-between gap-6">
+                                                            <span className="text-[9px] font-medium text-slate-400 uppercase">Masuk</span>
+                                                            <span className="text-[10px] font-bold">{payload[0].value}</span>
+                                                        </div>
+                                                        <div className="flex items-center justify-between gap-6">
+                                                            <span className="text-[9px] font-medium text-blue-500 uppercase">Selesai</span>
+                                                            <span className="text-[10px] font-bold text-blue-500">{payload[1].value}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+                                        return null;
+                                    }}
+                                />
+                                <Bar dataKey="received" fill="#f8fafc" radius={[4, 4, 4, 4]} barSize={30} />
+                                <Area
+                                    type="monotone"
+                                    dataKey="completed"
+                                    stroke="#3b82f6"
+                                    strokeWidth={3}
+                                    fill="transparent"
+                                    dot={{ r: 3, fill: '#3b82f6', strokeWidth: 0 }}
+                                />
+                            </ComposedChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
+
+                {/* Intensitas Kontrak */}
+                <Card className="flex flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-none lg:col-span-4">
+                    <CardHeader className="px-6 py-6">
+                        <CardTitle className="text-sm font-bold tracking-tight text-slate-800 uppercase">Intensitas</CardTitle>
+                        <p className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">Beban Kerja Per Tipe</p>
+                    </CardHeader>
+                    <CardContent className="space-y-6 px-6 pb-6">
+                        {contractCategories.map((cat) => (
+                            <div key={cat.name} className="space-y-1.5">
+                                <div className="flex justify-between text-[10px] font-bold uppercase tracking-tight">
+                                    <span className="text-slate-500">{cat.name}</span>
+                                    <span className="text-slate-800">{cat.value}%</span>
+                                </div>
+                                <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-50">
+                                    <div
+                                        className="h-full rounded-full"
+                                        style={{ width: `${cat.value}%`, backgroundColor: cat.color }}
+                                    />
+                                </div>
                             </div>
                         ))}
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
             </div>
         </div>
     );

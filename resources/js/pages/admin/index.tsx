@@ -41,6 +41,9 @@ interface Props {
     groups?: any;
     modules?: any;
     moduleGroups?: any;
+    formTemplates?: any;
+    contractTemplates?: any;
+    contractStatuses?: any;
     filters?: any;
 }
 
@@ -65,6 +68,9 @@ export default function AdminIndex({
     groups,
     modules,
     moduleGroups,
+    formTemplates,
+    contractTemplates,
+    contractStatuses,
     filters = {},
 }: Props) {
     
@@ -105,13 +111,14 @@ export default function AdminIndex({
                         departments={deptsArray} 
                         roles={rolesArray} 
                         users={usersArray} 
+                        contractStatuses={contractStatuses || []}
                         filters={filters} 
                     />
                 );
             case 'departments':
                 return <DepartmentManagement departments={departments} filters={filters} />;
             case 'contract-types':
-                return <ContractTypeManagement contractTypes={contractTypes || types} filters={filters} />;
+                return <ContractTypeManagement contractTypes={contractTypes || types} formTemplates={formTemplates} contractTemplates={contractTemplates} filters={filters} />;
             case 'contract-statuses':
                 return <StatusManagement statuses={statuses} filters={filters} />;
             case 'module-groups':
@@ -135,7 +142,7 @@ export default function AdminIndex({
         <ToastProvider>
             <Head title={`Admin - ${viewTitle}`} />
             
-            <div className="bg-background/50 flex min-h-0 flex-1 flex-col gap-6 p-6 overflow-hidden">
+            <div className="bg-background/20 flex min-h-0 flex-1 flex-col gap-4 p-3 overflow-hidden">
                 <div className="flex-1 overflow-hidden">
                     {renderView()}
                 </div>

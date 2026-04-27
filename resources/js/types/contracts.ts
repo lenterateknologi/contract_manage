@@ -5,6 +5,7 @@ export interface UserProfile {
     initials: string;
     role: string;
     department_id: string | null;
+    department_name?: string;
     bg_color: string;
     text_color: string;
 }

@@ -204,9 +204,9 @@ export const FormElement: React.FC<FormElementProps> = ({
     const getTypographyStyle = (scale = 1, isLabel = false) => {
         const options = field.options || {};
         return {
-            fontSize: options.font_size ? `${options.font_size * scale}px` : undefined,
-            fontWeight: isLabel ? options.font_weight_label || options.font_weight || undefined : options.font_weight || undefined,
-            fontFamily: options.font_family || undefined,
+            fontSize: options.font_size ? `${options.font_size * scale}px` : `${11 * scale}px`,
+            fontWeight: isLabel ? options.font_weight_label || options.font_weight || 'bold' : options.font_weight || 'bold',
+            fontFamily: options.font_family || "'Inter', sans-serif",
             fontStyle: options.font_style || undefined,
             textTransform: options.text_transform || undefined,
             textDecoration: options.text_decoration || undefined,

@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { usePage } from '@inertiajs/react';
 
 // ─── Toast Types ──────────────────────────────────────────────────────
 interface ToastMsg {
@@ -28,6 +29,7 @@ const ToastContext = createContext<ToastCtx>({
 export const useToast = () => useContext(ToastContext);
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
+    const { props } = usePage<any>();
     const [toast, setToast] = useState<ToastMsg | null>(null);
     const [progressToasts, setProgressToasts] = useState<ProgressToast[]>([]);
     const timerRef = useRef<any>(null);
@@ -37,6 +39,15 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         if (timerRef.current) window.clearTimeout(timerRef.current);
         timerRef.current = window.setTimeout(() => setToast(null), 3000);
     }, []);
+
+    // Auto-show Flash Messages from Backend
+    useEffect(() => {
+        const flash = (props as any).flash;
+        if (flash?.success) showToast(flash.success, 'success');
+        if (flash?.error) showToast(flash.error, 'danger');
+        if (flash?.danger) showToast(flash.danger, 'danger');
+        if (flash?.info) showToast(flash.info, 'info');
+    }, [props.flash, showToast]);
 
     const showProgress = useCallback((id: string, msg: string, progress: number) => {
         setProgressToasts(prev => {
