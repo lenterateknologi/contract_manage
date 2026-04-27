@@ -90,15 +90,17 @@ export const FormElement: React.FC<FormElementProps> = ({
     const renderValue = (val: any) => {
         if (val === null || val === undefined || val === '') return '—';
 
-        // Auto-format ISO Date strings (e.g., 2026-04-24T00:00:00.000000Z)
-        if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(val)) {
+        // Auto-format Date strings (ISO, YYYY-MM-DD, or YYYY-MM-DD HH:mm)
+        if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}/.test(val)) {
             try {
                 const date = new Date(val);
                 if (!isNaN(date.getTime())) {
-                    return date.toLocaleDateString('id-ID', {
+                    const hasTime = val.includes(':') || val.includes('T');
+                    return date.toLocaleString('id-ID', {
                         day: '2-digit',
                         month: 'long',
                         year: 'numeric',
+                        ...(hasTime ? { hour: '2-digit', minute: '2-digit' } : {}),
                     });
                 }
             } catch (e) {
@@ -420,7 +422,7 @@ export const FormElement: React.FC<FormElementProps> = ({
                             <input
                                 type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}
                                 placeholder={field.placeholder}
-                                value={value || ''}
+                                value={field.type === 'date' && typeof value === 'string' ? value.split('T')[0].split(' ')[0] : (value || '')}
                                 onChange={(e) => onChange?.(e.target.value)}
                                 className={cn(
                                     'placeholder:text-muted-foreground/50 flex min-h-[32px] w-full text-[11px] font-bold transition-all placeholder:italic',

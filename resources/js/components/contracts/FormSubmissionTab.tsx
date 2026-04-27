@@ -1,10 +1,10 @@
+import { useToast } from '@/components/contracts/Toast';
 import { FormField } from '@/components/form-renderer/FormElement';
 import { InteractiveForm } from '@/components/form-renderer/InteractiveForm';
 import { contractApi } from '@/lib/contract-api';
 import { cn } from '@/lib/utils';
 import { Contract } from '@/types/contracts';
 import axios from 'axios';
-import { useToast } from '@/components/contracts/Toast';
 import { Download, History, Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -58,98 +58,72 @@ const F2_IMPORTANT_FIELDS: { key: string; label: string; width: string; type?: s
 /**
  * Fuzzy matching helper to autofill F1 form fields from general contract data.
  */
-const getAutofillValue = (field: FormField, contract: Contract) => {
+const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' | 'f2') => {
     const name = field.name.toLowerCase();
-    const label = field.label.toLowerCase();
+
+    // Special Case: F2 Ruang Lingkup composite
+    if (name === 'meta_ruang_lingkup' && docType === 'f2') {
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('en-CA'); // YYYY-MM-DD
+        const crownNo = (contract as any).crown_no || '';
+        const signer = contract.p1_signer || (contract as any).initiator?.name || '';
+        return `${crownNo}/${dateStr}/${signer}`;
+    }
 
     // 1. Identification / Metadata
-    if (name === 'meta_nomor_pengajuan' || name === 'no_pengajuan' || label.includes('nomor pengajuan') || label.includes('nomor :')) {
-        return contract.contract_no || '';
+    if (name === 'meta_nomor') return contract.contract_no || '';
+    if (name === 'meta_nomor_kontrak') return (contract as any).crown_no || '';
+    if (name === 'meta_judul') return contract.title || '';
+    if (name === 'meta_topik') {
+        const type = (contract as any).contract_type;
+        return type?.name || (typeof type === 'string' ? type : '');
     }
-    if (name === 'meta_nomor_kontrak' || name === 'no_kontrak' || label.includes('nomor kontrak') || label.includes('crown')) {
-        return (contract as any).crown_no || '';
-    }
-    if (name === 'meta_judul_kontrak' || name === 'judul' || label.includes('judul kontrak')) {
-        return contract.title || '';
-    }
-    if (name === 'meta_topik' || label === 'topik') {
-        return (contract as any).contract_type?.name || (typeof contract.contract_type === 'string' ? contract.contract_type : '');
-    }
-    if (name === 'meta_sub_topik' || label.includes('sub topik')) {
-        return (contract as any).kop_sub_topik || '';
-    }
-    if (name === 'meta_lampiran' || label.includes('lampiran')) {
+    if (name === 'meta_sub_topik') return (contract as any).kop_sub_topik || '';
+    if (name === 'meta_lampiran') {
         const vendor = (contract as any).vendor;
-        if (vendor?.documents?.length > 0) {
-            const docs = vendor.documents;
-            if (docs.length > 3) {
-                const firstThree = docs.slice(0, 3).map((d: any, i: number) => `${i + 1}. ${d.name}`).join(', ');
-                return `${firstThree}, dan +${docs.length - 3} dokumen lainnya`;
-            }
-            return docs.map((d: any, i: number) => `${i + 1}. ${d.name}`).join(', ');
+        const docs = vendor?.documents || [];
+        if (docs.length === 0) return '';
+        if (docs.length > 3) {
+            return (
+                docs
+                    .slice(0, 3)
+                    .map((d: any, i: number) => `${i + 1}. ${d.name}`)
+                    .join(', ') + `, dan +${docs.length - 3} lainnya`
+            );
         }
+        return docs.map((d: any, i: number) => `${i + 1}. ${d.name}`).join(', ');
     }
 
     // 2. Dates
-    const formatDate = (date: string | null) => (date ? date.split(' ')[0] : '');
-    if (name === 'meta_tgl_dibuat' || name === 'tanggal' || label.includes('tgl dibuat')) {
-        // Use current date if no date is set or if explicitly requested "update by current time"
-        const targetDate = contract.contract_date || contract.created_at || new Date().toISOString();
-        return formatDate(targetDate);
+    if (name === 'meta_tgl_dibuat' || name === 'tanggal') {
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('en-CA'); // YYYY-MM-DD
+        const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        return field.type === 'date' ? dateStr : `${dateStr} ${timeStr}`;
     }
-    if (name === 'meta_masa_berlaku' || label.includes('masa berlaku')) {
+    if (name === 'meta_masa_berlaku') {
         if (contract.contract_date && contract.end_date) {
-            return `${formatDate(contract.contract_date)} s/d ${formatDate(contract.end_date)}`;
+            return `${contract.contract_date.split(' ')[0]} s/d ${contract.end_date.split(' ')[0]}`;
         }
-        return formatDate(contract.contract_date);
+        return '';
     }
 
-    // 3. Pihak Pertama (P1) - Internal
-    if (name.includes('p1') || name.includes('pertama')) {
-        if (name === 'meta_p1_entity' || label.includes('entitas') || label.includes('perusahaan')) {
-            return 'PT. Lentera Teknologi';
-        }
-        if (name === 'meta_p1_signer' || label.includes('penandatangan')) {
-            return contract.p1_signer || contract.initiator?.name || '';
-        }
-        if (name === 'meta_p1_signer_position' || label.includes('jabatan')) {
-            return contract.p1_signer_position || contract.initiator?.role || 'Direktur';
-        }
-        if (name === 'meta_p1_alamat' || label.includes('alamat')) {
-            return 'The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan';
-        }
-    }
+    // 3. Parties & Metadata
+    if (name === 'meta_p1_name' || name === 'meta_p1_entity') return 'PT. LENTERA TEKNOLOGI';
+    if (name === 'meta_type' || name === 'meta_tipe_perjanjian') return (contract as any).submission_type || '';
+    if (name === 'meta_p1_signer') return contract.p1_signer || (contract as any).initiator?.name || '';
+    if (name === 'meta_p1_signer_position') return contract.p1_signer_position || (contract as any).initiator?.role || '';
+    if (name === 'meta_p1_alamat') return 'The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan';
 
-    // 4. Pihak Kedua (P2) - Vendor
-    if (name.includes('p2') || name.includes('kedua') || name.includes('vendor')) {
-        const vendor = (contract as any).vendor;
-        if (name === 'meta_p2_entity' || label.includes('entitas') || label.includes('perusahaan')) {
-            return vendor?.name || contract.p2_entity || '';
-        }
-        if (name === 'meta_p2_signer' || label.includes('penandatangan')) {
-            return vendor?.pic_name || contract.p2_signer || '';
-        }
-        if (name === 'meta_p2_signer_position' || label.includes('jabatan')) {
-            return vendor?.pic_position || contract.p2_signer_position || '';
-        }
-        if (name === 'meta_p2_alamat' || label.includes('alamat')) {
-            return vendor?.address || contract.p2_address || '';
-        }
-    }
+    const vendor = (contract as any).vendor;
+    if (name === 'meta_p2_entity') return vendor?.name || '';
+    if (name === 'meta_p2_signer') return vendor?.pic_name || '';
+    if (name === 'meta_p2_signer_position') return vendor?.pic_position || '';
+    if (name === 'meta_p2_alamat') return vendor?.address || '';
 
-    // 5. Commercial
-    if (name === 'meta_tipe_perjanjian' || name === 'f1_sifat_row' || label.includes('tipe perjanjian')) {
-        return (contract as any).transaction_type || 'Perjanjian Baru';
-    }
-    if (name === 'meta_lokasi' || label.includes('lokasi')) {
-        return (contract as any).location || '';
-    }
-    if (name === 'meta_nilai_transaksi' || label.includes('nilai')) {
-        return (contract as any).total_value || '';
-    }
-    if (name === 'meta_mekanisme_pembayaran' || label.includes('mekanisme')) {
-        return (contract as any).payment_terms || '';
-    }
+    if (name === 'meta_lokasi') return (contract as any).location || '';
+    if (name === 'meta_nilai_transaksi') return (contract as any).amount || '';
+    if (name === 'meta_mekanisme_pembayaran') return (contract as any).payment_terms || '';
 
     // Fallback
     if (contract.metadata && (contract.metadata as any)[field.name]) {
@@ -203,6 +177,7 @@ function GenericFormTab({
     const [showMoreActions, setShowMoreActions] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const [manualFields, setManualFields] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -233,19 +208,52 @@ function GenericFormTab({
         return v.version_no.toString().includes(q) || v.created_by?.name?.toLowerCase().includes(q) || v.created_at.toLowerCase().includes(q);
     });
 
-    const handleSync = () => {
-        const synced = { ...formData };
-        fields.forEach((f) => {
-            if (f.type !== 'kop_surat' && f.type !== 'form_title') {
-                const val = getAutofillValue(f, selected);
-                if (val !== null) {
-                    synced[f.name] = val;
-                }
+    const handleSync = useCallback(
+        (isManual = false) => {
+            setFormData((prev) => {
+                const synced = { ...prev };
+                let hasChanged = false;
+                fields.forEach((f) => {
+                    if (f.type !== 'kop_surat' && f.type !== 'form_title') {
+                        const val = getAutofillValue(f, selected, docType);
+                        if (val !== null) {
+                            // Date fields marked as meta_tgl_dibuat/tanggal are always updated to current time
+                            // Other fields use the "Smart Sync" logic to preserve manual edits.
+                            const currentVal = synced[f.name];
+                            const serverVal = originalData[f.name];
+
+                            // A field is safe to auto-sync if:
+                            // 1. It's a manual sync trigger.
+                            // 2. The field has never been manually edited by the user in this session (manualFields).
+                            // 3. The current value still matches the last known server state (isUntouched).
+
+                            const isManualEdit = manualFields.has(f.name);
+                            const isUntouched = currentVal === serverVal;
+
+                            if (isManual || (!isManualEdit && (isUntouched || !currentVal))) {
+                                if (currentVal !== val) {
+                                    synced[f.name] = val;
+                                    hasChanged = true;
+                                }
+                            }
+                        }
+                    }
+                });
+                return hasChanged ? synced : prev;
+            });
+            if (isManual) {
+                showToast('Data sinkron dengan informasi kontrak & vendor.', 'success');
             }
-        });
-        setFormData(synced);
-        showToast('Data sinkron dengan informasi kontrak & vendor.', 'success');
-    };
+        },
+        [fields, selected, originalData, showToast],
+    );
+
+    // Auto-sync whenever contract metadata changes
+    useEffect(() => {
+        if (!loading && fields.length > 0) {
+            handleSync(false);
+        }
+    }, [selected, loading, fields.length, handleSync]);
 
     const loadData = useCallback(async () => {
         if (!matchingTemplate) {
@@ -260,40 +268,50 @@ function GenericFormTab({
             ]);
             const tplFields: FormField[] = tplRes.data.fields ?? [];
             setFields(tplFields);
+            setManualFields(new Set()); // Reset tracking on fresh load
 
             if (subRes.submission && subRes.versions?.length > 0) {
                 const latest = subRes.versions[0];
                 const savedData = latest.form_data ?? {};
 
-                // For F2: always merge prefill_data (passthrough identity fields like v_p2_entity)
-                // UNDER saved data so user-entered values are not overwritten.
-                // This ensures {{v_p1_entity}}, {{v_p2_entity}}, etc. resolve in static_text.
-                if (docType === 'f2' && subRes.prefill_data && Object.keys(subRes.prefill_data).length > 0) {
-                    const merged = { ...subRes.prefill_data, ...savedData };
-                    setFormData(merged);
-                    setOriginalData(merged);
-                } else {
-                    setFormData(savedData);
-                    setOriginalData(savedData);
-                }
+                // Generate full autofill set
+                const autofilled: Record<string, any> = {};
+                tplFields.forEach((f) => {
+                    if (f.type !== 'kop_surat' && f.type !== 'form_title') {
+                        const val = getAutofillValue(f, selected, docType);
+                        if (val !== null) autofilled[f.name] = val;
+                    }
+                });
+
+                // Merge: savedData wins for most fields, but ONLY if they are not empty.
+                // This ensures newly added metadata features populate even on old saved forms.
+                const finalData = { ...autofilled, ...(subRes.prefill_data || {}) };
+                Object.keys(savedData).forEach((key) => {
+                    if (savedData[key] !== null && savedData[key] !== '') {
+                        finalData[key] = savedData[key];
+                    }
+                });
+
+                setFormData(finalData);
+                setOriginalData(savedData);
                 setVersions(subRes.versions);
             } else {
-                // No submission yet — use prefill_data from backend if available
-                if (subRes.prefill_data && Object.keys(subRes.prefill_data).length > 0) {
-                    setFormData(subRes.prefill_data);
-                    setOriginalData(subRes.prefill_data);
-                } else {
-                    // Fallback to frontend autofill
-                    const initial: Record<string, any> = {};
-                    tplFields.forEach((f) => {
-                        if (f.type !== 'kop_surat' && f.type !== 'form_title') {
-                            const autofillValue = getAutofillValue(f, selected);
-                            initial[f.name] = autofillValue !== null ? autofillValue : '';
-                        }
-                    });
-                    setFormData(initial);
-                    setOriginalData(initial);
-                }
+                // No submission yet
+                const initial: Record<string, any> = {};
+                tplFields.forEach((f) => {
+                    if (f.type !== 'kop_surat' && f.type !== 'form_title') {
+                        const autofillValue = getAutofillValue(f, selected, docType);
+                        initial[f.name] = autofillValue !== null ? autofillValue : '';
+                    }
+                });
+
+                const finalInitial = {
+                    ...initial,
+                    ...(subRes.prefill_data || {}),
+                };
+
+                setFormData(finalInitial);
+                setOriginalData(finalInitial);
                 setVersions([]);
             }
         } catch (e) {
@@ -367,13 +385,17 @@ function GenericFormTab({
         }
 
         try {
-            const res = await axios.post(`/admin/contracts/${selected.id}/form-submissions/${docType}/export-queue`, {
-                data: JSON.stringify(formData),
-                form_template_id: matchingTemplate.id,
-            }, {
-                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
-                withCredentials: true
-            });
+            const res = await axios.post(
+                `/admin/contracts/${selected.id}/form-submissions/${docType}/export-queue`,
+                {
+                    data: JSON.stringify(formData),
+                    form_template_id: matchingTemplate.id,
+                },
+                {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' },
+                    withCredentials: true,
+                },
+            );
 
             const jobId = res.data.job_id;
 
@@ -383,8 +405,8 @@ function GenericFormTab({
             const interval = setInterval(async () => {
                 try {
                     const statusRes = await axios.get(`/admin/form-templates/pdf-status/${jobId}`, {
-                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
-                        withCredentials: true
+                        headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' },
+                        withCredentials: true,
                     });
                     const statusData = statusRes.data;
                     setPdfJobStatus(statusData);
@@ -405,7 +427,7 @@ function GenericFormTab({
                             // Fallback if window was closed or not opened
                             window.open(statusData.url, '_blank');
                         }
-                        
+
                         setIsExporting(false);
                         setPdfJobId(null);
                         hideProgress(jobId);
@@ -601,28 +623,6 @@ function GenericFormTab({
 
                         {showMoreActions && (
                             <div className="animate-in fade-in zoom-in-95 absolute top-full right-0 z-[999] mt-2 w-56 origin-top-right rounded-xl border border-slate-200 bg-white p-1 shadow-2xl shadow-slate-200/50 duration-200 outline-none">
-                                <button
-                                    onClick={() => {
-                                        loadData();
-                                        setShowMoreActions(false);
-                                    }}
-                                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[10px] font-bold text-slate-600 transition-all hover:bg-slate-50 hover:text-slate-900"
-                                >
-                                    <i className="fa-solid fa-arrows-rotate w-4 text-[10px] opacity-40" />
-                                    REFRESH DATA
-                                </button>
-
-                                <button
-                                    onClick={() => {
-                                        handleSync();
-                                        setShowMoreActions(false);
-                                    }}
-                                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[10px] font-bold text-indigo-600 transition-all hover:bg-indigo-50"
-                                >
-                                    <i className="fa-solid fa-sync w-4 text-[10px] opacity-60" />
-                                    SYCHRONIZE DATA
-                                </button>
-
                                 <a
                                     href={`/admin/contracts/${selected.id}/form-submissions/${docType}/compare`}
                                     target="_blank"
@@ -668,19 +668,22 @@ function GenericFormTab({
 
             <div className="relative flex-1 overflow-y-auto bg-slate-50/50">
                 {isDirty && (
-                    <div className="sticky top-0 right-0 z-50 flex justify-end p-4 pointer-events-none">
-                        <span className="flex items-center gap-1.5 rounded-full border border-amber-200/50 bg-amber-50 px-2.5 py-1 text-[9px] font-bold tracking-wider text-amber-600 uppercase shadow-md backdrop-blur-sm pointer-events-auto transition-all hover:scale-105">
+                    <div className="pointer-events-none sticky top-0 right-0 z-50 flex justify-end p-4">
+                        <span className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-amber-200/50 bg-amber-50 px-2.5 py-1 text-[9px] font-bold tracking-wider text-amber-600 uppercase shadow-md backdrop-blur-sm transition-all hover:scale-105">
                             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
                             Draft Belum Disimpan
                         </span>
                     </div>
                 )}
 
-                <div className="py-6 px-4 flex justify-center">
+                <div className="flex justify-center px-4 py-6">
                     <InteractiveForm
                         template={templateForRenderer}
                         formData={formData}
-                        onChange={(name, val) => setFormData((prev) => ({ ...prev, [name]: val }))}
+                        onChange={(name, val) => {
+                            setManualFields((prev) => new Set(prev).add(name));
+                            setFormData((prev) => ({ ...prev, [name]: val }));
+                        }}
                         readOnly={false}
                         className="shadow-2xl shadow-slate-200/50"
                     />

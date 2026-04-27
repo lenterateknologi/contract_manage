@@ -91,7 +91,7 @@ export function DraftEditableInfoCard({
             crownNo !== (selected.crown_no || '') ||
             kopSubTopik !== ((selected as any).kop_sub_topik || '')
         );
-    }, [title, description, typeId, vendorId, transactionType, crownNo, kopSubTopik, selected, types]);
+    }, [title, description, typeId, vendorId, submissionTypeId, transactionType, crownNo, kopSubTopik, selected, types]);
 
     const handleSave = () => {
         onUpdate({
