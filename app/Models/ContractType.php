@@ -14,6 +14,7 @@ class ContractType extends Model
 
     protected $fillable = [
         'name',
+        'code',
         'description',
         'f1_input_mechanism',
         'f1_form_template_id',

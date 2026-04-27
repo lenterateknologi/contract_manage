@@ -60,48 +60,62 @@ class MasterSeeder extends Seeder
         // to avoid duplication and maintain historical sample data.
 
         // 7. Seed Module Groups & Modules (Navigation structure)
+        // Cleanup existing navigation structure to ensure clean baseline
+        DB::table('m_role_module_groups')->truncate();
+        AccessModule::query()->forceDelete();
+        Module::query()->forceDelete();
+        ModuleGroup::query()->forceDelete();
+
         $groups = [
             ['name' => 'Dashboard', 'icon' => 'LayoutGrid', 'sequence' => 1],
-            ['name' => 'Kontrak', 'icon' => 'FileText', 'sequence' => 2],
-            ['name' => 'Laporan', 'icon' => 'BarChart2', 'sequence' => 3],
-            ['name' => 'Administrasi', 'icon' => 'ShieldCheck', 'sequence' => 4],
+            ['name' => 'Manajemen Kontrak', 'icon' => 'FileText', 'sequence' => 2],
+            ['name' => 'Template Library', 'icon' => 'Library', 'sequence' => 3],
+            ['name' => 'Workflow Engine', 'icon' => 'GitBranch', 'sequence' => 4],
+            ['name' => 'Master Data', 'icon' => 'Database', 'sequence' => 5],
+            ['name' => 'System & Security', 'icon' => 'ShieldCheck', 'sequence' => 6],
         ];
         foreach ($groups as $g) {
-            ModuleGroup::updateOrCreate(['name' => $g['name']], [
+            ModuleGroup::create([
+                'name' => $g['name'],
                 'icon' => $g['icon'],
                 'sequence' => $g['sequence']
             ]);
         }
 
         $mods = [
-            ['name' => 'Summary', 'identifier' => 'DASHBOARD', 'group' => 'Dashboard', 'route' => '/dashboard', 'icon' => 'Home', 'seq' => 1],
-            ['name' => 'Laporan', 'identifier' => 'ANLTX', 'group' => 'Dashboard', 'route' => '/admin/reports', 'icon' => 'BarChart3', 'seq' => 2],
-            ['name' => 'Semua Kontrak', 'identifier' => 'CONTRACTS', 'group' => 'Kontrak', 'route' => '/contracts', 'icon' => 'Files', 'seq' => 1],
-            ['name' => 'Kontrak Saya', 'identifier' => 'MY_CONTRACTS', 'group' => 'Kontrak', 'route' => '/contracts/mine', 'icon' => 'User', 'seq' => 2],
-            ['name' => 'Menunggu Approval', 'identifier' => 'PENDING', 'group' => 'Kontrak', 'route' => '/contracts/pending', 'icon' => 'Clock', 'seq' => 3],
-            //expiry
-            ['name' => 'Masa Berlaku', 'identifier' => 'EXPIRY', 'group' => 'Kontrak', 'route' => '/contracts/expiry', 'icon' => 'History', 'seq' => 4],
-            // ['name' => 'Formulir F1', 'identifier' => 'F1_LIST', 'group' => 'Kontrak', 'route' => '/contracts/f1', 'icon' => 'FilePlus', 'seq' => 4],
-            // ['name' => 'Formulir F2', 'identifier' => 'F2_LIST', 'group' => 'Kontrak', 'route' => '/contracts/f2', 'icon' => 'FileCheck', 'seq' => 5],
+            // Dashboard
+            ['name' => 'Dashboard', 'identifier' => 'DASH', 'group' => 'Dashboard', 'route' => '/dashboard', 'icon' => 'LayoutGrid', 'seq' => 1],
+            
+            // Manajemen Kontrak
+            ['name' => 'Daftar Kontrak', 'identifier' => 'CONTRACTS', 'group' => 'Manajemen Kontrak', 'route' => '/contracts', 'icon' => 'FileText', 'seq' => 1],
+            ['name' => 'Kontrak Saya', 'identifier' => 'MY_CTC', 'group' => 'Manajemen Kontrak', 'route' => '/contracts/mine', 'icon' => 'UserCheck', 'seq' => 2],
+            ['name' => 'Persetujuan', 'identifier' => 'PENDING', 'group' => 'Manajemen Kontrak', 'route' => '/contracts/pending', 'icon' => 'Clock', 'seq' => 3],
+            ['name' => 'Masa Berlaku', 'identifier' => 'EXPIRY', 'group' => 'Manajemen Kontrak', 'route' => '/contracts/expiry', 'icon' => 'History', 'seq' => 4],
 
-            // ['name' => 'Rekap Kontrak', 'identifier' => 'REPORT', 'group' => 'Laporan', 'route' => '/reports', 'icon' => 'ClipboardList', 'seq' => 1],
-            // ['name' => 'Audit Trail', 'identifier' => 'AUDIT', 'group' => 'Laporan', 'route' => '/reports/audit', 'icon' => 'History', 'seq' => 2],
+            // Template Library
+            ['name' => 'Folder Kontrak', 'identifier' => 'ADMIN_TYPES', 'group' => 'Template Library', 'route' => '/admin/contract-types', 'icon' => 'FolderClosed', 'seq' => 1],
+            ['name' => 'Isi Kontrak', 'identifier' => 'ADMIN_TEMPLATES', 'group' => 'Template Library', 'route' => '/admin/templates', 'icon' => 'FileCode', 'seq' => 2],
+            ['name' => 'Digital Form', 'identifier' => 'ADMIN_FORMS', 'group' => 'Template Library', 'route' => '/admin/form-templates', 'icon' => 'ScanLine', 'seq' => 3],
 
-            ['name' => 'Manajemen Role', 'identifier' => 'ADMIN_ROLES', 'group' => 'Administrasi', 'route' => '/admin/roles', 'icon' => 'Shield', 'seq' => 1],
-            ['name' => 'Manajemen User', 'identifier' => 'ADMIN_USERS', 'group' => 'Administrasi', 'route' => '/admin/users', 'icon' => 'Users', 'seq' => 2],
-            ['name' => 'Form Template', 'identifier' => 'ADMIN_FORMS', 'group' => 'Administrasi', 'route' => '/admin/form-templates', 'icon' => 'ListChecks', 'seq' => 3],
-            ['name' => 'Folder Template', 'identifier' => 'ADMIN_TEMPLATES', 'group' => 'Administrasi', 'route' => '/admin/templates', 'icon' => 'FolderOpen', 'seq' => 4],
-            ['name' => 'Manajemen Vendor', 'identifier' => 'ADMIN_VENDORS', 'group' => 'Administrasi', 'route' => '/admin/vendors', 'icon' => 'Building2', 'seq' => 5],
-            ['name' => 'Manajemen Departemen', 'identifier' => 'ADMIN_DEPTS', 'group' => 'Administrasi', 'route' => '/admin/departments', 'icon' => 'Library', 'seq' => 6],
-            ['name' => 'Tipe Kontrak', 'identifier' => 'ADMIN_TYPES', 'group' => 'Administrasi', 'route' => '/admin/contract-types', 'icon' => 'Tags', 'seq' => 7],
-            ['name' => 'Status Kontrak', 'identifier' => 'ADMIN_STATUS', 'group' => 'Administrasi', 'route' => '/admin/contract-statuses', 'icon' => 'Activity', 'seq' => 8],
-            ['name' => 'Workflow Approval', 'identifier' => 'ADMIN_WORKFLOWS', 'group' => 'Administrasi', 'route' => '/admin/workflows', 'icon' => 'GitBranch', 'seq' => 9],
+            // Workflow Engine
+            ['name' => 'Alur Persetujuan', 'identifier' => 'ADMIN_WORKFLOWS', 'group' => 'Workflow Engine', 'route' => '/admin/workflows', 'icon' => 'Workflow', 'seq' => 1],
+            ['name' => 'Label Status', 'identifier' => 'ADMIN_STATUS', 'group' => 'Workflow Engine', 'route' => '/admin/contract-statuses', 'icon' => 'Tags', 'seq' => 2],
+
+            // Master Data
+            ['name' => 'Database User', 'identifier' => 'ADMIN_USERS', 'group' => 'Master Data', 'route' => '/admin/users', 'icon' => 'UserCog', 'seq' => 1],
+            ['name' => 'Izin & Akses', 'identifier' => 'ADMIN_ROLES', 'group' => 'Master Data', 'route' => '/admin/roles', 'icon' => 'KeyRound', 'seq' => 2],
+            ['name' => 'Departemen', 'identifier' => 'ADMIN_DEPTS', 'group' => 'Master Data', 'route' => '/admin/departments', 'icon' => 'Building2', 'seq' => 3],
+            ['name' => 'Rekan Vendor', 'identifier' => 'ADMIN_VENDORS', 'group' => 'Master Data', 'route' => '/admin/vendors', 'icon' => 'Truck', 'seq' => 4],
+
+            // System & Security
+            ['name' => 'Laporan Analitikal', 'identifier' => 'ANLTX', 'group' => 'System & Security', 'route' => '/admin/reports', 'icon' => 'BarChart3', 'seq' => 1],
         ];
 
         foreach ($mods as $m) {
             $groupId = ModuleGroup::where('name', $m['group'])->value('id');
-            Module::updateOrCreate(['identifier' => $m['identifier']], [
+            Module::create([
                 'name' => $m['name'],
+                'identifier' => $m['identifier'],
                 'module_group_id' => $groupId,
                 'route' => $m['route'],
                 'icon' => $m['icon'],
@@ -163,15 +177,22 @@ class MasterSeeder extends Seeder
 
             foreach ($wf['steps'] as $idx => $s) {
                 $deptId = Department::where('code', $s['dept'])->value('id');
-                \App\Models\WorkflowStep::create([
-                    'id' => Str::uuid(),
+                $step = \App\Models\WorkflowStep::create([
                     'workflow_id' => $workflow->id,
-                    'role' => $s['role'],
                     'step' => $idx + 1,
-                    'department_id' => $deptId,
                     'description' => $s['desc'],
                     'created_by' => $admin->id,
+                    'approver_type' => 'role',
+                    'is_active' => true,
                 ]);
+
+                if (!empty($s['role'])) {
+                    $step->approverRoles()->create(['role_name' => $s['role']]);
+                }
+
+                if ($deptId) {
+                    $step->approverDepartments()->create(['department_id' => $deptId]);
+                }
             }
         }
 
