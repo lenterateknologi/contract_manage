@@ -11,9 +11,9 @@ use App\Models\FormTemplate;
 use App\Models\ContractHistory;
 use App\Models\ContractType;
 use App\Models\ContractVersion;
+use App\Models\SubmissionType;
 use App\Models\Role;
 use App\Models\User;
-use App\Models\Workflow;
 use App\Services\ContractWorkflowService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -66,6 +66,7 @@ class ContractController extends Controller
             'currentView' => $view,
             'contracts' => $contracts,
             'types' => ContractType::all(),
+            'submissionTypes' => SubmissionType::where('is_active', true)->get(),
             'users' => User::orderBy('name')->get()->map(fn($u) => $this->formatUser($u)),
             'vendors' => Vendor::with('documents')->where('is_active', true)->orderBy('name')->get()->map(fn($v) => [
                 'id' => $v->id,
@@ -167,6 +168,7 @@ class ContractController extends Controller
             'contracts' => $contracts,
             'initialSelected' => $this->formatContract($contract),
             'types' => ContractType::all(),
+            'submissionTypes' => SubmissionType::where('is_active', true)->get(),
             'users' => User::orderBy('name')->get()->map(fn($u) => $this->formatUser($u)),
             'vendors' => Vendor::where('is_active', true)->orderBy('name')->get()->map(fn($v) => [
                 'id' => $v->id,
@@ -199,7 +201,7 @@ class ContractController extends Controller
     private function getFilteredContractsQuery(Request $request, string $view = 'contracts')
     {
         $query = Contract::with([
-            'creator.department', 'contractType', 'approvals.approver', 'approvals.workflowStep',
+            'creator.department', 'contractType', 'submissionType', 'approvals.approver', 'approvals.workflowStep',
             'workflow.steps', 'versions.uploader', 'histories.actor', 'messages.user',
             'attachments.uploader', 'formSubmissions', 'vendor.documents', 'initiator.department'
         ])->orderByDesc('created_at');
@@ -207,7 +209,7 @@ class ContractController extends Controller
         // Apply View Filter
         switch ($view) {
             case 'mine':
-                $query->where('created_by', Auth::id());
+                $query->where('t_contracts.created_by', Auth::id());
                 break;
             case 'pending':
                 $query->whereHas('approvals', function ($q) {
@@ -231,7 +233,7 @@ class ContractController extends Controller
                 if (Auth::user()->role !== 'Admin') {
                     $query->where(function ($q) {
                         $q->where('status', '!=', 'draft')
-                          ->orWhere('created_by', Auth::id());
+                          ->orWhere('t_contracts.created_by', Auth::id());
                     });
                 }
                 break;
@@ -307,7 +309,7 @@ class ContractController extends Controller
         }
 
         if ($user->role !== 'Admin') {
-            $baseQuery->where('created_by', $user->id);
+            $baseQuery->where('t_contracts.created_by', $user->id);
         }
 
         $approvedContracts = (clone $baseQuery)->where('status', 'approved')->get();
@@ -361,6 +363,11 @@ class ContractController extends Controller
         return response()->json(ContractType::all());
     }
 
+    public function getSubmissionTypes(): JsonResponse
+    {
+        return response()->json(SubmissionType::where('is_active', true)->get());
+    }
+
     public function show(string $id): JsonResponse
     {
         $contract = Contract::with([
@@ -373,6 +380,7 @@ class ContractController extends Controller
             'messages.user',
             'attachments.uploader',
             'contractType',
+            'submissionType',
             'formSubmissions',
             'vendor.documents'
         ])->findOrFail($id);
@@ -432,7 +440,8 @@ class ContractController extends Controller
             'description' => 'nullable|string',
             'crown_no' => 'nullable|string|max:255',
             'contract_type_id' => 'required|exists:m_contract_types,id',
-            'transaction_type' => 'nullable|string|in:Perjanjian Baru,Addendum,Amandement,Perubahan Perjanjian,General',
+            'submission_type_id' => 'nullable|exists:m_submission_types,id',
+            'transaction_type' => 'nullable|string|in:Perjanjian Baru,Addendum,Amandement,Perubahan Perjanjian',
             'tax_required' => 'nullable|boolean',
             'initiated_by_id' => 'nullable|uuid|exists:m_users,id',
             'vendor_id' => 'nullable|uuid|exists:m_vendors,id',
@@ -464,6 +473,7 @@ class ContractController extends Controller
                 'crown_no' => $validated['crown_no'] ?? null,
                 'description' => $validated['description'] ?? '—',
                 'contract_type_id' => $validated['contract_type_id'],
+                'submission_type_id' => $validated['submission_type_id'] ?? null,
                 'transaction_type' => $validated['transaction_type'] ?? 'Perjanjian Baru',
                 'status' => 'draft',
                 'created_by' => $userId,
@@ -504,6 +514,7 @@ class ContractController extends Controller
             'title'            => 'required|string|max:255',
             'description'      => 'nullable|string',
             'contract_type_id' => 'nullable|uuid|exists:m_contract_types,id',
+            'submission_type_id' => 'nullable|uuid|exists:m_submission_types,id',
             'contract_no'      => 'nullable|string',
             'contract_date'    => 'nullable|date',
             'end_date'         => 'nullable|date',
@@ -538,7 +549,7 @@ class ContractController extends Controller
             'actor_id' => Auth::id(),
         ]);
 
-        return response()->json($this->formatContract($contract->fresh(['contractType', 'vendor', 'creator', 'initiator'])));
+        return response()->json($this->formatContract($contract->fresh(['contractType', 'submissionType', 'vendor', 'creator', 'initiator'])));
     }
 
     public function destroy(string $id): JsonResponse
@@ -844,7 +855,7 @@ class ContractController extends Controller
     {
         $contract = Contract::findOrFail($id);
         if (!$contract->vendor_id) abort(404);
-        
+
         $document = \App\Models\VendorDocument::where('vendor_id', $contract->vendor_id)->findOrFail($docId);
 
         if (!Storage::disk('public')->exists($document->file_url)) {
@@ -969,6 +980,8 @@ class ContractController extends Controller
             'end_date' => $c->end_date,
             'contract_type' => $c->contractType?->name ?? '—',
             'contract_type_id' => $c->contract_type_id,
+            'submission_type' => $c->submissionType?->name ?? '—',
+            'submission_type_id' => $c->submission_type_id,
             'created_by' => $c->created_by,
             'transaction_type' => $c->transaction_type,
             'p1_entity' => $c->p1_entity,

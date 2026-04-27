@@ -7,16 +7,27 @@ interface EditContractModalProps {
     onSubmit: (data: any) => void;
     contract: Contract | null;
     types: ContractType[];
+    submissionTypes: any[];
     vendors?: any[];
     processing: boolean;
 }
 
-export function EditContractModal({ open, onClose, onSubmit, contract, types, vendors = [], processing }: EditContractModalProps) {
+export function EditContractModal({
+    open,
+    onClose,
+    onSubmit,
+    contract,
+    types,
+    submissionTypes = [],
+    vendors = [],
+    processing,
+}: EditContractModalProps) {
     const [title, setTitle] = useState('');
     const [contractNo, setContractNo] = useState('');
     const [description, setDescription] = useState('');
     const [date, setDate] = useState('');
     const [typeId, setTypeId] = useState('');
+    const [submissionTypeId, setSubmissionTypeId] = useState('');
     const [vendorId, setVendorId] = useState('');
     const [crownNo, setCrownNo] = useState('');
 
@@ -28,6 +39,7 @@ export function EditContractModal({ open, onClose, onSubmit, contract, types, ve
             setDate(contract.contract_date ? contract.contract_date.split('T')[0] : '');
             const t = types.find((x) => x.name === contract.contract_type);
             setTypeId(t ? String(t.id) : '');
+            setSubmissionTypeId(contract.submission_type_id || '');
             setVendorId((contract as any).vendor_id || '');
             setCrownNo(contract.crown_no || '');
         }
@@ -113,6 +125,21 @@ export function EditContractModal({ open, onClose, onSubmit, contract, types, ve
                             </select>
                         </div>
                         <div>
+                            <label className="text-muted-foreground mb-1.5 block text-xs font-bold uppercase">Perjanjian</label>
+                            <select
+                                value={submissionTypeId}
+                                onChange={(e) => setSubmissionTypeId(e.target.value)}
+                                className="bg-muted/30 border-border focus:border-primary/50 w-full rounded-lg border px-3 py-2 text-sm transition-all outline-none"
+                            >
+                                <option value="">Pilih Tipe</option>
+                                {submissionTypes.map((st) => (
+                                    <option key={st.id} value={st.id}>
+                                        {st.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
                             <label className="text-muted-foreground mb-1.5 block text-xs font-bold uppercase">Pihak Kedua (Vendor)</label>
                             <select
                                 value={vendorId}
@@ -150,10 +177,10 @@ export function EditContractModal({ open, onClose, onSubmit, contract, types, ve
                                 onSubmit({
                                     title,
                                     contract_no: contractNo,
-                                    crown_no: crownNo,
                                     description,
                                     contract_date: date,
                                     contract_type_id: typeId,
+                                    submission_type_id: submissionTypeId,
                                     vendor_id: vendorId,
                                 })
                             }

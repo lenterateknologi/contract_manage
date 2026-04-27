@@ -56,7 +56,7 @@ function ExpiryBadge({ endDate }: { endDate: string | null }) {
     if (!endDate) return null;
     const end = new Date(endDate);
     const now = new Date();
-    now.setHours(0, 0, 0, 0); 
+    now.setHours(0, 0, 0, 0);
     const diffTime = end.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -148,6 +148,7 @@ function ContractPage({
     meUser,
     initialSelected,
     types,
+    submissionTypes = [],
     currentView,
     metrics,
     filters,
@@ -162,6 +163,7 @@ function ContractPage({
     meUser: any;
     initialSelected?: Contract | null;
     types: ContractType[];
+    submissionTypes: any[];
     currentView: View;
     metrics: any;
     filters: {
@@ -196,7 +198,7 @@ function ContractPage({
     }, [currentView, view, initialSelected]);
 
     const [selected, setSelected] = useState<Contract | null>(initialSelected ?? null);
-    
+
     // Sync state when initialSelected prop changes (Inertia updates)
     useEffect(() => {
         if (initialSelected) {
@@ -295,14 +297,14 @@ function ContractPage({
                 <DropdownMenuItem onClick={() => openDetail(c)} className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-tight text-slate-600 rounded-lg cursor-pointer">
                     <Eye size={14} /> Lihat Detail
                 </DropdownMenuItem>
-                <DropdownMenuItem 
+                <DropdownMenuItem
                     onClick={() => { setSelected(c); setEditOpen(true); }}
                     className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-tight text-slate-600 rounded-lg cursor-pointer"
                 >
                     <FileEdit size={14} /> Perbarui
                 </DropdownMenuItem>
                 <div className="my-1 h-px bg-slate-50" />
-                <DropdownMenuItem 
+                <DropdownMenuItem
                     onClick={() => { setSelected(c); setDeleteOpen(true); }}
                     className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-tight text-rose-600 focus:text-rose-600 focus:bg-rose-50 rounded-lg cursor-pointer"
                 >
@@ -336,41 +338,41 @@ function ContractPage({
     const canApprove = (selected?.status === 'in_review' || selected?.status === 'revision') && !!pendingApprovalForMe;
 
     const handleCreate = async (fd: FormData) => {
-        try { await contractApi.create(fd); router.reload({ preserveScroll: true } as any); showToast('Kontrak berhasil dibuat!', 'success'); } 
+        try { await contractApi.create(fd); router.reload({ preserveScroll: true } as any); showToast('Kontrak berhasil dibuat!', 'success'); }
         catch (err: any) { showToast(err.response?.data?.message || 'Gagal membuat kontrak.', 'danger'); }
     };
 
     const handleApprove = async () => {
         if (!selected) return;
-        try { const c = await contractApi.approve(selected.id, approvalNote); updateContract(c); setApprovalNote(''); showToast('Kontrak berhasil disetujui!', 'success'); } 
+        try { const c = await contractApi.approve(selected.id, approvalNote); updateContract(c); setApprovalNote(''); showToast('Kontrak berhasil disetujui!', 'success'); }
         catch { showToast('Gagal approve.', 'danger'); }
     };
 
     const handleReject = async (reason: string) => {
         if (!selected) return;
-        try { const c = await contractApi.reject(selected.id, reason); updateContract(c); showToast('Kontrak ditolak.', 'info'); } 
+        try { const c = await contractApi.reject(selected.id, reason); updateContract(c); showToast('Kontrak ditolak.', 'info'); }
         catch { showToast('Gagal reject.', 'danger'); }
     };
 
     const handleUpdate = async (data: any) => {
         if (!selected) return;
         setProcessing(true);
-        try { const c = await contractApi.update(selected.id, data); updateContract(c); setEditOpen(false); showToast('Informasi kontrak diperbarui.', 'success'); } 
-        catch { showToast('Gagal memperbarui kontrak.', 'danger'); } 
+        try { const c = await contractApi.update(selected.id, data); updateContract(c); setEditOpen(false); showToast('Informasi kontrak diperbarui.', 'success'); }
+        catch { showToast('Gagal memperbarui kontrak.', 'danger'); }
         finally { setProcessing(false); }
     };
 
     const handleDelete = async () => {
         if (!selected) return;
         setProcessing(true);
-        try { await contractApi.delete(selected.id); router.reload({ preserveScroll: true } as any); setSelected(null); setDeleteOpen(false); showToast('Kontrak berhasil dihapus.', 'success'); } 
-        catch { showToast('Gagal menghapus kontrak.', 'danger'); } 
+        try { await contractApi.delete(selected.id); router.reload({ preserveScroll: true } as any); setSelected(null); setDeleteOpen(false); showToast('Kontrak berhasil dihapus.', 'success'); }
+        catch { showToast('Gagal menghapus kontrak.', 'danger'); }
         finally { setProcessing(false); }
     };
 
     const handleSendSubmit = async (data: any) => {
         if (!selected) return;
-        try { const c = await contractApi.send(selected.id, data); updateContract(c); showToast('Kontrak berhasil dikirim untuk approval!', 'success'); } 
+        try { const c = await contractApi.send(selected.id, data); updateContract(c); showToast('Kontrak berhasil dikirim untuk approval!', 'success'); }
         catch (err: any) { showToast(err.response?.data?.message || 'Gagal mengirim kontrak.', 'danger'); }
     };
 
@@ -453,7 +455,7 @@ function ContractPage({
                                 </div>
                             </div>
                              <div className="flex flex-col gap-4">
-                                <DraftEditableInfoCard selected={selected} types={types} vendors={vendors} formTemplates={formTemplates} canUpdate={!!canUpdate} onUpdate={handleUpdate} processing={processing} setPreviewTitle={setPreviewTitle} setPreviewUrl={setPreviewUrl} setPreviewHasFile={setPreviewHasFile} setPreviewOpen={setPreviewOpen} />
+                                <DraftEditableInfoCard selected={selected} types={types} submissionTypes={submissionTypes} vendors={vendors} formTemplates={formTemplates} canUpdate={!!canUpdate} onUpdate={handleUpdate} processing={processing} setPreviewTitle={setPreviewTitle} setPreviewUrl={setPreviewUrl} setPreviewHasFile={setPreviewHasFile} setPreviewOpen={setPreviewOpen} />
                                 <ContractReferenceCard selected={selected} canUpdate={!!canUpdate} onUpdate={handleUpdate} processing={processing} />
                                 <div className="bg-card border-border overflow-hidden rounded-xl border shadow-sm">
                                     <div className="border-border/50 flex items-center gap-2 border-b p-3 font-bold text-[10px] uppercase tracking-widest bg-slate-50/50"><i className="fa-solid fa-arrow-right-arrow-left" /> Alur Approval</div>
@@ -503,7 +505,7 @@ function ContractPage({
                                     <div className="flex items-center gap-1.5 ml-auto">
                                         {/* Layout Toggle — Monochrome Compact */}
                                         <div className="flex bg-slate-50 border border-slate-100 p-0.5 rounded-none mr-2">
-                                            <button 
+                                            <button
                                                 onClick={() => setLayout('table')}
                                                 className={cn(
                                                     "h-8 w-8 flex items-center justify-center transition-all",
@@ -512,7 +514,7 @@ function ContractPage({
                                             >
                                                 <MoreVertical size={14} className="rotate-90" />
                                             </button>
-                                            <button 
+                                            <button
                                                 onClick={() => setLayout('grid')}
                                                 className={cn(
                                                     "h-8 w-8 flex items-center justify-center transition-all",
@@ -523,8 +525,8 @@ function ContractPage({
                                             </button>
                                         </div>
 
-                                        <button 
-                                            onClick={() => setFilterOpen(true)} 
+                                        <button
+                                            onClick={() => setFilterOpen(true)}
                                             className={cn(
                                                 "border-slate-100 hover:bg-slate-50 relative flex h-10 px-4 items-center gap-2 rounded-none border bg-white transition-all active:scale-95 text-[10px] font-black uppercase tracking-widest",
                                                 (filters.status?.length || filters.contract_type_id?.length) ? "border-black bg-black text-white" : "text-slate-500"
@@ -546,10 +548,10 @@ function ContractPage({
 
                                 <div className="flex-1 overflow-auto">
                                     {layout === 'table' ? (
-                                        <DataTable 
-                                            columns={columns} 
-                                            data={contracts} 
-                                            onRowClick={openDetail} 
+                                        <DataTable
+                                            columns={columns}
+                                            data={contracts}
+                                            onRowClick={openDetail}
                                             pagination={{
                                                 currentPage: contractsPaged.current_page,
                                                 lastPage: contractsPaged.last_page,
@@ -575,7 +577,7 @@ function ContractPage({
                                                                 <StatusBadge status={c.status} />
                                                             </div>
                                                         </div>
-                                                        
+
                                                         <div className="flex items-center gap-4 py-1.5 border-y border-slate-50 group-hover:border-slate-200 transition-all overflow-hidden">
                                                             <div className="flex flex-col gap-0 min-w-[90px]">
                                                                 <span className="text-[8px] font-black uppercase text-slate-300 group-hover:text-slate-400">Departemen</span>
@@ -601,7 +603,7 @@ function ContractPage({
                                                     </div>
                                                 ))}
                                             </div>
-                                            
+
                                             {/* Grid Pagination Footer — Standardizing with DataTable logic */}
                                             <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t border-slate-100 pt-6 sm:flex-row w-full pb-10">
                                                 <div className="text-slate-400 text-[10px] font-bold tracking-widest uppercase">
@@ -622,10 +624,10 @@ function ContractPage({
                 )}
             </div>
 
-            <CreateContractModal open={createOpen} onClose={() => setCreateOpen(false)} onSubmit={handleCreate} types={types} users={users} vendors={vendors} />
+            <CreateContractModal open={createOpen} onClose={() => setCreateOpen(false)} onSubmit={handleCreate} types={types} submissionTypes={submissionTypes} users={users} vendors={vendors} />
             <RejectModal open={rejectOpen} onClose={() => setRejectOpen(false)} onSubmit={handleReject} />
             <SendApprovalModal open={sendOpen} onClose={() => setSendOpen(false)} onSubmit={handleSendSubmit} contractType={selected?.contract_type ?? undefined} />
-            <EditContractModal open={editOpen} onClose={() => setEditOpen(false)} onSubmit={handleUpdate} contract={selected} types={types} vendors={vendors} processing={processing} />
+            <EditContractModal open={editOpen} onClose={() => setEditOpen(false)} onSubmit={handleUpdate} contract={selected} types={types} submissionTypes={submissionTypes} vendors={vendors} processing={processing} />
             <FilterSheet
                 isOpen={filterOpen}
                 onOpenChange={setFilterOpen}
@@ -692,6 +694,7 @@ export default function ContractsIndex({
     currentView = 'dashboard',
     contracts: initialContractsPaged = { data: [], links: [], current_page: 1, last_page: 1, total: 0, from: 0, to: 0, per_page: 10 } as any,
     types: initialTypes = [],
+    submissionTypes: initialSubmissionTypes = [],
     formTemplates: initialFormTemplates = [],
     metrics: initialMetrics = null,
     initialSelected: initialSelectedProp = null,
@@ -706,6 +709,7 @@ export default function ContractsIndex({
     const meUser = auth?.user ?? null;
     const [contractsPaged, setContractsPaged] = useState<PaginatedData<Contract>>(initialContractsPaged);
     const [types, setTypes] = useState<ContractType[]>(initialTypes);
+    const [submissionTypes, setSubmissionTypes] = useState<any[]>(initialSubmissionTypes);
     const [bootLoading, setBootLoading] = useState(initialContractsPaged.data.length === 0 && !initialMetrics && !initialSelectedProp);
     const [initialSelected, setInitialSelected] = useState<Contract | null>(initialSelectedProp);
     const [metrics, setMetrics] = useState<any>(initialMetrics);
@@ -725,7 +729,7 @@ export default function ContractsIndex({
 
     useEffect(() => {
         const hasInitialData = initialContractsPaged.data.length > 0 || initialContractsPaged.total > 0;
-        
+
         if (initialSelectedProp) {
             setInitialSelected(initialSelectedProp);
             setBootLoading(false);
@@ -746,18 +750,20 @@ export default function ContractsIndex({
         Promise.all([
             contractApi.list({ view: currentView }),
             contractApi.getTypes(),
+            axios.get('/admin/api/contracts/submission-types').then(res => res.data).catch(() => []),
             axios.post('/admin/api/reports/data', {}).then((res) => res.data).catch(() => null),
-        ]).then(([cData, tData, mData]) => {
+        ]).then(([cData, tData, sData, mData]) => {
             setContractsPaged(cData as any);
             setTypes(tData);
+            setSubmissionTypes(sData as any);
             setMetrics(mData);
-            
+
             if (initialSelectedProp) {
                 setInitialSelected(initialSelectedProp);
             } else if (initialId) {
                 setInitialSelected(cData.data.find((c: Contract) => c.id === initialId) ?? null);
             }
-            
+
             setBootLoading(false);
         }).catch(() => setBootLoading(false));
     }, [initialContractsPaged?.total, initialTypes?.length, initialId, currentView, initialSelectedProp?.id]);
@@ -772,18 +778,19 @@ export default function ContractsIndex({
                         <span>Memuat data kontrak...</span>
                     </div>
                 ) : (
-                    <ContractPage 
-                        contracts={contractsPaged} 
-                        meId={meId} 
-                        meUser={meUser} 
-                        initialSelected={initialSelected} 
-                        types={types} 
-                        vendors={vendors} 
-                        formTemplates={initialFormTemplates} 
-                        currentView={currentView} 
-                        metrics={metrics} 
-                        filters={filters} 
-                        users={users} 
+                    <ContractPage
+                        contracts={contractsPaged}
+                        meId={meId}
+                        meUser={meUser}
+                        initialSelected={initialSelected}
+                        types={types}
+                        submissionTypes={submissionTypes}
+                        vendors={vendors}
+                        formTemplates={initialFormTemplates}
+                        currentView={currentView}
+                        metrics={metrics}
+                        filters={filters}
+                        users={users}
                         departments={departments}
                         roles={roles}
                     />

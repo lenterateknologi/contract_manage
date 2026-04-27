@@ -62,6 +62,7 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('api')->group(function () {
         Route::get('/contracts', [ContractController::class, 'index']);
         Route::get('/contract-types', [ContractController::class, 'getTypes']);
+        Route::get('/contracts/submission-types', [ContractController::class, 'getSubmissionTypes']);
         Route::post('/contracts', [ContractController::class, 'store']);
         Route::get('/contracts/workflows', [ContractController::class, 'getWorkflows']);
         Route::get('/contracts/users', [ContractController::class, 'getUsers']);

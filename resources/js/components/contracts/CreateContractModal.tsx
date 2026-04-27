@@ -1,22 +1,22 @@
 import { usePage } from '@inertiajs/react';
-import { useState, useEffect } from 'react';
-import { SearchableSelect } from '@/components/ui/SearchableSelect';
-
+import { useEffect, useState } from 'react';
 
 interface Props {
     open: boolean;
     onClose: () => void;
     onSubmit: (data: FormData) => Promise<void>;
     types?: any[];
+    submissionTypes?: any[];
     users?: any[];
     vendors?: any[];
 }
 
-export default function CreateContractModal({ open, onClose, onSubmit, types = [], users = [], vendors = [] }: Props) {
+export default function CreateContractModal({ open, onClose, onSubmit, types = [], submissionTypes = [], users = [], vendors = [] }: Props) {
     const { auth } = usePage().props as any;
     const [title, setTitle] = useState('');
     const [desc, setDesc] = useState('');
     const [typeId, setTypeId] = useState('');
+    const [submissionTypeId, setSubmissionTypeId] = useState('');
     const [transactionType, setTransactionType] = useState('Perjanjian Baru');
     const [taxRequired, setTaxRequired] = useState(false);
     const [initiatedById, setInitiatedById] = useState('');
@@ -33,7 +33,8 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
 
     if (!open) return null;
 
-    const isLegalOrAdmin = auth?.user?.role === 'Admin' ||
+    const isLegalOrAdmin =
+        auth?.user?.role === 'Admin' ||
         auth?.user?.department?.name?.toLowerCase().includes('legal') ||
         auth?.user?.role?.toLowerCase().includes('legal');
 
@@ -52,6 +53,9 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
         fd.append('title', title);
         fd.append('description', desc);
         fd.append('contract_type_id', typeId);
+        if (submissionTypeId) {
+            fd.append('submission_type_id', submissionTypeId);
+        }
         fd.append('transaction_type', transactionType);
         fd.append('tax_required', taxRequired ? '1' : '0');
         if (initiatedById) {
@@ -68,6 +72,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
             setTitle('');
             setDesc('');
             setTypeId('');
+            setSubmissionTypeId('');
             setTransactionType('Perjanjian Baru');
             setTaxRequired(false);
             setInitiatedById(auth?.user?.id || '');
@@ -100,92 +105,89 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
 
                 <div className="max-h-[80vh] space-y-5 overflow-y-auto p-5">
                     {isLegalOrAdmin && (
-                        <div className="bg-indigo-50/50 border border-indigo-100 rounded-lg p-4 mb-2">
-                            <label className="text-indigo-900 mb-1.5 block text-[11px] font-black tracking-wider uppercase">
+                        <div className="mb-2 rounded-lg border border-indigo-100 bg-indigo-50/50 p-4">
+                            <label className="mb-1.5 block text-[11px] font-black tracking-wider text-indigo-900 uppercase">
                                 <i className="fa-solid fa-user-shield mr-1.5" /> Dibuat Untuk (Initiator)
                             </label>
                             <select
                                 value={initiatedById}
                                 onChange={(e) => setInitiatedById(e.target.value)}
-                                className="border-indigo-200 bg-white placeholder:text-muted-foreground/30 w-full rounded-md border px-3 py-2 text-[12px] outline-none focus:border-indigo-500 font-bold"
+                                className="placeholder:text-muted-foreground/30 w-full rounded-md border border-indigo-200 bg-white px-3 py-2 text-[12px] font-bold outline-none focus:border-indigo-500"
                             >
                                 <option value={auth.user.id}>Diri Sendiri ({auth.user.name})</option>
                                 <optgroup label="Pilih User Lain (Legal Helper Mode)">
-                                    {users.filter(u => u.id !== auth.user.id).map((u) => (
-                                        <option key={u.id} value={u.id}>
-                                            {u.name} — {u.role} ({u.department_name || 'No Dept'})
-                                        </option>
-                                    ))}
+                                    {users
+                                        .filter((u) => u.id !== auth.user.id)
+                                        .map((u) => (
+                                            <option key={u.id} value={u.id}>
+                                                {u.name} — {u.role} ({u.department_name || 'No Dept'})
+                                            </option>
+                                        ))}
                                 </optgroup>
                             </select>
-                            <p className="mt-2 text-[10px] text-indigo-600/70 italic leading-relaxed">
-                                <strong>Legal Helper:</strong> Jika Anda memilih user lain, workflow akan disesuaikan dengan departemen mereka, dan beberapa tahap review awal dapat dilewati secara otomatis.
+                            <p className="mt-2 text-[10px] leading-relaxed text-indigo-600/70 italic">
+                                <strong>Legal Helper:</strong> Jika Anda memilih user lain, workflow akan disesuaikan dengan departemen mereka, dan
+                                beberapa tahap review awal dapat dilewati secara otomatis.
                             </p>
                         </div>
                     )}
 
-                    <div>
-                        <label className="text-muted-foreground mb-1.5 block text-[11px] font-semibold tracking-wider uppercase">
-                            Nama Kontrak <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Masukkan nama kontrak"
-                            className="border-border placeholder:text-muted-foreground/30 w-full rounded-md border px-3 py-2 text-[12px] outline-none focus:border-indigo-500"
-                        />
-                        {errors.title && <div className="mt-1 text-[10px] text-red-500">{errors.title}</div>}
-                    </div>
-
                     <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-muted-foreground mb-1.5 block text-[11px] font-semibold tracking-wider uppercase">
+                                Perjanjian <span className="text-red-500">*</span>
+                            </label>
+                            <select
+                                value={submissionTypeId}
+                                onChange={(e) => setSubmissionTypeId(e.target.value)}
+                                className="border-border placeholder:text-muted-foreground/30 w-full rounded-md border bg-white px-3 py-2 text-[12px] outline-none focus:border-indigo-500"
+                            >
+                                <option value="">Pilih Tipe</option>
+                                {submissionTypes.map((st) => (
+                                    <option key={st.id} value={st.id}>
+                                        {st.name}
+                                    </option>
+                                ))}
+                            </select>
+                            {errors.submission_type_id && <div className="mt-1 text-[10px] text-red-500">{errors.submission_type_id}</div>}
+                        </div>
+
                         <div>
                             <label className="text-muted-foreground mb-1.5 block text-[11px] font-semibold tracking-wider uppercase">
                                 Tipe Kontrak <span className="text-red-500">*</span>
                             </label>
                             <select
                                 value={typeId}
-                                onChange={(e) => setTypeId(e.target.value)}
-                                className="border-border placeholder:text-muted-foreground/30 w-full rounded-md border px-3 py-2 text-[12px] outline-none focus:border-indigo-500 bg-white"
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setTypeId(val);
+                                    const selectedType = types.find((t) => String(t.id) === val);
+                                    if (selectedType) setTitle(selectedType.name);
+                                }}
+                                className="border-border placeholder:text-muted-foreground/30 w-full rounded-md border bg-white px-3 py-2 text-[12px] outline-none focus:border-indigo-500"
                             >
                                 <option value="">Pilih Tipe</option>
                                 {types.map((t) => (
-                                    <option key={t.id} value={t.id}>{t.name}</option>
+                                    <option key={t.id} value={t.id}>
+                                        {t.name}
+                                    </option>
                                 ))}
                             </select>
                             {errors.contract_type_id && <div className="mt-1 text-[10px] text-red-500">{errors.contract_type_id}</div>}
                         </div>
-
-                        <div>
-                            <label className="text-muted-foreground mb-1.5 block text-[11px] font-semibold tracking-wider uppercase">
-                                Pihak Kedua (Vendor)
-                            </label>
-                            <SearchableSelect
-                                options={vendors}
-                                value={vendorId}
-                                onChange={setVendorId}
-                                placeholder="Pilih Vendor"
-                            />
-                            <p className="mt-1 text-[9px] text-muted-foreground italic">Pilih vendor untuk autofill Pihak Kedua</p>
-                        </div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4">
-                        <div>
-                            <label className="text-muted-foreground mb-1.5 block text-[11px] font-semibold tracking-wider uppercase">
-                                Tipe Perjanjian <span className="text-red-500">*</span>
-                            </label>
-                            <select
-                                value={transactionType}
-                                onChange={(e) => setTransactionType(e.target.value)}
-                                className="border-border placeholder:text-muted-foreground/30 w-full rounded-md border px-3 py-2 text-[12px] outline-none focus:border-indigo-500 bg-white"
-                            >
-                                <option value="Perjanjian Baru">Perjanjian Baru</option>
-                                <option value="Addendum">Addendum</option>
-                                <option value="Amandement">Amandement</option>
-                                <option value="Perubahan Perjanjian">Perubahan Perjanjian</option>
-                                <option value="General">General</option>
-                            </select>
-                        </div>
+                    <div>
+                        <label className="text-muted-foreground mb-1.5 block text-[11px] font-semibold tracking-wider uppercase">
+                            Judul Kontrak <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            placeholder="Masukkan judul kontrak"
+                            className="border-border placeholder:text-muted-foreground/30 w-full rounded-md border px-3 py-2 text-[12px] outline-none focus:border-indigo-500"
+                        />
+                        {errors.title && <div className="mt-1 text-[10px] text-red-500">{errors.title}</div>}
                     </div>
 
                     <div>
@@ -201,19 +203,19 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                         />
                     </div>
 
-                    <div className="bg-slate-50 border border-slate-100 rounded-lg p-4 flex items-center justify-between">
+                    <div className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 p-4">
                         <div className="flex flex-col">
-                            <span className="text-[11px] font-black uppercase tracking-widest text-foreground/80">Pajak (Tax Review)</span>
-                            <span className="text-[10px] text-muted-foreground font-medium">Apakah kontrak ini memerlukan review pajak?</span>
+                            <span className="text-foreground/80 text-[11px] font-black tracking-widest uppercase">Pajak (Tax Review)</span>
+                            <span className="text-muted-foreground text-[10px] font-medium">Apakah kontrak ini memerlukan review pajak?</span>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
+                        <label className="relative inline-flex cursor-pointer items-center">
                             <input
                                 type="checkbox"
                                 checked={taxRequired}
                                 onChange={(e) => setTaxRequired(e.target.checked)}
-                                className="sr-only peer"
+                                className="peer sr-only"
                             />
-                            <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                            <div className="peer h-5 w-9 rounded-full bg-slate-300 peer-checked:bg-indigo-600 peer-focus:outline-none after:absolute after:top-[2px] after:left-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
                         </label>
                     </div>
 
@@ -225,7 +227,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                     )}
                 </div>
 
-                <div className="border-border/50 flex items-center justify-end gap-3 border-t px-5 py-4 bg-slate-50/50">
+                <div className="border-border/50 flex items-center justify-end gap-3 border-t bg-slate-50/50 px-5 py-4">
                     <button
                         onClick={onClose}
                         className="text-muted-foreground hover:text-foreground/80 px-5 py-2 text-[12px] font-medium transition-colors"
@@ -235,7 +237,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                     <button
                         onClick={handleSubmit}
                         disabled={loading}
-                        className="bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200/50 rounded-lg px-6 py-2 text-[12px] font-black uppercase tracking-widest text-white shadow-lg transition-all disabled:bg-gray-400 active:scale-95"
+                        className="rounded-lg bg-indigo-600 px-6 py-2 text-[12px] font-black tracking-widest text-white uppercase shadow-lg shadow-indigo-200/50 transition-all hover:bg-indigo-700 active:scale-95 disabled:bg-gray-400"
                     >
                         {loading ? <i className="fa-solid fa-spinner fa-spin mr-2" /> : <i className="fa-solid fa-check mr-2" />}
                         Buat Kontrak

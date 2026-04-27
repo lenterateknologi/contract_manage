@@ -74,8 +74,8 @@ class ReportController extends Controller
             ->get();
 
         // Contract Registry List
-        $contractsList = (clone $query)->with(['creator', 'contractType', 'approvals.approver'])
-            ->orderByDesc('t_contracts.created_at')
+        $contractsList = (clone $query)->with(['creator', 'contractType', 'submissionType', 'approvals.approver'])
+            ->orderByDesc('created_at')
             ->get()
             ->map(function ($c) {
                 return [
@@ -83,6 +83,7 @@ class ReportController extends Controller
                     'contract_no' => $c->contract_no,
                     'title' => $c->title,
                     'type' => $c->contractType?->name,
+                    'submission_type' => $c->submissionType?->name ?? '—',
                     'status' => $c->status,
                     'creator' => $c->creator?->name,
                     'created_at' => $c->created_at->toIso8601String(),
@@ -152,7 +153,7 @@ class ReportController extends Controller
 
     public function exportCsv(Request $request): StreamedResponse
     {
-        $query = Contract::with(['creator', 'contractType']);
+        $query = Contract::with(['creator', 'contractType', 'submissionType']);
 
         // Apply filters
         if ($request->filled('date_from')) {
@@ -202,6 +203,7 @@ class ReportController extends Controller
                 'No. Kontrak',
                 'Judul',
                 'Tipe',
+                'Perjanjian',
                 'Status',
                 'Pembuat',
                 'Tgl Dibuat',
@@ -215,6 +217,7 @@ class ReportController extends Controller
                     $c->contract_no,
                     $c->title,
                     $c->contractType?->name ?? '—',
+                    $c->submissionType?->name ?? '—',
                     strtoupper($c->status),
                     $c->creator?->name ?? '—',
                     $c->created_at->toDateString(),

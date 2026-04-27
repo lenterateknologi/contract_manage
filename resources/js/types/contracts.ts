@@ -79,6 +79,12 @@ export interface ContractType {
     description?: string;
 }
 
+export interface SubmissionType {
+    id: string;
+    code: string;
+    name: string;
+}
+
 export interface ContractFormSubmissionInfo {
     id: string;
     document_type: 'f1' | 'f2';
@@ -98,6 +104,8 @@ export interface Contract {
     end_date: string | null;
     contract_type: string | null;
     contract_type_id?: string;
+    submission_type?: string | null;
+    submission_type_id?: string;
     transaction_type?: string;
     kop_sub_topik?: string;
     parent_id?: string | null;
