@@ -835,7 +835,7 @@ class AdminController extends Controller
                         $workflow->initiatorRolesData()->create(['role_name' => $role]);
                     }
                 }
-                
+
                 $workflow->initiatorDepartmentsData()->delete();
                 if (!empty($data['initiator_departments'])) {
                     foreach ($data['initiator_departments'] as $deptId) {
@@ -876,13 +876,13 @@ class AdminController extends Controller
                                 $step->approverRoles()->create(['role_name' => $role]);
                             }
                         }
-                        
+
                         if (!empty($stepData['department_ids'])) {
                             foreach ((array)$stepData['department_ids'] as $deptId) {
                                 $step->approverDepartments()->create(['department_id' => $deptId]);
                             }
                         }
-                        
+
                         if (!empty($stepData['user_ids'])) {
                             foreach ((array)$stepData['user_ids'] as $userId) {
                                 $step->approverUsers()->create(['user_id' => $userId]);

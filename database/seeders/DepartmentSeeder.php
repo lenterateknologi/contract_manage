@@ -29,13 +29,14 @@ class DepartmentSeeder extends Seeder
         ];
 
         foreach ($departments as $dept) {
-            Department::updateOrCreate(
+            Department::withTrashed()->updateOrCreate(
                 ['code' => $dept['code']],
                 [
                     'name' => $dept['name'],
                     'description' => $dept['description'],
                     'created_by' => $adminId,
                     'updated_by' => $adminId,
+                    'deleted_at' => null,
                 ]
             );
         }

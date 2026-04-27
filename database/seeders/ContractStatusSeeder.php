@@ -83,11 +83,12 @@ class ContractStatusSeeder extends Seeder
         ];
 
         foreach ($statuses as $status) {
-            ContractStatus::updateOrCreate(
+            ContractStatus::withTrashed()->updateOrCreate(
                 ['code' => $status['code']],
                 array_merge($status, [
                     'created_by' => $adminId,
                     'updated_by' => $adminId,
+                    'deleted_at' => null,
                 ])
             );
         }

@@ -26,7 +26,10 @@ class ContractTypeSeeder extends Seeder
         ];
 
         foreach ($types as $t) {
-            ContractType::updateOrCreate(['code' => $t['code']], $t);
+            ContractType::withTrashed()->updateOrCreate(
+                ['code' => $t['code']],
+                array_merge($t, ['deleted_at' => null])
+            );
         }
     }
 }

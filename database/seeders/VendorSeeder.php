@@ -52,12 +52,13 @@ class VendorSeeder extends Seeder
         ];
 
         foreach ($vendors as $vendorData) {
-            Vendor::updateOrCreate(
+            Vendor::withTrashed()->updateOrCreate(
                 ['code' => $vendorData['code']],
                 array_merge($vendorData, [
                     'is_active' => true,
                     'created_by' => $adminId,
                     'updated_by' => $adminId,
+                    'deleted_at' => null,
                 ])
             );
         }

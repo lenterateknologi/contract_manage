@@ -21,9 +21,9 @@ class RoleSeeder extends Seeder
         ];
 
         foreach ($roles as $role) {
-            Role::updateOrCreate(
+            Role::withTrashed()->updateOrCreate(
                 ['name' => $role['name']],
-                ['description' => $role['description']]
+                ['description' => $role['description'], 'deleted_at' => null]
             );
         }
     }

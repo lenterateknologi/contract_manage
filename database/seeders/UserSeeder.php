@@ -126,7 +126,10 @@ class UserSeeder extends Seeder
         ];
 
         foreach ($users as $userData) {
-            User::updateOrCreate(['email' => $userData['email']], array_merge($userData, ['is_active' => true]));
+            User::withTrashed()->updateOrCreate(
+                ['email' => $userData['email']],
+                array_merge($userData, ['is_active' => true, 'deleted_at' => null])
+            );
         }
 
         // Now seed more users in a structured way
@@ -140,7 +143,7 @@ class UserSeeder extends Seeder
             
             // If no manager, create one
             if (!$hasManager) {
-                User::updateOrCreate(
+                User::withTrashed()->updateOrCreate(
                     ['email' => "manager.".strtolower($dept->code)."@example.com"],
                     [
                         'name' => fake()->name(),
@@ -154,6 +157,7 @@ class UserSeeder extends Seeder
                         'bg_color' => '#f1f5f9',
                         'text_color' => '#0f172a',
                         'is_active' => true,
+                        'deleted_at' => null,
                     ]
                 );
             }
@@ -164,7 +168,7 @@ class UserSeeder extends Seeder
                 $name = fake()->name();
                 $initials = collect(explode(' ', $name))->map(fn ($n) => strtoupper(substr($n, 0, 1)))->take(2)->join('');
                 
-                User::updateOrCreate(
+                User::withTrashed()->updateOrCreate(
                     ['email' => "staff{$i}.".strtolower($dept->code)."@example.com"],
                     [
                         'name' => $name,
@@ -178,6 +182,7 @@ class UserSeeder extends Seeder
                         'bg_color' => fake()->hexColor(),
                         'text_color' => '#ffffff',
                         'is_active' => true,
+                        'deleted_at' => null,
                     ]
                 );
             }
