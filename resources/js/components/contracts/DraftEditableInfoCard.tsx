@@ -15,6 +15,7 @@ export interface FormTemplateInfo {
 interface DraftEditableInfoCardProps {
     selected: Contract;
     types: ContractType[];
+    submissionTypes: any[];
     vendors: any[];
     formTemplates: FormTemplateInfo[];
     canUpdate: boolean;
@@ -29,6 +30,7 @@ interface DraftEditableInfoCardProps {
 export function DraftEditableInfoCard({
     selected,
     types,
+    submissionTypes = [],
     vendors = [],
     formTemplates,
     canUpdate,
@@ -47,6 +49,7 @@ export function DraftEditableInfoCard({
         return t ? String(t.id) : '';
     });
     const [vendorId, setVendorId] = useState(selected.vendor_id || '');
+    const [submissionTypeId, setSubmissionTypeId] = useState(selected.submission_type_id || '');
     const [transactionType, setTransactionType] = useState(selected.transaction_type || 'Perjanjian Baru');
     const [kopSubTopik, setKopSubTopik] = useState((selected as any).kop_sub_topik || '');
     const [minimized, setMinimized] = useState(false);
@@ -57,6 +60,7 @@ export function DraftEditableInfoCard({
         const t = types.find((x) => x.name === selected.contract_type);
         setTypeId(t ? String(t.id) : '');
         setVendorId(selected.vendor_id || '');
+        setSubmissionTypeId(selected.submission_type_id || '');
         setTransactionType(selected.transaction_type || 'Perjanjian Baru');
         setKopSubTopik((selected as any).kop_sub_topik || '');
     }, [
@@ -65,6 +69,7 @@ export function DraftEditableInfoCard({
         selected.description,
         selected.contract_type,
         selected.vendor_id,
+        selected.submission_type_id,
         selected.transaction_type,
         (selected as any).kop_sub_topik,
         types,
@@ -78,6 +83,7 @@ export function DraftEditableInfoCard({
             description !== (selected.description || '') ||
             typeId !== origTypeId ||
             vendorId !== (selected.vendor_id || '') ||
+            submissionTypeId !== (selected.submission_type_id || '') ||
             transactionType !== (selected.transaction_type || 'Perjanjian Baru') ||
             kopSubTopik !== ((selected as any).kop_sub_topik || '')
         );
@@ -89,6 +95,7 @@ export function DraftEditableInfoCard({
             description,
             contract_type_id: typeId || undefined,
             vendor_id: vendorId || undefined,
+            submission_type_id: submissionTypeId || undefined,
             transaction_type: transactionType,
             kop_sub_topik: kopSubTopik,
         });
@@ -185,7 +192,7 @@ export function DraftEditableInfoCard({
 
                     <div>
                         <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
-                            Tipe Kontrak
+                            Jenis Kontrak
                         </div>
                         {isDraft ? (
                             <select value={typeId} onChange={(e) => setTypeId(e.target.value)} className={inputCls}>
@@ -205,17 +212,19 @@ export function DraftEditableInfoCard({
 
                     <div>
                         <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
-                            Tipe Perjanjian
+                            Perjanjian
                         </div>
                         {isDraft ? (
-                            <select value={transactionType} onChange={(e) => setTransactionType(e.target.value)} className={inputCls}>
-                                <option value="Perjanjian Baru">Perjanjian Baru</option>
-                                <option value="Addendum">Addendum</option>
-                                <option value="Amandement">Amandement</option>
-                                <option value="Perubahan Perjanjian">Perubahan Perjanjian</option>
+                            <select value={submissionTypeId} onChange={(e) => setSubmissionTypeId(e.target.value)} className={inputCls}>
+                                <option value="">Pilih Tipe</option>
+                                {submissionTypes.map((st) => (
+                                    <option key={st.id} value={st.id}>
+                                        {st.name}
+                                    </option>
+                                ))}
                             </select>
                         ) : (
-                            <span style={{ fontSize: 12 }}>{selected.transaction_type || 'Perjanjian Baru'}</span>
+                            <span style={{ fontSize: 12 }}>{selected.submission_type || '—'}</span>
                         )}
                     </div>
 

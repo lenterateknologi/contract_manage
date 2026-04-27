@@ -7,6 +7,7 @@ interface EditContractModalProps {
     onSubmit: (data: any) => void;
     contract: Contract | null;
     types: ContractType[];
+    submissionTypes: any[];
     vendors?: any[];
     processing: boolean;
 }
@@ -17,6 +18,7 @@ export function EditContractModal({
     onSubmit,
     contract,
     types,
+    submissionTypes = [],
     vendors = [],
     processing,
 }: EditContractModalProps) {
@@ -25,6 +27,7 @@ export function EditContractModal({
     const [description, setDescription] = useState('');
     const [date, setDate] = useState('');
     const [typeId, setTypeId] = useState('');
+    const [submissionTypeId, setSubmissionTypeId] = useState('');
     const [vendorId, setVendorId] = useState('');
 
     useEffect(() => {
@@ -35,6 +38,7 @@ export function EditContractModal({
             setDate(contract.contract_date || '');
             const t = types.find((x) => x.name === contract.contract_type);
             setTypeId(t ? String(t.id) : '');
+            setSubmissionTypeId(contract.submission_type_id || '');
             setVendorId((contract as any).vendor_id || '');
         }
     }, [open, contract, types]);
@@ -102,6 +106,21 @@ export function EditContractModal({
                             </select>
                         </div>
                         <div>
+                            <label className="text-muted-foreground mb-1.5 block text-xs font-bold uppercase">Perjanjian</label>
+                            <select
+                                value={submissionTypeId}
+                                onChange={(e) => setSubmissionTypeId(e.target.value)}
+                                className="bg-muted/30 border-border focus:border-primary/50 w-full rounded-lg border px-3 py-2 text-sm transition-all outline-none"
+                            >
+                                <option value="">Pilih Tipe</option>
+                                {submissionTypes.map((st) => (
+                                    <option key={st.id} value={st.id}>
+                                        {st.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
                             <label className="text-muted-foreground mb-1.5 block text-xs font-bold uppercase">Pihak Kedua (Vendor)</label>
                             <select
                                 value={vendorId}
@@ -135,7 +154,7 @@ export function EditContractModal({
                             Batal
                         </button>
                         <button
-                            onClick={() => onSubmit({ title, contract_no: contractNo, description, contract_date: date, contract_type_id: typeId, vendor_id: vendorId })}
+                            onClick={() => onSubmit({ title, contract_no: contractNo, description, contract_date: date, contract_type_id: typeId, submission_type_id: submissionTypeId, vendor_id: vendorId })}
                             disabled={processing || !title}
                             className="bg-primary text-primary-foreground shadow-primary/20 hover:shadow-primary/30 flex-1 rounded-xl py-2.5 text-sm font-bold shadow-lg transition-all active:scale-[0.98] disabled:opacity-50"
                         >

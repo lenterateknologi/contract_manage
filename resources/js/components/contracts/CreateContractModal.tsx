@@ -8,15 +8,17 @@ interface Props {
     onClose: () => void;
     onSubmit: (data: FormData) => Promise<void>;
     types?: any[];
+    submissionTypes?: any[];
     users?: any[];
     vendors?: any[];
 }
 
-export default function CreateContractModal({ open, onClose, onSubmit, types = [], users = [], vendors = [] }: Props) {
+export default function CreateContractModal({ open, onClose, onSubmit, types = [], submissionTypes = [], users = [], vendors = [] }: Props) {
     const { auth } = usePage().props as any;
     const [title, setTitle] = useState('');
     const [desc, setDesc] = useState('');
     const [typeId, setTypeId] = useState('');
+    const [submissionTypeId, setSubmissionTypeId] = useState('');
     const [transactionType, setTransactionType] = useState('Perjanjian Baru');
     const [taxRequired, setTaxRequired] = useState(false);
     const [initiatedById, setInitiatedById] = useState('');
@@ -52,6 +54,9 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
         fd.append('title', title);
         fd.append('description', desc);
         fd.append('contract_type_id', typeId);
+        if (submissionTypeId) {
+            fd.append('submission_type_id', submissionTypeId);
+        }
         fd.append('transaction_type', transactionType);
         fd.append('tax_required', taxRequired ? '1' : '0');
         if (initiatedById) {
@@ -68,6 +73,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
             setTitle('');
             setDesc('');
             setTypeId('');
+            setSubmissionTypeId('');
             setTransactionType('Perjanjian Baru');
             setTaxRequired(false);
             setInitiatedById(auth?.user?.id || '');
@@ -124,27 +130,38 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                         </div>
                     )}
 
-                    <div>
-                        <label className="text-muted-foreground mb-1.5 block text-[11px] font-semibold tracking-wider uppercase">
-                            Nama Kontrak <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Masukkan nama kontrak"
-                            className="border-border placeholder:text-muted-foreground/30 w-full rounded-md border px-3 py-2 text-[12px] outline-none focus:border-indigo-500"
-                        />
-                        {errors.title && <div className="mt-1 text-[10px] text-red-500">{errors.title}</div>}
-                    </div>
+
 
                     <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-muted-foreground mb-1.5 block text-[11px] font-semibold tracking-wider uppercase">
+                                Perjanjian <span className="text-red-500">*</span>
+                            </label>
+                            <select
+                                value={submissionTypeId}
+                                onChange={(e) => setSubmissionTypeId(e.target.value)}
+                                className="border-border placeholder:text-muted-foreground/30 w-full rounded-md border px-3 py-2 text-[12px] outline-none focus:border-indigo-500 bg-white"
+                            >
+                                <option value="">Pilih Tipe</option>
+                                {submissionTypes.map((st) => (
+                                    <option key={st.id} value={st.id}>{st.name}</option>
+                                ))}
+                            </select>
+                            {errors.submission_type_id && <div className="mt-1 text-[10px] text-red-500">{errors.submission_type_id}</div>}
+                        </div>
+
                         <div>
                             <label className="text-muted-foreground mb-1.5 block text-[11px] font-semibold tracking-wider uppercase">
                                 Tipe Kontrak <span className="text-red-500">*</span>
                             </label>
                             <select
                                 value={typeId}
-                                onChange={(e) => setTypeId(e.target.value)}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setTypeId(val);
+                                    const selectedType = types.find(t => String(t.id) === val);
+                                    if (selectedType) setTitle(selectedType.name);
+                                }}
                                 className="border-border placeholder:text-muted-foreground/30 w-full rounded-md border px-3 py-2 text-[12px] outline-none focus:border-indigo-500 bg-white"
                             >
                                 <option value="">Pilih Tipe</option>
@@ -154,38 +171,22 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                             </select>
                             {errors.contract_type_id && <div className="mt-1 text-[10px] text-red-500">{errors.contract_type_id}</div>}
                         </div>
-
-                        <div>
-                            <label className="text-muted-foreground mb-1.5 block text-[11px] font-semibold tracking-wider uppercase">
-                                Pihak Kedua (Vendor)
-                            </label>
-                            <SearchableSelect
-                                options={vendors}
-                                value={vendorId}
-                                onChange={setVendorId}
-                                placeholder="Pilih Vendor"
-                            />
-                            <p className="mt-1 text-[9px] text-muted-foreground italic">Pilih vendor untuk autofill Pihak Kedua</p>
-                        </div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4">
-                        <div>
-                            <label className="text-muted-foreground mb-1.5 block text-[11px] font-semibold tracking-wider uppercase">
-                                Tipe Perjanjian <span className="text-red-500">*</span>
-                            </label>
-                            <select
-                                value={transactionType}
-                                onChange={(e) => setTransactionType(e.target.value)}
-                                className="border-border placeholder:text-muted-foreground/30 w-full rounded-md border px-3 py-2 text-[12px] outline-none focus:border-indigo-500 bg-white"
-                            >
-                                <option value="Perjanjian Baru">Perjanjian Baru</option>
-                                <option value="Addendum">Addendum</option>
-                                <option value="Amandement">Amandement</option>
-                                <option value="Perubahan Perjanjian">Perubahan Perjanjian</option>
-                            </select>
-                        </div>
+                    <div>
+                        <label className="text-muted-foreground mb-1.5 block text-[11px] font-semibold tracking-wider uppercase">
+                            Judul Kontrak <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            placeholder="Masukkan judul kontrak"
+                            className="border-border placeholder:text-muted-foreground/30 w-full rounded-md border px-3 py-2 text-[12px] outline-none focus:border-indigo-500"
+                        />
+                        {errors.title && <div className="mt-1 text-[10px] text-red-500">{errors.title}</div>}
                     </div>
+
+
 
                     <div>
                         <label className="text-muted-foreground mb-1.5 block text-[11px] font-semibold tracking-wider uppercase">

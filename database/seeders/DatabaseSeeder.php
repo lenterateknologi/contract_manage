@@ -13,10 +13,11 @@ class DatabaseSeeder extends Seeder
             DepartmentSeeder::class,       // 2. Departments
             ContractTypeSeeder::class,     // 3. Types
             ContractStatusSeeder::class,   // 4. Statuses
-            MasterSeeder::class,           // 5. Structure & Admin (finds Roles/Depts)
-            VendorSeeder::class,           // 6. Vendors
-            UserSeeder::class,             // 7. Extended Users
-            SampleSeeder::class,           // 8. Transactions & Redesigns
+            SubmissionTypeSeeder::class,   // 5. Submission Types
+            MasterSeeder::class,           // 6. Structure & Admin (finds Roles/Depts)
+            VendorSeeder::class,           // 7. Vendors
+            UserSeeder::class,             // 8. Extended Users
+            SampleSeeder::class,           // 9. Transactions & Redesigns
         ]);
     }
 }

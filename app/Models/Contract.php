@@ -23,6 +23,7 @@ class Contract extends Model
         'end_date',
         'contract_type',
         'contract_type_id',
+        'submission_type_id',
         'transaction_type',
         'status',
         'created_by',
@@ -65,6 +66,11 @@ class Contract extends Model
     public function contractType()
     {
         return $this->belongsTo(ContractType::class, 'contract_type_id');
+    }
+
+    public function submissionType()
+    {
+        return $this->belongsTo(SubmissionType::class, 'submission_type_id');
     }
 
     public function attachments(): HasMany

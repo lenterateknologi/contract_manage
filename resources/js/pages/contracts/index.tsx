@@ -148,6 +148,7 @@ function ContractPage({
     meUser,
     initialSelected,
     types,
+    submissionTypes = [],
     currentView,
     metrics,
     filters,
@@ -162,6 +163,7 @@ function ContractPage({
     meUser: any;
     initialSelected?: Contract | null;
     types: ContractType[];
+    submissionTypes: any[];
     currentView: View;
     metrics: any;
     filters: {
@@ -255,7 +257,7 @@ function ContractPage({
     const columns = useMemo<Column<Contract>[]>(() => {
         const baseColumns: Column<Contract>[] = [
             { header: 'No. Kontrak', accessorKey: 'contract_no', sortable: true, className: 'font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground' },
-            { header: 'Judul Kontrak', accessorKey: 'title', sortable: true, cell: (c) => (<div className="flex flex-col"><span className="text-foreground line-clamp-1 font-bold">{c.title}</span><span className="text-muted-foreground text-[10px] font-medium tracking-tight uppercase">{c.contract_type}</span></div>) },
+            { header: 'Judul Kontrak', accessorKey: 'title', sortable: true, cell: (c) => (<div className="flex flex-col"><span className="text-foreground line-clamp-1 font-bold">{c.title}</span><div className="flex gap-1 items-center"><span className="text-muted-foreground text-[10px] font-medium tracking-tight uppercase">{c.contract_type}</span><span className="text-slate-300 text-[8px]">•</span><span className="text-slate-400 text-[10px] font-medium tracking-tight uppercase">{c.submission_type}</span></div></div>) },
             { header: 'Departemen', accessorKey: 'initiator.department_name', cell: (c) => (<span className="text-[10px] font-bold uppercase tracking-tight text-slate-500 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">{c.initiator?.department_name || 'UMUM'}</span>) },
             { header: 'Status', accessorKey: 'status', cell: (c) => <StatusBadge status={c.status} /> },
             { header: 'Versi', accessorKey: 'current_version', cell: (c) => (<span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase">v{c.current_version}</span>) },
@@ -443,7 +445,7 @@ function ContractPage({
                                 </div>
                             </div>
                              <div className="flex flex-col gap-4">
-                                <DraftEditableInfoCard selected={selected} types={types} vendors={vendors} formTemplates={formTemplates} canUpdate={!!canUpdate} onUpdate={handleUpdate} processing={processing} setPreviewTitle={setPreviewTitle} setPreviewUrl={setPreviewUrl} setPreviewHasFile={setPreviewHasFile} setPreviewOpen={setPreviewOpen} />
+                                <DraftEditableInfoCard selected={selected} types={types} submissionTypes={submissionTypes} vendors={vendors} formTemplates={formTemplates} canUpdate={!!canUpdate} onUpdate={handleUpdate} processing={processing} setPreviewTitle={setPreviewTitle} setPreviewUrl={setPreviewUrl} setPreviewHasFile={setPreviewHasFile} setPreviewOpen={setPreviewOpen} />
                                 <ContractReferenceCard selected={selected} canUpdate={!!canUpdate} onUpdate={handleUpdate} processing={processing} />
                                 <div className="bg-card border-border overflow-hidden rounded-xl border shadow-sm">
                                     <div className="border-border/50 flex items-center gap-2 border-b p-3 font-bold text-[10px] uppercase tracking-widest bg-slate-50/50"><i className="fa-solid fa-arrow-right-arrow-left" /> Alur Approval</div>
@@ -612,10 +614,10 @@ function ContractPage({
                 )}
             </div>
 
-            <CreateContractModal open={createOpen} onClose={() => setCreateOpen(false)} onSubmit={handleCreate} types={types} users={users} vendors={vendors} />
+            <CreateContractModal open={createOpen} onClose={() => setCreateOpen(false)} onSubmit={handleCreate} types={types} submissionTypes={submissionTypes} users={users} vendors={vendors} />
             <RejectModal open={rejectOpen} onClose={() => setRejectOpen(false)} onSubmit={handleReject} />
             <SendApprovalModal open={sendOpen} onClose={() => setSendOpen(false)} onSubmit={handleSendSubmit} contractType={selected?.contract_type ?? undefined} />
-            <EditContractModal open={editOpen} onClose={() => setEditOpen(false)} onSubmit={handleUpdate} contract={selected} types={types} vendors={vendors} processing={processing} />
+            <EditContractModal open={editOpen} onClose={() => setEditOpen(false)} onSubmit={handleUpdate} contract={selected} types={types} submissionTypes={submissionTypes} vendors={vendors} processing={processing} />
             <FilterSheet
                 isOpen={filterOpen}
                 onOpenChange={setFilterOpen}
@@ -682,6 +684,7 @@ export default function ContractsIndex({
     currentView = 'dashboard',
     contracts: initialContractsPaged = { data: [], links: [], current_page: 1, last_page: 1, total: 0, from: 0, to: 0, per_page: 10 } as any,
     types: initialTypes = [],
+    submissionTypes: initialSubmissionTypes = [],
     formTemplates: initialFormTemplates = [],
     metrics: initialMetrics = null,
     initialSelected: initialSelectedProp = null,
@@ -696,6 +699,7 @@ export default function ContractsIndex({
     const meUser = auth?.user ?? null;
     const [contractsPaged, setContractsPaged] = useState<PaginatedData<Contract>>(initialContractsPaged);
     const [types, setTypes] = useState<ContractType[]>(initialTypes);
+    const [submissionTypes, setSubmissionTypes] = useState<any[]>(initialSubmissionTypes);
     const [bootLoading, setBootLoading] = useState(initialContractsPaged.data.length === 0 && !initialMetrics && !initialSelectedProp);
     const [initialSelected, setInitialSelected] = useState<Contract | null>(initialSelectedProp);
     const [metrics, setMetrics] = useState<any>(initialMetrics);
@@ -736,10 +740,12 @@ export default function ContractsIndex({
         Promise.all([
             contractApi.list({ view: currentView }),
             contractApi.getTypes(),
+            axios.get('/admin/api/contracts/submission-types').then(res => res.data).catch(() => []),
             axios.post('/admin/api/reports/data', {}).then((res) => res.data).catch(() => null),
-        ]).then(([cData, tData, mData]) => {
+        ]).then(([cData, tData, sData, mData]) => {
             setContractsPaged(cData as any);
             setTypes(tData);
+            setSubmissionTypes(sData as any);
             setMetrics(mData);
             
             if (initialSelectedProp) {
@@ -768,6 +774,7 @@ export default function ContractsIndex({
                         meUser={meUser} 
                         initialSelected={initialSelected} 
                         types={types} 
+                        submissionTypes={submissionTypes}
                         vendors={vendors} 
                         formTemplates={initialFormTemplates} 
                         currentView={currentView} 
