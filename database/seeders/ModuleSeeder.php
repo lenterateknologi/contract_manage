@@ -45,7 +45,6 @@ class ModuleSeeder extends Seeder
 
             // System & Security
             ['identifier' => 'ANLTX', 'name' => 'Laporan Analitikal', 'route' => '/admin/reports', 'icon' => 'BarChart3', 'group' => 'System & Security', 'sequence' => 1],
-            ['identifier' => 'ADMIN_NAV', 'name' => 'Struktur Navigasi', 'route' => '/admin/module-groups', 'icon' => 'Settings2', 'group' => 'System & Security', 'sequence' => 2],
         ];
 
         // Get the Admin Role

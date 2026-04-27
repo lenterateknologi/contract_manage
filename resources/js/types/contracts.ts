@@ -5,6 +5,7 @@ export interface UserProfile {
     initials: string;
     role: string;
     department_id: string | null;
+    department_name?: string;
     bg_color: string;
     text_color: string;
 }
@@ -97,6 +98,21 @@ export interface Contract {
     contract_type: string | null;
     contract_type_id?: string;
     transaction_type?: string;
+    kop_sub_topik?: string;
+    parent_id?: string | null;
+    parent?: {
+        id: string;
+        contract_no: string;
+        title: string;
+    } | null;
+    p1_entity?: string;
+    p1_signer?: string;
+    p1_signer_position?: string;
+    p1_address?: string;
+    p2_entity?: string;
+    p2_signer?: string;
+    p2_signer_position?: string;
+    p2_address?: string;
     created_by: string;
     status: ContractStatus;
     current_version: number;
@@ -131,6 +147,11 @@ export interface Contract {
         pic_name?: string;
         pic_position?: string;
         address?: string;
+        documents?: Array<{
+            id: string;
+            name: string;
+            type: string;
+        }>;
     };
 }
 

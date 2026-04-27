@@ -18,7 +18,7 @@ export default function FormPrint({ template, formData }: Props) {
             </Head>
             
             {/* Minimalist container for PDF rendering */}
-            <div className="mx-auto w-[210mm]">
+            <div className="mx-auto w-[210mm] form-print-container">
                 <InteractiveForm 
                     template={template}
                     formData={formData}
@@ -44,6 +44,22 @@ export default function FormPrint({ template, formData }: Props) {
                 }
                 /* Hide Interia progress bar if present */
                 #nprogress { display: none !important; }
+                
+                /* Ensure InteractiveForm padding is respected as the paper margin */
+                .form-print-container > div {
+                    border: none !important;
+                    box-shadow: none !important;
+                    ring: 0 !important;
+                    width: 100% !important;
+                    max-width: none !important;
+                }
+
+                /* Prevent breaking in the middle of a field */
+                .form-element-container {
+                    page-break-inside: avoid;
+                    break-inside: avoid;
+                    margin-bottom: 8mm; 
+                }
             `}} />
         </div>
     );

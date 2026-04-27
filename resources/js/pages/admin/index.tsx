@@ -14,6 +14,7 @@ import { ContractTypeManagement } from '@/components/admin/ContractTypeManagemen
 import { StatusManagement } from '@/components/admin/StatusManagement';
 import { NavigationManagement } from '@/components/admin/NavigationManagement';
 import { VendorManagement } from '@/components/admin/VendorManagement';
+import NumberingFormatManagement from '@/components/admin/NumberingFormatManagement';
 import AppLayout from '@/layouts/app-layout';
 
 interface PaginatedData<T> {
@@ -36,9 +37,13 @@ interface Props {
     statuses?: any;
     departments?: any;
     vendors?: any;
+    formats?: any;
     groups?: any;
     modules?: any;
     moduleGroups?: any;
+    formTemplates?: any;
+    contractTemplates?: any;
+    contractStatuses?: any;
     filters?: any;
 }
 
@@ -59,9 +64,13 @@ export default function AdminIndex({
     statuses,
     departments,
     vendors,
+    formats,
     groups,
     modules,
     moduleGroups,
+    formTemplates,
+    contractTemplates,
+    contractStatuses,
     filters = {},
 }: Props) {
     
@@ -76,6 +85,7 @@ export default function AdminIndex({
         vendors: 'Master Vendor',
         'module-groups': 'Grup Modul',
         modules: 'Modul & Menu',
+        'numbering-formats': 'Pengaturan Penomoran',
     };
 
     const viewTitle = viewTitleMap[currentView] || 'Administrasi Sistem';
@@ -101,13 +111,14 @@ export default function AdminIndex({
                         departments={deptsArray} 
                         roles={rolesArray} 
                         users={usersArray} 
+                        contractStatuses={contractStatuses || []}
                         filters={filters} 
                     />
                 );
             case 'departments':
                 return <DepartmentManagement departments={departments} filters={filters} />;
             case 'contract-types':
-                return <ContractTypeManagement contractTypes={contractTypes || types} filters={filters} />;
+                return <ContractTypeManagement contractTypes={contractTypes || types} formTemplates={formTemplates} contractTemplates={contractTemplates} filters={filters} />;
             case 'contract-statuses':
                 return <StatusManagement statuses={statuses} filters={filters} />;
             case 'module-groups':
@@ -116,6 +127,8 @@ export default function AdminIndex({
                 return <NavigationManagement groups={navigationsArray} modules={modules} isModuleView={true} filters={filters} />;
             case 'vendors':
                 return <VendorManagement vendors={vendors} filters={filters} />;
+            case 'numbering-formats':
+                return <NumberingFormatManagement formats={formats} />;
             default:
                 return (
                     <div className="h-full flex items-center justify-center text-slate-400 uppercase font-black tracking-widest text-xs">
@@ -129,7 +142,7 @@ export default function AdminIndex({
         <ToastProvider>
             <Head title={`Admin - ${viewTitle}`} />
             
-            <div className="bg-background/50 flex min-h-0 flex-1 flex-col gap-6 p-6 overflow-hidden">
+            <div className="bg-background/20 flex min-h-0 flex-1 flex-col gap-4 p-3 overflow-hidden">
                 <div className="flex-1 overflow-hidden">
                     {renderView()}
                 </div>

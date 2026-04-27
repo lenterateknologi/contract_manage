@@ -21,7 +21,6 @@ class WorkflowStep extends Model
     protected $keyType = 'string';
     protected $fillable = [
         'workflow_id',
-        'role',
         'approver_type',
         'step',
         'step_type',
@@ -30,13 +29,46 @@ class WorkflowStep extends Model
         'created_by',
         'updated_by',
         'is_active',
-        'department_id',
+        'status_id',
     ];
 
     protected $casts = [
         'step' => 'integer',
         'is_active' => 'boolean',
     ];
+
+    protected $with = ['approverRoles', 'approverDepartments', 'approverUsers'];
+    protected $appends = ['role', 'department_ids', 'user_ids'];
+
+    public function approverRoles(): HasMany
+    {
+        return $this->hasMany(WorkflowStepRole::class, 'workflow_step_id');
+    }
+
+    public function approverDepartments(): HasMany
+    {
+        return $this->hasMany(WorkflowStepDepartment::class, 'workflow_step_id');
+    }
+
+    public function approverUsers(): HasMany
+    {
+        return $this->hasMany(WorkflowStepUser::class, 'workflow_step_id');
+    }
+
+    public function getRoleAttribute()
+    {
+        return $this->approverRoles->pluck('role_name')->toArray();
+    }
+
+    public function getDepartmentIdsAttribute()
+    {
+        return $this->approverDepartments->pluck('department_id')->toArray();
+    }
+
+    public function getUserIdsAttribute()
+    {
+        return $this->approverUsers->pluck('user_id')->toArray();
+    }
 
     public function workflow(): BelongsTo
     {
@@ -53,8 +85,13 @@ class WorkflowStep extends Model
         return $this->hasMany(Approval::class);
     }
 
-    public function users(): BelongsToMany
+    public function status(): BelongsTo
     {
-        return $this->belongsToMany(User::class, 't_workflow_step_users')->withTimestamps();
+        return $this->belongsTo(ContractStatus::class, 'status_id');
+    }
+
+    public function users(): HasMany
+    {
+        return $this->approverUsers();
     }
 }

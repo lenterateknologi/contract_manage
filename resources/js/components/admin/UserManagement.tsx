@@ -38,43 +38,107 @@ export function UserManagement({ users, roles, departments, filters }: UserManag
         password: '',
     });
 
-    const columns = useMemo<Column<any>[]>(() => [
+    const filterConfig = useMemo(() => [
         {
-            header: 'Nama Lengkap',
-            accessorKey: 'name',
-            sortable: true,
-            className: 'font-black text-slate-950 uppercase tracking-tight text-[11px]',
+            label: 'Role Akses',
+            key: 'role',
+            type: 'searchable',
+            options: roles.map(r => ({ label: r.name, value: r.name }))
         },
         {
-            header: 'Username',
-            accessorKey: 'username',
+            label: 'Departemen',
+            key: 'department_id',
+            type: 'searchable',
+            options: departments.map(d => ({ label: d.name, value: d.id }))
+        }
+    ], [roles, departments]);
+
+    const handleFilterChange = (newFilters: Record<string, any>) => {
+        router.get(window.location.pathname, { 
+            ...filters, 
+            ...newFilters, 
+            page: 1 
+        }, { preserveState: true, replace: true });
+    };
+
+    const columns = useMemo<Column<any>[]>(() => [
+        {
+            header: 'Pengguna',
+            accessorKey: 'name',
+            sortable: true,
             cell: (row) => (
-                <span className="font-mono text-[10px] font-black text-slate-500 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded uppercase tracking-wider">
-                    {row.username}
-                </span>
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-none bg-slate-900 text-white flex items-center justify-center font-black text-[10px] shrink-0">
+                        {row.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                        <span className="font-bold text-slate-900 uppercase tracking-tight text-[11px] truncate leading-none mb-1">
+                            {row.name}
+                        </span>
+                        <span className="text-[9px] font-medium text-slate-400 lowercase truncate leading-none">
+                            {row.email}
+                        </span>
+                    </div>
+                </div>
             )
         },
         {
-            header: 'Email',
-            accessorKey: 'email',
-            className: 'font-medium text-slate-500 text-[10px] lowercase',
+            header: 'Identitas',
+            accessorKey: 'username',
+            cell: (row) => (
+                <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+                        <Fingerprint size={10} className="text-slate-300" />
+                        {row.username}
+                    </div>
+                    {row.phone && (
+                        <div className="flex items-center gap-1.5 text-[9px] font-medium text-slate-400 tracking-tight">
+                            <Phone size={10} className="text-slate-300" />
+                            {row.phone}
+                        </div>
+                    )}
+                </div>
+            )
         },
         {
-            header: 'Role',
+            header: 'Penempatan',
+            accessorKey: 'department.name',
+            cell: (row) => (
+                <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold text-slate-700 uppercase tracking-tight leading-none">
+                        {row.department?.name || 'GLOBAL'}
+                    </span>
+                    <span className="text-[9px] font-medium text-slate-400 uppercase tracking-tighter leading-none">
+                        {row.position || 'STAF'}
+                    </span>
+                </div>
+            )
+        },
+        {
+            header: 'Otoritas',
             accessorKey: 'role',
             cell: (row) => (
-                <Badge variant="outline" className="border-slate-200 bg-slate-50 px-2 py-0.5 text-[8px] font-black tracking-widest text-slate-600 uppercase">
+                <Badge variant="outline" className="border-slate-200 bg-white px-2 py-0.5 text-[8px] font-black tracking-widest text-slate-600 uppercase rounded-none shadow-sm">
                     {row.role}
                 </Badge>
             ),
         },
         {
-            header: 'Status',
+            header: 'Akses',
             accessorKey: 'is_active',
             cell: (row) => (
-                <Badge className={cn('px-2.5 py-0.5 text-[8px] font-black uppercase tracking-[0.2em] shadow-none border-none', row.is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600')}>
-                    {row.is_active ? 'Online' : 'Paused'}
-                </Badge>
+                <div className="flex items-center gap-2">
+                    <div className={cn(
+                        "w-1.5 h-1.5 rounded-full shrink-0",
+                        row.is_active ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-slate-300"
+                    )} />
+                    <span className={cn(
+                        "text-[9px] font-black uppercase tracking-widest",
+                        row.is_active ? "text-emerald-700" : "text-slate-400"
+                    )}>
+                        {row.is_active ? 'AKTIF' : 'SUSPENDED'}
+                    </span>
+                </div>
             ),
         },
     ], []);
@@ -161,7 +225,8 @@ export function UserManagement({ users, roles, departments, filters }: UserManag
                     {/* Main Column */}
                     <div className="md:col-span-8 space-y-10">
                         {/* Section: Akun & Identitas */}
-                        <FormSection title="Identitas & Otentikasi" subtitle="Informasi masuk dan profil dasar">
+                        <div className="space-y-4">
+                            <h3 className="text-[10px] font-black tracking-[0.2em] text-slate-600 uppercase border-b border-slate-200 pb-2">Identitas & Otentikasi</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                                 <div className="space-y-1 md:col-span-2">
                                     <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Nama Lengkap Sesuai KTP</Label>
@@ -193,10 +258,11 @@ export function UserManagement({ users, roles, departments, filters }: UserManag
                                     <Input type="password" value={form.data.password} onChange={e => form.setData('password', e.target.value)} required={!editingUser} placeholder="••••••••" className="h-10 rounded-none border-slate-200 text-sm font-medium px-4" />
                                 </div>
                             </div>
-                        </FormSection>
+                        </div>
 
                         {/* Section: Jabatan */}
-                        <FormSection title="Penempatan & Otoritas" subtitle="Struktur organisasi dan peran sistem">
+                        <div className="space-y-4">
+                            <h3 className="text-[10px] font-black tracking-[0.2em] text-slate-600 uppercase border-b border-slate-200 pb-2">Penempatan & Otoritas</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                                 <div className="space-y-1">
                                     <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Role User</Label>
@@ -225,7 +291,7 @@ export function UserManagement({ users, roles, departments, filters }: UserManag
                                     <Input value={form.data.position} onChange={e => form.setData('position', e.target.value)} placeholder="CONTOH: KEPALA BAGIAN HUKUM" className="h-10 rounded-none border-slate-200 bg-slate-50/20 text-xs font-black uppercase tracking-tight px-4" />
                                 </div>
                             </div>
-                        </FormSection>
+                        </div>
                     </div>
 
                     {/* Side Column */}
@@ -267,17 +333,20 @@ export function UserManagement({ users, roles, departments, filters }: UserManag
 
     return (
         <DataTable
-            title="Management User"
+            title="Database Pengguna"
             columns={columns}
             data={users.data || []}
             searchKey="name"
             searchPlaceholder="Cari nama, email, atau username..."
             searchValue={filters.search || ''}
             onSearchChange={(v) => router.get(window.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })}
+            filters={filterConfig as any}
+            activeFilters={filters}
+            onFilterChange={handleFilterChange}
             headerActions={
                 canCreate && (
-                    <Button onClick={openCreate} className="h-9 gap-2 rounded-xl px-5 text-[11px] font-black tracking-widest uppercase shadow-lg shadow-primary/20">
-                        <Plus className="h-3.5 w-3.5" /> Tambah User
+                    <Button onClick={openCreate} className="h-9 gap-2 rounded-none bg-black px-6 text-[10px] font-black uppercase tracking-widest text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] hover:bg-slate-800 transition-all active:translate-x-0.5 active:translate-y-0.5">
+                        <Plus className="h-3.5 w-3.5" /> Registrasi User Baru
                     </Button>
                 )
             }

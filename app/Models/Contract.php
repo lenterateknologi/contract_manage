@@ -40,9 +40,11 @@ class Contract extends Model
         'f1_sifat',
         'p1_entity',
         'p1_signer',
+        'p1_signer_position',
         'p1_address',
         'p2_entity',
         'p2_signer',
+        'p2_signer_position',
         'p2_address',
         'f2_scope',
         'f2_price',
@@ -50,11 +52,14 @@ class Contract extends Model
         'f2_tenure',
         'f2_location',
         'vendor_id',
+        'parent_id',
     ];
 
     protected $casts = [
         'metadata' => 'array',
         'submitted_at' => 'datetime',
+        'contract_date' => 'date',
+        'end_date' => 'date',
     ];
 
     public function contractType()
@@ -117,6 +122,11 @@ class Contract extends Model
     public function vendor(): BelongsTo
     {
         return $this->belongsTo(Vendor::class, 'vendor_id');
+    }
+
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(Contract::class, 'parent_id');
     }
 
     public function currentVersionModel(): ?ContractVersion

@@ -19,7 +19,7 @@ interface DepartmentManagementProps {
 
 export function DepartmentManagement({ departments, filters }: DepartmentManagementProps) {
     const { showToast } = useToast();
-    const { canCreate, canUpdate, canDelete } = usePermissions('ADMIN_DEPARTMENTS');
+    const { canCreate, canUpdate, canDelete } = usePermissions('ADMIN_DEPTS');
     const [isFormView, setIsFormView] = React.useState(false);
     const [editingDept, setEditingDept] = React.useState<any>(null);
 
@@ -30,26 +30,69 @@ export function DepartmentManagement({ departments, filters }: DepartmentManagem
         is_active: true as boolean,
     });
 
+    const filterConfig = useMemo(() => [
+        {
+            label: 'Status Visibilitas',
+            key: 'is_active',
+            options: [
+                { label: 'Visible (Aktif)', value: 'true' },
+                { label: 'Hidden (Nonaktif)', value: 'false' },
+            ]
+        }
+    ], []);
+
+    const handleFilterChange = (newFilters: Record<string, any>) => {
+        router.get(window.location.pathname, { 
+            ...filters, 
+            ...newFilters, 
+            page: 1 
+        }, { preserveState: true, replace: true });
+    };
+
     const columns = useMemo<Column<any>[]>(() => [
         {
-            header: 'Kode',
-            accessorKey: 'code',
-            sortable: true,
-            className: 'font-mono text-[10px] font-black text-slate-500 uppercase tracking-widest',
-        },
-        {
-            header: 'Nama Departemen',
+            header: 'Departemen / Unit',
             accessorKey: 'name',
             sortable: true,
-            className: 'font-black text-slate-900 uppercase tracking-tight text-[12px]',
+            cell: (row) => (
+                <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-none bg-slate-100 text-slate-400 group-hover:bg-black group-hover:text-white transition-colors">
+                        <Building2 size={14} />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                        <span className="text-[11px] font-black uppercase tracking-tight text-slate-900 leading-none mb-1 truncate">{row.name}</span>
+                        <div className="flex items-center gap-1.5 font-mono text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                            {row.code}
+                        </div>
+                    </div>
+                </div>
+            )
         },
         {
-            header: 'Status',
+            header: 'Deskripsi',
+            accessorKey: 'description',
+            cell: (row) => (
+                <span className="text-[10px] font-medium text-slate-400 uppercase tracking-tight line-clamp-1 max-w-[300px]">
+                    {row.description || 'TIDAK ADA KETERANGAN'}
+                </span>
+            )
+        },
+        {
+            header: 'Visibilitas',
             accessorKey: 'is_active',
             cell: (row) => (
-                <Badge variant="outline" className={cn("px-2.5 py-0.5 text-[8px] font-black tracking-[0.2em] uppercase border-none shadow-none", row.is_active ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600")}>
-                    {row.is_active ? 'Active' : 'Hidden'}
-                </Badge>
+                <div className="flex items-center gap-2">
+                    <div className={cn(
+                        "w-1.5 h-1.5 rounded-full shrink-0",
+                        row.is_active ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-slate-300"
+                    )} />
+                    <span className={cn(
+                        "text-[9px] font-black uppercase tracking-widest",
+                        row.is_active ? "text-emerald-700" : "text-slate-400"
+                    )}>
+                        {row.is_active ? 'VISIBLE' : 'HIDDEN'}
+                    </span>
+                </div>
             )
         },
     ], []);
@@ -92,7 +135,7 @@ export function DepartmentManagement({ departments, filters }: DepartmentManagem
     if (isFormView) {
         return (
             <ManagementForm
-                title={editingDept ? 'Edit Master Departemen' : 'Tambah Departemen Baru'}
+                title={editingDept ? 'Update Master Departemen' : 'Registrasi Departemen Baru'}
                 subtitle={editingDept ? 'Pengaturan detail unit organisasi' : 'Registrasi divisi atau unit organisasi'}
                 onClose={closeForm}
                 onSave={handleSubmit}
@@ -113,33 +156,31 @@ export function DepartmentManagement({ departments, filters }: DepartmentManagem
                 }
             >
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
-                    <div className="md:col-span-8">
-                        <FormSection title="Data Unit Kerja" subtitle="Detail identitas organisasi">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                                <div className="space-y-1">
-                                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Kode Unit / Singkatan</Label>
-                                    <Input value={form.data.code} onChange={e => form.setData('code', e.target.value)} required placeholder="CONTOH: IT / FIN / HR" className="h-10 rounded-none border-slate-200 bg-slate-50/20 text-sm font-mono font-black uppercase tracking-widest px-4" />
+                    <div className="md:col-span-8 space-y-10">
+                        <div className="space-y-4">
+                            <h3 className="text-[10px] font-black tracking-[0.2em] text-slate-600 uppercase border-b border-slate-200 pb-2">Data Organisasi</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                                <div className="md:col-span-1 space-y-1.5">
+                                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Kode / Singkatan</Label>
+                                    <Input value={form.data.code} onChange={e => form.setData('code', e.target.value)} required placeholder="CONTOH: IT" className="h-10 rounded-none border-slate-200 bg-white text-sm font-mono font-black uppercase tracking-widest px-4 focus-visible:ring-0 focus-visible:border-black transition-colors" />
                                 </div>
-                                <div className="space-y-1 md:col-span-2">
+                                <div className="md:col-span-3 space-y-1.5">
                                     <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Nama Unit Struktural</Label>
-                                    <Input value={form.data.name} onChange={e => form.setData('name', e.target.value)} required placeholder="NAMA LENGKAP DIVISI" className="h-10 rounded-none border-slate-200 text-sm font-black uppercase tracking-tight px-4" />
+                                    <Input value={form.data.name} onChange={e => form.setData('name', e.target.value)} required placeholder="NAMA LENGKAP DIVISI" className="h-10 rounded-none border-slate-200 bg-white text-sm font-black uppercase tracking-tight px-4 focus-visible:ring-0 focus-visible:border-black transition-colors" />
                                 </div>
-                                <div className="space-y-1 md:col-span-2 text-wrap">
+                                <div className="md:col-span-4 space-y-1.5">
                                     <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Keterangan Fungsi</Label>
-                                    <Input value={form.data.description} onChange={e => form.setData('description', e.target.value)} placeholder="Tuliskan deskripsi unit kerja ini..." className="h-10 rounded-none border-slate-200 text-sm font-medium px-4" />
+                                    <Input value={form.data.description} onChange={e => form.setData('description', e.target.value)} placeholder="Tuliskan deskripsi unit kerja ini..." className="h-10 rounded-none border-slate-200 bg-white text-[11px] font-medium px-4 focus-visible:ring-0 focus-visible:border-black transition-colors" />
                                 </div>
                             </div>
-                        </FormSection>
+                        </div>
                     </div>
 
-                    <div className="md:col-span-4 space-y-10">
-                        <FormDangerZone 
-                            title="Visibilitas Unit" 
-                            description="Tentukan apakah unit ini aktif dan dapat dipilih dalam pendataan user atau workflow."
-                        >
-                            <div className="flex items-center gap-3">
+                    <div className="md:col-span-4 flex flex-col pt-6 md:pt-0">
+                         <div className="border border-slate-200 p-6 bg-slate-50/50">
+                            <div className="flex items-center gap-3 mb-6">
                                 <span className={cn("text-[9px] font-black uppercase tracking-widest", form.data.is_active ? "text-emerald-600" : "text-rose-600")}>
-                                    {form.data.is_active ? 'VISIBLE' : 'HIDDEN'}
+                                     {form.data.is_active ? 'Unit Aktif' : 'Unit Hidden'}
                                 </span>
                                 <Checkbox 
                                     checked={form.data.is_active} 
@@ -147,16 +188,13 @@ export function DepartmentManagement({ departments, filters }: DepartmentManagem
                                     className="w-5 h-5 rounded-none border-black"
                                 />
                             </div>
-                        </FormDangerZone>
-
-                        <div className="border border-slate-200 p-6 bg-slate-50/50">
-                             <div className="flex items-center gap-2 mb-4">
+                            <div className="flex items-center gap-2 mb-4">
                                 <Building2 size={16} className="text-slate-400" />
-                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Unit Info</span>
-                             </div>
-                             <p className="text-[10px] text-slate-500 font-bold uppercase leading-relaxed">
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Arsitektur Unit</span>
+                            </div>
+                            <p className="text-[9px] text-slate-500 font-bold uppercase leading-relaxed tracking-tight italic">
                                 Departemen digunakan untuk mengelompokkan pengguna dan menentukan keterlibatan dalam alur persetujuan (Workflow) berbasis departemen.
-                             </p>
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -166,17 +204,20 @@ export function DepartmentManagement({ departments, filters }: DepartmentManagem
 
     return (
         <DataTable
-            title="Management Unit / Departemen"
+            title="Database Unit / Departemen"
             columns={columns}
             data={departments.data || []}
             searchKey="name"
             searchPlaceholder="Cari departemen..."
             searchValue={filters.search || ''}
             onSearchChange={(v) => router.get(window.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })}
+            filters={filterConfig as any}
+            activeFilters={filters}
+            onFilterChange={handleFilterChange}
             headerActions={
                 canCreate && (
-                    <Button onClick={openCreate} className="h-9 gap-2 rounded-xl px-5 text-[11px] font-black uppercase tracking-widest shadow-lg shadow-slate-200">
-                        <Plus className="h-3.5 w-3.5" /> Tambah Unit
+                    <Button onClick={openCreate} className="h-9 gap-2 rounded-none bg-black px-6 text-[10px] font-black uppercase tracking-widest text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] hover:bg-slate-800 transition-all active:translate-x-0.5 active:translate-y-0.5">
+                        <Plus className="h-3.5 w-3.5" /> Registrasi Unit Baru
                     </Button>
                 )
             }

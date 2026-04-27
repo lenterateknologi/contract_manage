@@ -250,17 +250,6 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
                                     COMPARE VERSIONS
                                 </button>
 
-                                {selectedVno && (
-                                    <a
-                                        href={`/api/contracts/${contract.id}/file/${selectedVno}?type=agreement`}
-                                        download
-                                        onClick={() => setShowMoreActions(false)}
-                                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[10px] font-bold text-slate-600 transition-all hover:bg-slate-50 hover:text-slate-900"
-                                    >
-                                        <Download size={12} className="opacity-40" />
-                                        DOWNLOAD DOCX
-                                    </a>
-                                )}
                             </div>
                         )}
                     </div>

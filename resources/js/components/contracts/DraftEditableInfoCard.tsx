@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Contract, ContractType } from '@/types/contracts';
 import { Avatar, StatusBadge } from '@/components/contracts/ui';
-import { contractApi } from '@/lib/contract-api';
+import { Contract, ContractType } from '@/types/contracts';
+import { useEffect, useMemo, useState } from 'react';
 
 export interface FormTemplateInfo {
     id: string;
@@ -48,6 +47,8 @@ export function DraftEditableInfoCard({
         return t ? String(t.id) : '';
     });
     const [vendorId, setVendorId] = useState(selected.vendor_id || '');
+    const [transactionType, setTransactionType] = useState(selected.transaction_type || 'Perjanjian Baru');
+    const [kopSubTopik, setKopSubTopik] = useState((selected as any).kop_sub_topik || '');
     const [minimized, setMinimized] = useState(false);
 
     useEffect(() => {
@@ -56,16 +57,41 @@ export function DraftEditableInfoCard({
         const t = types.find((x) => x.name === selected.contract_type);
         setTypeId(t ? String(t.id) : '');
         setVendorId(selected.vendor_id || '');
-    }, [selected.id, selected.title, selected.description, selected.contract_type, selected.vendor_id, types]);
+        setTransactionType(selected.transaction_type || 'Perjanjian Baru');
+        setKopSubTopik((selected as any).kop_sub_topik || '');
+    }, [
+        selected.id,
+        selected.title,
+        selected.description,
+        selected.contract_type,
+        selected.vendor_id,
+        selected.transaction_type,
+        (selected as any).kop_sub_topik,
+        types,
+    ]);
 
     const hasChanges = useMemo(() => {
         const origType = types.find((x) => x.name === selected.contract_type);
         const origTypeId = origType ? String(origType.id) : '';
-        return title !== selected.title || description !== (selected.description || '') || typeId !== origTypeId || vendorId !== (selected.vendor_id || '');
-    }, [title, description, typeId, vendorId, selected, types]);
+        return (
+            title !== selected.title ||
+            description !== (selected.description || '') ||
+            typeId !== origTypeId ||
+            vendorId !== (selected.vendor_id || '') ||
+            transactionType !== (selected.transaction_type || 'Perjanjian Baru') ||
+            kopSubTopik !== ((selected as any).kop_sub_topik || '')
+        );
+    }, [title, description, typeId, vendorId, transactionType, kopSubTopik, selected, types]);
 
     const handleSave = () => {
-        onUpdate({ title, description, contract_type_id: typeId || undefined, vendor_id: vendorId || undefined });
+        onUpdate({
+            title,
+            description,
+            contract_type_id: typeId || undefined,
+            vendor_id: vendorId || undefined,
+            transaction_type: transactionType,
+            kop_sub_topik: kopSubTopik,
+        });
     };
 
     const inputCls =
@@ -181,9 +207,16 @@ export function DraftEditableInfoCard({
                         <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
                             Tipe Perjanjian
                         </div>
-                        <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-xs font-bold tracking-wider text-emerald-700 uppercase dark:border-emerald-900/30 dark:bg-emerald-900/20 dark:text-emerald-400">
-                            {selected.transaction_type || 'Perjanjian Baru'}
-                        </span>
+                        {isDraft ? (
+                            <select value={transactionType} onChange={(e) => setTransactionType(e.target.value)} className={inputCls}>
+                                <option value="Perjanjian Baru">Perjanjian Baru</option>
+                                <option value="Addendum">Addendum</option>
+                                <option value="Amandement">Amandement</option>
+                                <option value="Perubahan Perjanjian">Perubahan Perjanjian</option>
+                            </select>
+                        ) : (
+                            <span style={{ fontSize: 12 }}>{selected.transaction_type || 'Perjanjian Baru'}</span>
+                        )}
                     </div>
 
                     <div>
@@ -191,7 +224,11 @@ export function DraftEditableInfoCard({
                             Pihak Kedua (Vendor)
                         </div>
                         {isDraft ? (
-                            <select value={vendorId} onChange={(e) => setVendorId(e.target.value)} className={inputCls + ' font-bold text-indigo-600'}>
+                            <select
+                                value={vendorId}
+                                onChange={(e) => setVendorId(e.target.value)}
+                                className={inputCls}
+                            >
                                 <option value="">Pilih Vendor</option>
                                 {vendors.map((v) => (
                                     <option key={v.id} value={v.id}>
@@ -200,7 +237,7 @@ export function DraftEditableInfoCard({
                                 ))}
                             </select>
                         ) : (
-                            <span className="rounded-full border border-indigo-100 bg-indigo-50 px-2 py-0.5 text-xs font-bold tracking-wider text-indigo-700 uppercase dark:border-indigo-900/30 dark:bg-indigo-900/20 dark:text-indigo-400">
+                            <span className="rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-xs font-bold tracking-wider text-slate-600 uppercase">
                                 {(selected as any).vendor?.name || '-'}
                             </span>
                         )}
@@ -221,96 +258,6 @@ export function DraftEditableInfoCard({
                             Tgl Dibuat
                         </div>
                         <span style={{ fontSize: 12 }}>{selected.created_at}</span>
-                    </div>
-
-                    <div>
-                        <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
-                            Form Template
-                        </div>
-                        {tpl ? (
-                            <div className="flex items-center gap-2">
-                                <span className="text-primary max-w-[160px] truncate font-medium" style={{ fontSize: 12 }} title={tpl.name}>
-                                    {tpl.name}
-                                </span>
-                                <span className="text-muted-foreground" style={{ fontSize: 10 }}>
-                                    ({tpl.fields_count} fields)
-                                </span>
-                            </div>
-                        ) : (
-                            <span className="text-muted-foreground italic" style={{ fontSize: 12 }}>
-                                Belum ada template
-                            </span>
-                        )}
-                    </div>
-
-                    <div>
-                        <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
-                            Dokumen F2
-                        </div>
-                        {f2Version ? (
-                            <div className="flex items-center gap-2">
-                                <div className="flex flex-col">
-                                    <span className="text-primary font-mono font-bold" style={{ fontSize: 12 }}>
-                                        v{f2Version.version_no}
-                                    </span>
-                                    <span
-                                        className="text-muted-foreground max-w-[140px] truncate"
-                                        style={{ fontSize: 12 }}
-                                        title={f2Version.file_name}
-                                    >
-                                        {f2Version.file_name}
-                                    </span>
-                                </div>
-                                <div className="flex gap-1">
-                                    <button
-                                        onClick={() => {
-                                            setPreviewTitle('F2 - v' + f2Version.version_no);
-                                            setPreviewUrl(contractApi.pdfPreviewUrl(selected.id, f2Version.version_no, 'f2'));
-                                            setPreviewHasFile(f2Version.has_file);
-                                            setPreviewOpen(true);
-                                        }}
-                                        className="bg-muted/50 border-border/50 text-muted-foreground hover:bg-card flex h-5 w-5 items-center justify-center rounded border shadow-sm transition-all hover:text-cyan-600"
-                                    >
-                                        <i className="fa-solid fa-eye" style={{ fontSize: 12 }} />
-                                    </button>
-                                    <a
-                                        href={contractApi.downloadUrl(selected.id, 'f2', f2Version.version_no)}
-                                        download
-                                        className="bg-muted/50 border-border/50 text-muted-foreground hover:bg-card flex h-5 w-5 items-center justify-center rounded border shadow-sm transition-all hover:text-cyan-600"
-                                    >
-                                        <i className="fa-solid fa-download" style={{ fontSize: 12 }} />
-                                    </a>
-                                </div>
-                            </div>
-                        ) : (
-                            <span className="text-muted-foreground italic" style={{ fontSize: 12 }}>
-                                -
-                            </span>
-                        )}
-                    </div>
-
-                    <div>
-                        <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
-                            Total Versi
-                        </div>
-                        <span style={{ fontSize: 12 }}>{selected.versions?.length ?? 0} versi</span>
-                    </div>
-
-                    <div style={{ gridColumn: '1/-1' }}>
-                        <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
-                            Deskripsi
-                        </div>
-                        {isDraft ? (
-                            <textarea
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                rows={3}
-                                placeholder="Deskripsi kontrak (opsional)..."
-                                className={inputCls + ' resize-none'}
-                            />
-                        ) : (
-                            <div style={{ fontSize: 12 }}>{selected.description || <span className="text-muted-foreground italic">-</span>}</div>
-                        )}
                     </div>
                 </div>
             )}

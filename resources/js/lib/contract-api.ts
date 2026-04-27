@@ -10,7 +10,7 @@ export const contractApi = {
     list: (params?: any): Promise<PaginatedData<Contract>> => api.get('/api/contracts', { params }).then((r) => r.data),
     get: (id: string): Promise<Contract> => api.get(`/api/contracts/${id}`).then((r) => r.data),
     create: (data: FormData): Promise<Contract> => api.post('/api/contracts', data).then((r) => r.data),
-    getWorkflows: (): Promise<any[]> => api.get('/api/contracts/workflows').then((r) => r.data),
+    getWorkflows: (contractType?: string): Promise<any[]> => api.get('/api/contracts/workflows', { params: { contract_type: contractType } }).then((r) => r.data),
     getUsers: (): Promise<any[]> => api.get('/api/contracts/users').then((r) => r.data),
     getRoles: (): Promise<any[]> => api.get('/api/contracts/roles').then((r) => r.data),
     send: (id: string, data?: { workflow_id?: string; custom_steps?: any[] }): Promise<Contract> =>
@@ -37,6 +37,8 @@ export const contractApi = {
     attachmentDownloadUrl: (id: string, atId: string) => `/api/contracts/${id}/attachment/${atId}`,
     pdfPreviewUrl: (id: string, versionNo: number, type: string = 'contract') => `/api/contracts/${id}/pdf/${versionNo}?type=${type}`,
     attachmentPdfPreviewUrl: (id: string, atId: string) => `/api/contracts/${id}/attachment-pdf/${atId}`,
+    vendorDocumentDownloadUrl: (id: string, docId: string) => `/api/contracts/${id}/vendor-document/${docId}`,
+    vendorDocumentPdfPreviewUrl: (id: string, docId: string) => `/api/contracts/${id}/vendor-document-pdf/${docId}`,
     messages: {
         list: (contractId: string) => api.get(`/api/contracts/${contractId}/messages`).then((r) => r.data),
         send: (contractId: string, message: string, file?: File) => {
