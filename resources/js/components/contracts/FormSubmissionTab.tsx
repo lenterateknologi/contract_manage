@@ -99,7 +99,8 @@ const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' | 'f2')
         const now = new Date();
         const dateStr = now.toLocaleDateString('en-CA'); // YYYY-MM-DD
         const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-        return field.type === 'date' ? dateStr : `${dateStr} ${timeStr}`;
+        const isDateField = field.type === 'date' || field.options?.value_type === 'date';
+        return isDateField ? dateStr : `${dateStr} ${timeStr}`;
     }
     if (name === 'meta_masa_berlaku') {
         if (contract.contract_date && contract.end_date) {
@@ -230,7 +231,16 @@ function GenericFormTab({
                             const isManualEdit = manualFields.has(f.name);
                             const isUntouched = currentVal === serverVal;
 
+                            // Special case: Avoid auto-syncing "Date" fields that already have a value
+                            // unless it's a manual sync trigger. This prevents "Date Created" from
+                            // resetting to "today" every single time the form is opened.
+                            const isDateField = f.name === 'meta_tgl_dibuat' || f.name === 'tanggal' || f.type === 'date' || (f.options as any)?.value_type === 'date';
+
                             if (isManual || (!isManualEdit && (isUntouched || !currentVal))) {
+                                if (!isManual && isDateField && currentVal) {
+                                    return; // Keep existing date
+                                }
+
                                 if (currentVal !== val) {
                                     synced[f.name] = val;
                                     hasChanged = true;

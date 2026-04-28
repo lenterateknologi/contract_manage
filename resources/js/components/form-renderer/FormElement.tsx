@@ -936,7 +936,11 @@ export const FormElement: React.FC<FormElementProps> = ({
                                 <input
                                     type={valueType === 'number' ? 'number' : valueType === 'date' ? 'date' : 'text'}
                                     placeholder={field.placeholder}
-                                    value={value || ''}
+                                    value={
+                                        valueType === 'date' && typeof value === 'string'
+                                            ? value.split('T')[0].split(' ')[0]
+                                            : (value || '')
+                                    }
                                     onChange={(e) => onChange?.(e.target.value)}
                                     className={cn(
                                         'placeholder:text-muted-foreground/50 flex h-8 w-full text-[11px] font-bold transition-all placeholder:italic',

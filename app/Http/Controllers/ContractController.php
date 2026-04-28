@@ -206,6 +206,7 @@ class ContractController extends Controller
             'attachments.uploader', 'formSubmissions', 'vendor.documents', 'initiator.department'
         ])->orderByDesc('created_at');
 
+
         // Apply View Filter
         switch ($view) {
             case 'mine':
@@ -229,13 +230,7 @@ class ContractController extends Controller
                 break;
             case 'contracts':
             default:
-                // If NOT an Admin, only show non-drafts OR drafts created by current user
-                if (Auth::user()->role !== 'Admin') {
-                    $query->where(function ($q) {
-                        $q->where('status', '!=', 'draft')
-                          ->orWhere('t_contracts.created_by', Auth::id());
-                    });
-                }
+                $query->where('status', '!=', 'draft');
                 break;
         }
 
@@ -291,6 +286,7 @@ class ContractController extends Controller
         if ($request->filled('created_to')) {
             $query->whereDate('created_at', '<=', $request->created_to);
         }
+
 
         return $query;
     }

@@ -81,25 +81,7 @@ export function EditContractModal({
                                 className="bg-muted/30 border-border focus:border-primary/50 w-full rounded-lg border px-3 py-2 font-mono text-sm transition-all outline-none"
                             />
                         </div>
-                        <div>
-                            <label className="mb-1.5 block text-xs font-black text-indigo-600 uppercase">No. Kontrak (Crown)</label>
-                            <div className="relative">
-                                <input
-                                    value={crownNo}
-                                    onChange={(e) => setCrownNo(e.target.value)}
-                                    placeholder="..."
-                                    className="w-full rounded-lg border border-indigo-100 bg-indigo-50/50 px-3 py-2 pr-8 text-sm font-bold text-indigo-700 transition-all outline-none focus:border-indigo-500"
-                                />
-                                {crownNo && (
-                                    <button
-                                        onClick={() => setCrownNo('')}
-                                        className="text-muted-foreground absolute top-1/2 right-2 -translate-y-1/2 transition-colors hover:text-red-500"
-                                    >
-                                        <i className="fa-solid fa-circle-xmark text-[14px]" />
-                                    </button>
-                                )}
-                            </div>
-                        </div>
+
                         <div>
                             <label className="text-muted-foreground mb-1.5 block text-xs font-bold uppercase">Tanggal</label>
                             <input

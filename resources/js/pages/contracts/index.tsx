@@ -257,7 +257,6 @@ function ContractPage({
     const columns = useMemo<Column<Contract>[]>(() => {
         const baseColumns: Column<Contract>[] = [
             { header: 'No. Pengajuan', accessorKey: 'contract_no', sortable: true, className: 'font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground' },
-            { header: 'No. Kontrak', accessorKey: 'crown_no', sortable: true, className: 'font-mono text-[11px] font-semibold uppercase tracking-wider text-indigo-600' },
             { header: 'Judul Kontrak', accessorKey: 'title', sortable: true, cell: (c) => (<div className="flex flex-col"><span className="text-foreground line-clamp-1 font-bold">{c.title}</span><span className="text-muted-foreground text-[10px] font-medium tracking-tight uppercase">{c.contract_type}</span></div>) },
             { header: 'Departemen', accessorKey: 'initiator.department_name', cell: (c) => (<span className="text-[10px] font-bold uppercase tracking-tight text-slate-500 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">{c.initiator?.department_name || 'UMUM'}</span>) },
             { header: 'Status', accessorKey: 'status', cell: (c) => <StatusBadge status={c.status} /> },
@@ -396,11 +395,7 @@ function ContractPage({
                                         <span className="bg-slate-100 text-slate-500 rounded-md px-2 py-0.5 font-mono text-[10px] font-bold ring-1 ring-slate-200 flex w-fit items-center gap-1.5">
                                             <i className="fa-solid fa-hashtag text-[8px]" /> {selected.contract_no || 'NO REQ'}
                                         </span>
-                                        {selected.crown_no && (
-                                            <span className="bg-indigo-50 text-indigo-600 rounded-md px-2 py-0.5 font-mono text-[10px] font-bold ring-1 ring-indigo-100 flex w-fit items-center gap-1.5 animate-in fade-in slide-in-from-left-1 duration-300 border border-indigo-100/50">
-                                                <i className="fa-solid fa-file-signature text-[8px]" /> {selected.crown_no}
-                                            </span>
-                                        )}
+
                                     </div>
                                 </div>
                             </div>

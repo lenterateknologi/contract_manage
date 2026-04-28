@@ -191,42 +191,8 @@ export function DraftEditableInfoCard({
                                 {selected.contract_no}
                             </span>
                         </div>
-                        <div>
-                            <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
-                                No. Kontrak
-                            </div>
-                            {isDraft ? (
-                                <div className="group relative">
-                                    <input
-                                        value={crownNo}
-                                        onChange={(e) => setCrownNo(e.target.value)}
-                                        placeholder="..."
-                                        className={inputCls + ' pr-8 font-bold text-indigo-600'}
-                                    />
-                                    {crownNo && (
-                                        <button
-                                            onClick={() => setCrownNo('')}
-                                            className="text-muted-foreground absolute top-1/2 right-2 -translate-y-1/2 transition-colors hover:text-red-500"
-                                            title="Hapus nomor"
-                                        >
-                                            <i className="fa-solid fa-circle-xmark text-[14px]" />
-                                        </button>
-                                    )}
-                                </div>
-                            ) : (
-                                <span
-                                    className={
-                                        selected.crown_no
-                                            ? 'rounded border border-indigo-100 bg-indigo-50 px-2 py-0.5 font-mono font-bold text-indigo-700'
-                                            : 'text-muted-foreground italic'
-                                    }
-                                    style={{ fontSize: 12 }}
-                                >
-                                    {selected.crown_no || 'Not Set'}
-                                </span>
-                            )}
-                        </div>
                     </div>
+
 
                     <div>
                         <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>

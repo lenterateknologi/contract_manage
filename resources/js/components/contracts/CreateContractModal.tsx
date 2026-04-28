@@ -190,7 +190,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                         {errors.title && <div className="mt-1 text-[10px] text-red-500">{errors.title}</div>}
                     </div>
 
-                    <div>
+                    {/* <div>
                         <label className="text-muted-foreground mb-1.5 block text-[11px] font-semibold tracking-wider uppercase">
                             Deskripsi <span className="text-muted-foreground/50 text-[10px] normal-case">(opsional)</span>
                         </label>
@@ -201,9 +201,9 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                             placeholder="Deskripsi singkat kontrak..."
                             className="border-border placeholder:text-muted-foreground/30 w-full rounded-md border px-3 py-2 text-[12px] outline-none focus:border-indigo-500"
                         />
-                    </div>
+                    </div> */}
 
-                    <div className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 p-4">
+                    {/* <div className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 p-4">
                         <div className="flex flex-col">
                             <span className="text-foreground/80 text-[11px] font-black tracking-widest uppercase">Pajak (Tax Review)</span>
                             <span className="text-muted-foreground text-[10px] font-medium">Apakah kontrak ini memerlukan review pajak?</span>
@@ -217,7 +217,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                             />
                             <div className="peer h-5 w-9 rounded-full bg-slate-300 peer-checked:bg-indigo-600 peer-focus:outline-none after:absolute after:top-[2px] after:left-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
                         </label>
-                    </div>
+                    </div> */}
 
                     {errors.general && (
                         <div className="rounded-md border border-red-100 bg-red-50 p-3 text-[11px] text-red-600">
