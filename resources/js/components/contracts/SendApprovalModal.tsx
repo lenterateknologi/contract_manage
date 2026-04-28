@@ -82,42 +82,41 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
 
     return (
         <div
-            className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/60 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-slate-900/40 backdrop-blur-sm p-4"
             onClick={(e) => e.target === e.currentTarget && onClose()}
         >
-            <div className="bg-white my-auto w-full max-w-lg rounded-none border-2 border-black shadow-[16px_16px_0px_0px_rgba(0,0,0,1)] duration-200 animate-in fade-in zoom-in-95 overflow-hidden">
-                <div className="bg-black text-white px-6 py-5 flex items-center justify-between">
+            <div className="bg-white my-auto w-full max-w-lg rounded-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
                     <div>
-                        <h6 className="text-[14px] font-black uppercase tracking-[0.2em] flex items-center gap-3">
-                            <Shield size={16} className="text-white" /> Access Authorization
+                        <h6 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                            <GitBranch size={16} className="text-primary" /> Kirim Approval
                         </h6>
-                        <p className="text-white/50 mt-1 text-[9px] font-bold uppercase tracking-widest">Select Approval Pathway</p>
+                        <p className="text-slate-400 text-[10px] mt-0.5">Konfirmasi alur persetujuan kontrak</p>
                     </div>
                     <button
                         onClick={onClose}
-                        className="hover:rotate-90 transition-all duration-300 text-white/50 hover:text-white"
+                        className="text-slate-400 hover:text-slate-600 transition-colors"
                     >
-                        <i className="fa-solid fa-xmark text-xl" />
+                        <i className="fa-solid fa-xmark text-lg" />
                     </button>
                 </div>
 
-                <div className="p-8 space-y-8">
+                <div className="p-6 space-y-6">
                     {/* Tax Policy Gate */}
-                    <div className="space-y-2">
-                        <Label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Mandatory Policy Check</Label>
+                    <div className="space-y-3">
                         <label 
                             className={cn(
-                                "flex cursor-pointer items-center justify-between p-5 border-2 transition-all",
-                                metadata.tax_required ? "bg-black text-white border-black" : "bg-slate-50 border-slate-100 hover:border-slate-300"
+                                "flex cursor-pointer items-center justify-between p-4 rounded-xl border-2 transition-all",
+                                metadata.tax_required ? "bg-primary/5 border-primary" : "bg-white border-slate-100 hover:border-slate-200"
                             )}
                         >
-                            <span className="flex items-center gap-4">
-                                <div className={cn("w-10 h-10 flex items-center justify-center transition-colors", metadata.tax_required ? "bg-white/10" : "bg-white border border-slate-200 shadow-sm")}>
-                                    <AlertCircle size={18} className={metadata.tax_required ? "text-white" : "text-slate-400"} />
+                            <span className="flex items-center gap-3">
+                                <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", metadata.tax_required ? "bg-primary text-white" : "bg-slate-100 text-slate-400")}>
+                                    <AlertCircle size={18} />
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="text-[11px] font-black uppercase tracking-tight">Tax Compliance Review</span>
-                                    <span className={cn("text-[8px] font-bold uppercase mt-0.5", metadata.tax_required ? "text-white/50" : "text-slate-400")}>Include tax department in the approval loop</span>
+                                    <span className="text-xs font-bold text-slate-900">Review Kepatuhan Pajak</span>
+                                    <span className="text-[10px] text-slate-400 mt-0.5 text-balance italic">Sertakan departemen pajak dalam alur persetujuan</span>
                                 </div>
                             </span>
                             <input 
@@ -126,33 +125,33 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
                                 checked={metadata.tax_required}
                                 onChange={() => setMetadata({ ...metadata, tax_required: !metadata.tax_required })}
                             />
-                            <div className={cn("w-6 h-6 border-2 flex items-center justify-center transition-all", metadata.tax_required ? "bg-white border-white text-black" : "bg-white border-slate-200")}>
-                                {metadata.tax_required && <CheckCircle2 size={14} />}
+                            <div className={cn("w-5 h-5 rounded border-2 flex items-center justify-center transition-all", metadata.tax_required ? "bg-primary border-primary text-white" : "bg-white border-slate-200")}>
+                                {metadata.tax_required && <CheckCircle2 size={12} />}
                             </div>
                         </label>
                     </div>
 
                     {initLoading ? (
-                        <div className="py-12 flex flex-col items-center justify-center gap-4 border-2 border-dashed border-slate-100">
-                            <div className="w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">Evaluating Access...</span>
+                        <div className="py-10 flex flex-col items-center justify-center gap-3 bg-slate-50 rounded-xl">
+                            <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Mengevaluasi Alur...</span>
                         </div>
                     ) : workflows.length === 0 ? (
-                        <div className="p-6 border-2 border-rose-100 bg-rose-50 text-center space-y-3">
-                            <div className="mx-auto w-10 h-10 border-2 border-rose-200 flex items-center justify-center text-rose-500"><AlertCircle size={20} /></div>
-                            <h4 className="text-[11px] font-black uppercase text-rose-800">Authorization Denied</h4>
-                            <p className="text-[9px] font-bold text-rose-600 uppercase tracking-tight leading-relaxed">No authorized workflows found for this contract category. Contact your administrator for access rights.</p>
+                        <div className="p-6 rounded-xl border border-rose-100 bg-rose-50/50 text-center space-y-3">
+                            <div className="mx-auto w-10 h-10 rounded-full border border-rose-200 flex items-center justify-center text-rose-500 bg-white"><AlertCircle size={20} /></div>
+                            <h4 className="text-xs font-bold text-rose-900">Akses Ditolak</h4>
+                            <p className="text-[10px] text-rose-600/80 leading-relaxed">Tidak ditemukan alur persetujuan yang sesuai untuk kategori ini. Hubungi admin untuk akses.</p>
                         </div>
                     ) : (
                         <div className="space-y-6">
                             {workflows.length > 1 ? (
                                 <div className="space-y-2">
-                                    <Label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Authorized Workflows</Label>
+                                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pilih Workflow</Label>
                                     <div className="relative group">
                                         <select 
                                             value={selectedWorkflowId} 
                                             onChange={(e) => setSelectedWorkflowId(e.target.value)}
-                                            className="w-full bg-slate-50 border-2 border-slate-200 h-14 px-5 text-[11px] font-black uppercase tracking-tight rounded-none appearance-none focus:border-black focus:bg-white transition-all outline-none"
+                                            className="w-full bg-slate-50 border border-slate-200 h-11 px-4 text-xs font-bold rounded-lg appearance-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
                                         >
                                             {workflows.map(wf => (
                                                 <option key={wf.id} value={wf.id}>
@@ -160,34 +159,37 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
                                                 </option>
                                             ))}
                                         </select>
-                                        <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none group-focus-within:rotate-180 transition-transform" size={16} />
+                                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" size={14} />
                                     </div>
-                                    <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-2 ml-1">You have access to multiple pathways. Choose the appropriate one.</p>
                                 </div>
                             ) : (
-                                <div className="p-6 bg-slate-50 border-2 border-black/5 flex flex-col items-center text-center space-y-4">
-                                    <div className="w-12 h-12 bg-black text-white flex items-center justify-center shadow-xl shadow-black/20"><CheckCircle2 size={24} /></div>
-                                    <div>
-                                        <h4 className="text-[11px] font-black uppercase text-slate-900 tracking-[0.1em]">{workflows[0].name}</h4>
-                                        <p className="text-[8px] font-bold text-slate-400 uppercase mt-1">Automatic Authorization Confirmed</p>
-                                    </div>
-                                    <div className="pt-2 flex items-center gap-1.5 opacity-30">
-                                        {[1,2,3].map(i => <div key={i} className="w-1 h-1 bg-black rounded-full" />)}
+                                <div className="p-5 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-4">
+                                    <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center"><CheckCircle2 size={20} /></div>
+                                    <div className="flex-1">
+                                        <h4 className="text-xs font-bold text-slate-900 uppercase tracking-tight">{workflows[0].name}</h4>
+                                        <p className="text-[10px] text-slate-400 mt-0.5 italic">Alur otomatis telah diotorisasi</p>
                                     </div>
                                 </div>
                             )}
 
                             {selectedWorkflow && (
                                 <div className="animate-in fade-in slide-in-from-top-2">
-                                    <Label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 block">Process Architecture</Label>
-                                    <div className="flex items-center gap-1 overflow-hidden h-12">
+                                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 block">Urutan Persetujuan</Label>
+                                    <div className="flex items-center gap-2 overflow-x-auto pb-4 scrollbar-none">
                                         {selectedWorkflow.steps?.map((step: any, idx: number) => (
-                                            <div key={idx} className="flex items-center">
-                                                <div className="h-10 px-4 flex items-center justify-center bg-white border border-slate-200 text-[10px] font-black uppercase text-slate-900 shadow-sm min-w-[80px]">
-                                                    {step.role}
+                                            <div key={idx} className="flex items-center flex-shrink-0">
+                                                <div className="px-4 py-2.5 rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col items-center justify-center min-w-[100px]">
+                                                    <span className="text-[11px] font-bold text-slate-900 leading-tight">
+                                                        {Array.isArray(step.role) ? step.role.join(', ') : step.role}
+                                                    </span>
+                                                    {step.department_names && step.department_names.length > 0 && (
+                                                        <span className="text-[8px] font-medium text-slate-400 mt-1 uppercase tracking-wider">
+                                                            {step.department_names.join(' & ')}
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 {idx < (selectedWorkflow.steps?.length || 0) - 1 && (
-                                                    <div className="w-4 h-[2px] bg-slate-200" />
+                                                    <div className="w-4 h-[1px] bg-slate-200" />
                                                 )}
                                             </div>
                                         ))}
@@ -198,20 +200,20 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
                     )}
                 </div>
 
-                <div className="p-6 bg-slate-50 border-t-2 border-black flex gap-3">
+                <div className="p-6 bg-slate-50 border-t border-slate-100 flex gap-3">
                     <button
                         onClick={onClose}
-                        className="flex-1 h-12 text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all border border-transparent hover:border-black"
+                        className="flex-1 h-11 text-xs font-bold text-slate-500 hover:text-slate-700 transition-colors"
                     >
-                        Abort
+                        Batal
                     </button>
                     <button
                         onClick={handleSubmit}
                         disabled={loading || initLoading || workflows.length === 0 || !selectedWorkflowId}
-                        className="flex-[2] bg-black text-white h-12 text-[10px] font-black uppercase tracking-widest shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] hover:shadow-none hover:translate-x-0.5 hover:translate-y-0.5 transition-all disabled:opacity-20 disabled:grayscale"
+                        className="flex-[2] bg-primary text-white h-11 text-xs font-bold rounded-lg transition-all active:scale-95 disabled:opacity-30 disabled:grayscale hover:bg-primary/90"
                     >
-                        {loading ? <i className="fa-solid fa-spinner fa-spin mr-2" /> : <GitBranch size={14} className="inline mr-2" />}
-                        {loading ? 'Executing...' : 'Authorize & Dispatch'}
+                        {loading ? <i className="fa-solid fa-spinner fa-spin mr-2" /> : <GitBranch size={16} className="inline mr-2" />}
+                        {loading ? 'Mengirim...' : 'Konfirmasi & Kirim'}
                     </button>
                 </div>
             </div>

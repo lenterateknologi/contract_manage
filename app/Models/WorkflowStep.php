@@ -38,7 +38,7 @@ class WorkflowStep extends Model
     ];
 
     protected $with = ['approverRoles', 'approverDepartments', 'approverUsers'];
-    protected $appends = ['role', 'department_ids', 'user_ids'];
+    protected $appends = ['role', 'department_ids', 'department_names', 'user_ids'];
 
     public function approverRoles(): HasMany
     {
@@ -63,6 +63,14 @@ class WorkflowStep extends Model
     public function getDepartmentIdsAttribute()
     {
         return $this->approverDepartments->pluck('department_id')->toArray();
+    }
+
+    public function getDepartmentNamesAttribute()
+    {
+        // Load the departments relation if not loaded
+        return $this->approverDepartments->map(function($sd) {
+            return $sd->department?->name ?? 'All Departments';
+        })->unique()->toArray();
     }
 
     public function getUserIdsAttribute()

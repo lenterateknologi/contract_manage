@@ -825,39 +825,39 @@ class AdminController extends Controller
 
         try {
             return DB::transaction(function() use ($data, $workflow) {
+                // Update basic info
                 $workflowData = collect($data)->except(['initiator_roles', 'initiator_users', 'initiator_departments', 'steps'])->toArray();
                 $workflow->update($workflowData);
 
-                // Sync Initiators
+                // Sync Initiators (Role, Dept, User)
                 $workflow->initiatorRolesData()->delete();
                 if (!empty($data['initiator_roles'])) {
-                    foreach ($data['initiator_roles'] as $role) {
+                    foreach ((array)$data['initiator_roles'] as $role) {
                         $workflow->initiatorRolesData()->create(['role_name' => $role]);
                     }
                 }
 
                 $workflow->initiatorDepartmentsData()->delete();
                 if (!empty($data['initiator_departments'])) {
-                    foreach ($data['initiator_departments'] as $deptId) {
+                    foreach ((array)$data['initiator_departments'] as $deptId) {
                         $workflow->initiatorDepartmentsData()->create(['department_id' => $deptId]);
                     }
                 }
 
                 $workflow->initiatorUsersData()->delete();
                 if (!empty($data['initiator_users'])) {
-                    foreach ($data['initiator_users'] as $userId) {
+                    foreach ((array)$data['initiator_users'] as $userId) {
                         $workflow->initiatorUsersData()->create(['user_id' => $userId]);
                     }
                 }
 
-                // Sync steps - Detailed Cleanup
-                $oldSteps = $workflow->steps()->get();
-                foreach ($oldSteps as $s) {
-                    $s->approverRoles()->delete();
-                    $s->approverDepartments()->delete();
-                    $s->approverUsers()->delete();
-                    $s->forceDelete();
+                // Sync Workflow Steps
+                foreach ($workflow->steps as $oldStep) {
+                    $oldStep->approverRoles()->delete();
+                    $oldStep->approverDepartments()->delete();
+                    $oldStep->approverUsers()->delete();
                 }
+                $workflow->steps()->forceDelete();
 
                 if (! empty($data['steps'])) {
                     foreach ($data['steps'] as $index => $stepData) {
@@ -894,9 +894,7 @@ class AdminController extends Controller
                 return back()->with('success', 'Workflow updated successfully.');
             });
         } catch (\Exception $e) {
-            Log::error('Workflow Update Error: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
+            Log::error('Workflow Update Error: ' . $e->getMessage());
             return back()->withErrors(['error' => 'Gagal memperbarui alur kerja: ' . $e->getMessage()]);
         }
     }
@@ -923,47 +921,60 @@ class AdminController extends Controller
 
     public function updateWorkflowSteps(Request $request, Workflow $workflow)
     {
+        // This method is a specialized version of updateWorkflow's step syncing logic
         $data = $request->validate([
             'steps' => 'nullable|array',
-            'steps.*.role' => 'required',
-            'steps.*.selected_role' => 'nullable|string',
+            'steps.*.role' => 'nullable',
             'steps.*.description' => 'nullable|string',
             'steps.*.approver_type' => 'nullable|string|in:role,user',
             'steps.*.user_ids' => 'nullable|array',
-            'steps.*.department_id' => 'nullable|uuid|exists:m_departments,id',
+            'steps.*.department_ids' => 'nullable|array',
+            'steps.*.status_id' => 'nullable|string',
         ]);
 
-        $workflow->steps()->each(function($s) {
-            $s->approverRoles()->delete();
-            $s->approverDepartments()->detach();
-            $s->approverUsers()->detach();
-            $s->forceDelete();
-        });
+        return DB::transaction(function() use ($data, $workflow) {
+            // Cleanup existing steps
+            foreach ($workflow->steps as $oldStep) {
+                $oldStep->approverRoles()->delete();
+                $oldStep->approverDepartments()->delete();
+                $oldStep->approverUsers()->delete();
+            }
+            $workflow->steps()->forceDelete();
 
-        if (! empty($data['steps'])) {
-            foreach ($data['steps'] as $index => $stepData) {
-                $step = $workflow->steps()->create([
-                    'approver_type' => $stepData['approver_type'] ?? 'role',
-                    'description' => $stepData['description'] ?? '',
-                    'step' => $index + 1,
-                    'created_by' => Auth::id(),
-                    'updated_by' => Auth::id(),
-                ]);
+            if (! empty($data['steps'])) {
+                foreach ($data['steps'] as $index => $stepData) {
+                    $step = $workflow->steps()->create([
+                        'approver_type' => $stepData['approver_type'] ?? 'role',
+                        'description' => $stepData['description'] ?? '',
+                        'status_id' => $stepData['status_id'] ?? null,
+                        'step' => $index + 1,
+                        'created_by' => Auth::id(),
+                        'updated_by' => Auth::id(),
+                        'is_active' => true,
+                    ]);
 
-                if (($stepData['approver_type'] ?? 'role') === 'role') {
-                    $roleName = $stepData['selected_role'] ?? (is_array($stepData['role']) ? $stepData['role'][0] : $stepData['role']);
-                    $step->approverRoles()->create(['role_name' => $roleName]);
-                } else if (! empty($stepData['user_ids'])) {
-                     $step->approverUsers()->sync($stepData['user_ids']);
-                }
+                    if (!empty($stepData['role'])) {
+                        foreach ((array)$stepData['role'] as $role) {
+                            $step->approverRoles()->create(['role_name' => $role]);
+                        }
+                    }
 
-                if (!empty($stepData['department_id'])) {
-                    $step->approverDepartments()->sync([$stepData['department_id']]);
+                    if (!empty($stepData['department_ids'])) {
+                        foreach ((array)$stepData['department_ids'] as $deptId) {
+                            $step->approverDepartments()->create(['department_id' => $deptId]);
+                        }
+                    }
+
+                    if (!empty($stepData['user_ids'])) {
+                        foreach ((array)$stepData['user_ids'] as $userId) {
+                            $step->approverUsers()->create(['user_id' => $userId]);
+                        }
+                    }
                 }
             }
-        }
 
-        return redirect()->route('admin.workflows');
+            return redirect()->route('admin.workflows')->with('success', 'Steps updated successfully.');
+        });
     }
 
     // Navigation Management (Combined)

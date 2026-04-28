@@ -60,17 +60,17 @@ export default function ApprovalSteps({ approvals, creator, submittedAt }: Props
     }, [submittedAt, steps]);
 
     const renderStep = (a: ContractApproval, i: number, isLast: boolean, isOnly: boolean) => (
-        <div key={a.id} className={`flex gap-2.5 ${!isLast && !isOnly ? 'relative pb-4' : ''}`}>
-            {!isLast && !isOnly && <div className="bg-border absolute top-7 bottom-0 left-3 w-px" />}
+        <div key={a.id} className={`flex gap-3 ${!isLast && !isOnly ? 'relative pb-4' : ''}`}>
+            {!isLast && !isOnly && <div className="bg-slate-100 absolute top-8 bottom-0 left-3.5 w-px" />}
             <div
-                className={`relative z-10 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border ${dotCls[a.status] ?? dotCls.waiting}`}
+                className={`relative z-10 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border shadow-sm ${dotCls[a.status] ?? dotCls.waiting}`}
             >
-                <i className={`fa-solid ${iconMap[a.status] ?? 'fa-minus'}`} style={{ fontSize: 8 }} />
+                <i className={`fa-solid ${iconMap[a.status] ?? 'fa-minus'}`} style={{ fontSize: 10 }} />
             </div>
             <div className="flex-1 pt-0.5">
-                <div className="text-foreground text-[12px] font-semibold flex items-center gap-1.5 flex-wrap">
-                    {a.role} - {a.department_name ?? 'Matching Dept'}
-                    <span className="text-muted-foreground text-[10px] font-normal opacity-70">· Seq {a.sequence}</span>
+                <div className="text-slate-900 text-xs font-bold flex items-center gap-1.5 flex-wrap leading-tight">
+                    {a.role} · {a.department_name ?? 'Matching Dept'}
+                    <span className="text-slate-400 text-[10px] font-normal opacity-70">· Seq {a.sequence}</span>
                 </div>
                 
                 <div className="text-muted-foreground mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px]">
@@ -113,19 +113,19 @@ export default function ApprovalSteps({ approvals, creator, submittedAt }: Props
     );
 
     const renderInitiator = (isOnly: boolean) => (
-        <div key="initiator" className={`flex gap-2.5 ${!isOnly ? 'relative pb-4' : ''}`}>
-            {!isOnly && <div className="bg-border absolute top-7 bottom-0 left-3 w-px" />}
-            <div className="relative z-10 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/30">
-                <i className="fa-solid fa-paper-plane" style={{ fontSize: 8 }} />
+        <div key="initiator" className={`flex gap-3 ${!isOnly ? 'relative pb-4' : ''}`}>
+            {!isOnly && <div className="bg-slate-100 absolute top-8 bottom-0 left-3.5 w-px" />}
+            <div className="relative z-10 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border bg-blue-50 text-blue-600 border-blue-200 shadow-sm shadow-blue-100/50">
+                <i className="fa-solid fa-paper-plane" style={{ fontSize: 10 }} />
             </div>
             <div className="flex-1 pt-0.5">
-                <div className="text-foreground text-[12px] font-black uppercase tracking-widest">
-                    Initiator <span className="text-muted-foreground text-[10px] font-normal">· Phase 0</span>
+                <div className="text-slate-900 text-xs font-bold leading-tight">
+                    Initiator <span className="text-slate-400 text-[10px] font-normal italic ml-1">· Phase 0</span>
                 </div>
-                <div className="text-muted-foreground mt-0.5 flex items-center gap-1.5 text-[11px]">
+                <div className="text-slate-400 mt-1 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider">
                     <Avatar user={creator} size="sm" /> {creator?.name}
                 </div>
-                <div className="text-muted-foreground mt-1 text-[10px]">
+                <div className="text-slate-400 mt-1 text-[10px]">
                     {submittedAt ? `Submitted at ${submittedAt}` : <span className="italic opacity-50 text-[9px]">Submission pending</span>}
                 </div>
             </div>
@@ -133,19 +133,19 @@ export default function ApprovalSteps({ approvals, creator, submittedAt }: Props
     );
 
     const renderProjected = () => (
-        <div key="projected" className="flex gap-2.5 relative pb-4 opacity-70">
-            <div className="bg-border absolute top-7 bottom-0 left-3 w-px" />
-            <div className="relative z-10 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border bg-muted text-muted-foreground border-border">
-                <i className="fa-solid fa-user-shield" style={{ fontSize: 8 }} />
+        <div key="projected" className="flex gap-3 relative pb-4 opacity-70">
+            <div className="bg-slate-100 absolute top-8 bottom-0 left-3.5 w-px" />
+            <div className="relative z-10 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border bg-slate-50 text-slate-500 border-slate-200">
+                <i className="fa-solid fa-user-shield" style={{ fontSize: 10 }} />
             </div>
             <div className="flex-1 pt-0.5">
-                <div className="text-foreground text-[12px] font-semibold">
-                    Direct Supervisor <span className="text-muted-foreground text-[10px] font-normal">· Phase 1</span>
+                <div className="text-slate-900 text-xs font-bold leading-tight">
+                    Direct Supervisor <span className="text-slate-400 text-[10px] font-normal italic ml-1">· Phase 1</span>
                 </div>
-                <div className="text-muted-foreground mt-0.5 flex items-center gap-1.5 text-[11px]">
+                <div className="text-slate-400 mt-1 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider leading-none">
                     <i className="fa-solid fa-circle-info opacity-50" /> Manager (Dept: {creator.department_id ? 'Matching' : 'Unknown'})
                 </div>
-                <div className="text-muted-foreground mt-1 text-[10px] italic">
+                <div className="text-slate-400 mt-1 text-[10px] italic">
                     Will be assigned upon submission
                 </div>
             </div>

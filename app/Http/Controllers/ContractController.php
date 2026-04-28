@@ -201,10 +201,10 @@ class ContractController extends Controller
     private function getFilteredContractsQuery(Request $request, string $view = 'contracts')
     {
         $query = Contract::with([
-            'creator.department', 'contractType', 'submissionType', 'approvals.approver', 'approvals.workflowStep',
+            'creator.department', 'contractType', 'submissionType', 'approvals.approver.department', 'approvals.workflowStep',
             'workflow.steps', 'versions.uploader', 'histories.actor', 'messages.user',
-            'attachments.uploader', 'formSubmissions', 'vendor.documents', 'initiator.department'
-        ])->orderByDesc('created_at');
+            'attachments.uploader', 'formSubmissions', 'vendor.documents', 'initiator.department', 'parent'
+        ])->latest();
 
 
         // Apply View Filter
@@ -231,6 +231,9 @@ class ContractController extends Controller
             case 'contracts':
             default:
                 $query->where('status', '!=', 'draft');
+                break;
+            case 'all':
+                // No status filter
                 break;
         }
 
@@ -1095,8 +1098,10 @@ class ContractController extends Controller
         foreach ($workflowSteps as $step) {
             $approvals = $c->approvals->where('workflow_step_id', $step->id);
 
-            // Resolve Department Name
-            $deptName = $step->department?->name;
+            // Resolve Department Name(s)
+            $deptNames = (array)$step->department_names;
+            $deptName = count($deptNames) > 0 ? implode(', ', $deptNames) : null;
+
             if (!$deptName && $step->step === 1 && $c->initiator?->department) {
                 $deptName = $c->initiator->department->name;
             }
@@ -1126,18 +1131,19 @@ class ContractController extends Controller
                 }
             } else {
                 // Future step placeholder
+                $roleLabel = is_array($step->role) ? implode(', ', $step->role) : $step->role;
                 $timeline[] = [
                     'id' => 'step-'.$step->id,
                     'user_id' => null,
-                    'approver_name' => 'Pendataan '.$step->role,
-                    'role' => $step->role,
+                    'approver_name' => 'Pendataan '.$roleLabel,
+                    'role' => $roleLabel,
                     'department_name' => $deptName,
                     'target_approvers' => $targetApprovers,
                     'sequence' => $step->step,
                     'status' => 'waiting',
                     'note' => null,
                     'approved_at' => null,
-                    'approver' => ['name' => 'Approver '.$step->role],
+                    'approver' => ['name' => 'Approver '.$roleLabel],
                 ];
             }
         }

@@ -6,6 +6,10 @@ export interface UserProfile {
     role: string;
     department_id: string | null;
     department_name?: string;
+    department?: {
+        id: string;
+        name: string;
+    };
     bg_color: string;
     text_color: string;
 }

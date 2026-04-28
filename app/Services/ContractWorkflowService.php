@@ -112,20 +112,24 @@ class ContractWorkflowService
      */
     private function createApprovalForStep(Contract $contract, WorkflowStep $step): void
     {
+        // Get roles list (handle both array and string cases)
+        $roles = (array)$step->role;
+        $lowerRoles = array_map('strtolower', $roles);
+
         // Determine approvers
         if ($step->approver_type === 'user') {
             $approvers = $step->users;
-        } elseif (strtolower($step->role) === 'initiator') {
+        } elseif (in_array('initiator', $lowerRoles)) {
             // Special handling for the original initiator (proxy owner)
             $approvers = collect([$contract->initiator]);
-        } elseif (strtolower($step->role) === 'manager' && $step->department_id === null) {
+        } elseif (in_array('manager', $lowerRoles) && $step->department_id === null) {
             // Resolution for "Manager Staff" or "Manager Initiator" (Department dynamic based on Initiator)
             $query = User::where('role', 'Manager')
                 ->where('department_id', $contract->initiator->department_id);
             $approvers = $query->get();
         } else {
-            // Find all users with the required role and in the same department
-            $query = User::where('role', $step->role);
+            // Find all users with any of the required roles and in the same department
+            $query = User::whereIn('role', $roles);
             
             // Prioritize step-level department, then fallback to initiator's department if not specified
             $targetDeptId = $step->department_id ?: $contract->initiator->department_id;
@@ -143,7 +147,9 @@ class ContractWorkflowService
                 'workflow_step_id' => $step->id,
                 'user_id' => $approver->id,
                 'approver_name' => $approver->name,
-                'role' => $step->role,
+                // If multiple roles, we just pick the first one for the approval record label, 
+                // or we could join them, but usually one user has one primary role match.
+                'role' => count($roles) > 0 ? $roles[0] : 'Approver',
                 'job_title' => $approver->job_title ?? null,
                 'status' => 'pending',
                 'created_by' => Auth::id(),
@@ -343,21 +349,30 @@ class ContractWorkflowService
         $query = Workflow::where('is_active', true);
         
         if ($contractType) {
-            $query->where('contract_type', $contractType);
+            // Case-insensitive search for contract type
+            $query->where(function($q) use ($contractType) {
+                $q->where('contract_type', 'ilike', $contractType)
+                  ->orWhere('is_default', true); // Show global defaults as fallback
+            });
         }
 
         return $query->where(function ($q) use ($user) {
+                // Anyone can initiate if initiator_type is 'all'
                 $q->where('initiator_type', 'all')
-                    ->orWhere(function ($sq) use ($user) {
-                        $sq->where('initiator_type', 'role')
-                           ->whereJsonContains('initiator_roles', $user->role);
+                    // Check by Role
+                    ->orWhereHas('initiatorRolesData', function ($sq) use ($user) {
+                        $sq->where('role_name', $user->role);
                     })
-                    ->orWhere(function ($sq) use ($user) {
-                        $sq->where('initiator_type', 'user')
-                           ->whereJsonContains('initiator_users', $user->id);
+                    // Check by Department
+                    ->orWhereHas('initiatorDepartmentsData', function ($sq) use ($user) {
+                        $sq->where('department_id', $user->department_id);
+                    })
+                    // Check by specific User
+                    ->orWhereHas('initiatorUsersData', function ($sq) use ($user) {
+                        $sq->where('user_id', $user->id);
                     });
             })
-            ->with('steps')
+            ->with(['steps', 'initiatorRolesData', 'initiatorDepartmentsData', 'initiatorUsersData'])
             ->get();
     }
 }

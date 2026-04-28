@@ -1,8 +1,7 @@
 import { cn } from '@/lib/utils';
 import { Contract } from '@/types/contracts';
 import axios from 'axios';
-import { renderAsync } from 'docx-preview';
-import { Diff, Download, FileText, History, Loader2, Upload } from 'lucide-react'; 
+import { Diff, Download, FileText, History, Loader2, Upload, ExternalLink, X } from 'lucide-react'; 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useToast } from '@/components/contracts/Toast';
 
@@ -23,13 +22,11 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
     const [selectedVno, setSelectedVno] = useState<number | null>(null);
-    const [previewLoading, setPreviewLoading] = useState(false);
     const [showVersions, setShowVersions] = useState(false);
     const [showMoreActions, setShowMoreActions] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [uploadNote, setUploadNote] = useState('');
 
-    const previewContainerRef = useRef<HTMLDivElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     // Sidebar/Dropdown click outside
@@ -51,9 +48,8 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
                 const res = await axios.get(`/api/contracts/${contract.id}/agreement/versions`);
                 setVersions(res.data);
 
-                // If explicit force, or if nothing selected yet
                 if (res.data.length > 0 && (forceLatest || !selectedVno)) {
-                    handlePreview(res.data[0].version_no);
+                    setSelectedVno(res.data[0].version_no);
                 }
             } catch (err) {
                 console.error('Failed to load agreement versions', err);
@@ -86,7 +82,6 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
             const res = await axios.post(`/api/contracts/${contract.id}/agreement`, formData);
             setUploadNote('');
             if (onUpdate && res.data) onUpdate(res.data);
-            // Force load and switch to latest
             await loadVersions(true);
         } catch (err) {
             console.error('Upload failed', err);
@@ -96,25 +91,15 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
         }
     };
 
-    const handlePreview = async (versionNo: number) => {
+    const handlePreview = (versionNo: number) => {
         setSelectedVno(versionNo);
-        setPreviewLoading(true);
         setShowVersions(false);
+    };
 
-        try {
-            const res = await axios.get(`/api/contracts/${contract.id}/file/${versionNo}?type=agreement`, {
-                responseType: 'blob',
-            });
-
-            if (previewContainerRef.current) {
-                previewContainerRef.current.innerHTML = '';
-                await renderAsync(res.data, previewContainerRef.current);
-            }
-        } catch (err) {
-            console.error('Preview failed', err);
-        } finally {
-            setPreviewLoading(false);
-        }
+    const handleCompare = () => {
+        const v1 = versions.length > 1 ? versions[1].version_no : selectedVno;
+        const v2 = selectedVno;
+        window.open(`/admin/contracts/${contract.id}/agreement/compare?v1=${v1}&v2=${v2}`, '_blank');
     };
 
     const filteredVersions = versions.filter((v) => {
@@ -123,23 +108,21 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
         return v.version_no.toString().includes(q) || v.uploader?.name?.toLowerCase().includes(q) || v.created_at.toLowerCase().includes(q);
     });
 
-    const handleCompare = () => {
-        // Find latest 2 versions for default comparison if only 1 version is selected
-        const v1 = versions.length > 1 ? versions[1].version_no : selectedVno;
-        const v2 = selectedVno;
-        window.open(`/admin/contracts/${contract.id}/agreement/compare?v1=${v1}&v2=${v2}`, '_blank');
-    };
+    // PDF Preview URL targeting the backend conversion endpoint
+    const pdfUrl = selectedVno 
+        ? `/api/contracts/${contract.id}/pdf/${selectedVno}?type=agreement#view=FitH` 
+        : null;
 
     return (
-        <div className="bg-card animate-in fade-in flex min-h-[850px] flex-1 flex-col overflow-hidden duration-500">
-            {/* Minimal Sticky Header - Mirroring F1/F2 */}
+        <div className="bg-card animate-in fade-in flex flex-1 flex-col overflow-hidden duration-500">
+            {/* Header Area */}
             <div className="border-border/60 sticky top-0 z-40 flex h-[72px] shrink-0 items-center justify-between border-b bg-white/50 px-6 backdrop-blur-sm">
                 <div className="flex items-center gap-4">
                     <div className="flex flex-col">
                         <div className="flex items-center gap-2">
                             <div className="h-4 w-1 rounded-full bg-indigo-600" />
                             <h4 className="text-[11px] leading-none font-black tracking-tighter text-slate-900 uppercase">
-                                Final Agreement Document
+                                Agreement Preview
                             </h4>
                             {selectedVno && (
                                 <span className="animate-in fade-in zoom-in rounded bg-slate-950 px-1.5 py-0.5 text-[8px] font-black tracking-widest text-white uppercase duration-500">
@@ -148,13 +131,12 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
                             )}
                         </div>
                         <span className="mt-1.5 text-[9px] font-black tracking-[0.2em] text-indigo-500 uppercase">
-                            Word Layout (.DOCX) &bull; Format Preserved
+                            High-Fidelity PDF Preview &bull; Layout Preserved
                         </span>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-2.5" ref={dropdownRef}>
-                    {/* Versions Dropdown - Mirroring F1/F2 */}
                     {versions.length > 0 && (
                         <div className="relative">
                             <button
@@ -251,12 +233,10 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
                                     <Diff size={12} className="opacity-60" />
                                     COMPARE VERSIONS
                                 </button>
-
                             </div>
                         )}
                     </div>
 
-                    {/* Minimal Upload Button */}
                     <label
                         className={cn(
                             'flex h-8 cursor-pointer items-center gap-2 rounded-xl bg-slate-900 px-5 text-[9px] font-black tracking-widest text-white uppercase shadow-lg shadow-slate-200 transition-all hover:bg-slate-800 active:scale-95',
@@ -270,18 +250,13 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
                 </div>
             </div>
 
-            {/* Main Preview Area - Mirrored Aesthetic */}
-            <div className="relative flex flex-1 flex-col overflow-hidden bg-slate-50">
-                {previewLoading && (
-                    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm">
-                        <Loader2 size={32} className="mb-4 animate-spin text-indigo-600" />
-                        <span className="animate-pulse text-[10px] font-bold tracking-[0.2em] text-indigo-600 uppercase">
-                            Rendering Word Layout...
-                        </span>
+            {/* Main Preview Area - PDF Iframe */}
+            <div className="relative flex flex-1 flex-col overflow-hidden bg-slate-200 p-2 lg:p-8 min-h-[1000px] border-t border-slate-200">
+                {loading ? (
+                    <div className="flex h-full items-center justify-center">
+                        <Loader2 size={32} className="animate-spin text-slate-300" />
                     </div>
-                )}
-
-                {versions.length === 0 ? (
+                ) : versions.length === 0 ? (
                     <div className="flex flex-1 flex-col items-center justify-center p-12 text-center">
                         <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full border-2 border-dashed border-slate-200 bg-white">
                             <FileText size={40} className="text-slate-200" />
@@ -292,34 +267,23 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
                         </p>
                     </div>
                 ) : (
-                    <div className="custom-scrollbar flex flex-1 justify-center overflow-y-auto bg-white p-8">
-                        <div className="mb-20 w-full max-w-[210mm] rounded-sm bg-white shadow-2xl ring-1 ring-slate-200">
-                            <div ref={previewContainerRef} className="docx-container contract-doc w-full p-12 text-left" />
-                        </div>
-                    </div>
+                    <>
+                        {pdfUrl ? (
+                            <iframe 
+                                src={pdfUrl} 
+                                className="flex-1 w-full border-none min-h-[1000px]"
+                                title="Agreement Preview"
+                            />
+                        ) : (
+                            <div className="flex flex-1 items-center justify-center">
+                                <Loader2 size={32} className="animate-spin text-indigo-600" />
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
-
-            <style
-                dangerouslySetInnerHTML={{
-                    __html: `
-                .docx-container > div {
-                    background: transparent !important;
-                    box-shadow: none !important;
-                    margin: 0 !important;
-                    padding: 0 !important;
-                    width: 100% !important;
-                }
-                .docx-wrapper {
-                    background: transparent !important;
-                    padding: 0 !important;
-                    margin-top: 100px !important;
-                }
-                section.docx {
-                    margin-bottom: 0 !important;
-                    box-shadow: none !important;
-                    padding: 40px !important;
-                }
+            
+            <style dangerouslySetInnerHTML={{ __html: `
                 .custom-scrollbar::-webkit-scrollbar {
                     width: 6px;
                 }
@@ -327,9 +291,7 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
                     background: #e2e8f0;
                     border-radius: 10px;
                 }
-            `,
-                }}
-            />
+            `}} />
         </div>
     );
 }
