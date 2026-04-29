@@ -2,11 +2,26 @@ import { useToast } from '@/components/contracts/Toast';
 import { FormField } from '@/components/form-renderer/FormElement';
 import { InteractiveForm } from '@/components/form-renderer/InteractiveForm';
 import { contractApi } from '@/lib/contract-api';
+import { Modal } from '@/components/ui/Modal';
 import { cn } from '@/lib/utils';
 import { Contract } from '@/types/contracts';
 import axios from 'axios';
-import { Download, History, Loader2 } from 'lucide-react';
+import {
+    ArrowRight,
+    Check,
+    ChevronDown,
+    Columns,
+    Download,
+    FileText,
+    FolderOpen,
+    History,
+    Loader2,
+    MoreVertical,
+    PlusCircle,
+    Search,
+} from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import LoadingLottie from '../ui/LoadingLottie';
 
 interface FormTemplateInfo {
     id: string;
@@ -110,8 +125,9 @@ const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' | 'f2')
     }
 
     // 3. Parties & Metadata
-    if (name === 'meta_p1_name' || name === 'meta_p1_entity') return 'PT. LENTERA TEKNOLOGI';
-    if (name === 'meta_type' || name === 'meta_tipe_perjanjian') return (contract as any).submission_type || '';
+    if (name === 'meta_p1_entity') return 'PT. LENTERA TEKNOLOGI';
+    if (name === 'meta_type' || name === 'meta_tipe_perjanjian') return (contract as any).submission_type || (contract as any).transaction_type || '';
+    if (name === 'meta_transaction_type') return (contract as any).transaction_type || '';
     if (name === 'meta_p1_signer') return contract.p1_signer || (contract as any).initiator?.name || '';
     if (name === 'meta_p1_signer_position') return contract.p1_signer_position || (contract as any).initiator?.role || '';
     if (name === 'meta_p1_alamat') return 'The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan';
@@ -125,6 +141,7 @@ const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' | 'f2')
     if (name === 'meta_lokasi') return (contract as any).location || '';
     if (name === 'meta_nilai_transaksi') return (contract as any).amount || '';
     if (name === 'meta_mekanisme_pembayaran') return (contract as any).payment_terms || '';
+    if (name === 'meta_deskripsi' || name === 'keterangan') return contract.description || '';
 
     // Fallback
     if (contract.metadata && (contract.metadata as any)[field.name]) {
@@ -176,6 +193,8 @@ function GenericFormTab({
     const [saving, setSaving] = useState(false);
     const [showVersions, setShowVersions] = useState(false);
     const [showMoreActions, setShowMoreActions] = useState(false);
+    const [showNoteModal, setShowNoteModal] = useState(false);
+    const [versionNote, setVersionNote] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const dropdownRef = useRef<HTMLDivElement>(null);
     const [manualFields, setManualFields] = useState<Set<string>>(new Set());
@@ -228,17 +247,19 @@ function GenericFormTab({
                             // 2. The field has never been manually edited by the user in this session (manualFields).
                             // 3. The current value still matches the last known server state (isUntouched).
 
+                            // Auto-sync is aggressive: if the user hasn't manually edited
+                            // the field IN THIS SESSION, we pull the latest from contract info.
                             const isManualEdit = manualFields.has(f.name);
-                            const isUntouched = currentVal === serverVal;
+                            const isDateField =
+                                f.name === 'meta_tgl_dibuat' ||
+                                f.name === 'tanggal' ||
+                                f.type === 'date' ||
+                                (f.options as any)?.value_type === 'date';
 
-                            // Special case: Avoid auto-syncing "Date" fields that already have a value
-                            // unless it's a manual sync trigger. This prevents "Date Created" from
-                            // resetting to "today" every single time the form is opened.
-                            const isDateField = f.name === 'meta_tgl_dibuat' || f.name === 'tanggal' || f.type === 'date' || (f.options as any)?.value_type === 'date';
-
-                            if (isManual || (!isManualEdit && (isUntouched || !currentVal))) {
+                            if (isManual || !isManualEdit) {
+                                // For dates, we only auto-update on manual sync or if empty
                                 if (!isManual && isDateField && currentVal) {
-                                    return; // Keep existing date
+                                    return;
                                 }
 
                                 if (currentVal !== val) {
@@ -255,7 +276,7 @@ function GenericFormTab({
                 showToast('Data sinkron dengan informasi kontrak & vendor.', 'success');
             }
         },
-        [fields, selected, originalData, showToast],
+        [fields, selected, originalData, showToast, manualFields, docType],
     );
 
     // Auto-sync whenever contract metadata changes
@@ -270,7 +291,8 @@ function GenericFormTab({
             setLoading(false);
             return;
         }
-        setLoading(true);
+        // Only show spinner if we don't have fields yet
+        if (fields.length === 0) setLoading(true);
         try {
             const [tplRes, subRes] = await Promise.all([
                 api.get(`/api/form-templates/${matchingTemplate.id}/fields`),
@@ -323,6 +345,22 @@ function GenericFormTab({
                 setFormData(finalInitial);
                 setOriginalData(finalInitial);
                 setVersions([]);
+
+                // Auto-create V1 if it's a fresh form
+                try {
+                    const firstVersion = await contractApi.formSubmissions.save(selected.id, {
+                        form_template_id: matchingTemplate.id,
+                        document_type: docType,
+                        form_data: finalInitial,
+                        is_new_version: true,
+                        change_summary: 'Initial version (Auto-created)',
+                    });
+                    if (firstVersion.versions) {
+                        setVersions(firstVersion.versions as any);
+                    }
+                } catch (saveErr) {
+                    console.error('Failed to auto-create V1', saveErr);
+                }
             }
         } catch (e) {
             console.error('Failed to load form data', e);
@@ -335,25 +373,68 @@ function GenericFormTab({
         loadData();
     }, [loadData]);
 
+    const isDraft = selected.status === 'draft';
     const isDirty = JSON.stringify(formData) !== JSON.stringify(originalData);
+    const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+    const autoSaveTimerRef = useRef<any>(null);
+
+    const latestVersion = versions.length > 0 ? [...versions].sort((a, b) => b.version_no - a.version_no)[0] : null;
+    const vno = latestVersion?.version_no;
+
+    // Debounced Auto-Save
+    useEffect(() => {
+        if (!loading && isDirty && matchingTemplate && isDraft) {
+            setAutoSaveStatus('saving');
+
+            if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+
+            autoSaveTimerRef.current = setTimeout(async () => {
+                try {
+                    await contractApi.formSubmissions.save(selected.id, {
+                        form_template_id: matchingTemplate.id,
+                        document_type: docType,
+                        form_data: formData,
+                        is_new_version: false, // Don't bump version on auto-save
+                    });
+                    setOriginalData({ ...formData });
+                    setAutoSaveStatus('saved');
+                    // Reset to idle after 3 seconds
+                    setTimeout(() => setAutoSaveStatus('idle'), 3000);
+                } catch (e) {
+                    console.error('Auto-save failed', e);
+                    setAutoSaveStatus('error');
+                }
+            }, 3000); // 3 second debounce
+        }
+
+        return () => {
+            if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+        };
+    }, [formData, loading, matchingTemplate, selected.id, docType, isDirty]);
+
     const isF2 = docType === 'f2';
 
-    const handleSave = async () => {
-        if (!matchingTemplate || !isDirty) return;
+    const handleManualSave = async () => {
+        if (!matchingTemplate) return;
         setSaving(true);
         try {
             const updated = await contractApi.formSubmissions.save(selected.id, {
                 form_template_id: matchingTemplate.id,
                 document_type: docType,
                 form_data: formData,
+                is_new_version: true, // Explicit version bump
+                change_summary: versionNote || undefined,
             });
             onContractUpdated(updated);
             setOriginalData({ ...formData });
-            showToast(`Form ${docType.toUpperCase()} berhasil disimpan.`, 'success');
+            showToast(`Versi baru ${docType.toUpperCase()} berhasil disimpan.`, 'success');
             const res = await contractApi.formSubmissions.get(selected.id, docType);
             if (res.versions) setVersions(res.versions);
+            setAutoSaveStatus('idle');
+            setVersionNote('');
+            setShowNoteModal(false);
         } catch (e: any) {
-            showToast('Gagal menyimpan form.', 'danger');
+            showToast('Gagal menyimpan data.', 'danger');
         } finally {
             setSaving(false);
         }
@@ -463,11 +544,11 @@ function GenericFormTab({
 
     if (!matchingTemplate) {
         return (
-            <div className="border-border rounded-xl border border-dashed py-12 text-center">
-                <div className="bg-muted/50 mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full">
-                    <i className="fa-solid fa-file-circle-question text-muted-foreground" style={{ fontSize: 24 }} />
+            <div className="rounded-xl border border-dashed border-black/10 bg-black/5 py-20 text-center dark:border-white/10 dark:bg-white/5">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-black/10 dark:bg-white/10">
+                    <FileText className="text-black/40 dark:text-white/40" size={24} />
                 </div>
-                <h5 className="text-foreground mb-1 font-bold" style={{ fontSize: 14 }}>
+                <h5 className="mb-1 font-bold tracking-widest text-black uppercase dark:text-white" style={{ fontSize: 12 }}>
                     Belum Ada Template {docType.toUpperCase()}
                 </h5>
             </div>
@@ -476,8 +557,8 @@ function GenericFormTab({
 
     if (loading)
         return (
-            <div className="text-muted-foreground py-- text-center text-xs">
-                <i className="fa-solid fa-spinner fa-spin mr-2" />
+            <div className="flex flex-col items-center justify-center py-20 text-[10px] font-bold tracking-widest text-black/40 uppercase dark:text-white/40">
+                <LoadingLottie width={80} height={80} className="mb-4" />
                 Memuat form {docType.toUpperCase()}...
             </div>
         );
@@ -491,99 +572,125 @@ function GenericFormTab({
     } as any;
 
     return (
-        <div className="bg-card animate-in fade-in flex flex-1 flex-col overflow-hidden duration-500">
+        <div className="bg-card animate-in fade-in flex flex-1 flex-col overflow-hidden duration-300">
             {/* PDF Preview Overlay */}
             {pdfPreviewUrl && (
-                <div className="bg-background/90 animate-in fade-in zoom-in-95 fixed inset-0 z-[100] flex flex-col backdrop-blur-xl duration-300">
-                    <div className="border-border bg-muted/50 flex h-16 items-center justify-between border-b px-6">
+                <div className="dark:bg-sidebar/90 animate-in fade-in zoom-in-95 fixed inset-0 z-[100] flex flex-col bg-white/90 backdrop-blur-md duration-300">
+                    <div className="flex h-16 items-center justify-between border-b border-black/10 px-6 dark:border-white/10">
                         <div className="flex flex-col">
-                            <h3 className="text-foreground flex items-center gap-2 text-sm font-bold tracking-widest uppercase">
-                                <i className="fa-solid fa-file-pdf text-rose-500" /> Preview Dokumen {docType.toUpperCase()}
+                            <h3 className="flex items-center gap-2 text-[11px] font-bold tracking-widest text-black uppercase dark:text-white">
+                                <FileText size={16} className="text-rose-500" /> Preview Dokumen {docType.toUpperCase()}
                             </h3>
-                            <span className="text-muted-foreground text-[10px] font-bold">{selected.contract_no} — Ready for Download</span>
+                            <span className="text-[9px] font-bold tracking-wider text-black/40 uppercase dark:text-white/40">
+                                {selected.contract_no} — Ready for Download
+                            </span>
                         </div>
                         <div className="flex items-center gap-3">
                             <a
                                 href={pdfPreviewUrl}
                                 download={`${selected.contract_no}_${docType.toUpperCase()}.pdf`}
-                                className="flex items-center gap-2 rounded-md bg-indigo-600 px-6 py-2 text-xs font-bold tracking-widest text-white uppercase shadow-xl shadow-indigo-500/20 transition-all hover:bg-indigo-700"
+                                className="flex items-center gap-2 rounded-lg bg-black px-6 py-2.5 text-[10px] font-bold tracking-widest text-white uppercase shadow-lg transition-all hover:opacity-90 active:scale-95 dark:bg-white dark:text-black"
                             >
                                 <Download size={14} /> Download PDF
                             </a>
                             <button
                                 onClick={() => setPdfPreviewUrl(null)}
-                                className="bg-muted hover:bg-muted/80 text-foreground rounded-md px-4 py-2 text-xs font-bold tracking-widest uppercase transition-all"
+                                className="rounded-lg bg-black/5 px-4 py-2.5 text-[10px] font-bold tracking-widest text-black uppercase transition-all hover:bg-black/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
                             >
                                 Tutup
                             </button>
                         </div>
                     </div>
                     <div className="flex flex-1 justify-center overflow-hidden p-8">
-                        <div className="bg-card ring-border animate-in slide-in-from-bottom-5 fill-mode-both h-full w-full max-w-[210mm] overflow-hidden rounded-sm shadow-2xl ring-1 delay-150 duration-500">
+                        <div className="animate-in slide-in-from-bottom-5 fill-mode-both h-full w-full max-w-[210mm] overflow-hidden rounded-sm bg-white shadow-2xl ring-1 ring-black/10 delay-150 duration-500 dark:ring-white/10">
                             <iframe src={`${pdfPreviewUrl}#toolbar=0&navpanes=0`} className="h-full w-full border-none" title="PDF Preview" />
                         </div>
                     </div>
                 </div>
             )}
 
-            <div className="border-border/60 sticky top-0 z-40 flex h-[60px] shrink-0 items-center justify-between border-b bg-white/50 px-6 backdrop-blur-sm">
-                <div className="flex items-center gap-4">
-                    <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                            <div className="h-4 w-1 rounded-full bg-slate-900" />
-                            <h4 className="text-[10px] leading-none font-black tracking-tighter text-slate-900 uppercase">
-                                {docType === 'f1' ? 'Formulir F1 (Internal)' : 'Formulir F2 (Resume)'}
-                            </h4>
-                            <span className="animate-in fade-in zoom-in rounded bg-slate-950 px-1.5 py-0.5 text-[8px] font-black tracking-widest text-white uppercase duration-500">
-                                V{submissionInfo?.current_version || 1}
-                            </span>
+            <div className="border-black/10 dark:border-white/10 sticky top-0 z-40 flex h-[72px] shrink-0 items-center justify-between border-b bg-white/80 dark:bg-sidebar/80 px-6 backdrop-blur-md">
+                <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-4">
+                        <div className="h-10 w-[3px] rounded-full bg-[#0f172a] dark:bg-white" />
+                        <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                                <h4 className="text-sm font-bold text-black dark:text-white">
+                                    {docType === 'f1' ? 'Formulir F1 (Internal)' : 'Formulir F2 (Resume)'}
+                                </h4>
+                                <div className="rounded bg-black dark:bg-white px-1.5 py-0.5">
+                                    <span className="text-[10px] font-bold text-white dark:text-black">
+                                        V{submissionInfo?.current_version || 1}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="mt-0.5 flex items-center gap-2">
+                                <span className="text-[10px] font-bold text-black dark:text-white">
+                                    {docType === 'f1' ? 'Submission Document' : 'Agreement Resume'}
+                                </span>
+                                <div className="h-1 w-1 rounded-full bg-black dark:bg-white" />
+                                <span className="text-[10px] font-bold text-black dark:text-white">{submissionInfo ? 'Sudah Diisi' : 'Draft Mode'}</span>
+                            </div>
                         </div>
-                        <span
-                            className={cn(
-                                'mt-1 text-[8px] font-black tracking-[0.2em] uppercase',
-                                submissionInfo ? 'text-emerald-500' : 'text-indigo-500',
-                            )}
-                        >
-                            {docType === 'f1'
-                                ? submissionInfo
-                                    ? 'Sudah Diisi'
-                                    : 'Draft / Inherited Data'
-                                : submissionInfo
-                                  ? 'Resume Disimpan'
-                                  : 'Resume & Persetujuan (Editable)'}
-                        </span>
                     </div>
                 </div>
-                <div className="flex items-center gap-2.5" ref={dropdownRef}>
+
+                <div className="flex items-center gap-3" ref={dropdownRef}>
+                    {autoSaveStatus !== 'idle' && (
+                        <div className="mr-2 flex items-center gap-2 rounded-md bg-black/5 px-2.5 py-1 dark:bg-white/5">
+                            {autoSaveStatus === 'saving' && (
+                                <>
+                                    <Loader2 size={12} className="animate-spin text-black dark:text-white" />
+                                    <span className="text-[11px] font-bold text-black dark:text-white">Menyimpan...</span>
+                                </>
+                            )}
+                            {autoSaveStatus === 'saved' && (
+                                <>
+                                    <Check size={12} className="text-emerald-600 dark:text-emerald-400" />
+                                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400">Tersimpan</span>
+                                </>
+                            )}
+                        </div>
+                    )}
                     <div className="relative">
                         <button
                             onClick={() => setShowVersions(!showVersions)}
                             className={cn(
-                                'border-border flex h-7 items-center gap-1.5 rounded-xl border bg-white px-3 text-[9px] font-black tracking-widest uppercase shadow-sm transition-all active:scale-95',
-                                showVersions ? 'border-slate-900 bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50',
+                                'group flex h-9 items-center gap-2.5 rounded-lg border px-4 transition-all active:scale-95',
+                                showVersions
+                                    ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black'
+                                    : 'border-black bg-white text-black hover:border-black/20 dark:border-white dark:bg-transparent dark:text-white',
                             )}
                         >
-                            <History size={11} className={cn('text-indigo-500', showVersions && 'text-white')} />
-                            {versions.length || 0} <span className={cn('opacity-40', showVersions && 'opacity-60')}>VERSIONS</span>
-                            <i className={cn('fa-solid fa-chevron-down ml-1 text-[8px] transition-transform', showVersions && 'rotate-180')} />
+                            <History
+                                size={16}
+                                className={cn(
+                                    'transition-colors',
+                                    showVersions
+                                        ? 'text-white'
+                                        : 'text-black/40 group-hover:text-black dark:text-white/40 dark:group-hover:text-white',
+                                )}
+                            />
+                            <span className="text-xs font-semibold">{versions.length || 0} Versi</span>
+                            <ChevronDown size={14} className={cn('ml-1 transition-transform', showVersions && 'rotate-180')} />
                         </button>
 
                         {showVersions && (
-                            <div className="animate-in fade-in zoom-in-95 absolute top-full left-0 z-[999] mt-2 w-72 origin-top-left rounded-xl border border-slate-200 bg-white p-1 shadow-2xl shadow-slate-200/50 duration-200 outline-none">
-                                <div className="border-b border-slate-100 p-2">
+                            <div className="animate-in fade-in zoom-in-95 absolute top-full right-0 z-[999] mt-2 w-80 origin-top-right rounded-2xl border border-black/10 bg-white p-1.5 shadow-2xl backdrop-blur-md duration-200 dark:border-white/10 dark:bg-[#1e293b]">
+                                <div className="border-b border-black/5 p-3 dark:border-white/5">
                                     <div className="relative">
-                                        <i className="fa-solid fa-magnifying-glass absolute top-1/2 left-3 -translate-y-1/2 text-[10px] text-slate-400" />
+                                        <Search size={14} className="absolute top-1/2 left-3.5 -translate-y-1/2 text-black dark:text-white" />
                                         <input
                                             autoFocus
                                             type="text"
-                                            placeholder="Cari versi..."
+                                            placeholder="Cari riwayat versi..."
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
-                                            className="w-full rounded-lg border border-slate-100 bg-slate-50 py-1.5 pr-3 pl-8 text-[11px] font-bold transition-all outline-none focus:border-indigo-200 focus:bg-white"
+                                            className="w-full rounded-xl border border-black bg-white py-2.5 pr-4 pl-10 text-xs font-bold transition-all outline-none focus:ring-2 focus:ring-black dark:border-white dark:bg-transparent dark:text-white dark:focus:ring-white"
                                         />
                                     </div>
                                 </div>
-                                <div className="max-h-[300px] overflow-y-auto py-1">
+                                <div className="max-h-[320px] overflow-y-auto py-1">
                                     {filteredVersions.length > 0 ? (
                                         filteredVersions.map((v) => (
                                             <button
@@ -593,26 +700,35 @@ function GenericFormTab({
                                                     setOriginalData(v.form_data);
                                                     setShowVersions(false);
                                                 }}
-                                                className="group flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition-all hover:bg-slate-50"
+                                                className="group flex w-full items-center justify-between rounded-xl px-4 py-3.5 text-left transition-all hover:bg-black/5 dark:hover:bg-white/5"
                                             >
                                                 <div className="flex flex-col">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="flex h-5 w-5 items-center justify-center rounded-md bg-slate-100 text-[10px] font-black text-slate-600 transition-colors group-hover:bg-indigo-100 group-hover:text-indigo-600">
+                                                    <div className="flex items-center gap-2.5">
+                                                        <span className="flex h-6 w-6 items-center justify-center rounded bg-black text-[10px] font-bold text-white dark:bg-white dark:text-black">
                                                             {v.version_no}
                                                         </span>
-                                                        <span className="text-[11px] font-bold text-slate-800">Version {v.version_no}</span>
+                                                        <span className="text-xs font-bold text-black dark:text-white">Versi {v.version_no}</span>
                                                     </div>
-                                                    <span className="mt-1 text-[9px] font-medium tracking-tight text-slate-400 uppercase">
-                                                        {v.created_at} · {v.created_by?.name || 'System'}
-                                                    </span>
+                                                    <div className="mt-1 flex items-center gap-2">
+                                                        <span className="text-[10px] font-bold text-black dark:text-white">
+                                                            {v.created_at}
+                                                        </span>
+                                                        <div className="h-1 w-1 rounded-full bg-black dark:bg-white" />
+                                                        <span className="text-[10px] font-bold text-black dark:text-white">
+                                                            {v.created_by?.name || 'System'}
+                                                        </span>
+                                                    </div>
                                                 </div>
-                                                <i className="fa-solid fa-arrow-right -translate-x-2 text-[10px] text-slate-300 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100" />
+                                                <ArrowRight
+                                                    size={14}
+                                                    className="-translate-x-2 text-[#0f172a] opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100 dark:text-white"
+                                                />
                                             </button>
                                         ))
                                     ) : (
-                                        <div className="py-8 text-center">
-                                            <i className="fa-solid fa-folder-open mb-2 block text-xl text-slate-200" />
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase">Tidak ada versi ditemukan</span>
+                                        <div className="py-16 text-center">
+                                            <FolderOpen className="mx-auto mb-3 text-black dark:text-white" size={24} />
+                                            <span className="text-xs font-bold text-black dark:text-white">Data Kosong</span>
                                         </div>
                                     )}
                                 </div>
@@ -624,79 +740,130 @@ function GenericFormTab({
                         <button
                             onClick={() => setShowMoreActions(!showMoreActions)}
                             className={cn(
-                                'border-border flex h-7 w-7 items-center justify-center rounded-xl border bg-white shadow-sm transition-all active:scale-95',
-                                showMoreActions ? 'border-slate-900 bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50',
+                                'flex h-9 w-9 items-center justify-center rounded-lg border transition-all active:scale-95',
+                                showMoreActions
+                                    ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black'
+                                    : 'border-black bg-white text-black hover:bg-black/5 dark:border-white dark:bg-transparent dark:text-white',
                             )}
                         >
-                            <i className="fa-solid fa-ellipsis-vertical text-[10px]" />
+                            <MoreVertical size={16} />
                         </button>
 
                         {showMoreActions && (
-                            <div className="animate-in fade-in zoom-in-95 absolute top-full right-0 z-[999] mt-2 w-56 origin-top-right rounded-xl border border-slate-200 bg-white p-1 shadow-2xl shadow-slate-200/50 duration-200 outline-none">
-                                <a
-                                    href={`/admin/contracts/${selected.id}/form-submissions/${docType}/compare`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    onClick={() => setShowMoreActions(false)}
-                                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[10px] font-bold text-orange-600 transition-all hover:bg-orange-50"
-                                >
-                                    <i className="fa-solid fa-columns w-4 text-[10px] opacity-60" />
-                                    COMPARE VERSIONS
-                                </a>
-
-                                {(submissionInfo || docType === 'f1' || docType === 'f2') && (
-                                    <button
-                                        onClick={() => {
-                                            handleExportPdf();
-                                            setShowMoreActions(false);
-                                        }}
-                                        disabled={isExporting}
-                                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[10px] font-bold text-slate-600 transition-all hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50"
+                            <div className="animate-in fade-in zoom-in-95 absolute top-full right-0 z-[999] mt-2 w-64 origin-top-right rounded-2xl border border-black/10 bg-white p-1.5 shadow-2xl backdrop-blur-xl duration-200 dark:border-white/10 dark:bg-[#1e293b]">
+                                {versions.length > 1 && (
+                                    <a
+                                        href={`/admin/contracts/${selected.id}/form-submissions/${docType}/compare`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={() => setShowMoreActions(false)}
+                                        className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-xs font-semibold text-[#0f172a] transition-all hover:bg-black/5 dark:text-white dark:hover:bg-white/5"
                                     >
-                                        {isExporting ? (
-                                            <Loader2 size={12} className="animate-spin opacity-40" />
-                                        ) : (
-                                            <Download size={12} className="opacity-40" />
-                                        )}
-                                        EXPORT PDF DOCUMENT
-                                    </button>
+                                        <Columns size={16} className="opacity-40" />
+                                        Bandingkan Versi
+                                    </a>
                                 )}
+
+                                <button
+                                    onClick={() => {
+                                        handleExportPdf();
+                                        setShowMoreActions(false);
+                                    }}
+                                    disabled={isExporting}
+                                    className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-xs font-semibold text-[#0f172a] transition-all hover:bg-black/5 disabled:opacity-20 dark:text-white dark:hover:bg-white/5"
+                                >
+                                    {isExporting ? (
+                                        <Loader2 size={16} className="animate-spin opacity-40" />
+                                    ) : (
+                                        <Download size={16} className="opacity-40" />
+                                    )}
+                                    Ekspor PDF
+                                </button>
                             </div>
                         )}
                     </div>
 
-                    <button
-                        onClick={handleSave}
-                        disabled={saving}
-                        className="flex h-7 items-center gap-2 rounded-xl bg-slate-900 px-5 text-[9px] font-black tracking-widest text-white uppercase shadow-lg shadow-slate-200 transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-50"
+                    {/* Simpan Versi Popup Modal */}
+                    <Modal
+                        isOpen={showNoteModal}
+                        onClose={() => setShowNoteModal(false)}
+                        title="Update Versi Dokumen"
+                        description="Arsipkan perubahan sebagai versi baru."
+                        maxWidth="md"
                     >
-                        {saving ? <i className="fa-solid fa-spinner fa-spin" /> : <i className="fa-solid fa-check" />}
-                        {submissionInfo ? 'Update Form' : 'Simpan Data'}
-                    </button>
+                        <div className="space-y-6">
+                            <div>
+                                <label className="mb-2 block text-xs font-bold text-black dark:text-white">Catatan Perubahan</label>
+                                <textarea
+                                    autoFocus
+                                    value={versionNote}
+                                    onChange={(e) => setVersionNote(e.target.value)}
+                                    placeholder="Apa saja yang berubah pada versi ini?"
+                                    rows={4}
+                                    className="w-full resize-none rounded-2xl border border-black bg-white p-5 text-sm font-medium transition-all outline-none placeholder:text-black focus:ring-2 focus:ring-black dark:border-white dark:bg-transparent dark:text-white dark:placeholder:text-white dark:focus:ring-white"
+                                />
+                            </div>
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={() => setShowNoteModal(false)}
+                                    className="flex-1 rounded-xl bg-white border-2 border-black py-4 text-xs font-bold text-black transition-all hover:bg-black hover:text-white active:scale-95 dark:bg-transparent dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    onClick={handleManualSave}
+                                    disabled={saving}
+                                    className="flex flex-[1.5] items-center justify-center gap-2.5 rounded-xl bg-black py-4 text-xs font-bold text-white shadow-xl transition-all hover:opacity-90 active:scale-95 disabled:opacity-20 dark:bg-white dark:text-black"
+                                >
+                                    {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+                                    Simpan Versi Baru
+                                </button>
+                            </div>
+                        </div>
+                    </Modal>
+
+                    <div className="mx-1 h-8 w-px bg-black/10 dark:bg-white/10" />
+
+                    {isDraft && (
+                        <button
+                            onClick={() => setShowNoteModal(true)}
+                            disabled={saving}
+                            className="flex h-9 items-center gap-2 rounded-lg bg-black px-5 text-xs font-bold text-white shadow-lg transition-all hover:opacity-90 active:scale-95 disabled:opacity-20 dark:bg-white dark:text-black"
+                        >
+                            <PlusCircle size={16} />
+                            Update Versi
+                        </button>
+                    )}
                 </div>
             </div>
 
-            <div className="relative flex-1 overflow-y-auto bg-slate-50/50">
-                {isDirty && (
-                    <div className="pointer-events-none sticky top-0 right-0 z-50 flex justify-end p-4">
-                        <span className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-amber-200/50 bg-amber-50 px-2.5 py-1 text-[9px] font-bold tracking-wider text-amber-600 uppercase shadow-md backdrop-blur-sm transition-all hover:scale-105">
-                            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
-                            Draft Belum Disimpan
-                        </span>
-                    </div>
-                )}
-
-                <div className="flex justify-center px-4 py-6">
-                    <InteractiveForm
-                        template={templateForRenderer}
-                        formData={formData}
-                        onChange={(name, val) => {
-                            setManualFields((prev) => new Set(prev).add(name));
-                            setFormData((prev) => ({ ...prev, [name]: val }));
-                        }}
-                        readOnly={false}
-                        className="shadow-2xl shadow-slate-200/50"
-                    />
+            <div className="dark:bg-sidebar force-light relative flex-1 overflow-y-auto bg-white/50 custom-scrollbar">
+                <div className="flex justify-center py-12 px-6">
+                    {(selected as any).display_mode === 'pdf' ? (
+                        <InteractiveForm
+                            template={templateForRenderer}
+                            formData={formData}
+                            readOnly={true}
+                            className={cn(
+                                "shadow-2xl transition-all duration-300",
+                                "shadow-black/20 ring-1 ring-black/5"
+                            )}
+                        />
+                    ) : (
+                        <InteractiveForm
+                            template={templateForRenderer}
+                            formData={formData}
+                            onChange={(name, val) => {
+                                setManualFields((prev) => new Set(prev).add(name));
+                                setFormData((prev) => ({ ...prev, [name]: val }));
+                            }}
+                            readOnly={!isDraft}
+                            className={cn(
+                                "shadow-2xl transition-all duration-500",
+                                !isDraft ? "shadow-black/20 ring-1 ring-black/5" : "shadow-black/10"
+                            )}
+                        />
+                    )}
                 </div>
             </div>
         </div>

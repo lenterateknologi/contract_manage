@@ -114,7 +114,7 @@ class AdminController extends Controller
     {
         $modules = Module::with(['moduleGroup', 'accessModules' => function ($query) use ($role) {
             $query->where('role_id', $role->id);
-        }])->orderBy('module_group_id')->orderBy('sequence')->get();
+        }])->orderBy('module_group_id')->orderBy('id')->get();
 
         $modules->transform(function ($module) {
             $module->access = $module->accessModules->first();
@@ -165,30 +165,17 @@ class AdminController extends Controller
 
     public function roleNavigation(Role $role)
     {
-        // Get all groups and their role-specific sort order
-        $groups = ModuleGroup::all()->map(function ($group) use ($role) {
-            $config = RoleModuleGroup::where('role_id', $role->id)
-                ->where('module_group_id', $group->id)
-                ->first();
-
-            $group->sequence = $config ? $config->sequence : 999;
-
+        // Get all groups and their modules for this role
+        $groups = ModuleGroup::orderBy('name')->get()->map(function ($group) use ($role) {
             // Get modules that belong to this group FOR THIS ROLE
             $group->modules = Module::whereHas('accessModules', function ($q) use ($role, $group) {
                 $q->where('role_id', $role->id)
                     ->where('module_group_id', $group->id)
                     ->where('can_read', true);
-            })->get()->map(function ($module) use ($role) {
-                $access = AccessModule::where('role_id', $role->id)
-                    ->where('module_id', $module->id)
-                    ->first();
-                $module->sequence = $access ? $access->sequence : 999;
-
-                return $module;
-            })->sortBy('sequence')->values();
+            })->orderBy('name')->get();
 
             return $group;
-        })->sortBy('sequence')->values();
+        })->values();
 
         $allModules = Module::orderBy('name')->get();
 
@@ -210,56 +197,33 @@ class AdminController extends Controller
             'role_id' => 'required|uuid|exists:m_roles,id',
             'groups' => 'required|array',
             'groups.*.id' => 'required|uuid|exists:m_module_groups,id',
-            'groups.*.sequence' => 'required|integer',
             'groups.*.modules' => 'nullable|array',
             'groups.*.modules.*.id' => 'required|uuid|exists:m_modules,id',
-            'groups.*.modules.*.sequence' => 'required|integer',
         ]);
 
         $roleId = $data['role_id'];
         $activeModuleIds = [];
 
-        Log::info('Reordering Role Navigation', [
-            'role_id' => $roleId,
-            'groups_count' => count($data['groups']),
-        ]);
-
         foreach ($data['groups'] as $groupData) {
-            // Save group order for this role specifically - using query builder due to composite key
-            $updatedGroups = RoleModuleGroup::where('role_id', $roleId)
-                ->where('module_group_id', $groupData['id'])
-                ->update(['sequence' => $groupData['sequence']]);
-
-            if ($updatedGroups === 0) {
-                RoleModuleGroup::create([
+            // Ensure group exists for this role
+            RoleModuleGroup::updateOrCreate(
+                [
                     'role_id' => $roleId,
                     'module_group_id' => $groupData['id'],
-                    'sequence' => $groupData['sequence'],
-                ]);
-            }
+                ],
+                []
+            );
 
             if (! empty($groupData['modules'])) {
                 foreach ($groupData['modules'] as $moduleData) {
                     $activeModuleIds[] = $moduleData['id'];
 
-                    // Directly update using query builder to ensure targeting the correct composite key row
-                    $updated = AccessModule::where('role_id', $roleId)
+                    AccessModule::where('role_id', $roleId)
                         ->where('module_id', $moduleData['id'])
                         ->update([
                             'can_read' => true,
                             'module_group_id' => $groupData['id'],
-                            'sequence' => $moduleData['sequence'],
                         ]);
-
-                    if ($updated === 0) {
-                        AccessModule::create([
-                            'role_id' => $roleId,
-                            'module_id' => $moduleData['id'],
-                            'can_read' => true,
-                            'module_group_id' => $groupData['id'],
-                            'sequence' => $moduleData['sequence'],
-                        ]);
-                    }
                 }
             }
         }
@@ -270,7 +234,6 @@ class AdminController extends Controller
             ->update([
                 'can_read' => false,
                 'module_group_id' => null,
-                'sequence' => 0,
             ]);
 
         return back();
@@ -414,7 +377,7 @@ class AdminController extends Controller
 
         return Inertia::render('admin/index', [
             'currentView' => 'contract-statuses',
-            'statuses' => $query->orderBy('sequence')->paginate($request->input('per_page', 10))->withQueryString(),
+            'statuses' => $query->orderBy('label')->paginate($request->input('per_page', 10))->withQueryString(),
             'filters' => $request->only(['search']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
@@ -432,8 +395,8 @@ class AdminController extends Controller
             'bg_color' => 'required|string|max:20',
             'icon' => 'nullable|string|max:50',
             'description' => 'nullable|string',
-            'sequence' => 'required|integer',
             'is_active' => 'boolean',
+            'display_mode' => 'nullable|string|in:interactive,pdf',
         ]);
 
         ContractStatus::create($data);
@@ -450,8 +413,8 @@ class AdminController extends Controller
             'bg_color' => 'required|string|max:20',
             'icon' => 'nullable|string|max:50',
             'description' => 'nullable|string',
-            'sequence' => 'required|integer',
             'is_active' => 'boolean',
+            'display_mode' => 'nullable|string|in:interactive,pdf',
         ]);
 
         $status->update($data);
@@ -708,7 +671,7 @@ class AdminController extends Controller
             'departments' => Department::all(),
             'roles' => Role::all(),
             'users' => User::all(),
-            'contractStatuses' => ContractStatus::orderBy('sequence')->get(),
+            'contractStatuses' => ContractStatus::orderBy('label')->get(),
             'filters' => $request->only(['search', 'contract_type']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
@@ -981,9 +944,9 @@ class AdminController extends Controller
     public function navigation()
     {
         $groups = ModuleGroup::with(['modules' => function ($query) {
-            $query->orderBy('sequence');
+            $query->orderBy('name');
         }])
-            ->orderBy('sequence')
+            ->orderBy('name')
             ->get();
 
         return Inertia::render('admin/index', [
@@ -1001,7 +964,7 @@ class AdminController extends Controller
 
         return Inertia::render('admin/index', [
             'currentView' => 'module-groups',
-            'moduleGroups' => $query->orderBy('sequence')->paginate($request->input('per_page', 10))->withQueryString(),
+            'moduleGroups' => $query->orderBy('name')->paginate($request->input('per_page', 10))->withQueryString(),
             'filters' => $request->only(['search']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#'],
@@ -1039,23 +1002,16 @@ class AdminController extends Controller
             'role_id' => 'required|uuid|exists:m_roles,id',
             'groups' => 'required|array',
             'groups.*.id' => 'required|uuid|exists:m_module_groups,id',
-            'groups.*.sequence' => 'required|integer',
             'groups.*.modules' => 'nullable|array',
             'groups.*.modules.*.id' => 'required|uuid|exists:m_modules,id',
-            'groups.*.modules.*.sequence' => 'required|integer',
         ]);
 
         $roleId = $data['role_id'];
 
         foreach ($data['groups'] as $groupData) {
-            ModuleGroup::where('id', $groupData['id'])->update([
-                'sequence' => $groupData['sort_number'],
-            ]);
-
             if (! empty($groupData['modules'])) {
                 foreach ($groupData['modules'] as $moduleData) {
                     Module::where('id', $moduleData['id'])->update([
-                        'sequence' => $moduleData['sort_number'],
                         'module_group_id' => $groupData['id'],
                     ]);
 
@@ -1064,14 +1020,14 @@ class AdminController extends Controller
                         ['role_id' => $roleId, 'module_id' => $moduleData['id']],
                         [
                             'can_read' => true,
-                            'created_by' => Auth::id(), // Fix: Add current user ID
+                            'created_by' => Auth::id(), 
                         ]
                     );
                 }
             }
         }
 
-        return back()->with('success', 'Navigation order and permissions updated successfully.');
+        return back()->with('success', 'Navigation and permissions updated successfully.');
     }
 
     // Module Groups
@@ -1080,7 +1036,6 @@ class AdminController extends Controller
     {
         $data = $request->validate([
             'name' => 'required|string|max:255|unique:m_module_groups,name',
-            'sequence' => 'required|integer',
             'icon' => 'nullable|string|max:50',
         ]);
 
@@ -1096,7 +1051,6 @@ class AdminController extends Controller
     {
         $data = $request->validate([
             'name' => 'required|string|max:255|unique:m_module_groups,name,' . $group->id,
-            'sequence' => 'required|integer',
             'icon' => 'nullable|string|max:50',
         ]);
 
@@ -1120,7 +1074,6 @@ class AdminController extends Controller
             'name' => 'required|string|max:255|unique:m_modules,name',
             'identifier' => 'required|string|max:50|unique:m_modules,identifier',
             'module_group_id' => 'required|uuid|exists:m_module_groups,id',
-            'sequence' => 'required|integer',
             'route' => 'nullable|string|max:255',
             'icon' => 'nullable|string|max:50',
             'showed_as_menu' => 'boolean',
@@ -1140,7 +1093,6 @@ class AdminController extends Controller
             'name' => 'required|string|max:255|unique:m_modules,name,'.$module->id,
             'identifier' => 'required|string|max:50|unique:m_modules,identifier,'.$module->id,
             'module_group_id' => 'required|uuid|exists:m_module_groups,id',
-            'sequence' => 'required|integer',
             'route' => 'nullable|string|max:255',
             'icon' => 'nullable|string|max:50',
             'showed_as_menu' => 'boolean',

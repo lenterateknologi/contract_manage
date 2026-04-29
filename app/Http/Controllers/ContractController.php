@@ -32,6 +32,7 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ContractController extends Controller
 {
@@ -243,6 +244,7 @@ class ContractController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'ilike', "%{$search}%")
                     ->orWhere('contract_no', 'ilike', "%{$search}%")
+                    ->orWhere('crown_no', 'ilike', "%{$search}%")
                     ->orWhereHas('creator', fn ($uq) => $uq->where('name', 'ilike', "%{$search}%"));
             });
         }
@@ -510,7 +512,7 @@ class ContractController extends Controller
         }
 
         $validated = $request->validate([
-            'title'            => 'required|string|max:255',
+            'title'            => 'sometimes|required|string|max:255',
             'description'      => 'nullable|string',
             'contract_type_id' => 'nullable|uuid|exists:m_contract_types,id',
             'submission_type_id' => 'nullable|uuid|exists:m_submission_types,id',
@@ -548,7 +550,7 @@ class ContractController extends Controller
             'actor_id' => Auth::id(),
         ]);
 
-        return response()->json($this->formatContract($contract->fresh(['contractType', 'submissionType', 'vendor', 'creator', 'initiator'])));
+        return response()->json($this->formatContract($contract->fresh(['contractType', 'submissionType', 'vendor', 'creator', 'initiator', 'parent'])));
     }
 
     public function destroy(string $id): JsonResponse
@@ -642,7 +644,8 @@ class ContractController extends Controller
 
         $typeLabel = strtoupper($type);
         $ext = $request->file('file')->getClientOriginalExtension();
-        $fileName = "{$contract->contract_no}_{$typeLabel}_v{$newVer}.{$ext}";
+        $safeNo = Str::slug($contract->contract_no ?: 'contract');
+        $fileName = "{$safeNo}_{$typeLabel}_v{$newVer}.{$ext}";
         $filePath = $request->file('file')->storeAs("contracts/{$contract->id}", "v{$newVer}_{$type}_{$fileName}", 'local');
 
         ContractVersion::create([
@@ -1005,6 +1008,7 @@ class ContractController extends Controller
                 ]),
             ] : null,
             'status' => $c->status,
+            'display_mode' => \App\Models\ContractStatus::where('code', $c->status)->value('display_mode') ?? 'interactive',
             'current_version' => $c->current_version,
             'created_at' => $c->created_at->format('d/m/Y'),
             'submitted_at' => $c->submitted_at ? $c->submitted_at->format('d/m/Y H:i') : null,
@@ -1187,6 +1191,8 @@ class ContractController extends Controller
         $docType = $request->document_type;
         $formData = $request->form_data;
 
+        $isNewVersion = $request->input('is_new_version', true);
+
         // Find or create submission
         $submission = ContractFormSubmission::firstOrNew([
             'contract_id' => $contract->id,
@@ -1203,11 +1209,14 @@ class ContractController extends Controller
         }
 
         // Determine version number
-        $versionNo = $isNew ? 1 : $submission->current_version + 1;
+        $versionNo = $submission->current_version;
+        if ($isNewVersion && !$isNew) {
+            $versionNo = $submission->current_version + 1;
+        }
 
         // Build change summary
-        $changeSummary = null;
-        if (!$isNew) {
+        $changeSummary = $request->input('change_summary');
+        if (!$changeSummary && !$isNew) {
             $prevVersion = $submission->versions()->where('version_no', $submission->current_version)->first();
             if ($prevVersion) {
                 $oldData = $prevVersion->form_data ?? [];
@@ -1237,16 +1246,37 @@ class ContractController extends Controller
             }
         }
 
-        // Create version
-        ContractFormSubmissionVersion::create([
-            'submission_id' => $submission->id,
-            'version_no' => $versionNo,
-            'form_data' => $formData,
-            'change_summary' => $changeSummary,
-            'created_by' => Auth::id(),
-        ]);
+        // Create or Update version
+        if (!$isNewVersion && !$isNew) {
+            $existingVersion = ContractFormSubmissionVersion::where('submission_id', $submission->id)
+                ->where('version_no', $versionNo)
+                ->first();
+            
+            if ($existingVersion) {
+                $existingVersion->update([
+                    'form_data' => $formData,
+                    'change_summary' => $changeSummary ?: $existingVersion->change_summary,
+                ]);
+            } else {
+                ContractFormSubmissionVersion::create([
+                    'submission_id' => $submission->id,
+                    'version_no' => $versionNo,
+                    'form_data' => $formData,
+                    'change_summary' => $changeSummary,
+                    'created_by' => Auth::id(),
+                ]);
+            }
+        } else {
+            ContractFormSubmissionVersion::create([
+                'submission_id' => $submission->id,
+                'version_no' => $versionNo,
+                'form_data' => $formData,
+                'change_summary' => $changeSummary,
+                'created_by' => Auth::id(),
+            ]);
+        }
 
-        // Update current version
+        // Update main submission model
         $submission->current_version = $versionNo;
         $submission->save();
 
@@ -1364,6 +1394,143 @@ class ContractController extends Controller
     }
 
     /**
+     * Export Audit Trail to Excel (CSV) for a single contract.
+     */
+    public function exportAuditExcel(string $id, Request $request): StreamedResponse
+    {
+        $contract = Contract::findOrFail($id);
+        $query = $contract->histories()->with('actor')->orderBy('created_at', 'desc');
+
+        // Apply Filters (same as getAuditTrail)
+        if ($request->action) $query->where('action', $request->action);
+        if ($request->actor_id) $query->where('actor_id', $request->actor_id);
+        if ($request->date_from) $query->whereDate('created_at', '>=', $request->date_from);
+        if ($request->date_to) $query->whereDate('created_at', '<=', $request->date_to);
+        if ($request->search) $query->where('description', 'like', '%' . $request->search . '%');
+
+        $histories = $query->get();
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="audit_trail_' . Str::slug($contract->contract_no ?: 'contract') . '_' . date('Ymd') . '.csv"',
+        ];
+
+        return new StreamedResponse(function () use ($histories, $contract) {
+            $handle = fopen('php://output', 'w');
+            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF)); // BOM for Excel
+
+            // Headers
+            fputcsv($handle, [
+                'Waktu',
+                'No. Kontrak',
+                'Judul Kontrak',
+                'Aksi',
+                'Deskripsi',
+                'Aktor',
+            ]);
+
+            foreach ($histories as $h) {
+                fputcsv($handle, [
+                    $h->created_at->format('Y-m-d H:i:s'),
+                    $contract->contract_no,
+                    $contract->title,
+                    strtoupper($h->action),
+                    $h->description,
+                    $h->actor?->name ?? 'System',
+                ]);
+            }
+            fclose($handle);
+        }, 200, $headers);
+    }
+
+    /**
+     * Render Approval Timeline for PDF/Print view.
+     */
+    public function renderApprovalTimeline(string $id, Request $request)
+    {
+        $contract = Contract::with(['creator', 'approvals.approver'])->findOrFail($id);
+        
+        $query = $contract->approvals()->orderBy('sequence');
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        if ($request->filled('role')) {
+            $query->where('role', 'like', '%' . $request->role . '%');
+        }
+        if ($request->filled('department')) {
+            $query->where('department_name', 'like', '%' . $request->department . '%');
+        }
+
+        $approvals = $query->get();
+
+        return view('pdf.contract-approval', [
+            'contract' => $contract,
+            'approvals' => $approvals,
+            'generated_at' => now()->format('d/m/Y H:i'),
+            'generated_by' => $request->generated_by ?? (Auth::user() ? Auth::user()->name : 'System'),
+        ]);
+    }
+
+    /**
+     * Export Approval Timeline to PDF via Background Queue.
+     */
+    public function exportApprovalTimelinePdfQueue(string $id, Request $request)
+    {
+        Log::info("Approval Timeline PDF Queue Request: id={$id}");
+        $contract = Contract::findOrFail($id);
+
+        try {
+            $jobId = (string) Str::uuid();
+            $userName = Auth::user() ? Auth::user()->name : 'System';
+
+            // Parameters for the print view
+            $params = array_merge($request->only(['status', 'role', 'department']), [
+                'id' => $id,
+                'generated_by' => $userName
+            ]);
+
+            // Determine if we need to force 127.0.0.1 for local dev (Browsershot requirement)
+            if (app()->environment('local')) {
+                $rootUrl = config('app.url');
+                if (str_contains($rootUrl, 'localhost')) {
+                    \Illuminate\Support\Facades\URL::forceRootUrl(str_replace('localhost', '127.0.0.1', $rootUrl));
+                }
+            }
+
+            // Generate the signed URL for the print view
+            $printUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+                'contracts.approval.document.print',
+                now()->addMinutes(30),
+                $params
+            );
+
+            // Safe filename
+            $safeNo = Str::slug($contract->contract_no ?: 'contract');
+            $fileName = "Approval_Timeline_{$safeNo}_" . time() . ".pdf";
+
+            // Add Job to Queue - FIXED ARGUMENT ORDER (jobId, printUrl, fileName)
+            \App\Jobs\GeneratePdfJob::dispatch(
+                $jobId,
+                $printUrl,
+                $fileName
+            );
+
+            return response()->json([
+                'success' => true,
+                'job_id' => $jobId,
+                'message' => 'Laporan alur approval sedang diproses.'
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Failed to queue Approval Timeline PDF: " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memproses laporan alur approval.'
+            ], 500);
+        }
+    }
+
+    /**
      * Export Audit Trail to PDF via Background Queue.
      */
     public function exportAuditPdfQueue(string $id, Request $request)
@@ -1456,13 +1623,28 @@ class ContractController extends Controller
                 ->margins(0, 0, 0, 0)
                 ->showBackground()
                 ->displayHeaderFooter(false)
-                ->setDelay(500)
-                ->pdf();
+                ->setDelay(500);
 
-            return response($pdfContent)
+            $pdfDir = 'contracts/' . $contract->id . '/pdfs';
+            $pdfFileName = 'Audit_Trail_' . Str::slug($contract->contract_no) . '_' . md5($printUrl) . '.pdf';
+            $pdfPath = $pdfDir . '/' . $pdfFileName;
+            $disposition = 'attachment';
+
+            if (Storage::disk('local')->exists($pdfPath)) {
+                $finalPdf = Storage::disk('local')->get($pdfPath);
+            } else {
+                $finalPdf = $pdfContent->pdf();
+
+                // Save to cache
+                if (!Storage::disk('local')->exists($pdfDir)) {
+                    Storage::disk('local')->makeDirectory($pdfDir);
+                }
+                Storage::disk('local')->put($pdfPath, $finalPdf);
+            }
+
+            return response($finalPdf)
                 ->header('Content-Type', 'application/pdf')
-                ->header('Content-Disposition', 'attachment; filename="Audit_Trail_' . Str::slug($contract->contract_no) . '.pdf"')
-                ->header('Cache-Control', 'no-cache, no-store, must-revalidate');
+                ->header('Content-Disposition', "$disposition; filename=\"{$pdfFileName}\"");
 
         } catch (\Exception $e) {
             Log::error('Audit Trail Browsershot Export Failed: ' . $e->getMessage());
@@ -1711,6 +1893,19 @@ class ContractController extends Controller
             return response()->json(['message' => 'Data form belum diisi.'], 404);
         }
 
+        // Cache Logic: Check if PDF already exists for this version
+        $vno = $latestVersion ? $latestVersion->version_no : 0;
+        $pdfDir = "contracts/{$id}/pdfs";
+        $pdfFileName = "{$type}_v{$vno}.pdf";
+        $pdfPath = "{$pdfDir}/{$pdfFileName}";
+
+        if (Storage::disk('local')->exists($pdfPath)) {
+            $content = Storage::disk('local')->get($pdfPath);
+            return response($content)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', "$disposition; filename=\"{$pdfFileName}\"");
+        }
+
         try {
             // Generate a signed URL for Browsershot to visit the React print page
             $printUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
@@ -1743,19 +1938,19 @@ class ContractController extends Controller
                 ->margins(0, 0, 0, 0)
                 ->showBackground()
                 ->waitForSelector('#pdf-render-complete')
-                ->setDelay(200)
-                ->pdf();
+                ->setDelay(200);
 
+            $finalPdf = $pdfContent->pdf();
 
+            // Save to cache
+            if (!Storage::disk('local')->exists($pdfDir)) {
+                Storage::disk('local')->makeDirectory($pdfDir);
+            }
+            Storage::disk('local')->put($pdfPath, $finalPdf);
 
-
-
-
-
-            $fileName = $contract->contract_no . '_' . strtoupper($type) . '.pdf';
-            return response($pdfContent)
+            return response($finalPdf)
                 ->header('Content-Type', 'application/pdf')
-                ->header('Content-Disposition', $disposition . '; filename="' . $fileName . '"');
+                ->header('Content-Disposition', "$disposition; filename=\"{$pdfFileName}\"");
 
         } catch (\Exception $e) {
             Log::error('Browsershot Export Failed: ' . $e->getMessage());
@@ -1769,7 +1964,8 @@ class ContractController extends Controller
                 'contract' => $contract,
             ]);
 
-            $fileName = $contract->contract_no . '_' . strtoupper($type) . '.pdf';
+            $safeNo = Str::slug($contract->contract_no ?: 'contract');
+            $fileName = $safeNo . '_' . strtoupper($type) . '.pdf';
             if ($disposition === 'inline') {
                 return $pdf->stream($fileName);
             }

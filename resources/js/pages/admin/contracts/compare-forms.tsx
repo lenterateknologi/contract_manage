@@ -131,34 +131,33 @@ export default function CompareForms({ contract, docType, template, versions, in
                         <ArrowLeftRight className="h-5 w-5" />
                     </div>
                     <div className="flex flex-col">
-                        <h2 className="flex items-center gap-2 text-[13px] font-bold tracking-tight text-slate-900">
-                            Compare Document Versions
-                            <span className="rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 text-[9px] font-medium text-slate-500">
-                                Audit Mode
+                        <h2 className="flex items-center gap-2 text-sm font-bold text-black">
+                            Perbandingan Versi Dokumen
+                            <span className="rounded-md border border-black bg-black px-2 py-0.5 text-[9px] font-bold text-white">
+                                Mode Audit
                             </span>
                         </h2>
-                        <p className="mt-0.5 text-[10px] text-slate-400">
+                        <p className="mt-0.5 text-xs font-medium text-black">
                             {contract.contract_no} &bull; {contract.title}
                         </p>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    {/* Simplified Switch Toggle */}
+                <div className="flex items-center gap-4">
                     <div className="flex items-center gap-3 mr-2">
-                        <span className="text-[10px] font-black tracking-tighter text-slate-400 uppercase">
-                            Sync Scroll
+                        <span className="text-[10px] font-bold text-black">
+                            Sinkronisasi Scroll
                         </span>
                         <button
                             onClick={() => setSyncScroll(!syncScroll)}
                             className={cn(
-                                "relative inline-flex h-5 w-10 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500",
-                                syncScroll ? "bg-indigo-600" : "bg-slate-200"
+                                "relative inline-flex h-5 w-10 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black",
+                                syncScroll ? "bg-black" : "bg-black/10"
                             )}
                         >
                             <span
                                 className={cn(
-                                    "pointer-events-none block h-4 w-4 rounded-full bg-white shadow-lg ring-0 transition-transform",
+                                    "pointer-events-none block h-4 w-4 rounded-full bg-white shadow-lg transition-transform",
                                     syncScroll ? "translate-x-5" : "translate-x-1"
                                 )}
                             />
@@ -166,9 +165,9 @@ export default function CompareForms({ contract, docType, template, versions, in
                     </div>
                     <button
                         onClick={() => window.close()}
-                        className="rounded-md bg-slate-900 px-4 py-1.5 text-[11px] font-medium text-white shadow-sm transition-all hover:bg-slate-800"
+                        className="rounded-lg bg-black px-6 py-2 text-xs font-bold text-white shadow-lg transition-all hover:opacity-90 active:scale-95"
                     >
-                        Close
+                        Tutup
                     </button>
                 </div>
             </div>
@@ -177,21 +176,21 @@ export default function CompareForms({ contract, docType, template, versions, in
             <div className="flex flex-1 divide-x-2 divide-slate-300 overflow-hidden bg-slate-200/50">
                 {/* SIDE A: BASE REFERENCE */}
                 <div ref={ref1} onScroll={() => handleScroll('left')} className="scrollbar-thin relative flex-1 overflow-auto bg-slate-50">
-                    <div className="sticky top-0 z-[60] flex items-center justify-between border-b border-slate-200 bg-white px-8 py-4 shadow-sm">
+                    <div className="sticky top-0 z-[60] flex items-center justify-between border-b border-black/5 bg-white/95 px-8 py-5 backdrop-blur-md">
                         <div className="flex items-center gap-4">
-                            <div className="h-8 w-1.5 rounded-full bg-slate-300" />
+                            <div className="h-10 w-[3px] rounded-full bg-black" />
                             <div className="flex flex-col">
-                                <span className="text-[8px] font-black tracking-widest text-slate-400 uppercase">Base Reference (Old)</span>
-                                <h3 className="text-sm font-black tracking-tighter text-slate-900 uppercase">VERSION {v1}</h3>
+                                <span className="text-[10px] font-bold text-black">Referensi Dasar (Lama)</span>
+                                <h3 className="text-sm font-bold text-black">VERSI {v1}</h3>
                             </div>
-                            <div className="mx-2 h-6 w-px bg-slate-100" />
+                            <div className="mx-4 h-8 w-px bg-black/10" />
                             <div className="flex flex-col">
-                                <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600">
-                                    <User size={12} className="text-slate-400" />
+                                <div className="flex items-center gap-2 text-[10px] font-bold text-black">
+                                    <User size={12} />
                                     {meta1?.created_by || '-'}
                                 </div>
-                                <div className="mt-0.5 flex items-center gap-2 text-[9px] text-slate-400">
-                                    <CalendarDays size={10} />
+                                <div className="mt-1 flex items-center gap-2 text-[10px] font-bold text-black">
+                                    <CalendarDays size={12} />
                                     {meta1?.created_at || '-'}
                                 </div>
                             </div>
@@ -199,9 +198,9 @@ export default function CompareForms({ contract, docType, template, versions, in
                         <select
                             value={v1}
                             onChange={(e) => setV1(Number(e.target.value))}
-                            className="cursor-pointer rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-bold text-slate-700 outline-none"
+                            className="cursor-pointer rounded-lg border-2 border-black bg-white px-4 py-2 text-xs font-bold text-black outline-none transition-all hover:bg-black hover:text-white"
                         >
-                            {sortedVersions.map((v) => <option key={v.id} value={v.version_no}>v{v.version_no}</option>)}
+                            {sortedVersions.map((v) => <option key={v.id} value={v.version_no}>Versi {v.version_no}</option>)}
                         </select>
                     </div>
 
@@ -223,23 +222,21 @@ export default function CompareForms({ contract, docType, template, versions, in
 
                 {/* SIDE B: CHANGE TARGET */}
                 <div ref={ref2} onScroll={() => handleScroll('right')} className="scrollbar-thin relative flex-1 overflow-auto bg-slate-50">
-                    <div className="sticky top-0 z-[60] flex items-center justify-between border-b border-indigo-100 bg-indigo-50 px-8 py-4 shadow-sm">
+                    <div className="sticky top-0 z-[60] flex items-center justify-between border-b border-black bg-black px-8 py-5">
                         <div className="flex items-center gap-4">
-                            <div className="h-8 w-1.5 rounded-full bg-indigo-500 shadow-lg shadow-indigo-100" />
+                            <div className="h-10 w-[3px] rounded-full bg-white" />
                             <div className="flex flex-col">
-                                <span className="text-[8px] font-black tracking-widest text-indigo-400 uppercase">Active Comparison (New)</span>
-                                <h3 className="max-w-[150px] overflow-hidden text-sm font-black tracking-tighter text-ellipsis whitespace-nowrap text-indigo-600 uppercase italic">
-                                    VERSION {v2}
-                                </h3>
+                                <span className="text-[10px] font-bold text-white">Perbandingan Aktif (Baru)</span>
+                                <h3 className="text-sm font-bold text-white">VERSI {v2}</h3>
                             </div>
-                            <div className="mx-2 h-6 w-px bg-indigo-100" />
+                            <div className="mx-4 h-8 w-px bg-white/20" />
                             <div className="flex flex-col">
-                                <div className="flex items-center gap-2 text-[10px] font-bold text-indigo-900">
-                                    <User size={12} className="text-indigo-400" />
+                                <div className="flex items-center gap-2 text-[10px] font-bold text-white">
+                                    <User size={12} />
                                     {meta2?.created_by || '-'}
                                 </div>
-                                <div className="mt-0.5 flex items-center gap-2 text-[9px] leading-none text-indigo-400/70">
-                                    <CalendarDays size={10} />
+                                <div className="mt-1 flex items-center gap-2 text-[10px] font-bold text-white">
+                                    <CalendarDays size={12} />
                                     {meta2?.created_at || '-'}
                                 </div>
                             </div>
@@ -247,9 +244,9 @@ export default function CompareForms({ contract, docType, template, versions, in
                         <select
                             value={v2}
                             onChange={(e) => setV2(Number(e.target.value))}
-                            className="cursor-pointer rounded-lg border-none bg-indigo-600 px-3 py-1.5 text-[11px] font-bold text-white outline-none shadow-lg shadow-indigo-100"
+                            className="cursor-pointer rounded-lg border-2 border-white bg-white px-4 py-2 text-xs font-bold text-black outline-none transition-all hover:bg-transparent hover:text-white"
                         >
-                            {sortedVersions.map((v) => <option key={v.id} value={v.version_no} className="bg-slate-900">v{v.version_no}</option>)}
+                            {sortedVersions.map((v) => <option key={v.id} value={v.version_no} className="text-black">Versi {v.version_no}</option>)}
                         </select>
                     </div>
 
@@ -271,33 +268,33 @@ export default function CompareForms({ contract, docType, template, versions, in
             </div>
 
             {/* Audit Status HUD */}
-            <div className="z-50 flex shrink-0 items-center justify-center gap-10 border-t border-slate-200 bg-white px-10 py-3">
+            <div className="z-50 flex shrink-0 items-center justify-center gap-10 border-t border-black/5 bg-white px-10 py-4">
                 <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-slate-300" />
-                    <span className="text-[9px] font-black tracking-widest text-slate-500 uppercase">
-                        Base Fields: {templateForRenderer?.fields?.length || 0}
+                    <div className="h-2 w-2 rounded-full bg-black" />
+                    <span className="text-[10px] font-bold text-black">
+                        Total Field: {templateForRenderer?.fields?.length || 0}
                     </span>
                 </div>
-                <div className="h-4 w-px bg-slate-200" />
+                <div className="h-4 w-px bg-black/10" />
                 <div className="flex items-center gap-2">
-                    <div className={cn("h-2 w-2 rounded-full", syncScroll ? "bg-emerald-500 animate-pulse" : "bg-slate-300")} />
-                    <span className={cn("text-[9px] font-black tracking-widest uppercase italic", syncScroll ? "text-emerald-600" : "text-slate-400")}>
-                        Scroll Sync {syncScroll ? 'Active' : 'Disabled'}
+                    <div className={cn("h-2 w-2 rounded-full", syncScroll ? "bg-black animate-pulse" : "bg-black/20")} />
+                    <span className={cn("text-[10px] font-bold", syncScroll ? "text-black" : "text-black/40")}>
+                        Sinkronisasi Scroll {syncScroll ? 'Aktif' : 'Nonaktif'}
                     </span>
                 </div>
-                <div className="h-4 w-px bg-slate-200" />
-                <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1">
-                        <div className="h-2 w-2 rounded-sm border border-rose-400 bg-rose-200" />
-                        <span className="text-[8px] font-black text-slate-400 uppercase">Removed</span>
+                <div className="h-4 w-px bg-black/10" />
+                <div className="flex items-center gap-5">
+                    <div className="flex items-center gap-2">
+                        <div className="h-3 w-3 rounded-sm border border-black bg-rose-50" />
+                        <span className="text-[10px] font-bold text-black">Dihapus</span>
                     </div>
-                    <div className="flex items-center gap-1">
-                        <div className="h-2 w-2 rounded-sm border border-emerald-400 bg-emerald-100" />
-                        <span className="text-[8px] font-black text-slate-400 uppercase">Added</span>
+                    <div className="flex items-center gap-2">
+                        <div className="h-3 w-3 rounded-sm border border-black bg-emerald-50" />
+                        <span className="text-[10px] font-bold text-black">Ditambah</span>
                     </div>
-                    <div className="flex items-center gap-1">
-                        <div className="h-2 w-2 rounded-sm border border-amber-400 bg-amber-100" />
-                        <span className="text-[8px] font-black text-slate-400 uppercase">Modified</span>
+                    <div className="flex items-center gap-2">
+                        <div className="h-3 w-3 rounded-sm border border-black bg-amber-50" />
+                        <span className="text-[10px] font-bold text-black">Diubah</span>
                     </div>
                 </div>
             </div>

@@ -1,4 +1,5 @@
 import { UserProfile } from '@/types/contracts';
+import { cn } from '@/lib/utils';
 
 // ─── Status config ─────────────────────────────────────────────────
 const STATUS_LABEL: Record<string, string> = {
@@ -28,7 +29,7 @@ const STATUS_CLS: Record<string, string> = {
 export function StatusBadge({ status, label }: { status: string; label?: string }) {
     const cls = STATUS_CLS[status] ?? STATUS_CLS.draft;
     return (
-        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${cls}`}>
+        <span className={cn('inline-flex items-center rounded-lg px-2.5 py-1 text-[10.5px] font-bold tracking-tight uppercase border transition-all duration-300', cls)}>
             {label ?? STATUS_LABEL[status] ?? status}
         </span>
     );

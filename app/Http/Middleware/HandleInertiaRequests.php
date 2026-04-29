@@ -114,12 +114,10 @@ class HandleInertiaRequests extends Middleware
             ->where('m_access_modules.can_read', true)
             ->select(
                 'm_modules.*', 
-                'm_module_groups.name as group_title', 
-                'm_access_modules.sequence as module_sort', 
-                'm_role_module_groups.sequence as group_sort'
+                'm_module_groups.name as group_title'
             )
-            ->orderByRaw('COALESCE(m_role_module_groups.sequence, 999)')
-            ->orderBy('m_access_modules.sequence')
+            ->orderBy('m_module_groups.name')
+            ->orderBy('m_modules.name')
             ->get();
 
         return $modules->groupBy('group_title')

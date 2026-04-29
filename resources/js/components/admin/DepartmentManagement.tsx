@@ -58,12 +58,12 @@ export function DepartmentManagement({ departments, filters }: DepartmentManagem
             sortable: true,
             cell: (row) => (
                 <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-none bg-slate-100 text-slate-400 group-hover:bg-black group-hover:text-white transition-colors">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-none bg-black/5 dark:bg-white/5 text-black/40 dark:text-white/40 group-hover:bg-black dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-black transition-colors border border-black/5 dark:border-white/5">
                         <Building2 size={14} />
                     </div>
                     <div className="flex flex-col min-w-0">
-                        <span className="text-[11px] font-black uppercase tracking-tight text-slate-900 leading-none mb-1 truncate">{row.name}</span>
-                        <div className="flex items-center gap-1.5 font-mono text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                        <span className="text-[11px] font-black uppercase tracking-tight text-black dark:text-white leading-none mb-1 truncate">{row.name}</span>
+                        <div className="flex items-center gap-1.5 font-mono text-[9px] font-black text-black/40 dark:text-white/40 uppercase tracking-widest leading-none">
                             {row.code}
                         </div>
                     </div>
@@ -74,7 +74,7 @@ export function DepartmentManagement({ departments, filters }: DepartmentManagem
             header: 'Deskripsi',
             accessorKey: 'description',
             cell: (row) => (
-                <span className="text-[10px] font-medium text-slate-400 uppercase tracking-tight line-clamp-1 max-w-[300px]">
+                <span className="text-[10px] font-medium text-black/50 dark:text-white/50 uppercase tracking-tight line-clamp-1 max-w-[300px]">
                     {row.description || 'TIDAK ADA KETERANGAN'}
                 </span>
             )
@@ -85,12 +85,12 @@ export function DepartmentManagement({ departments, filters }: DepartmentManagem
             cell: (row) => (
                 <div className="flex items-center gap-2">
                     <div className={cn(
-                        "w-1.5 h-1.5 rounded-full shrink-0",
-                        row.is_active ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-slate-300"
+                        "w-1.5 h-1.5 rounded-none shrink-0",
+                        row.is_active ? "bg-black dark:bg-white" : "bg-black/10 dark:bg-white/10"
                     )} />
                     <span className={cn(
                         "text-[9px] font-black uppercase tracking-widest",
-                        row.is_active ? "text-emerald-700" : "text-slate-400"
+                        row.is_active ? "text-black dark:text-white" : "text-black/30 dark:text-white/30"
                     )}>
                         {row.is_active ? 'TERLIHAT' : 'DISEMBUNYIKAN'}
                     </span>
@@ -150,7 +150,7 @@ export function DepartmentManagement({ departments, filters }: DepartmentManagem
                             type="button" 
                             variant="ghost" 
                             onClick={() => setIsConfirmOpen(true)}
-                            className="h-8 hover:bg-rose-50 text-rose-600 rounded-none px-4 text-[10px] font-black uppercase tracking-widest transition-all"
+                            className="h-8 hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black text-black/50 dark:text-white/50 rounded-none px-4 text-[10px] font-black uppercase tracking-widest transition-all"
                         >
                             <Trash2 size={14} className="mr-2" /> Hapus Data
                         </Button>
@@ -176,41 +176,41 @@ export function DepartmentManagement({ departments, filters }: DepartmentManagem
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
                     <div className="md:col-span-8 space-y-10">
                         <div className="space-y-4">
-                            <h3 className="text-[10px] font-black tracking-[0.2em] text-slate-600 uppercase border-b border-slate-200 pb-2">Data Organisasi</h3>
+                            <h3 className="text-[10px] font-black tracking-[0.2em] text-black/60 dark:text-white/60 uppercase border-b border-black/10 dark:border-white/10 pb-2 text-left">Data Organisasi</h3>
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                                 <div className="md:col-span-1 space-y-1.5">
-                                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Kode / Singkatan</Label>
-                                    <Input value={form.data.code} onChange={e => form.setData('code', e.target.value)} required placeholder="CONTOH: IT" className="h-10 rounded-none border-slate-200 bg-white text-sm font-mono font-black uppercase tracking-widest px-4 focus-visible:ring-0 focus-visible:border-black transition-colors" />
+                                    <Label className="text-[9px] font-black text-black/40 dark:text-white/40 uppercase tracking-widest">Kode / Singkatan</Label>
+                                    <Input value={form.data.code} onChange={e => form.setData('code', e.target.value)} required placeholder="CONTOH: IT" className="h-10 rounded-none border-black dark:border-white bg-white dark:bg-black text-[10px] font-mono font-black uppercase tracking-widest px-4 focus-visible:ring-0 transition-colors text-black dark:text-white" />
                                 </div>
                                 <div className="md:col-span-3 space-y-1.5">
-                                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Nama Unit Struktural</Label>
-                                    <Input value={form.data.name} onChange={e => form.setData('name', e.target.value)} required placeholder="NAMA LENGKAP DIVISI" className="h-10 rounded-none border-slate-200 bg-white text-sm font-black uppercase tracking-tight px-4 focus-visible:ring-0 focus-visible:border-black transition-colors" />
+                                    <Label className="text-[9px] font-black text-black/40 dark:text-white/40 uppercase tracking-widest">Nama Unit Struktural</Label>
+                                    <Input value={form.data.name} onChange={e => form.setData('name', e.target.value)} required placeholder="NAMA LENGKAP DIVISI" className="h-10 rounded-none border-black dark:border-white bg-white dark:bg-black text-[10px] font-black uppercase tracking-tight px-4 focus-visible:ring-0 transition-colors text-black dark:text-white" />
                                 </div>
                                 <div className="md:col-span-4 space-y-1.5">
-                                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Keterangan Fungsi</Label>
-                                    <Input value={form.data.description} onChange={e => form.setData('description', e.target.value)} placeholder="Tuliskan deskripsi unit kerja ini..." className="h-10 rounded-none border-slate-200 bg-white text-[11px] font-medium px-4 focus-visible:ring-0 focus-visible:border-black transition-colors" />
+                                    <Label className="text-[9px] font-black text-black/40 dark:text-white/40 uppercase tracking-widest">Keterangan Fungsi</Label>
+                                    <Input value={form.data.description} onChange={e => form.setData('description', e.target.value)} placeholder="Tuliskan deskripsi unit kerja ini..." className="h-10 rounded-none border-black dark:border-white bg-white dark:bg-black text-[10px] font-bold uppercase px-4 focus-visible:ring-0 transition-colors text-black dark:text-white" />
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <div className="md:col-span-4 flex flex-col pt-6 md:pt-0">
-                         <div className="border border-slate-200 p-6 bg-slate-50/50">
+                         <div className="border border-black dark:border-white p-6 bg-black/5 dark:bg-white/5">
                             <div className="flex items-center gap-3 mb-6">
-                                <span className={cn("text-[9px] font-black uppercase tracking-widest", form.data.is_active ? "text-emerald-600" : "text-rose-600")}>
+                                <span className={cn("text-[9px] font-black uppercase tracking-widest", form.data.is_active ? "text-black dark:text-white" : "text-black/40 dark:text-white/40")}>
                                      {form.data.is_active ? 'Unit Aktif' : 'Unit Tersembunyi'}
                                 </span>
                                 <Checkbox 
                                     checked={form.data.is_active} 
                                     onCheckedChange={(c) => form.setData('is_active', !!c)} 
-                                    className="w-5 h-5 rounded-none border-black"
+                                    className="w-5 h-5 rounded-none border-black dark:border-white"
                                 />
                             </div>
                             <div className="flex items-center gap-2 mb-4">
-                                <Building2 size={16} className="text-slate-400" />
-                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Arsitektur Unit</span>
+                                <Building2 size={16} className="text-black/40 dark:text-white/40" />
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-black/40 dark:text-white/40">Arsitektur Unit</span>
                             </div>
-                            <p className="text-[9px] text-slate-500 font-bold uppercase leading-relaxed tracking-tight italic">
+                            <p className="text-[9px] text-black/50 dark:text-white/50 font-bold uppercase leading-relaxed tracking-tight italic">
                                 Departemen digunakan untuk mengelompokkan pengguna dan menentukan keterlibatan dalam alur persetujuan (Workflow) berbasis departemen.
                             </p>
                         </div>

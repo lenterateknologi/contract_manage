@@ -23,7 +23,6 @@ class Module extends Model
         'id',
         'identifier',
         'name',
-        'sequence',
         'route',
         'icon',
         'module_group_id',

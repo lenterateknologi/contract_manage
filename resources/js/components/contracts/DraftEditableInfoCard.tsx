@@ -1,6 +1,7 @@
 import { Avatar, StatusBadge } from '@/components/contracts/ui';
 import { Contract, ContractType } from '@/types/contracts';
-import { useEffect, useMemo, useState } from 'react';
+import { Info, Loader2, Check, ChevronUp, ChevronDown } from 'lucide-react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 
 export interface FormTemplateInfo {
     id: string;
@@ -78,6 +79,9 @@ export function DraftEditableInfoCard({
         types,
     ]);
 
+    const autoSaveTimerRef = useRef<any>(null);
+    const [localSaving, setLocalSaving] = useState(false);
+
     const hasChanges = useMemo(() => {
         const origType = types.find((x) => x.name === selected.contract_type);
         const origTypeId = origType ? String(origType.id) : '';
@@ -93,21 +97,49 @@ export function DraftEditableInfoCard({
         );
     }, [title, description, typeId, vendorId, submissionTypeId, transactionType, crownNo, kopSubTopik, selected, types]);
 
-    const handleSave = () => {
-        onUpdate({
-            title,
-            description,
-            contract_type_id: typeId || undefined,
-            vendor_id: vendorId || undefined,
-            submission_type_id: submissionTypeId || undefined,
-            transaction_type: transactionType,
-            kop_sub_topik: kopSubTopik,
-            crown_no: crownNo,
-        });
-    };
+    // Debounced Auto-Save for Contract Metadata
+    useEffect(() => {
+        if (!isDraft) return;
+
+        if (hasChanges && title.trim()) {
+            if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+            autoSaveTimerRef.current = setTimeout(async () => {
+                setLocalSaving(true);
+                try {
+                    await onUpdate({
+                        title,
+                        description,
+                        contract_type_id: typeId || undefined,
+                        vendor_id: vendorId || undefined,
+                        submission_type_id: submissionTypeId || undefined,
+                        transaction_type: transactionType,
+                        kop_sub_topik: kopSubTopik,
+                        crown_no: crownNo,
+                    });
+                } finally {
+                    setLocalSaving(false);
+                }
+            }, 3000); // 3 second debounce
+        }
+
+        return () => {
+            if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+        };
+    }, [
+        title,
+        description,
+        typeId,
+        vendorId,
+        submissionTypeId,
+        transactionType,
+        kopSubTopik,
+        crownNo,
+        isDraft,
+        onUpdate,
+    ]);
 
     const inputCls =
-        'w-full bg-background border border-border rounded-lg px-3 py-1.5 text-sm text-foreground outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all';
+        'w-full bg-white dark:bg-sidebar border border-black/20 dark:border-white/20 rounded-lg px-3 py-1.5 text-sm text-black dark:text-white outline-none focus:border-black dark:focus:border-white transition-all';
 
     const f2Version = selected.versions?.filter((x) => x.document_type === 'f2').sort((a, b) => b.version_no - a.version_no)[0];
 
@@ -117,57 +149,62 @@ export function DraftEditableInfoCard({
     );
 
     return (
-        <div className="bg-card border-border overflow-hidden rounded-xl border">
-            <div className="border-border/50 flex items-center justify-between border-b" style={{ padding: '12px 16px' }}>
-                <div className="flex items-center gap-2 font-semibold" style={{ fontSize: 13 }}>
-                    <i className="fa-solid fa-circle-info text-muted-foreground" style={{ fontSize: 12 }} /> Informasi Kontrak
+        <div className="bg-white dark:bg-sidebar border border-black/10 dark:border-white/10 overflow-hidden rounded-xl">
+            <div className="border-b border-black/10 dark:border-white/10 flex items-center justify-between bg-[#0f172a] dark:bg-white p-4">
+                <div className="flex items-center gap-2 font-bold text-white dark:text-[#0f172a] text-[11px] uppercase tracking-widest">
+                    <Info size={14} className="text-white/40 dark:text-[#0f172a]/40" /> Informasi Kontrak
                     {isDraft && (
-                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold tracking-wider text-amber-700 uppercase dark:bg-amber-900/30 dark:text-amber-400">
+                        <span className="rounded-full bg-white dark:bg-[#0f172a] px-2 py-0.5 text-[8px] font-bold tracking-widest text-[#0f172a] dark:text-white uppercase">
                             Editable
                         </span>
                     )}
                 </div>
                 <div className="flex items-center gap-2">
-                    {isDraft && hasChanges && (
-                        <button
-                            onClick={handleSave}
-                            disabled={processing || !title.trim()}
-                            className="bg-primary text-primary-foreground shadow-primary/20 hover:shadow-primary/30 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold shadow-md transition-all active:scale-95 disabled:opacity-50"
-                        >
-                            {processing ? (
-                                <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: 10 }} />
+                    {isDraft && (
+                        <div className="flex items-center gap-2 px-2">
+                            {localSaving ? (
+                                <>
+                                    <Loader2 size={12} className="animate-spin text-white/40 dark:text-[#0f172a]/40" />
+                                    <span className="text-[10px] font-bold text-white/40 dark:text-[#0f172a]/40 uppercase tracking-widest">Menyimpan...</span>
+                                </>
+                            ) : hasChanges ? (
+                                <>
+                                    <div className="h-1.5 w-1.5 rounded-full bg-white dark:bg-[#0f172a] animate-pulse" />
+                                    <span className="text-[10px] font-bold text-white dark:text-[#0f172a] uppercase tracking-widest">Berubah</span>
+                                </>
                             ) : (
-                                <i className="fa-solid fa-save" style={{ fontSize: 10 }} />
+                                <>
+                                    <Check size={12} className="text-white dark:text-[#0f172a]" />
+                                    <span className="text-[10px] font-bold text-white dark:text-[#0f172a] uppercase tracking-widest">Tersimpan</span>
+                                </>
                             )}
-                            Simpan
-                        </button>
+                        </div>
                     )}
-                    {!(isDraft && hasChanges) && (
-                        <button
-                            onClick={() => setMinimized(!minimized)}
-                            className="text-muted-foreground hover:bg-muted h-7 w-7 rounded-md transition-all active:scale-95"
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer',
-                                border: 'none',
-                                background: 'none',
-                            }}
-                        >
-                            <i
-                                className={`fa-solid fa-chevron-${minimized ? 'down' : 'up'}`}
-                                style={{ fontSize: 12, transition: 'transform 0.2s' }}
-                            />
-                        </button>
-                    )}
+                    <button
+                        onClick={() => setMinimized(!minimized)}
+                        className="text-white/40 dark:text-[#0f172a]/40 hover:text-white dark:hover:text-[#0f172a] transition-all active:scale-95"
+                    >
+                        {minimized ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+                    </button>
                 </div>
             </div>
             {!minimized && (
                 <div style={{ padding: 16, display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
+                    <div>
+                        <div className="text-black/40 dark:text-white/40 font-bold tracking-[0.2em] uppercase" style={{ fontSize: 9, marginBottom: 6 }}>
+                            No. Pengajuan
+                        </div>
+                        <span
+                            className="rounded border border-black/10 dark:border-white/10 bg-white dark:bg-sidebar px-3 py-1.5 font-mono font-bold text-black dark:text-white inline-block shadow-sm"
+                            style={{ fontSize: 12 }}
+                        >
+                            {selected.contract_no}
+                        </span>
+                    </div>
+
                     {isDraft ? (
                         <div style={{ gridColumn: '1/-1' }}>
-                            <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
+                            <div className="text-black/40 dark:text-white/40 font-bold tracking-[0.2em] uppercase" style={{ fontSize: 9, marginBottom: 6 }}>
                                 Judul Kontrak
                             </div>
                             <input
@@ -181,28 +218,49 @@ export function DraftEditableInfoCard({
 
                     <div className="flex flex-col gap-4">
                         <div>
-                            <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
-                                No. Pengajuan
+                            <div className="text-black/40 dark:text-white/40 font-bold tracking-[0.2em] uppercase" style={{ fontSize: 9, marginBottom: 6 }}>
+                                No. Kontrak
                             </div>
-                            <span
-                                className="rounded border border-slate-200 bg-slate-100 px-2 py-0.5 font-mono font-bold text-slate-500"
-                                style={{ fontSize: 12 }}
-                            >
-                                {selected.contract_no}
-                            </span>
+                            {isDraft ? (
+                                <input
+                                    value={crownNo}
+                                    onChange={(e) => setCrownNo(e.target.value)}
+                                    placeholder="CROWN-XXX..."
+                                    className={inputCls + ' font-mono font-bold'}
+                                />
+                            ) : (
+                                <span
+                                    className="rounded border border-black/10 dark:border-white/10 bg-white dark:bg-sidebar px-3 py-1.5 font-mono font-bold text-black dark:text-white inline-block shadow-sm"
+                                    style={{ fontSize: 12 }}
+                                >
+                                    {selected.crown_no || '—'}
+                                </span>
+                            )}
+                        </div>
+
+                        <div>
+                            <div className="text-black/40 dark:text-white/40 font-bold tracking-[0.2em] uppercase" style={{ fontSize: 9, marginBottom: 6 }}>
+                                Sifat Kontrak
+                            </div>
+                            {isDraft ? (
+                                <select value={transactionType} onChange={(e) => setTransactionType(e.target.value)} className={inputCls}>
+                                    <option value="Perjanjian Baru">Perjanjian Baru</option>
+                                    <option value="Perpanjangan">Perpanjangan</option>
+                                    <option value="Addendum">Addendum</option>
+                                    <option value="Amandemen">Amandemen</option>
+                                    <option value="Lainnya">Lainnya</option>
+                                </select>
+                            ) : (
+                                <span className="text-xs font-bold text-black dark:text-white uppercase">
+                                    {selected.transaction_type || '—'}
+                                </span>
+                            )}
                         </div>
                     </div>
 
 
                     <div>
-                        <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
-                            Status
-                        </div>
-                        <StatusBadge status={selected.status} />
-                    </div>
-
-                    <div>
-                        <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
+                        <div className="text-black/40 dark:text-white/40 font-bold tracking-[0.2em] uppercase" style={{ fontSize: 9, marginBottom: 6 }}>
                             Jenis Kontrak
                         </div>
                         {isDraft ? (
@@ -215,14 +273,14 @@ export function DraftEditableInfoCard({
                                 ))}
                             </select>
                         ) : (
-                            <span className="rounded-full border border-blue-100 bg-blue-50 px-2 py-0.5 text-xs font-bold tracking-wider text-blue-700 uppercase dark:border-blue-900/30 dark:bg-blue-900/20 dark:text-blue-400">
+                            <span className="rounded-full border border-black/10 dark:border-white/10 bg-[#0f172a] dark:bg-white px-3 py-1 text-[10px] font-bold tracking-[0.1em] text-white dark:text-[#0f172a] uppercase shadow-sm">
                                 {selected.contract_type}
                             </span>
                         )}
                     </div>
 
                     <div>
-                        <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
+                        <div className="text-black/40 dark:text-white/40 font-bold tracking-[0.2em] uppercase" style={{ fontSize: 9, marginBottom: 6 }}>
                             Perjanjian
                         </div>
                         {isDraft ? (
@@ -235,12 +293,12 @@ export function DraftEditableInfoCard({
                                 ))}
                             </select>
                         ) : (
-                            <span style={{ fontSize: 12 }}>{selected.submission_type || '—'}</span>
+                            <span className="text-black dark:text-white font-medium" style={{ fontSize: 12 }}>{selected.submission_type || '—'}</span>
                         )}
                     </div>
 
                     <div>
-                        <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
+                        <div className="text-black/40 dark:text-white/40 font-bold tracking-[0.2em] uppercase" style={{ fontSize: 9, marginBottom: 6 }}>
                             Pihak Kedua (Vendor)
                         </div>
                         {isDraft ? (
@@ -253,27 +311,27 @@ export function DraftEditableInfoCard({
                                 ))}
                             </select>
                         ) : (
-                            <span className="rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-xs font-bold tracking-wider text-slate-600 uppercase">
+                            <span className="rounded-full border border-black/10 dark:border-white/10 bg-white dark:bg-sidebar px-3 py-1 text-[10px] font-bold tracking-[0.1em] text-black dark:text-white uppercase shadow-sm">
                                 {(selected as any).vendor?.name || '-'}
                             </span>
                         )}
                     </div>
 
                     <div>
-                        <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
+                        <div className="text-black/40 dark:text-white/40 font-bold tracking-widest uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
                             Dibuat Oleh
                         </div>
                         <div className="flex items-center gap-1.5">
                             <Avatar user={selected.creator} size="sm" />
-                            <span style={{ fontSize: 12 }}>{selected.creator?.name}</span>
+                            <span className="text-black dark:text-white font-medium" style={{ fontSize: 12 }}>{selected.creator?.name}</span>
                         </div>
                     </div>
 
                     <div>
-                        <div className="text-muted-foreground font-semibold tracking-wider uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
+                        <div className="text-black/40 dark:text-white/40 font-bold tracking-widest uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
                             Tgl Dibuat
                         </div>
-                        <span style={{ fontSize: 12 }}>{selected.created_at}</span>
+                        <span className="text-black dark:text-white font-medium" style={{ fontSize: 12 }}>{selected.created_at}</span>
                     </div>
                 </div>
             )}

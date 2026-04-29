@@ -60,10 +60,11 @@ class GeneratePdfJob implements ShouldQueue
                 })
                 ->timeout(300)
                 ->format('A4')
-                ->margins(0, 0, 0, 0)
+                ->margins(10, 10, 10, 10)
                 ->showBackground()
                 ->waitUntilNetworkIdle()
                 ->setDelay(500)
+                ->preventUnsuccessfulResponse()
                 ->pdf();
 
 

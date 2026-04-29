@@ -21,7 +21,6 @@ class ModuleGroup extends Model
         'id',
         'name',
         'icon',
-        'sequence',
         'created_by',
         'updated_by',
     ];

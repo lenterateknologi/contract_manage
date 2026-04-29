@@ -7,9 +7,10 @@ import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import AuthLayout from '@/layouts/auth-layout';
+import AuthSplitLayout from '@/layouts/auth/auth-split-layout';
 
 interface RegisterForm {
+    [key: string]: any;
     name: string;
     email: string;
     password: string;
@@ -32,12 +33,16 @@ export default function Register() {
     };
 
     return (
-        <AuthLayout title="Create an account" description="Enter your details below to create your account">
-            <Head title="Register" />
+        <AuthSplitLayout 
+            title="Daftar Akun" 
+            description="Lengkapi data untuk memulai."
+            image="https://images.unsplash.com/photo-1542744094-24638eff58bb?auto=format&fit=crop&q=80&w=1200"
+        >
+            <Head title="Daftar" />
             <form className="flex flex-col gap-6" onSubmit={submit}>
-                <div className="grid gap-6">
+                <div className="grid gap-5">
                     <div className="grid gap-2">
-                        <Label htmlFor="name">Name</Label>
+                        <Label htmlFor="name" className="text-[var(--font-size-small)] font-[var(--font-weight-bold)] text-[var(--text-dark)] tracking-tight uppercase">Nama Lengkap</Label>
                         <Input
                             id="name"
                             type="text"
@@ -48,13 +53,14 @@ export default function Register() {
                             value={data.name}
                             onChange={(e) => setData('name', e.target.value)}
                             disabled={processing}
-                            placeholder="Full name"
+                            placeholder="Nama Lengkap Anda"
+                            className="h-[48px] rounded-[var(--radius-lg)] border-[var(--border)] bg-[var(--white)] px-4 text-[var(--font-size-body)] text-[var(--text-dark)] focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] transition-all"
                         />
-                        <InputError message={errors.name} className="mt-2" />
+                        <InputError message={errors.name} />
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="email">Email address</Label>
+                        <Label htmlFor="email" className="text-[var(--font-size-small)] font-[var(--font-weight-bold)] text-[var(--text-dark)] tracking-tight uppercase">Alamat Email</Label>
                         <Input
                             id="email"
                             type="email"
@@ -65,12 +71,13 @@ export default function Register() {
                             onChange={(e) => setData('email', e.target.value)}
                             disabled={processing}
                             placeholder="email@example.com"
+                            className="h-[48px] rounded-[var(--radius-lg)] border-[var(--border)] bg-[var(--white)] px-4 text-[var(--font-size-body)] text-[var(--text-dark)] focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] transition-all"
                         />
                         <InputError message={errors.email} />
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="password">Password</Label>
+                        <Label htmlFor="password" className="text-[var(--font-size-small)] font-[var(--font-weight-bold)] text-[var(--text-dark)] tracking-tight uppercase">Kata Sandi</Label>
                         <Input
                             id="password"
                             type="password"
@@ -80,13 +87,14 @@ export default function Register() {
                             value={data.password}
                             onChange={(e) => setData('password', e.target.value)}
                             disabled={processing}
-                            placeholder="Password"
+                            placeholder="Min 8 Karakter"
+                            className="h-[48px] rounded-[var(--radius-lg)] border-[var(--border)] bg-[var(--white)] px-4 text-[var(--font-size-body)] text-[var(--text-dark)] focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] transition-all"
                         />
                         <InputError message={errors.password} />
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="password_confirmation">Confirm password</Label>
+                        <Label htmlFor="password_confirmation" className="text-[var(--font-size-small)] font-[var(--font-weight-bold)] text-[var(--text-dark)] tracking-tight uppercase">Konfirmasi</Label>
                         <Input
                             id="password_confirmation"
                             type="password"
@@ -96,24 +104,30 @@ export default function Register() {
                             value={data.password_confirmation}
                             onChange={(e) => setData('password_confirmation', e.target.value)}
                             disabled={processing}
-                            placeholder="Confirm password"
+                            placeholder="Masukkan Kembali"
+                            className="h-[48px] rounded-[var(--radius-lg)] border-[var(--border)] bg-[var(--white)] px-4 text-[var(--font-size-body)] text-[var(--text-dark)] focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] transition-all"
                         />
                         <InputError message={errors.password_confirmation} />
                     </div>
 
-                    <Button type="submit" className="mt-2 w-full" tabIndex={5} disabled={processing}>
-                        {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                        Create account
+                    <Button 
+                        type="submit" 
+                        className="h-[48px] w-full rounded-[var(--radius-lg)] bg-[var(--primary)] text-[var(--font-size-body)] font-[var(--font-weight-bold)] text-[var(--white)] transition-all hover:bg-[var(--primary-hover)] active:bg-[var(--primary-active)] active:scale-[0.98]" 
+                        tabIndex={5} 
+                        disabled={processing}
+                    >
+                        {processing && <LoaderCircle className="mr-2 size-4 animate-spin" />}
+                        Buat Akun Baru
                     </Button>
                 </div>
 
-                <div className="text-muted-foreground text-center text-sm">
-                    Already have an account?{' '}
-                    <TextLink href={route('login')} tabIndex={6}>
-                        Log in
+                <div className="text-center text-[var(--font-size-small)] text-[var(--text-muted)] font-[var(--font-weight-medium)]">
+                    Sudah punya akun?{' '}
+                    <TextLink href={route('login')} className="font-[var(--font-weight-bold)] text-[var(--primary)] hover:text-[var(--primary-hover)] hover:underline" tabIndex={6}>
+                        Masuk Disini
                     </TextLink>
                 </div>
             </form>
-        </AuthLayout>
+        </AuthSplitLayout>
     );
 }

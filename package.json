@@ -19,6 +19,8 @@
         "prettier": "^3.4.2",
         "prettier-plugin-organize-imports": "^4.1.0",
         "prettier-plugin-tailwindcss": "^0.6.11",
+        "puppeteer": "npm:puppeteer-core@^24.42.0",
+        "puppeteer-core": "^24.42.0",
         "typescript-eslint": "^8.23.0"
     },
     "dependencies": {
@@ -51,6 +53,7 @@
         "docx-preview": "^0.3.7",
         "globals": "^15.14.0",
         "laravel-vite-plugin": "^1.0",
+        "lottie-react": "^2.4.1",
         "lucide-react": "^0.475.0",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",

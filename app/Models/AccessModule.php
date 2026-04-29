@@ -22,7 +22,6 @@ class AccessModule extends Model
         'can_approve',
         'created_by',
         'module_group_id',
-        'sequence',
     ];
 
     public $timestamps = true;

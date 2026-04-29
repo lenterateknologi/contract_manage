@@ -1,12 +1,10 @@
 import AgreementView from '@/components/contracts/AgreementView';
 import ContractAuditTrail from '@/components/contracts/ContractAuditTrail';
 import CreateContractModal from '@/components/contracts/CreateContractModal';
-import FloatingChat from '@/components/contracts/FloatingChat';
 import { FormSubmissionTab } from '@/components/contracts/FormSubmissionTab';
 import PreviewModal from '@/components/contracts/PreviewModal';
 // No RejectModal import needed
 import { ToastProvider, useToast } from '@/components/contracts/Toast';
-import { StatusBadge } from '@/components/contracts/ui';
 import { FilterSheet } from '@/components/ui/FilterSheet';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -19,17 +17,23 @@ import axios from 'axios';
 import {
     AlertCircle,
     AlertTriangle,
-    ArrowRight,
+    Archive,
     CheckCircle2,
+    ChevronLeft,
     Clock,
+    Download,
     Eye,
     FileEdit,
     FileType,
     Filter,
     Layers,
     LayoutGrid,
+    LayoutList,
     MoreVertical,
+    PlusCircle,
+    Save,
     Search,
+    Send,
     Trash2,
     Zap,
 } from 'lucide-react';
@@ -46,23 +50,10 @@ import { ProfileView } from '@/components/contracts/ProfileView';
 import SendApprovalModal from '@/components/contracts/SendApprovalModal';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { Column, DataTable } from '@/components/ui/DataTable';
+import LoadingLottie from '@/components/ui/LoadingLottie';
 import { usePermissions } from '@/hooks/use-permissions';
 
 type View = 'dashboard' | 'contracts' | 'pending' | 'audit' | 'f1' | 'f2' | 'profile' | 'mine' | 'expiry';
-
-function ProgressCell({ c }: { c: Contract }) {
-    const { done, total, pct } = c.progress;
-    return (
-        <div style={{ padding: '0 12px', minWidth: 80 }}>
-            <div style={{ fontSize: 11, color: 'var(--muted-foreground)', marginBottom: 4 }}>
-                {done}/{total}
-            </div>
-            <div style={{ height: 4, background: 'var(--muted)', borderRadius: 99, overflow: 'hidden', width: '100%' }}>
-                <div style={{ height: '100%', background: 'var(--primary)', borderRadius: 99, width: `${pct}%` }} />
-            </div>
-        </div>
-    );
-}
 
 function ExpiryBadge({ endDate }: { endDate: string | null }) {
     if (!endDate) return null;
@@ -72,29 +63,53 @@ function ExpiryBadge({ endDate }: { endDate: string | null }) {
     const diffTime = end.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    let color = 'bg-green-500/10 text-green-600 border-green-200';
+    let color = 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20';
     let icon = 'fa-circle-check';
     let label = `${diffDays} Hari Lagi`;
 
     if (diffDays < 0) {
-        color = 'bg-red-500/10 text-red-600 border-red-200';
+        color = 'bg-rose-50 text-rose-600 border-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20';
         icon = 'fa-circle-exclamation';
         label = `Expired ${Math.abs(diffDays)} Hari`;
     } else if (diffDays <= 30) {
-        color = 'bg-red-500/10 text-red-600 border-red-200';
+        color = 'bg-rose-50 text-rose-600 border-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20';
         icon = 'fa-triangle-exclamation';
     } else if (diffDays <= 90) {
-        color = 'bg-amber-500/10 text-amber-600 border-amber-200';
+        color = 'bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20';
+        color = 'text-amber-500';
         icon = 'fa-clock';
     }
 
     return (
-        <div className={cn('inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase', color)}>
-            <i className={cn('fa-solid', icon)} />
+        <div className={cn('inline-flex items-center gap-1.5 text-[11px] font-semibold', color)}>
+            <i className={cn('fa-solid text-[10px]', icon)} />
             {label}
         </div>
     );
 }
+
+const StatusBadge = ({ status }: { status: string }) => {
+    const config = {
+        draft: { color: 'bg-slate-400', label: 'Draft' },
+        in_review: { color: 'bg-amber-400', label: 'Review' },
+        revision: { color: 'bg-rose-400', label: 'Revisi' },
+        pending: { color: 'bg-amber-500', label: 'Pending' },
+        approved: { color: 'bg-emerald-500', label: 'Disetujui' },
+        active: { color: 'bg-emerald-600', label: 'Aktif' },
+        expired: { color: 'bg-rose-600', label: 'Expired' },
+        archived: { color: 'bg-slate-300', label: 'Arsip' },
+        rejected: { color: 'bg-rose-500', label: 'Ditolak' },
+    };
+
+    const s = config[status as keyof typeof config] || config.draft;
+
+    return (
+        <div className="inline-flex items-center gap-2 text-[12px] font-medium">
+            <span className={cn('h-2 w-2 rounded-full', s.color)} />
+            <span className="text-slate-700 dark:text-slate-200">{s.label}</span>
+        </div>
+    );
+};
 
 const SLACountdown = ({ deadline, status }: { deadline: string | null; status: string }) => {
     const [timeLeft, setTimeLeft] = useState<string>('');
@@ -140,15 +155,15 @@ const SLACountdown = ({ deadline, status }: { deadline: string | null; status: s
     return (
         <div
             className={cn(
-                'flex w-fit items-center gap-1.5 rounded-md px-2 py-0.5 font-mono text-[10px] font-bold tracking-tight ring-1',
+                'flex w-fit items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-bold ring-1',
                 urgency === 'danger'
-                    ? 'animate-pulse bg-rose-50 text-rose-600 ring-rose-200'
+                    ? 'bg-rose-50 text-rose-600 ring-rose-200'
                     : urgency === 'warning'
                       ? 'bg-amber-50 text-amber-600 ring-amber-200'
                       : 'bg-emerald-50 text-emerald-600 ring-emerald-200',
             )}
         >
-            <Clock size={10} className={urgency === 'danger' ? 'animate-spin-slow' : ''} />
+            <Clock size={10} className={urgency === 'danger' ? 'animate-pulse' : ''} />
             {timeLeft}
         </div>
     );
@@ -195,30 +210,33 @@ function ContractPage({
     roles?: any[];
 }) {
     const contracts = contractsPaged.data;
-    const { showToast } = useToast();
+    const { showToast, showProgress, hideProgress } = useToast();
     const { canUpdate } = usePermissions('CONTRACTS');
-    const [view, setView] = useState<View>(currentView);
 
+    // PDF Queue States
+    const [isExportingTimeline, setIsExportingTimeline] = useState(false);
+    const [timelinePdfJobId, setTimelinePdfJobId] = useState<string | null>(null);
+    const [timelinePdfJobStatus, setTimelinePdfJobStatus] = useState<any>(null);
+    const [timelinePdfPreviewUrl, setTimelinePdfPreviewUrl] = useState<string | null>(null);
+
+    const [view, setView] = useState<View>(currentView);
+    const [selected, setSelected] = useState<Contract | null>(initialSelected ?? null);
+
+    // Sync view and selection when props change (Inertia navigation)
     useEffect(() => {
         if (currentView && currentView !== view) {
             setView(currentView);
-            // Only clear selection if we're not explicitly trying to show a contract (from /contracts/{id})
-            if (!initialSelected) {
-                setSelected(null);
-            }
         }
-    }, [currentView, view, initialSelected]);
+    }, [currentView]);
 
-    const [selected, setSelected] = useState<Contract | null>(initialSelected ?? null);
-
-    // Sync state when initialSelected prop changes (Inertia updates)
     useEffect(() => {
-        if (initialSelected) {
-            setSelected(initialSelected);
-        }
+        // Sync selected with initialSelected prop whenever it changes
+        setSelected(initialSelected ?? null);
     }, [initialSelected]);
 
-    const [detailTab, setDetailTab] = useState<'form_template' | 'f2' | 'agreement' | 'attachments' | 'audit' | 'chat'>('form_template');
+    const [detailTab, setDetailTab] = useState<'form_template' | 'f2' | 'agreement' | 'attachments' | 'audit' | 'chat' | 'timeline' | 'references'>(
+        'form_template',
+    );
     const [search, setSearch] = useState(filters?.search || '');
     const [approvalNote, setApprovalNote] = useState('');
     const [filterOpen, setFilterOpen] = useState(false);
@@ -273,16 +291,20 @@ function ContractPage({
                 header: 'No. Pengajuan',
                 accessorKey: 'contract_no',
                 sortable: true,
-                className: 'font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground',
+                className: 'font-mono text-[11px] font-semibold text-slate-500',
             },
             {
-                header: 'Judul Kontrak',
+                header: 'Informasi Kontrak',
                 accessorKey: 'title',
                 sortable: true,
                 cell: (c) => (
                     <div className="flex flex-col">
-                        <span className="text-foreground line-clamp-1 font-bold">{c.title}</span>
-                        <span className="text-muted-foreground text-[10px] font-medium tracking-tight uppercase">{c.contract_type}</span>
+                        <span className="text-[13px] leading-tight font-bold text-slate-900">{c.title}</span>
+                        <div className="mt-1 flex items-center gap-2">
+                            <span className="text-[10px] font-bold tracking-wide text-slate-400 uppercase">{c.contract_type}</span>
+                            <span className="h-1 w-1 rounded-full bg-slate-300" />
+                            <span className="text-[10px] font-bold tracking-wide text-slate-400 uppercase">{c.vendor?.name || 'No Vendor'}</span>
+                        </div>
                     </div>
                 ),
             },
@@ -290,51 +312,25 @@ function ContractPage({
                 header: 'Departemen',
                 accessorKey: 'initiator.department_name',
                 cell: (c) => (
-                    <span className="rounded-md border border-slate-100 bg-slate-50 px-2 py-0.5 text-[10px] font-bold tracking-tight text-slate-500 uppercase">
-                        {c.initiator?.department_name || 'UMUM'}
-                    </span>
+                    <span className="text-[11px] font-semibold tracking-wide text-slate-500 uppercase">{c.initiator?.department_name || 'UMUM'}</span>
                 ),
             },
             { header: 'Status', accessorKey: 'status', cell: (c) => <StatusBadge status={c.status} /> },
             {
-                header: 'Versi',
-                accessorKey: 'current_version',
+                header: 'Progress',
+                accessorKey: 'progress',
                 cell: (c) => (
-                    <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase">
-                        v{c.current_version}
+                    <span className="text-sidebar-foreground/90 text-[10px] font-bold tracking-tight">
+                        {c.progress.done}/{c.progress.total}
                     </span>
                 ),
-            },
-            { header: 'Progress', accessorKey: 'progress.pct', cell: (c) => <ProgressCell c={c} /> },
-            {
-                header: 'Masa Berlaku',
-                accessorKey: 'end_date',
-                cell: (c) => {
-                    const formatDate = (dateStr: string | null) => {
-                        if (!dateStr) return '—';
-                        try {
-                            const d = new Date(dateStr);
-                            if (isNaN(d.getTime())) return dateStr;
-                            return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                        } catch {
-                            return '—';
-                        }
-                    };
-                    return (
-                        <div className="flex items-center gap-1.5 text-[10px] font-medium text-slate-500">
-                            <span>{formatDate(c.contract_date)}</span>
-                            <ArrowRight size={10} className="text-slate-300" />
-                            <span className="font-bold text-slate-800">{formatDate(c.end_date)}</span>
-                        </div>
-                    );
-                },
             },
             { header: 'SLA Sisa', accessorKey: 'sla_deadline', cell: (c) => <SLACountdown deadline={c.sla_deadline ?? null} status={c.status} /> },
         ];
         baseColumns.push({
             header: 'Tgl Dibuat',
             accessorKey: 'created_at',
-            className: 'text-muted-foreground text-[10px] font-medium',
+            className: 'text-slate-400 text-[11px] font-medium',
             cell: (c) => c.created_at,
         });
         return baseColumns;
@@ -344,11 +340,17 @@ function ContractPage({
         (c: Contract) => (
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 rounded-lg border border-slate-100 bg-white p-0 hover:bg-slate-50">
-                        <MoreVertical size={14} className="text-slate-400" />
+                    <Button
+                        variant="ghost"
+                        className="border-sidebar-border dark:bg-sidebar-accent/50 hover:bg-sidebar-accent group h-8 w-8 rounded-lg border bg-white p-0 transition-all"
+                    >
+                        <MoreVertical size={14} className="text-sidebar-foreground/40 group-hover:text-sidebar-primary" />
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-44 rounded-xl border-slate-100 p-1.5 shadow-xl">
+                <DropdownMenuContent
+                    align="end"
+                    className="border-sidebar-border dark:bg-sidebar-accent/90 w-52 rounded-xl bg-white p-1.5 shadow-2xl backdrop-blur-md"
+                >
                     <DropdownMenuItem
                         onClick={() => openDetail(c)}
                         className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-bold tracking-tight text-slate-600 uppercase"
@@ -381,8 +383,8 @@ function ContractPage({
     );
 
     const updateContract = useCallback(
-        (c: Contract) => {
-            router.reload({ preserveScroll: true, preserveState: true } as any);
+        (c: Contract, silent = false) => {
+            if (!silent) router.reload({ preserveScroll: true, preserveState: true } as any);
             if (selected?.id === c.id) setSelected(c);
         },
         [selected?.id],
@@ -449,18 +451,107 @@ function ContractPage({
         }
     };
 
-    const handleUpdate = async (data: any) => {
+    const handleExportTimelinePdf = async () => {
         if (!selected) return;
-        setProcessing(true);
+        setIsExportingTimeline(true);
+        setTimelinePdfJobStatus({ progress: 0, status: 'pending' });
+
+        // Open window immediately to avoid pop-up blocker
+        const win = window.open('about:blank', '_blank');
+        (window as any)._timelineWindow = win;
+        if (win) {
+            win.document.write(`
+                <html>
+                    <head>
+                        <title>Mempersiapkan Alur Approval...</title>
+                        <style>
+                            body { font-family: 'Inter', sans-serif; background: #f8fafc; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; color: #1e293b; }
+                            .card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); text-align: center; border: 1px solid #e2e8f0; max-width: 400px; }
+                            .loader { width: 48px; height: 48px; border: 5px solid #f1f5f9; border-top: 5px solid #0f172a; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 24px; }
+                            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                            h2 { font-size: 14px; font-weight: 900; letter-spacing: 0.15em; text-transform: uppercase; margin: 0 0 12px; }
+                            p { font-size: 11px; color: #64748b; font-weight: 500; line-height: 1.6; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="card">
+                            <div class="loader"></div>
+                            <h2>Mempersiapkan Laporan Approval</h2>
+                            <p>Mohon tunggu sebentar, data alur approval sedang dikonversi menjadi PDF. Halaman ini akan otomatis beralih ke dokumen setelah siap.</p>
+                        </div>
+                    </body>
+                </html>
+            `);
+            win.document.close();
+        }
+
+        try {
+            const res = await axios.get(`/api/contracts/${selected.id}/approval/pdf/queue`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' },
+                withCredentials: true,
+            });
+
+            const jobId = res.data.job_id;
+            setTimelinePdfJobId(jobId);
+
+            const interval = setInterval(async () => {
+                try {
+                    const statusRes = await axios.get(`/admin/form-templates/pdf-status/${jobId}`, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' },
+                        withCredentials: true,
+                    });
+                    const statusData = statusRes.data;
+                    setTimelinePdfJobStatus(statusData);
+
+                    showProgress(jobId, 'Mempersiapkan Laporan Approval...', statusData.progress || 0);
+
+                    if (statusData.status === 'completed') {
+                        clearInterval(interval);
+                        if ((window as any)._timelineWindow) {
+                            (window as any)._timelineWindow.location.href = statusData.url;
+                            (window as any)._timelineWindow = null;
+                        } else {
+                            window.open(statusData.url, '_blank');
+                        }
+                        setIsExportingTimeline(false);
+                        setTimelinePdfJobId(null);
+                        hideProgress(jobId);
+                    } else if (statusData.status === 'failed') {
+                        clearInterval(interval);
+                        setIsExportingTimeline(false);
+                        setTimelinePdfJobId(null);
+                        hideProgress(jobId);
+                        showToast('Export PDF gagal: ' + (statusData.error || 'Unknown error'), 'danger');
+                        if ((window as any)._timelineWindow) {
+                            (window as any)._timelineWindow.close();
+                            (window as any)._timelineWindow = null;
+                        }
+                    }
+                } catch (pollErr) {
+                    console.error('Polling error', pollErr);
+                }
+            }, 2000);
+        } catch (err: any) {
+            console.error('Export failed', err);
+            setIsExportingTimeline(false);
+            showToast('Gagal mengekspor PDF.', 'danger');
+        }
+    };
+
+    const handleUpdate = async (data: any, silent = false) => {
+        if (!selected) return;
+        if (!silent) setProcessing(true);
         try {
             const c = await contractApi.update(selected.id, data);
-            updateContract(c);
-            setEditOpen(false);
-            showToast('Informasi kontrak diperbarui.', 'success');
+            updateContract(c, silent);
+            if (!silent) {
+                setEditOpen(false);
+                showToast('Informasi kontrak diperbarui.', 'success');
+            }
         } catch {
-            showToast('Gagal memperbarui kontrak.', 'danger');
+            if (!silent) showToast('Gagal memperbarui kontrak.', 'danger');
         } finally {
-            setProcessing(false);
+            if (!silent) setProcessing(false);
         }
     };
 
@@ -494,27 +585,31 @@ function ContractPage({
     return (
         <>
             <Head title={currentView} />
-            <div className="bg-background/20 flex min-h-0 flex-1 flex-col gap-4 p-4">
+            <div className="bg-background dark:bg-background/50 flex min-h-0 flex-1 flex-col">
                 {selected ? (
-                    <div className="flex flex-1 flex-col gap-4">
+                    <div className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-6 p-4">
                         <div className="flex flex-col gap-2 px-1 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-6">
                                 <button
                                     onClick={closeDetail}
-                                    className="text-muted-foreground hover:text-foreground mb-1 flex w-fit items-center gap-2 text-[10px] font-black tracking-widest uppercase transition-colors"
+                                    className="flex items-center gap-2 text-black transition-all hover:opacity-70 active:scale-95 dark:text-white"
                                 >
-                                    <i className="fa-solid fa-arrow-left" /> Kembali
+                                    <ChevronLeft size={20} strokeWidth={2.5} />
+                                    <span className="text-[10px] font-bold tracking-widest uppercase">Kembali</span>
                                 </button>
-                                <div className="flex flex-col gap-3">
-                                    <div className="flex flex-wrap items-center gap-3">
-                                        <h2 className="text-foreground text-2xl font-black tracking-tight">{selected.title}</h2>
+
+                                <div className="h-10 w-px bg-black/10 dark:bg-white/10" />
+
+                                <div className="flex flex-col">
+                                    <div className="flex items-center gap-3">
+                                        <h2 className="text-lg leading-none font-bold tracking-tight text-black uppercase dark:text-white">
+                                            {selected.title}
+                                        </h2>
                                         <StatusBadge status={selected.status} />
                                     </div>
-                                    <div className="flex flex-col gap-1.5">
-                                        <span className="flex w-fit items-center gap-1.5 rounded-md bg-slate-100 px-2 py-0.5 font-mono text-[10px] font-bold text-slate-500 ring-1 ring-slate-200">
-                                            <i className="fa-solid fa-hashtag text-[8px]" /> {selected.contract_no || 'NO REQ'}
-                                        </span>
-                                    </div>
+                                    <span className="mt-1.5 text-[10px] font-bold tracking-[0.2em] text-black/40 uppercase dark:text-white/40">
+                                        #{selected.contract_no || 'NO-REQ'}
+                                    </span>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -526,86 +621,78 @@ function ContractPage({
                                 {selected.status === 'draft' && (
                                     <button
                                         onClick={() => setSendOpen(true)}
-                                        className="bg-primary text-primary-foreground shadow-primary/20 hover:shadow-primary/30 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-bold shadow-md transition-all active:scale-95"
+                                        className="inline-flex items-center gap-2 rounded-lg bg-black px-6 py-2.5 text-[11px] font-bold tracking-wider text-white uppercase shadow-lg transition-all hover:opacity-90 active:scale-95 dark:bg-white dark:text-black"
                                     >
-                                        <i className="fa-solid fa-paper-plane" /> Kirim Approval
+                                        <Send size={14} /> Kirim Approval
                                     </button>
                                 )}
-                                <button
-                                    onClick={() => setDeleteOpen(true)}
-                                    className="border-border bg-card text-muted-foreground inline-flex h-9 w-9 items-center justify-center rounded-lg border shadow-sm transition-all hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 active:scale-95"
-                                >
-                                    <i className="fa-solid fa-trash-can" />
-                                </button>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <button className="dark:bg-sidebar inline-flex h-10 w-10 items-center justify-center rounded-lg border border-black/20 bg-white text-black transition-all hover:bg-black/5 active:scale-95 dark:border-white/20 dark:text-white dark:hover:bg-white/5">
+                                            <MoreVertical size={18} />
+                                        </button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent
+                                        align="end"
+                                        className="dark:bg-sidebar w-56 rounded-xl border-black/10 bg-white p-1.5 shadow-2xl dark:border-white/10"
+                                    >
+                                        <div className="mb-1 px-2 py-1.5">
+                                            <p className="text-[10px] font-bold tracking-widest text-black/40 uppercase dark:text-white/40">
+                                                Opsi Kontrak
+                                            </p>
+                                        </div>
+                                        <DropdownMenuItem
+                                            onClick={() => {
+                                                handleUpdate({}, true);
+                                            }}
+                                            className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-bold tracking-tight text-black uppercase focus:bg-black/5 dark:text-white dark:focus:bg-white/5"
+                                        >
+                                            <Save size={14} className="text-black dark:text-white" /> Paksa Simpan (Force Sync)
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-bold tracking-tight text-black uppercase focus:bg-black/5 dark:text-white dark:focus:bg-white/5">
+                                            <Archive size={14} className="text-black/40 dark:text-white/40" /> Arsipkan Kontrak
+                                        </DropdownMenuItem>
+                                        <div className="my-1.5 h-px bg-black/10 dark:bg-white/10" />
+                                        <DropdownMenuItem
+                                            onClick={() => setDeleteOpen(true)}
+                                            className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-bold tracking-tight text-rose-500 uppercase focus:bg-rose-500 focus:text-white"
+                                        >
+                                            <Trash2 size={14} /> Hapus Kontrak
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </div>
                         </div>
 
-                        <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
+                        <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[1fr_400px]">
                             <div className="flex flex-col gap-6">
-                                <div className="bg-card border-border overflow-hidden rounded-xl border shadow-sm">
-                                    <div className="border-border/50 flex flex-wrap border-b bg-slate-50/50 p-0.5">
-                                        <button
-                                            onClick={() => setDetailTab('form_template')}
-                                            className={cn(
-                                                'rounded-md px-4 py-2 text-[10px] font-black tracking-widest uppercase transition-all',
-                                                detailTab === 'form_template'
-                                                    ? 'text-primary bg-white shadow-sm'
-                                                    : 'text-muted-foreground hover:bg-white/50',
-                                            )}
-                                        >
-                                            Formulir F1
-                                        </button>
-                                        <button
-                                            onClick={() => setDetailTab('f2')}
-                                            className={cn(
-                                                'rounded-md px-4 py-2 text-[10px] font-black tracking-widest uppercase transition-all',
-                                                detailTab === 'f2' ? 'text-primary bg-white shadow-sm' : 'text-muted-foreground hover:bg-white/50',
-                                            )}
-                                        >
-                                            Formulir F2
-                                        </button>
-                                        <button
-                                            onClick={() => setDetailTab('agreement')}
-                                            className={cn(
-                                                'rounded-md px-4 py-2 text-[10px] font-black tracking-widest uppercase transition-all',
-                                                detailTab === 'agreement'
-                                                    ? 'text-primary bg-white shadow-sm'
-                                                    : 'text-muted-foreground hover:bg-white/50',
-                                            )}
-                                        >
-                                            Agreement
-                                        </button>
-                                        <button
-                                            onClick={() => setDetailTab('attachments')}
-                                            className={cn(
-                                                'rounded-md px-4 py-2 text-[10px] font-black tracking-widest uppercase transition-all',
-                                                detailTab === 'attachments'
-                                                    ? 'text-primary bg-white shadow-sm'
-                                                    : 'text-muted-foreground hover:bg-white/50',
-                                            )}
-                                        >
-                                            Lampiran
-                                        </button>
-                                        <button
-                                            onClick={() => setDetailTab('audit')}
-                                            className={cn(
-                                                'rounded-md px-4 py-2 text-[10px] font-black tracking-widest uppercase transition-all',
-                                                detailTab === 'audit' ? 'text-primary bg-white shadow-sm' : 'text-muted-foreground hover:bg-white/50',
-                                            )}
-                                        >
-                                            Audit Trail
-                                        </button>
-                                        <button
-                                            onClick={() => setDetailTab('chat')}
-                                            className={cn(
-                                                'rounded-md px-4 py-2 text-[10px] font-black tracking-widest uppercase transition-all',
-                                                detailTab === 'chat' ? 'text-primary bg-white shadow-sm' : 'text-muted-foreground hover:bg-white/50',
-                                            )}
-                                        >
-                                            Chat
-                                        </button>
+                                <div className="dark:bg-sidebar overflow-hidden rounded-xl border border-black/10 bg-white dark:border-white">
+                                    <div className="dark:bg-sidebar/50 flex flex-wrap gap-1 border-b border-black/10 bg-white p-1 dark:border-white">
+                                        {[
+                                            { id: 'form_template', label: 'F1' },
+                                            { id: 'f2', label: 'F2' },
+                                            { id: 'agreement', label: 'Agreement' },
+                                            { id: 'attachments', label: 'Lampiran' },
+                                            { id: 'audit', label: 'Audit Trail' },
+                                            { id: 'timeline', label: 'Alur Approval' },
+                                            { id: 'references', label: 'Referensi' },
+                                            { id: 'chat', label: 'Chat' },
+                                        ].map((tab) => (
+                                            <button
+                                                key={tab.id}
+                                                onClick={() => setDetailTab(tab.id as any)}
+                                                className={cn(
+                                                    'rounded-md px-4 py-2 text-[10px] font-bold tracking-widest uppercase transition-all duration-200',
+                                                    detailTab === tab.id
+                                                        ? 'bg-[#0f172a] text-white shadow-md dark:bg-white dark:text-[#0f172a]'
+                                                        : 'text-black/40 hover:text-black dark:text-white/40 dark:hover:text-white',
+                                                )}
+                                            >
+                                                {tab.label}
+                                            </button>
+                                        ))}
                                     </div>
-                                    <div className={cn("flex-1 flex flex-col min-h-[1000px]", detailTab !== 'agreement' && "p-4")}>
+                                    <div className={cn('flex min-h-[600px] flex-1 flex-col', detailTab !== 'agreement' && 'p-5')}>
                                         {detailTab === 'form_template' && (
                                             <FormSubmissionTab
                                                 docType="f1"
@@ -627,6 +714,22 @@ function ContractPage({
                                             <ContractAttachments contract={selected} onUpdated={updateContract} showToast={showToast} />
                                         )}
                                         {detailTab === 'audit' && <ContractAuditTrail contract={selected} />}
+                                        {detailTab === 'timeline' && (
+                                            <ApprovalSteps
+                                                contract={selected}
+                                                approvals={selected.approvals}
+                                                creator={selected.creator}
+                                                submittedAt={selected.submitted_at ?? undefined}
+                                            />
+                                        )}
+                                        {detailTab === 'references' && (
+                                            <ContractReferenceCard
+                                                selected={selected}
+                                                canUpdate={!!canUpdate}
+                                                onUpdate={(d) => handleUpdate(d, true)}
+                                                processing={processing}
+                                            />
+                                        )}
                                         {detailTab === 'chat' && <ContractChat contract={selected} meId={meId} onNewMessage={updateContract} />}
                                     </div>
                                 </div>
@@ -639,172 +742,70 @@ function ContractPage({
                                     vendors={vendors}
                                     formTemplates={formTemplates}
                                     canUpdate={!!canUpdate}
-                                    onUpdate={handleUpdate}
+                                    onUpdate={(d) => handleUpdate(d, true)}
                                     processing={processing}
                                     setPreviewTitle={setPreviewTitle}
                                     setPreviewUrl={setPreviewUrl}
                                     setPreviewHasFile={setPreviewHasFile}
                                     setPreviewOpen={setPreviewOpen}
-                                />
-                                <ContractReferenceCard selected={selected} canUpdate={!!canUpdate} onUpdate={handleUpdate} processing={processing} />
-
-                                <div className="bg-card border-border overflow-hidden rounded-xl border shadow-sm">
-                                    <div className="border-border/50 flex items-center gap-2 border-b bg-slate-50/50 p-3.5 text-[10px] font-black tracking-[0.2em] uppercase">
-                                        <i className="fa-solid fa-timeline text-primary" /> Alur Approval
-                                    </div>
-                                    <div className="p-4">
-                                        <ApprovalSteps
-                                            approvals={selected.approvals}
-                                            creator={selected.creator}
-                                            submittedAt={selected.submitted_at ?? undefined}
-                                        />
-                                    </div>
-                                </div>
-
-                                {hasAnyPending && (
-                                    <div className="bg-card border-border overflow-hidden rounded-xl border shadow-sm">
-                                        <div className="border-border/50 flex items-center gap-2 border-b bg-slate-50/50 p-3.5 text-[10px] font-black tracking-[0.2em] uppercase">
-                                            <i className="fa-solid fa-bolt text-amber-500" /> Aksi Approval
-                                        </div>
-                                        <div className="p-4">
-                                            {canApprove ? (
-                                                <div className="flex flex-col gap-3">
-                                                    <div className="relative">
-                                                        <textarea
-                                                            value={approvalNote}
-                                                            onChange={(e) => setApprovalNote(e.target.value)}
-                                                            rows={3}
-                                                            placeholder="Tambahkan catatan (Minimal 10 karakter)..."
-                                                            className={cn(
-                                                                'border-border focus:border-primary/50 w-full resize-none rounded-xl bg-slate-50/50 p-3 text-sm font-medium transition-all outline-none',
-                                                                approvalNote.length > 0 && approvalNote.length < 10
-                                                                    ? 'border-amber-200 ring-1 ring-amber-100'
-                                                                    : '',
-                                                            )}
-                                                        />
-                                                        {approvalNote.length > 0 && approvalNote.length < 10 && (
-                                                            <div className="absolute right-3 bottom-2 animate-pulse text-[9px] font-bold text-amber-500">
-                                                                {10 - approvalNote.length} karakter lagi
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <div className="flex gap-2">
-                                                        <button
-                                                            onClick={handleApprove}
-                                                            disabled={approvalNote.length < 10}
-                                                            className="bg-primary text-primary-foreground flex-3 rounded-lg py-2.5 text-xs font-bold shadow-md transition-all active:scale-95 disabled:scale-100 disabled:opacity-30 disabled:grayscale"
-                                                        >
-                                                            <i className="fa-solid fa-check mr-1.5" /> Setujui
-                                                        </button>
-                                                        <button
-                                                            onClick={handleReject}
-                                                            disabled={approvalNote.length < 10}
-                                                            className="flex-2 rounded-lg bg-rose-600 py-2.5 text-xs font-bold text-white shadow-md transition-all active:scale-95 disabled:scale-100 disabled:opacity-30 disabled:grayscale"
-                                                        >
-                                                            <i className="fa-solid fa-xmark mr-1.5" /> Tolak
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="p-1">
-                                                    <div className="mb-4 ml-1 text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase italic">
-                                                        Menunggu Approval Dari
-                                                    </div>
-                                                    <div className="space-y-4">
-                                                        {selected?.approvals
-                                                            .filter((a) => a.status === 'pending')
-                                                            .slice(0, approversExpanded ? undefined : 1)
-                                                            .map((a, i, arr) => (
-                                                                <div key={i} className="animate-in fade-in slide-in-from-top-1 relative flex gap-3">
-                                                                    {((!approversExpanded && i < 0) ||
-                                                                        (approversExpanded &&
-                                                                            i <
-                                                                                selected.approvals.filter((a) => a.status === 'pending').length -
-                                                                                    1)) && (
-                                                                        <div className="absolute top-8 bottom-0 left-3.5 w-px bg-slate-100" />
-                                                                    )}
-                                                                    <div className="relative z-10 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-amber-200 bg-amber-50 text-amber-600 shadow-sm">
-                                                                        <i className="fa-solid fa-clock text-[10px]" />
-                                                                    </div>
-                                                                    <div className="flex-1 pt-0.5">
-                                                                        <div className="text-xs leading-tight font-bold text-slate-900">
-                                                                            {a.approver?.name || a.approver_name}
-                                                                        </div>
-                                                                        <div className="mt-1 text-[10px] leading-none font-medium tracking-wider whitespace-nowrap text-slate-400 uppercase">
-                                                                            {a.role || 'Approver'}{' '}
-                                                                            {a.approver?.department?.name ? `· ${a.approver.department.name}` : ''}
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            ))}
-                                                    </div>
-
-                                                    {selected?.approvals.filter((a) => a.status === 'pending').length > 1 && (
-                                                        <button
-                                                            onClick={() => setApproversExpanded(!approversExpanded)}
-                                                            className="text-primary hover:text-primary/70 mt-5 w-full border-t border-slate-50 py-2 text-center text-[9px] font-black tracking-widest uppercase transition-colors"
-                                                        >
-                                                            {approversExpanded
-                                                                ? 'Sembunyikan'
-                                                                : `Lihat ${selected.approvals.filter((a) => a.status === 'pending').length - 1} Orang Lainnya`}
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
+                                />{' '}
                             </div>
                         </div>
                     </div>
                 ) : (
-                    <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-4 p-4">
                         {view === 'dashboard' && <DashboardMetrics metrics={metrics} roles={roles} departments={departments} filters={filters} />}
                         {view === 'profile' && <ProfileView meUser={meUser} showToast={showToast} />}
                         {view !== 'profile' && view !== 'dashboard' && (
-                            <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden rounded-2xl border border-slate-100 bg-white">
+                            <div className="border-sidebar-border bg-sidebar flex min-h-0 flex-1 flex-col gap-0 overflow-hidden">
                                 {/* Unified Toolbar — Identical for both modes */}
-                                <div className="sticky top-0 z-20 flex items-center gap-6 border-b border-slate-100 bg-white px-5 py-4">
+                                <div className="border-sidebar-border bg-sidebar sticky top-0 z-20 flex items-center gap-6 border-b px-5 py-4">
                                     <div className="relative max-w-sm flex-1">
-                                        <Search className="absolute top-1/2 left-3.5 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                                        <Search className="absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-black dark:text-white" />
                                         <Input
                                             placeholder="Cari berdasarkan judul atau nomor..."
-                                            className="h-10 rounded-none border-r-0 border-slate-100 bg-slate-50/50 pl-10 text-[11px] font-medium transition-all placeholder:text-slate-400 focus:border-black focus-visible:ring-0 focus-visible:ring-offset-0"
+                                            className="dark:bg-sidebar h-10 rounded-lg border border-black bg-white pl-10 text-[12px] font-medium text-black transition-all placeholder:text-gray-600 focus:border-black focus-visible:ring-0 focus-visible:ring-offset-0 dark:border-white dark:text-white dark:placeholder:text-white dark:focus:border-white"
                                             value={search}
                                             onChange={(e) => setSearch(e.target.value)}
                                         />
                                     </div>
 
-                                    <div className="ml-auto flex items-center gap-1.5">
-                                        {/* Layout Toggle — Monochrome Compact */}
-                                        <div className="mr-2 flex rounded-none border border-slate-100 bg-slate-50 p-0.5">
+                                    <div className="ml-auto flex items-center gap-2">
+                                        {/* Layout Toggle — Modern Compact */}
+                                        <div className="border-sidebar-border bg-sidebar-accent flex rounded-lg border p-1">
                                             <button
                                                 onClick={() => setLayout('table')}
                                                 className={cn(
-                                                    'flex h-8 w-8 items-center justify-center transition-all',
-                                                    (layout as string) === 'table' ? 'bg-black text-white' : 'text-slate-400 hover:text-black',
+                                                    'flex h-8 items-center gap-2 rounded-md px-3 text-[11px] font-semibold transition-all',
+                                                    (layout as string) === 'table'
+                                                        ? 'bg-sidebar-primary text-white shadow-md'
+                                                        : 'text-black hover:text-black dark:text-white dark:hover:text-white',
                                                 )}
                                             >
-                                                <MoreVertical size={14} className="rotate-90" />
+                                                <LayoutList size={14} />
+                                                Table
                                             </button>
                                             <button
                                                 onClick={() => setLayout('grid')}
                                                 className={cn(
-                                                    'flex h-8 w-8 items-center justify-center transition-all',
-                                                    (layout as string) === 'grid' ? 'bg-black text-white' : 'text-slate-400 hover:text-black',
+                                                    'flex h-8 items-center gap-2 rounded-md px-3 text-[11px] font-semibold transition-all',
+                                                    (layout as string) === 'grid'
+                                                        ? 'bg-sidebar-primary text-white shadow-md'
+                                                        : 'text-black hover:text-black dark:text-white dark:hover:text-white',
                                                 )}
                                             >
                                                 <LayoutGrid size={14} />
+                                                Grid
                                             </button>
                                         </div>
 
                                         <button
                                             onClick={() => setFilterOpen(true)}
                                             className={cn(
-                                                'relative flex h-10 items-center gap-2 rounded-none border border-slate-100 bg-white px-4 text-[10px] font-black tracking-widest uppercase transition-all hover:bg-slate-50 active:scale-95',
+                                                'border-sidebar-border dark:bg-sidebar-accent hover:border-sidebar-primary relative flex h-10 items-center gap-2 rounded-lg border bg-white px-4 text-[11px] font-semibold transition-all active:scale-95',
                                                 filters.status?.length || filters.contract_type_id?.length
-                                                    ? 'border-black bg-black text-white'
-                                                    : 'text-slate-500',
+                                                    ? 'border-sidebar-primary bg-sidebar-primary text-white'
+                                                    : 'text-black/80 dark:text-white/80',
                                             )}
                                         >
                                             <Filter size={14} />
@@ -816,7 +817,7 @@ function ContractPage({
                                                       ? 1
                                                       : 0) >
                                                 0 && (
-                                                <span className="ml-1 flex h-4 w-4 items-center justify-center rounded-none bg-white text-[9px] font-black text-black">
+                                                <span className="text-sidebar-primary ml-1 flex h-4 min-w-[16px] items-center justify-center rounded-md bg-white px-1 text-[9px] font-bold">
                                                     {(Array.isArray(filters.status) ? filters.status.length : filters.status ? 1 : 0) +
                                                         (Array.isArray(filters.contract_type_id)
                                                             ? filters.contract_type_id.length
@@ -828,9 +829,9 @@ function ContractPage({
                                         </button>
                                         <button
                                             onClick={() => setCreateOpen(true)}
-                                            className="flex h-10 items-center gap-2 rounded-none bg-black px-6 text-[10px] font-black tracking-widest text-white uppercase transition-all hover:bg-slate-800 active:scale-95"
+                                            className="bg-sidebar-primary shadow-sidebar-primary/20 flex h-10 items-center gap-2 rounded-lg px-6 text-[12px] font-bold text-white shadow-lg transition-all hover:opacity-90 active:scale-95"
                                         >
-                                            <i className="fa-solid fa-plus text-[10px]" /> Kontrak Baru
+                                            <PlusCircle size={16} /> Kontrak Baru
                                         </button>
                                     </div>
                                 </div>
@@ -839,7 +840,9 @@ function ContractPage({
                                     {layout === 'table' ? (
                                         <DataTable
                                             columns={columns}
-                                            data={contracts}
+                                            data={contractsPaged.data}
+                                            loading={false}
+                                            searchPlaceholder="Cari data..."
                                             onRowClick={openDetail}
                                             pagination={{
                                                 currentPage: contractsPaged.current_page,
@@ -863,57 +866,50 @@ function ContractPage({
                                             }}
                                         />
                                     ) : (
-                                        <div className="flex flex-col gap-6 p-5">
-                                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                        <div className="flex flex-col gap-8 p-6">
+                                            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                                                 {contracts.map((c) => (
                                                     <div
                                                         key={c.id}
                                                         onClick={() => openDetail(c)}
-                                                        className="group flex cursor-pointer flex-col gap-3 border border-slate-100 bg-white p-4 shadow-sm transition-all hover:border-black hover:shadow-md"
+                                                        className="group border-sidebar-border bg-sidebar hover:border-sidebar-primary hover:shadow-sidebar-primary/10 dark:hover:bg-sidebar-accent/10 relative flex cursor-pointer flex-col gap-4 rounded-xl border p-5 transition-all hover:shadow-xl"
                                                     >
                                                         <div className="flex items-start justify-between gap-3">
-                                                            <div className="flex min-w-0 flex-col">
-                                                                <span className="font-mono text-[9px] font-bold tracking-tight text-slate-400 uppercase transition-all group-hover:text-slate-600">
-                                                                    {c.contract_no || 'NO NUMBER'}
+                                                            <div className="flex min-w-0 flex-col gap-1">
+                                                                <span className="group-hover:text-sidebar-primary text-[10px] font-medium text-black/40 transition-all dark:text-white/40">
+                                                                    {c.contract_no || 'No Req'}
                                                                 </span>
-                                                                <h3 className="line-clamp-1 text-sm leading-tight font-black tracking-tight transition-all group-hover:text-black">
+                                                                <h3 className="group-hover:text-sidebar-primary line-clamp-2 text-[12px] leading-tight font-semibold text-black transition-colors dark:text-white">
                                                                     {c.title}
                                                                 </h3>
+                                                                <span className="mt-0.5 text-[10px] font-medium text-black/30 dark:text-white/30">
+                                                                    {c.contract_type}
+                                                                </span>
                                                             </div>
-                                                            <div className="flex-shrink-0">
+                                                            <div className="flex-shrink-0 origin-top-right scale-90">
                                                                 <StatusBadge status={c.status} />
                                                             </div>
                                                         </div>
 
-                                                        <div className="flex items-center gap-4 overflow-hidden border-y border-slate-50 py-1.5 transition-all group-hover:border-slate-200">
-                                                            <div className="flex min-w-[90px] flex-col gap-0">
-                                                                <span className="text-[8px] font-black text-slate-300 uppercase group-hover:text-slate-400">
+                                                        <div className="border-sidebar-border/50 bg-sidebar-accent/30 dark:bg-sidebar-accent/10 group-hover:border-sidebar-primary/20 flex flex-col gap-3 rounded-lg border p-3 transition-all">
+                                                            <div className="flex items-center justify-between">
+                                                                <span className="text-[10px] font-medium text-black/40 dark:text-white/40">
                                                                     Departemen
                                                                 </span>
-                                                                <span className="truncate text-[9px] font-bold text-slate-600 transition-all group-hover:text-black">
-                                                                    {c.initiator?.department_name || 'UMUM'}
+                                                                <span className="truncate text-[11px] font-semibold text-black dark:text-white">
+                                                                    {c.initiator?.department_name || 'Umum'}
                                                                 </span>
                                                             </div>
-                                                            <div className="flex flex-1 flex-col gap-1 pr-1">
-                                                                <div className="h-1 w-full overflow-hidden rounded-none bg-slate-100">
-                                                                    <div className="h-full bg-black" style={{ width: `${c.progress.pct}%` }} />
-                                                                </div>
-                                                                <span className="self-end text-[8px] font-black text-slate-400 transition-all group-hover:text-black">
-                                                                    {c.progress.pct}%
+                                                            <div className="flex items-center justify-between pt-1 text-[11px] font-medium">
+                                                                <span className="text-black/40 dark:text-white/40">Progress</span>
+                                                                <span className="font-semibold text-black dark:text-white">
+                                                                    {c.progress.done}/{c.progress.total}
                                                                 </span>
                                                             </div>
                                                         </div>
 
-                                                        <div className="mt-auto flex items-center justify-between">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="text-[9px] font-black text-slate-300 uppercase group-hover:text-slate-400">
-                                                                    Masa Berlaku:
-                                                                </span>
-                                                                <span className="text-[10px] font-bold text-slate-700 transition-all group-hover:text-black">
-                                                                    {c.end_date || '—'}
-                                                                </span>
-                                                            </div>
-                                                            <div className="origin-right scale-90">
+                                                        <div className="border-sidebar-border/50 mt-auto flex items-center justify-end border-t pt-4">
+                                                            <div className="origin-right scale-75">
                                                                 <SLACountdown deadline={c.sla_deadline ?? null} status={c.status} />
                                                             </div>
                                                         </div>
@@ -922,13 +918,14 @@ function ContractPage({
                                             </div>
 
                                             {/* Grid Pagination Footer — Standardizing with DataTable logic */}
-                                            <div className="mt-8 flex w-full flex-col items-center justify-between gap-4 border-t border-slate-100 pt-6 pb-10 sm:flex-row">
-                                                <div className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">
-                                                    Showing <span className="text-black">{contractsPaged.from}</span> to{' '}
-                                                    <span className="text-black">{contractsPaged.to}</span> of{' '}
-                                                    <span className="text-black">{contractsPaged.total}</span> Results
+                                            <div className="border-sidebar-border mt-4 flex w-full flex-col items-center justify-between gap-4 border-t pt-6 pb-10 sm:flex-row">
+                                                <div className="text-[11px] font-medium text-black/40 dark:text-white/40">
+                                                    Menampilkan{' '}
+                                                    <span className="font-semibold text-black dark:text-white">{contractsPaged.from}</span> sampai{' '}
+                                                    <span className="font-semibold text-black dark:text-white">{contractsPaged.to}</span> dari{' '}
+                                                    <span className="font-semibold text-black dark:text-white">{contractsPaged.total}</span> data
                                                 </div>
-                                                <div className="flex items-center gap-1">
+                                                <div className="flex items-center gap-2">
                                                     <button
                                                         disabled={contractsPaged.current_page === 1}
                                                         onClick={() =>
@@ -938,10 +935,19 @@ function ContractPage({
                                                                 { preserveState: true },
                                                             )
                                                         }
-                                                        className="h-8 rounded border border-slate-100 px-3 text-[10px] font-black uppercase active:scale-95 disabled:opacity-30"
+                                                        className="border-sidebar-border bg-sidebar hover:border-sidebar-primary hover:text-sidebar-primary h-9 rounded-lg border px-4 text-[11px] font-semibold text-black/40 transition-all active:scale-95 disabled:pointer-events-none disabled:opacity-50 dark:text-white"
                                                     >
-                                                        Prev
+                                                        Sebelumnya
                                                     </button>
+                                                    <div className="flex items-center gap-1.5 px-3">
+                                                        <span className="text-sidebar-primary text-[11px] font-bold">
+                                                            {contractsPaged.current_page}
+                                                        </span>
+                                                        <span className="text-[11px] font-bold text-black/20 dark:text-white/20">/</span>
+                                                        <span className="text-[11px] font-bold text-black/40 dark:text-white/40">
+                                                            {contractsPaged.last_page}
+                                                        </span>
+                                                    </div>
                                                     <button
                                                         disabled={contractsPaged.current_page === contractsPaged.last_page}
                                                         onClick={() =>
@@ -951,9 +957,9 @@ function ContractPage({
                                                                 { preserveState: true },
                                                             )
                                                         }
-                                                        className="h-8 rounded border border-slate-100 px-3 text-[10px] font-black uppercase active:scale-95 disabled:opacity-30"
+                                                        className="border-sidebar-border bg-sidebar hover:border-sidebar-primary hover:text-sidebar-primary h-9 rounded-lg border px-4 text-[11px] font-semibold text-black/40 transition-all active:scale-95 disabled:pointer-events-none disabled:opacity-20 dark:text-white/40"
                                                     >
-                                                        Next
+                                                        Berikutnya
                                                     </button>
                                                 </div>
                                             </div>
@@ -1064,7 +1070,42 @@ function ContractPage({
                 processing={processing}
             />
             <PreviewModal open={previewOpen} onClose={() => setPreviewOpen(false)} title={previewTitle} url={previewUrl} hasFile={previewHasFile} />
-            <FloatingChat contracts={contracts} meId={meId} onContractUpdated={updateContract} />
+            {timelinePdfPreviewUrl && (
+                <div className="bg-background/90 animate-in fade-in zoom-in-95 fixed inset-0 z-[100] flex flex-col backdrop-blur-xl duration-300">
+                    <div className="border-border flex h-16 items-center justify-between border-b bg-slate-50 px-6">
+                        <div className="flex flex-col">
+                            <h3 className="text-foreground flex items-center gap-2 text-sm font-bold tracking-widest uppercase">
+                                <i className="fa-solid fa-file-pdf text-rose-500" /> Export Alur Approval
+                            </h3>
+                            <span className="text-muted-foreground text-[10px] font-bold">{selected?.contract_no} — Generation Complete</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <a
+                                href={timelinePdfPreviewUrl}
+                                download={`Alur_Approval_${selected?.id}.pdf`}
+                                className="flex items-center gap-2 rounded-md bg-indigo-600 px-6 py-2 text-xs font-bold tracking-widest text-white uppercase shadow-xl shadow-indigo-500/20 transition-all hover:bg-indigo-700"
+                            >
+                                <Download size={14} /> Download PDF
+                            </a>
+                            <button
+                                onClick={() => setTimelinePdfPreviewUrl(null)}
+                                className="text-foreground rounded-md border border-slate-200 bg-white px-4 py-2 text-xs font-bold tracking-widest uppercase transition-all hover:bg-slate-50"
+                            >
+                                Tutup
+                            </button>
+                        </div>
+                    </div>
+                    <div className="flex flex-1 justify-center overflow-hidden p-8">
+                        <div className="ring-border animate-in slide-in-from-bottom-5 fill-mode-both h-full w-full max-w-[210mm] overflow-hidden rounded-sm bg-white shadow-2xl ring-1 delay-150 duration-500">
+                            <iframe
+                                src={`${timelinePdfPreviewUrl}#toolbar=0&navpanes=0`}
+                                className="h-full w-full border-none"
+                                title="Approval Timeline Preview"
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }
@@ -1083,93 +1124,97 @@ export default function ContractsIndex({
     departments = [],
     roles = [],
 }: any) {
-    const { auth, contractId: initialId } = usePage<{ auth: { user: any }; contractId?: string }>().props;
+    const { auth } = usePage<{ auth: { user: any } }>().props;
     const meId = auth?.user?.id ?? '';
     const meUser = auth?.user ?? null;
+
+    // Use state to manage current data, but sync with props from Inertia
     const [contractsPaged, setContractsPaged] = useState<PaginatedData<Contract>>(initialContractsPaged);
     const [types, setTypes] = useState<ContractType[]>(initialTypes);
     const [submissionTypes, setSubmissionTypes] = useState<any[]>(initialSubmissionTypes);
-    const [bootLoading, setBootLoading] = useState(initialContractsPaged.data.length === 0 && !initialMetrics && !initialSelectedProp);
-    const [initialSelected, setInitialSelected] = useState<Contract | null>(initialSelectedProp);
     const [metrics, setMetrics] = useState<any>(initialMetrics);
+    
+    // Boot loading state: only true if we have NO data AND we are not already showing a specific contract
+    const [bootLoading, setBootLoading] = useState(
+        initialContractsPaged.data.length === 0 && 
+        !initialMetrics && 
+        !initialSelectedProp &&
+        initialTypes.length === 0
+    );
 
-    // Sync state when props change (for navigation between views)
+    // Sync props to state when they change (Inertia partial reloads or navigation)
     useEffect(() => {
-        if (initialSelectedProp) {
-            setInitialSelected(initialSelectedProp);
-        }
-    }, [initialSelectedProp]);
+        setContractsPaged(initialContractsPaged);
+    }, [initialContractsPaged]);
 
     useEffect(() => {
-        if (initialContractsPaged.data.length > 0 || currentView === 'pending' || currentView === 'mine') {
-            setContractsPaged(initialContractsPaged);
-        }
-    }, [initialContractsPaged, currentView]);
+        if (initialTypes.length > 0) setTypes(initialTypes);
+    }, [initialTypes]);
 
     useEffect(() => {
-        const hasInitialData = initialContractsPaged.data.length > 0 || initialContractsPaged.total > 0;
+        if (initialSubmissionTypes.length > 0) setSubmissionTypes(initialSubmissionTypes);
+    }, [initialSubmissionTypes]);
 
-        if (initialSelectedProp) {
-            setInitialSelected(initialSelectedProp);
-            setBootLoading(false);
-            if (hasInitialData && initialTypes.length > 0) return;
-        } else if (initialId && hasInitialData) {
-            const found = initialContractsPaged.data.find((c: Contract) => c.id === initialId);
-            if (found) {
-                setInitialSelected(found);
-                setBootLoading(false);
-                if (initialTypes.length > 0) return;
-            }
-        } else if (hasInitialData && initialTypes.length > 0) {
+    useEffect(() => {
+        if (initialMetrics) setMetrics(initialMetrics);
+    }, [initialMetrics]);
+
+    // Initial data fetch ONLY if props are truly missing and we are on a list view
+    useEffect(() => {
+        const hasCriticalData = initialContractsPaged.data.length > 0 || initialSelectedProp || initialMetrics;
+        
+        if (hasCriticalData && initialTypes.length > 0) {
             setBootLoading(false);
             return;
         }
 
-        setBootLoading(true);
-        Promise.all([
-            contractApi.list({ view: currentView }),
-            contractApi.getTypes(),
-            axios
-                .get('/admin/api/contracts/submission-types')
-                .then((res) => res.data)
-                .catch(() => []),
-            axios
-                .post('/admin/api/reports/data', {})
-                .then((res) => res.data)
-                .catch(() => null),
-        ])
-            .then(([cData, tData, sData, mData]) => {
+        // If we really need to fetch (e.g. direct URL visit with partial props)
+        if (!hasCriticalData) {
+            setBootLoading(true);
+            Promise.all([
+                contractApi.list({ view: currentView }),
+                contractApi.getTypes(),
+                axios.get('/admin/api/contracts/submission-types').then(res => res.data).catch(() => []),
+                axios.post('/admin/api/reports/data', {}).then(res => res.data).catch(() => null),
+            ]).then(([cData, tData, sData, mData]) => {
                 setContractsPaged(cData as any);
                 setTypes(tData);
                 setSubmissionTypes(sData as any);
                 setMetrics(mData);
-
-                if (initialSelectedProp) {
-                    setInitialSelected(initialSelectedProp);
-                } else if (initialId) {
-                    setInitialSelected(cData.data.find((c: Contract) => c.id === initialId) ?? null);
-                }
-
                 setBootLoading(false);
-            })
-            .catch(() => setBootLoading(false));
-    }, [initialContractsPaged?.total, initialTypes?.length, initialId, currentView, initialSelectedProp?.id]);
+            }).catch(() => setBootLoading(false));
+        } else {
+            setBootLoading(false);
+        }
+    }, [currentView]); // Only re-run if view changes drastically
 
     return (
         <>
             <Head title="Contract Manager" />
             <ToastProvider>
                 {bootLoading ? (
-                    <div className="text-muted-foreground flex h-screen items-center justify-center">
-                        <i className="fa-solid fa-spinner fa-spin text-primary mr-3 text-3xl" />
-                        <span>Memuat data kontrak...</span>
+                    <div className="flex h-screen flex-col items-center justify-center gap-6 bg-white dark:bg-[#09090b]">
+                        <div className="relative flex items-center justify-center">
+                            <LoadingLottie width={180} height={180} />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="h-32 w-32 rounded-full border-b-2 border-slate-800 animate-spin opacity-20 dark:border-white" />
+                            </div>
+                        </div>
+                        <div className="flex flex-col items-center gap-2">
+                            <span className="text-[11px] font-black tracking-[0.5em] text-black uppercase animate-pulse dark:text-white">
+                                Memuat Sistem Kontrak
+                            </span>
+                            <div className="h-0.5 w-48 overflow-hidden rounded-full bg-slate-100 dark:bg-white/10">
+                                <div className="h-full w-full bg-black dark:bg-white origin-left animate-progress" />
+                            </div>
+                        </div>
                     </div>
                 ) : (
                     <ContractPage
                         contracts={contractsPaged}
                         meId={meId}
                         meUser={meUser}
-                        initialSelected={initialSelected}
+                        initialSelected={initialSelectedProp}
                         types={types}
                         submissionTypes={submissionTypes}
                         vendors={vendors}

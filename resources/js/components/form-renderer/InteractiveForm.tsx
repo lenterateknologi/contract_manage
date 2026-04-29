@@ -60,7 +60,7 @@ export const InteractiveForm: React.FC<InteractiveFormProps> = ({
     return (
         <div
             className={cn(
-                'border-border bg-card text-foreground ring-border mx-auto flex min-h-[297mm] w-full max-w-[210mm] flex-col border shadow-2xl ring-1 transition-all',
+                'border-slate-200 bg-white text-black ring-slate-200 mx-auto flex min-h-[297mm] w-full max-w-[210mm] flex-col border shadow-2xl ring-1 transition-all',
                 className,
             )}
             style={{

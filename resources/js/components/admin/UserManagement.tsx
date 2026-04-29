@@ -70,14 +70,14 @@ export function UserManagement({ users, roles, departments, filters }: UserManag
             sortable: true,
             cell: (row) => (
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-none bg-slate-900 text-white flex items-center justify-center font-black text-[10px] shrink-0">
+                    <div className="w-8 h-8 rounded-none bg-black dark:bg-white text-white dark:text-black flex items-center justify-center font-black text-[10px] shrink-0 border border-black dark:border-white">
                         {row.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex flex-col min-w-0">
-                        <span className="font-bold text-slate-900 uppercase tracking-tight text-[11px] truncate leading-none mb-1">
+                        <span className="font-black text-black dark:text-white uppercase tracking-tight text-[11px] truncate leading-none mb-1">
                             {row.name}
                         </span>
-                        <span className="text-[9px] font-medium text-slate-400 lowercase truncate leading-none">
+                        <span className="text-[9px] font-bold text-black/50 dark:text-white/50 truncate leading-none uppercase tracking-wider">
                             {row.email}
                         </span>
                     </div>
@@ -89,13 +89,13 @@ export function UserManagement({ users, roles, departments, filters }: UserManag
             accessorKey: 'username',
             cell: (row) => (
                 <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500 uppercase tracking-wider">
-                        <Fingerprint size={10} className="text-slate-300" />
+                    <div className="flex items-center gap-1.5 text-[9px] font-black text-black/60 dark:text-white/60 uppercase tracking-wider">
+                        <Fingerprint size={10} className="text-black/30 dark:text-white/30" />
                         {row.username}
                     </div>
                     {row.phone && (
-                        <div className="flex items-center gap-1.5 text-[9px] font-medium text-slate-400 tracking-tight">
-                            <Phone size={10} className="text-slate-300" />
+                        <div className="flex items-center gap-1.5 text-[9px] font-bold text-black/40 dark:text-white/40 tracking-tight uppercase">
+                            <Phone size={10} className="text-black/30 dark:text-white/30" />
                             {row.phone}
                         </div>
                     )}
@@ -107,10 +107,10 @@ export function UserManagement({ users, roles, departments, filters }: UserManag
             accessorKey: 'department.name',
             cell: (row) => (
                 <div className="flex flex-col gap-1">
-                    <span className="text-[10px] font-bold text-slate-700 uppercase tracking-tight leading-none">
+                    <span className="text-[10px] font-black text-black dark:text-white uppercase tracking-tight leading-none">
                         {row.department?.name || 'GLOBAL'}
                     </span>
-                    <span className="text-[9px] font-medium text-slate-400 uppercase tracking-tighter leading-none">
+                    <span className="text-[9px] font-bold text-black/50 dark:text-white/50 uppercase tracking-widest leading-none mt-0.5">
                         {row.position || 'STAF'}
                     </span>
                 </div>
@@ -120,7 +120,7 @@ export function UserManagement({ users, roles, departments, filters }: UserManag
             header: 'Otoritas',
             accessorKey: 'role',
             cell: (row) => (
-                <Badge variant="outline" className="border-slate-200 bg-white px-2 py-0.5 text-[8px] font-black tracking-widest text-slate-600 uppercase rounded-none shadow-sm">
+                <Badge variant="outline" className="border-black dark:border-white bg-black/5 dark:bg-white/5 px-2 py-0.5 text-[8px] font-black tracking-widest text-black dark:text-white uppercase rounded-none shadow-none">
                     {row.role}
                 </Badge>
             ),
@@ -132,11 +132,11 @@ export function UserManagement({ users, roles, departments, filters }: UserManag
                 <div className="flex items-center gap-2">
                     <div className={cn(
                         "w-1.5 h-1.5 rounded-full shrink-0",
-                        row.is_active ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-slate-300"
+                        row.is_active ? "bg-black dark:bg-white" : "bg-black/20 dark:bg-white/20"
                     )} />
                     <span className={cn(
                         "text-[9px] font-black uppercase tracking-widest",
-                        row.is_active ? "text-emerald-700" : "text-slate-400"
+                        row.is_active ? "text-black dark:text-white" : "text-black/30 dark:text-white/30"
                     )}>
                         {row.is_active ? 'AKTIF' : 'SUSPENDED'}
                     </span>
@@ -208,7 +208,7 @@ export function UserManagement({ users, roles, departments, filters }: UserManag
                             type="button" 
                             variant="ghost" 
                             onClick={handleDelete}
-                            className="h-8 hover:bg-rose-50 text-rose-600 rounded-none px-4 text-[10px] font-black uppercase tracking-widest transition-all"
+                            className="h-8 hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black text-black dark:text-white rounded-none px-4 text-[10px] font-black uppercase tracking-widest transition-all border border-black dark:border-white"
                         >
                             <Trash2 size={14} className="mr-2" /> Hapus User
                         </Button>
@@ -236,69 +236,69 @@ export function UserManagement({ users, roles, departments, filters }: UserManag
                     <div className="md:col-span-8 space-y-10">
                         {/* Section: Akun & Identitas */}
                         <div className="space-y-4">
-                            <h3 className="text-[10px] font-black tracking-[0.2em] text-slate-600 uppercase border-b border-slate-200 pb-2">Identitas & Otentikasi</h3>
+                            <h3 className="text-[10px] font-black tracking-[0.2em] text-black dark:text-white uppercase border-b border-black dark:border-white pb-2">Identitas & Otentikasi</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                                 <div className="space-y-1 md:col-span-2">
-                                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Nama Lengkap Sesuai KTP</Label>
-                                    <Input value={form.data.name} onChange={e => form.setData('name', e.target.value)} required placeholder="NAMA LENGKAP" className="h-10 rounded-none border-slate-200 bg-slate-50/20 text-sm font-black uppercase tracking-tight px-4" />
+                                    <Label className="text-[10px] font-black text-black/50 dark:text-white/50 uppercase tracking-widest">Nama Lengkap Sesuai KTP</Label>
+                                    <Input value={form.data.name} onChange={e => form.setData('name', e.target.value)} required placeholder="NAMA LENGKAP" className="h-10 rounded-none border-black dark:border-white bg-white dark:bg-black text-sm font-black uppercase tracking-tight px-4 text-black dark:text-white placeholder:text-black/20" />
                                 </div>
                                 <div className="space-y-1">
-                                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Username Akses</Label>
+                                    <Label className="text-[10px] font-black text-black/50 dark:text-white/50 uppercase tracking-widest">Username Akses</Label>
                                     <div className="relative">
-                                        <Fingerprint className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 w-3.5 h-3.5" />
-                                        <Input value={form.data.username} onChange={e => form.setData('username', e.target.value)} required placeholder="USERNAME" className="h-10 rounded-none border-slate-200 text-sm font-mono pl-10" />
+                                        <Fingerprint className="absolute left-3 top-1/2 -translate-y-1/2 text-black/30 dark:text-white/30 w-3.5 h-3.5" />
+                                        <Input value={form.data.username} onChange={e => form.setData('username', e.target.value)} required placeholder="USERNAME" className="h-10 rounded-none border-black dark:border-white bg-white dark:bg-black text-sm font-mono pl-10 text-black dark:text-white placeholder:text-black/20" />
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Email Institusi</Label>
+                                    <Label className="text-[10px] font-black text-black/50 dark:text-white/50 uppercase tracking-widest">Email Institusi</Label>
                                     <div className="relative">
-                                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 w-3.5 h-3.5" />
-                                        <Input type="email" value={form.data.email} onChange={e => form.setData('email', e.target.value)} required placeholder="user@company.com" className="h-10 rounded-none border-slate-200 text-sm font-medium pl-10" />
+                                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-black/30 dark:text-white/30 w-3.5 h-3.5" />
+                                        <Input type="email" value={form.data.email} onChange={e => form.setData('email', e.target.value)} required placeholder="user@company.com" className="h-10 rounded-none border-black dark:border-white bg-white dark:bg-black text-sm font-bold pl-10 text-black dark:text-white placeholder:text-black/20" />
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Nomor Telepon</Label>
+                                    <Label className="text-[10px] font-black text-black/50 dark:text-white/50 uppercase tracking-widest">Nomor Telepon</Label>
                                     <div className="relative">
-                                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 w-3.5 h-3.5" />
-                                        <Input value={form.data.phone} onChange={e => form.setData('phone', e.target.value)} placeholder="08XX XXXX XXXX" className="h-10 rounded-none border-slate-200 text-sm font-medium pl-10" />
+                                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-black/30 dark:text-white/30 w-3.5 h-3.5" />
+                                        <Input value={form.data.phone} onChange={e => form.setData('phone', e.target.value)} placeholder="08XX XXXX XXXX" className="h-10 rounded-none border-black dark:border-white bg-white dark:bg-black text-sm font-bold pl-10 text-black dark:text-white placeholder:text-black/20" />
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{editingUser ? 'Reset Password (Opsional)' : 'Set Password Akun'}</Label>
-                                    <Input type="password" value={form.data.password} onChange={e => form.setData('password', e.target.value)} required={!editingUser} placeholder="••••••••" className="h-10 rounded-none border-slate-200 text-sm font-medium px-4" />
+                                    <Label className="text-[10px] font-black text-black/50 dark:text-white/50 uppercase tracking-widest">{editingUser ? 'Reset Password (Opsional)' : 'Set Password Akun'}</Label>
+                                    <Input type="password" value={form.data.password} onChange={e => form.setData('password', e.target.value)} required={!editingUser} placeholder="••••••••" className="h-10 rounded-none border-black dark:border-white bg-white dark:bg-black text-sm font-bold px-4 text-black dark:text-white placeholder:text-black/20" />
                                 </div>
                             </div>
                         </div>
 
                         {/* Section: Jabatan */}
                         <div className="space-y-4">
-                            <h3 className="text-[10px] font-black tracking-[0.2em] text-slate-600 uppercase border-b border-slate-200 pb-2">Penempatan & Otoritas</h3>
+                            <h3 className="text-[10px] font-black tracking-[0.2em] text-black dark:text-white uppercase border-b border-black dark:border-white pb-2">Penempatan & Otoritas</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                                 <div className="space-y-1">
-                                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Role User</Label>
+                                    <Label className="text-[10px] font-black text-black/50 dark:text-white/50 uppercase tracking-widest">Role User</Label>
                                     <Select value={form.data.role} onValueChange={v => form.setData('role', v)}>
-                                        <SelectTrigger className="h-10 rounded-none border-slate-200 text-[11px] font-black uppercase tracking-tight bg-slate-50/20">
+                                        <SelectTrigger className="h-10 rounded-none border-black dark:border-white text-[11px] font-black uppercase tracking-tight bg-white dark:bg-black text-black dark:text-white">
                                             <SelectValue />
                                         </SelectTrigger>
-                                        <SelectContent className="rounded-none">
-                                            {roles.map(r => <SelectItem key={r.id} value={r.name} className="text-[10px] uppercase font-black tracking-wider py-2.5">{r.name}</SelectItem>)}
+                                        <SelectContent className="rounded-none bg-white dark:bg-black border-black dark:border-white">
+                                            {roles.map(r => <SelectItem key={r.id} value={r.name} className="text-[10px] uppercase font-black tracking-wider py-2.5 text-black dark:text-white">{r.name}</SelectItem>)}
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 <div className="space-y-1">
-                                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Unit / Departemen</Label>
+                                    <Label className="text-[10px] font-black text-black/50 dark:text-white/50 uppercase tracking-widest">Unit / Departemen</Label>
                                     <Select value={String(form.data.department_id)} onValueChange={v => form.setData('department_id', v)}>
-                                        <SelectTrigger className="h-10 rounded-none border-slate-200 text-[11px] font-black uppercase tracking-tight bg-slate-50/20">
+                                        <SelectTrigger className="h-10 rounded-none border-black dark:border-white text-[11px] font-black uppercase tracking-tight bg-white dark:bg-black text-black dark:text-white">
                                             <SelectValue placeholder="PILIH UNIT KERJA" />
                                         </SelectTrigger>
-                                        <SelectContent className="rounded-none">
-                                            {departments.map(d => <SelectItem key={d.id} value={String(d.id)} className="text-[10px] uppercase font-black tracking-wider py-2.5">{d.name}</SelectItem>)}
+                                        <SelectContent className="rounded-none bg-white dark:bg-black border-black dark:border-white">
+                                            {departments.map(d => <SelectItem key={d.id} value={String(d.id)} className="text-[10px] uppercase font-black tracking-wider py-2.5 text-black dark:text-white">{d.name}</SelectItem>)}
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 <div className="space-y-1 md:col-span-2">
-                                    <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Jabatan Struktural</Label>
-                                    <Input value={form.data.position} onChange={e => form.setData('position', e.target.value)} placeholder="CONTOH: KEPALA BAGIAN HUKUM" className="h-10 rounded-none border-slate-200 bg-slate-50/20 text-xs font-black uppercase tracking-tight px-4" />
+                                    <Label className="text-[10px] font-black text-black/50 dark:text-white/50 uppercase tracking-widest">Jabatan Struktural</Label>
+                                    <Input value={form.data.position} onChange={e => form.setData('position', e.target.value)} placeholder="CONTOH: KEPALA BAGIAN HUKUM" className="h-10 rounded-none border-black dark:border-white bg-white dark:bg-black text-xs font-black uppercase tracking-tight px-4 text-black dark:text-white placeholder:text-black/20" />
                                 </div>
                             </div>
                         </div>
@@ -311,28 +311,28 @@ export function UserManagement({ users, roles, departments, filters }: UserManag
                             description="Tentukan apakah user ini memiliki hak akses aktif ke portal admin saat ini."
                         >
                             <div className="flex items-center gap-3">
-                                <span className={cn("text-[9px] font-black uppercase tracking-widest", form.data.is_active ? "text-emerald-600" : "text-rose-600")}>
+                                <span className={cn("text-[9px] font-black uppercase tracking-widest", form.data.is_active ? "text-black dark:text-white" : "text-black/30 dark:text-white/30")}>
                                     {form.data.is_active ? 'AKUN AKTIF' : 'NONAKTIF'}
                                 </span>
                                 <Checkbox 
                                     checked={form.data.is_active} 
                                     onCheckedChange={(c) => form.setData('is_active', !!c)} 
-                                    className="w-5 h-5 rounded-none border-black"
+                                    className="w-5 h-5 rounded-none border-black dark:border-white data-[state=checked]:bg-black dark:data-[state=checked]:bg-white data-[state=checked]:text-white dark:data-[state=checked]:text-black"
                                 />
                             </div>
                         </FormDangerZone>
 
-                        <div className="border border-slate-200 p-6 bg-slate-50/50">
+                        <div className="border border-black dark:border-white p-6 bg-black/5 dark:bg-white/5">
                             <div className="flex items-center gap-2 mb-4">
-                                <UserCircle size={16} className="text-slate-400" />
-                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Preview Profil</span>
+                                <UserCircle size={16} className="text-black/30 dark:text-white/30" />
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-black/30 dark:text-white/30">Preview Profil</span>
                             </div>
-                            <div className="flex flex-col items-center py-6 border-y border-slate-200 border-dashed">
-                                <div className="w-16 h-16 bg-black text-white flex items-center justify-center font-black text-2xl mb-4">
+                            <div className="flex flex-col items-center py-6 border-y border-black dark:border-white border-dashed">
+                                <div className="w-16 h-16 bg-black dark:bg-white text-white dark:text-black flex items-center justify-center font-black text-2xl mb-4 border border-black dark:border-white">
                                     {form.data.name ? form.data.name.charAt(0).toUpperCase() : '?'}
                                 </div>
-                                <span className="text-sm font-black uppercase text-center leading-tight tracking-tight">{form.data.name || 'NAMA BELUM DIISI'}</span>
-                                <span className="text-[10px] font-bold text-slate-400 uppercase mt-1">{form.data.position || 'JABATAN BELUM SET'}</span>
+                                <span className="text-sm font-black uppercase text-center leading-tight tracking-tight text-black dark:text-white">{form.data.name || 'NAMA BELUM DIISI'}</span>
+                                <span className="text-[10px] font-bold text-black/40 dark:text-white/40 uppercase mt-1 tracking-widest">{form.data.position || 'JABATAN BELUM SET'}</span>
                             </div>
                         </div>
                     </div>
@@ -355,7 +355,7 @@ export function UserManagement({ users, roles, departments, filters }: UserManag
             onFilterChange={handleFilterChange}
             headerActions={
                 canCreate && (
-                    <Button onClick={openCreate} className="h-9 gap-2 rounded-none bg-black px-6 text-[10px] font-black uppercase tracking-widest text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] hover:bg-slate-800 transition-all active:translate-x-0.5 active:translate-y-0.5">
+                    <Button onClick={openCreate} className="h-9 gap-2 rounded-none bg-black dark:bg-white px-6 text-[11px] font-black uppercase tracking-widest text-white dark:text-black shadow-none hover:opacity-90 transition-all active:scale-95 border border-black dark:border-white">
                         <Plus className="h-3.5 w-3.5" /> Registrasi User Baru
                     </Button>
                 )

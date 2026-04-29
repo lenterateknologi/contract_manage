@@ -97,13 +97,13 @@ function SortableStepItem({
 
     return (
         <div ref={setNodeRef} style={style} className={cn(
-            "group/step relative flex gap-4 border border-slate-200 bg-white p-3 transition-all hover:bg-slate-50",
-            isDragging && "shadow-2xl grayscale border-black scale-[1.01] z-50",
+            "group/step relative flex gap-4 border border-black/10 dark:border-white/10 bg-white dark:bg-black p-3 transition-all hover:bg-black/5 dark:hover:bg-white/5",
+            isDragging && "shadow-2xl grayscale border-black dark:border-white scale-[1.01] z-50",
             !isAnySelected && "border-dashed"
         )}>
             {/* Index & Handle */}
             <div className="flex flex-col items-center gap-1 shrink-0">
-                <div {...attributes} {...listeners} className="flex h-8 w-8 cursor-grab items-center justify-center bg-white border border-slate-200 group-hover/step:bg-black group-hover/step:text-white transition-colors">
+                <div {...attributes} {...listeners} className="flex h-8 w-8 cursor-grab items-center justify-center bg-white dark:bg-black border border-black/10 dark:border-white/10 group-hover/step:bg-black dark:group-hover/step:bg-white group-hover/step:text-white dark:group-hover/step:text-black transition-colors">
                     <span className="text-[10px] font-black">{idx + 1}</span>
                 </div>
             </div>
@@ -114,13 +114,13 @@ function SortableStepItem({
                     <div className="flex flex-col gap-1 min-w-0 flex-1">
                         {!isAnySelected ? (
                             <div className="flex items-center gap-2">
-                                <Badge variant="secondary" className="bg-slate-100 text-slate-400 border-none text-[8px] font-black tracking-widest px-2 h-5">SEMUA PERSONEL</Badge>
-                                <span className="text-[7px] font-bold text-slate-300 uppercase tracking-tighter">Otoritas Terbuka</span>
+                                <Badge variant="secondary" className="bg-black/5 dark:bg-white/5 text-black/40 dark:text-white/40 border-none text-[8px] font-black tracking-widest px-2 h-5 rounded-none uppercase">SEMUA PERSONEL</Badge>
+                                <span className="text-[7px] font-bold text-black/30 dark:text-white/30 uppercase tracking-tighter">Otoritas Terbuka</span>
                             </div>
                         ) : (
                             <div className="flex flex-wrap gap-2 items-center">
                                 {activeRoles.length > 0 && (
-                                    <div className="flex items-center gap-1.5 p-1 bg-black text-white rounded-none">
+                                    <div className="flex items-center gap-1.5 p-1 bg-black dark:bg-white text-white dark:text-black rounded-none">
                                         <Shield size={10} />
                                         <span className="text-[8px] font-black uppercase tracking-tighter max-w-[150px] truncate">
                                             {activeRoles.length === 1 ? activeRoles[0] : `${activeRoles.length} ROLE`}
@@ -129,7 +129,7 @@ function SortableStepItem({
                                 )}
                                 
                                 {activeDepts.length > 0 && (
-                                    <div className="flex items-center gap-1.5 p-1 border-2 border-black text-black rounded-none">
+                                    <div className="flex items-center gap-1.5 p-1 border border-black dark:border-white text-black dark:text-white rounded-none">
                                         <GitBranch size={10} />
                                         <span className="text-[8px] font-black uppercase tracking-tighter max-w-[150px] truncate">
                                             {activeDepts.length === 1 ? departments.find(d => d.id === activeDepts[0])?.name : `${activeDepts.length} DEPT`}
@@ -138,7 +138,7 @@ function SortableStepItem({
                                 )}
 
                                 {activeUsers.length > 0 && (
-                                    <div className="flex items-center gap-1.5 p-1 bg-slate-100 text-slate-900 rounded-none border border-slate-200">
+                                    <div className="flex items-center gap-1.5 p-1 bg-black/5 dark:bg-white/5 text-black dark:text-white rounded-none border border-black/10 dark:border-white/10">
                                         <UserCheck size={10} />
                                         <span className="text-[8px] font-black uppercase tracking-tighter max-w-[150px] truncate">
                                             {activeUsers.length === 1 ? users.find(u => u.id === activeUsers[0])?.name : `${activeUsers.length} PERSONEL`}
@@ -149,9 +149,9 @@ function SortableStepItem({
                         )}
                         <div className="flex items-center gap-2 mt-1">
                             {step.status_id && (
-                                <Badge variant="secondary" className="bg-amber-100 text-amber-800 border-none text-[7px] font-black tracking-widest px-1.5 h-4">STATUS KONTRAK MAP</Badge>
+                                <Badge variant="secondary" className="bg-black dark:bg-white text-white dark:text-black border-none text-[7px] font-black tracking-widest px-1.5 h-4 rounded-none uppercase">STATUS MAP</Badge>
                             )}
-                            {step.description && <span className="text-[7px] font-bold text-slate-400 uppercase italic truncate">{step.description}</span>}
+                            {step.description && <span className="text-[7px] font-bold text-black/40 dark:text-white/40 uppercase italic truncate tracking-tight">{step.description}</span>}
                         </div>
                     </div>
                 </div>
@@ -163,28 +163,28 @@ function SortableStepItem({
                                 <Edit3 size={12} /> Atur Otoritas
                             </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-5xl rounded-none border-2 border-black p-0 overflow-hidden bg-white">
-                            <DialogHeader className="p-4 bg-slate-900 text-white flex-row items-center justify-between space-y-0">
+                        <DialogContent className="max-w-5xl rounded-none border border-black dark:border-white p-0 overflow-hidden bg-white dark:bg-black">
+                            <DialogHeader className="p-4 bg-black dark:bg-white text-white dark:text-black flex-row items-center justify-between space-y-0">
                                 <div>
-                                    <DialogTitle className="text-[12px] font-black uppercase tracking-[0.2em]">Konfigurasi Otoritas Tahap {idx + 1}</DialogTitle>
-                                    <p className="text-[8px] font-bold text-slate-400 uppercase mt-1">Gunakan Drill-down Hierarchy (Role → Dept → Personel)</p>
+                                    <DialogTitle className="text-[12px] font-black uppercase tracking-[0.2em]">Tahap {idx + 1}: Konfigurasi Otoritas</DialogTitle>
+                                    <p className="text-[8px] font-bold text-white/50 dark:text-black/50 uppercase mt-1">Gunakan Drill-down Hierarchy (Role → Dept → Personel)</p>
                                 </div>
                             </DialogHeader>
 
-                            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex gap-6">
+                            <div className="px-6 py-4 border-b border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 flex gap-6">
                                 <div className="flex-1 space-y-1.5">
-                                    <Label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.15em]">Deskripsi Tahapan (Opsional)</Label>
+                                    <Label className="text-[9px] font-black text-black/50 dark:text-white/50 uppercase tracking-widest">Deskripsi Tahapan (Opsional)</Label>
                                     <Input
                                         placeholder="CONTOH: REVIEW LEGAL DRAFT"
                                         value={step.description || ''}
                                         onChange={(e) => updateLocalStep(idx, { description: e.target.value })}
-                                        className="h-9 rounded-none border-slate-200 bg-white font-bold uppercase text-[10px] tracking-tight shadow-none focus-visible:ring-0 focus-visible:border-black transition-colors"
+                                        className="h-9 rounded-none border-black dark:border-white bg-white dark:bg-black font-black uppercase text-[10px] tracking-tight shadow-none focus-visible:ring-0 transition-colors text-black dark:text-white"
                                     />
                                 </div>
                                 <div className="flex-1 space-y-1.5">
-                                    <Label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.15em]">Label Status (Opsional)</Label>
+                                    <Label className="text-[9px] font-black text-black/50 dark:text-white/50 uppercase tracking-widest">Label Status (Opsional)</Label>
                                     <select
-                                        className="w-full h-9 rounded-none border border-slate-200 bg-white px-3 text-[10px] font-bold uppercase tracking-tight shadow-none focus:border-black focus:outline-none focus:ring-0 transition-colors"
+                                        className="w-full h-9 rounded-none border border-black dark:border-white bg-white dark:bg-black px-3 text-[10px] font-black uppercase tracking-tight shadow-none focus:outline-none focus:ring-0 transition-colors text-black dark:text-white"
                                         value={step.status_id || ''}
                                         onChange={(e) => updateLocalStep(idx, { status_id: e.target.value || null })}
                                     >
@@ -338,7 +338,7 @@ function SortableStepItem({
                         </DialogContent>
                     </Dialog>
 
-                    <Button variant="ghost" size="icon" onClick={() => removeLocalStep(idx)} className="h-8 w-8 text-slate-300 hover:text-red-600 transition-colors">
+                    <Button variant="ghost" size="icon" onClick={() => removeLocalStep(idx)} className="h-8 w-8 text-black/20 dark:text-white/20 hover:text-black dark:hover:text-white transition-colors">
                         <Trash2 size={14} />
                     </Button>
                 </div>
@@ -390,11 +390,11 @@ export function WorkflowManagement({ workflows, contractTypes, departments, role
             cell: (row) => (
                 <div className="flex flex-col">
                     <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black text-slate-900 uppercase tracking-tight">{row.name}</span>
-                        {row.is_default && <div className="text-white bg-black px-1.5 py-0.5 rounded-full text-[6px] font-black tracking-widest leading-none">DEFAULT</div>}
+                        <span className="text-[10px] font-black text-black dark:text-white uppercase tracking-tight">{row.name}</span>
+                        {row.is_default && <div className="text-white dark:text-black bg-black dark:bg-white px-1.5 py-0.5 rounded-none text-[6px] font-black tracking-widest leading-none uppercase">DEFAULT</div>}
                     </div>
-                    <div className="mt-1 text-[8px] font-black text-slate-400 uppercase tracking-[0.1em] flex items-center gap-1.5">
-                        {row.contract_type} 
+                    <div className="mt-1 text-[8px] font-black text-black/40 dark:text-white/40 uppercase tracking-widest flex items-center gap-1.5 leading-none">
+                        {row.contract_type || 'GLOBAL'} 
                     </div>
                 </div>
             )
@@ -404,7 +404,7 @@ export function WorkflowManagement({ workflows, contractTypes, departments, role
             accessorKey: 'initiator_type',
             cell: (row) => (
                 <div className="flex flex-col">
-                    <span className="text-[9px] font-bold uppercase text-slate-900">
+                    <span className="text-[9px] font-black uppercase text-black dark:text-white tracking-widest">
                          {row.initiator_type === 'all' ? 'Publik' : row.initiator_type === 'role' ? `${row.initiator_roles?.length || 0} Role` : `${row.initiator_users?.length || 0} User`}
                     </span>
                 </div>
@@ -417,12 +417,12 @@ export function WorkflowManagement({ workflows, contractTypes, departments, role
                 <div className="flex items-center gap-3">
                     <div className="flex -space-x-1">
                         {row.steps?.slice(0, 3).map((s:any, i:number) => (
-                            <div key={i} className="w-6 h-6 rounded-none border border-black bg-white flex items-center justify-center text-[8px] font-black text-black shadow-sm" title={Array.isArray(s.role) ? s.role.join(', ') : s.role}>
+                            <div key={i} className="w-6 h-6 rounded-none border border-black dark:border-white bg-white dark:bg-black flex items-center justify-center text-[8px] font-black text-black dark:text-white" title={Array.isArray(s.role) ? s.role.join(', ') : s.role}>
                                 {Array.isArray(s.role) ? s.role[0]?.charAt(0) : s.role?.charAt(0)}
                             </div>
                         ))}
                     </div>
-                    <span className="text-[10px] font-black uppercase text-slate-900 leading-none">{row.steps?.length || 0}</span>
+                    <span className="text-[10px] font-black uppercase text-black dark:text-white leading-none tracking-widest">{row.steps?.length || 0}</span>
                 </div>
             )
         }
@@ -508,20 +508,20 @@ export function WorkflowManagement({ workflows, contractTypes, departments, role
                     <div className="grid grid-cols-1 gap-6">
                         {/* Primary Identity Section */}
                         <div className="space-y-4">
-                            <h3 className="text-[10px] font-black tracking-[0.2em] text-slate-600 uppercase border-b border-slate-200 pb-2">Konfigurasi Utama Alur</h3>
+                            <h3 className="text-[10px] font-black tracking-[0.2em] text-black/60 dark:text-white/60 uppercase border-b border-black/10 dark:border-white/10 pb-2 text-left">Konfigurasi Utama Alur</h3>
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-x-4 gap-y-4">
                                 <div className="md:col-span-3 space-y-1.5">
-                                    <Label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.15em]">Nama Alur Kerja</Label>
+                                    <Label className="text-[9px] font-black text-black/50 dark:text-white/50 uppercase tracking-widest">Nama Alur Kerja</Label>
                                     <Input 
                                         value={form.data.name} 
                                         onChange={e => form.setData('name', e.target.value)} 
                                         required 
                                         placeholder="CONTOH: PENGADAAN REGULER" 
-                                        className="h-10 rounded-none border-slate-200 bg-white font-bold uppercase text-[11px] tracking-tight shadow-none focus-visible:ring-0 focus-visible:border-black transition-colors" 
+                                        className="h-10 rounded-none border-black dark:border-white bg-white dark:bg-black font-black uppercase text-[10px] tracking-tight shadow-none focus-visible:ring-0 transition-colors text-black dark:text-white" 
                                     />
                                 </div>
                                 <div className="md:col-span-1 space-y-1.5">
-                                    <Label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.15em]">Klasifikasi</Label>
+                                    <Label className="text-[9px] font-black text-black/50 dark:text-white/50 uppercase tracking-widest">Klasifikasi</Label>
                                     <SearchableSelect
                                         value={form.data.contract_type || 'all'}
                                         onValueChange={v => form.setData('contract_type', v === 'all' ? '' : v)}
@@ -534,15 +534,15 @@ export function WorkflowManagement({ workflows, contractTypes, departments, role
                                     />
                                 </div>
                                 <div className="md:col-span-1 space-y-1.5">
-                                    <Label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.15em] opacity-0 select-none">‌</Label>
-                                    <label className="flex h-10 items-center gap-2.5 cursor-pointer group border border-slate-200 bg-white px-3 hover:border-black transition-colors">
+                                    <Label className="text-[9px] font-black text-black/50 dark:text-white/50 uppercase tracking-widest opacity-0 select-none">‌</Label>
+                                    <label className="flex h-10 items-center gap-2.5 cursor-pointer group border border-black dark:border-white bg-white dark:bg-black px-3 hover:bg-black dark:hover:bg-white transition-colors">
                                         <Checkbox 
                                             id="f-default"
                                             checked={form.data.is_default} 
                                             onCheckedChange={(checked) => form.setData('is_default', checked as boolean)} 
-                                            className="w-4 h-4 rounded-none border-slate-300 data-[state=checked]:bg-black data-[state=checked]:text-white data-[state=checked]:border-black"
+                                            className="w-4 h-4 rounded-none border-black dark:border-white data-[state=checked]:bg-black dark:data-[state=checked]:bg-white data-[state=checked]:text-white dark:data-[state=checked]:text-black"
                                         />
-                                        <span className="text-[9px] font-black uppercase text-slate-500 group-hover:text-black transition-colors leading-none">Alur Standar</span>
+                                        <span className="text-[9px] font-black uppercase text-black/40 dark:text-white/40 group-hover:text-white dark:group-hover:text-black transition-colors leading-none tracking-widest">Alur Standar</span>
                                     </label>
                                 </div>
                             </div>
@@ -550,7 +550,7 @@ export function WorkflowManagement({ workflows, contractTypes, departments, role
 
                         {/* Initiator Control Section */}
                         <div className="space-y-4">
-                            <h3 className="text-[10px] font-black tracking-[0.2em] text-slate-600 uppercase border-b border-slate-200 pb-2">Hak Akses Inisiator</h3>
+                            <h3 className="text-[10px] font-black tracking-[0.2em] text-black/60 dark:text-white/60 uppercase border-b border-black/10 dark:border-white/10 pb-2 text-left">Hak Akses Inisiator</h3>
                             {(() => {
                                 const activeRoles = form.data.initiator_roles || [];
                                 const activeDepts = form.data.initiator_departments || [];
@@ -572,14 +572,14 @@ export function WorkflowManagement({ workflows, contractTypes, departments, role
 
                                 return (
                                     <div className={cn(
-                                        "relative flex items-center justify-between border border-slate-200 bg-white p-4 transition-all hover:bg-slate-50",
+                                        "relative flex items-center justify-between border border-black dark:border-white bg-white dark:bg-black p-4 transition-all hover:bg-black/5 dark:hover:bg-white/5",
                                         !isAnySelected && "border-dashed"
                                     )}>
                                         <div className="flex flex-col gap-1 min-w-0 flex-1">
                                             {!isAnySelected ? (
                                                 <div className="flex items-center gap-2">
-                                                    <Badge variant="secondary" className="bg-slate-100 text-slate-400 border-none text-[8px] font-black tracking-widest px-2 h-5">SEMUA PERSONEL</Badge>
-                                                    <span className="text-[7px] font-bold text-slate-300 uppercase tracking-tighter">Akses Terbuka (Publik)</span>
+                                                    <Badge variant="secondary" className="bg-black/5 dark:bg-white/5 text-black/40 dark:text-white/40 border-none text-[8px] font-black tracking-widest px-2 h-5 rounded-none">SEMUA PERSONEL</Badge>
+                                                    <span className="text-[7px] font-bold text-black/30 dark:text-white/30 uppercase tracking-tighter">Akses Terbuka (Publik)</span>
                                                 </div>
                                             ) : (
                                                 <div className="flex flex-wrap gap-2 items-center">
@@ -617,11 +617,11 @@ export function WorkflowManagement({ workflows, contractTypes, departments, role
                                                     <Edit3 size={12} /> Atur Akses Inisiator
                                                 </Button>
                                             </DialogTrigger>
-                                            <DialogContent className="max-w-5xl rounded-none border-2 border-black p-0 overflow-hidden bg-white">
-                                                <DialogHeader className="p-4 bg-slate-900 text-white flex-row items-center justify-between space-y-0">
+                                            <DialogContent className="max-w-5xl rounded-none border border-black dark:border-white p-0 overflow-hidden bg-white dark:bg-black">
+                                                <DialogHeader className="p-4 bg-black dark:bg-white text-white dark:text-black flex-row items-center justify-between space-y-0">
                                                     <div>
                                                         <DialogTitle className="text-[12px] font-black uppercase tracking-[0.2em]">Otoritas Inisiator Kontrak</DialogTitle>
-                                                        <p className="text-[8px] font-bold text-slate-400 uppercase mt-1">Gunakan Drill-down Hierarchy (Role → Dept → User)</p>
+                                                        <p className="text-[8px] font-bold text-white/50 dark:text-black/50 uppercase mt-1">Gunakan Drill-down Hierarchy (Role → Dept → User)</p>
                                                     </div>
                                                 </DialogHeader>
 
@@ -640,9 +640,9 @@ export function WorkflowManagement({ workflows, contractTypes, departments, role
                                                                 placeholder="CARI ROLE..." 
                                                                 value={initiatorRoleSearch} 
                                                                 onChange={e => setInitiatorRoleSearch(e.target.value)} 
-                                                                className="h-8 pl-8 rounded-none border-slate-200 text-[10px] font-bold uppercase shadow-none focus-visible:ring-0 focus-visible:border-black" 
+                                                                className="h-8 pl-8 rounded-none border-black dark:border-white bg-white dark:bg-black text-[10px] font-black uppercase shadow-none focus-visible:ring-0 transition-colors text-black dark:text-white" 
                                                             />
-                                                            <Shield className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" size={12} />
+                                                            <Shield className="absolute left-2.5 top-1/2 -translate-y-1/2 text-black/40 dark:text-white/40" size={12} />
                                                         </div>
                                                         <div className="grid grid-cols-1 gap-1 max-h-[300px] overflow-y-auto pr-1 customize-scrollbar">
                                                             {searchedRoles.map(r => {
@@ -681,9 +681,9 @@ export function WorkflowManagement({ workflows, contractTypes, departments, role
                                                                 placeholder="CARI DEPARTEMEN..." 
                                                                 value={initiatorDeptSearch} 
                                                                 onChange={e => setInitiatorDeptSearch(e.target.value)} 
-                                                                className="h-8 pl-8 rounded-none border-slate-200 text-[10px] font-bold uppercase shadow-none focus-visible:ring-0 focus-visible:border-black" 
+                                                                className="h-8 pl-8 rounded-none border-black dark:border-white bg-white dark:bg-black text-[10px] font-black uppercase shadow-none focus-visible:ring-0 transition-colors text-black dark:text-white" 
                                                             />
-                                                            <GitBranch className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" size={12} />
+                                                            <GitBranch className="absolute left-2.5 top-1/2 -translate-y-1/2 text-black/40 dark:text-white/40" size={12} />
                                                         </div>
                                                         <div className="grid grid-cols-1 gap-1 max-h-[300px] overflow-y-auto pr-1 customize-scrollbar">
                                                             {searchedDepts.map(d => {
@@ -723,9 +723,9 @@ export function WorkflowManagement({ workflows, contractTypes, departments, role
                                                                 placeholder="CARI USER..." 
                                                                 value={initiatorUserSearch} 
                                                                 onChange={e => setInitiatorUserSearch(e.target.value)} 
-                                                                className="h-8 pl-8 rounded-none border-slate-200 text-[10px] font-bold uppercase shadow-none focus-visible:ring-0 focus-visible:border-black" 
+                                                                className="h-8 pl-8 rounded-none border-black dark:border-white bg-white dark:bg-black text-[10px] font-black uppercase shadow-none focus-visible:ring-0 transition-colors text-black dark:text-white" 
                                                             />
-                                                            <UsersIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" size={12} />
+                                                            <UsersIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 text-black/40 dark:text-white/40" size={12} />
                                                         </div>
                                                         <div className="grid grid-cols-1 gap-1 max-h-[300px] overflow-y-auto pr-1 customize-scrollbar">
                                                             {filteredUsers.map(u => {
@@ -754,9 +754,9 @@ export function WorkflowManagement({ workflows, contractTypes, departments, role
                                                     </div>
                                                 </div>
 
-                                                <DialogFooter className="p-3 bg-slate-50 border-t flex items-center justify-between sm:justify-between">
-                                                    <div className="text-[8px] font-black uppercase text-slate-400 italic">Perubahan Tersimpan Otomatis di Draft</div>
-                                                    <Button type="button" onClick={() => setIsInitiatorDialogOpen(false)} className="h-8 rounded-none bg-black text-white text-[10px] font-black uppercase px-8">Tutup</Button>
+                                                <DialogFooter className="p-3 bg-black/5 dark:bg-white/5 border-t border-black/10 dark:border-white/10 flex items-center justify-between sm:justify-between">
+                                                    <div className="text-[8px] font-black uppercase text-black/40 dark:text-white/40 italic">Perubahan Tersimpan Otomatis di Draft</div>
+                                                    <Button type="button" onClick={() => setIsInitiatorDialogOpen(false)} className="h-8 rounded-none bg-black dark:bg-white text-white dark:text-black text-[10px] font-black uppercase px-8">Tutup</Button>
                                                 </DialogFooter>
                                             </DialogContent>
                                         </Dialog>
@@ -770,7 +770,7 @@ export function WorkflowManagement({ workflows, contractTypes, departments, role
                         <div className="flex items-center justify-between border-b pb-2">
                             <div className="flex items-center gap-3">
                                 <GitBranch size={16} />
-                                <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900 leading-none">Tahapan Persetujuan</h3>
+                                <h3 className="text-[11px] font-black uppercase tracking-widest text-black dark:text-white leading-none">Tahapan Persetujuan</h3>
                             </div>
                             <Button 
                                 type="button" 
@@ -785,10 +785,10 @@ export function WorkflowManagement({ workflows, contractTypes, departments, role
 
                         <div className="space-y-4">
                             {form.data.steps.length === 0 ? (
-                                <div className="py-24 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 bg-slate-50/30">
-                                    <div className="w-16 h-16 rounded-none border-2 border-slate-100 bg-white flex items-center justify-center text-slate-200 mb-6 shadow-sm"><PlusCircle size={32} /></div>
-                                    <span className="text-[11px] font-black text-slate-300 uppercase tracking-[0.4em]">Struktur Kosong</span>
-                                    <Button type="button" variant="link" onClick={addLocalStep} className="text-black text-[10px] font-black uppercase mt-4 underline decoration-slate-300 underline-offset-8 hover:decoration-black transition-all">Definisikan Tahapan Persetujuan Awal</Button>
+                                <div className="py-24 flex flex-col items-center justify-center border border-dashed border-black/20 dark:border-white/20 bg-black/5 dark:bg-white/5 rounded-none">
+                                    <div className="w-16 h-16 rounded-none border border-black/10 dark:border-white/10 bg-white dark:bg-black flex items-center justify-center text-black/20 dark:text-white/20 mb-6 shadow-none"><PlusCircle size={32} /></div>
+                                    <span className="text-[11px] font-black text-black/30 dark:text-white/30 uppercase tracking-[0.4em]">Struktur Kosong</span>
+                                    <Button type="button" variant="link" onClick={addLocalStep} className="text-black dark:text-white text-[10px] font-black uppercase mt-4 underline decoration-black/20 dark:decoration-white/20 underline-offset-8 hover:decoration-black dark:hover:decoration-white transition-all">Definisikan Tahapan Persetujuan Awal</Button>
                                 </div>
                             ) : (
                                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd} modifiers={[restrictToVerticalAxis]}>
@@ -833,16 +833,17 @@ export function WorkflowManagement({ workflows, contractTypes, departments, role
     }
 
     return (
-        <div className="flex flex-col h-full bg-background animate-in fade-in duration-500">
+        <div className="flex flex-col h-full bg-white dark:bg-black animate-in fade-in duration-500">
             <DataTable
+                title="Master Alur Kerja (Workflow)"
                 columns={columns}
                 data={workflows.data || []}
                 searchKey="name"
-                searchPlaceholder="Filter Alur..."
+                searchPlaceholder="Cari alur kerja atau tipe..."
                 onRowClick={openEdit}
                 headerActions={
-                    <Button onClick={openCreate} className="h-9 gap-2 rounded-none px-6 text-[10px] font-black uppercase tracking-[0.1em] bg-black text-white hover:bg-slate-800 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5">
-                        <Plus className="h-3.5 w-3.5" /> Registrasi Alur Baru
+                    <Button onClick={openCreate} className="h-10 gap-2 rounded-none px-8 text-[11px] font-black uppercase tracking-widest bg-black dark:bg-white text-white dark:text-black hover:opacity-90 transition-all border border-black dark:border-white shadow-none">
+                        <Plus className="h-4 w-4" /> Registrasi Alur Baru
                     </Button>
                 }
             />

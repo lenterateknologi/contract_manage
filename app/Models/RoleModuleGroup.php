@@ -13,14 +13,13 @@ class RoleModuleGroup extends Model
 
     public $incrementing = false;
 
-    protected $primaryKey = ['role_id', 'module_group_id'];
+    protected $primaryKey = null;
 
     protected $keyType = 'string';
 
     protected $fillable = [
         'role_id',
         'module_group_id',
-        'sort_number',
     ];
 
     public function role()

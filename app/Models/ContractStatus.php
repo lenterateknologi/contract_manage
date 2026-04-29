@@ -23,14 +23,13 @@ class ContractStatus extends Model
         'bg_color',
         'icon',
         'description',
-        'sequence',
         'is_active',
+        'display_mode',
         'created_by',
         'updated_by',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
-        'sequence' => 'integer',
     ];
 }

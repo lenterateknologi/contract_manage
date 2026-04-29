@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import AuthLayout from '@/layouts/auth-layout';
+import AuthSplitLayout from '@/layouts/auth/auth-split-layout';
 
 interface LoginForm {
     email: string;
@@ -25,7 +25,7 @@ interface LoginProps {
 
 export default function Login({ status, canResetPassword, canTestEmail }: LoginProps) {
     const [showPassword, setShowPassword] = useState(false);
-    const { data, setData, post, processing, errors, reset } = useForm<LoginForm>({
+    const { data, setData, post, processing, errors, reset, wasSuccessful } = useForm<LoginForm>({
         email: '',
         password: '',
         remember: false,
@@ -39,103 +39,94 @@ export default function Login({ status, canResetPassword, canTestEmail }: LoginP
     };
 
     return (
-        <AuthLayout title="Log in to your account" description="Enter your email or username and password below to log in">
-            <Head title="Log in" />
+        <AuthSplitLayout 
+            title="Selamat Datang!" 
+            description="Masuk ke akun Anda dengan aman."
+            isSuccess={wasSuccessful}
+        >
+            <Head title="Masuk" />
 
-            <div className="rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
-                <form className="flex flex-col gap-6" onSubmit={submit}>
-                    <div className="grid gap-6">
-                        <div className="grid gap-2">
-                            <Label htmlFor="email">Email or Username</Label>
+            <form className="flex flex-col gap-6" onSubmit={submit}>
+                <div className="grid gap-5">
+                    <div className="grid gap-2">
+                        <Label htmlFor="email" className="text-[var(--font-size-small)] font-[var(--font-weight-bold)] text-[var(--text-dark)] tracking-tight uppercase">ALAMAT EMAIL</Label>
+                        <Input
+                            id="email"
+                            type="text"
+                            required
+                            autoFocus
+                            tabIndex={1}
+                            autoComplete="email"
+                            value={data.email}
+                            onChange={(e) => setData('email', e.target.value)}
+                            placeholder="Alamat Email Anda"
+                            className="h-[48px] rounded-[var(--radius-lg)] border-[var(--border)] bg-[var(--white)] px-4 text-[var(--font-size-body)] text-[var(--text-dark)] focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] transition-all"
+                        />
+                        <InputError message={errors.email} />
+                    </div>
+
+                    <div className="grid gap-2">
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="password" className="text-[var(--font-size-small)] font-[var(--font-weight-bold)] text-[var(--text-dark)] tracking-tight uppercase">KATA SANDI</Label>
+                            {canResetPassword && (
+                                <TextLink href={route('password.request')} className="text-[var(--font-size-small)] font-[var(--font-weight-bold)] text-[var(--primary)] hover:text-[var(--primary-hover)]" tabIndex={5}>
+                                    Lupa?
+                                </TextLink>
+                            )}
+                        </div>
+                        <div className="relative">
                             <Input
-                                id="email"
-                                type="text"
+                                id="password"
+                                type={showPassword ? 'text' : 'password'}
                                 required
-                                autoFocus
-                                tabIndex={1}
-                                autoComplete="email"
-                                value={data.email}
-                                onChange={(e) => setData('email', e.target.value)}
-                                placeholder="email@example.com or username"
+                                tabIndex={2}
+                                autoComplete="current-password"
+                                value={data.password}
+                                onChange={(e) => setData('password', e.target.value)}
+                                placeholder="Kata Sandi Anda"
+                                className="h-[48px] rounded-[var(--radius-lg)] border-[var(--border)] bg-[var(--white)] pr-12 px-4 text-[var(--font-size-body)] text-[var(--text-dark)] focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] transition-all"
                             />
-                            <InputError message={errors.email} />
-                        </div>
-
-                        <div className="grid gap-2">
-                            <div className="flex items-center justify-between">
-                                <Label htmlFor="password">Password</Label>
-                                {canResetPassword && (
-                                    <TextLink href={route('password.request')} className="text-sm" tabIndex={5}>
-                                        Forgot password?
-                                    </TextLink>
+                            <button
+                                type="button"
+                                tabIndex={-1}
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-light)]"
+                            >
+                                {showPassword ? (
+                                    <EyeOff className="size-4" />
+                                ) : (
+                                    <Eye className="size-4" />
                                 )}
-                            </div>
-                            <div className="relative">
-                                <Input
-                                    id="password"
-                                    type={showPassword ? 'text' : 'password'}
-                                    required
-                                    tabIndex={2}
-                                    autoComplete="current-password"
-                                    value={data.password}
-                                    onChange={(e) => setData('password', e.target.value)}
-                                    placeholder="Password"
-                                    className="pr-10"
-                                />
-                                <button
-                                    type="button"
-                                    tabIndex={-1}
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                                >
-                                    {showPassword ? (
-                                        <EyeOff className="h-4 w-4" />
-                                    ) : (
-                                        <Eye className="h-4 w-4" />
-                                    )}
-                                </button>
-                            </div>
-                            <InputError message={errors.password} />
+                            </button>
                         </div>
-
-                        <div className="flex items-center space-x-3">
-                            <Checkbox id="remember" name="remember" tabIndex={3} />
-                            <Label htmlFor="remember">Remember me</Label>
-                        </div>
-
-                        <Button type="submit" className="mt-4 w-full" tabIndex={4} disabled={processing}>
-                            {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                            Log in
-                        </Button>
+                        <InputError message={errors.password} />
                     </div>
 
-                    <div className="text-muted-foreground text-center text-sm">
-                        Don't have an account?{' '}
-                        <TextLink href={route('register')} tabIndex={5}>
-                            Sign up
-                        </TextLink>
+                    <div className="flex items-center space-x-2">
+                        <Checkbox id="remember" name="remember" tabIndex={3} className="h-4 w-4 rounded-[var(--radius-sm)] border-[var(--border)] data-[state=checked]:bg-[var(--primary)]" />
+                        <Label htmlFor="remember" className="text-[var(--font-size-small)] font-[var(--font-weight-medium)] text-[var(--text-light)]">Ingat saya</Label>
                     </div>
 
-                    {canResetPassword && (
-                        <div className="text-muted-foreground text-center text-sm">
-                            <TextLink href={route('password.request')} className="text-blue-600 hover:text-blue-800">
-                                Forgot your password?
-                            </TextLink>
-                        </div>
-                    )}
+                    <Button 
+                        type="submit" 
+                        className="h-[48px] w-full rounded-[var(--radius-lg)] bg-[var(--primary)] text-[var(--font-size-body)] font-[var(--font-weight-bold)] text-[var(--white)] transition-all hover:bg-[var(--primary-hover)] active:bg-[var(--primary-active)] active:scale-[0.98]" 
+                        tabIndex={4} 
+                        disabled={processing}
+                    >
+                        {processing && <LoaderCircle className="mr-2 size-4 animate-spin" />}
+                        Masuk Ke Akun
+                    </Button>
+                </div>
 
-                    {canTestEmail && (
-                        <div className="text-muted-foreground text-center text-sm mt-2">
-                            <TextLink href="/email-test" className="text-blue-600 hover:text-blue-800">
-                                Test Email Configuration
-                            </TextLink>
-                        </div>
-                    )}
-                </form>
+                <div className="text-center text-[var(--font-size-small)] text-[var(--text-muted)] font-[var(--font-weight-medium)]">
+                    Belum punya akun?{' '}
+                    <TextLink href={route('register')} className="font-[var(--font-weight-bold)] text-[var(--primary)] hover:text-[var(--primary-hover)] hover:underline" tabIndex={5}>
+                        Daftar Gratis
+                    </TextLink>
+                </div>
 
-                {status && <div className="mb-4 text-center text-sm font-medium text-green-600">{status}</div>}
-            </div>
-        </AuthLayout>
+                {status && <div className="mt-4 text-center text-sm font-semibold text-[var(--success)]">{status}</div>}
+            </form>
+        </AuthSplitLayout>
     );
 }

@@ -1,21 +1,15 @@
-import { Head, router } from '@inertiajs/react';
-import React from 'react';
-import { 
-    Users, ShieldCheck, Settings2, GitBranch, Tags, Building2, 
-    LayoutGrid, Shield
-} from 'lucide-react';
+import { Head } from '@inertiajs/react';
 
-import { ToastProvider } from '@/components/contracts/Toast';
-import { UserManagement } from '@/components/admin/UserManagement';
-import { RoleManagement } from '@/components/admin/RoleManagement';
-import { WorkflowManagement } from '@/components/admin/WorkflowManagement';
-import { DepartmentManagement } from '@/components/admin/DepartmentManagement';
 import { ContractTypeManagement } from '@/components/admin/ContractTypeManagement';
-import { StatusManagement } from '@/components/admin/StatusManagement';
+import { DepartmentManagement } from '@/components/admin/DepartmentManagement';
 import { NavigationManagement } from '@/components/admin/NavigationManagement';
-import { VendorManagement } from '@/components/admin/VendorManagement';
 import NumberingFormatManagement from '@/components/admin/NumberingFormatManagement';
-import AppLayout from '@/layouts/app-layout';
+import { RoleManagement } from '@/components/admin/RoleManagement';
+import { StatusManagement } from '@/components/admin/StatusManagement';
+import { UserManagement } from '@/components/admin/UserManagement';
+import { VendorManagement } from '@/components/admin/VendorManagement';
+import { WorkflowManagement } from '@/components/admin/WorkflowManagement';
+import { ToastProvider } from '@/components/contracts/Toast';
 
 interface PaginatedData<T> {
     data: T[];
@@ -73,7 +67,6 @@ export default function AdminIndex({
     contractStatuses,
     filters = {},
 }: Props) {
-    
     // View Metadata Mapping
     const viewTitleMap: Record<string, string> = {
         users: 'Manajemen Pengguna',
@@ -91,11 +84,11 @@ export default function AdminIndex({
     const viewTitle = viewTitleMap[currentView] || 'Administrasi Sistem';
 
     // Helper to ensure we have roles and departments as simple arrays for selects
-    const rolesArray = Array.isArray(roles) ? roles : (roles?.data || []);
-    const deptsArray = Array.isArray(departments) ? departments : (departments?.data || []);
-    const typesArray = Array.isArray(contractTypes || types) ? (contractTypes || types) : ((contractTypes || types)?.data || []);
-    const usersArray = Array.isArray(users) ? users : (users?.data || []);
-    const navigationsArray = Array.isArray(groups || moduleGroups) ? (groups || moduleGroups) : ((groups || moduleGroups)?.data || []);
+    const rolesArray = Array.isArray(roles) ? roles : roles?.data || [];
+    const deptsArray = Array.isArray(departments) ? departments : departments?.data || [];
+    const typesArray = Array.isArray(contractTypes || types) ? contractTypes || types : (contractTypes || types)?.data || [];
+    const usersArray = Array.isArray(users) ? users : users?.data || [];
+    const navigationsArray = Array.isArray(groups || moduleGroups) ? groups || moduleGroups : (groups || moduleGroups)?.data || [];
 
     const renderView = () => {
         switch (currentView) {
@@ -105,20 +98,27 @@ export default function AdminIndex({
                 return <RoleManagement roles={roles} filters={filters} />;
             case 'workflows':
                 return (
-                    <WorkflowManagement 
-                        workflows={workflows} 
-                        contractTypes={typesArray} 
-                        departments={deptsArray} 
-                        roles={rolesArray} 
-                        users={usersArray} 
+                    <WorkflowManagement
+                        workflows={workflows}
+                        contractTypes={typesArray}
+                        departments={deptsArray}
+                        roles={rolesArray}
+                        users={usersArray}
                         contractStatuses={contractStatuses || []}
-                        filters={filters} 
+                        filters={filters}
                     />
                 );
             case 'departments':
                 return <DepartmentManagement departments={departments} filters={filters} />;
             case 'contract-types':
-                return <ContractTypeManagement contractTypes={contractTypes || types} formTemplates={formTemplates} contractTemplates={contractTemplates} filters={filters} />;
+                return (
+                    <ContractTypeManagement
+                        contractTypes={contractTypes || types}
+                        formTemplates={formTemplates}
+                        contractTemplates={contractTemplates}
+                        filters={filters}
+                    />
+                );
             case 'contract-statuses':
                 return <StatusManagement statuses={statuses} filters={filters} />;
             case 'module-groups':
@@ -131,7 +131,7 @@ export default function AdminIndex({
                 return <NumberingFormatManagement formats={formats} />;
             default:
                 return (
-                    <div className="h-full flex items-center justify-center text-slate-400 uppercase font-black tracking-widest text-xs">
+                    <div className="flex h-full items-center justify-center text-xs font-black tracking-widest text-slate-400 uppercase">
                         Pilih menu administrasi untuk mengelola sistem
                     </div>
                 );
@@ -141,11 +141,9 @@ export default function AdminIndex({
     return (
         <ToastProvider>
             <Head title={`Admin - ${viewTitle}`} />
-            
-            <div className="bg-background/20 flex min-h-0 flex-1 flex-col gap-4 p-3 overflow-hidden">
-                <div className="flex-1 overflow-hidden">
-                    {renderView()}
-                </div>
+
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden bg-[var(--background)]">
+                <div className="flex-1 overflow-hidden">{renderView()}</div>
             </div>
         </ToastProvider>
     );

@@ -39,8 +39,8 @@ export interface ContractApproval {
     target_approvers?: string;
     sequence: number;
     status: 'pending' | 'waiting' | 'approved' | 'rejected';
-    note: string | null;
-    approved_at: string | null;
+    comment: string | null;
+    decided_at: string | null;
     approver: UserProfile;
 }
 
@@ -117,6 +117,8 @@ export interface Contract {
         id: string;
         contract_no: string;
         title: string;
+        status: ContractStatus;
+        created_at: string;
     } | null;
     p1_entity?: string;
     p1_signer?: string;

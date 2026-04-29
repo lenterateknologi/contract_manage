@@ -8,48 +8,51 @@
 
 @theme {
     --font-sans:
-        'Inter', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+        'Inter', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-primary:
+        'Inter', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
     --font-serif:
         'Lora', 'Times New Roman', Georgia, serif;
+    --font-mono:
+        var(--font-mono), 'Courier New', monospace;
 
-    --radius-lg: var(--radius);
-    --radius-md: calc(var(--radius) - 2px);
-    --radius-sm: calc(var(--radius) - 4px);
+    /* Theme Radii */
+    --radius-lg: var(--radius-lg);
+    --radius-md: var(--radius-md);
+    --radius-sm: var(--radius-sm);
 
+    /* Theme Colors mapped to Tailwind v4 theme keys */
     --color-background: var(--background);
-    --color-foreground: var(--foreground);
+    --color-foreground: var(--text-dark);
 
-    --color-card: var(--card);
-    --color-card-foreground: var(--card-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--white);
+
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--text-dark);
+
+    --color-muted: var(--secondary);
+    --color-muted-foreground: var(--text-light);
+
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--white);
+
+    --color-border: var(--border);
+    --color-input: var(--white);
+    --color-ring: var(--primary);
+
+    --color-success: var(--success);
+    --color-warning: var(--warning);
+    --color-danger: var(--danger);
+    --color-info: var(--info);
 
     --color-popover: var(--popover);
     --color-popover-foreground: var(--popover-foreground);
 
-    --color-primary: var(--primary);
-    --color-primary-foreground: var(--primary-foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
 
-    --color-secondary: var(--secondary);
-    --color-secondary-foreground: var(--secondary-foreground);
-
-    --color-muted: var(--muted);
-    --color-muted-foreground: var(--muted-foreground);
-
-    --color-accent: var(--accent);
-    --color-accent-foreground: var(--accent-foreground);
-
-    --color-destructive: var(--destructive);
-    --color-destructive-foreground: var(--destructive-foreground);
-
-    --color-border: var(--border);
-    --color-input: var(--input);
-    --color-ring: var(--ring);
-
-    --color-chart-1: var(--chart-1);
-    --color-chart-2: var(--chart-2);
-    --color-chart-3: var(--chart-3);
-    --color-chart-4: var(--chart-4);
-    --color-chart-5: var(--chart-5);
-
+    /* Sidebar Theme Mapping */
     --color-sidebar: var(--sidebar-background);
     --color-sidebar-foreground: var(--sidebar-foreground);
     --color-sidebar-primary: var(--sidebar-primary);
@@ -60,63 +63,93 @@
     --color-sidebar-ring: var(--sidebar-ring);
 }
 
-/*
-  The default border color has changed to `currentColor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
-@layer base {
-    *,
-    ::after,
-    ::before,
-    ::backdrop,
-    ::file-selector-button {
-        border-color: var(--color-gray-200, currentColor);
-    }
-}
-
 :root {
-    --background: hsl(0, 0%, 100%);
-    --foreground: hsl(0, 0%, 3.9%);
-    --card: hsl(0, 0%, 100%);
-    --card-foreground: hsl(0, 0%, 3.9%);
-    --popover: hsl(0, 0%, 100%);
-    --popover-foreground: hsl(0, 0%, 3.9%);
-    --primary: hsl(0, 0%, 9%);
-    --primary-foreground: hsl(0, 0%, 98%);
-    --secondary: hsl(0, 0%, 96.1%);
-    --secondary-foreground: hsl(0, 0%, 9%);
-    --muted: hsl(0, 0%, 96.1%);
-    --muted-foreground: hsl(0, 0%, 45.1%);
-    --accent: hsl(0, 0%, 96.1%);
-    --accent-foreground: hsl(0, 0%, 9%);
-    --destructive: hsl(0, 84.2%, 60.2%);
-    --destructive-foreground: hsl(0, 0%, 98%);
-    --border: hsl(0, 0%, 92.8%);
-    --input: hsl(0, 0%, 89.8%);
-    --ring: hsl(0, 0%, 3.9%);
-    --chart-1: hsl(12, 76%, 61%);
-    --chart-2: hsl(173, 58%, 39%);
-    --chart-3: hsl(197, 37%, 24%);
-    --chart-4: hsl(43, 74%, 66%);
-    --chart-5: hsl(27, 87%, 67%);
-    --radius: 0.5rem;
-    --sidebar-background: hsl(0, 0%, 98%);
-    --sidebar-foreground: hsl(240, 5.3%, 30%);
-    --sidebar-primary: hsl(0, 0%, 10%);
-    --sidebar-primary-foreground: hsl(0, 0%, 98%);
-    --sidebar-accent: hsl(0, 0%, 94%);
-    --sidebar-accent-foreground: hsl(0, 0%, 30%);
-    --sidebar-border: hsl(0, 0%, 91%);
-    --sidebar-ring: hsl(217.2, 91.2%, 59.8%);
+    /* Sidebar colors - Light Mode (Clean White) */
+    --sidebar-background: #ffffff;
+    --sidebar-foreground: #0f2a4a;
+    --sidebar-primary: #0f2a4a;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #f1f5f9;
+    --sidebar-accent-foreground: #0f2a4a;
+    --sidebar-border: #e2e8f0;
+    --sidebar-ring: #0f2a4a;
+
+    /* Colors - Professional Dark Blue Theme */
+    --primary: #0f2a4a;
+    --primary-hover: #0a1d33;
+    --primary-active: #050e1a;
+    --primary-light: #e6ebf0;
+
+    --secondary: #f5f7fa;
+    --accent: #00a86b;
+
+    --text-dark: #1a2332;
+    --text-light: #4a5568;
+    --text-muted: #718096;
+
+    --border: #e2e8f0;
+    --background: #f8fafc;
+    --white: #ffffff;
+
+    --popover: #ffffff;
+    --popover-foreground: #0f2a4a;
+    --card: #ffffff;
+    --card-foreground: #0f2a4a;
+
+    --success: #1a7f37;
+    --warning: #9a6700;
+    --danger: #d73a49;
+    --info: #0550ae;
+
+    /* Typography */
+    --font-primary: 'Inter', sans-serif;
+    --font-mono: 'Courier New', monospace;
+
+    --font-size-h1: 28px;
+    --font-size-h2: 20px;
+    --font-size-h3: 18px;
+    --font-size-body: 14px;
+    --font-size-small: 12px;
+
+    --font-weight-light: 300;
+    --font-weight-regular: 400;
+    --font-weight-semibold: 500;
+    --font-weight-bold: 600;
+
+    --line-height-heading: 1.2;
+    --line-height-body: 1.5;
+
+    /* Spacing */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 12px;
+    --spacing-base: 16px;
+    --spacing-lg: 20px;
+    --spacing-xl: 24px;
+    --spacing-2xl: 32px;
+    --spacing-3xl: 40px;
+
+    /* Borders & Radius */
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.05);
+    --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+    /* Breakpoints */
+    --breakpoint-tablet: 768px;
+    --breakpoint-desktop: 1200px;
+
+    /* Transitions */
+    --transition-base: 300ms ease-in-out;
 }
 
 .dark {
-    --background: hsl(0, 0%, 3.9%);
-    --foreground: hsl(0, 0%, 98%);
+    --background: #0b1a2d;
+    --foreground: #f8fafc;
     --card: hsl(0, 0%, 3.9%);
     --card-foreground: hsl(0, 0%, 98%);
     --popover: hsl(0, 0%, 3.9%);
@@ -139,14 +172,14 @@
     --chart-3: hsl(30, 80%, 55%);
     --chart-4: hsl(280, 65%, 60%);
     --chart-5: hsl(340, 75%, 55%);
-    --sidebar-background: hsl(0, 0%, 7%);
-    --sidebar-foreground: hsl(0, 0%, 80%);
-    --sidebar-primary: hsl(360, 100%, 100%);
-    --sidebar-primary-foreground: hsl(0, 0%, 100%);
-    --sidebar-accent: hsl(0, 0%, 15.9%);
-    --sidebar-accent-foreground: hsl(240, 4.8%, 95.9%);
-    --sidebar-border: hsl(0, 0%, 15.9%);
-    --sidebar-ring: hsl(217.2, 91.2%, 59.8%);
+    --sidebar-background: #0b1a2d;
+    --sidebar-foreground: #f8fafc;
+    --sidebar-primary: #3b82f6;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: rgba(255, 255, 255, 0.05);
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: rgba(255, 255, 255, 0.1);
+    --sidebar-ring: #3b82f6;
 }
 
 @layer base {
@@ -154,9 +187,24 @@
         @apply border-border;
     }
 
-    body {
-        @apply bg-background text-foreground;
+    html {
+        font-family: 'Inter', sans-serif;
     }
+
+    body {
+        @apply bg-background text-foreground font-sans;
+    }
+
+    input, button, select, textarea {
+        font-family: 'Inter', sans-serif !important;
+    }
+}
+
+* {
+    font-family: 'Inter', sans-serif !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
 }
 
 /* Contract CMS Animations */
@@ -185,3 +233,42 @@
 .contract-doc th, .contract-doc td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; color: var(--foreground); }
 .contract-doc th { background: var(--muted); font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
 .contract-doc .highlight { background: var(--primary); color: var(--primary-foreground); padding: 0 4px; border-radius: 2px; }
+
+/* Force Light Mode Utility for Documents */
+.force-light {
+    --background: #ffffff;
+    --foreground: #000000;
+    --text-dark: #000000;
+    --text-light: #334155;
+    --border: #e2e8f0;
+    --card: #ffffff;
+    --card-foreground: #000000;
+    --muted: #f8fafc;
+    --muted-foreground: #64748b;
+    --popover: #ffffff;
+    --popover-foreground: #000000;
+    --primary: #0f172a;
+    --primary-foreground: #ffffff;
+    --input: #ffffff;
+    --secondary: #f1f5f9;
+    --secondary-foreground: #0f172a;
+
+    background-color: white !important;
+    color: black !important;
+}
+
+.force-light * {
+    border-color: rgba(0,0,0,0.1) !important;
+}
+
+.force-light input,
+.force-light textarea,
+.force-light select {
+    background-color: #f8fafc !important;
+    color: black !important;
+    border-color: #e2e8f0 !important;
+}
+
+.force-light label {
+    color: #475569 !important;
+}

@@ -34,14 +34,14 @@ export function ConfirmationModal({
     if (!open) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white scale-in-center w-full max-w-sm overflow-hidden rounded-2xl border border-slate-200 shadow-2xl">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-black scale-in-center w-full max-w-sm overflow-hidden rounded-none border border-black dark:border-white shadow-2xl">
                 {/* Content Section */}
                 <div className="p-8 text-center">
                     <div className={cn(
-                        "mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full transition-all duration-300",
-                        variant === 'danger' ? 'bg-rose-50 text-rose-600' : 
-                        variant === 'warning' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'
+                        "mx-auto mb-6 flex h-20 w-20 items-center justify-center transition-all duration-300 border-2",
+                        variant === 'danger' ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white' : 
+                        variant === 'warning' ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white' : 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white'
                     )}>
                         {icon || (
                             variant === 'danger' ? 
@@ -52,20 +52,20 @@ export function ConfirmationModal({
                         )}
                     </div>
                     
-                    <h3 className="text-slate-900 mb-3 text-xl font-black uppercase tracking-tight">
+                    <h3 className="text-black dark:text-white mb-3 text-xl font-black uppercase tracking-tight">
                         {title}
                     </h3>
-                    <p className="text-slate-500 text-sm leading-relaxed font-medium">
+                    <p className="text-black/60 dark:text-white/60 text-[11px] leading-relaxed font-bold uppercase tracking-wider">
                         {description}
                     </p>
                 </div>
 
                 {/* Actions Section */}
-                <div className="flex border-t border-slate-100">
+                <div className="flex border-t border-black dark:border-white">
                     <button
                         onClick={onClose}
                         disabled={processing}
-                        className="text-slate-400 hover:bg-slate-50 flex-1 border-r border-slate-100 py-5 text-sm font-black uppercase tracking-widest transition-all active:bg-slate-100"
+                        className="text-black/40 dark:text-white/40 hover:bg-black/5 dark:hover:bg-white/5 flex-1 border-r border-black dark:border-white py-5 text-[11px] font-black uppercase tracking-widest transition-all active:bg-black/10 dark:active:bg-white/10"
                     >
                         {cancelText}
                     </button>
@@ -73,9 +73,8 @@ export function ConfirmationModal({
                         onClick={onConfirm}
                         disabled={processing}
                         className={cn(
-                            "flex-1 py-5 text-sm font-black uppercase tracking-widest transition-all active:opacity-80 disabled:opacity-50",
-                            variant === 'danger' ? 'text-rose-600 hover:bg-rose-50' : 
-                            variant === 'warning' ? 'text-amber-600 hover:bg-amber-50' : 'text-blue-600 hover:bg-blue-50'
+                            "flex-1 py-5 text-[11px] font-black uppercase tracking-widest transition-all active:opacity-80 disabled:opacity-50",
+                            "text-black dark:text-white hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black"
                         )}
                     >
                         {processing ? <i className="fa-solid fa-spinner fa-spin mr-2" /> : null}

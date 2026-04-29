@@ -66,8 +66,8 @@ const SortableModuleItem = ({ module, onRemove }: { module: Module; onRemove: (i
                 <GripVertical size={14} />
             </div>
             <div className="min-w-0 flex-1">
-                <p className="truncate text-[11px] leading-none font-black tracking-tight text-slate-900 uppercase">{module.name}</p>
-                <p className="mt-1 truncate text-[9px] font-bold text-slate-400 uppercase">{module.route || 'SYSTEM_INTERNAL'}</p>
+                <p className="truncate text-[12px] font-bold text-slate-900">{module.name}</p>
+                <p className="mt-1 truncate text-[10px] font-medium text-slate-400 uppercase tracking-wide">{module.route || 'SYSTEM_INTERNAL'}</p>
             </div>
             <button
                 onClick={() => onRemove(module.id)}
@@ -97,10 +97,10 @@ const SortableGroupItem = ({ group, onRemoveModule }: { group: Group; onRemoveMo
                         <GripVertical size={16} />
                     </div>
                     <div>
-                        <h3 className="flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-800 uppercase">
+                        <h3 className="flex items-center gap-2 text-[12px] font-bold text-slate-800 uppercase tracking-wide">
                             {group.name}
-                            <span className="bg-slate-900 px-1.5 py-0.5 text-[8px] leading-none font-black tracking-widest text-white uppercase">
-                                {group.modules.length} ELEMENTS
+                            <span className="bg-slate-900 px-2 py-0.5 text-[9px] font-bold text-white rounded-md">
+                                {group.modules.length} ITEMS
                             </span>
                         </h3>
                     </div>
@@ -128,10 +128,9 @@ const AvailableListContainer = ({ modules, onQuickAdd }: { modules: Module[]; on
         <div ref={setNodeRef} className="col-span-12 flex h-full flex-col overflow-hidden border border-slate-200 bg-white lg:col-span-4">
             <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-slate-50 p-4">
                 <div className="flex items-center gap-3">
-                    {/* <div className="w-1.5 h-3 bg-black" /> */}
-                    <h2 className="text-[10px] font-black tracking-[0.2em] text-slate-600 uppercase">Available Repository</h2>
+                    <h2 className="text-[11px] font-bold tracking-wider text-slate-600 uppercase">Available Repository</h2>
                 </div>
-                <span className="bg-slate-200 px-2 py-0.5 text-[9px] font-black tracking-tight text-slate-500 uppercase">{modules.length} UNITS</span>
+                <span className="bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-500 rounded-md">{modules.length} UNITS</span>
             </div>
             <div className="scrollbar-hide flex-1 space-y-2 overflow-y-auto p-4">
                 <SortableContext id="available-context" items={modules.map((m) => m.id)} strategy={verticalListSortingStrategy}>
@@ -170,8 +169,8 @@ const AvailableModuleItem = ({ module, onQuickAdd }: { module: Module; onQuickAd
                     <GripVertical size={14} />
                 </div>
                 <div className="min-w-0">
-                    <span className="block truncate text-[11px] font-black tracking-tight text-slate-900 uppercase">{module.name}</span>
-                    <span className="mt-0.5 block truncate text-[9px] leading-none font-bold tracking-wider text-slate-400 uppercase italic">
+                    <span className="block truncate text-[12px] font-bold text-slate-900">{module.name}</span>
+                    <span className="mt-0.5 block truncate text-[10px] font-medium text-slate-400 uppercase tracking-wide">
                         {module.route || 'NO_PATH'}
                     </span>
                 </div>

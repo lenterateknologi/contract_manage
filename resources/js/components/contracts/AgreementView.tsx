@@ -1,9 +1,10 @@
+import { useToast } from '@/components/contracts/Toast';
 import { cn } from '@/lib/utils';
 import { Contract } from '@/types/contracts';
 import axios from 'axios';
-import { Diff, Download, FileText, History, Loader2, Upload, ExternalLink, X } from 'lucide-react'; 
+import { Diff, FileText, History, Loader2, Upload, ChevronDown, Search, MoreVertical, RefreshCw, ArrowRight } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useToast } from '@/components/contracts/Toast';
+import LoadingLottie from '../ui/LoadingLottie';
 
 interface AgreementVersion {
     id: string;
@@ -64,6 +65,8 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
         loadVersions();
     }, [loadVersions]);
 
+    const isDraft = contract.status === 'draft';
+
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -109,28 +112,26 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
     });
 
     // PDF Preview URL targeting the backend conversion endpoint
-    const pdfUrl = selectedVno 
-        ? `/api/contracts/${contract.id}/pdf/${selectedVno}?type=agreement#view=FitH` 
-        : null;
+    const pdfUrl = selectedVno ? `/api/contracts/${contract.id}/pdf/${selectedVno}?type=agreement#view=FitH` : null;
 
     return (
-        <div className="bg-card animate-in fade-in flex flex-1 flex-col overflow-hidden duration-500">
+        <div className="bg-card animate-in fade-in flex flex-1 flex-col overflow-hidden duration-300">
             {/* Header Area */}
-            <div className="border-border/60 sticky top-0 z-40 flex h-[72px] shrink-0 items-center justify-between border-b bg-white/50 px-6 backdrop-blur-sm">
+            <div className="border-black/10 dark:border-white/10 sticky top-0 z-40 flex h-[72px] shrink-0 items-center justify-between border-b bg-white/80 dark:bg-sidebar/80 px-6 backdrop-blur-md">
                 <div className="flex items-center gap-4">
                     <div className="flex flex-col">
                         <div className="flex items-center gap-2">
-                            <div className="h-4 w-1 rounded-full bg-indigo-600" />
-                            <h4 className="text-[11px] leading-none font-black tracking-tighter text-slate-900 uppercase">
-                                Agreement Preview
-                            </h4>
+                            <div className="h-4 w-1 rounded-full bg-black dark:bg-white" />
+                            <h4 className="text-sm font-bold text-black dark:text-white">Preview Persetujuan</h4>
                             {selectedVno && (
-                                <span className="animate-in fade-in zoom-in rounded bg-slate-950 px-1.5 py-0.5 text-[8px] font-black tracking-widest text-white uppercase duration-500">
-                                    V{selectedVno}
-                                </span>
+                                <div className="rounded bg-black dark:bg-white px-1.5 py-0.5">
+                                    <span className="text-[10px] font-bold text-white dark:text-black">
+                                        V{selectedVno}
+                                    </span>
+                                </div>
                             )}
                         </div>
-                        <span className="mt-1.5 text-[9px] font-black tracking-[0.2em] text-indigo-500 uppercase">
+                        <span className="mt-0.5 text-[10px] font-bold text-black dark:text-white">
                             High-Fidelity PDF Preview &bull; Layout Preserved
                         </span>
                     </div>
@@ -142,27 +143,29 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
                             <button
                                 onClick={() => setShowVersions(!showVersions)}
                                 className={cn(
-                                    'border-border flex h-8 items-center gap-1.5 rounded-xl border bg-white px-3 text-[9px] font-black tracking-widest uppercase shadow-sm transition-all active:scale-95',
-                                    showVersions ? 'border-slate-900 bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50',
+                                    'group flex h-9 items-center gap-2.5 rounded-lg border px-4 transition-all active:scale-95',
+                                    showVersions
+                                        ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black'
+                                        : 'border-black bg-white text-black hover:border-black/20 dark:border-white dark:bg-transparent dark:text-white',
                                 )}
                             >
-                                <History size={11} className={cn('text-indigo-500', showVersions && 'text-white')} />
-                                {versions.length} <span className={cn('opacity-40', showVersions && 'opacity-60')}>VERSIONS</span>
-                                <i className={cn('fa-solid fa-chevron-down ml-1 text-[8px] transition-transform', showVersions && 'rotate-180')} />
+                                <History size={16} className={showVersions ? 'text-white dark:text-black' : 'text-black dark:text-white'} />
+                                <span className="text-xs font-bold">{versions.length} Versi</span>
+                                <ChevronDown size={12} className={cn('ml-1 transition-transform', showVersions && 'rotate-180')} />
                             </button>
 
                             {showVersions && (
-                                <div className="animate-in fade-in zoom-in-95 absolute top-full left-0 z-[999] mt-2 w-72 origin-top-left rounded-xl border border-slate-200 bg-white p-1 shadow-2xl shadow-slate-200/50 duration-200 outline-none">
-                                    <div className="border-b border-slate-100 p-2">
+                                <div className="animate-in fade-in zoom-in-95 absolute top-full left-0 z-[999] mt-2 w-72 origin-top-left rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-sidebar p-1 shadow-2xl duration-200">
+                                    <div className="border-b border-black/5 dark:border-white/5 p-2">
                                         <div className="relative">
-                                            <i className="fa-solid fa-magnifying-glass absolute top-1/2 left-3 -translate-y-1/2 text-[10px] text-slate-400" />
+                                            <Search size={14} className="absolute top-1/2 left-3.5 -translate-y-1/2 text-black dark:text-white" />
                                             <input
                                                 autoFocus
                                                 type="text"
-                                                placeholder="Cari versi..."
+                                                placeholder="Cari riwayat versi..."
                                                 value={searchQuery}
                                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                                className="w-full rounded-lg border border-slate-100 bg-slate-50 py-1.5 pr-3 pl-8 text-[11px] font-bold transition-all outline-none focus:border-indigo-200 focus:bg-white"
+                                                className="w-full rounded-xl border border-black bg-white py-2.5 pr-4 pl-10 text-xs font-bold transition-all outline-none focus:ring-2 focus:ring-black dark:border-white dark:bg-transparent dark:text-white dark:focus:ring-white"
                                             />
                                         </div>
                                     </div>
@@ -171,26 +174,25 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
                                             <button
                                                 key={v.id}
                                                 onClick={() => handlePreview(v.version_no)}
-                                                className="group flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition-all hover:bg-slate-50"
+                                                className="group flex w-full items-center justify-between rounded-lg px-3 py-3 text-left transition-all hover:bg-black/5 dark:hover:bg-white/5"
                                             >
                                                 <div className="flex flex-col">
                                                     <div className="flex items-center gap-2">
                                                         <span
                                                             className={cn(
-                                                                'flex h-5 w-5 items-center justify-center rounded-md text-[10px] font-black transition-colors',
-                                                                selectedVno === v.version_no
-                                                                    ? 'bg-indigo-600 text-white'
-                                                                    : 'bg-slate-100 text-slate-600 group-hover:bg-indigo-100 group-hover:text-indigo-600',
+                                                                'flex h-6 w-6 items-center justify-center rounded bg-black text-[10px] font-bold text-white transition-colors dark:bg-white dark:text-black',
+                                                                selectedVno !== v.version_no && 'bg-black dark:bg-white',
                                                             )}
                                                         >
                                                             {v.version_no}
                                                         </span>
-                                                        <span className="text-[11px] font-bold text-slate-800">{v.file_name}</span>
+                                                        <span className="text-xs font-bold text-black dark:text-white">{v.file_name}</span>
                                                     </div>
-                                                    <span className="mt-1 text-[9px] font-medium tracking-tight text-slate-400 uppercase">
+                                                    <span className="mt-1 text-[10px] font-bold text-black dark:text-white">
                                                         {v.created_at} &bull; {v.uploader?.name || 'System'}
                                                     </span>
                                                 </div>
+                                                <ArrowRight size={14} className="opacity-0 transition-all group-hover:opacity-100 text-black dark:text-white" />
                                             </button>
                                         ))}
                                     </div>
@@ -203,87 +205,92 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
                         <button
                             onClick={() => setShowMoreActions(!showMoreActions)}
                             className={cn(
-                                'border-border flex h-8 w-8 items-center justify-center rounded-xl border bg-white shadow-sm transition-all active:scale-95',
-                                showMoreActions ? 'border-slate-900 bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'
+                                'flex h-9 w-9 items-center justify-center rounded-lg border transition-all active:scale-95',
+                                showMoreActions
+                                    ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black'
+                                    : 'border-black bg-white text-black hover:bg-black/5 dark:border-white dark:bg-transparent dark:text-white',
                             )}
                         >
-                            <i className="fa-solid fa-ellipsis-vertical text-[10px]" />
+                            <MoreVertical size={16} />
                         </button>
 
                         {showMoreActions && (
-                            <div className="animate-in fade-in zoom-in-95 absolute top-full right-0 z-[999] mt-2 w-48 origin-top-right rounded-xl border border-slate-200 bg-white p-1 shadow-2xl shadow-slate-200/50 duration-200 outline-none">
+                            <div className="animate-in fade-in zoom-in-95 absolute top-full right-0 z-[999] mt-2 w-48 origin-top-right rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-sidebar p-1 shadow-2xl duration-200">
                                 <button
                                     onClick={() => {
                                         loadVersions();
                                         setShowMoreActions(false);
                                     }}
-                                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[10px] font-bold text-slate-600 transition-all hover:bg-slate-50 hover:text-slate-900"
+                                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-xs font-bold text-black dark:text-white transition-all hover:bg-black/5 dark:hover:bg-white/5 uppercase tracking-widest"
                                 >
-                                    <i className="fa-solid fa-arrows-rotate w-4 text-[10px] opacity-40" />
+                                    <RefreshCw size={14} className="text-black dark:text-white" />
                                     REFRESH LIST
                                 </button>
 
-                                <button
-                                    onClick={() => {
-                                        handleCompare();
-                                        setShowMoreActions(false);
-                                    }}
-                                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[10px] font-bold text-orange-600 transition-all hover:bg-orange-50"
-                                >
-                                    <Diff size={12} className="opacity-60" />
-                                    COMPARE VERSIONS
-                                </button>
+                                {versions.length > 1 && (
+                                    <button
+                                        onClick={() => {
+                                            handleCompare();
+                                            setShowMoreActions(false);
+                                        }}
+                                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-xs font-bold text-black dark:text-white transition-all hover:bg-black/5 dark:hover:bg-white/5 uppercase tracking-widest"
+                                    >
+                                        <Diff size={14} className="text-black dark:text-white" />
+                                        COMPARE VERSIONS
+                                    </button>
+                                )}
                             </div>
                         )}
                     </div>
 
-                    <label
-                        className={cn(
-                            'flex h-8 cursor-pointer items-center gap-2 rounded-xl bg-slate-900 px-5 text-[9px] font-black tracking-widest text-white uppercase shadow-lg shadow-slate-200 transition-all hover:bg-slate-800 active:scale-95',
-                            uploading && 'pointer-events-none opacity-50',
-                        )}
-                    >
-                        <input type="file" className="hidden" accept=".docx" onChange={handleFileUpload} disabled={uploading} />
-                        {uploading ? <Loader2 size={11} className="animate-spin" /> : <Upload size={11} />}
-                        UPLOAD NEW VERSION
-                    </label>
+                    {isDraft && (
+                        <label
+                            className={cn(
+                                'flex h-9 cursor-pointer items-center gap-2 rounded-lg bg-black px-6 text-xs font-bold text-white shadow-lg transition-all hover:opacity-90 active:scale-95 dark:bg-white dark:text-black',
+                                uploading && 'pointer-events-none opacity-50',
+                            )}
+                        >
+                            <input type="file" className="hidden" accept=".docx" onChange={handleFileUpload} disabled={uploading} />
+                            {uploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                            Upload Versi Baru
+                        </label>
+                    )}
                 </div>
             </div>
 
             {/* Main Preview Area - PDF Iframe */}
-            <div className="relative flex flex-1 flex-col overflow-hidden bg-slate-200 p-2 lg:p-8 min-h-[1000px] border-t border-slate-200">
+            <div className="relative flex min-h-[1000px] flex-1 flex-col overflow-hidden border-t border-black dark:border-white bg-white dark:bg-transparent">
                 {loading ? (
-                    <div className="flex h-full items-center justify-center">
-                        <Loader2 size={32} className="animate-spin text-slate-300" />
+                    <div className="flex h-full flex-col items-center justify-center gap-4">
+                        <LoadingLottie width={120} height={120} />
+                        <span className="text-[10px] font-black tracking-[0.2em] text-black uppercase dark:text-white">Memuat Dokumen...</span>
                     </div>
                 ) : versions.length === 0 ? (
-                    <div className="flex flex-1 flex-col items-center justify-center p-12 text-center">
-                        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full border-2 border-dashed border-slate-200 bg-white">
-                            <FileText size={40} className="text-slate-200" />
+                    <div className="flex flex-1 flex-col items-center justify-center p-20 text-center">
+                        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-dashed border-black dark:border-white">
+                            <FileText size={40} className="text-black dark:text-white" />
                         </div>
-                        <h4 className="mb-2 text-sm font-black tracking-widest text-slate-400 uppercase">No Document Available</h4>
-                        <p className="max-w-sm text-[10px] leading-relaxed font-bold tracking-tight text-slate-300 uppercase">
-                            Upload the final draft of your agreement (.docx) to start version tracking and per-point auditing.
+                        <h4 className="mb-2 text-xs font-bold text-black dark:text-white">Dokumen Tidak Tersedia</h4>
+                        <p className="max-w-sm text-[11px] font-bold text-black dark:text-white">
+                            Upload draf final persetujuan Anda (.docx) untuk mulai melacak versi dan melakukan audit per poin.
                         </p>
                     </div>
                 ) : (
                     <>
                         {pdfUrl ? (
-                            <iframe 
-                                src={pdfUrl} 
-                                className="flex-1 w-full border-none min-h-[1000px]"
-                                title="Agreement Preview"
-                            />
+                            <iframe src={pdfUrl} className="min-h-[1000px] w-full flex-1 border-none bg-white" title="Agreement Preview" />
                         ) : (
                             <div className="flex flex-1 items-center justify-center">
-                                <Loader2 size={32} className="animate-spin text-indigo-600" />
+                                <LoadingLottie width={120} height={120} />
                             </div>
                         )}
                     </>
                 )}
             </div>
-            
-            <style dangerouslySetInnerHTML={{ __html: `
+
+            <style
+                dangerouslySetInnerHTML={{
+                    __html: `
                 .custom-scrollbar::-webkit-scrollbar {
                     width: 6px;
                 }
@@ -291,7 +298,9 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
                     background: #e2e8f0;
                     border-radius: 10px;
                 }
-            `}} />
+            `,
+                }}
+            />
         </div>
     );
 }

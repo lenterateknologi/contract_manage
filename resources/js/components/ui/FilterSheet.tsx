@@ -78,41 +78,43 @@ function SearchableCategory({
 
     return (
         <div className="space-y-1.5 font-sans">
-            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block px-0.5">
+            <Label className="text-[11px] font-semibold text-black/50 dark:text-white/50 block px-0.5">
                 {category.label}
             </Label>
 
             <div className="relative">
                 <Popover>
                     <PopoverTrigger className={cn(
-                        "w-full flex items-center justify-between h-10 pl-3 pr-10 rounded-none border transition-all text-left overflow-hidden relative",
-                        activeValues.length > 0 ? "border-black bg-white" : "border-slate-200 bg-white hover:border-black"
+                        "w-full flex items-center justify-between h-10 pl-3 pr-10 rounded-lg border transition-all text-left overflow-hidden relative",
+                        activeValues.length > 0 
+                            ? "border-black dark:border-white bg-black/5 dark:bg-white/5 text-black dark:text-white" 
+                            : "border-black/20 dark:border-white/20 bg-white dark:bg-sidebar text-black dark:text-white hover:border-black dark:hover:border-white"
                     )}>
                         <div className="flex items-center gap-2 min-w-0 pr-2">
-                            <Search size={14} className="text-slate-400 shrink-0" />
+                            <Search size={14} className="text-black/40 dark:text-white/40 shrink-0" />
                             <div className="flex-1 truncate">
                                 {activeValues.length > 0 ? (
-                                    <span className="text-[11px] font-black uppercase tracking-tight text-slate-900">
-                                        {activeValues.length} DIPILIH: {activeOptions.map(o => o.label).join(", ")}
+                                    <span className="text-[11px] font-bold text-black dark:text-white">
+                                        {activeValues.length} Terpilih: {activeOptions.map(o => o.label).join(", ")}
                                     </span>
                                 ) : (
-                                    <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">
-                                        PILIH {category.label}...
+                                    <span className="text-[11px] text-black dark:text-white font-medium">
+                                        Pilih {category.label}...
                                     </span>
                                 )}
                             </div>
                         </div>
-                        <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300" />
+                        <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-black/40 dark:text-white/40" />
                     </PopoverTrigger>
-                    <PopoverContent align="start" className="w-[300px] p-0 overflow-hidden rounded-none border-black shadow-2xl ring-1 ring-black/10">
-                        <div className="p-2 border-b border-slate-100 bg-white">
+                    <PopoverContent align="start" className="w-[300px] p-0 overflow-hidden rounded-xl border-black/20 dark:border-white/20 bg-white dark:bg-sidebar shadow-2xl ring-1 ring-black/10">
+                        <div className="p-2 border-b border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5">
                             <div className="relative">
-                                <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-black/40 dark:text-white/40" size={14} />
                                 <Input 
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    placeholder="CARI..."
-                                    className="h-8 pl-8 text-[11px] bg-slate-50 border-none rounded-none focus-visible:ring-1 focus-visible:ring-black placeholder:text-slate-400"
+                                    placeholder="Cari..."
+                                    className="h-9 pl-8 text-[12px] bg-white dark:bg-sidebar border-black/20 dark:border-white/20 rounded-md focus-visible:ring-1 focus-visible:ring-black dark:focus-visible:ring-white placeholder:text-black/30 dark:placeholder:text-white/30 font-medium text-black dark:text-white"
                                 />
                             </div>
                         </div>
@@ -121,7 +123,7 @@ function SearchableCategory({
                             <div className="p-1 grid gap-0.5">
                                 {filteredOptions.length === 0 ? (
                                     <div className="py-8 text-center">
-                                        <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">Tidak ada hasil</p>
+                                        <p className="text-[10px] text-black/40 dark:text-white/40 font-bold uppercase tracking-widest">Tidak ada hasil</p>
                                     </div>
                                 ) : (
                                     filteredOptions.map((opt) => {
@@ -131,17 +133,24 @@ function SearchableCategory({
                                                 key={String(opt.value)}
                                                 onClick={() => onToggle(opt.value)}
                                                 className={cn(
-                                                    "flex items-center gap-3 p-2.5 rounded-none text-left transition-all border border-transparent",
-                                                    isSelected ? "bg-black text-white" : "hover:bg-slate-100"
+                                                    "flex items-center gap-3 p-3 rounded-none text-left transition-all border-b border-black/5 dark:border-white/5",
+                                                    isSelected 
+                                                        ? "bg-black/5 dark:bg-white/5 text-black dark:text-white" 
+                                                        : "text-black/70 dark:text-white/70 hover:bg-black/10 dark:hover:bg-white/10"
                                                 )}
                                             >
                                                 <div className={cn(
-                                                    "h-3.5 w-3.5 rounded-none border flex items-center justify-center shrink-0",
-                                                    isSelected ? "bg-white border-white" : "bg-white border-slate-300 shadow-sm"
+                                                    "h-4 w-4 rounded border flex items-center justify-center shrink-0 transition-all",
+                                                    isSelected 
+                                                        ? "bg-black dark:bg-white border-black dark:border-white" 
+                                                        : "bg-white dark:bg-sidebar border-black/20 dark:border-white/20 hover:border-black dark:hover:border-white"
                                                 )}>
-                                                    {isSelected && <Check size={10} className="text-black" strokeWidth={5} />}
+                                                    {isSelected && <Check size={12} className="text-white dark:text-black" strokeWidth={4} />}
                                                 </div>
-                                                <span className="text-[11px] font-black truncate uppercase tracking-tight">
+                                                <span className={cn(
+                                                    "text-[11px] font-semibold truncate",
+                                                    isSelected ? "text-black dark:text-white" : "text-black dark:text-white"
+                                                )}>
                                                     {opt.label}
                                                 </span>
                                             </button>
@@ -159,7 +168,7 @@ function SearchableCategory({
                             e.stopPropagation();
                             activeValues.forEach(v => onToggle(v));
                         }}
-                        className="absolute right-8 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center text-slate-300 hover:text-black hover:bg-slate-100 transition-all rounded-sm z-10"
+                        className="absolute right-8 top-1/2 -translate-y-1/2 h-6 w-6 flex items-center justify-center text-black/30 dark:text-white/30 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-all rounded-sm z-10"
                         title="Kosongkan"
                     >
                         <X size={14} strokeWidth={3} />
@@ -172,7 +181,7 @@ function SearchableCategory({
                     {activeOptions.map(opt => (
                         <Badge 
                             key={String(opt.value)}
-                            className="bg-slate-100 text-slate-600 border border-slate-200 hover:border-black hover:text-black cursor-pointer text-[9px] font-black px-1.5 py-0 rounded-none transition-all gap-1 uppercase tracking-tighter"
+                            className="bg-black/5 dark:bg-white/5 text-black dark:text-white border border-black/10 dark:border-white/10 hover:border-black dark:hover:border-white cursor-pointer text-[9px] font-black px-1.5 py-0 rounded-none transition-all gap-1 uppercase tracking-tighter"
                             onClick={() => onToggle(opt.value)}
                         >
                             {opt.label}
@@ -207,7 +216,7 @@ function DateRangeCategory({
     return (
         <div className="space-y-1.5 font-sans">
             <div className="flex items-center justify-between px-0.5">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">
+                <Label className="text-[11px] font-bold text-black dark:text-white block">
                     {category.label}
                 </Label>
                 {hasValue && (
@@ -216,30 +225,30 @@ function DateRangeCategory({
                             onFilterChange(fromKey, '');
                             onFilterChange(toKey, '');
                         }}
-                        className="text-[10px] font-bold text-slate-400 hover:text-black uppercase tracking-tighter"
+                        className="text-[10px] font-bold text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white uppercase tracking-tighter"
                     >
                         HAPUS
                     </button>
                 )}
             </div>
 
-            <div className="grid grid-cols-2 gap-px bg-slate-200 border border-slate-200">
-                <div className="relative bg-white">
-                    <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={12} />
+            <div className="grid grid-cols-2 gap-3">
+                <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-black/30 dark:text-white/30 pointer-events-none" size={14} />
                     <input 
                         type="date"
                         value={fromVal}
                         onChange={(e) => onFilterChange(fromKey, e.target.value)}
-                        className="w-full h-10 pl-8 pr-2 text-[10px] font-black uppercase border-none focus:ring-1 focus:ring-inset focus:ring-black outline-none"
+                        className="w-full h-11 pl-9 pr-2 text-[10px] font-bold uppercase bg-white dark:bg-sidebar border border-black/20 dark:border-white/20 rounded-lg text-black dark:text-white focus:ring-1 focus:ring-black dark:focus:ring-white outline-none transition-all"
                     />
                 </div>
-                <div className="relative bg-white">
-                    <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={12} />
+                <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-black/30 dark:text-white/30 pointer-events-none" size={14} />
                     <input 
                         type="date"
                         value={toVal}
                         onChange={(e) => onFilterChange(toKey, e.target.value)}
-                        className="w-full h-10 pl-8 pr-2 text-[10px] font-black uppercase border-none focus:ring-1 focus:ring-inset focus:ring-black outline-none"
+                        className="w-full h-11 pl-9 pr-2 text-[11px] font-medium bg-white dark:bg-sidebar border border-black/20 dark:border-white/20 rounded-lg text-black dark:text-white focus:ring-1 focus:ring-black dark:focus:ring-white outline-none transition-all"
                     />
                 </div>
             </div>
@@ -264,20 +273,23 @@ export function FilterSheet({
 
     return (
         <Sheet open={isOpen} onOpenChange={onOpenChange}>
-            <SheetContent side="right" className="w-[320px] p-0 flex flex-col border-l border-black bg-white">
-                {/* Header - Unified Monochrome */}
-                <div className="p-4 bg-black text-white flex-shrink-0 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <ListFilter size={16} />
-                        <SheetTitle className="text-xs font-black uppercase tracking-[0.2em] text-white m-0">FILTER</SheetTitle>
+            <SheetContent side="right" className="w-[340px] p-0 flex flex-col border-l border-black/10 dark:border-white/10 bg-white dark:bg-sidebar shadow-2xl">
+                {/* Header - Unified Theme */}
+                <div className="p-6 border-b border-black/10 dark:border-white/10 flex-shrink-0 flex items-center justify-between bg-black/5 dark:bg-white/5">
+                    <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2 text-black dark:text-white">
+                            <ListFilter size={18} strokeWidth={2.5} />
+                            <SheetTitle className="text-sm font-bold text-black dark:text-white m-0">Filter</SheetTitle>
+                        </div>
+                        <p className="text-[11px] font-semibold text-black dark:text-white">{description}</p>
                     </div>
                     {hasActiveFilters && (
                         <button 
                             onClick={onReset}
-                            className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-all bg-white/10 px-2 py-1 rounded-none border border-white/10 hover:border-white/20"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all border border-rose-500/20"
+                            title="Reset Semua"
                         >
-                            <Trash2 size={10} />
-                            HAPUS SEMUA
+                            <RotateCcw size={14} strokeWidth={2.5} />
                         </button>
                     )}
                 </div>
@@ -302,7 +314,7 @@ export function FilterSheet({
                                 ) : (
                                     <div className="space-y-2">
                                         <div className="flex items-center justify-between px-0.5">
-                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">
+                                            <Label className="text-[11px] font-bold text-black dark:text-white block">
                                                 {category.label}
                                             </Label>
                                             {((Array.isArray(activeFilters[category.key]) && activeFilters[category.key].length > 0) || (!Array.isArray(activeFilters[category.key]) && activeFilters[category.key])) && (
@@ -314,7 +326,7 @@ export function FilterSheet({
                                                             onFilterChange(category.key, '');
                                                         }
                                                     }}
-                                                    className="text-[10px] font-bold text-slate-400 hover:text-black uppercase tracking-tighter"
+                                                    className="text-[10px] font-bold text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white uppercase tracking-tighter"
                                                 >
                                                     HAPUS
                                                 </button>
@@ -330,16 +342,16 @@ export function FilterSheet({
                                                         onClick={() => onFilterChange(category.key, opt.value)}
                                                         className={cn(
                                                             "flex items-center gap-3 p-2.5 rounded-none border transition-all text-left group",
-                                                            isSelected ? "border-black bg-black text-white" : "border-slate-100 bg-white hover:border-black"
+                                                            isSelected ? "border-black dark:border-white bg-black dark:bg-white text-white dark:text-black" : "border-black/10 dark:border-white/10 bg-white dark:bg-sidebar hover:border-black dark:hover:border-white"
                                                         )}
                                                     >
                                                         <div className={cn(
                                                             "h-3.5 w-3.5 rounded-none border flex items-center justify-center shrink-0",
-                                                            isSelected ? "bg-white border-white" : "bg-white border-slate-200 group-hover:border-black"
+                                                            isSelected ? "bg-white dark:bg-black border-white dark:border-black" : "bg-white dark:bg-sidebar border-black/20 dark:border-white/20 group-hover:border-black dark:group-hover:border-white"
                                                         )}>
-                                                            {isSelected && <Check size={10} className="text-black" strokeWidth={5} />}
+                                                            {isSelected && <Check size={10} className="text-black dark:text-white" strokeWidth={5} />}
                                                         </div>
-                                                        <span className="text-[11px] font-black uppercase tracking-tight">
+                                                        <span className="text-[12px] font-semibold">
                                                             {opt.label}
                                                         </span>
                                                     </button>
@@ -353,13 +365,13 @@ export function FilterSheet({
                     </div>
                 </ScrollArea>
 
-                {/* Footer - Solid Monochrome */}
-                <SheetFooter className="p-4 bg-white border-t border-slate-100 flex-shrink-0">
+                {/* Footer - Solid Theme */}
+                <SheetFooter className="p-6 bg-black/5 dark:bg-white/5 border-t border-black/10 dark:border-white/10 flex-shrink-0">
                     <Button 
                         onClick={() => onOpenChange(false)}
-                        className="h-11 w-full rounded-none text-[11px] font-black uppercase tracking-[0.2em] bg-black text-white hover:bg-slate-800 transition-all shadow-none border-none"
+                        className="h-12 w-full rounded-xl text-[12px] font-bold bg-black dark:bg-white text-white dark:text-black hover:opacity-90 transition-all shadow-xl border-none"
                     >
-                        {totalResults !== undefined ? `${applyText} (${totalResults})` : applyText}
+                        {totalResults !== undefined ? `Terapkan (${totalResults})` : 'Terapkan'}
                     </Button>
                 </SheetFooter>
             </SheetContent>

@@ -41,16 +41,16 @@ interface MetricProps {
 
 function SimpleMetricCard({ label, value, subValue, icon, color }: MetricProps) {
     return (
-        <Card className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-none">
+        <Card className="overflow-hidden rounded-lg border border-sidebar-border bg-white shadow-sm hover:shadow-md transition-all duration-300 group">
             <div className="flex items-center gap-4 p-5">
-                <div className={cn('flex h-12 w-12 items-center justify-center rounded-xl', color)}>
-                    {icon}
+                <div className={cn('flex h-12 w-12 items-center justify-center rounded-lg transition-transform group-hover:scale-110 duration-300', color)}>
+                    {React.cloneElement(icon as React.ReactElement<any>, { size: 22, className: 'stroke-[2.5px]' })}
                 </div>
                 <div className="flex flex-col">
-                    <p className="text-[10px] font-bold tracking-widest text-slate-400 uppercase leading-none mb-1.5">{label}</p>
+                    <p className="text-[10px] font-bold tracking-wider text-sidebar-foreground/40 uppercase leading-none mb-2">{label}</p>
                     <div className="flex items-baseline gap-1.5">
-                        <span className="text-xl font-bold tracking-tight text-slate-800">{value}</span>
-                        <span className="text-[9px] font-bold text-slate-400 uppercase">{subValue}</span>
+                        <span className="text-2xl font-bold tracking-tight text-sidebar-foreground">{value}</span>
+                        <span className="text-[10px] font-bold text-sidebar-foreground/30 uppercase tracking-wider">{subValue}</span>
                     </div>
                 </div>
             </div>
@@ -100,20 +100,20 @@ export function DashboardMetrics({
         <div className="animate-in fade-in slide-in-from-top-4 space-y-6 duration-500">
             
             {/* Filter Dashboard */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white p-4 rounded-2xl border border-slate-100 mb-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white p-4 rounded-lg border border-sidebar-border shadow-sm mb-6">
                 <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400">
-                        <Filter size={16} />
+                    <div className="h-8 w-8 rounded-md bg-sidebar-accent flex items-center justify-center text-sidebar-primary">
+                        <Filter size={16} className="stroke-[2.5px]" />
                     </div>
-                    <span className="text-[11px] font-bold text-slate-700 uppercase tracking-widest">Filter Laporan</span>
+                    <span className="text-[11px] font-bold text-sidebar-foreground uppercase tracking-wider">Filter Laporan</span>
                 </div>
                 
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap items-center gap-2">
                     {/* Filter Role */}
                     <select 
                         value={filters.role_id || ''}
                         onChange={(e) => handleFilterChange('role_id', e.target.value)}
-                        className="h-9 rounded-xl border-slate-100 bg-slate-50 px-3 text-[11px] font-bold text-slate-600 outline-none transition-all focus:ring-2 focus:ring-blue-100 min-w-[140px]"
+                        className="h-9 rounded-md border-sidebar-border bg-sidebar-accent/50 px-3 text-[11px] font-bold text-sidebar-foreground outline-none transition-all focus:ring-2 focus:ring-sidebar-primary/20 min-w-[140px] border"
                     >
                         <option value="">Semua Peran</option>
                         {roles.map((role: any) => (
@@ -125,7 +125,7 @@ export function DashboardMetrics({
                     <select 
                         value={filters.department_id || ''}
                         onChange={(e) => handleFilterChange('department_id', e.target.value)}
-                        className="h-9 rounded-xl border-slate-100 bg-slate-50 px-3 text-[11px] font-bold text-slate-600 outline-none transition-all focus:ring-2 focus:ring-blue-100 min-w-[160px]"
+                        className="h-9 rounded-md border-sidebar-border bg-sidebar-accent/50 px-3 text-[11px] font-bold text-sidebar-foreground outline-none transition-all focus:ring-2 focus:ring-sidebar-primary/20 min-w-[160px] border"
                     >
                         <option value="">Semua Departemen</option>
                         {departments.map((dept: any) => (
@@ -136,7 +136,7 @@ export function DashboardMetrics({
                     {(filters.role_id || filters.department_id) && (
                         <button 
                             onClick={clearFilters}
-                            className="flex h-9 items-center gap-2 rounded-xl bg-rose-50 px-4 text-[10px] font-bold text-rose-600 transition-all hover:bg-rose-100"
+                            className="flex h-9 items-center gap-2 rounded-md bg-rose-50 px-4 text-[10px] font-bold text-rose-600 transition-all hover:bg-rose-100 border border-rose-100"
                         >
                             <X size={14} /> BERSIHKAN
                         </button>
@@ -150,29 +150,29 @@ export function DashboardMetrics({
                     label="Bank Kontrak"
                     value={metricsData.totalContracts}
                     subValue="Aktif"
-                    icon={<FileText size={20} />}
-                    color="bg-blue-50 text-blue-600"
+                    icon={<FileText />}
+                    color="bg-sidebar-accent text-sidebar-primary"
                 />
                 <SimpleMetricCard
                     label="Antrean Tugas"
                     value={metricsData.pendingApprovals}
                     subValue="Menunggu"
-                    icon={<Clock size={20} />}
-                    color="bg-amber-50 text-amber-500"
+                    icon={<Clock />}
+                    color="bg-amber-50 text-amber-600"
                 />
                 <SimpleMetricCard
                     label="Output Bulanan"
                     value={metricsData.approvedThisMonth}
                     subValue="Selesai"
-                    icon={<Shield size={20} />}
+                    icon={<Shield />}
                     color="bg-emerald-50 text-emerald-600"
                 />
                 <SimpleMetricCard
                     label="Waktu Siklus"
                     value={metricsData.avgCycleTime}
                     subValue="Hari"
-                    icon={<BarChart3 size={20} />}
-                    color="bg-slate-100 text-slate-600"
+                    icon={<BarChart3 />}
+                    color="bg-neutral-50 text-neutral-600"
                 />
             </div>
 

@@ -3,9 +3,10 @@ import { cn } from '@/lib/utils';
 import { Contract, ContractAttachment } from '@/types/contracts';
 import axios from 'axios';
 import { renderAsync } from 'docx-preview';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowLeft, Download, Plus, Trash2, FileCheck, File as FileIcon, FileText } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
+import LoadingLottie from '../ui/LoadingLottie';
 
 interface Props {
     contract: Contract;
@@ -181,17 +182,17 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
             <div className="bg-card animate-in fade-in flex flex-1 flex-col overflow-hidden duration-500">
                 <style>{DOCX_STYLES}</style>
                 {/* High-Fidelity HUD for Attachment Preview */}
-                <div className="border-border/60 flex h-[72px] shrink-0 items-center justify-between border-b bg-white/50 px-6 backdrop-blur-sm">
+                <div className="border-black/10 dark:border-white/10 flex h-[72px] shrink-0 items-center justify-between border-b bg-white/80 dark:bg-sidebar/80 px-6 backdrop-blur-xl">
                     <div className="flex items-center gap-4">
                         <div className="flex flex-col">
                             <div className="flex items-center gap-2">
-                                <div className="h-4 w-1 rounded-full bg-orange-500" />
-                                <h4 className="text-[11px] leading-none font-black tracking-tighter text-slate-900 uppercase">{previewAt.label}</h4>
-                                <span className="animate-in fade-in zoom-in rounded bg-slate-950 px-1.5 py-0.5 text-[8px] font-black tracking-widest text-white uppercase duration-500">
+                                <div className="h-4 w-1 rounded-full bg-black dark:bg-white" />
+                                <h4 className="text-[11px] leading-none font-bold tracking-widest text-black dark:text-white uppercase">{previewAt.label}</h4>
+                                <span className="rounded bg-black dark:bg-white px-2 py-0.5 text-[8px] font-bold tracking-widest text-white dark:text-black uppercase">
                                     {previewAt.category || 'Attachment'}
                                 </span>
                             </div>
-                            <span className="mt-1.5 text-[9px] font-black tracking-[0.2em] text-orange-500 uppercase">
+                            <span className="mt-1.5 text-[9px] font-bold tracking-[0.2em] text-black/40 dark:text-white/40 uppercase">
                                 {previewAt.file_name} &bull; Document Preview
                             </span>
                         </div>
@@ -200,9 +201,9 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                     <div className="flex items-center gap-2.5">
                         <button
                             onClick={() => setPreviewAt(null)}
-                            className="border-border flex h-8 items-center gap-2 rounded-xl border bg-white px-4 text-[9px] font-black tracking-widest text-slate-600 uppercase shadow-sm transition-all hover:bg-slate-50 active:scale-95"
+                            className="border-black/20 dark:border-white/20 flex h-8 items-center gap-2 rounded-lg border bg-white dark:bg-sidebar px-4 text-[10px] font-bold tracking-widest text-black/60 dark:text-white/60 uppercase transition-all hover:bg-black/5 dark:hover:bg-white/5 active:scale-95"
                         >
-                            <i className="fa-solid fa-arrow-left text-[10px]" /> BACK TO LIST
+                            <ArrowLeft size={14} /> BACK TO LIST
                         </button>
 
                         <a
@@ -210,18 +211,19 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                                 ? contractApi.vendorDocumentDownloadUrl(contract.id, previewAt.id)
                                 : contractApi.attachmentDownloadUrl(contract.id, previewAt.id)}
                             download
-                            className="border-border flex h-8 items-center gap-2 rounded-xl border bg-white px-4 text-[9px] font-black tracking-widest text-slate-900 uppercase shadow-sm transition-all hover:border-slate-300 hover:bg-slate-50 active:scale-95"
+                            className="border-black/20 dark:border-white/20 flex h-8 items-center gap-2 rounded-lg border bg-white dark:bg-sidebar px-4 text-[10px] font-bold tracking-widest text-black dark:text-white uppercase transition-all hover:bg-black/5 dark:hover:bg-white/5 active:scale-95"
                         >
-                            <i className="fa-solid fa-download text-[10px] text-slate-400" /> DOWNLOAD
+                            <Download size={14} className="opacity-40" /> DOWNLOAD
                         </a>
                     </div>
                 </div>
 
-                <div className="flex flex-1 justify-center bg-white p-8">
-                    <div className="relative mb-20 min-h-[80vh] w-full max-w-[210mm] overflow-hidden rounded-sm bg-white shadow-2xl ring-1 ring-slate-200">
+                <div className="flex flex-1 justify-center bg-black/5 dark:bg-white/5 p-8">
+                    <div className="relative mb-20 min-h-[80vh] w-full max-w-[210mm] overflow-hidden rounded-sm bg-white shadow-2xl ring-1 ring-black/10 dark:ring-white/10">
                         {previewLoading && (
-                            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 backdrop-blur-sm">
-                                <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+                            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/80 dark:bg-sidebar/80 backdrop-blur-sm">
+                                <LoadingLottie width={100} height={100} />
+                                <span className="text-[10px] font-black tracking-widest text-black/40 uppercase dark:text-white/40">Menyiapkan Preview...</span>
                             </div>
                         )}
 
@@ -248,8 +250,8 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
             <input type="file" ref={fileRef} className="hidden" onChange={handleFileChange} />
             {CATEGORIES.map((cat) => (
                 <div key={cat.id}>
-                    <h6 className="text-foreground/80 mb-4 flex items-center gap-2 text-[10px] font-black tracking-widest uppercase">
-                        <div className="h-1.5 w-1.5 rounded-full bg-slate-900" />
+                    <h6 className="text-black dark:text-white mb-6 flex items-center gap-3 text-[10px] font-bold tracking-[0.2em] uppercase">
+                        <div className="h-2 w-2 rounded-full bg-black dark:bg-white" />
                         {cat.label}
                     </h6>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-2">
@@ -262,39 +264,39 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                                     key={label}
                                     onClick={() => at && setPreviewAt(at)}
                                     className={cn(
-                                        'group relative flex items-center justify-between rounded-xl border p-3.5 transition-all outline-none',
+                                        'group relative flex items-center justify-between rounded-xl border p-4 transition-all outline-none',
                                         at
-                                            ? 'cursor-pointer border-slate-200 bg-white hover:border-slate-300 hover:shadow-md'
-                                            : 'border-slate-200/60 bg-slate-50/30',
+                                            ? 'cursor-pointer border-black/10 dark:border-white/10 bg-white dark:bg-sidebar hover:border-black dark:hover:border-white'
+                                            : 'border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02]',
                                     )}
                                 >
-                                    <div className="flex min-w-0 items-center gap-3.5">
+                                    <div className="flex min-w-0 items-center gap-4">
                                         <div
                                             className={cn(
-                                                'flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl transition-colors',
+                                                'flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl transition-colors',
                                                 at
-                                                    ? 'bg-slate-100 text-slate-900 group-hover:bg-slate-900 group-hover:text-white'
-                                                    : 'bg-slate-100 text-slate-300',
+                                                    ? 'bg-black/5 dark:bg-white/5 text-black dark:text-white group-hover:bg-black dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-black'
+                                                    : 'bg-black/[0.02] dark:bg-white/[0.02] text-black/20 dark:text-white/20',
                                             )}
                                         >
-                                            <i className={cn('text-[14px]', at ? 'fa-solid fa-file-circle-check' : 'fa-regular fa-file')} />
+                                            {at ? <FileCheck size={20} /> : <FileIcon size={20} />}
                                         </div>
                                         <div className="min-w-0">
                                             <div
                                                 className={cn(
-                                                    'truncate text-[11px] font-bold tracking-tight',
-                                                    at ? 'text-slate-900' : 'text-slate-400',
+                                                    'truncate text-[12px] font-bold tracking-tight',
+                                                    at ? 'text-black dark:text-white uppercase' : 'text-black/40 dark:text-white/40 uppercase',
                                                 )}
                                                 title={label}
                                             >
                                                 {label}
                                             </div>
                                             {at ? (
-                                                <div className="mt-0.5 truncate text-[9px] font-medium tracking-tight text-slate-400 uppercase">
+                                                <div className="mt-1 truncate text-[9px] font-bold tracking-widest text-black/40 dark:text-white/40 uppercase">
                                                     {at.file_name} · {at.created_at}
                                                 </div>
                                             ) : (
-                                                <div className="mt-0.5 text-[9px] font-medium tracking-widest text-slate-300 uppercase italic">
+                                                <div className="mt-1 text-[9px] font-bold tracking-widest text-black/20 dark:text-white/20 uppercase italic">
                                                     Belum ada dokumen
                                                 </div>
                                             )}
@@ -310,10 +312,10 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                                                         : contractApi.attachmentDownloadUrl(contract.id, at.id)}
                                                     download
                                                     onClick={(e) => e.stopPropagation()}
-                                                    className="border-border flex h-8 w-8 items-center justify-center rounded-lg border bg-white shadow-sm transition-all hover:bg-slate-900 hover:text-white active:scale-95"
+                                                    className="border-black/10 dark:border-white/10 flex h-8 w-8 items-center justify-center rounded-lg border bg-white dark:bg-sidebar transition-all hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black active:scale-95"
                                                     title="Download"
                                                 >
-                                                    <i className="fa-solid fa-download text-[11px]" />
+                                                    <Download size={14} />
                                                 </a>
                                                 {!(at as any).is_vendor_doc && (
                                                     <button
@@ -321,10 +323,10 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                                                             e.stopPropagation();
                                                             handleDelete(at.id, label);
                                                         }}
-                                                        className="border-border flex h-8 w-8 items-center justify-center rounded-lg border bg-white text-rose-600 shadow-sm transition-all hover:bg-rose-600 hover:text-white active:scale-95"
+                                                        className="border-black/10 dark:border-white/10 flex h-8 w-8 items-center justify-center rounded-lg border bg-white dark:bg-sidebar text-rose-600 transition-all hover:bg-rose-600 hover:text-white active:scale-95"
                                                         title="Delete"
                                                     >
-                                                        <i className="fa-solid fa-trash-can text-[11px]" />
+                                                        <Trash2 size={14} />
                                                     </button>
                                                 )}
                                             </>
@@ -337,12 +339,12 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                                                     setActiveCat(cat.id);
                                                     fileRef.current?.click();
                                                 }}
-                                                className="border-border flex h-8 items-center gap-1.5 rounded-lg border bg-white px-3 text-[9px] font-black tracking-widest text-slate-400 uppercase shadow-sm transition-all hover:bg-slate-900 hover:text-white active:scale-95 disabled:opacity-50"
+                                                className="border-black/10 dark:border-white/10 flex h-8 items-center gap-2 rounded-lg border bg-white dark:bg-sidebar px-4 text-[10px] font-bold tracking-widest text-black/40 dark:text-white/40 uppercase transition-all hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black active:scale-95 disabled:opacity-20"
                                             >
                                                 {isUp ? (
-                                                    <i className="fa-solid fa-spinner fa-spin" />
+                                                    <Loader2 size={12} className="animate-spin" />
                                                 ) : (
-                                                    <i className="fa-solid fa-plus text-[10px]" />
+                                                    <Plus size={12} />
                                                 )}
                                                 Upload
                                             </button>

@@ -41,13 +41,13 @@ export default function CompareAgreements({ contract, versions, initialV1, initi
                         <ArrowLeftRight className="h-5 w-5 text-indigo-600" />
                     </div>
                     <div className="flex flex-col">
-                        <h2 className="flex items-center gap-2 text-[13px] font-black tracking-tight text-slate-900 uppercase">
-                            Compare Document Versions
-                            <span className="rounded bg-slate-950 px-1.5 py-0.5 text-[8px] font-black tracking-widest text-white uppercase">
-                                Audit Mode
+                        <h2 className="flex items-center gap-2 text-sm font-bold text-black">
+                            Perbandingan Persetujuan
+                            <span className="rounded border border-black bg-black px-1.5 py-0.5 text-[9px] font-bold text-white">
+                                Mode Audit
                             </span>
                         </h2>
-                        <p className="mt-1 text-[10px] font-bold tracking-tight text-slate-400">
+                        <p className="mt-0.5 text-xs font-bold text-black">
                             {contract.contract_no} &bull; {contract.title}
                         </p>
                     </div>
@@ -56,9 +56,9 @@ export default function CompareAgreements({ contract, versions, initialV1, initi
                 <div className="flex items-center gap-3">
                     <button
                         onClick={() => window.close()}
-                        className="rounded-xl bg-slate-900 px-6 py-2 text-[10px] font-black tracking-widest text-white uppercase shadow-lg shadow-slate-200 transition-all hover:bg-slate-800 active:scale-95"
+                        className="rounded-lg bg-black px-6 py-2 text-xs font-bold text-white shadow-lg transition-all hover:opacity-90 active:scale-95"
                     >
-                        Close Comparison
+                        Tutup Perbandingan
                     </button>
                 </div>
             </div>
@@ -67,19 +67,19 @@ export default function CompareAgreements({ contract, versions, initialV1, initi
             <div className="flex flex-1 divide-x divide-slate-200 overflow-hidden bg-slate-100">
                 {/* SIDE A */}
                 <div className="relative flex flex-1 flex-col overflow-hidden">
-                    <div className="z-40 flex items-center justify-between border-b border-slate-200 bg-white/80 px-8 py-4 backdrop-blur-sm">
+                    <div className="z-40 flex items-center justify-between border-b border-black/5 bg-white/95 px-8 py-5 backdrop-blur-md">
                         <div className="flex items-center gap-4">
-                            <div className="h-8 w-1 rounded-full bg-slate-300" />
+                            <div className="h-10 w-[3px] rounded-full bg-black" />
                             <div className="flex flex-col">
-                                <span className="text-[8px] font-black tracking-widest text-slate-400 uppercase">Reference Version</span>
-                                <h3 className="text-xs font-black tracking-tighter text-slate-900 uppercase">VERSION {v1}</h3>
+                                <span className="text-[10px] font-bold text-black">Versi Referensi</span>
+                                <h3 className="text-sm font-bold text-black">VERSI {v1}</h3>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
                             <select
                                 value={v1}
                                 onChange={(e) => setV1(Number(e.target.value))}
-                                className="cursor-pointer rounded-xl border-border bg-slate-50 px-4 py-2 text-[10px] font-black tracking-widest text-slate-700 outline-none transition-all hover:bg-white focus:ring-2 focus:ring-indigo-500/20"
+                                className="cursor-pointer rounded-lg border-2 border-black bg-white px-4 py-2 text-xs font-bold text-black outline-none transition-all hover:bg-black hover:text-white"
                             >
                                 {[...versions]
                                     .sort((a, b) => b.version_no - a.version_no)
@@ -91,10 +91,10 @@ export default function CompareAgreements({ contract, versions, initialV1, initi
                             </select>
                             <a
                                 href={`/api/contracts/${contract.id}/download?version=${v1}&type=agreement`}
-                                className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-white text-slate-400 transition-all hover:border-slate-300 hover:text-slate-600 active:scale-95"
+                                className="flex h-9 w-9 items-center justify-center rounded-lg border-2 border-black bg-white text-black transition-all hover:bg-black hover:text-white active:scale-95"
                                 title="Download Word file"
                             >
-                                <Download size={14} />
+                                <Download size={16} />
                             </a>
                         </div>
                     </div>
@@ -112,34 +112,34 @@ export default function CompareAgreements({ contract, versions, initialV1, initi
 
                 {/* SIDE B */}
                 <div className="relative flex flex-1 flex-col overflow-hidden">
-                    <div className="z-40 flex items-center justify-between border-b border-indigo-100 bg-indigo-50/50 px-8 py-4 backdrop-blur-sm">
+                    <div className="z-40 flex items-center justify-between border-b border-black bg-black px-8 py-5">
                         <div className="flex items-center gap-4">
-                            <div className="h-8 w-1 rounded-full bg-indigo-500 shadow-lg shadow-indigo-200" />
+                            <div className="h-10 w-[3px] rounded-full bg-white" />
                             <div className="flex flex-col">
-                                <span className="text-[8px] font-black tracking-widest text-indigo-400 uppercase">Comparison Target</span>
-                                <h3 className="text-xs font-black tracking-tighter text-indigo-600 uppercase">VERSION {v2}</h3>
+                                <span className="text-[10px] font-bold text-white">Target Perbandingan</span>
+                                <h3 className="text-sm font-bold text-white">VERSI {v2}</h3>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
                             <select
                                 value={v2}
                                 onChange={(e) => setV2(Number(e.target.value))}
-                                className="cursor-pointer rounded-xl border-none bg-indigo-600 px-4 py-2 text-[10px] font-black tracking-widest text-white shadow-lg shadow-indigo-100 outline-none transition-all hover:bg-indigo-700 active:scale-95"
+                                className="cursor-pointer rounded-lg border-2 border-white bg-white px-4 py-2 text-xs font-bold text-black outline-none transition-all hover:bg-transparent hover:text-white"
                             >
                                 {[...versions]
                                     .sort((a, b) => b.version_no - a.version_no)
                                     .map((v) => (
-                                        <option key={v.id} value={v.version_no} className="bg-slate-900">
+                                        <option key={v.id} value={v.version_no} className="text-black">
                                             V{v.version_no} - {v.uploader?.name || 'System'}
                                         </option>
                                     ))}
                             </select>
                             <a
                                 href={`/api/contracts/${contract.id}/download?version=${v2}&type=agreement`}
-                                className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-indigo-500 shadow-md transition-all hover:bg-indigo-50 active:scale-95"
+                                className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-black shadow-lg transition-all hover:opacity-90 active:scale-95"
                                 title="Download Word file"
                             >
-                                <Download size={14} />
+                                <Download size={16} />
                             </a>
                         </div>
                     </div>
@@ -157,13 +157,13 @@ export default function CompareAgreements({ contract, versions, initialV1, initi
             </div>
 
             {/* Status Footer */}
-            <div className="z-50 flex shrink-0 items-center justify-center gap-8 border-t border-slate-200 bg-white px-10 py-3">
+            <div className="z-50 flex shrink-0 items-center justify-center gap-8 border-t border-black/5 bg-white px-10 py-4">
                 <div className="flex items-center gap-2">
-                    <span className="text-[9px] font-black tracking-[0.2em] text-slate-400 uppercase">High-Fidelity PDF Engine</span>
+                    <span className="text-[10px] font-bold text-black">High-Fidelity PDF Engine</span>
                 </div>
-                <div className="h-3 w-px bg-slate-200" />
-                <div className="flex items-center gap-2 text-indigo-600">
-                    <span className="text-[9px] font-black tracking-[0.2em] uppercase italic">Comparison View</span>
+                <div className="h-4 w-px bg-black/10" />
+                <div className="flex items-center gap-2 text-black">
+                    <span className="text-[10px] font-bold">Mode Perbandingan</span>
                 </div>
             </div>
             

@@ -1,45 +1,128 @@
 import AppLogoIcon from '@/components/app-logo-icon';
-import { type SharedData } from '@/types';
-import { Link, usePage } from '@inertiajs/react';
+import { cn } from '@/lib/utils';
+import { router } from '@inertiajs/react';
+import React, { useEffect, useState } from 'react';
 
-interface AuthLayoutProps {
+// Import the generated mockup image
+import cmsMockup from '/Users/wahyudi.ramadhan/.gemini/antigravity/brain/77afdc7b-862e-4047-af9f-554820df3e2f/cms_dashboard_mockup_1777367947628.png';
+
+interface AuthSplitLayoutProps {
     children: React.ReactNode;
     title?: string;
     description?: string;
+    isSuccess?: boolean;
+    image?: string;
 }
 
-export default function AuthSplitLayout({ children, title, description }: AuthLayoutProps) {
-    const { name, quote } = usePage<SharedData>().props;
+export default function AuthSplitLayout({ children, title, description, isSuccess = false, image }: AuthSplitLayoutProps) {
+    const [isSliding, setIsSliding] = useState(true);
+    const [isExiting, setIsExiting] = useState(false);
+
+    useEffect(() => {
+        // Entry animation: Gate closes to show content
+        const timer = setTimeout(() => setIsSliding(false), 50);
+
+        // Intercept navigation to ensure exit animation plays fully before switching pages
+        const unbind = router.on('before', (event) => {
+            // If it's an external link or already exiting, don't intercept
+            if (isExiting || event.detail.visit.url.origin !== window.location.origin) return;
+
+            // Prevent immediate navigation
+            event.preventDefault();
+            
+            // Trigger exit animation (Gate opens)
+            setIsExiting(true);
+
+            // Wait for the animation to finish (850ms) then perform the visit
+            setTimeout(() => {
+                router.visit(event.detail.visit.url, {
+                    ...event.detail.visit,
+                    onStart: () => {}, // Clear interceptor loop
+                });
+            }, 850);
+        });
+
+        return () => {
+            clearTimeout(timer);
+            unbind();
+        };
+    }, [isExiting]);
+
+    const shouldPull = isSuccess || isExiting;
+
+    // Directional transforms using cubic-bezier for premium mechanical feel
+    const leftTransform = isSliding ? '-translate-x-full' : shouldPull ? '-translate-x-full' : 'translate-x-0';
+    const rightTransform = isSliding ? 'translate-x-full' : shouldPull ? 'translate-x-full' : 'translate-x-0';
 
     return (
-        <div className="relative grid h-dvh flex-col items-center justify-center px-8 sm:px-0 lg:max-w-none lg:grid-cols-2 lg:px-0">
-            <div className="bg-muted relative hidden h-full flex-col p-10 text-white lg:flex dark:border-r">
-                <div className="absolute inset-0 bg-zinc-900" />
-                <Link href={route('home')} className="relative z-20 flex items-center text-lg font-medium">
-                    <AppLogoIcon className="mr-2 size-8 fill-current text-white" />
-                    {name}
-                </Link>
-                {quote && (
-                    <div className="relative z-20 mt-auto">
-                        <blockquote className="space-y-2">
-                            <p className="text-lg">&ldquo;{quote.message}&rdquo;</p>
-                            <footer className="text-sm text-neutral-300">{quote.author}</footer>
-                        </blockquote>
+        <div className="relative flex min-h-svh w-full items-center justify-center overflow-hidden bg-[var(--background)] font-sans text-[var(--text-dark)]">
+            
+            {/* Split Screen Container */}
+            <div className="flex min-h-svh w-full overflow-hidden">
+                
+                {/* Left Panel: Form Content - Using Theme Colors */}
+                <div
+                    className={cn(
+                        'cubic-bezier(0.23, 1, 0.32, 1) z-40 fixed inset-y-0 left-0 w-full flex flex-col items-center justify-center border-r border-[var(--border)] bg-[var(--white)] shadow-[var(--shadow-xl)] transition-all duration-[800ms] md:w-1/2',
+                        leftTransform
+                    )}
+                >
+                    {/* Main Content Area - Vertically Centered and High-Density */}
+                    <div className="w-full max-w-[380px] p-6 md:max-w-[480px] lg:p-8">
+                        <div className="mb-8 space-y-1.5 text-center md:text-left">
+                            <h1 className="text-[var(--font-size-h1)] font-[var(--font-weight-bold)] tracking-tight text-[var(--text-dark)] leading-[var(--line-height-heading)]">
+                                {title || 'Selamat Datang!'}
+                            </h1>
+                            <p className="text-[var(--font-size-small)] leading-[var(--line-height-body)] font-[var(--font-weight-medium)] text-[var(--text-light)]">
+                                {description || 'Silakan lengkapi data Anda untuk melanjutkan.'}
+                            </p>
+                        </div>
+
+                        <div className="compact-form-container">
+                            {children}
+                        </div>
                     </div>
-                )}
-            </div>
-            <div className="w-full lg:p-8">
-                <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
-                    <Link href={route('home')} className="relative z-20 flex items-center justify-center lg:hidden">
-                        <AppLogoIcon className="h-10 fill-current text-black sm:h-12" />
-                    </Link>
-                    <div className="flex flex-col items-start gap-2 text-left sm:items-center sm:text-center">
-                        <h1 className="text-xl font-medium">{title}</h1>
-                        <p className="text-muted-foreground text-sm text-balance">{description}</p>
-                    </div>
-                    {children}
+                </div>
+
+                {/* Right Panel: Fullscreen Visual Mockup */}
+                <div
+                    className={cn(
+                        'cubic-bezier(0.23, 1, 0.32, 1) fixed inset-y-0 right-0 z-40 hidden flex-col items-center justify-center overflow-hidden border-l border-[var(--primary-active)] bg-[var(--primary-active)] transition-transform duration-[1000ms] md:flex md:w-1/2',
+                        rightTransform
+                    )}
+                >
+                    {/* Fullscreen Sample Image */}
+                    <img
+                        src={image || cmsMockup}
+                        alt="CMS Dashboard"
+                        className="h-full w-full object-cover object-left opacity-90 transition-opacity duration-700 hover:opacity-100"
+                    />
+                    {/* Professional Blue Gradient Overlay */}
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[var(--primary-active)]/50 to-transparent" />
                 </div>
             </div>
+
+            {/* Success/Navigation Overlay - High Contrast */}
+            {(isSuccess || isExiting) && (
+                <div className="pointer-events-none fixed inset-0 z-[100] flex items-center justify-center bg-[var(--white)]/40 backdrop-blur-[4px]">
+                    <div className="animate-in zoom-in fade-in flex flex-col items-center gap-6 transition-all duration-[var(--transition-slow)]">
+                        {/* Lottie Animation Player */}
+                        <div className="relative flex h-32 w-32 items-center justify-center">
+                            <lottie-player
+                                src="/assets/lottie/loading.json"
+                                background="transparent"
+                                speed="1.2"
+                                style={{ width: '160px', height: '160px' }}
+                                loop
+                                autoplay
+                            ></lottie-player>
+                        </div>
+                        <span className="text-[var(--font-size-small)] font-[var(--font-weight-bold)] tracking-[0.4em] text-[var(--primary)] uppercase">
+                            {isSuccess ? 'BERHASIL MASUK' : 'MEMUAT'}
+                        </span>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

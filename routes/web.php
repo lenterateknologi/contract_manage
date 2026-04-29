@@ -38,6 +38,10 @@ Route::get('/form-templates/{template}/render-print', [FormTemplateController::c
     ->name('admin.form-templates.render-print')
     ->middleware('signed');
 
+Route::get('/api/contracts/{id}/approval/document/print', [ContractController::class, 'renderApprovalTimeline'])
+    ->name('contracts.approval.document.print')
+    ->middleware('signed');
+
 Route::get('/api/contracts/{id}/audit-trail/document/print', [ContractController::class, 'renderAuditDocument'])
     ->name('contracts.audit.document.print')
     ->middleware('signed');
@@ -109,6 +113,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/contracts/{id}/audit-trail/document', [ContractController::class, 'renderAuditDocument'])->name('contracts.audit.document');
         Route::get('/contracts/{id}/audit-trail/pdf', [ContractController::class, 'exportAuditPdf'])->name('contracts.audit.pdf');
         Route::get('/contracts/{id}/audit-trail/pdf/queue', [ContractController::class, 'exportAuditPdfQueue'])->name('contracts.audit.pdf.queue');
+        Route::get('/contracts/{id}/approval/pdf/queue', [ContractController::class, 'exportApprovalTimelinePdfQueue'])->name('contracts.approval.pdf.queue');
+        Route::get('/contracts/{id}/audit-trail/excel', [ContractController::class, 'exportAuditExcel'])->name('contracts.audit.excel');
     });
 
     Route::middleware(['admin'])->prefix('admin')->group(function () {

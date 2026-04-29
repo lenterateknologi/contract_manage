@@ -54,19 +54,19 @@ export function VendorManagement({ vendors, filters }: VendorManagementProps) {
             sortable: true,
             cell: (row) => (
                 <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-none bg-slate-100 text-slate-400 group-hover:bg-black group-hover:text-white transition-colors">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-none bg-black/5 dark:bg-white/5 text-black/40 dark:text-white/40 group-hover:bg-black dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-black transition-colors border border-black/5 dark:border-white/5">
                         <Truck size={16} />
                     </div>
                     <div className="flex flex-col min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                             <span className="bg-black text-[8px] text-white px-1.5 py-0.5 font-black uppercase tracking-[0.2em]">{row.company_type || 'CV'}</span>
-                             <span className="text-[11px] font-black uppercase tracking-tight text-slate-900 truncate leading-none">{row.name}</span>
+                             <span className="bg-black dark:bg-white text-[8px] text-white dark:text-black px-1.5 py-0.5 font-black uppercase tracking-[0.2em]">{row.company_type || 'CV'}</span>
+                             <span className="text-[11px] font-black uppercase tracking-tight text-black dark:text-white truncate leading-none">{row.name}</span>
                         </div>
-                        <div className="flex items-center gap-2 font-mono text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                        <div className="flex items-center gap-2 font-mono text-[9px] font-black text-black/40 dark:text-white/40 uppercase tracking-widest leading-none">
                             {row.code}
                             <div className={cn(
-                                "w-1 h-1 rounded-full",
-                                row.is_active ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-slate-300"
+                                "w-1 h-1 rounded-none",
+                                row.is_active ? "bg-black dark:bg-white" : "bg-black/10 dark:bg-white/10"
                             )} />
                         </div>
                     </div>
@@ -78,17 +78,17 @@ export function VendorManagement({ vendors, filters }: VendorManagementProps) {
             accessorKey: 'category',
             cell: (row) => (
                 <div className="space-y-2">
-                    <span className="inline-block px-2 py-0.5 bg-slate-50 text-slate-500 text-[8px] font-black uppercase tracking-widest border border-slate-100">
+                    <span className="inline-block px-2 py-0.5 bg-black/5 dark:bg-white/5 text-black/60 dark:text-white/60 text-[8px] font-black uppercase tracking-widest border border-black/10 dark:border-white/10 rounded-none">
                         {row.category || 'GENERAL SUPPLIER'}
                     </span>
                     <div className="grid grid-cols-1 gap-1">
                         {row.email && (
-                            <div className="flex items-center gap-1.5 lowercase font-mono text-[9px] text-slate-400">
+                            <div className="flex items-center gap-1.5 lowercase font-mono text-[9px] text-black/50 dark:text-white/50">
                                 <Mail size={10} className="shrink-0" /> {row.email}
                             </div>
                         )}
                         {row.phone && (
-                            <div className="flex items-center gap-1.5 font-mono text-[9px] text-slate-400">
+                            <div className="flex items-center gap-1.5 font-mono text-[9px] text-black/50 dark:text-white/50">
                                 <Phone size={10} className="shrink-0" /> {row.phone}
                             </div>
                         )}
@@ -101,8 +101,8 @@ export function VendorManagement({ vendors, filters }: VendorManagementProps) {
             accessorKey: 'pic_name',
             cell: (row) => (
                 <div className="flex flex-col">
-                    <span className="text-[11px] font-black text-slate-900 uppercase tracking-tight">{row.pic_name || row.director_name || '-'}</span>
-                    <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1 leading-none">{row.pic_position || 'DIREKTUR UTAMA'}</span>
+                    <span className="text-[11px] font-black text-black dark:text-white uppercase tracking-tight">{row.pic_name || row.director_name || '-'}</span>
+                    <span className="text-[9px] text-black/40 dark:text-white/40 font-bold uppercase tracking-widest mt-1 leading-none">{row.pic_position || 'DIREKTUR UTAMA'}</span>
                 </div>
             )
         },
@@ -115,12 +115,12 @@ export function VendorManagement({ vendors, filters }: VendorManagementProps) {
                    <div className="flex gap-0.5">
                         {[1, 2, 3, 4, 5].map((i) => (
                             <div key={i} className={cn(
-                                "w-2 h-3.5 border",
-                                i <= (row.documents_count || i % 3 + 1) ? "bg-black border-black" : "bg-white border-slate-100"
+                                "w-2 h-3.5 border border-black/10 dark:border-white/10 rounded-none",
+                                i <= (row.documents_count || i % 3 + 1) ? "bg-black dark:bg-white border-black dark:border-white" : "bg-transparent"
                             )} />
                         ))}
                    </div>
-                   <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Skor Kepatuhan: {Math.round(((row.documents_count || 3) / 5) * 100)}%</span>
+                   <span className="text-[8px] font-black text-black/40 dark:text-white/40 uppercase tracking-tighter">Skor Kepatuhan: {Math.round(((row.documents_count || 3) / 5) * 100)}%</span>
                 </div>
             )
         },

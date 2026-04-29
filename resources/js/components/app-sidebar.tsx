@@ -124,21 +124,26 @@ export function AppSidebar() {
                     ) : (
                         <div className="px-2">
                             <div className="group/search relative">
-                                <Search className="text-muted-foreground group-focus-within/search:text-primary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transition-colors" />
+                                <Search className="text-sidebar-foreground/40 group-focus-within/search:text-sidebar-primary absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 transition-colors duration-300" />
                                 <input
                                     type="text"
-                                    placeholder="Cari menu & fitur..."
-                                    className="bg-muted/30 border-border focus:ring-primary/20 w-full rounded-md border py-2 pr-8 pl-9 text-[14px] font-medium transition-all outline-none focus:ring-1"
+                                    placeholder="Cari fitur..."
+                                    className="bg-sidebar-accent/50 border-sidebar-border/50 focus:ring-sidebar-primary/20 w-full h-9 rounded-lg border py-2 pr-12 pl-10 text-[13px] font-semibold transition-all duration-300 outline-none focus:bg-sidebar-accent focus:ring-2 text-sidebar-foreground placeholder:text-sidebar-foreground/30"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     autoFocus={search !== ''}
                                 />
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none flex items-center gap-1 opacity-40 group-focus-within/search:opacity-0 transition-opacity duration-300">
+                                    <kbd className="flex h-5 items-center justify-center rounded border border-sidebar-foreground/20 px-1.5 font-sans text-[10px] font-bold text-sidebar-foreground">
+                                        K
+                                    </kbd>
+                                </div>
                                 {search && (
                                     <button
                                         onClick={() => setSearch('')}
-                                        className="hover:bg-muted absolute top-1/2 right-2 -translate-y-1/2 rounded-full p-1"
+                                        className="hover:bg-white/10 absolute top-1/2 right-2 -translate-y-1/2 rounded-full p-1.5 transition-colors"
                                     >
-                                        <X className="text-muted-foreground h-3.5 w-3.5" />
+                                        <X className="text-sidebar-foreground/60 h-3.5 w-3.5" />
                                     </button>
                                 )}
                             </div>
