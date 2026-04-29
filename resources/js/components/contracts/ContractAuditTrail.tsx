@@ -66,7 +66,7 @@ export default function ContractAuditTrail({ contract }: Props) {
             );
         if (a.includes('created'))
             return (
-                <div className="rounded-full bg-slate-900 p-1 text-white">
+                <div className="rounded-full bg-[#172554] p-1 text-white">
                     <ExternalLink size={10} strokeWidth={4} />
                 </div>
             );
@@ -99,29 +99,37 @@ export default function ContractAuditTrail({ contract }: Props) {
     const activeCount = (filters.actor_id ? 1 : 0) + (filters.date_from || filters.date_to ? 1 : 0);
 
     return (
-        <div className="flex flex-col gap-6 animate-in fade-in duration-300 relative bg-white dark:bg-sidebar rounded-xl border border-black/10 dark:border-white/10 overflow-hidden">
-            <div className="flex items-center justify-between border-b border-black/10 dark:border-white/10 bg-[#0f172a] dark:bg-white p-4">
-                <div className="flex items-center gap-2">
-                    <Clock size={14} className="text-white dark:text-[#0f172a]" />
-                    <h3 className="text-[11px] font-bold uppercase tracking-widest text-white dark:text-[#0f172a]">
-                        Audit Trail Aktivitas
-                    </h3>
+        <div className="flex flex-col gap-6 animate-in fade-in duration-300 relative">
+            <div className="flex items-center gap-4 mb-2">
+                <div className="relative flex-1 group">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-black/40 dark:text-white/40 transition-colors" />
+                    <input 
+                        type="text"
+                        placeholder="CARI AKTIVITAS..."
+                        value={filters.search}
+                        onChange={(e) => {
+                            const newFilters = { ...filters, search: e.target.value };
+                            setFilters(newFilters);
+                            fetchHistories(newFilters);
+                        }}
+                        className="w-full bg-black/[0.03] dark:bg-white/[0.03] rounded-xl py-2.5 pl-10 pr-4 text-[10px] font-bold uppercase tracking-widest outline-none transition-all placeholder:text-black/20 dark:placeholder:text-white/20 focus:bg-white dark:focus:bg-sidebar shadow-sm"
+                    />
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                     <Button 
                         variant="outline" 
                         size="sm" 
                         onClick={() => setIsFilterOpen(true)}
                         className={cn(
-                            "h-8 px-3 gap-2 border-white/20 dark:border-black/20 text-white dark:text-[#0f172a] font-bold rounded-lg hover:bg-white hover:text-[#0f172a] dark:hover:bg-[#0f172a] dark:hover:text-white transition-all shadow-sm",
-                            activeCount > 0 && "border-white bg-white text-[#0f172a] dark:bg-[#0f172a] dark:text-white"
+                            "h-10 px-4 gap-2 text-black/60 dark:text-white/60 font-bold rounded-xl hover:bg-[#172554] hover:text-white dark:hover:bg-white dark:hover:text-[#172554] transition-all shadow-sm",
+                            activeCount > 0 && "bg-[#172554] text-white dark:bg-white dark:text-[#172554]"
                         )}
                     >
-                        <ListFilter size={12} strokeWidth={3} />
-                        <span className="text-[9px] uppercase tracking-widest">Filter</span>
+                        <ListFilter size={14} strokeWidth={3} />
+                        <span className="text-[10px] uppercase tracking-widest">Filter</span>
                         {activeCount > 0 && (
-                            <span className="bg-[#0f172a] text-white dark:bg-white dark:text-[#0f172a] w-4 h-4 flex items-center justify-center rounded-md text-[8px] font-bold">
+                            <span className="bg-[#172554] text-white dark:bg-white dark:text-[#172554] w-4 h-4 flex items-center justify-center rounded-md text-[8px] font-bold ml-1">
                                 {activeCount}
                             </span>
                         )}
@@ -129,31 +137,15 @@ export default function ContractAuditTrail({ contract }: Props) {
 
                     <button 
                         onClick={handleExportExcel}
-                        className="h-8 w-8 flex items-center justify-center text-white/40 dark:text-[#0f172a]/40 hover:text-white dark:hover:text-[#0f172a] transition-colors"
+                        className="h-10 w-10 flex items-center justify-center rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-sidebar text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white transition-all active:scale-95 shadow-sm"
                         title="Ekspor Excel"
                     >
-                        <FileSpreadsheet size={16} strokeWidth={2.5} />
+                        <FileSpreadsheet size={18} strokeWidth={2.5} />
                     </button>
                 </div>
             </div>
 
-            <div className="px-6 pb-6">
-                <div className="mb-6 flex items-center gap-4">
-                    <div className="relative flex-1 group">
-                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-black/40 dark:text-white/40 transition-colors" />
-                        <input 
-                            type="text"
-                            placeholder="CARI AKTIVITAS..."
-                            value={filters.search}
-                            onChange={(e) => {
-                                const newFilters = { ...filters, search: e.target.value };
-                                setFilters(newFilters);
-                                fetchHistories(newFilters);
-                            }}
-                            className="w-full bg-black/[0.02] dark:bg-white/[0.02] border border-black/10 dark:border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-[10px] font-bold uppercase tracking-widest outline-none transition-all placeholder:text-black/20 dark:placeholder:text-white/20 focus:bg-white dark:focus:bg-sidebar focus:border-black dark:focus:border-white"
-                        />
-                    </div>
-                </div>
+            <div className="pb-6">
 
             <FilterSheet 
                 isOpen={isFilterOpen}

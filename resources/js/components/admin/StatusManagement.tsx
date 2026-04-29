@@ -1,16 +1,15 @@
-import React, { useMemo, useState } from 'react';
+import { ManagementForm } from '@/components/admin/ManagementForm';
+import { useToast } from '@/components/contracts/Toast';
 import { Column, DataTable } from '@/components/ui/DataTable';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useForm, router } from '@inertiajs/react';
-import { Tags, Plus, Palette, ListOrdered, CheckCircle2, AlertCircle } from 'lucide-react';
 import { usePermissions } from '@/hooks/use-permissions';
-import { useToast } from '@/components/contracts/Toast';
 import { cn } from '@/lib/utils';
-import { ManagementForm, FormSection, FormDangerZone } from '@/components/admin/ManagementForm';
+import { router, useForm } from '@inertiajs/react';
+import { AlertCircle, CheckCircle2, Palette, Plus, Tags } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
 
 interface StatusManagementProps {
     statuses: any;
@@ -32,63 +31,86 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
         description: '',
         is_active: true as boolean,
         display_mode: 'interactive' as 'interactive' | 'pdf',
+        allow_info_edit: false as boolean,
     });
 
-    const columns = useMemo<Column<any>[]>(() => [
-        {
-            header: 'Status Label',
-            accessorKey: 'label',
-            sortable: true,
-            cell: (row) => (
-                <div className="flex flex-col">
-                    <span className="font-black text-black dark:text-white text-[11px] uppercase tracking-tight">{row.label}</span>
-                    <span className="text-[9px] text-black/40 dark:text-white/40 font-bold uppercase tracking-widest">{row.code}</span>
-                </div>
-            )
-        },
-        {
-            header: 'Visual',
-            accessorKey: 'color',
-            cell: (row) => (
-                <div 
-                    className="h-5 px-3 flex items-center justify-center text-[9px] font-black uppercase tracking-widest border border-black dark:border-white"
-                    style={{ color: row.color, backgroundColor: row.bg_color }}
-                >
-                    {row.label}
-                </div>
-            )
-        },
-        {
-            header: 'Show Mode',
-            accessorKey: 'display_mode',
-            cell: (row) => (
-                <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="rounded-none border-none bg-black dark:bg-white px-2 py-1 text-[9px] font-black tracking-widest text-white dark:text-black uppercase">
+    const columns = useMemo<Column<any>[]>(
+        () => [
+            {
+                header: 'Status Label',
+                accessorKey: 'label',
+                sortable: true,
+                cell: (row) => (
+                    <div className="flex flex-col">
+                        <span className="text-[13px] leading-tight font-bold text-black dark:text-white">{row.label}</span>
+                        <span className="mt-0.5 font-mono text-[10px] font-bold tracking-widest text-black/30 uppercase dark:text-white/30">
+                            {row.code}
+                        </span>
+                    </div>
+                ),
+            },
+            {
+                header: 'Visual Preview',
+                accessorKey: 'color',
+                cell: (row) => (
+                    <div className="flex items-center gap-3">
+                        <span className="text-[10px] font-black tracking-[0.2em] uppercase" style={{ color: row.color }}>
+                            {row.label}
+                        </span>
+                    </div>
+                ),
+            },
+            {
+                header: 'Show Mode',
+                accessorKey: 'display_mode',
+                cell: (row) => (
+                    <span className="text-[10px] font-black tracking-widest text-black/40 uppercase dark:text-white/40">
                         {row.display_mode === 'pdf' ? 'DOCUMENT PDF' : 'INTERACTIVE FORM'}
-                    </Badge>
-                </div>
-            )
-        },
-        {
-            header: 'Sistem',
-            accessorKey: 'is_active',
-            cell: (row) => (
-                <div className="flex items-center gap-2">
-                    {row.is_active ? (
-                        <div className="flex items-center gap-1.5">
-                            <div className="w-1.5 h-1.5 rounded-full bg-black dark:bg-white" />
-                            <span className="text-[10px] font-bold text-black dark:text-white">AKTIF</span>
-                        </div>
-                    ) : (
-                        <div className="flex items-center gap-1.5">
-                            <div className="w-1.5 h-1.5 rounded-full bg-black/20 dark:bg-white/20" />
-                            <span className="text-[10px] font-bold text-black/30 dark:text-white/30">NON-AKTIF</span>
-                        </div>
-                    )}
-                </div>
-            )
-        }
-    ], []);
+                    </span>
+                ),
+            },
+            {
+                header: 'Edit Info',
+                accessorKey: 'allow_info_edit',
+                cell: (row) => (
+                    <div className="flex items-center gap-2">
+                        <div
+                            className={cn(
+                                'h-1.5 w-1.5 rounded-full',
+                                row.allow_info_edit ? 'bg-black dark:bg-white' : 'bg-black/10 dark:bg-white/10',
+                            )}
+                        />
+                        <span
+                            className={cn(
+                                'text-[10px] font-black tracking-widest uppercase',
+                                row.allow_info_edit ? 'text-black dark:text-white' : 'text-black/30 dark:text-white/30',
+                            )}
+                        >
+                            {row.allow_info_edit ? 'ALLOWED' : 'LOCKED'}
+                        </span>
+                    </div>
+                ),
+            },
+            {
+                header: 'Sistem',
+                accessorKey: 'is_active',
+                cell: (row) => (
+                    <div className="flex items-center gap-2">
+                        <div className={cn('h-1.5 w-1.5 rounded-full', row.is_active ? 'bg-black dark:bg-white' : 'bg-black/10 dark:bg-white/10')} />
+                        <span
+                            className={cn(
+                                'text-[10px] font-black tracking-widest uppercase',
+                                row.is_active ? 'text-black dark:text-white' : 'text-black/30 dark:text-white/30',
+                            )}
+                        >
+                            {row.is_active ? 'AKTIF' : 'NON-AKTIF'}
+                        </span>
+                    </div>
+                ),
+            },
+        ],
+        [],
+    );
 
     const openCreate = () => {
         setEditingStatus(null);
@@ -107,18 +129,19 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
             description: s.description || '',
             is_active: !!s.is_active,
             display_mode: s.display_mode || 'interactive',
+            allow_info_edit: !!s.allow_info_edit,
         });
         setIsEditorOpen(true);
     };
 
     const handleSubmit = (e?: React.FormEvent) => {
         if (e) e.preventDefault();
-        const options = { 
+        const options = {
             onSuccess: () => {
                 setIsEditorOpen(false);
                 setEditingStatus(null);
                 showToast('Parameter Status Diperbarui', 'success');
-            } 
+            },
         };
         if (editingStatus) form.put(`/admin/contract-statuses/${editingStatus.id}`, options);
         else form.post('/admin/contract-statuses', options);
@@ -129,153 +152,263 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
         return (
             <ManagementForm
                 title={isEdit ? 'Profil Parameter Status' : 'Registrasi Status Baru'}
-                onClose={() => { setIsEditorOpen(false); setEditingStatus(null); }}
+                subtitle={isEdit ? 'Konfigurasi visual dan perilaku sistem untuk status ini' : 'Definisikan kategori status baru dalam alur kerja'}
+                onClose={() => {
+                    setIsEditorOpen(false);
+                    setEditingStatus(null);
+                }}
                 onSave={handleSubmit}
                 processing={form.processing}
                 isDirty={form.isDirty}
                 isEdit={isEdit}
             >
-                <div className="space-y-8 pb-16 animate-in slide-in-from-bottom-2 duration-500 w-full px-2">
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div className="animate-in slide-in-from-bottom-2 w-full space-y-12 px-1 pb-16 duration-700">
+                    <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
                         {/* Primary Configuration */}
-                        <div className="lg:col-span-8">
-                            <FormSection title="Arsitektur Identitas Status">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-                                    <div className="space-y-1.5">
-                                        <Label className="text-[9px] font-black text-black/50 dark:text-white/50 uppercase tracking-widest">Kode Sistem</Label>
-                                        <Input 
-                                            value={form.data.code} 
-                                            onChange={e => form.setData('code', e.target.value)} 
-                                            required 
-                                            placeholder="ST-01" 
-                                            className="h-9 rounded-none border-black dark:border-white bg-white dark:bg-black font-mono font-bold uppercase text-[10px] focus:ring-0 transition-all text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30" 
+                        <div className="space-y-12 lg:col-span-8">
+                            <div className="space-y-6">
+                                <h3 className="ml-1 border-b border-black/[0.05] pb-3 text-[11px] font-black tracking-[0.2em] text-black uppercase dark:border-white/[0.05] dark:text-white">
+                                    Arsitektur Identitas Status
+                                </h3>
+                                <div className="grid grid-cols-1 gap-x-8 gap-y-6 p-1 md:grid-cols-3">
+                                    <div className="space-y-2">
+                                        <Label className="ml-1 text-[10px] leading-none font-black tracking-widest text-black/40 uppercase dark:text-white/40">
+                                            Kode Sistem
+                                        </Label>
+                                        <Input
+                                            value={form.data.code}
+                                            onChange={(e) => form.setData('code', e.target.value)}
+                                            required
+                                            placeholder="ST-01"
+                                            className="h-10 rounded-xl border-black/[0.08] bg-black/[0.03] font-mono text-[11px] font-black text-black uppercase shadow-sm transition-all placeholder:text-black/20 focus:border-black focus-visible:ring-0 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white dark:focus:border-white"
                                         />
                                     </div>
-                                    <div className="space-y-1.5">
-                                        <Label className="text-[9px] font-black text-black/50 dark:text-white/50 uppercase tracking-widest">Label Status</Label>
-                                        <Input 
-                                            value={form.data.label} 
-                                            onChange={e => form.setData('label', e.target.value)} 
-                                            required 
-                                            placeholder="CONTOH: DALAM PROSES" 
-                                            className="h-9 rounded-none border-black dark:border-white bg-white dark:bg-black font-bold uppercase text-[10px] focus:ring-0 transition-all text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30" 
+                                    <div className="space-y-2">
+                                        <Label className="ml-1 text-[10px] leading-none font-black tracking-widest text-black/40 uppercase dark:text-white/40">
+                                            Label Status
+                                        </Label>
+                                        <Input
+                                            value={form.data.label}
+                                            onChange={(e) => form.setData('label', e.target.value)}
+                                            required
+                                            placeholder="CONTOH: DALAM PROSES"
+                                            className="h-10 rounded-xl border-black/[0.08] bg-black/[0.03] text-[11px] font-black text-black uppercase shadow-sm transition-all placeholder:text-black/20 focus:border-black focus-visible:ring-0 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white dark:focus:border-white"
                                         />
                                     </div>
-                                    <div className="md:col-span-2 space-y-1.5">
-                                        <Label className="text-[9px] font-black text-black/50 dark:text-white/50 uppercase tracking-widest">Deskripsi Fungsional</Label>
-                                        <Input 
-                                            value={form.data.description} 
-                                            onChange={e => form.setData('description', e.target.value)} 
-                                            placeholder="Jelaskan peran status ini dalam alur kerja..." 
-                                            className="h-9 rounded-none border-black dark:border-white bg-white dark:bg-black font-bold uppercase text-[10px] focus:ring-0 transition-all text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30" 
+                                    <div className="space-y-2">
+                                        <Label className="ml-1 text-[10px] leading-none font-black tracking-widest text-black/40 uppercase dark:text-white/40">
+                                            Deskripsi Fungsional
+                                        </Label>
+                                        <Input
+                                            value={form.data.description}
+                                            onChange={(e) => form.setData('description', e.target.value)}
+                                            placeholder="Jelaskan peran status ini dalam alur kerja..."
+                                            className="h-10 rounded-xl border-black/[0.08] bg-black/[0.03] text-[11px] font-bold text-black uppercase shadow-sm transition-all placeholder:text-black/20 focus:border-black focus-visible:ring-0 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white dark:focus:border-white"
                                         />
                                     </div>
                                 </div>
-                            </FormSection>
+                            </div>
 
-                            <FormSection title="Visual & Skema Warna">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                            <div className="space-y-6">
+                                <h3 className="ml-1 border-b border-black/[0.05] pb-3 text-[11px] font-black tracking-[0.2em] text-black uppercase dark:border-white/[0.05] dark:text-white">
+                                    Visual & Skema Warna
+                                </h3>
+                                <div className="grid grid-cols-1 gap-x-8 gap-y-6 p-1 md:grid-cols-3">
                                     <div className="space-y-2">
-                                        <Label className="text-[9px] font-black text-black/50 dark:text-white/50 uppercase tracking-widest flex items-center gap-2"><Palette size={10} /> Warna Tipografi</Label>
-                                        <div className="flex gap-3 items-center p-2 bg-black/5 dark:bg-white/5 border border-black dark:border-white">
-                                            <Input type="color" value={form.data.color} onChange={e => form.setData('color', e.target.value)} className="h-8 w-12 rounded-none p-0 border-none bg-transparent cursor-pointer" />
-                                            <span className="text-[10px] font-mono font-bold uppercase text-black dark:text-white">{form.data.color}</span>
+                                        <Label className="ml-1 flex items-center gap-2 text-[10px] leading-none font-black tracking-widest text-black/40 uppercase dark:text-white/40">
+                                            <Palette size={12} className="opacity-40" /> Warna Tipografi
+                                        </Label>
+                                        <div className="flex items-center gap-4 rounded-xl border border-black/[0.08] bg-black/[0.03] p-3 shadow-sm dark:border-white/[0.08] dark:bg-white/[0.03]">
+                                            <Input
+                                                type="color"
+                                                value={form.data.color}
+                                                onChange={(e) => form.setData('color', e.target.value)}
+                                                className="h-10 w-16 cursor-pointer rounded-lg border-none bg-transparent p-0"
+                                            />
+                                            <span className="font-mono text-[11px] font-black tracking-widest text-black uppercase dark:text-white">
+                                                {form.data.color}
+                                            </span>
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="text-[9px] font-black text-black/50 dark:text-white/50 uppercase tracking-widest flex items-center gap-2"><Palette size={10} /> Warna Latar (Badge)</Label>
-                                        <div className="flex gap-3 items-center p-2 bg-black/5 dark:bg-white/5 border border-black dark:border-white">
-                                            <Input type="color" value={form.data.bg_color} onChange={e => form.setData('bg_color', e.target.value)} className="h-8 w-12 rounded-none p-0 border-none bg-transparent cursor-pointer" />
-                                            <span className="text-[10px] font-mono font-bold uppercase text-black dark:text-white">{form.data.bg_color}</span>
+                                        <Label className="ml-1 flex items-center gap-2 text-[10px] leading-none font-black tracking-widest text-black/40 uppercase dark:text-white/40">
+                                            <Palette size={12} className="opacity-40" /> Warna Latar (Badge)
+                                        </Label>
+                                        <div className="flex items-center gap-4 rounded-xl border border-black/[0.08] bg-black/[0.03] p-3 shadow-sm dark:border-white/[0.08] dark:bg-white/[0.03]">
+                                            <Input
+                                                type="color"
+                                                value={form.data.bg_color}
+                                                onChange={(e) => form.setData('bg_color', e.target.value)}
+                                                className="h-10 w-16 cursor-pointer rounded-lg border-none bg-transparent p-0"
+                                            />
+                                            <span className="font-mono text-[11px] font-black tracking-widest text-black uppercase dark:text-white">
+                                                {form.data.bg_color}
+                                            </span>
                                         </div>
                                     </div>
-                                    <div className="md:col-span-2 py-4 px-6 border border-dashed border-black dark:border-white bg-black/5 dark:bg-white/5 flex flex-col items-center justify-center gap-3">
-                                        <span className="text-[9px] font-black text-black/40 dark:text-white/40 uppercase tracking-widest">Live Preview Badge</span>
-                                        <div style={{ color: form.data.color, backgroundColor: form.data.bg_color }} className="px-6 py-2 text-[11px] font-black uppercase tracking-widest border border-black dark:border-white">
+                                    <div className="flex flex-col items-center justify-center gap-6 rounded-2xl border border-dashed border-black/[0.1] bg-black/[0.02] px-8 py-10 dark:border-white/[0.1] dark:bg-white/[0.02]">
+                                        <span className="text-[10px] font-black tracking-[0.3em] text-black/30 uppercase dark:text-white/30">
+                                            Live Preview Badge
+                                        </span>
+                                        <div
+                                            style={{ color: form.data.color, backgroundColor: form.data.bg_color }}
+                                            className="transform rounded-xl border border-black/[0.05] px-8 py-3 text-[12px] font-black tracking-widest uppercase shadow-lg transition-all duration-300 hover:scale-105 dark:border-white/[0.05]"
+                                        >
                                             {form.data.label || 'PREVIEW STATUS'}
                                         </div>
                                     </div>
                                 </div>
-                            </FormSection>
+                            </div>
                         </div>
 
                         {/* Order & Priority */}
-                        <div className="lg:col-span-4 space-y-8">
-
-
-                            <FormSection title="Konfigurasi Preview">
-                                <div className="space-y-4">
-                                    <Label className="text-[9px] font-black text-black/50 dark:text-white/50 uppercase tracking-widest">Mode Tampilan Form (F1/F2)</Label>
-                                    <div className="grid grid-cols-1 gap-3">
+                        <div className="space-y-10 lg:col-span-4">
+                            <div className="space-y-6">
+                                <h3 className="ml-1 border-b border-black/[0.05] pb-3 text-[11px] font-black tracking-[0.2em] text-black uppercase dark:border-white/[0.05] dark:text-white">
+                                    Konfigurasi Preview
+                                </h3>
+                                <div className="space-y-4 p-1">
+                                    <Label className="ml-1 text-[10px] leading-none font-black tracking-widest text-black/40 uppercase dark:text-white/40">
+                                        Mode Tampilan Form (F1/F2)
+                                    </Label>
+                                    <div className="grid grid-cols-1 gap-4">
                                         <button
                                             type="button"
                                             onClick={() => form.setData('display_mode', 'interactive')}
                                             className={cn(
-                                                "flex flex-col items-start gap-2 p-3 border-2 transition-all rounded-none",
-                                                form.data.display_mode === 'interactive' 
-                                                    ? "border-black dark:border-white bg-black dark:bg-white text-white dark:text-black" 
-                                                    : "border-black/10 dark:border-white/10 bg-white dark:bg-black text-black dark:text-white hover:border-black dark:hover:border-white"
+                                                'group flex flex-col items-start gap-3 rounded-2xl border p-5 text-left shadow-sm transition-all',
+                                                form.data.display_mode === 'interactive'
+                                                    ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black'
+                                                    : 'border-black/[0.08] bg-white text-black hover:border-black dark:border-white/[0.08] dark:bg-black/40 dark:text-white dark:hover:border-white',
                                             )}
                                         >
-                                            <div className="flex items-center gap-2">
-                                                <div className={cn("w-3 h-3 rounded-full border-2", form.data.display_mode === 'interactive' ? "bg-white dark:bg-black border-white dark:border-black" : "border-black/30 dark:border-white/30")} />
-                                                <span className="text-[11px] font-bold uppercase">Interactive Form</span>
+                                            <div className="flex items-center gap-3">
+                                                <div
+                                                    className={cn(
+                                                        'h-4 w-4 rounded-full border-2 transition-all',
+                                                        form.data.display_mode === 'interactive'
+                                                            ? 'border-white bg-white dark:border-black dark:bg-black'
+                                                            : 'border-black/20 group-hover:border-black dark:border-white/20 dark:group-hover:border-white',
+                                                    )}
+                                                />
+                                                <span className="text-[12px] font-black tracking-tight uppercase">Interactive Form</span>
                                             </div>
-                                            <p className={cn("text-[10px] text-left font-medium", form.data.display_mode === 'interactive' ? "text-white/70 dark:text-black/70" : "text-black/50 dark:text-white/50")}>Tampilan interaktif React untuk pengisian cepat.</p>
+                                            <p
+                                                className={cn(
+                                                    'text-[10px] leading-relaxed font-bold',
+                                                    form.data.display_mode === 'interactive'
+                                                        ? 'text-white/60 dark:text-black/60'
+                                                        : 'text-black/40 dark:text-white/40',
+                                                )}
+                                            >
+                                                Tampilan interaktif React yang dioptimalkan untuk pengisian data cepat dan responsif.
+                                            </p>
                                         </button>
 
                                         <button
                                             type="button"
                                             onClick={() => form.setData('display_mode', 'pdf')}
                                             className={cn(
-                                                "flex flex-col items-start gap-2 p-3 border-2 transition-all rounded-none",
-                                                form.data.display_mode === 'pdf' 
-                                                    ? "border-black dark:border-white bg-black dark:bg-white text-white dark:text-black" 
-                                                    : "border-black/10 dark:border-white/10 bg-white dark:bg-black text-black dark:text-white hover:border-black dark:hover:border-white"
+                                                'group flex flex-col items-start gap-3 rounded-2xl border p-5 text-left shadow-sm transition-all',
+                                                form.data.display_mode === 'pdf'
+                                                    ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black'
+                                                    : 'border-black/[0.08] bg-white text-black hover:border-black dark:border-white/[0.08] dark:bg-black/40 dark:text-white dark:hover:border-white',
                                             )}
                                         >
-                                            <div className="flex items-center gap-2">
-                                                <div className={cn("w-3 h-3 rounded-full border-2", form.data.display_mode === 'pdf' ? "bg-white dark:bg-black border-white dark:border-black" : "border-black/30 dark:border-white/30")} />
-                                                <span className="text-[11px] font-bold uppercase">PDF Preview</span>
+                                            <div className="flex items-center gap-3">
+                                                <div
+                                                    className={cn(
+                                                        'h-4 w-4 rounded-full border-2 transition-all',
+                                                        form.data.display_mode === 'pdf'
+                                                            ? 'border-white bg-white dark:border-black dark:bg-black'
+                                                            : 'border-black/20 group-hover:border-black dark:border-white/20 dark:group-hover:border-white',
+                                                    )}
+                                                />
+                                                <span className="text-[12px] font-black tracking-tight uppercase">PDF Preview</span>
                                             </div>
-                                            <p className={cn("text-[10px] text-left font-medium", form.data.display_mode === 'pdf' ? "text-white/70 dark:text-black/70" : "text-black/50 dark:text-white/50")}>Tampilan file PDF statis dari server.</p>
+                                            <p
+                                                className={cn(
+                                                    'text-[10px] leading-relaxed font-bold',
+                                                    form.data.display_mode === 'pdf'
+                                                        ? 'text-white/60 dark:text-black/60'
+                                                        : 'text-black/40 dark:text-white/40',
+                                                )}
+                                            >
+                                                Tampilan file PDF statis yang dirender langsung dari server untuk akurasi cetak maksimal.
+                                            </p>
                                         </button>
                                     </div>
                                 </div>
-                            </FormSection>
+                            </div>
 
-                            <FormDangerZone 
-                                title="Kontrol Operasional"
-                                description="Konfigurasi visibilitas status dalam sistem."
-                            >
-                                <div className="flex items-center gap-3 p-1">
-                                    <Checkbox 
-                                        id="f-active"
-                                        checked={form.data.is_active} 
-                                        onCheckedChange={(checked) => form.setData('is_active', checked as boolean)} 
-                                        className="w-5 h-5 rounded-none border-black dark:border-white data-[state=checked]:bg-black dark:data-[state=checked]:bg-white data-[state=checked]:text-white dark:data-[state=checked]:text-black transition-colors"
-                                    />
-                                    <div className="flex flex-col">
-                                        <Label htmlFor="f-active" className="text-[12px] font-bold cursor-pointer leading-tight text-black dark:text-white">STATUS AKTIF</Label>
-                                        <p className="text-[10px] text-black/50 dark:text-white/50 mt-0.5 uppercase font-bold">Dapat digunakan dalam kontrak</p>
+                            <div className="space-y-6">
+                                <h3 className="ml-1 border-b border-black/[0.05] pb-3 text-[11px] font-black tracking-[0.2em] text-black uppercase dark:border-white/[0.05] dark:text-white">
+                                    Kontrol Operasional
+                                </h3>
+                                <div className="space-y-5 p-1">
+                                    <div
+                                        className="group flex cursor-pointer items-center gap-4 rounded-xl border border-black/[0.05] bg-black/[0.01] p-4 shadow-sm transition-colors hover:bg-black/[0.03] dark:border-white/[0.05] dark:bg-white/[0.01] dark:hover:bg-white/[0.03]"
+                                        onClick={() => form.setData('allow_info_edit', !form.data.allow_info_edit)}
+                                    >
+                                        <Checkbox
+                                            id="f-edit-info"
+                                            checked={form.data.allow_info_edit}
+                                            onCheckedChange={(checked) => form.setData('allow_info_edit', checked as boolean)}
+                                            className="h-5 w-5 rounded-lg border-black/[0.1] transition-all data-[state=checked]:bg-black data-[state=checked]:text-white dark:border-white/[0.1] dark:data-[state=checked]:bg-white dark:data-[state=checked]:text-black"
+                                        />
+                                        <div className="flex flex-col">
+                                            <Label
+                                                htmlFor="f-edit-info"
+                                                className="cursor-pointer text-[11px] leading-tight font-black tracking-widest text-black uppercase dark:text-white"
+                                            >
+                                                IZINKAN EDIT INFO
+                                            </Label>
+                                            <p className="mt-1 text-[9px] font-bold tracking-tight text-black/30 uppercase dark:text-white/30">
+                                                User dapat memodifikasi metadata kontrak
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div
+                                        className="group flex cursor-pointer items-center gap-4 rounded-xl border border-black/[0.05] bg-black/[0.01] p-4 shadow-sm transition-colors hover:bg-black/[0.03] dark:border-white/[0.05] dark:bg-white/[0.01] dark:hover:bg-white/[0.03]"
+                                        onClick={() => form.setData('is_active', !form.data.is_active)}
+                                    >
+                                        <Checkbox
+                                            id="f-active"
+                                            checked={form.data.is_active}
+                                            onCheckedChange={(checked) => form.setData('is_active', checked as boolean)}
+                                            className="h-5 w-5 rounded-lg border-black/[0.1] transition-all data-[state=checked]:bg-black data-[state=checked]:text-white dark:border-white/[0.1] dark:data-[state=checked]:bg-white dark:data-[state=checked]:text-black"
+                                        />
+                                        <div className="flex flex-col">
+                                            <Label
+                                                htmlFor="f-active"
+                                                className="cursor-pointer text-[11px] leading-tight font-black tracking-widest text-black uppercase dark:text-white"
+                                            >
+                                                STATUS AKTIF
+                                            </Label>
+                                            <p className="mt-1 text-[9px] font-bold tracking-tight text-black/30 uppercase dark:text-white/30">
+                                                Status tersedia untuk alur kerja operasional
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
-                            </FormDangerZone>
+                            </div>
 
-                            <div className="p-4 bg-black dark:bg-white border border-black dark:border-white flex gap-3">
-                                <AlertCircle size={14} className="text-white dark:text-black shrink-0 mt-0.5" />
-                                <p className="text-[8px] font-bold text-white dark:text-black uppercase leading-relaxed">
-                                    Perubahan pada skema warna akan segera berdampak pada seluruh dashboard dan laporan audit kontrak yang aktif.
+                            <div className="flex gap-4 rounded-2xl border border-black bg-black p-6 shadow-xl shadow-black/10 dark:border-white dark:bg-white dark:shadow-white/5">
+                                <AlertCircle size={16} className="mt-0.5 shrink-0 text-white dark:text-black" />
+                                <p className="text-[9px] leading-relaxed font-bold tracking-wider text-white uppercase dark:text-black">
+                                    Perubahan pada skema warna akan segera berdampak pada seluruh dashboard, laporan, dan riwayat audit kontrak secara
+                                    global.
                                 </p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-4 py-8 opacity-20 grayscale">
+                    <div className="flex items-center gap-6 py-12 opacity-10 grayscale">
                         <div className="h-px flex-1 bg-black dark:bg-white" />
-                        <div className="flex items-center gap-2 text-black dark:text-white">
-                            <CheckCircle2 size={20} />
-                            <span className="text-[11px] font-black uppercase tracking-[0.4em]">KONFIGURASI TERSIMPAN</span>
+                        <div className="flex items-center gap-3 text-black dark:text-white">
+                            <CheckCircle2 size={24} />
+                            <span className="text-[12px] font-black tracking-[0.5em] uppercase">KONFIGURASI TERSIMPAN</span>
                         </div>
                         <div className="h-px flex-1 bg-black dark:bg-white" />
                     </div>
@@ -285,27 +418,103 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
     }
 
     return (
-        <div className="flex flex-col h-full bg-white dark:bg-black animate-in fade-in duration-500">
+        <div className="animate-in fade-in flex h-full flex-col bg-white duration-500 dark:bg-black">
             <DataTable
+                title="Master Parameter Status"
                 columns={columns}
                 data={statuses?.data || []}
                 searchKey="label"
                 searchPlaceholder="Filter Master Status..."
+                searchValue={filters.search || ''}
+                onSearchChange={(v) =>
+                    router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })
+                }
+                filters={[
+                    {
+                        label: 'Tampilan Formulir',
+                        key: 'display_mode',
+                        options: [
+                            { label: 'Interactive Form', value: 'interactive' },
+                            { label: 'Dokumen PDF', value: 'pdf' },
+                        ],
+                    },
+                    {
+                        label: 'Izin Edit Info',
+                        key: 'allow_info_edit',
+                        options: [
+                            { label: 'Diizinkan', value: '1' },
+                            { label: 'Dikunci', value: '0' },
+                        ],
+                    },
+                    {
+                        label: 'Status Sistem',
+                        key: 'is_active',
+                        options: [
+                            { label: 'Aktif', value: '1' },
+                            { label: 'Non-aktif', value: '0' },
+                        ],
+                    },
+                ]}
+                activeFilters={{
+                    display_mode: filters.display_mode ? [filters.display_mode] : [],
+                    allow_info_edit:
+                        filters.allow_info_edit !== undefined && filters.allow_info_edit !== null ? [String(filters.allow_info_edit)] : [],
+                    is_active: filters.is_active !== undefined && filters.is_active !== null ? [String(filters.is_active)] : [],
+                }}
+                onFilterChange={(updatedFilters) => {
+                    const newFilters: Record<string, any> = { ...filters, page: 1 };
+                    Object.keys(updatedFilters).forEach((key) => {
+                        newFilters[key] = updatedFilters[key].length > 0 ? updatedFilters[key][0] : null;
+                    });
+                    router.get(globalThis.location.pathname, newFilters, { preserveState: true, replace: true });
+                }}
                 onRowClick={openEdit}
-                pagination={statuses && statuses.meta ? {
-                    currentPage: statuses.meta.current_page || 1,
-                    lastPage: statuses.meta.last_page || 1,
-                    total: statuses.meta.total || 0,
-                    from: statuses.meta.from || 1,
-                    to: statuses.meta.to || 1,
-                    perPage: statuses.meta.per_page || 10,
-                    onPageChange: (page) => router.get(window.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
-                    onPerPageChange: (pp) => router.get(window.location.pathname, { ...filters, per_page: pp, page: 1 }, { preserveState: true, preserveScroll: true }),
-                } : undefined}
+                pagination={
+                    statuses && statuses.meta
+                        ? {
+                              currentPage: statuses.meta.current_page || 1,
+                              lastPage: statuses.meta.last_page || 1,
+                              total: statuses.meta.total || 0,
+                              from: statuses.meta.from || 1,
+                              to: statuses.meta.to || 1,
+                              perPage: statuses.meta.per_page || 10,
+                              onPageChange: (page) =>
+                                  router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                              onPerPageChange: (pp) =>
+                                  router.get(
+                                      globalThis.location.pathname,
+                                      { ...filters, per_page: pp, page: 1 },
+                                      { preserveState: true, preserveScroll: true },
+                                  ),
+                          }
+                        : undefined
+                }
                 headerActions={
-                    <Button onClick={openCreate} className="h-10 gap-2 rounded-none px-8 text-[11px] font-black bg-black dark:bg-white text-white dark:text-black border border-black dark:border-white hover:opacity-90 transition-all uppercase tracking-widest shadow-none">
-                        <Plus className="h-4 w-4" /> Registrasi Status
+                    <Button variant="primary" onClick={openCreate} className="h-10 px-8 shadow-xl active:scale-95">
+                        <Plus size={14} /> Registrasi Status Baru
                     </Button>
+                }
+                bulkActions={
+                    canUpdate
+                        ? [
+                              {
+                                  label: 'Hapus Terpilih',
+                                  icon: Tags,
+                                  variant: 'destructive',
+                                  onClick: (ids) => {
+                                      if (confirm(`Hapus ${ids.length} status terpilih?`)) {
+                                          router.post(
+                                              '/admin/contract-statuses/bulk-delete',
+                                              { ids },
+                                              {
+                                                  onSuccess: () => showToast(`${ids.length} status telah dihapus`, 'success'),
+                                              },
+                                          );
+                                      }
+                                  },
+                              },
+                          ]
+                        : undefined
                 }
             />
         </div>

@@ -130,6 +130,8 @@ export interface Contract {
     p2_address?: string;
     created_by: string;
     status: ContractStatus;
+    display_mode?: 'interactive' | 'pdf';
+    allow_info_edit?: boolean;
     current_version: number;
     created_at: string;
     submitted_at: string | null;

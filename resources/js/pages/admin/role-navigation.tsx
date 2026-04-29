@@ -99,7 +99,7 @@ const SortableGroupItem = ({ group, onRemoveModule }: { group: Group; onRemoveMo
                     <div>
                         <h3 className="flex items-center gap-2 text-[12px] font-bold text-slate-800 uppercase tracking-wide">
                             {group.name}
-                            <span className="bg-slate-900 px-2 py-0.5 text-[9px] font-bold text-white rounded-md">
+                            <span className="bg-[var(--primary)] px-2 py-0.5 text-[9px] font-black text-white rounded-md tracking-tighter">
                                 {group.modules.length} ITEMS
                             </span>
                         </h3>
@@ -130,7 +130,9 @@ const AvailableListContainer = ({ modules, onQuickAdd }: { modules: Module[]; on
                 <div className="flex items-center gap-3">
                     <h2 className="text-[11px] font-bold tracking-wider text-slate-600 uppercase">Available Repository</h2>
                 </div>
-                <span className="bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-500 rounded-md">{modules.length} UNITS</span>
+                <span className="bg-black/10 dark:bg-white/10 px-2 py-0.5 text-[10px] font-black text-black/60 dark:text-white/60 rounded-md tracking-widest uppercase">
+                    {modules.length} UNITS
+                </span>
             </div>
             <div className="scrollbar-hide flex-1 space-y-2 overflow-y-auto p-4">
                 <SortableContext id="available-context" items={modules.map((m) => m.id)} strategy={verticalListSortingStrategy}>
@@ -411,9 +413,9 @@ export default function RoleNavigation({ role, navigation: initialNavigation, al
                 <DragOverlay dropAnimation={{ sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: '0.5' } } }) }}>
                     {activeId ? (
                         activeType === 'group' ? (
-                            <div className="flex w-[400px] cursor-grabbing items-center gap-3 border border-black bg-white p-3 opacity-90 shadow-2xl ring-4 ring-black/5">
+                            <div className="flex w-[400px] cursor-grabbing items-center gap-3 border border-black bg-white p-3 opacity-90 shadow-2xl ring-4 ring-black/5 rounded-lg">
                                 <GripVertical className="text-black" size={16} />
-                                <h3 className="text-[11px] font-black tracking-widest text-slate-800 uppercase">
+                                <h3 className="text-[11px] font-black tracking-widest text-black uppercase">
                                     {items.find((g) => g.id === activeId)?.name}
                                 </h3>
                             </div>

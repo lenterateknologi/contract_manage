@@ -42,7 +42,7 @@ export function DraftEditableInfoCard({
     setPreviewHasFile,
     setPreviewOpen,
 }: DraftEditableInfoCardProps) {
-    const isDraft = selected.status === 'draft' && canUpdate;
+    const isDraft = selected.allow_info_edit && canUpdate;
     const [title, setTitle] = useState(selected.title);
     const [description, setDescription] = useState(selected.description || '');
     const [typeId, setTypeId] = useState(() => {
@@ -139,7 +139,7 @@ export function DraftEditableInfoCard({
     ]);
 
     const inputCls =
-        'w-full bg-white dark:bg-sidebar border border-black/20 dark:border-white/20 rounded-lg px-3 py-1.5 text-sm text-black dark:text-white outline-none focus:border-black dark:focus:border-white transition-all';
+        'w-full bg-black/[0.03] dark:bg-white/[0.03] rounded-lg px-3 py-1.5 text-sm text-black dark:text-white outline-none focus:bg-white dark:focus:bg-sidebar transition-all shadow-sm';
 
     const f2Version = selected.versions?.filter((x) => x.document_type === 'f2').sort((a, b) => b.version_no - a.version_no)[0];
 
@@ -149,10 +149,10 @@ export function DraftEditableInfoCard({
     );
 
     return (
-        <div className="bg-white dark:bg-sidebar border border-black/10 dark:border-white/10 overflow-hidden rounded-xl">
-            <div className="border-b border-black/10 dark:border-white/10 flex items-center justify-between bg-[#0f172a] dark:bg-white p-4">
-                <div className="flex items-center gap-2 font-bold text-white dark:text-[#0f172a] text-[11px] uppercase tracking-widest">
-                    <Info size={14} className="text-white/40 dark:text-[#0f172a]/40" /> Informasi Kontrak
+        <div className="bg-white dark:bg-sidebar overflow-hidden rounded-xl shadow-sm">
+            <div className="flex items-center justify-between bg-[#172554] dark:bg-white p-4">
+                <div className="flex items-center gap-2 font-bold text-white dark:text-[#172554] text-[11px] uppercase tracking-widest">
+                    <Info size={14} className="text-white/40 dark:text-[#172554]/40" /> Informasi Kontrak
                     {isDraft && (
                         <span className="rounded-full bg-white dark:bg-[#0f172a] px-2 py-0.5 text-[8px] font-bold tracking-widest text-[#0f172a] dark:text-white uppercase">
                             Editable
@@ -195,7 +195,7 @@ export function DraftEditableInfoCard({
                             No. Pengajuan
                         </div>
                         <span
-                            className="rounded border border-black/10 dark:border-white/10 bg-white dark:bg-sidebar px-3 py-1.5 font-mono font-bold text-black dark:text-white inline-block shadow-sm"
+                            className="rounded bg-black/[0.03] dark:bg-white/[0.03] px-3 py-1.5 font-mono font-bold text-black dark:text-white inline-block shadow-sm"
                             style={{ fontSize: 12 }}
                         >
                             {selected.contract_no}
@@ -230,7 +230,7 @@ export function DraftEditableInfoCard({
                                 />
                             ) : (
                                 <span
-                                    className="rounded border border-black/10 dark:border-white/10 bg-white dark:bg-sidebar px-3 py-1.5 font-mono font-bold text-black dark:text-white inline-block shadow-sm"
+                                    className="rounded bg-black/[0.03] dark:bg-white/[0.03] px-3 py-1.5 font-mono font-bold text-black dark:text-white inline-block shadow-sm"
                                     style={{ fontSize: 12 }}
                                 >
                                     {selected.crown_no || '—'}
@@ -273,9 +273,9 @@ export function DraftEditableInfoCard({
                                 ))}
                             </select>
                         ) : (
-                            <span className="rounded-full border border-black/10 dark:border-white/10 bg-[#0f172a] dark:bg-white px-3 py-1 text-[10px] font-bold tracking-[0.1em] text-white dark:text-[#0f172a] uppercase shadow-sm">
-                                {selected.contract_type}
-                            </span>
+                                <span className="rounded-full bg-[#172554] dark:bg-white px-3 py-1 text-[10px] font-bold tracking-[0.1em] text-white dark:text-[#172554] uppercase shadow-sm">
+                                    {selected.contract_type}
+                                </span>
                         )}
                     </div>
 
@@ -311,9 +311,9 @@ export function DraftEditableInfoCard({
                                 ))}
                             </select>
                         ) : (
-                            <span className="rounded-full border border-black/10 dark:border-white/10 bg-white dark:bg-sidebar px-3 py-1 text-[10px] font-bold tracking-[0.1em] text-black dark:text-white uppercase shadow-sm">
-                                {(selected as any).vendor?.name || '-'}
-                            </span>
+                                <span className="rounded-full bg-black/[0.03] dark:bg-white/[0.03] px-3 py-1 text-[10px] font-bold tracking-[0.1em] text-black dark:text-white uppercase shadow-sm">
+                                    {(selected as any).vendor?.name || '-'}
+                                </span>
                         )}
                     </div>
 

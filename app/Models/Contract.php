@@ -74,6 +74,11 @@ class Contract extends Model
         return $this->belongsTo(SubmissionType::class, 'submission_type_id');
     }
 
+    public function statusDetail(): BelongsTo
+    {
+        return $this->belongsTo(ContractStatus::class, 'status', 'code');
+    }
+
     public function attachments(): HasMany
     {
         return $this->hasMany(ContractAttachment::class);

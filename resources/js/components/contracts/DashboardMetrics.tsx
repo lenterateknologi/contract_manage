@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { router } from '@inertiajs/react';
 import { BarChart3, Clock, FileText, Filter, Shield, X } from 'lucide-react';
 import React from 'react';
+import { Button } from '@/components/ui/button';
 import { Area, Bar, ComposedChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 // Data Tetap Sama
@@ -134,12 +135,13 @@ export function DashboardMetrics({
                     </select>
 
                     {(filters.role_id || filters.department_id) && (
-                        <button 
+                        <Button 
+                            variant="destructive"
                             onClick={clearFilters}
-                            className="flex h-9 items-center gap-2 rounded-md bg-rose-50 px-4 text-[10px] font-bold text-rose-600 transition-all hover:bg-rose-100 border border-rose-100"
+                            className="h-9 px-4 text-[10px] font-black uppercase tracking-widest shadow-none rounded-lg"
                         >
                             <X size={14} /> BERSIHKAN
-                        </button>
+                        </Button>
                     )}
                 </div>
             </div>

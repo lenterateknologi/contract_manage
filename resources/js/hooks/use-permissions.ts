@@ -19,6 +19,9 @@ export function usePermissions(moduleCode?: string) {
         create: false,
         update: false,
         delete: false,
+        approve: false,
+        bulk_approve: false,
+        bulk_delete: false,
     };
 
     return {
@@ -26,5 +29,8 @@ export function usePermissions(moduleCode?: string) {
         canCreate: modulePerms.create,
         canUpdate: modulePerms.update,
         canDelete: modulePerms.delete,
+        canApprove: (modulePerms as any).approve,
+        canBulkApprove: (modulePerms as any).bulk_approve,
+        canBulkDelete: (modulePerms as any).bulk_delete,
     };
 }

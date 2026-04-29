@@ -1,6 +1,6 @@
 import { useToast } from '@/components/contracts/Toast';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { Column, DataTable } from '@/components/ui/DataTable';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,7 +10,6 @@ import { router, useForm } from '@inertiajs/react';
 import { Plus, Trash2 } from 'lucide-react';
 import React, { useMemo } from 'react';
 import { FormSection, ManagementForm } from './ManagementForm';
-import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 
 interface ContractTypeManagementProps {
     contractTypes: any;
@@ -47,61 +46,39 @@ export function ContractTypeManagement({ contractTypes, formTemplates, contractT
                 header: 'Jenis Kontrak',
                 accessorKey: 'name',
                 sortable: true,
-                className: 'font-black text-black dark:text-white uppercase tracking-tight text-[11px] antialiased',
+                className: 'font-bold text-black dark:text-white text-[13px] antialiased',
             },
             {
                 header: 'F1 (Internal)',
                 accessorKey: 'f1_input_mechanism',
                 cell: (row) => (
-                    <div className="flex items-center gap-2">
-                        {row.f1_input_mechanism === 'digital' ? (
-                            <Badge className="rounded-none border-none bg-black dark:bg-white px-2 text-[8px] font-black tracking-widest text-white dark:text-black uppercase">
-                                Formulir Digital
-                            </Badge>
-                        ) : row.f1_input_mechanism === 'folder' ? (
-                            <Badge className="rounded-none border-none bg-black dark:bg-white px-2 text-[8px] font-black tracking-widest text-white dark:text-black uppercase">
-                                Folder Kontrak
-                            </Badge>
-                        ) : (
-                            <Badge
-                                variant="outline"
-                                className="rounded-none border-black dark:border-white px-2 text-[8px] font-black tracking-widest text-black/40 dark:text-white/40 uppercase shadow-none bg-black/5 dark:bg-white/5"
-                            >
-                                Manual
-                            </Badge>
-                        )}
-                    </div>
+                    <span className="text-[10px] font-black tracking-widest text-black/60 uppercase dark:text-white/60">
+                        {row.f1_input_mechanism === 'digital'
+                            ? 'Formulir Digital'
+                            : row.f1_input_mechanism === 'folder'
+                              ? 'Folder Kontrak'
+                              : 'Manual'}
+                    </span>
                 ),
             },
             {
                 header: 'F2 (Eksternal)',
                 accessorKey: 'f2_input_mechanism',
                 cell: (row) => (
-                    <div className="flex items-center gap-2">
-                        {row.f2_input_mechanism === 'digital' ? (
-                            <Badge className="rounded-none border-none bg-black dark:bg-white px-2 text-[8px] font-black tracking-widest text-white dark:text-black uppercase">
-                                Formulir Digital
-                            </Badge>
-                        ) : row.f2_input_mechanism === 'folder' ? (
-                            <Badge className="rounded-none border-none bg-black dark:bg-white px-2 text-[8px] font-black tracking-widest text-white dark:text-black uppercase">
-                                Folder Kontrak
-                            </Badge>
-                        ) : (
-                            <Badge
-                                variant="outline"
-                                className="rounded-none border-black dark:border-white px-2 text-[8px] font-black tracking-widest text-black/40 dark:text-white/40 uppercase shadow-none bg-black/5 dark:bg-white/5"
-                            >
-                                Manual
-                            </Badge>
-                        )}
-                    </div>
+                    <span className="text-[10px] font-black tracking-widest text-black/60 uppercase dark:text-white/60">
+                        {row.f2_input_mechanism === 'digital'
+                            ? 'Formulir Digital'
+                            : row.f2_input_mechanism === 'folder'
+                              ? 'Folder Kontrak'
+                              : 'Manual'}
+                    </span>
                 ),
             },
             {
                 header: 'Deskripsi',
                 accessorKey: 'description',
-                className: 'text-[10px] font-bold text-black/50 dark:text-white/50 uppercase tracking-tight truncate max-w-[200px]',
-                cell: (row) => row.description || '-',
+                className: 'text-[10px] font-bold text-black/40 dark:text-white/40 uppercase tracking-tight truncate max-w-[200px]',
+                cell: (row) => row.description || '—',
             },
         ],
         [],
@@ -176,25 +153,25 @@ export function ContractTypeManagement({ contractTypes, formTemplates, contractT
                     canDelete && (
                         <Button
                             type="button"
-                            variant="ghost"
+                            variant="outline"
                             onClick={handleDelete}
-                            className="h-8 rounded-none px-4 text-[10px] font-black tracking-widest text-black dark:text-white uppercase transition-all hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black border border-black dark:border-white"
+                            className="h-9 border-red-500/20 px-4 text-red-500 hover:bg-red-500 hover:text-white"
                         >
-                            <Trash2 size={14} className="mr-2" /> Hapus Klasifikasi
+                            <Trash2 size={14} /> Hapus Klasifikasi
                         </Button>
                     )
                 }
             >
-                <ConfirmationModal 
+                <ConfirmationModal
                     open={isConfirmOpen}
                     onClose={() => setIsConfirmOpen(false)}
                     onConfirm={() => {
                         setIsConfirmOpen(false);
-                        router.delete(`/admin/contract-types/${editingType.id}`, { 
+                        router.delete(`/admin/contract-types/${editingType.id}`, {
                             onSuccess: () => {
                                 closeForm();
                                 showToast('Tipe kontrak telah dihapus', 'success');
-                            }
+                            },
                         });
                     }}
                     title="Hapus Klasifikasi Kontrak"
@@ -204,24 +181,28 @@ export function ContractTypeManagement({ contractTypes, formTemplates, contractT
                 <div className="font-inter grid grid-cols-1 gap-10 md:grid-cols-12">
                     <div className="space-y-12 md:col-span-12 lg:col-span-9">
                         <FormSection title="Metadata Klasifikasi Utama" subtitle="Identifikasi utama untuk kategori kontrak ini">
-                            <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-                                <div className="space-y-1.5">
-                                    <Label className="text-[9px] font-black tracking-[0.2em] text-black/50 dark:text-white/50 uppercase">Nama Klasifikasi</Label>
+                            <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+                                <div className="space-y-1.5 md:col-span-1">
+                                    <Label className="text-[10px] font-bold tracking-widest text-black/40 uppercase dark:text-white/40">
+                                        Nama Klasifikasi
+                                    </Label>
                                     <Input
                                         value={form.data.name}
                                         onChange={(e) => form.setData('name', e.target.value)}
                                         required
                                         placeholder="CONTOH: PERJANJIAN KERJASAMA JASA"
-                                        className="h-10 rounded-none border-black dark:border-white bg-white dark:bg-black px-4 text-xs font-black tracking-tight uppercase transition-all focus-visible:ring-0 text-black dark:text-white placeholder:text-black/20"
+                                        className="h-10 rounded-xl border-black/[0.1] bg-black/[0.02] px-4 text-xs font-bold tracking-tight text-black uppercase transition-all placeholder:text-black/20 focus-visible:ring-0 dark:border-white/[0.1] dark:bg-white/[0.02] dark:text-white"
                                     />
                                 </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-[9px] font-black tracking-[0.2em] text-black/50 dark:text-white/50 uppercase">Deskripsi Konteks</Label>
+                                <div className="space-y-1.5 md:col-span-2">
+                                    <Label className="text-[10px] font-bold tracking-widest text-black/40 uppercase dark:text-white/40">
+                                        Deskripsi Konteks
+                                    </Label>
                                     <Input
                                         value={form.data.description}
                                         onChange={(e) => form.setData('description', e.target.value)}
                                         placeholder="Ringkasan kapan menggunakan tipe ini..."
-                                        className="h-10 rounded-none border-black dark:border-white bg-white dark:bg-black px-4 text-xs font-bold uppercase tracking-tight transition-all focus-visible:ring-0 text-black dark:text-white placeholder:text-black/20"
+                                        className="h-10 rounded-xl border-black/[0.1] bg-black/[0.02] px-4 text-xs font-bold tracking-tight text-black uppercase transition-all placeholder:text-black/20 focus-visible:ring-0 dark:border-white/[0.1] dark:bg-white/[0.02] dark:text-white"
                                     />
                                 </div>
                             </div>
@@ -236,21 +217,30 @@ export function ContractTypeManagement({ contractTypes, formTemplates, contractT
                             >
                                 <div className="space-y-6">
                                     <div className="space-y-1.5">
-                                        <Label className="text-[9px] font-black tracking-[0.2em] text-black/50 dark:text-white/50 uppercase">
+                                        <Label className="text-[10px] font-bold tracking-widest text-black/40 uppercase dark:text-white/40">
                                             Mekanisme Pengajuan (F1)
                                         </Label>
                                         <Select value={form.data.f1_input_mechanism} onValueChange={(v) => form.setData('f1_input_mechanism', v)}>
-                                            <SelectTrigger className="h-10 rounded-none border-black dark:border-white bg-white dark:bg-black text-[10px] font-black tracking-widest uppercase text-black dark:text-white">
+                                            <SelectTrigger className="h-10 rounded-xl border-black/[0.1] bg-black/[0.02] text-[10px] font-black tracking-widest text-black uppercase dark:border-white/[0.1] dark:bg-white/[0.02] dark:text-white">
                                                 <SelectValue />
                                             </SelectTrigger>
-                                            <SelectContent className="rounded-none border-black dark:border-white bg-white dark:bg-black">
-                                                <SelectItem value="digital" className="py-3 text-[9px] font-black tracking-widest uppercase text-black dark:text-white">
+                                            <SelectContent className="rounded-xl border-black/[0.1] bg-white dark:border-white/[0.1] dark:bg-black">
+                                                <SelectItem
+                                                    value="digital"
+                                                    className="py-3 text-[10px] font-black tracking-widest text-black uppercase dark:text-white"
+                                                >
                                                     Pengajuan Formulir Digital
                                                 </SelectItem>
-                                                <SelectItem value="folder" className="py-3 text-[9px] font-black tracking-widest uppercase text-black dark:text-white">
+                                                <SelectItem
+                                                    value="folder"
+                                                    className="py-3 text-[10px] font-black tracking-widest text-black uppercase dark:text-white"
+                                                >
                                                     Templat Folder Kontrak
                                                 </SelectItem>
-                                                <SelectItem value="manual" className="py-3 text-[9px] font-black tracking-widest uppercase text-black dark:text-white">
+                                                <SelectItem
+                                                    value="manual"
+                                                    className="py-3 text-[10px] font-black tracking-widest text-black uppercase dark:text-white"
+                                                >
                                                     Unggah Dokumen Manual
                                                 </SelectItem>
                                             </SelectContent>
@@ -259,28 +249,33 @@ export function ContractTypeManagement({ contractTypes, formTemplates, contractT
 
                                     {form.data.f1_input_mechanism === 'digital' ? (
                                         <div className="animate-in fade-in slide-in-from-top-2 space-y-1.5">
-                                            <Label className="text-[9px] font-black tracking-[0.2em] text-black/50 dark:text-white/50 uppercase">
+                                            <Label className="text-[10px] font-bold tracking-widest text-black/40 uppercase dark:text-white/40">
                                                 Tautan ke Templat Digital F1
                                             </Label>
                                             <Select
                                                 value={form.data.f1_form_template_id}
                                                 onValueChange={(v) => form.setData('f1_form_template_id', v)}
                                             >
-                                                <SelectTrigger className="h-10 rounded-none border-black dark:border-white bg-white dark:bg-black text-[10px] font-black tracking-tight uppercase text-black dark:text-white">
+                                                <SelectTrigger className="h-10 rounded-xl border-black/[0.1] bg-black/[0.02] text-[10px] font-black tracking-tight text-black uppercase dark:border-white/[0.1] dark:bg-white/[0.02] dark:text-white">
                                                     <SelectValue placeholder="PILIH ASET F1..." />
                                                 </SelectTrigger>
-                                                <SelectContent className="max-h-[200px] rounded-none border-black dark:border-white bg-white dark:bg-black">
-                                                    <SelectItem value="none" className="text-[9px] font-black text-black/20 dark:text-white/20 uppercase italic">
+                                                <SelectContent className="max-h-[200px] rounded-xl border-black/[0.1] bg-white dark:border-white/[0.1] dark:bg-black">
+                                                    <SelectItem
+                                                        value="none"
+                                                        className="text-[10px] font-black text-black/20 uppercase italic dark:text-white/20"
+                                                    >
                                                         Tidak Terpaut / Tanpa Templat
                                                     </SelectItem>
                                                     {templates.map((t: any) => (
                                                         <SelectItem
                                                             key={t.id}
                                                             value={t.id}
-                                                            className="py-3 text-[9px] font-black tracking-wider uppercase text-black dark:text-white"
+                                                            className="py-3 text-[10px] font-black tracking-widest text-black uppercase dark:text-white"
                                                         >
                                                             {t.name}{' '}
-                                                            <span className="ml-2 font-bold text-black/30 dark:text-white/30">({t.document_type || 'ADHOC'})</span>
+                                                            <span className="ml-2 font-bold text-black/30 dark:text-white/30">
+                                                                ({t.document_type || 'ADHOC'})
+                                                            </span>
                                                         </SelectItem>
                                                     ))}
                                                 </SelectContent>
@@ -288,35 +283,41 @@ export function ContractTypeManagement({ contractTypes, formTemplates, contractT
                                         </div>
                                     ) : form.data.f1_input_mechanism === 'folder' ? (
                                         <div className="animate-in fade-in slide-in-from-top-2 space-y-1.5">
-                                            <Label className="text-[9px] font-black tracking-[0.2em] text-black/50 dark:text-white/50 uppercase">
+                                            <Label className="text-[10px] font-bold tracking-widest text-black/40 uppercase dark:text-white/40">
                                                 Tautan ke Templat Folder (F1)
                                             </Label>
                                             <Select
                                                 value={form.data.f1_contract_template_id}
                                                 onValueChange={(v) => form.setData('f1_contract_template_id', v)}
                                             >
-                                                <SelectTrigger className="h-10 rounded-none border-black dark:border-white bg-white dark:bg-black text-[10px] font-black tracking-tight uppercase text-black dark:text-white">
+                                                <SelectTrigger className="h-10 rounded-xl border-black/[0.1] bg-black/[0.02] text-[10px] font-black tracking-tight text-black uppercase dark:border-white/[0.1] dark:bg-white/[0.02] dark:text-white">
                                                     <SelectValue placeholder="PILIH ASET FISIK..." />
                                                 </SelectTrigger>
-                                                <SelectContent className="max-h-[200px] rounded-none border-black dark:border-white bg-white dark:bg-black">
-                                                    <SelectItem value="none" className="text-[9px] font-black text-black/20 dark:text-white/20 uppercase italic">
+                                                <SelectContent className="max-h-[200px] rounded-xl border-black/[0.1] bg-white dark:border-white/[0.1] dark:bg-black">
+                                                    <SelectItem
+                                                        value="none"
+                                                        className="text-[10px] font-black text-black/20 uppercase italic dark:text-white/20"
+                                                    >
                                                         Tidak Ada Templat Terpilih
                                                     </SelectItem>
                                                     {physTemplates.map((t: any) => (
                                                         <SelectItem
                                                             key={t.id}
                                                             value={t.id}
-                                                            className="py-3 text-[9px] font-black tracking-wider uppercase text-black dark:text-white"
+                                                            className="py-3 text-[10px] font-black tracking-widest text-black uppercase dark:text-white"
                                                         >
-                                                            {t.name} <span className="ml-2 font-bold text-black/30 dark:text-white/30">({t.file_type || 'PDF'})</span>
+                                                            {t.name}{' '}
+                                                            <span className="ml-2 font-bold text-black/30 dark:text-white/30">
+                                                                ({t.file_type || 'PDF'})
+                                                            </span>
                                                         </SelectItem>
                                                     ))}
                                                 </SelectContent>
                                             </Select>
                                         </div>
                                     ) : (
-                                        <div className="animate-in fade-in border border-dashed border-black dark:border-white bg-black/5 dark:bg-white/5 p-4 text-center">
-                                            <p className="text-[9px] font-bold text-black/40 dark:text-white/40 uppercase tracking-widest">
+                                        <div className="animate-in fade-in rounded-xl border border-dashed border-black/[0.1] bg-black/[0.02] p-6 text-center dark:border-white/[0.1] dark:bg-white/[0.02]">
+                                            <p className="text-[10px] font-bold tracking-[0.2em] text-black/30 uppercase dark:text-white/30">
                                                 PENGGUNA INTERNAL AKAN MENGUNGGAH PDF MANUAL UNTUK F1
                                             </p>
                                         </div>
@@ -332,21 +333,30 @@ export function ContractTypeManagement({ contractTypes, formTemplates, contractT
                             >
                                 <div className="space-y-6">
                                     <div className="space-y-1.5">
-                                        <Label className="text-[9px] font-black tracking-[0.2em] text-black/50 dark:text-white/50 uppercase">
+                                        <Label className="text-[10px] font-bold tracking-widest text-black/40 uppercase dark:text-white/40">
                                             Mekanisme Pengajuan (F2)
                                         </Label>
                                         <Select value={form.data.f2_input_mechanism} onValueChange={(v) => form.setData('f2_input_mechanism', v)}>
-                                            <SelectTrigger className="h-10 rounded-none border-black dark:border-white bg-white dark:bg-black text-[10px] font-black tracking-widest uppercase text-black dark:text-white">
+                                            <SelectTrigger className="h-10 rounded-xl border-black/[0.1] bg-black/[0.02] text-[10px] font-black tracking-widest text-black uppercase dark:border-white/[0.1] dark:bg-white/[0.02] dark:text-white">
                                                 <SelectValue />
                                             </SelectTrigger>
-                                            <SelectContent className="rounded-none border-black dark:border-white bg-white dark:bg-black">
-                                                <SelectItem value="digital" className="py-3 text-[9px] font-black tracking-widest uppercase text-black dark:text-white">
+                                            <SelectContent className="rounded-xl border-black/[0.1] bg-white dark:border-white/[0.1] dark:bg-black">
+                                                <SelectItem
+                                                    value="digital"
+                                                    className="py-3 text-[10px] font-black tracking-widest text-black uppercase dark:text-white"
+                                                >
                                                     Pengajuan Formulir Digital
                                                 </SelectItem>
-                                                <SelectItem value="folder" className="py-3 text-[9px] font-black tracking-widest uppercase text-black dark:text-white">
+                                                <SelectItem
+                                                    value="folder"
+                                                    className="py-3 text-[10px] font-black tracking-widest text-black uppercase dark:text-white"
+                                                >
                                                     Templat Folder Kontrak
                                                 </SelectItem>
-                                                <SelectItem value="manual" className="py-3 text-[9px] font-black tracking-widest uppercase text-black dark:text-white">
+                                                <SelectItem
+                                                    value="manual"
+                                                    className="py-3 text-[10px] font-black tracking-widest text-black uppercase dark:text-white"
+                                                >
                                                     Unggah Dokumen Manual
                                                 </SelectItem>
                                             </SelectContent>
@@ -355,28 +365,33 @@ export function ContractTypeManagement({ contractTypes, formTemplates, contractT
 
                                     {form.data.f2_input_mechanism === 'digital' ? (
                                         <div className="animate-in fade-in slide-in-from-top-2 space-y-1.5">
-                                            <Label className="text-[9px] font-black tracking-[0.2em] text-black/50 dark:text-white/50 uppercase">
+                                            <Label className="text-[10px] font-bold tracking-widest text-black/40 uppercase dark:text-white/40">
                                                 Tautan ke Templat Digital F2
                                             </Label>
                                             <Select
                                                 value={form.data.f2_form_template_id}
                                                 onValueChange={(v) => form.setData('f2_form_template_id', v)}
                                             >
-                                                <SelectTrigger className="h-10 rounded-none border-black dark:border-white bg-white dark:bg-black text-[10px] font-black tracking-tight uppercase text-black dark:text-white">
+                                                <SelectTrigger className="h-10 rounded-xl border-black/[0.1] bg-black/[0.02] text-[10px] font-black tracking-tight text-black uppercase dark:border-white/[0.1] dark:bg-white/[0.02] dark:text-white">
                                                     <SelectValue placeholder="PILIH ASET F2..." />
                                                 </SelectTrigger>
-                                                <SelectContent className="max-h-[200px] rounded-none border-black dark:border-white bg-white dark:bg-black">
-                                                    <SelectItem value="none" className="text-[9px] font-black text-black/20 dark:text-white/20 uppercase italic">
+                                                <SelectContent className="max-h-[200px] rounded-xl border-black/[0.1] bg-white dark:border-white/[0.1] dark:bg-black">
+                                                    <SelectItem
+                                                        value="none"
+                                                        className="text-[10px] font-black text-black/20 uppercase italic dark:text-white/20"
+                                                    >
                                                         Tidak Terpaut / Tanpa Templat
                                                     </SelectItem>
                                                     {templates.map((t: any) => (
                                                         <SelectItem
                                                             key={t.id}
                                                             value={t.id}
-                                                            className="py-3 text-[9px] font-black tracking-wider uppercase text-black dark:text-white"
+                                                            className="py-3 text-[10px] font-black tracking-widest text-black uppercase dark:text-white"
                                                         >
                                                             {t.name}{' '}
-                                                            <span className="ml-2 font-bold text-black/30 dark:text-white/30">({t.document_type || 'ADHOC'})</span>
+                                                            <span className="ml-2 font-bold text-black/30 dark:text-white/30">
+                                                                ({t.document_type || 'ADHOC'})
+                                                            </span>
                                                         </SelectItem>
                                                     ))}
                                                 </SelectContent>
@@ -384,35 +399,43 @@ export function ContractTypeManagement({ contractTypes, formTemplates, contractT
                                         </div>
                                     ) : form.data.f2_input_mechanism === 'folder' ? (
                                         <div className="animate-in fade-in slide-in-from-top-2 space-y-1.5">
-                                            <Label className="text-[9px] font-black tracking-[0.2em] text-black/50 dark:text-white/50 uppercase">
+                                            <Label className="text-[10px] font-bold tracking-widest text-black/40 uppercase dark:text-white/40">
                                                 Tautan ke Templat Folder (F2)
                                             </Label>
                                             <Select
                                                 value={form.data.f2_contract_template_id}
                                                 onValueChange={(v) => form.setData('f2_contract_template_id', v)}
                                             >
-                                                <SelectTrigger className="h-10 rounded-none border-black dark:border-white bg-white dark:bg-black text-[10px] font-black tracking-tight uppercase text-black dark:text-white">
+                                                <SelectTrigger className="h-10 rounded-xl border-black/[0.1] bg-black/[0.02] text-[10px] font-black tracking-tight text-black uppercase dark:border-white/[0.1] dark:bg-white/[0.02] dark:text-white">
                                                     <SelectValue placeholder="PILIH ASET FISIK..." />
                                                 </SelectTrigger>
-                                                <SelectContent className="max-h-[200px] rounded-none border-black dark:border-white bg-white dark:bg-black">
-                                                    <SelectItem value="none" className="text-[9px] font-black text-black/20 dark:text-white/20 uppercase italic">
+                                                <SelectContent className="max-h-[200px] rounded-xl border-black/[0.1] bg-white dark:border-white/[0.1] dark:bg-black">
+                                                    <SelectItem
+                                                        value="none"
+                                                        className="text-[10px] font-black text-black/20 uppercase italic dark:text-white/20"
+                                                    >
                                                         Tidak Ada Templat Terpilih
                                                     </SelectItem>
                                                     {physTemplates.map((t: any) => (
                                                         <SelectItem
                                                             key={t.id}
                                                             value={t.id}
-                                                            className="py-3 text-[9px] font-black tracking-wider uppercase text-black dark:text-white"
+                                                            className="py-3 text-[10px] font-black tracking-widest text-black uppercase dark:text-white"
                                                         >
-                                                            {t.name} <span className="ml-2 font-bold text-black/30 dark:text-white/30">({t.file_type || 'PDF'})</span>
+                                                            {t.name}{' '}
+                                                            <span className="ml-2 font-bold text-black/30 dark:text-white/30">
+                                                                ({t.file_type || 'PDF'})
+                                                            </span>
                                                         </SelectItem>
                                                     ))}
                                                 </SelectContent>
                                             </Select>
                                         </div>
                                     ) : (
-                                        <div className="animate-in fade-in border border-dashed border-black dark:border-white bg-black/5 dark:bg-white/5 p-4 text-center">
-                                            <p className="text-[9px] font-bold text-black/40 dark:text-white/40 uppercase tracking-widest">VENDOR AKAN MENGUNGGAH PDF MANUAL UNTUK F2</p>
+                                        <div className="animate-in fade-in rounded-xl border border-dashed border-black/[0.1] bg-black/[0.02] p-6 text-center dark:border-white/[0.1] dark:bg-white/[0.02]">
+                                            <p className="text-[10px] font-bold tracking-[0.2em] text-black/30 uppercase dark:text-white/30">
+                                                VENDOR AKAN MENGUNGGAH PDF MANUAL UNTUK F2
+                                            </p>
                                         </div>
                                     )}
                                 </div>
@@ -433,17 +456,67 @@ export function ContractTypeManagement({ contractTypes, formTemplates, contractT
             searchPlaceholder="Filter jenis klasifikasi..."
             searchValue={filters.search || ''}
             onSearchChange={(v) => router.get(window.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })}
+            filters={[
+                {
+                    label: 'Mekanisme F1',
+                    key: 'f1_input_mechanism',
+                    options: [
+                        { label: 'Formulir Digital', value: 'digital' },
+                        { label: 'Folder Kontrak', value: 'folder' },
+                        { label: 'Manual', value: 'manual' },
+                    ],
+                },
+                {
+                    label: 'Mekanisme F2',
+                    key: 'f2_input_mechanism',
+                    options: [
+                        { label: 'Formulir Digital', value: 'digital' },
+                        { label: 'Folder Kontrak', value: 'folder' },
+                        { label: 'Manual', value: 'manual' },
+                    ],
+                },
+            ]}
+            activeFilters={{
+                f1_input_mechanism: filters.f1_input_mechanism ? [filters.f1_input_mechanism] : [],
+                f2_input_mechanism: filters.f2_input_mechanism ? [filters.f2_input_mechanism] : [],
+            }}
+            onFilterChange={(updatedFilters) => {
+                const newFilters: Record<string, any> = { ...filters, page: 1 };
+                Object.keys(updatedFilters).forEach(key => {
+                    newFilters[key] = updatedFilters[key].length > 0 ? updatedFilters[key][0] : null;
+                });
+                router.get(window.location.pathname, newFilters, { preserveState: true, replace: true });
+            }}
             headerActions={
                 canCreate && (
-                    <Button
-                        onClick={openCreate}
-                        className="h-10 gap-2 rounded-none bg-black dark:bg-white px-6 text-[11px] font-black tracking-widest text-white dark:text-black border border-black dark:border-white shadow-none hover:opacity-90 transition-all active:scale-95"
-                    >
-                        <Plus className="h-4 w-4" /> Tambah Tipe
+                    <Button variant="primary" onClick={openCreate} className="h-10 px-8 shadow-xl active:scale-95">
+                        <Plus size={14} /> Tambah Klasifikasi Baru
                     </Button>
                 )
             }
             onRowClick={openEdit}
+            bulkActions={
+                canUpdate
+                    ? [
+                          {
+                              label: 'Hapus Terpilih',
+                              icon: Trash2,
+                              variant: 'destructive',
+                              onClick: (ids) => {
+                                  if (confirm(`Hapus ${ids.length} tipe kontrak terpilih?`)) {
+                                      router.post(
+                                          '/admin/contract-types/bulk-delete',
+                                          { ids },
+                                          {
+                                              onSuccess: () => showToast(`${ids.length} tipe kontrak telah dihapus`, 'success'),
+                                          },
+                                      );
+                                  }
+                              },
+                          },
+                      ]
+                    : undefined
+            }
             pagination={
                 contractTypes && contractTypes.meta
                     ? {

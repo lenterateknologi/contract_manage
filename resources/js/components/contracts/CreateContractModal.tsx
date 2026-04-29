@@ -11,6 +11,7 @@ import {
     Settings2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 interface Props {
     open: boolean;
@@ -220,16 +221,17 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
 
                 {/* Footer */}
                 <div className="border-sidebar-border/50 flex items-center justify-end gap-3 border-t bg-sidebar-accent/20 px-6 py-5">
-                    <button
+                    <Button
+                        variant="ghost"
                         onClick={onClose}
-                        className="text-black/50 dark:text-white/50 hover:text-black dark:hover:text-white px-4 py-2 text-[12px] font-semibold transition-all"
+                        className="text-black/50 dark:text-white/50 hover:text-black dark:hover:text-white px-4 h-10 text-[11px] font-bold uppercase tracking-widest transition-all"
                     >
                         Batal
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         onClick={handleSubmit}
                         disabled={loading}
-                        className="flex items-center gap-2 rounded-xl bg-sidebar-primary px-8 py-2.5 text-[12px] font-bold text-white shadow-lg shadow-sidebar-primary/20 transition-all hover:opacity-90 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="h-10 gap-2 rounded-lg px-8 text-[11px] font-black uppercase tracking-widest shadow-lg active:scale-95 disabled:opacity-50"
                     >
                         {loading ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -237,7 +239,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                             <Check size={16} strokeWidth={3} />
                         )}
                         Buat Kontrak
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>

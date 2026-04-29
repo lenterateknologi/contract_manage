@@ -589,7 +589,7 @@ function GenericFormTab({
                             <a
                                 href={pdfPreviewUrl}
                                 download={`${selected.contract_no}_${docType.toUpperCase()}.pdf`}
-                                className="flex items-center gap-2 rounded-lg bg-black px-6 py-2.5 text-[10px] font-bold tracking-widest text-white uppercase shadow-lg transition-all hover:opacity-90 active:scale-95 dark:bg-white dark:text-black"
+                                className="flex items-center gap-2 rounded-lg bg-[#172554] px-6 py-2.5 text-[10px] font-bold tracking-widest text-white uppercase shadow-lg transition-all hover:opacity-90 active:scale-95 dark:bg-white dark:text-[#172554]"
                             >
                                 <Download size={14} /> Download PDF
                             </a>
@@ -612,14 +612,14 @@ function GenericFormTab({
             <div className="border-black/10 dark:border-white/10 sticky top-0 z-40 flex h-[72px] shrink-0 items-center justify-between border-b bg-white/80 dark:bg-sidebar/80 px-6 backdrop-blur-md">
                 <div className="flex items-center gap-6">
                     <div className="flex items-center gap-4">
-                        <div className="h-10 w-[3px] rounded-full bg-[#0f172a] dark:bg-white" />
+                        <div className="h-10 w-[3px] rounded-full bg-[#172554] dark:bg-white" />
                         <div className="flex flex-col">
                             <div className="flex items-center gap-2">
                                 <h4 className="text-sm font-bold text-black dark:text-white">
                                     {docType === 'f1' ? 'Formulir F1 (Internal)' : 'Formulir F2 (Resume)'}
                                 </h4>
-                                <div className="rounded bg-black dark:bg-white px-1.5 py-0.5">
-                                    <span className="text-[10px] font-bold text-white dark:text-black">
+                                <div className="rounded bg-[#172554] dark:bg-white px-1.5 py-0.5">
+                                    <span className="text-[10px] font-bold text-white dark:text-[#172554]">
                                         V{submissionInfo?.current_version || 1}
                                     </span>
                                 </div>
@@ -628,7 +628,7 @@ function GenericFormTab({
                                 <span className="text-[10px] font-bold text-black dark:text-white">
                                     {docType === 'f1' ? 'Submission Document' : 'Agreement Resume'}
                                 </span>
-                                <div className="h-1 w-1 rounded-full bg-black dark:bg-white" />
+                                <div className="h-1 w-1 rounded-full bg-[#172554] dark:bg-white" />
                                 <span className="text-[10px] font-bold text-black dark:text-white">{submissionInfo ? 'Sudah Diisi' : 'Draft Mode'}</span>
                             </div>
                         </div>
@@ -658,8 +658,8 @@ function GenericFormTab({
                             className={cn(
                                 'group flex h-9 items-center gap-2.5 rounded-lg border px-4 transition-all active:scale-95',
                                 showVersions
-                                    ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black'
-                                    : 'border-black bg-white text-black hover:border-black/20 dark:border-white dark:bg-transparent dark:text-white',
+                                    ? 'border-[#172554] bg-[#172554] text-white dark:border-white dark:bg-white dark:text-[#172554]'
+                                    : 'border-[#172554] bg-white text-[#172554] hover:border-[#172554]/20 dark:border-white dark:bg-transparent dark:text-white',
                             )}
                         >
                             <History
@@ -686,7 +686,7 @@ function GenericFormTab({
                                             placeholder="Cari riwayat versi..."
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
-                                            className="w-full rounded-xl border border-black bg-white py-2.5 pr-4 pl-10 text-xs font-bold transition-all outline-none focus:ring-2 focus:ring-black dark:border-white dark:bg-transparent dark:text-white dark:focus:ring-white"
+                                            className="w-full rounded-xl border border-[#172554] bg-white py-2.5 pr-4 pl-10 text-xs font-bold transition-all outline-none focus:ring-2 focus:ring-[#172554] dark:border-white dark:bg-transparent dark:text-white dark:focus:ring-white"
                                         />
                                     </div>
                                 </div>
@@ -704,7 +704,7 @@ function GenericFormTab({
                                             >
                                                 <div className="flex flex-col">
                                                     <div className="flex items-center gap-2.5">
-                                                        <span className="flex h-6 w-6 items-center justify-center rounded bg-black text-[10px] font-bold text-white dark:bg-white dark:text-black">
+                                                        <span className="flex h-6 w-6 items-center justify-center rounded bg-[#172554] text-[10px] font-bold text-white dark:bg-white dark:text-[#172554]">
                                                             {v.version_no}
                                                         </span>
                                                         <span className="text-xs font-bold text-black dark:text-white">Versi {v.version_no}</span>
@@ -713,7 +713,7 @@ function GenericFormTab({
                                                         <span className="text-[10px] font-bold text-black dark:text-white">
                                                             {v.created_at}
                                                         </span>
-                                                        <div className="h-1 w-1 rounded-full bg-black dark:bg-white" />
+                                                        <div className="h-1 w-1 rounded-full bg-[#172554] dark:bg-white" />
                                                         <span className="text-[10px] font-bold text-black dark:text-white">
                                                             {v.created_by?.name || 'System'}
                                                         </span>
@@ -742,8 +742,8 @@ function GenericFormTab({
                             className={cn(
                                 'flex h-9 w-9 items-center justify-center rounded-lg border transition-all active:scale-95',
                                 showMoreActions
-                                    ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black'
-                                    : 'border-black bg-white text-black hover:bg-black/5 dark:border-white dark:bg-transparent dark:text-white',
+                                    ? 'border-[#172554] bg-[#172554] text-white dark:border-white dark:bg-white dark:text-[#172554]'
+                                    : 'border-[#172554] bg-white text-[#172554] hover:bg-[#172554]/5 dark:border-white dark:bg-transparent dark:text-white',
                             )}
                         >
                             <MoreVertical size={16} />

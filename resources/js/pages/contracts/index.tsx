@@ -9,6 +9,8 @@ import { FilterSheet } from '@/components/ui/FilterSheet';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { SearchInput } from '@/components/ui/search-input';
+import { LayoutToggle, LayoutType } from '@/components/ui/layout-toggle';
 import { contractApi } from '@/lib/contract-api';
 import { cn } from '@/lib/utils';
 import { Contract, ContractType, PaginatedData } from '@/types/contracts';
@@ -18,17 +20,18 @@ import {
     AlertCircle,
     AlertTriangle,
     Archive,
+    Check,
     CheckCircle2,
     ChevronLeft,
+    ChevronRight,
     Clock,
     Download,
     Eye,
     FileEdit,
+    FileText,
     FileType,
     Filter,
     Layers,
-    LayoutGrid,
-    LayoutList,
     MoreVertical,
     PlusCircle,
     Save,
@@ -106,7 +109,7 @@ const StatusBadge = ({ status }: { status: string }) => {
     return (
         <div className="inline-flex items-center gap-2 text-[12px] font-medium">
             <span className={cn('h-2 w-2 rounded-full', s.color)} />
-            <span className="text-slate-700 dark:text-slate-200">{s.label}</span>
+            <span className="text-black dark:text-white font-bold">{s.label}</span>
         </div>
     );
 };
@@ -150,17 +153,17 @@ const SLACountdown = ({ deadline, status }: { deadline: string | null; status: s
         return () => clearInterval(timer);
     }, [deadline, status]);
 
-    if (!deadline || status === 'archived' || status === 'approved') return <span className="text-muted-foreground text-[10px]">—</span>;
+    if (!deadline || status === 'archived' || status === 'approved') return <span className="text-black/40 dark:text-white/40 text-[10px]">—</span>;
 
     return (
         <div
             className={cn(
                 'flex w-fit items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-bold ring-1',
                 urgency === 'danger'
-                    ? 'bg-rose-50 text-rose-600 ring-rose-200'
+                    ? 'bg-rose-500/10 text-rose-600 ring-rose-500/20 dark:bg-rose-500/20 dark:text-rose-400'
                     : urgency === 'warning'
-                      ? 'bg-amber-50 text-amber-600 ring-amber-200'
-                      : 'bg-emerald-50 text-emerald-600 ring-emerald-200',
+                      ? 'bg-amber-500/10 text-amber-600 ring-amber-500/20 dark:bg-amber-500/20 dark:text-amber-400'
+                      : 'bg-black/5 text-black ring-black/10 dark:bg-white/5 dark:text-white dark:ring-white/10',
             )}
         >
             <Clock size={10} className={urgency === 'danger' ? 'animate-pulse' : ''} />
@@ -211,7 +214,7 @@ function ContractPage({
 }) {
     const contracts = contractsPaged.data;
     const { showToast, showProgress, hideProgress } = useToast();
-    const { canUpdate } = usePermissions('CONTRACTS');
+    const { canUpdate, canBulkApprove, canBulkDelete } = usePermissions('CONTRACTS');
 
     // PDF Queue States
     const [isExportingTimeline, setIsExportingTimeline] = useState(false);
@@ -291,7 +294,7 @@ function ContractPage({
                 header: 'No. Pengajuan',
                 accessorKey: 'contract_no',
                 sortable: true,
-                className: 'font-mono text-[11px] font-semibold text-slate-500',
+                className: 'font-mono text-[11px] font-semibold text-black dark:text-white',
             },
             {
                 header: 'Informasi Kontrak',
@@ -299,11 +302,18 @@ function ContractPage({
                 sortable: true,
                 cell: (c) => (
                     <div className="flex flex-col">
-                        <span className="text-[13px] leading-tight font-bold text-slate-900">{c.title}</span>
-                        <div className="mt-1 flex items-center gap-2">
-                            <span className="text-[10px] font-bold tracking-wide text-slate-400 uppercase">{c.contract_type}</span>
-                            <span className="h-1 w-1 rounded-full bg-slate-300" />
-                            <span className="text-[10px] font-bold tracking-wide text-slate-400 uppercase">{c.vendor?.name || 'No Vendor'}</span>
+                        <div className="flex items-center gap-2">
+                            <span className="text-[13px] leading-tight font-bold text-black dark:text-white">{c.title}</span>
+                            {c.current_version && (
+                                <div className="rounded bg-black dark:bg-white px-1.5 py-0.5 flex-shrink-0">
+                                    <span className="text-[9px] font-black text-white dark:text-black uppercase">V{c.current_version}</span>
+                                </div>
+                            )}
+                        </div>
+                        <div className="mt-1.5 flex items-center gap-2">
+                            <span className="text-[10px] font-bold tracking-wide text-black/50 dark:text-white/50 uppercase">{c.contract_type}</span>
+                            <span className="h-1 w-1 rounded-full bg-black/20 dark:bg-white/20" />
+                            <span className="text-[10px] font-bold tracking-wide text-black/50 dark:text-white/50 uppercase">{c.vendor?.name || 'No Vendor'}</span>
                         </div>
                     </div>
                 ),
@@ -311,26 +321,29 @@ function ContractPage({
             {
                 header: 'Departemen',
                 accessorKey: 'initiator.department_name',
+                sortable: true,
                 cell: (c) => (
-                    <span className="text-[11px] font-semibold tracking-wide text-slate-500 uppercase">{c.initiator?.department_name || 'UMUM'}</span>
+                    <span className="text-[11px] font-semibold tracking-wide text-black/60 dark:text-white/60 uppercase">{c.initiator?.department_name || 'UMUM'}</span>
                 ),
             },
-            { header: 'Status', accessorKey: 'status', cell: (c) => <StatusBadge status={c.status} /> },
+            { header: 'Status', accessorKey: 'status', sortable: true, cell: (c) => <StatusBadge status={c.status} /> },
             {
                 header: 'Progress',
                 accessorKey: 'progress',
+                sortable: true,
                 cell: (c) => (
                     <span className="text-sidebar-foreground/90 text-[10px] font-bold tracking-tight">
                         {c.progress.done}/{c.progress.total}
                     </span>
                 ),
             },
-            { header: 'SLA Sisa', accessorKey: 'sla_deadline', cell: (c) => <SLACountdown deadline={c.sla_deadline ?? null} status={c.status} /> },
+            { header: 'SLA Sisa', accessorKey: 'sla_deadline', sortable: true, cell: (c) => <SLACountdown deadline={c.sla_deadline ?? null} status={c.status} /> },
         ];
         baseColumns.push({
             header: 'Tgl Dibuat',
             accessorKey: 'created_at',
-            className: 'text-slate-400 text-[11px] font-medium',
+            sortable: true,
+            className: 'text-black/40 dark:text-white/40 text-[11px] font-medium',
             cell: (c) => c.created_at,
         });
         return baseColumns;
@@ -582,6 +595,39 @@ function ContractPage({
         }
     };
 
+    const handleBulkDelete = async (selectedContracts: Contract[]) => {
+        if (!confirm(`Hapus ${selectedContracts.length} kontrak terpilih?`)) return;
+        setProcessing(true);
+        try {
+            await axios.post('/api/contracts/bulk-delete', { ids: selectedContracts.map(c => c.id) });
+            router.reload({ preserveScroll: true, preserveState: true } as any);
+            showToast(`${selectedContracts.length} kontrak berhasil dihapus.`, 'success');
+        } catch (err: any) {
+            showToast('Gagal menghapus beberapa kontrak.', 'danger');
+        } finally {
+            setProcessing(false);
+        }
+    };
+
+    const handleBulkApprove = async (selectedContracts: Contract[]) => {
+        const note = prompt(`Masukkan catatan untuk ${selectedContracts.length} kontrak yang akan disetujui:`);
+        if (note === null) return;
+        if (note.length < 10) {
+            showToast('Catatan wajib diisi minimal 10 karakter.', 'info');
+            return;
+        }
+        setProcessing(true);
+        try {
+            await axios.post('/api/contracts/bulk-approve', { ids: selectedContracts.map(c => c.id), note });
+            router.reload({ preserveScroll: true, preserveState: true } as any);
+            showToast(`${selectedContracts.length} kontrak berhasil disetujui.`, 'success');
+        } catch (err: any) {
+            showToast('Gagal menyetujui beberapa kontrak.', 'danger');
+        } finally {
+            setProcessing(false);
+        }
+    };
+
     return (
         <>
             <Head title={currentView} />
@@ -619,18 +665,19 @@ function ContractPage({
                                     </button>
                                 )} */}
                                 {selected.status === 'draft' && (
-                                    <button
+                                    <Button
+                                        variant="primary"
                                         onClick={() => setSendOpen(true)}
-                                        className="inline-flex items-center gap-2 rounded-lg bg-black px-6 py-2.5 text-[11px] font-bold tracking-wider text-white uppercase shadow-lg transition-all hover:opacity-90 active:scale-95 dark:bg-white dark:text-black"
+                                        className="h-10 px-6 active:scale-95"
                                     >
                                         <Send size={14} /> Kirim Approval
-                                    </button>
+                                    </Button>
                                 )}
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <button className="dark:bg-sidebar inline-flex h-10 w-10 items-center justify-center rounded-lg border border-black/20 bg-white text-black transition-all hover:bg-black/5 active:scale-95 dark:border-white/20 dark:text-white dark:hover:bg-white/5">
+                                        <Button variant="outline" size="icon" className="h-10 w-10 active:scale-95">
                                             <MoreVertical size={18} />
-                                        </button>
+                                        </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent
                                         align="end"
@@ -666,8 +713,13 @@ function ContractPage({
 
                         <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[1fr_400px]">
                             <div className="flex flex-col gap-6">
-                                <div className="dark:bg-sidebar overflow-hidden rounded-xl border border-black/10 bg-white dark:border-white">
-                                    <div className="dark:bg-sidebar/50 flex flex-wrap gap-1 border-b border-black/10 bg-white p-1 dark:border-white">
+                                <div className="dark:bg-sidebar overflow-hidden rounded-xl bg-white shadow-sm">
+                                    <div className="flex items-center justify-between bg-[var(--primary)] p-4 dark:bg-white">
+                                        <div className="flex items-center gap-2 text-[11px] font-black tracking-widest text-white uppercase dark:text-[var(--primary)]">
+                                            <FileText size={14} className="text-white/40 dark:text-[var(--primary)]/40" /> Detail & Dokumen Kontrak
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-wrap gap-1 bg-black/[0.02] p-1.5 dark:bg-white/[0.02]">
                                         {[
                                             { id: 'form_template', label: 'F1' },
                                             { id: 'f2', label: 'F2' },
@@ -682,10 +734,10 @@ function ContractPage({
                                                 key={tab.id}
                                                 onClick={() => setDetailTab(tab.id as any)}
                                                 className={cn(
-                                                    'rounded-md px-4 py-2 text-[10px] font-bold tracking-widest uppercase transition-all duration-200',
+                                                    'rounded-lg px-4 py-2 text-[9px] font-black tracking-[0.2em] uppercase transition-all duration-300',
                                                     detailTab === tab.id
-                                                        ? 'bg-[#0f172a] text-white shadow-md dark:bg-white dark:text-[#0f172a]'
-                                                        : 'text-black/40 hover:text-black dark:text-white/40 dark:hover:text-white',
+                                                        ? 'z-10 scale-105 bg-[var(--primary)] text-white shadow-xl shadow-[var(--primary)]/20 dark:bg-white dark:text-[var(--primary)] dark:shadow-white/10'
+                                                        : 'text-black/30 hover:bg-black/5 hover:text-black dark:text-white/30 dark:hover:bg-white/5 dark:hover:text-white',
                                                 )}
                                             >
                                                 {tab.label}
@@ -730,7 +782,9 @@ function ContractPage({
                                                 processing={processing}
                                             />
                                         )}
-                                        {detailTab === 'chat' && <ContractChat contract={selected} meId={meId} onNewMessage={updateContract} />}
+                                        {detailTab === 'chat' && (
+                                            <ContractChat contract={selected} meId={meId} users={users} onNewMessage={updateContract} />
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -753,59 +807,32 @@ function ContractPage({
                         </div>
                     </div>
                 ) : (
-                    <div className="flex flex-col gap-4 p-4">
+                    <div className="flex flex-col gap-4">
                         {view === 'dashboard' && <DashboardMetrics metrics={metrics} roles={roles} departments={departments} filters={filters} />}
                         {view === 'profile' && <ProfileView meUser={meUser} showToast={showToast} />}
                         {view !== 'profile' && view !== 'dashboard' && (
                             <div className="border-sidebar-border bg-sidebar flex min-h-0 flex-1 flex-col gap-0 overflow-hidden">
                                 {/* Unified Toolbar — Identical for both modes */}
                                 <div className="border-sidebar-border bg-sidebar sticky top-0 z-20 flex items-center gap-6 border-b px-5 py-4">
-                                    <div className="relative max-w-sm flex-1">
-                                        <Search className="absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-black dark:text-white" />
-                                        <Input
-                                            placeholder="Cari berdasarkan judul atau nomor..."
-                                            className="dark:bg-sidebar h-10 rounded-lg border border-black bg-white pl-10 text-[12px] font-medium text-black transition-all placeholder:text-gray-600 focus:border-black focus-visible:ring-0 focus-visible:ring-offset-0 dark:border-white dark:text-white dark:placeholder:text-white dark:focus:border-white"
-                                            value={search}
-                                            onChange={(e) => setSearch(e.target.value)}
-                                        />
-                                    </div>
+                                    <SearchInput
+                                        containerClassName="max-w-sm flex-1"
+                                        placeholder="Cari kontrak..."
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
+                                    />
 
                                     <div className="ml-auto flex items-center gap-2">
-                                        {/* Layout Toggle — Modern Compact */}
-                                        <div className="border-sidebar-border bg-sidebar-accent flex rounded-lg border p-1">
-                                            <button
-                                                onClick={() => setLayout('table')}
-                                                className={cn(
-                                                    'flex h-8 items-center gap-2 rounded-md px-3 text-[11px] font-semibold transition-all',
-                                                    (layout as string) === 'table'
-                                                        ? 'bg-sidebar-primary text-white shadow-md'
-                                                        : 'text-black hover:text-black dark:text-white dark:hover:text-white',
-                                                )}
-                                            >
-                                                <LayoutList size={14} />
-                                                Table
-                                            </button>
-                                            <button
-                                                onClick={() => setLayout('grid')}
-                                                className={cn(
-                                                    'flex h-8 items-center gap-2 rounded-md px-3 text-[11px] font-semibold transition-all',
-                                                    (layout as string) === 'grid'
-                                                        ? 'bg-sidebar-primary text-white shadow-md'
-                                                        : 'text-black hover:text-black dark:text-white dark:hover:text-white',
-                                                )}
-                                            >
-                                                <LayoutGrid size={14} />
-                                                Grid
-                                            </button>
-                                        </div>
+                                        <LayoutToggle 
+                                            value={layout as LayoutType} 
+                                            onChange={(val) => setLayout(val)} 
+                                        />
 
-                                        <button
+                                        <Button
+                                            variant="outline"
                                             onClick={() => setFilterOpen(true)}
                                             className={cn(
-                                                'border-sidebar-border dark:bg-sidebar-accent hover:border-sidebar-primary relative flex h-10 items-center gap-2 rounded-lg border bg-white px-4 text-[11px] font-semibold transition-all active:scale-95',
-                                                filters.status?.length || filters.contract_type_id?.length
-                                                    ? 'border-sidebar-primary bg-sidebar-primary text-white'
-                                                    : 'text-black/80 dark:text-white/80',
+                                                'relative h-10 px-4 transition-all active:scale-95',
+                                                (filters.status?.length || filters.contract_type_id?.length) && 'bg-[var(--primary)] text-white border-[var(--primary)]'
                                             )}
                                         >
                                             <Filter size={14} />
@@ -817,7 +844,10 @@ function ContractPage({
                                                       ? 1
                                                       : 0) >
                                                 0 && (
-                                                <span className="text-sidebar-primary ml-1 flex h-4 min-w-[16px] items-center justify-center rounded-md bg-white px-1 text-[9px] font-bold">
+                                                <span className={cn(
+                                                    "ml-1 flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[9px] font-bold",
+                                                    (filters.status?.length || filters.contract_type_id?.length) ? "bg-white text-[var(--primary)]" : "bg-[var(--primary)] text-white"
+                                                )}>
                                                     {(Array.isArray(filters.status) ? filters.status.length : filters.status ? 1 : 0) +
                                                         (Array.isArray(filters.contract_type_id)
                                                             ? filters.contract_type_id.length
@@ -826,13 +856,14 @@ function ContractPage({
                                                               : 0)}
                                                 </span>
                                             )}
-                                        </button>
-                                        <button
+                                        </Button>
+                                        <Button
+                                            variant="primary"
                                             onClick={() => setCreateOpen(true)}
-                                            className="bg-sidebar-primary shadow-sidebar-primary/20 flex h-10 items-center gap-2 rounded-lg px-6 text-[12px] font-bold text-white shadow-lg transition-all hover:opacity-90 active:scale-95"
+                                            className="h-10 px-6 active:scale-95"
                                         >
                                             <PlusCircle size={16} /> Kontrak Baru
-                                        </button>
+                                        </Button>
                                     </div>
                                 </div>
 
@@ -841,9 +872,33 @@ function ContractPage({
                                         <DataTable
                                             columns={columns}
                                             data={contractsPaged.data}
-                                            loading={false}
+                                            loading={processing}
                                             searchPlaceholder="Cari data..."
                                             onRowClick={openDetail}
+                                            bulkActions={(selectedRows) => (
+                                                <div className="flex items-center gap-2">
+                                                    {canBulkApprove && (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="h-8 px-3 border-black/10 dark:border-white/10"
+                                                            onClick={() => handleBulkApprove(selectedRows)}
+                                                        >
+                                                            <Check className="h-3 w-3 mr-1.5" /> Approve
+                                                        </Button>
+                                                    )}
+                                                    {canBulkDelete && (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="h-8 px-3 border-rose-500/20 text-rose-600 hover:bg-rose-600 hover:text-white"
+                                                            onClick={() => handleBulkDelete(selectedRows)}
+                                                        >
+                                                            <Trash2 className="h-3 w-3 mr-1.5" /> Hapus
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            )}
                                             pagination={{
                                                 currentPage: contractsPaged.current_page,
                                                 lastPage: contractsPaged.last_page,
@@ -918,48 +973,53 @@ function ContractPage({
                                             </div>
 
                                             {/* Grid Pagination Footer — Standardizing with DataTable logic */}
-                                            <div className="border-sidebar-border mt-4 flex w-full flex-col items-center justify-between gap-4 border-t pt-6 pb-10 sm:flex-row">
-                                                <div className="text-[11px] font-medium text-black/40 dark:text-white/40">
-                                                    Menampilkan{' '}
-                                                    <span className="font-semibold text-black dark:text-white">{contractsPaged.from}</span> sampai{' '}
-                                                    <span className="font-semibold text-black dark:text-white">{contractsPaged.to}</span> dari{' '}
-                                                    <span className="font-semibold text-black dark:text-white">{contractsPaged.total}</span> data
+                                            <div className="mt-8 mb-10 w-full flex items-center justify-between">
+                                                {/* Left Pill: Info */}
+                                                <div className="flex items-center gap-4 px-6 py-2 bg-[#0f2a4a]/[0.03] dark:bg-white/[0.03] rounded-xl border border-[#0f2a4a]/10 dark:border-white/10 shadow-sm transition-all duration-500">
+                                                    <div className="flex items-center gap-4 text-[#0f2a4a]/60 dark:text-white/60 text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
+                                                        <span className="opacity-40 hidden sm:inline text-[9px]">Menampilkan</span>
+                                                        <span>{contractsPaged.from} - {contractsPaged.to} / {contractsPaged.total}</span>
+                                                    </div>
                                                 </div>
-                                                <div className="flex items-center gap-2">
+
+                                                {/* Right Pill: Navigation */}
+                                                <div className="flex items-center gap-1 px-3 py-1 bg-[#0f2a4a]/[0.03] dark:bg-white/[0.03] rounded-xl border border-[#0f2a4a]/10 dark:border-white/10 shadow-sm transition-all duration-500">
                                                     <button
                                                         disabled={contractsPaged.current_page === 1}
                                                         onClick={() =>
                                                             router.get(
                                                                 window.location.pathname,
                                                                 { ...filters, page: contractsPaged.current_page - 1 },
-                                                                { preserveState: true },
+                                                                { preserveState: true, preserveScroll: true },
                                                             )
                                                         }
-                                                        className="border-sidebar-border bg-sidebar hover:border-sidebar-primary hover:text-sidebar-primary h-9 rounded-lg border px-4 text-[11px] font-semibold text-black/40 transition-all active:scale-95 disabled:pointer-events-none disabled:opacity-50 dark:text-white"
+                                                        className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-[#0f2a4a]/5 dark:hover:bg-white/10 disabled:opacity-20 transition-all text-[#0f2a4a]/60 dark:text-white/60"
                                                     >
-                                                        Sebelumnya
+                                                        <ChevronLeft className="h-4 w-4" />
                                                     </button>
-                                                    <div className="flex items-center gap-1.5 px-3">
-                                                        <span className="text-sidebar-primary text-[11px] font-bold">
+
+                                                    <div className="flex items-center gap-1 mx-1">
+                                                        <div className="h-8 min-w-[32px] px-3 rounded-lg text-[10px] font-black flex items-center justify-center bg-[#0f2a4a] text-white shadow-md shadow-[#0f2a4a]/20">
                                                             {contractsPaged.current_page}
-                                                        </span>
-                                                        <span className="text-[11px] font-bold text-black/20 dark:text-white/20">/</span>
-                                                        <span className="text-[11px] font-bold text-black/40 dark:text-white/40">
+                                                        </div>
+                                                        <span className="text-[10px] font-black text-black/20 dark:text-white/20 mx-1">/</span>
+                                                        <div className="text-[10px] font-black text-[#0f2a4a]/40 dark:text-white/40">
                                                             {contractsPaged.last_page}
-                                                        </span>
+                                                        </div>
                                                     </div>
+
                                                     <button
                                                         disabled={contractsPaged.current_page === contractsPaged.last_page}
                                                         onClick={() =>
                                                             router.get(
                                                                 window.location.pathname,
                                                                 { ...filters, page: contractsPaged.current_page + 1 },
-                                                                { preserveState: true },
+                                                                { preserveState: true, preserveScroll: true },
                                                             )
                                                         }
-                                                        className="border-sidebar-border bg-sidebar hover:border-sidebar-primary hover:text-sidebar-primary h-9 rounded-lg border px-4 text-[11px] font-semibold text-black/40 transition-all active:scale-95 disabled:pointer-events-none disabled:opacity-20 dark:text-white/40"
+                                                        className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-[#0f2a4a]/5 dark:hover:bg-white/10 disabled:opacity-20 transition-all text-[#0f2a4a]/60 dark:text-white/60"
                                                     >
-                                                        Berikutnya
+                                                        <ChevronRight className="h-4 w-4" />
                                                     </button>
                                                 </div>
                                             </div>
@@ -1133,13 +1193,10 @@ export default function ContractsIndex({
     const [types, setTypes] = useState<ContractType[]>(initialTypes);
     const [submissionTypes, setSubmissionTypes] = useState<any[]>(initialSubmissionTypes);
     const [metrics, setMetrics] = useState<any>(initialMetrics);
-    
+
     // Boot loading state: only true if we have NO data AND we are not already showing a specific contract
     const [bootLoading, setBootLoading] = useState(
-        initialContractsPaged.data.length === 0 && 
-        !initialMetrics && 
-        !initialSelectedProp &&
-        initialTypes.length === 0
+        initialContractsPaged.data.length === 0 && !initialMetrics && !initialSelectedProp && initialTypes.length === 0,
     );
 
     // Sync props to state when they change (Inertia partial reloads or navigation)
@@ -1162,7 +1219,7 @@ export default function ContractsIndex({
     // Initial data fetch ONLY if props are truly missing and we are on a list view
     useEffect(() => {
         const hasCriticalData = initialContractsPaged.data.length > 0 || initialSelectedProp || initialMetrics;
-        
+
         if (hasCriticalData && initialTypes.length > 0) {
             setBootLoading(false);
             return;
@@ -1174,15 +1231,23 @@ export default function ContractsIndex({
             Promise.all([
                 contractApi.list({ view: currentView }),
                 contractApi.getTypes(),
-                axios.get('/admin/api/contracts/submission-types').then(res => res.data).catch(() => []),
-                axios.post('/admin/api/reports/data', {}).then(res => res.data).catch(() => null),
-            ]).then(([cData, tData, sData, mData]) => {
-                setContractsPaged(cData as any);
-                setTypes(tData);
-                setSubmissionTypes(sData as any);
-                setMetrics(mData);
-                setBootLoading(false);
-            }).catch(() => setBootLoading(false));
+                axios
+                    .get('/admin/api/contracts/submission-types')
+                    .then((res) => res.data)
+                    .catch(() => []),
+                axios
+                    .post('/admin/api/reports/data', {})
+                    .then((res) => res.data)
+                    .catch(() => null),
+            ])
+                .then(([cData, tData, sData, mData]) => {
+                    setContractsPaged(cData as any);
+                    setTypes(tData);
+                    setSubmissionTypes(sData as any);
+                    setMetrics(mData);
+                    setBootLoading(false);
+                })
+                .catch(() => setBootLoading(false));
         } else {
             setBootLoading(false);
         }
@@ -1197,15 +1262,15 @@ export default function ContractsIndex({
                         <div className="relative flex items-center justify-center">
                             <LoadingLottie width={180} height={180} />
                             <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="h-32 w-32 rounded-full border-b-2 border-slate-800 animate-spin opacity-20 dark:border-white" />
+                                <div className="h-32 w-32 animate-spin rounded-full border-b-2 border-slate-800 opacity-20 dark:border-white" />
                             </div>
                         </div>
                         <div className="flex flex-col items-center gap-2">
-                            <span className="text-[11px] font-black tracking-[0.5em] text-black uppercase animate-pulse dark:text-white">
+                            <span className="animate-pulse text-[11px] font-black tracking-[0.5em] text-black uppercase dark:text-white">
                                 Memuat Sistem Kontrak
                             </span>
                             <div className="h-0.5 w-48 overflow-hidden rounded-full bg-slate-100 dark:bg-white/10">
-                                <div className="h-full w-full bg-black dark:bg-white origin-left animate-progress" />
+                                <div className="animate-progress h-full w-full origin-left bg-black dark:bg-white" />
                             </div>
                         </div>
                     </div>

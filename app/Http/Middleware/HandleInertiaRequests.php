@@ -80,7 +80,7 @@ class HandleInertiaRequests extends Middleware
 
         return \App\Models\AccessModule::where('role_id', $role->id)
             ->join('m_modules', 'm_access_modules.module_id', '=', 'm_modules.id')
-            ->select('m_modules.identifier as code', 'can_read', 'can_create', 'can_update', 'can_delete')
+            ->select('m_modules.identifier as code', 'can_read', 'can_create', 'can_update', 'can_delete', 'can_approve', 'can_bulk_approve', 'can_bulk_delete')
             ->get()
             ->keyBy('code')
             ->map(fn ($item) => [
@@ -88,6 +88,9 @@ class HandleInertiaRequests extends Middleware
                 'create' => (bool) $item->can_create,
                 'update' => (bool) $item->can_update,
                 'delete' => (bool) $item->can_delete,
+                'approve' => (bool) ($item->can_approve ?? false),
+                'bulk_approve' => (bool) ($item->can_bulk_approve ?? false),
+                'bulk_delete' => (bool) ($item->can_bulk_delete ?? false),
             ])
             ->all();
     }

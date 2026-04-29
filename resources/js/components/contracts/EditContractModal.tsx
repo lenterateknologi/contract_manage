@@ -1,5 +1,6 @@
 import { Contract, ContractType } from '@/types/contracts';
 import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
 
 interface EditContractModalProps {
     open: boolean;
@@ -148,13 +149,14 @@ export function EditContractModal({
                         </div>
                     </div>
                     <div className="mt-8 flex gap-3">
-                        <button
+                        <Button
+                            variant="outline"
                             onClick={onClose}
-                            className="border-border hover:bg-muted flex-1 rounded-xl border py-2.5 text-sm font-bold transition-all"
+                            className="flex-1 rounded-lg h-11 text-[11px] font-black uppercase tracking-widest transition-all"
                         >
                             Batal
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             onClick={() =>
                                 onSubmit({
                                     title,
@@ -167,11 +169,11 @@ export function EditContractModal({
                                 })
                             }
                             disabled={processing || !title}
-                            className="bg-primary text-primary-foreground shadow-primary/20 hover:shadow-primary/30 flex-1 rounded-xl py-2.5 text-sm font-bold shadow-lg transition-all active:scale-[0.98] disabled:opacity-50"
+                            className="flex-1 rounded-lg h-11 text-[11px] font-black uppercase tracking-widest shadow-lg active:scale-95 disabled:opacity-50"
                         >
                             {processing ? <i className="fa-solid fa-spinner fa-spin mr-2" /> : <i className="fa-solid fa-save mr-2" />}
                             Simpan Perubahan
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </div>

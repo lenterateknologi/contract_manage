@@ -11,7 +11,7 @@ import { type BreadcrumbItem as BreadcrumbItemType } from '@/types';
 
 export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItemType[] }) {
     return (
-        <header className="border-sidebar-border/50 bg-sidebar sticky top-0 z-10 flex h-12 shrink-0 items-center justify-between border-b px-4 transition-[width,height] ease-linear">
+        <header className="border-sidebar-border/50 bg-sidebar sticky top-0 z-10 m-2 flex h-12 shrink-0 items-center justify-between border-b px-4 transition-[width,height] ease-linear">
             <div className="flex items-center gap-3">
                 <SidebarTrigger className="text-sidebar-foreground/80 hover:text-sidebar-primary hover:bg-sidebar-accent -ml-1 h-8 w-8 shrink-0 transition-all" />
                 <Breadcrumbs breadcrumbs={breadcrumbs} />

@@ -28,6 +28,7 @@ use App\Jobs\GeneratePdfJob;
 use Illuminate\Support\Facades\Cache;
 use App\Models\Vendor;
 use Illuminate\Support\Facades\URL;
+use App\Models\AccessModule;
 
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -614,6 +615,78 @@ class ContractController extends Controller
         return response()->json($this->formatContract($contract));
     }
 
+    public function bulkDestroy(Request $request): JsonResponse
+    {
+        if (!$this->checkBulkPermission('can_bulk_delete')) {
+            return response()->json(['message' => 'Anda tidak memiliki izin untuk aksi massal ini.'], 403);
+        }
+
+        $ids = $request->input('ids');
+        if (empty($ids)) return response()->json(['message' => 'Tidak ada kontrak yang dipilih.'], 422);
+
+        return DB::transaction(function () use ($ids) {
+            $contracts = Contract::whereIn('id', $ids)->get();
+            $count = 0;
+
+            foreach ($contracts as $contract) {
+                if ($contract->status === 'draft') {
+                    Storage::disk('local')->deleteDirectory("contracts/{$contract->id}");
+                    $contract->delete();
+                    $count++;
+                }
+            }
+
+            return response()->json(['message' => "$count kontrak berhasil dihapus."]);
+        });
+    }
+
+    public function bulkApprove(Request $request): JsonResponse
+    {
+        if (!$this->checkBulkPermission('can_bulk_approve')) {
+            return response()->json(['message' => 'Anda tidak memiliki izin untuk aksi massal ini.'], 403);
+        }
+
+        $request->validate([
+            'ids' => 'required|array',
+            'note' => 'required|string|min:10'
+        ]);
+
+        $ids = $request->input('ids');
+        $note = $request->input('note');
+
+        return DB::transaction(function () use ($ids, $note) {
+            $count = 0;
+            foreach ($ids as $id) {
+                $approval = Approval::where('contract_id', $id)
+                    ->where('user_id', Auth::id())
+                    ->where('status', 'pending')
+                    ->first();
+
+                if ($approval) {
+                    $contract = Contract::find($id);
+                    if ($contract) {
+                        $this->workflowService->approveContract($contract, $approval, $note);
+                        $count++;
+                    }
+                }
+            }
+
+            return response()->json(['message' => "$count kontrak berhasil disetujui."]);
+        });
+    }
+
+    protected function checkBulkPermission($permission)
+    {
+        $role = Role::where('name', Auth::user()->role)->first();
+        if (!$role) return false;
+
+        return AccessModule::where('role_id', $role->id)
+            ->join('m_modules', 'm_access_modules.module_id', '=', 'm_modules.id')
+            ->where('m_modules.identifier', 'CONTRACTS')
+            ->where($permission, true)
+            ->exists();
+    }
+
     public function uploadRevision(Request $request, string $id): JsonResponse
     {
         try {
@@ -1008,7 +1081,8 @@ class ContractController extends Controller
                 ]),
             ] : null,
             'status' => $c->status,
-            'display_mode' => \App\Models\ContractStatus::where('code', $c->status)->value('display_mode') ?? 'interactive',
+            'display_mode' => $c->statusDetail?->display_mode ?? 'interactive',
+            'allow_info_edit' => $c->statusDetail?->allow_info_edit ?? ($c->status === 'draft'),
             'current_version' => $c->current_version,
             'created_at' => $c->created_at->format('d/m/Y'),
             'submitted_at' => $c->submitted_at ? $c->submitted_at->format('d/m/Y H:i') : null,

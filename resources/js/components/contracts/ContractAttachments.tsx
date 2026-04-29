@@ -186,9 +186,9 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                     <div className="flex items-center gap-4">
                         <div className="flex flex-col">
                             <div className="flex items-center gap-2">
-                                <div className="h-4 w-1 rounded-full bg-black dark:bg-white" />
+                                <div className="h-4 w-1 rounded-full bg-[#172554] dark:bg-white" />
                                 <h4 className="text-[11px] leading-none font-bold tracking-widest text-black dark:text-white uppercase">{previewAt.label}</h4>
-                                <span className="rounded bg-black dark:bg-white px-2 py-0.5 text-[8px] font-bold tracking-widest text-white dark:text-black uppercase">
+                                <span className="rounded bg-[#172554] dark:bg-white px-2 py-0.5 text-[8px] font-bold tracking-widest text-white dark:text-[#172554] uppercase">
                                     {previewAt.category || 'Attachment'}
                                 </span>
                             </div>
@@ -250,10 +250,13 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
             <input type="file" ref={fileRef} className="hidden" onChange={handleFileChange} />
             {CATEGORIES.map((cat) => (
                 <div key={cat.id}>
-                    <h6 className="text-black dark:text-white mb-6 flex items-center gap-3 text-[10px] font-bold tracking-[0.2em] uppercase">
-                        <div className="h-2 w-2 rounded-full bg-black dark:bg-white" />
-                        {cat.label}
-                    </h6>
+                    <div className="mb-6 flex items-center gap-3">
+                        <div className="h-1.5 w-1.5 rounded-full bg-[#172554] dark:bg-white" />
+                        <h6 className="text-black/40 dark:text-white/40 text-[10px] font-black tracking-[0.3em] uppercase">
+                            {cat.label}
+                        </h6>
+                        <div className="h-px flex-1 bg-black/5 dark:bg-white/5" />
+                    </div>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-2">
                         {cat.items.map((label) => {
                             const at = getAttachment(label);
@@ -264,22 +267,22 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                                     key={label}
                                     onClick={() => at && setPreviewAt(at)}
                                     className={cn(
-                                        'group relative flex items-center justify-between rounded-xl border p-4 transition-all outline-none',
+                                        'group relative flex items-center justify-between rounded-xl border p-4 transition-all duration-300 outline-none',
                                         at
-                                            ? 'cursor-pointer border-black/10 dark:border-white/10 bg-white dark:bg-sidebar hover:border-black dark:hover:border-white'
-                                            : 'border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02]',
+                                            ? 'cursor-pointer border-black/10 dark:border-white/10 bg-white dark:bg-sidebar hover:border-black dark:hover:border-white hover:-translate-y-1 hover:shadow-xl hover:shadow-black/5 dark:hover:shadow-white/5'
+                                            : 'border-black/5 dark:border-white/5 bg-black/[0.01] dark:bg-white/[0.01]',
                                     )}
                                 >
                                     <div className="flex min-w-0 items-center gap-4">
                                         <div
                                             className={cn(
-                                                'flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl transition-colors',
+                                                'flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl transition-all duration-300',
                                                 at
-                                                    ? 'bg-black/5 dark:bg-white/5 text-black dark:text-white group-hover:bg-black dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-black'
-                                                    : 'bg-black/[0.02] dark:bg-white/[0.02] text-black/20 dark:text-white/20',
+                                                    ? 'bg-black/5 dark:bg-white/5 text-black/60 dark:text-white/60 group-hover:bg-black dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-black shadow-inner'
+                                                    : 'bg-black/[0.02] dark:bg-white/[0.02] text-black/10 dark:text-white/10',
                                             )}
                                         >
-                                            {at ? <FileCheck size={20} /> : <FileIcon size={20} />}
+                                            {at ? <FileCheck size={20} strokeWidth={2.5} /> : <FileIcon size={20} strokeWidth={2.5} />}
                                         </div>
                                         <div className="min-w-0">
                                             <div
@@ -292,12 +295,12 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                                                 {label}
                                             </div>
                                             {at ? (
-                                                <div className="mt-1 truncate text-[9px] font-bold tracking-widest text-black/40 dark:text-white/40 uppercase">
-                                                    {at.file_name} · {at.created_at}
+                                                <div className="mt-1 truncate text-[9px] font-bold tracking-[0.1em] text-black/30 dark:text-white/30 uppercase">
+                                                    {at.file_name} · <span className="text-emerald-600 dark:text-emerald-400">READY</span>
                                                 </div>
                                             ) : (
-                                                <div className="mt-1 text-[9px] font-bold tracking-widest text-black/20 dark:text-white/20 uppercase italic">
-                                                    Belum ada dokumen
+                                                <div className="mt-1 text-[9px] font-bold tracking-widest text-black/10 dark:text-white/10 uppercase italic">
+                                                    Kosong
                                                 </div>
                                             )}
                                         </div>
@@ -312,10 +315,10 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                                                         : contractApi.attachmentDownloadUrl(contract.id, at.id)}
                                                     download
                                                     onClick={(e) => e.stopPropagation()}
-                                                    className="border-black/10 dark:border-white/10 flex h-8 w-8 items-center justify-center rounded-lg border bg-white dark:bg-sidebar transition-all hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black active:scale-95"
+                                                    className="border-black/10 dark:border-white/10 flex h-8 w-8 items-center justify-center rounded-lg border bg-white dark:bg-sidebar transition-all hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black active:scale-95 shadow-sm"
                                                     title="Download"
                                                 >
-                                                    <Download size={14} />
+                                                    <Download size={14} strokeWidth={2.5} />
                                                 </a>
                                                 {!(at as any).is_vendor_doc && (
                                                     <button
@@ -323,10 +326,10 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                                                             e.stopPropagation();
                                                             handleDelete(at.id, label);
                                                         }}
-                                                        className="border-black/10 dark:border-white/10 flex h-8 w-8 items-center justify-center rounded-lg border bg-white dark:bg-sidebar text-rose-600 transition-all hover:bg-rose-600 hover:text-white active:scale-95"
+                                                        className="border-black/10 dark:border-white/10 flex h-8 w-8 items-center justify-center rounded-lg border bg-white dark:bg-sidebar text-rose-600 transition-all hover:bg-rose-600 hover:text-white active:scale-95 shadow-sm"
                                                         title="Delete"
                                                     >
-                                                        <Trash2 size={14} />
+                                                        <Trash2 size={14} strokeWidth={2.5} />
                                                     </button>
                                                 )}
                                             </>

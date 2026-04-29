@@ -20,6 +20,8 @@ class AccessModule extends Model
         'can_update',
         'can_delete',
         'can_approve',
+        'can_bulk_approve',
+        'can_bulk_delete',
         'created_by',
         'module_group_id',
     ];

@@ -49,7 +49,7 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
             header: 'Grup Menu',
             accessorKey: 'name',
             sortable: true,
-            className: 'font-bold text-black dark:text-white text-[12px]',
+            className: 'font-bold text-black dark:text-white text-[13px]',
             cell: (row) => (
                 <div className="flex items-center gap-3">
                     <span className="font-bold">{row.name}</span>
@@ -60,7 +60,7 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
         {
             header: 'Total Modul',
             accessorKey: 'modules_count',
-            cell: (row) => <Badge className="bg-black dark:bg-white text-white dark:text-black text-[10px] font-bold uppercase tracking-wide rounded-none border-none">{row.modules_count || 0} MODULS</Badge>
+            cell: (row) => <span className="text-[10px] font-black uppercase tracking-widest text-black/60 dark:text-white/60">{row.modules_count || 0} MODULS</span>
         }
     ], []);
 
@@ -69,11 +69,11 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
             header: 'Modul & Kode',
             accessorKey: 'name',
             sortable: true,
-            className: 'font-bold text-black dark:text-white text-[12px]',
+            className: 'font-bold text-black dark:text-white text-[13px]',
             cell: (row) => (
                 <div className="flex flex-col">
-                    <span className="font-bold uppercase tracking-tight">{row.name}</span>
-                    <span className="text-[10px] font-bold text-black/40 dark:text-white/40 mt-1">{row.identifier}</span>
+                    <span className="font-bold truncate leading-tight">{row.name}</span>
+                    <span className="text-[10px] font-bold text-black/40 dark:text-white/40 mt-1 uppercase tracking-widest">{row.identifier}</span>
                 </div>
             )
         },
@@ -84,9 +84,9 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
                 const grps = (groups.data || groups);
                 const group = Array.isArray(grps) ? grps.find((g:any) => g.id === row.module_group_id) : null;
                 return (
-                    <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="px-2 py-0 text-[10px] font-bold text-black dark:text-white uppercase border-black dark:border-white rounded-none">{group?.name || 'GENERAL'}</Badge>
-                        <span className="text-[10px] text-black/50 dark:text-white/50 font-bold font-mono">{row.route || '#'}</span>
+                    <div className="flex items-center gap-3">
+                        <span className="text-[10px] font-black text-black/60 dark:text-white/60 uppercase tracking-widest border-r border-black/10 dark:border-white/10 pr-3">{group?.name || 'GENERAL'}</span>
+                        <span className="text-[10px] text-black/40 dark:text-white/40 font-bold font-mono tracking-tight">{row.route || '#'}</span>
                     </div>
                 )
             }
@@ -140,17 +140,38 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
     return (
         <div className="flex flex-col h-full bg-white dark:bg-black animate-in fade-in duration-500">
             <DataTable
+                title={isModuleView ? "Master Modul Navigasi" : "Struktur Grup Menu"}
                 columns={isModuleView ? moduleColumns : groupColumns}
                 data={isModuleView ? (modules?.data || modules || []) : (groups?.data || groups || [])}
                 searchKey="name"
                 searchPlaceholder={`Cari ${isModuleView ? 'modul' : 'grup'}...`}
                 headerActions={
                     canCreate && (
-                        <Button onClick={openCreate} className="h-9 gap-2 rounded-none px-6 text-[11px] font-bold bg-black dark:bg-white text-white dark:text-black uppercase tracking-widest hover:opacity-90 transition-all">
-                            <Plus className="h-4 w-4" /> {isModuleView ? 'Tambah Modul' : 'Tambah Grup'}
+                        <Button 
+                            variant="primary"
+                            onClick={openCreate} 
+                            className="h-10 px-8 shadow-xl active:scale-95"
+                        >
+                            <Plus size={14} /> {isModuleView ? 'Tambah Modul Baru' : 'Tambah Grup Baru'}
                         </Button>
                     )
                 }
+                bulkActions={canUpdate ? [
+                    {
+                        label: 'Hapus Terpilih',
+                        icon: Trash2,
+                        variant: 'destructive',
+                        onClick: (ids) => {
+                            const typeLabel = isModuleView ? 'modul' : 'grup menu';
+                            if (confirm(`Hapus ${ids.length} ${typeLabel} terpilih?`)) {
+                                const path = isModuleView ? 'modules' : 'module-groups';
+                                router.post(`/admin/${path}/bulk-delete`, { ids }, {
+                                    onSuccess: () => showToast(`${ids.length} ${typeLabel} telah dihapus`, 'success')
+                                });
+                            }
+                        }
+                    }
+                ] : undefined}
                 pagination={isModuleView && modules && modules.meta ? {
                     currentPage: modules.meta.current_page || 1,
                     lastPage: modules.meta.last_page || 1,
@@ -197,13 +218,12 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
             />
 
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden rounded-none border border-black dark:border-white shadow-2xl bg-white dark:bg-black">
+                <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden rounded-2xl border border-black/[0.1] dark:border-white/[0.1] shadow-2xl bg-white dark:bg-black">
                     <div className="bg-black dark:bg-white p-8 text-white dark:text-black relative">
                         <DialogTitle className="text-xl font-bold flex items-center gap-2 uppercase tracking-tight">
-                             <div className="w-1.5 h-6 bg-white dark:bg-black" />
                              {editingItem ? 'Edit' : 'Tambah'} {isModuleView ? 'Modul' : 'Grup'}
                         </DialogTitle>
-                        <DialogDescription className="text-white/60 dark:text-black/60 text-[10px] font-bold mt-1 uppercase tracking-wider">Konfigurasi struktur navigasi dan menu sistem</DialogDescription>
+                        <DialogDescription className="text-white/40 dark:text-black/40 text-[10px] font-bold mt-1 uppercase tracking-widest">Konfigurasi struktur navigasi dan menu sistem</DialogDescription>
                     </div>
 
                     <form onSubmit={handleSubmit} className="p-8 space-y-6">
@@ -211,44 +231,44 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
                             {isModuleView ? (
                                 <>
                                     <div className="grid gap-2">
-                                        <Label className="text-[10px] font-bold text-black dark:text-white uppercase tracking-wider">Judul Modul</Label>
-                                        <Input value={moduleForm.data.name} onChange={e => moduleForm.setData('name', e.target.value)} required className="h-10 rounded-none bg-white dark:bg-black border-black dark:border-white font-bold text-sm text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30" />
+                                        <Label className="text-[10px] font-bold text-black/40 dark:text-white/40 uppercase tracking-widest">Judul Modul</Label>
+                                        <Input value={moduleForm.data.name} onChange={e => moduleForm.setData('name', e.target.value)} required className="h-10 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border-black/[0.1] dark:border-white/[0.1] font-bold text-sm text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30" />
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="grid gap-2">
-                                            <Label className="text-[10px] font-bold text-black dark:text-white uppercase tracking-wider">Kode Modul (Unik)</Label>
-                                            <Input value={moduleForm.data.identifier} onChange={e => moduleForm.setData('identifier', e.target.value)} required className="h-10 rounded-none bg-white dark:bg-black border-black dark:border-white font-mono text-xs font-bold text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30" />
+                                            <Label className="text-[10px] font-bold text-black/40 dark:text-white/40 uppercase tracking-widest">Kode Modul (Unik)</Label>
+                                            <Input value={moduleForm.data.identifier} onChange={e => moduleForm.setData('identifier', e.target.value)} required className="h-10 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border-black/[0.1] dark:border-white/[0.1] font-mono text-xs font-bold text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30" />
                                         </div>
                                         <div className="grid gap-2">
-                                            <Label className="text-[10px] font-bold text-black dark:text-white uppercase tracking-wider">Grup Menu</Label>
+                                            <Label className="text-[10px] font-bold text-black/40 dark:text-white/40 uppercase tracking-widest">Grup Menu</Label>
                                             <Select value={String(moduleForm.data.module_group_id)} onValueChange={v => moduleForm.setData('module_group_id', v)}>
-                                                <SelectTrigger className="h-10 rounded-none bg-white dark:bg-black text-xs font-bold text-black dark:text-white border-black dark:border-white"><SelectValue /></SelectTrigger>
-                                                <SelectContent className="bg-white dark:bg-black border-black dark:border-white rounded-none">
+                                                <SelectTrigger className="h-10 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] text-xs font-bold text-black dark:text-white border-black/[0.1] dark:border-white/[0.1]"><SelectValue /></SelectTrigger>
+                                                <SelectContent className="bg-white dark:bg-black border-black/[0.1] dark:border-white/[0.1] rounded-xl">
                                                     {(groups.data || groups || []).map((g:any) => <SelectItem key={g.id} value={String(g.id)} className="text-[11px] font-bold uppercase">{g.name}</SelectItem>)}
                                                 </SelectContent>
                                             </Select>
                                         </div>
                                     </div>
                                     <div className="grid gap-2">
-                                        <Label className="text-[10px] font-bold text-black dark:text-white uppercase tracking-wider">URL Navigasi</Label>
-                                        <Input value={moduleForm.data.route} onChange={e => moduleForm.setData('route', e.target.value)} placeholder="/admin/..." className="h-10 rounded-none bg-white dark:bg-black border-black dark:border-white text-sm font-bold text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30" />
+                                        <Label className="text-[10px] font-bold text-black/40 dark:text-white/40 uppercase tracking-widest">URL Navigasi</Label>
+                                        <Input value={moduleForm.data.route} onChange={e => moduleForm.setData('route', e.target.value)} placeholder="/admin/..." className="h-10 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border-black/[0.1] dark:border-white/[0.1] text-sm font-bold text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30" />
                                     </div>
                                 </>
                             ) : (
                                 <>
                                     <div className="grid gap-2">
-                                        <Label className="text-[10px] font-bold text-black dark:text-white uppercase tracking-wider">Judul Grup Menu</Label>
-                                        <Input value={groupForm.data.name} onChange={e => groupForm.setData('name', e.target.value)} required className="h-10 rounded-none bg-white dark:bg-black border-black dark:border-white font-bold text-sm text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30" />
+                                        <Label className="text-[10px] font-bold text-black/40 dark:text-white/40 uppercase tracking-widest">Judul Grup Menu</Label>
+                                        <Input value={groupForm.data.name} onChange={e => groupForm.setData('name', e.target.value)} required className="h-10 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border-black/[0.1] dark:border-white/[0.1] font-bold text-sm text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30" />
                                     </div>
                                 </>
                             )}
                         </div>
 
-                        <div className="flex border-t border-black dark:border-white mt-8 -mx-8">
-                             <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-6 text-[11px] font-bold uppercase tracking-widest text-black/40 dark:text-white/40 hover:bg-black/5 dark:hover:bg-white/5 transition-all">Batal</button>
-                             <button type="submit" disabled={form.processing} className="flex-1 py-6 text-[11px] font-black uppercase tracking-widest text-black dark:text-white hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black transition-all disabled:opacity-50">
+                        <div className="flex gap-3 mt-8">
+                             <Button variant="ghost" type="button" onClick={() => setIsModalOpen(false)} className="flex-1 h-10 rounded-lg text-[11px] font-bold uppercase tracking-widest transition-all">Batal</Button>
+                             <Button type="submit" disabled={form.processing} className="flex-1 h-10 rounded-lg text-[11px] font-black uppercase tracking-widest shadow-lg transition-all disabled:opacity-50">
                                  {form.processing ? 'Menyimpan...' : 'Simpan Data'}
-                             </button>
+                             </Button>
                         </div>
                     </form>
                 </DialogContent>

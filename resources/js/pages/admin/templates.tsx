@@ -14,11 +14,13 @@ import {
     Edit2,
     File,
     FileText,
+    Filter,
     Folder,
     FolderPlus,
     MoreHorizontal,
     MoreVertical,
     MoveHorizontal,
+    Plus,
     Search,
     Trash2,
     Upload,
@@ -52,6 +54,7 @@ interface Props {
 export default function Templates({ folders, templates }: Props) {
     const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [fileTypeFilter, setFileTypeFilter] = useState<string | null>(null);
     const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
 
     // Dialog States
@@ -99,9 +102,22 @@ export default function Templates({ folders, templates }: Props) {
     );
 
     const filteredTemplates = useMemo(
-        () => templates.filter((t) => t.template_folder_id === currentFolderId && t.name.toLowerCase().includes(searchQuery.toLowerCase())),
-        [templates, currentFolderId, searchQuery],
+        () => templates.filter((t) => 
+            t.template_folder_id === currentFolderId && 
+            t.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+            (fileTypeFilter ? t.file_type === fileTypeFilter : true)
+        ),
+        [templates, currentFolderId, searchQuery, fileTypeFilter],
     );
+
+    // Get unique file types from all templates for the filter dropdown
+    const availableFileTypes = useMemo(() => {
+        const types = new Set<string>();
+        templates.forEach((t) => {
+            if (t.file_type) types.add(t.file_type);
+        });
+        return Array.from(types).sort();
+    }, [templates]);
 
     const toggleFolder = (id: string) => {
         setExpandedFolders((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -223,138 +239,85 @@ export default function Templates({ folders, templates }: Props) {
         <>
             <Head title="Template Kontrak" />
 
-            <div className="bg-background flex h-[calc(100vh-64px)] overflow-hidden">
-                {/* Context Menu Hub */}
-                <div style={{ position: 'fixed', left: contextMenu.x, top: contextMenu.y, zIndex: 1000 }}>
-                    <DropdownMenu open={contextMenu.isOpen} onOpenChange={closeContextMenu}>
-                        <DropdownMenuTrigger asChild>
-                            <div className="pointer-events-none h-1 w-1" />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start" className="w-48 shadow-xl">
-                            {contextMenu.item?.type === 'background' ? (
-                                <>
-                                    <DropdownMenuItem onClick={() => setIsFolderModalOpen(true)}>
-                                        <FolderPlus className="mr-2 h-4 w-4" /> New Folder
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => setIsUploadModalOpen(true)}>
-                                        <Upload className="mr-2 h-4 w-4" /> Upload Template
-                                    </DropdownMenuItem>
-                                </>
-                            ) : (
-                                <>
-                                    <DropdownMenuItem
-                                        onClick={() => {
-                                            if (!contextMenu.item) return;
-                                            setSelectedItem(contextMenu.item);
-                                            setNewFolderName(contextMenu.item.name);
-                                            setIsRenameModalOpen(true);
-                                        }}
-                                    >
-                                        <Edit2 className="mr-2 h-4 w-4" /> Rename
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        onClick={() => {
-                                            if (!contextMenu.item) return;
-                                            setSelectedItem(contextMenu.item);
-                                            setIsMoveModalOpen(true);
-                                        }}
-                                    >
-                                        <MoveHorizontal className="mr-2 h-4 w-4" /> Move To...
-                                    </DropdownMenuItem>
-                                    {contextMenu.item?.type === 'template' && (
-                                        <DropdownMenuItem asChild>
-                                            <a href={route('admin.templates.download', contextMenu.item?.id)}>
-                                                <Download className="mr-2 h-4 w-4" /> Download
-                                            </a>
-                                        </DropdownMenuItem>
-                                    )}
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem
-                                        className="text-destructive focus:text-destructive"
-                                        onClick={() => {
-                                            if (!contextMenu.item) return;
-                                            setSelectedItem(contextMenu.item);
-                                            setIsDeleteModalOpen(true);
-                                        }}
-                                    >
-                                        <Trash2 className="mr-2 h-4 w-4" /> Delete
-                                    </DropdownMenuItem>
-                                </>
-                            )}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
-
+            <div className="bg-white dark:bg-black flex h-[calc(100vh-64px)] overflow-hidden antialiased font-inter">
                 {/* Fixed Sidebar for Tree Navigation */}
-                <div className="border-border bg-muted/10 w-64 shrink-0 overflow-y-auto border-r p-4 select-none">
-                    <div className="mb-4 flex items-center justify-between px-2">
-                        <h3 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">Struktur Folder</h3>
-                        <Button variant="ghost" size="icon" className="text-muted-foreground h-4 w-4" onClick={() => setIsFolderModalOpen(true)}>
-                            <FolderPlus size={12} />
+                <div className="border-r border-black/[0.05] dark:border-white/[0.05] bg-black/[0.02] dark:bg-white/[0.02] w-72 shrink-0 overflow-y-auto p-6 select-none flex flex-col gap-6">
+                    <div className="flex items-center justify-between px-1">
+                        <div className="space-y-1">
+                            <h3 className="text-black dark:text-white text-[11px] font-black tracking-[0.2em] uppercase leading-none">Struktur Folder</h3>
+                            <p className="text-black/30 dark:text-white/30 text-[9px] font-bold uppercase tracking-widest">Hierarchy Explorer</p>
+                        </div>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl bg-black dark:bg-white text-white dark:text-black shadow-lg shadow-black/10 dark:shadow-white/5 active:scale-95 transition-all" onClick={() => setIsFolderModalOpen(true)}>
+                            <Plus size={14} />
                         </Button>
                     </div>
-                    <div className="space-y-0.5">
+                    <div className="space-y-1">
                         <div
                             className={cn(
-                                'group flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
-                                currentFolderId === null ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted',
+                                'group flex cursor-pointer items-center gap-3 rounded-xl px-4 py-3 text-[11px] transition-all border border-transparent active:scale-[0.98]',
+                                currentFolderId === null 
+                                    ? 'bg-black dark:bg-white text-white dark:text-black font-black shadow-xl shadow-black/10 dark:shadow-white/5' 
+                                    : 'text-black/40 dark:text-white/40 hover:bg-black/[0.03] dark:hover:bg-white/[0.03] font-bold uppercase tracking-tight'
                             )}
                             onClick={() => setCurrentFolderId(null)}
                         >
                             <Folder
                                 size={14}
-                                className={
-                                    currentFolderId === null ? 'fill-primary/20 text-primary' : 'text-muted-foreground group-hover:text-foreground'
-                                }
+                                className={cn(
+                                    "transition-colors",
+                                    currentFolderId === null ? 'fill-current' : 'text-black/20 dark:text-white/20'
+                                )}
                             />
-                            Root
+                            Repository Root
                         </div>
-                        {folders
-                            .filter((f) => !f.parent_id)
-                            .sort((a, b) => a.name.localeCompare(b.name))
-                            .map((folder) => (
-                                <FolderTreeItem
-                                    key={folder.id}
-                                    folder={folder}
-                                    allFolders={folders}
-                                    currentId={currentFolderId}
-                                    onSelect={setCurrentFolderId}
-                                    expandedFolders={expandedFolders}
-                                    toggleFolder={toggleFolder}
-                                />
-                            ))}
+                        <div className="mt-4 space-y-1">
+                            {folders
+                                .filter((f) => !f.parent_id)
+                                .sort((a, b) => a.name.localeCompare(b.name))
+                                .map((folder) => (
+                                    <FolderTreeItem
+                                        key={folder.id}
+                                        folder={folder}
+                                        allFolders={folders}
+                                        currentId={currentFolderId}
+                                        onSelect={setCurrentFolderId}
+                                        expandedFolders={expandedFolders}
+                                        toggleFolder={toggleFolder}
+                                    />
+                                ))}
+                        </div>
                     </div>
                 </div>
 
                 {/* Main Content Area */}
-                <div className="flex min-w-0 flex-1 flex-col">
+                <div className="flex min-w-0 flex-1 flex-col bg-white dark:bg-black">
                     {/* Toolbar */}
-                    <div className="border-border bg-card flex h-14 shrink-0 items-center justify-between gap-4 border-b px-6">
-                        <div className="flex items-center gap-2 overflow-hidden">
+                    <div className="border-b border-black/[0.05] dark:border-white/[0.05] bg-white dark:bg-black flex h-20 shrink-0 items-center justify-between gap-6 px-8 sticky top-0 z-20">
+                        <div className="flex items-center gap-4 overflow-hidden">
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 shrink-0"
+                                className="h-10 w-10 shrink-0 rounded-xl border border-black/[0.05] dark:border-white/[0.05] bg-black/[0.02] dark:bg-white/[0.02] hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black transition-all active:scale-95 shadow-sm"
                                 onClick={() => setCurrentFolderId(currentFolder?.parent_id || null)}
                                 disabled={currentFolderId === null}
                             >
                                 <ArrowLeft size={16} />
                             </Button>
 
-                            <nav className="flex items-center overflow-hidden text-sm font-medium whitespace-nowrap">
+                            <nav className="flex items-center overflow-hidden text-[11px] font-black uppercase tracking-widest whitespace-nowrap">
                                 <span
-                                    className="hover:text-primary shrink-0 cursor-pointer transition-colors"
+                                    className="text-black/30 dark:text-white/30 hover:text-black dark:hover:text-white cursor-pointer transition-colors"
                                     onClick={() => setCurrentFolderId(null)}
                                 >
-                                    Templates
+                                    Assets
                                 </span>
                                 {folderPath.map((f, i) => (
                                     <React.Fragment key={f.id}>
-                                        <ChevronRight size={14} className="text-muted-foreground/60 mx-1 shrink-0" />
+                                        <ChevronRight size={14} className="text-black/10 dark:text-white/10 mx-2 shrink-0" />
                                         <span
                                             className={cn(
-                                                'hover:text-primary cursor-pointer truncate transition-colors',
-                                                i === folderPath.length - 1 ? 'text-primary' : 'text-foreground/80',
+                                                'cursor-pointer truncate transition-colors max-w-[150px]',
+                                                i === folderPath.length - 1 ? 'text-black dark:text-white' : 'text-black/30 dark:text-white/30 hover:text-black dark:hover:text-white',
                                             )}
                                             onClick={() => setCurrentFolderId(f.id)}
                                         >
@@ -365,71 +328,113 @@ export default function Templates({ folders, templates }: Props) {
                             </nav>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                            <div className="relative hidden w-40 md:block lg:w-48">
-                                <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+                        <div className="flex items-center gap-3">
+                            <div className="relative hidden w-56 md:block">
+                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-black/30 dark:text-white/30" />
                                 <Input
                                     type="search"
-                                    placeholder="Cari..."
-                                    className="bg-muted/30 focus-visible:ring-primary/20 h-8 border-none pl-8 text-xs ring-0 focus-visible:ring-1"
+                                    placeholder="Cari item..."
+                                    className="h-10 border-black/[0.08] dark:border-white/[0.08] focus:border-black dark:focus:border-white rounded-xl bg-black/[0.03] dark:bg-white/[0.03] pl-10 text-[11px] font-bold uppercase tracking-tight focus-visible:ring-0 transition-all shadow-sm"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                 />
                             </div>
 
-                            <Button size="sm" variant="outline" className="h-8 gap-1.5 px-2 font-medium" onClick={() => setIsFolderModalOpen(true)}>
+                            {/* Filter Button */}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className={cn(
+                                            "h-10 gap-2 px-4 transition-all active:scale-95 text-[10px] font-black uppercase tracking-widest border-black/[0.1] dark:border-white/[0.1] rounded-xl shadow-sm",
+                                            fileTypeFilter && "bg-[var(--primary)] text-white border-[var(--primary)]"
+                                        )}
+                                    >
+                                        <Filter size={14} />
+                                        <span className="hidden lg:inline">Filter</span>
+                                        {fileTypeFilter && (
+                                            <span className={cn(
+                                                "flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[9px] font-bold",
+                                                fileTypeFilter ? "bg-white text-[var(--primary)]" : "bg-[var(--primary)] text-white"
+                                            )}>
+                                                1
+                                            </span>
+                                        )}
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-48 font-inter">
+                                    <DropdownMenuItem
+                                        onClick={() => setFileTypeFilter(null)}
+                                        className={cn("text-[11px] font-bold uppercase", fileTypeFilter === null ? "bg-black/[0.05] dark:bg-white/[0.05]" : "")}
+                                    >
+                                        Semua Tipe File
+                                    </DropdownMenuItem>
+                                    {availableFileTypes.map((type) => (
+                                        <DropdownMenuItem
+                                            key={type}
+                                            onClick={() => setFileTypeFilter(type)}
+                                            className={cn("text-[11px] font-bold uppercase", fileTypeFilter === type ? "bg-black/[0.05] dark:bg-white/[0.05]" : "")}
+                                        >
+                                            {type}
+                                        </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+
+                            <Button size="sm" variant="outline" className="h-10 gap-2 px-5 rounded-xl border-black/[0.1] dark:border-white/[0.1] text-[10px] font-black uppercase tracking-[0.15em] hover:bg-black/[0.02] dark:hover:bg-white/[0.02] active:scale-95 transition-all shadow-sm" onClick={() => setIsFolderModalOpen(true)}>
                                 <FolderPlus size={14} />
-                                <span className="hidden text-[11px] lg:inline">Folder</span>
+                                <span className="hidden lg:inline">New Folder</span>
                             </Button>
 
                             <Button
                                 size="sm"
-                                className="shadow-primary/20 h-8 gap-1.5 px-3 font-medium shadow-sm"
+                                className="h-10 gap-2 px-6 rounded-xl bg-black dark:bg-white text-white dark:text-black text-[10px] font-black uppercase tracking-[0.15em] hover:opacity-90 active:scale-95 transition-all shadow-xl shadow-black/10 dark:shadow-white/5 border-none"
                                 onClick={() => setIsUploadModalOpen(true)}
                             >
                                 <Upload size={14} />
-                                <span className="hidden text-[11px] lg:inline">Upload</span>
+                                <span className="hidden lg:inline">Upload Asset</span>
                             </Button>
                         </div>
                     </div>
 
                     {/* File List / Grid - Right Click Enabled Background */}
                     <div
-                        className="bg-muted/5 relative flex-1 overflow-y-auto p-6"
+                        className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-black/[0.01] dark:bg-white/[0.01]"
                         onContextMenu={(e) => handleContextMenu(e, 'background', currentFolderId || 'root', 'Background')}
                     >
-                        <div className="grid auto-rows-max grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                        <div className="grid auto-rows-max grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                             {/* Folders First */}
                             {filteredFolders.map((folder) => (
                                 <div
                                     key={folder.id}
                                     className={cn(
-                                        'group bg-card hover:border-primary/50 relative flex h-20 cursor-pointer items-center gap-3 rounded-xl border p-3 transition-all select-none hover:-translate-y-0.5 hover:shadow-xl',
+                                        'group bg-white dark:bg-black/20 hover:border-black dark:hover:border-white relative flex h-24 cursor-pointer items-center gap-4 rounded-xl border border-black/[0.05] dark:border-white/[0.05] p-5 transition-all select-none hover:shadow-2xl hover:-translate-y-1',
                                         contextMenu.item?.id === folder.id && contextMenu.isOpen
-                                            ? 'border-primary ring-primary/20 shadow-md ring-1'
-                                            : '',
+                                            ? 'border-black dark:border-white ring-black/5 dark:ring-white/5 shadow-2xl'
+                                            : 'shadow-sm',
                                     )}
                                     onClick={() => setCurrentFolderId(folder.id)}
                                     onContextMenu={(e) => handleContextMenu(e, 'folder', folder.id, folder.name)}
                                 >
-                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-blue-500/20 bg-blue-500/10 text-blue-500 shadow-sm">
-                                        <Folder size={20} fill="currentColor" fillOpacity={0.1} />
+                                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-black/[0.03] dark:bg-white/[0.03] border border-black/[0.05] dark:border-white/[0.05] text-black/40 dark:text-white/40 shadow-sm group-hover:bg-black dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-black transition-all">
+                                        <Folder size={22} fill="currentColor" fillOpacity={0.1} />
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                        <h4 className="text-foreground/90 truncate text-xs leading-tight font-bold tracking-tight">{folder.name}</h4>
-                                        <p className="text-muted-foreground/60 text-[10px] font-medium">{folder.templates_count} items</p>
+                                        <h4 className="text-black dark:text-white truncate text-[13px] font-black uppercase tracking-tight leading-none mb-1.5">{folder.name}</h4>
+                                        <p className="text-black/30 dark:text-white/30 text-[9px] font-bold uppercase tracking-widest leading-none">{folder.templates_count} items</p>
                                     </div>
 
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-7 w-7 shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+                                        className="h-8 w-8 shrink-0 opacity-0 group-hover:opacity-100 rounded-lg hover:bg-black/[0.05] dark:hover:bg-white/[0.05] transition-opacity"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             handleContextMenu(e as any, 'folder', folder.id, folder.name);
                                         }}
                                     >
-                                        <MoreVertical size={12} />
+                                        <MoreVertical size={14} className="text-black/30 dark:text-white/30" />
                                     </Button>
                                 </div>
                             ))}
@@ -439,54 +444,57 @@ export default function Templates({ folders, templates }: Props) {
                                 <div
                                     key={template.id}
                                     className={cn(
-                                        'group bg-card hover:border-primary/50 relative cursor-default overflow-hidden rounded-xl border transition-all select-none hover:-translate-y-0.5 hover:shadow-xl',
+                                        'group bg-white dark:bg-black/20 hover:border-black dark:hover:border-white relative cursor-default overflow-hidden rounded-xl border border-black/[0.05] dark:border-white/[0.05] transition-all select-none hover:shadow-2xl hover:-translate-y-1 shadow-sm',
                                         contextMenu.item?.id === template.id && contextMenu.isOpen
-                                            ? 'border-primary ring-primary/20 shadow-md ring-1'
+                                            ? 'border-black dark:border-white ring-black/5 dark:ring-white/5 shadow-2xl'
                                             : '',
                                     )}
                                     onContextMenu={(e) => handleContextMenu(e, 'template', template.id, template.name)}
                                 >
-                                    <div className="border-muted/50 flex items-center gap-3 border-b p-3">
-                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-orange-500/20 bg-orange-500/10 text-orange-500 shadow-sm">
-                                            <FileText size={20} />
+                                    <div className="flex items-center gap-4 p-5">
+                                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-black/[0.03] dark:bg-white/[0.03] border border-black/[0.05] dark:border-white/[0.05] text-black/40 dark:text-white/40 shadow-sm group-hover:bg-black dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-black transition-all">
+                                            <FileText size={22} />
                                         </div>
                                         <div className="min-w-0 flex-1">
-                                            <h4 className="truncate text-xs leading-tight font-bold tracking-tight">{template.name}</h4>
-                                            <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase opacity-60">
+                                            <h4 className="text-black dark:text-white truncate text-[13px] font-black uppercase tracking-tight leading-none mb-1.5">{template.name}</h4>
+                                            <p className="text-black/30 dark:text-white/30 text-[9px] font-bold uppercase tracking-widest leading-none">
                                                 {template.file_type} • {formatSize(template.file_size)}
                                             </p>
                                         </div>
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="text-muted-foreground h-7 w-7 shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+                                            className="h-8 w-8 shrink-0 opacity-0 group-hover:opacity-100 rounded-lg hover:bg-black/[0.05] dark:hover:bg-white/[0.05] transition-opacity"
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 handleContextMenu(e as any, 'template', template.id, template.name);
                                             }}
                                         >
-                                            <MoreHorizontal size={12} />
+                                            <MoreHorizontal size={14} className="text-black/30 dark:text-white/30" />
                                         </Button>
                                     </div>
-                                    <div className="bg-muted/20 flex items-center justify-between px-3 py-1.5">
-                                        <span className="text-muted-foreground/60 max-w-[80px] truncate text-[9px] font-medium">
-                                            By {template.creator?.name || 'Admin'}
+                                    <div className="bg-black/[0.02] dark:bg-white/[0.02] border-t border-black/[0.05] dark:border-white/[0.05] flex items-center justify-between px-5 py-3">
+                                        <span className="text-black/40 dark:text-white/40 max-w-[100px] truncate text-[9px] font-bold uppercase tracking-widest">
+                                            By {template.creator?.name || 'System'}
                                         </span>
                                         <a
                                             href={route('admin.templates.download', template.id)}
-                                            className="text-primary hover:text-primary/80 text-[9px] font-black tracking-tighter transition-colors"
+                                            className="text-black dark:text-white hover:opacity-70 text-[9px] font-black uppercase tracking-[0.2em] transition-all"
                                             onClick={(e) => e.stopPropagation()}
                                         >
-                                            UNDUH
+                                            Download
                                         </a>
                                     </div>
                                 </div>
                             ))}
 
                             {filteredFolders.length === 0 && filteredTemplates.length === 0 && (
-                                <div className="text-muted-foreground border-muted col-span-full flex flex-col items-center justify-center rounded-3xl border-2 border-dashed py-20 opacity-60 select-none">
-                                    <Folder className="mb-3 h-10 w-10 opacity-10" />
-                                    <p className="text-xs font-medium italic">Klik kanan di sini atau tekan 'Upload' untuk menambahkan konten</p>
+                                <div className="col-span-full flex flex-col items-center justify-center py-32 opacity-30 select-none">
+                                    <div className="p-8 rounded-3xl bg-black/[0.02] dark:bg-white/[0.02] border border-dashed border-black/[0.1] dark:border-white/[0.1] mb-8">
+                                        <Folder className="h-16 w-16 text-black/20 dark:text-white/20" strokeWidth={1} />
+                                    </div>
+                                    <p className="text-[11px] font-black uppercase tracking-[0.4em] text-black/40 dark:text-white/40">Repository is Empty</p>
+                                    <p className="text-[9px] font-bold uppercase tracking-widest text-black/20 dark:text-white/20 mt-4 italic">Right-click or use toolbar to initialize assets</p>
                                 </div>
                             )}
                         </div>
@@ -496,55 +504,50 @@ export default function Templates({ folders, templates }: Props) {
 
             {/* Delete Confirmation Dialog */}
             <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-                <DialogContent className="sm:max-w-[400px]">
-                    <DialogHeader>
-                        <div className="mb-2 flex items-center gap-3">
-                            <div className="bg-destructive/10 text-destructive flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
-                                <AlertTriangle size={20} />
-                            </div>
-                            <DialogTitle className="text-base font-bold">Hapus {selectedItem?.type === 'folder' ? 'Folder' : 'Item'}</DialogTitle>
+                <DialogContent className="sm:max-w-[400px] p-8 rounded-xl border-none shadow-2xl bg-white dark:bg-black overflow-hidden">
+                    <div className="flex flex-col items-center text-center">
+                        <div className="h-14 w-14 bg-red-50 dark:bg-red-950/20 text-red-500 rounded-2xl flex items-center justify-center mb-5 shadow-inner">
+                            <AlertTriangle size={28} />
                         </div>
-                        <DialogDescription className="text-xs">
-                            Apakah Anda yakin ingin menghapus <strong>"{selectedItem?.name}"</strong>?
-                            {selectedItem?.type === 'folder' && ' Semua isi di dalam folder ini juga akan terhapus secara permanen.'}
-                            Tindakan ini tidak dapat dibatalkan.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter className="mt-4 gap-2 sm:gap-0">
-                        <Button variant="outline" size="sm" className="text-xs font-semibold" onClick={() => setIsDeleteModalOpen(false)}>
-                            Batal
-                        </Button>
-                        <Button variant="destructive" size="sm" className="shadow-destructive/20 text-xs font-bold shadow-md" onClick={handleDelete}>
-                            Hapus Sekarang
-                        </Button>
-                    </DialogFooter>
+                        <DialogHeader className="p-0">
+                            <DialogTitle className="text-[16px] font-black uppercase tracking-tight text-black dark:text-white mb-2">Delete {selectedItem?.type === 'folder' ? 'Folder' : 'Item'}?</DialogTitle>
+                            <DialogDescription className="text-black/50 dark:text-white/50 text-[11px] font-bold uppercase tracking-widest leading-relaxed antialiased max-w-[280px]">
+                                Apakah Anda yakin ingin menghapus <span className="text-red-500 font-black">"{selectedItem?.name}"</span>?
+                                {selectedItem?.type === 'folder' && ' Semua isi di dalamnya akan terhapus permanen.'}
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid grid-cols-2 w-full gap-3 mt-8">
+                            <Button variant="outline" size="sm" className="rounded-xl h-11 font-black uppercase text-[10px] border-black/[0.08] dark:border-white/[0.08] text-black/40 dark:text-white/40 hover:bg-black/[0.02] dark:hover:bg-white/[0.02]" onClick={() => setIsDeleteModalOpen(false)}>Cancel</Button>
+                            <Button variant="destructive" size="sm" className="rounded-xl h-11 font-black uppercase text-[10px] bg-red-500 hover:bg-red-600 shadow-xl shadow-red-500/20 active:scale-95 transition-all" onClick={handleDelete}>Delete Now</Button>
+                        </div>
+                    </div>
                 </DialogContent>
             </Dialog>
 
             {/* Move Dialog */}
             <Dialog open={isMoveModalOpen} onOpenChange={setIsMoveModalOpen}>
-                <DialogContent className="sm:max-w-[400px]">
-                    <DialogHeader>
-                        <DialogTitle className="text-base font-bold">Pindahkan {selectedItem?.name}</DialogTitle>
-                        <DialogDescription className="text-xs">Pilih folder tujuan untuk memindahkan item ini.</DialogDescription>
+                <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden border-none rounded-xl shadow-2xl bg-white dark:bg-black">
+                    <DialogHeader className="bg-black dark:bg-white p-8 text-white dark:text-black">
+                        <DialogTitle className="text-[14px] font-black uppercase tracking-[0.2em] mb-1">Transfer Asset</DialogTitle>
+                        <DialogDescription className="text-white/50 dark:text-black/50 text-[10px] font-bold uppercase tracking-widest antialiased">Pilih folder tujuan untuk memindahkan <strong>{selectedItem?.name}</strong>.</DialogDescription>
                     </DialogHeader>
-                    <div className="py-2">
-                        <Label className="text-muted-foreground mb-2 block px-1 text-[10px] font-bold tracking-widest uppercase">
-                            Pilih Folder Tujuan
+                    <div className="p-8">
+                        <Label className="text-black/40 dark:text-white/40 mb-3 block px-1 text-[10px] font-black tracking-widest uppercase">
+                            Destination Directory
                         </Label>
-                        <div className="bg-muted/10 overflow-hidden rounded-xl border">
-                            <div className="h-60 overflow-y-auto p-2">
+                        <div className="bg-black/[0.02] dark:bg-white/[0.02] overflow-hidden rounded-xl border border-black/[0.05] dark:border-white/[0.05]">
+                            <div className="h-64 overflow-y-auto p-2 custom-scrollbar">
                                 <div
                                     className={cn(
-                                        'mb-1 flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-xs',
+                                        'mb-1 flex cursor-pointer items-center gap-3 rounded-xl px-4 py-3 text-[11px] font-bold uppercase tracking-tight transition-all active:scale-[0.98]',
                                         targetFolderId === null
-                                            ? 'bg-primary text-primary-foreground shadow-primary/20 font-bold shadow-md'
-                                            : 'hover:bg-muted font-medium transition-colors',
+                                            ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg'
+                                            : 'hover:bg-black/[0.03] dark:hover:bg-white/[0.03] text-black/40 dark:text-white/40',
                                     )}
                                     onClick={() => setTargetFolderId(null)}
                                 >
-                                    <Folder size={14} className={targetFolderId === null ? 'fill-white/20' : 'text-muted-foreground'} />
-                                    Root
+                                    <Folder size={14} className={cn("transition-colors", targetFolderId === null ? 'fill-current' : 'text-black/20 dark:text-white/20')} />
+                                    Repository Root
                                 </div>
                                 {folders
                                     .filter((f) => f.id !== selectedItem?.id) // Prevent moving to self
@@ -553,26 +556,26 @@ export default function Templates({ folders, templates }: Props) {
                                         <div
                                             key={folder.id}
                                             className={cn(
-                                                'mb-1 ml-2 flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-xs',
+                                                'mb-1 flex cursor-pointer items-center gap-3 rounded-xl px-4 py-3 text-[11px] font-bold uppercase tracking-tight transition-all active:scale-[0.98]',
                                                 targetFolderId === folder.id
-                                                    ? 'bg-primary text-primary-foreground shadow-primary/20 font-bold shadow-md'
-                                                    : 'hover:bg-muted hover:border-muted-foreground/10 border border-transparent font-medium transition-colors',
+                                                    ? 'bg-black dark:bg-white text-white dark:text-black shadow-lg'
+                                                    : 'hover:bg-black/[0.03] dark:hover:bg-white/[0.03] text-black/40 dark:text-white/40',
                                             )}
                                             onClick={() => setTargetFolderId(folder.id)}
                                         >
-                                            <Folder size={14} className={targetFolderId === folder.id ? 'fill-white/20' : 'text-muted-foreground'} />
+                                            <Folder size={14} className={cn("transition-colors", targetFolderId === folder.id ? 'fill-current' : 'text-black/20 dark:text-white/20')} />
                                             {folder.name}
                                         </div>
                                     ))}
                             </div>
                         </div>
                     </div>
-                    <DialogFooter className="gap-2 sm:gap-0">
-                        <Button variant="outline" size="sm" className="text-xs font-semibold" onClick={() => setIsMoveModalOpen(false)}>
-                            Batal
+                    <DialogFooter className="px-8 pb-8 gap-3">
+                        <Button variant="ghost" size="sm" className="px-6 rounded-xl font-black uppercase text-[10px] h-10 text-black/40 dark:text-white/40 hover:bg-black/[0.05] dark:hover:bg-white/[0.05]" onClick={() => setIsMoveModalOpen(false)}>
+                            Discard
                         </Button>
-                        <Button size="sm" className="text-xs font-bold" onClick={handleMove}>
-                            Pindahkan Sekarang
+                        <Button size="sm" className="px-10 rounded-xl font-black uppercase text-[10px] h-10 bg-black dark:bg-white text-white dark:text-black shadow-xl shadow-black/20 dark:shadow-white/10 active:scale-95 transition-all" onClick={handleMove}>
+                            Confirm Transfer
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -580,30 +583,30 @@ export default function Templates({ folders, templates }: Props) {
 
             {/* Folder Creation Modal */}
             <Dialog open={isFolderModalOpen} onOpenChange={setIsFolderModalOpen}>
-                <DialogContent className="sm:max-w-[400px]">
-                    <DialogHeader>
-                        <DialogTitle className="text-base font-bold">Buat Folder Baru</DialogTitle>
-                        <DialogDescription className="text-xs">Masukkan nama folder untuk mengelompokkan template.</DialogDescription>
+                <DialogContent className="sm:max-w-[420px] p-0 overflow-hidden border-none rounded-xl shadow-2xl bg-white dark:bg-black">
+                    <DialogHeader className="bg-black dark:bg-white p-8 text-white dark:text-black">
+                        <DialogTitle className="text-[14px] font-black uppercase tracking-[0.2em] mb-1">Create Directory</DialogTitle>
+                        <DialogDescription className="text-white/50 dark:text-black/50 text-[10px] font-bold uppercase tracking-widest antialiased">Initialize a new folder for template grouping.</DialogDescription>
                     </DialogHeader>
-                    <div className="py-4">
-                        <Label htmlFor="name" className="text-muted-foreground mb-1.5 block px-1 text-[10px] font-bold tracking-widest uppercase">
-                            Nama Folder
+                    <div className="p-8">
+                        <Label htmlFor="name" className="text-black/40 dark:text-white/40 mb-3 block px-1 text-[10px] font-black tracking-widest uppercase">
+                            Directory Identifier
                         </Label>
                         <Input
                             id="name"
-                            className="bg-muted/20 placeholder:text-muted-foreground/50 focus-visible:ring-primary/30 h-10 rounded-xl border-none text-sm font-medium ring-0 focus-visible:ring-1"
+                            className="h-12 bg-black/[0.03] dark:bg-white/[0.03] border-black/[0.08] dark:border-white/[0.08] rounded-xl font-bold text-sm focus:border-black dark:focus:border-white transition-all shadow-sm"
                             value={newFolderName}
                             onChange={(e) => setNewFolderName(e.target.value)}
                             placeholder="e.g. Perjanjian Kerja Sama"
                             autoFocus
                         />
                     </div>
-                    <DialogFooter>
-                        <Button variant="outline" size="sm" className="text-xs font-semibold" onClick={() => setIsFolderModalOpen(false)}>
-                            Batal
+                    <DialogFooter className="px-8 pb-8 gap-3">
+                        <Button variant="ghost" size="sm" className="px-6 rounded-xl font-black uppercase text-[10px] h-10 text-black/40 dark:text-white/40 hover:bg-black/[0.05] dark:hover:bg-white/[0.05]" onClick={() => setIsFolderModalOpen(false)}>
+                            Cancel
                         </Button>
-                        <Button size="sm" className="text-xs font-bold" onClick={handleCreateFolder}>
-                            Simpan Folder
+                        <Button size="sm" className="px-10 rounded-xl font-black uppercase text-[10px] h-10 bg-black dark:bg-white text-white dark:text-black shadow-xl shadow-black/20 dark:shadow-white/10 active:scale-95 transition-all" onClick={handleCreateFolder}>
+                            Save Folder
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -611,32 +614,32 @@ export default function Templates({ folders, templates }: Props) {
 
             {/* Rename Modal */}
             <Dialog open={isRenameModalOpen} onOpenChange={setIsRenameModalOpen}>
-                <DialogContent className="sm:max-w-[400px]">
-                    <DialogHeader>
-                        <DialogTitle className="text-base font-bold">Ganti Nama</DialogTitle>
-                        <DialogDescription className="text-xs">Ubah nama untuk "{selectedItem?.name}".</DialogDescription>
+                <DialogContent className="sm:max-w-[420px] p-0 overflow-hidden border-none rounded-xl shadow-2xl bg-white dark:bg-black">
+                    <DialogHeader className="bg-black dark:bg-white p-8 text-white dark:text-black">
+                        <DialogTitle className="text-[14px] font-black uppercase tracking-[0.2em] mb-1">Modify Identifier</DialogTitle>
+                        <DialogDescription className="text-white/50 dark:text-black/50 text-[10px] font-bold uppercase tracking-widest antialiased">Ubah nama untuk "<strong>{selectedItem?.name}</strong>".</DialogDescription>
                     </DialogHeader>
-                    <div className="py-4">
+                    <div className="p-8">
                         <Label
                             htmlFor="rename-input"
-                            className="text-muted-foreground mb-1.5 block px-1 text-[10px] font-bold tracking-widest uppercase"
+                            className="text-black/40 dark:text-white/40 mb-3 block px-1 text-[10px] font-black tracking-widest uppercase"
                         >
-                            Nama Baru
+                            New Identifier Name
                         </Label>
                         <Input
                             id="rename-input"
-                            className="bg-muted/20 focus-visible:ring-primary/30 h-10 rounded-xl border-none text-sm font-medium ring-0 focus-visible:ring-1"
+                            className="h-12 bg-black/[0.03] dark:bg-white/[0.03] border-black/[0.08] dark:border-white/[0.08] rounded-xl font-bold text-sm focus:border-black dark:focus:border-white transition-all shadow-sm"
                             value={newFolderName}
                             onChange={(e) => setNewFolderName(e.target.value)}
                             autoFocus
                         />
                     </div>
-                    <DialogFooter>
-                        <Button variant="outline" size="sm" className="text-xs font-semibold" onClick={() => setIsRenameModalOpen(false)}>
-                            Batal
+                    <DialogFooter className="px-8 pb-8 gap-3">
+                        <Button variant="ghost" size="sm" className="px-6 rounded-xl font-black uppercase text-[10px] h-10 text-black/40 dark:text-white/40 hover:bg-black/[0.05] dark:hover:bg-white/[0.05]" onClick={() => setIsRenameModalOpen(false)}>
+                            Cancel
                         </Button>
-                        <Button size="sm" className="text-xs font-bold" onClick={handleRename}>
-                            Simpan Perubahan
+                        <Button size="sm" className="px-10 rounded-xl font-black uppercase text-[10px] h-10 bg-black dark:bg-white text-white dark:text-black shadow-xl shadow-black/20 dark:shadow-white/10 active:scale-95 transition-all" onClick={handleRename}>
+                            Apply Change
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -644,42 +647,42 @@ export default function Templates({ folders, templates }: Props) {
 
             {/* Upload Modal */}
             <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
-                <DialogContent className="sm:max-w-[400px]">
+                <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden border-none rounded-xl shadow-2xl bg-white dark:bg-black">
                     <form onSubmit={handleUploadTemplate}>
-                        <DialogHeader>
-                            <DialogTitle className="text-base font-bold">Upload Template</DialogTitle>
-                            <DialogDescription className="text-xs">Tambahkan file baru ke dalam folder ini.</DialogDescription>
+                        <DialogHeader className="bg-black dark:bg-white p-8 text-white dark:text-black">
+                            <DialogTitle className="text-[14px] font-black uppercase tracking-[0.2em] mb-1">Asset Intake</DialogTitle>
+                            <DialogDescription className="text-white/50 dark:text-black/50 text-[10px] font-bold uppercase tracking-widest antialiased">Tambahkan file baru ke dalam repository.</DialogDescription>
                         </DialogHeader>
-                        <div className="grid gap-4 py-4">
-                            <div className="grid gap-1">
-                                <Label htmlFor="tpl-name" className="text-muted-foreground px-1 text-[10px] font-bold tracking-widest uppercase">
-                                    Nama Tampilan
+                        <div className="p-8 space-y-5">
+                            <div className="grid gap-2">
+                                <Label htmlFor="tpl-name" className="text-black/40 dark:text-white/40 px-1 text-[10px] font-black tracking-widest uppercase">
+                                    Display Name
                                 </Label>
                                 <Input
                                     id="tpl-name"
-                                    className="bg-muted/20 placeholder:text-muted-foreground/50 focus-visible:ring-primary/30 h-10 rounded-xl border-none text-sm font-medium ring-0 focus-visible:ring-1"
+                                    className="h-11 bg-black/[0.03] dark:bg-white/[0.03] border-black/[0.08] dark:border-white/[0.08] rounded-xl font-bold text-xs focus:border-black dark:focus:border-white transition-all shadow-sm"
                                     value={uploadData.name}
                                     onChange={(e) => setUploadData({ ...uploadData, name: e.target.value })}
                                     placeholder="e.g. Kontrak Pihak Ketiga"
                                     required
                                 />
                             </div>
-                            <div className="grid gap-1">
-                                <Label htmlFor="tpl-desc" className="text-muted-foreground px-1 text-[10px] font-bold tracking-widest uppercase">
-                                    Deskripsi (Opsional)
+                            <div className="grid gap-2">
+                                <Label htmlFor="tpl-desc" className="text-black/40 dark:text-white/40 px-1 text-[10px] font-black tracking-widest uppercase">
+                                    Narrative (Optional)
                                 </Label>
                                 <Input
                                     id="tpl-desc"
-                                    className="bg-muted/20 placeholder:text-muted-foreground/50 focus-visible:ring-primary/30 h-10 rounded-xl border-none text-sm font-medium ring-0 focus-visible:ring-1"
+                                    className="h-11 bg-black/[0.03] dark:bg-white/[0.03] border-black/[0.08] dark:border-white/[0.08] rounded-xl font-bold text-xs focus:border-black dark:focus:border-white transition-all shadow-sm"
                                     value={uploadData.description}
                                     onChange={(e) => setUploadData({ ...uploadData, description: e.target.value })}
                                 />
                             </div>
-                            <div className="grid gap-1">
-                                <Label htmlFor="tpl-file" className="text-muted-foreground px-1 text-[10px] font-bold tracking-widest uppercase">
-                                    Pilih File
+                            <div className="grid gap-2">
+                                <Label htmlFor="tpl-file" className="text-black/40 dark:text-white/40 px-1 text-[10px] font-black tracking-widest uppercase">
+                                    Source File
                                 </Label>
-                                <div className="group/field border-muted-foreground/10 hover:border-primary/20 hover:bg-primary/5 relative cursor-pointer rounded-2xl border-2 border-dashed p-4 text-center transition-all">
+                                <div className="group/field border-black/[0.1] dark:border-white/[0.1] hover:border-black dark:hover:border-white hover:bg-black/[0.02] dark:hover:bg-white/[0.02] relative cursor-pointer rounded-2xl border-2 border-dashed p-6 text-center transition-all shadow-inner">
                                     <Input
                                         id="tpl-file"
                                         type="file"
@@ -687,33 +690,32 @@ export default function Templates({ folders, templates }: Props) {
                                         onChange={(e) => setUploadData({ ...uploadData, file: e.target.files?.[0] || null })}
                                         required
                                     />
-                                    <div className="space-y-1">
-                                        <Upload
-                                            size={18}
-                                            className="text-muted-foreground group-hover/field:text-primary mx-auto transition-colors"
-                                        />
-                                        <p className="group-hover/field:text-primary text-foreground/80 text-[10px] font-bold transition-colors">
-                                            {uploadData.file ? uploadData.file.name : 'Klik atau seret file ke sini'}
+                                    <div className="space-y-2">
+                                        <div className="h-12 w-12 bg-black/[0.03] dark:bg-white/[0.03] rounded-xl flex items-center justify-center mx-auto group-hover/field:bg-black dark:group-hover/field:bg-white group-hover/field:text-white dark:group-hover/field:text-black transition-all shadow-sm">
+                                            <Upload size={20} />
+                                        </div>
+                                        <p className="text-black dark:text-white text-[11px] font-black uppercase tracking-tight truncate max-w-[300px] mx-auto">
+                                            {uploadData.file ? uploadData.file.name : 'Select or Drop File'}
                                         </p>
-                                        <p className="text-muted-foreground/60 text-[9px] tracking-tighter uppercase">
-                                            MAX 10MB • .DOCX, .PDF, .XLSX
+                                        <p className="text-black/30 dark:text-white/30 text-[9px] font-bold uppercase tracking-widest">
+                                            MAX 10MB • DOCX, PDF, XLSX
                                         </p>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <DialogFooter>
+                        <DialogFooter className="px-8 pb-8 gap-3">
                             <Button
                                 type="button"
-                                variant="outline"
+                                variant="ghost"
                                 size="sm"
-                                className="text-xs font-semibold"
+                                className="px-6 rounded-xl font-black uppercase text-[10px] h-10 text-black/40 dark:text-white/40 hover:bg-black/[0.05] dark:hover:bg-white/[0.05]"
                                 onClick={() => setIsUploadModalOpen(false)}
                             >
-                                Batal
+                                Cancel
                             </Button>
-                            <Button type="submit" size="sm" className="shadow-primary/20 text-xs font-bold shadow-md">
-                                Mulai Unggah
+                            <Button type="submit" size="sm" className="px-10 rounded-xl font-black uppercase text-[10px] h-10 bg-black dark:bg-white text-white dark:text-black shadow-xl shadow-black/20 dark:shadow-white/10 active:scale-95 transition-all">
+                                Confirm Intake
                             </Button>
                         </DialogFooter>
                     </form>

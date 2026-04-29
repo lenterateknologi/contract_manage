@@ -1,7 +1,7 @@
 import { Head, useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Save, CheckSquare, Square, Check, X, LayoutGrid, ShieldAlert } from 'lucide-react';
+import { CheckSquare, Square, LayoutGrid, ShieldAlert } from 'lucide-react';
 import React, { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/contracts/Toast';
@@ -16,11 +16,17 @@ interface Props {
     }>;
 }
 
-const PERMISSIONS = ['can_read', 'can_create', 'can_update', 'can_delete'] as const;
+const PERMISSIONS = ['can_read', 'can_create', 'can_update', 'can_delete', 'can_approve', 'can_bulk_approve', 'can_bulk_delete'] as const;
 type Permission = typeof PERMISSIONS[number];
 
 const permissionLabels: Record<Permission, string> = {
-    can_read: 'Read', can_create: 'Create', can_update: 'Update', can_delete: 'Delete',
+    can_read: 'Read', 
+    can_create: 'Create', 
+    can_update: 'Update', 
+    can_delete: 'Delete',
+    can_approve: 'Approve',
+    can_bulk_approve: 'Bulk Aprv',
+    can_bulk_delete: 'Bulk Del',
 };
 
 export default function RoleAccess({ role, modules }: Props) {
@@ -32,6 +38,9 @@ export default function RoleAccess({ role, modules }: Props) {
             can_create: module.access?.can_create || false,
             can_update: module.access?.can_update || false,
             can_delete: module.access?.can_delete || false,
+            can_approve: (module.access as any)?.can_approve || false,
+            can_bulk_approve: (module.access as any)?.can_bulk_approve || false,
+            can_bulk_delete: (module.access as any)?.can_bulk_delete || false,
         })),
     });
 
@@ -51,7 +60,14 @@ export default function RoleAccess({ role, modules }: Props) {
 
     const setAll = (checked: boolean) => {
         form.setData('accesses', form.data.accesses.map(access => ({
-            ...access, can_read: checked, can_create: checked, can_update: checked, can_delete: checked,
+            ...access, 
+            can_read: checked, 
+            can_create: checked, 
+            can_update: checked, 
+            can_delete: checked,
+            can_approve: checked,
+            can_bulk_approve: checked,
+            can_bulk_delete: checked,
         })));
     };
 
@@ -69,7 +85,7 @@ export default function RoleAccess({ role, modules }: Props) {
     const setRow = (moduleId: string, checked: boolean) => {
         form.setData('accesses', form.data.accesses.map(access => 
             access.module_id === moduleId 
-                ? { ...access, can_read: checked, can_create: checked, can_update: checked, can_delete: checked } 
+                ? { ...access, can_read: checked, can_create: checked, can_update: checked, can_delete: checked, can_approve: checked, can_bulk_approve: checked, can_bulk_delete: checked } 
                 : access
         ));
     };
@@ -94,11 +110,11 @@ export default function RoleAccess({ role, modules }: Props) {
             isDirty={form.isDirty}
             isEdit={true}
             headerActions={
-                <div className="flex bg-slate-100 p-1 rounded-none border border-slate-200 mr-2">
-                    <Button variant="ghost" size="sm" className="h-7 text-[9px] font-black uppercase tracking-tight hover:bg-white" onClick={() => setAll(true)}>
+                <div className="flex bg-black/[0.03] dark:bg-white/[0.03] p-1 rounded-lg border border-black/5 dark:border-white/5 mr-2">
+                    <Button variant="ghost" size="sm" className="h-7 text-[9px] font-black uppercase tracking-tight hover:bg-white dark:hover:bg-black/40" onClick={() => setAll(true)}>
                         <CheckSquare className="h-3 w-3 mr-1.5" /> Pilih Semua
                     </Button>
-                    <Button variant="ghost" size="sm" className="h-7 text-[9px] font-black uppercase tracking-tight hover:bg-white" onClick={() => setAll(false)}>
+                    <Button variant="ghost" size="sm" className="h-7 text-[9px] font-black uppercase tracking-tight hover:bg-white dark:hover:bg-black/40" onClick={() => setAll(false)}>
                         <Square className="h-3 w-3 mr-1.5" /> Bersihkan
                     </Button>
                 </div>
@@ -109,7 +125,7 @@ export default function RoleAccess({ role, modules }: Props) {
                     <div className="border border-slate-200 overflow-hidden">
                         <table className="w-full border-collapse">
                             <thead>
-                                <tr className="bg-slate-900 text-white uppercase tracking-[0.2em] text-[10px] font-black">
+                                <tr className="bg-[var(--primary)] text-white uppercase tracking-[0.2em] text-[10px] font-black">
                                     <th className="px-5 py-4 text-left font-black border-r border-white/10">Scope Modul</th>
                                     {PERMISSIONS.map(p => {
                                         const isAllChecked = form.data.accesses.every(a => a[p]);
@@ -118,7 +134,7 @@ export default function RoleAccess({ role, modules }: Props) {
                                                 <div className="flex flex-col items-center gap-2">
                                                     <span>{permissionLabels[p]}</span>
                                                     <Checkbox 
-                                                        className="h-4 w-4 rounded-none border-white/30 data-[state=checked]:bg-white data-[state=checked]:border-white data-[state=checked]:text-black"
+                                                        className="h-4 w-4 rounded-sm border-white/30 data-[state=checked]:bg-white data-[state=checked]:border-white data-[state=checked]:text-black"
                                                         checked={isAllChecked}
                                                         onCheckedChange={(checked) => setColumn(p, !!checked)}
                                                     />
@@ -126,14 +142,14 @@ export default function RoleAccess({ role, modules }: Props) {
                                             </th>
                                         );
                                     })}
-                                    <th className="px-2 py-4 text-center min-w-[80px] bg-slate-800 border-l border-white/10">Full</th>
+                                    <th className="px-2 py-4 text-center min-w-[80px] bg-black/20 border-l border-white/10">Full</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {Object.entries(groupedModules).map(([groupId, group]) => {
                                     const groupModuleIds = group.modules.map(m => m.id);
                                     const groupAccesses = form.data.accesses.filter(a => groupModuleIds.includes(a.module_id));
-                                    const isGroupFullControlChecked = groupAccesses.every(a => a.can_read && a.can_create && a.can_update && a.can_delete);
+                                    const isGroupFullControlChecked = groupAccesses.every(a => a.can_read && a.can_create && a.can_update && a.can_delete && a.can_approve && a.can_bulk_approve && a.can_bulk_delete);
 
                                     return (
                                         <React.Fragment key={groupId}>
@@ -163,8 +179,8 @@ export default function RoleAccess({ role, modules }: Props) {
                                                             className="h-4 w-4 rounded-none border-slate-400 data-[state=checked]:bg-black data-[state=checked]:border-black"
                                                             checked={isGroupFullControlChecked}
                                                             onCheckedChange={(checked) => {
-                                                                form.setData('accesses', form.data.accesses.map(access => 
-                                                                    groupModuleIds.includes(access.module_id) ? { ...access, can_read: !!checked, can_create: !!checked, can_update: !!checked, can_delete: !!checked } : access
+                                                                 form.setData('accesses', form.data.accesses.map(access => 
+                                                                    groupModuleIds.includes(access.module_id) ? { ...access, can_read: !!checked, can_create: !!checked, can_update: !!checked, can_delete: !!checked, can_approve: !!checked, can_bulk_approve: !!checked, can_bulk_delete: !!checked } : access
                                                                 ));
                                                             }}
                                                         />
@@ -174,7 +190,7 @@ export default function RoleAccess({ role, modules }: Props) {
                                             {/* Module Rows */}
                                             {group.modules.map((module) => {
                                                 const moduleAccess = form.data.accesses.find(a => a.module_id === module.id);
-                                                const isRowAllChecked = moduleAccess?.can_read && moduleAccess?.can_create && moduleAccess?.can_update && moduleAccess?.can_delete;
+                                                const isRowAllChecked = moduleAccess?.can_read && moduleAccess?.can_create && moduleAccess?.can_update && moduleAccess?.can_delete && moduleAccess?.can_approve && moduleAccess?.can_bulk_approve && moduleAccess?.can_bulk_delete;
                                                 
                                                 return (
                                                     <tr key={module.id} className="border-b border-slate-200 last:border-b-0 hover:bg-slate-50 transition-colors group">

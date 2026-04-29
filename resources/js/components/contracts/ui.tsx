@@ -15,15 +15,15 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_CLS: Record<string, string> = {
-    draft: 'bg-muted text-muted-foreground border border-border',
+    draft: 'bg-black/5 text-black/60 dark:bg-white/5 dark:text-white/60 border border-black/10 dark:border-white/10',
     in_review: 'bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-900/30',
     revision: 'bg-red-50 text-red-800 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/30',
     approved: 'bg-green-50 text-green-800 border border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-900/30',
     locked: 'bg-violet-50 text-violet-800 border border-violet-200 dark:bg-violet-900/20 dark:text-violet-400 dark:border-violet-900/30',
-    archived: 'bg-muted text-muted-foreground border border-border',
+    archived: 'bg-black/5 text-black/60 dark:bg-white/5 dark:text-white/60 border border-black/10 dark:border-white/10',
     pending: 'bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-900/30',
     rejected: 'bg-red-50 text-red-800 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/30',
-    waiting: 'bg-muted text-muted-foreground border border-border',
+    waiting: 'bg-black/5 text-black/60 dark:bg-white/5 dark:text-white/60 border border-black/10 dark:border-white/10',
 };
 
 export function StatusBadge({ status, label }: { status: string; label?: string }) {
@@ -61,10 +61,10 @@ export function Avatar({
 export function ProgressBar({ done, total, pct }: { done: number; total: number; pct: number }) {
     return (
         <div>
-            <div className="text-muted-foreground mb-1 text-xs">
+            <div className="text-black/40 dark:text-white/40 mb-1 text-xs">
                 {done}/{total}
             </div>
-            <div className="bg-muted h-1 w-20 overflow-hidden rounded-full">
+            <div className="bg-black/5 dark:bg-white/5 h-1 w-20 overflow-hidden rounded-full">
                 <div className="bg-primary h-full rounded-full transition-all" style={{ width: `${pct}%` }} />
             </div>
         </div>

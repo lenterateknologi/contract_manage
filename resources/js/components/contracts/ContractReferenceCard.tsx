@@ -64,35 +64,27 @@ export function ContractReferenceCard({
     };
 
     return (
-        <div className="animate-in fade-in duration-500">
-            {/* Header Mirroring Audit Trail style */}
-            <div className="flex items-center justify-between border-b border-black/10 dark:border-white/10 bg-[#0f172a] dark:bg-white p-4 rounded-t-xl">
-                <div className="flex items-center gap-2">
-                    <LinkIcon size={14} className="text-white dark:text-[#0f172a]" />
-                    <h3 className="text-[11px] font-bold uppercase tracking-widest text-white dark:text-[#0f172a]">
-                        Referensi Kontrak
-                    </h3>
-                </div>
-                
-                {isDraft && (
+        <div className="animate-in fade-in duration-500 flex flex-col gap-6">
+            {!parent && isDraft && (
+                <div className="flex justify-end">
                     <Button 
                         variant="outline" 
                         size="sm" 
                         onClick={() => setIsEditing(true)}
-                        className="h-8 gap-2 border-white/20 dark:border-black/20 text-white dark:text-[#0f172a] font-bold rounded-lg hover:bg-white hover:text-[#0f172a] dark:hover:bg-[#0f172a] dark:hover:text-white transition-all shadow-sm"
+                        className="h-10 gap-2 text-black/60 dark:text-white/60 font-bold rounded-xl hover:bg-[#172554] hover:text-white dark:hover:bg-white dark:hover:text-[#172554] transition-all shadow-sm"
                     >
-                        <Plus size={12} strokeWidth={3} />
-                        <span className="text-[9px] uppercase tracking-[0.2em]">{parent ? 'GANTI' : 'HUBUNGKAN'}</span>
+                        <Plus size={14} strokeWidth={3} />
+                        <span className="text-[10px] uppercase tracking-widest">Hubungkan Kontrak</span>
                     </Button>
-                )}
-            </div>
+                </div>
+            )}
 
             <div className="relative">
                 {parent ? (
-                    <div className="bg-white dark:bg-sidebar border border-black/10 dark:border-white/10 rounded-b-xl overflow-hidden group transition-all">
+                    <div className="bg-black/[0.03] dark:bg-white/[0.03] rounded-xl overflow-hidden group transition-all">
                         <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
                             <div className="flex-1 flex gap-5">
-                                <div className="h-14 w-14 rounded-xl bg-black/5 dark:bg-white/5 flex items-center justify-center border border-black/10 dark:border-white/10 text-black/20 dark:text-white/20 shrink-0">
+                                <div className="h-14 w-14 rounded-xl bg-white dark:bg-sidebar flex items-center justify-center text-black/20 dark:text-white/20 shrink-0 shadow-sm">
                                     <FileIcon size={24} />
                                 </div>
                                 <div className="flex flex-col min-w-0">
@@ -115,10 +107,18 @@ export function ContractReferenceCard({
                             </div>
 
                             <div className="flex items-center gap-2 shrink-0">
+                                {isDraft && (
+                                    <Button
+                                        onClick={() => setIsEditing(true)}
+                                        variant="outline"
+                                        className="h-9 px-4 gap-2 text-black/60 font-bold text-[11px] hover:bg-[#172554] hover:text-white rounded-lg transition-all active:scale-95 shadow-sm"
+                                    >
+                                        GANTI
+                                    </Button>
+                                )}
                                 <Button
                                     onClick={handleRedirect}
-                                    variant="outline"
-                                    className="h-9 px-4 gap-2 border-slate-200 text-slate-900 font-bold text-[11px] hover:bg-slate-50 rounded-md transition-all active:scale-95"
+                                    className="h-9 px-4 gap-2 bg-[#172554] dark:bg-white text-white dark:text-[#172554] font-bold text-[11px] hover:scale-95 rounded-lg transition-all shadow-lg shadow-[#172554]/10"
                                 >
                                     <ExternalLink size={13} strokeWidth={2.5} /> LIHAT DETAIL
                                 </Button>
@@ -126,7 +126,7 @@ export function ContractReferenceCard({
                                     <Button
                                         onClick={handleRemove}
                                         variant="ghost"
-                                        className="h-9 w-9 p-0 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-all active:scale-95"
+                                        className="h-9 w-9 p-0 text-black/20 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all active:scale-95"
                                         title="Hapus Referensi"
                                     >
                                         <Trash2 size={16} strokeWidth={2.5} />
@@ -136,8 +136,8 @@ export function ContractReferenceCard({
                         </div>
                     </div>
                 ) : (
-                    <div className="flex flex-col items-center justify-center py-20 px-4 bg-white dark:bg-sidebar border border-dashed border-black/10 dark:border-white/10 rounded-b-xl text-center animate-in zoom-in-95 duration-300">
-                        <div className="h-16 w-16 bg-black/5 dark:bg-white/5 rounded-full flex items-center justify-center border border-black/5 dark:border-white/5 text-black/10 dark:text-white/10 mb-6">
+                    <div className="flex flex-col items-center justify-center py-20 px-4 bg-black/[0.03] dark:bg-white/[0.03] rounded-xl text-center animate-in zoom-in-95 duration-300">
+                        <div className="h-16 w-16 bg-black/5 dark:bg-white/5 rounded-full flex items-center justify-center text-black/10 dark:text-white/10 mb-6">
                             <LinkIcon size={24} />
                         </div>
                         <h4 className="text-[11px] font-bold text-black dark:text-white uppercase tracking-[0.3em] mb-2">Tidak Ada Referensi</h4>
@@ -146,10 +146,9 @@ export function ContractReferenceCard({
                         </p>
                         {isDraft && (
                             <Button 
-                                variant="outline"
                                 size="sm"
                                 onClick={() => setIsEditing(true)}
-                                className="mt-8 h-9 px-6 text-[10px] font-bold border-black/20 dark:border-white/20 text-black dark:text-white uppercase hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black rounded-lg transition-all shadow-sm"
+                                className="mt-8 h-9 px-6 text-[10px] font-bold bg-[#172554] dark:bg-white text-white dark:text-[#172554] uppercase hover:scale-95 rounded-lg transition-all shadow-md"
                             >
                                 Cari Kontrak Sekarang
                             </Button>
@@ -166,7 +165,7 @@ export function ContractReferenceCard({
                         onClick={() => setIsEditing(false)}
                     />
                     
-                    <div className="relative bg-white w-full max-w-lg rounded-none shadow-2xl flex flex-col max-h-[80vh] overflow-hidden border border-slate-950 animate-in zoom-in-95 duration-200">
+                    <div className="relative bg-white w-full max-w-lg rounded-xl shadow-2xl flex flex-col max-h-[80vh] overflow-hidden animate-in zoom-in-95 duration-200">
                         <div className="px-5 py-4 border-b border-slate-200 bg-white flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <Search size={16} className="text-slate-900" strokeWidth={3} />
@@ -190,7 +189,7 @@ export function ContractReferenceCard({
                                     value={search}
                                     onChange={(e) => handleSearch(e.target.value)}
                                     placeholder="CARI BERDASARKAN NO. KONTRAK ATAU JUDUL..."
-                                    className="w-full text-xs bg-slate-50 border border-slate-200 rounded-none pl-11 pr-4 py-3 outline-none focus:bg-white focus:border-slate-900 transition-all font-bold uppercase tracking-widest placeholder:text-slate-300"
+                                    className="w-full text-xs bg-slate-50 rounded-lg pl-11 pr-4 py-3 outline-none focus:bg-slate-100 transition-all font-bold uppercase tracking-widest placeholder:text-slate-300"
                                 />
                             </div>
                         </div>
@@ -218,8 +217,8 @@ export function ContractReferenceCard({
                                                 </div>
                                                 <div className="mt-2 flex items-center gap-3">
                                                     <span className={cn(
-                                                        "px-2 py-0.5 rounded-sm text-[8px] font-black uppercase tracking-widest border",
-                                                        c.status === 'approved' ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-slate-100 text-slate-500 border-slate-200"
+                                                        "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest",
+                                                        c.status === 'approved' ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"
                                                     )}>
                                                         {c.status}
                                                     </span>

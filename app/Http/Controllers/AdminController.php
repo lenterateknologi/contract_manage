@@ -110,6 +110,15 @@ class AdminController extends Controller
         return back()->with('success', 'Role deleted successfully.');
     }
 
+    public function bulkDestroyRole(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        if (empty($ids)) return back();
+
+        Role::whereIn('id', $ids)->delete();
+        return back()->with('success', count($ids) . ' roles deleted successfully.');
+    }
+
     public function roleAccess(Role $role)
     {
         $modules = Module::with(['moduleGroup', 'accessModules' => function ($query) use ($role) {
@@ -143,6 +152,9 @@ class AdminController extends Controller
             'accesses.*.can_create' => 'boolean',
             'accesses.*.can_update' => 'boolean',
             'accesses.*.can_delete' => 'boolean',
+            'accesses.*.can_approve' => 'boolean',
+            'accesses.*.can_bulk_approve' => 'boolean',
+            'accesses.*.can_bulk_delete' => 'boolean',
         ]);
 
         foreach ($data['accesses'] as $accessData) {
@@ -156,6 +168,9 @@ class AdminController extends Controller
                     'can_create' => $accessData['can_create'],
                     'can_update' => $accessData['can_update'],
                     'can_delete' => $accessData['can_delete'],
+                    'can_approve' => $accessData['can_approve'] ?? false,
+                    'can_bulk_approve' => $accessData['can_bulk_approve'] ?? false,
+                    'can_bulk_delete' => $accessData['can_bulk_delete'] ?? false,
                 ]
             );
         }
@@ -302,6 +317,20 @@ class AdminController extends Controller
         return back()->with('success', 'User deleted successfully.');
     }
 
+    public function bulkDestroyUser(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        if (empty($ids)) return back();
+
+        // Prevent deleting yourself
+        if (in_array(Auth::id(), $ids)) {
+            return back()->with('error', 'Cannot delete yourself in bulk operation.');
+        }
+
+        User::whereIn('id', $ids)->delete();
+        return back()->with('success', count($ids) . ' users deleted successfully.');
+    }
+
     public function contractTypes(Request $request)
     {
         $query = ContractType::query()
@@ -397,6 +426,7 @@ class AdminController extends Controller
             'description' => 'nullable|string',
             'is_active' => 'boolean',
             'display_mode' => 'nullable|string|in:interactive,pdf',
+            'allow_info_edit' => 'boolean',
         ]);
 
         ContractStatus::create($data);
@@ -415,6 +445,7 @@ class AdminController extends Controller
             'description' => 'nullable|string',
             'is_active' => 'boolean',
             'display_mode' => 'nullable|string|in:interactive,pdf',
+            'allow_info_edit' => 'boolean',
         ]);
 
         $status->update($data);
@@ -493,6 +524,15 @@ class AdminController extends Controller
         $department->delete();
 
         return back()->with('success', 'Department deleted successfully.');
+    }
+
+    public function bulkDestroyDepartment(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        if (empty($ids)) return back();
+
+        Department::whereIn('id', $ids)->delete();
+        return back()->with('success', count($ids) . ' departments deleted successfully.');
     }
 
     public function vendors(Request $request)
@@ -651,6 +691,60 @@ class AdminController extends Controller
         $vendor->delete();
 
         return back()->with('success', 'Vendor deleted successfully.');
+    }
+
+    public function bulkDestroyStatuses(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        if (empty($ids)) return back();
+
+        ContractStatus::whereIn('id', $ids)->delete();
+        return back()->with('success', count($ids) . ' statuses deleted successfully.');
+    }
+
+    public function bulkDestroyContractTypes(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        if (empty($ids)) return back();
+
+        ContractType::whereIn('id', $ids)->delete();
+        return back()->with('success', count($ids) . ' contract types deleted successfully.');
+    }
+
+    public function bulkDestroyModules(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        if (empty($ids)) return back();
+
+        Module::whereIn('id', $ids)->delete();
+        return back()->with('success', count($ids) . ' modules deleted successfully.');
+    }
+
+    public function bulkDestroyModuleGroups(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        if (empty($ids)) return back();
+
+        ModuleGroup::whereIn('id', $ids)->delete();
+        return back()->with('success', count($ids) . ' module groups deleted successfully.');
+    }
+
+    public function bulkDestroyWorkflows(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        if (empty($ids)) return back();
+
+        Workflow::whereIn('id', $ids)->delete();
+        return back()->with('success', count($ids) . ' workflows deleted successfully.');
+    }
+
+    public function bulkDestroyVendor(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        if (empty($ids)) return back();
+
+        Vendor::whereIn('id', $ids)->delete();
+        return back()->with('success', count($ids) . ' vendors deleted successfully.');
     }
 
     public function workflows(Request $request)

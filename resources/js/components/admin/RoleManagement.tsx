@@ -1,4 +1,5 @@
 import { useToast } from '@/components/contracts/Toast';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { Column, DataTable } from '@/components/ui/DataTable';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,17 +8,16 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { router, useForm } from '@inertiajs/react';
 import { Key, LayoutGrid, Plus, ShieldCheck, Trash2 } from 'lucide-react';
 import React, { useMemo } from 'react';
-import { FormSection, ManagementForm } from './ManagementForm';
-import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
+import { ManagementForm } from './ManagementForm';
 
 interface RoleManagementProps {
     roles: any;
     filters: any;
 }
 
-export function RoleManagement({ roles, filters }: RoleManagementProps) {
+export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>) {
     const { showToast } = useToast();
-    const { canCreate, canUpdate, canDelete } = usePermissions('ADMIN_ROLES');
+    const { canCreate, canDelete } = usePermissions('ADMIN_ROLES');
     const [isFormView, setIsFormView] = React.useState(false);
     const [editingRole, setEditingRole] = React.useState<any>(null);
     const [isConfirmOpen, setIsConfirmOpen] = React.useState(false);
@@ -27,20 +27,27 @@ export function RoleManagement({ roles, filters }: RoleManagementProps) {
         description: '',
     });
 
-    const filterConfig = useMemo(() => [
-        {
-            label: 'Tanggal Registrasi',
-            key: 'created',
-            type: 'date-range'
-        }
-    ], []);
+    const filterConfig = useMemo(
+        () => [
+            {
+                label: 'Tanggal Registrasi',
+                key: 'created',
+                type: 'date-range',
+            },
+        ],
+        [],
+    );
 
     const handleFilterChange = (newFilters: Record<string, any>) => {
-        router.get(window.location.pathname, { 
-            ...filters, 
-            ...newFilters, 
-            page: 1 
-        }, { preserveState: true, replace: true });
+        router.get(
+            window.location.pathname,
+            {
+                ...filters,
+                ...newFilters,
+                page: 1,
+            },
+            { preserveState: true, replace: true },
+        );
     };
 
     const handleReset = () => {
@@ -55,12 +62,14 @@ export function RoleManagement({ roles, filters }: RoleManagementProps) {
                 sortable: true,
                 cell: (row) => (
                     <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-none bg-black/5 dark:bg-white/5 text-black/30 dark:text-white/30 group-hover:bg-black dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-black transition-colors border border-black/10 dark:border-white/10">
-                            <ShieldCheck size={14} />
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-black/[0.05] bg-black/[0.03] text-black/30 transition-colors group-hover:text-black dark:border-white/[0.05] dark:bg-white/[0.03] dark:text-white/30 dark:group-hover:text-white">
+                            <ShieldCheck size={18} />
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-[11px] font-black uppercase tracking-tight text-black dark:text-white leading-none mb-1">{row.name}</span>
-                            <span className="text-[9px] font-bold text-black/40 dark:text-white/40 uppercase tracking-widest leading-none">Terdaftar: {new Date(row.created_at).toLocaleDateString('id-ID')}</span>
+                            <span className="text-[13px] leading-tight font-bold text-black dark:text-white">{row.name}</span>
+                            <span className="mt-0.5 text-[10px] font-bold tracking-widest text-black/30 uppercase dark:text-white/30">
+                                TERDAFTAR: {new Date(row.created_at).toLocaleDateString('id-ID')}
+                            </span>
                         </div>
                     </div>
                 ),
@@ -68,29 +77,36 @@ export function RoleManagement({ roles, filters }: RoleManagementProps) {
             {
                 header: 'Deskripsi Otoritas',
                 accessorKey: 'description',
-                cell: (row) => (row.description ? (
-                    <span className="text-[10px] font-bold text-black/60 dark:text-white/60 uppercase tracking-tight leading-tight block max-w-sm truncate">
-                        {row.description}
-                    </span>
-                ) : <span className="text-black/30 dark:text-white/30 italic text-[10px] font-bold uppercase tracking-widest leading-none">TANPA DESKRIPSI</span>),
+                cell: (row) =>
+                    row.description ? (
+                        <span className="block max-w-sm truncate text-[11px] leading-tight font-bold tracking-tight text-black/40 uppercase dark:text-white/40">
+                            {row.description}
+                        </span>
+                    ) : (
+                        <span className="text-[10px] leading-none font-bold tracking-widest text-black/20 uppercase italic dark:text-white/20">
+                            —
+                        </span>
+                    ),
             },
             {
                 header: 'Pemetaan Akses',
                 accessorKey: 'role_config',
                 cell: (row) => (
                     <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                        <button
+                        <Button
+                            variant="outline"
                             onClick={() => router.get(`/admin/roles/${row.id}/access`)}
-                            className="bg-white dark:bg-black border border-black dark:border-white h-7 px-3 text-[9px] font-black text-black dark:text-white uppercase transition-all hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black active:scale-95 flex items-center gap-1.5 rounded-none"
+                            className="flex h-8 items-center gap-2 px-4 text-[9px] active:scale-95"
                         >
-                            <Key size={10} /> Konfigurasi Modul
-                        </button>
-                        <button
+                            <Key size={11} className="opacity-40" /> Hak Akses
+                        </Button>
+                        <Button
+                            variant="outline"
                             onClick={() => router.get(`/admin/roles/${row.id}/navigation`)}
-                            className="bg-white dark:bg-black border border-black dark:border-white h-7 px-3 text-[9px] font-black text-black dark:text-white uppercase transition-all hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black active:scale-95 flex items-center gap-1.5 rounded-none"
+                            className="flex h-8 items-center gap-2 px-4 text-[9px] active:scale-95"
                         >
-                            <LayoutGrid size={10} /> Atur Navigasi
-                        </button>
+                            <LayoutGrid size={11} className="opacity-40" /> Navigasi
+                        </Button>
                     </div>
                 ),
             },
@@ -148,71 +164,82 @@ export function RoleManagement({ roles, filters }: RoleManagementProps) {
                             type="button"
                             variant="ghost"
                             onClick={() => setIsConfirmOpen(true)}
-                            className="h-8 rounded-none px-4 text-[10px] font-black tracking-widest text-black dark:text-white uppercase transition-all hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black border border-black dark:border-white"
+                            className="h-10 rounded-xl border border-black/[0.1] px-6 text-[10px] font-black tracking-widest text-black uppercase shadow-sm transition-all hover:bg-black hover:text-white dark:border-white/[0.1] dark:text-white dark:hover:bg-white dark:hover:text-black"
                         >
                             <Trash2 size={14} className="mr-2" /> Hapus Role
                         </Button>
                     )
                 }
             >
-                <ConfirmationModal 
+                <ConfirmationModal
                     open={isConfirmOpen}
                     onClose={() => setIsConfirmOpen(false)}
                     onConfirm={() => {
                         setIsConfirmOpen(false);
-                        router.delete(`/admin/roles/${editingRole.id}`, { 
+                        router.delete(`/admin/roles/${editingRole.id}`, {
                             onSuccess: () => {
                                 closeForm();
                                 showToast('Role telah dihapus', 'success');
-                            }
+                            },
                         });
                     }}
                     title="Hapus Role Otoritas"
                     description={`Apakah Anda yakin ingin menghapus role ${editingRole?.name}? Seluruh mapping hak akses untuk role ini akan dihapus permanen.`}
                     confirmText="Hapus Role"
                 />
-                <div className="grid grid-cols-1 gap-10 md:grid-cols-12">
-                    <div className="md:col-span-8 space-y-10">
-                        <div className="space-y-4">
-                            <h3 className="text-[10px] font-black tracking-[0.2em] text-black dark:text-white uppercase border-b border-black dark:border-white pb-2">Identitas Role</h3>
-                            <div className="grid grid-cols-1 gap-6">
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-black tracking-widest text-black/50 dark:text-white/50 uppercase leading-none">Nama Jabatan / Role</Label>
+                <div className="grid grid-cols-1 gap-12 md:grid-cols-12">
+                    <div className="space-y-10 md:col-span-8">
+                        <div className="space-y-6">
+                            <h3 className="ml-1 border-b border-black/[0.05] pb-3 text-[11px] font-black tracking-[0.2em] text-black uppercase dark:border-white/[0.05] dark:text-white">
+                                Identitas Role
+                            </h3>
+                            <div className="grid grid-cols-1 gap-8 p-1">
+                                <div className="space-y-2">
+                                    <Label className="ml-1 text-[10px] leading-none font-black tracking-widest text-black/40 uppercase dark:text-white/40">
+                                        Nama Jabatan / Role
+                                    </Label>
                                     <Input
                                         value={form.data.name}
                                         onChange={(e) => form.setData('name', e.target.value)}
                                         required
                                         placeholder="CONTOH: LEGAL MANAGER"
-                                        className="h-10 rounded-none border-black dark:border-white bg-white dark:bg-black px-4 text-sm font-black tracking-tight uppercase focus-visible:ring-0 transition-colors text-black dark:text-white placeholder:text-black/20"
+                                        className="h-10 rounded-xl border-black/[0.08] bg-black/[0.03] px-5 text-sm font-black tracking-tight text-black uppercase shadow-sm transition-all placeholder:text-black/20 focus:border-black focus-visible:ring-0 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white dark:focus:border-white"
                                     />
                                 </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-[10px] font-black tracking-widest text-black/50 dark:text-white/50 uppercase leading-none">Penjelasan Fungsi</Label>
+                                <div className="space-y-2">
+                                    <Label className="ml-1 text-[10px] leading-none font-black tracking-widest text-black/40 uppercase dark:text-white/40">
+                                        Penjelasan Fungsi
+                                    </Label>
                                     <Input
                                         value={form.data.description}
                                         onChange={(e) => form.setData('description', e.target.value)}
                                         placeholder="Tuliskan deskripsi tanggung jawab role ini..."
-                                        className="h-10 rounded-none border-black dark:border-white bg-white dark:bg-black px-4 text-[11px] font-bold uppercase tracking-tight focus-visible:ring-0 transition-colors text-black dark:text-white placeholder:text-black/20"
+                                        className="h-10 rounded-xl border-black/[0.08] bg-black/[0.03] px-5 text-[11px] font-bold tracking-tight text-black uppercase shadow-sm transition-all placeholder:text-black/20 focus:border-black focus-visible:ring-0 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white dark:focus:border-white"
                                     />
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="md:col-span-4 flex flex-col pt-6 md:pt-0">
-                         <div className="border border-black dark:border-white p-6 bg-black/5 dark:bg-white/5">
-                            <div className="flex items-center gap-2 mb-4">
-                                <ShieldCheck size={16} className="text-black/30 dark:text-white/30" />
-                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-black/30 dark:text-white/30">Pusat Otoritas</span>
+                    <div className="flex flex-col pt-6 md:col-span-4 md:pt-0">
+                        <div className="rounded-xl border border-black/[0.05] bg-black/[0.02] p-8 shadow-sm dark:border-white/[0.05] dark:bg-white/[0.02]">
+                            <div className="mb-8 flex items-center gap-3">
+                                <ShieldCheck size={18} className="text-black/20 dark:text-white/20" />
+                                <span className="text-[10px] font-black tracking-[0.3em] text-black/30 uppercase dark:text-white/30">
+                                    Pusat Otoritas
+                                </span>
                             </div>
-                            <div className="space-y-4 border-y border-black dark:border-white border-dashed py-4 mb-4">
-                                <span className="text-[12px] font-black uppercase text-black dark:text-white block tracking-tight">{form.data.name || 'NAMA ROLE'}</span>
-                                <p className="text-[9px] font-bold text-black/40 dark:text-white/40 uppercase leading-relaxed tracking-widest italic">
+                            <div className="mb-8 space-y-6 border-y border-dashed border-black/[0.05] py-8 dark:border-white/[0.05]">
+                                <span className="block text-sm leading-tight font-black tracking-tight text-black uppercase dark:text-white">
+                                    {form.data.name || 'NAMA ROLE'}
+                                </span>
+                                <p className="text-[10px] leading-relaxed font-bold tracking-widest text-black/40 uppercase italic dark:text-white/40">
                                     {form.data.description || 'Deskripsi belum diatur untuk role ini...'}
                                 </p>
                             </div>
-                            <p className="text-[8px] font-bold text-black/50 dark:text-white/50 uppercase leading-normal tracking-wider">
-                                Role menentukan hak akses pengguna terhadap modul-modul sistem. Setelah menyimpan, Anda dapat mengatur hak akses spesifik per modul.
+                            <p className="text-[10px] leading-normal font-bold tracking-tight text-black/30 uppercase dark:text-white/30">
+                                Role menentukan hak akses pengguna terhadap modul-modul sistem. Setelah menyimpan, Anda dapat mengatur hak akses
+                                spesifik per modul.
                             </p>
                         </div>
                     </div>
@@ -236,15 +263,34 @@ export function RoleManagement({ roles, filters }: RoleManagementProps) {
             onRefresh={handleReset}
             headerActions={
                 canCreate && (
-                    <Button
-                        onClick={openCreate}
-                        className="h-9 gap-2 rounded-none bg-black dark:bg-white px-6 text-[11px] font-black uppercase tracking-widest text-white dark:text-black border border-black dark:border-white shadow-none hover:opacity-90 transition-all active:scale-95"
-                    >
-                        <Plus className="h-3.5 w-3.5" /> Registrasi Role Baru
+                    <Button variant="primary" onClick={openCreate} className="h-10 px-8 shadow-xl active:scale-95">
+                        <Plus size={14} /> Registrasi Role Baru
                     </Button>
                 )
             }
             onRowClick={openEdit}
+            bulkActions={
+                canDelete
+                    ? [
+                          {
+                              label: 'Hapus Terpilih',
+                              icon: Trash2,
+                              variant: 'destructive',
+                              onClick: (ids) => {
+                                  if (confirm(`Hapus ${ids.length} role terpilih?`)) {
+                                      router.post(
+                                          '/admin/roles/bulk-delete',
+                                          { ids },
+                                          {
+                                              onSuccess: () => showToast(`${ids.length} role telah dihapus`, 'success'),
+                                          },
+                                      );
+                                  }
+                              },
+                          },
+                      ]
+                    : undefined
+            }
             pagination={{
                 currentPage: roles.current_page || 1,
                 lastPage: roles.last_page || 1,

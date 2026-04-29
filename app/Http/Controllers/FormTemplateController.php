@@ -463,6 +463,15 @@ class FormTemplateController extends Controller
 
         return back()->with('success', 'Template form berhasil dihapus.');
     }
+
+    public function bulkDestroy(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        if (empty($ids)) return back();
+
+        FormTemplate::whereIn('id', $ids)->delete();
+        return back()->with('success', count($ids) . ' templates deleted successfully.');
+    }
     
     /**
      * Duplicate a form template with all its fields.

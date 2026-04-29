@@ -970,9 +970,8 @@ function FormBuilder({ template }: Props) {
                         {template.id && (
                             <Button
                                 variant="outline"
-                                size="sm"
                                 asChild
-                                className="h-8 text-[10px] font-black tracking-wider uppercase transition-all hover:bg-green-50 hover:text-green-700 active:scale-95"
+                                className="h-8 text-[10px] active:scale-95 px-4"
                             >
                                 <a href={route('admin.form-templates.fill', template.id)} target="_blank" rel="noopener noreferrer">
                                     <Eye size={14} className="mr-1.5" /> Preview
@@ -983,10 +982,9 @@ function FormBuilder({ template }: Props) {
                         <Button
                             type="button"
                             variant="outline"
-                            size="sm"
                             onClick={handleTestDownload}
                             disabled={saving || !!pdfJobId}
-                            className="h-8 text-[10px] font-black tracking-wider uppercase transition-all hover:bg-orange-50 hover:text-orange-700 active:scale-95"
+                            className="h-8 text-[10px] active:scale-95 px-4"
                         >
                             {saving && !!pdfJobId ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : <Download size={14} className="mr-1.5" />}
                             {saving && !!pdfJobId ? 'Generating...' : 'Download'}
@@ -994,8 +992,8 @@ function FormBuilder({ template }: Props) {
 
                         <Button
                             type="submit"
-                            size="sm"
-                            className="bg-primary text-primary-foreground shadow-primary/20 hover:bg-primary/90 h-8 text-[10px] font-black tracking-wider uppercase shadow-lg active:scale-95"
+                            variant="primary"
+                            className="h-8 text-[10px] shadow-xl active:scale-95 px-6"
                             disabled={processing}
                         >
                             <Save size={14} className="mr-1.5" /> {processing ? 'Saving...' : 'Simpan'}

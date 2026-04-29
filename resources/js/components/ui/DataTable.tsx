@@ -1,24 +1,23 @@
 import React, { useState, useMemo } from 'react';
 import {
     ChevronDown, ChevronUp, ChevronsUpDown,
-    Search, Filter, SlidersHorizontal, X,
+    Filter,
     RefreshCcw, ChevronLeft, ChevronRight,
-    Loader2, Inbox,
-    Check
+    Loader2, Inbox
 } from 'lucide-react';
 import { Button } from './button';
-import { Input } from './input';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from './dropdown-menu';
 import { cn } from '@/lib/utils';
-import { Badge } from './badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from './dialog';
+import { Checkbox } from './checkbox';
 import { FilterSheet } from './FilterSheet';
+import { SearchInput } from './search-input';
 
+/**
+ * DataTable Standard Component
+ * ----------------------------
+ * Komponen ini adalah standar tunggal untuk semua tabel di dalam proyek.
+ * Dilarang membuat implementasi tabel baru secara manual.
+ * Gunakan props yang tersedia untuk kustomisasi.
+ */
 export interface Column<T> {
     header: string;
     accessorKey: keyof T | string;
@@ -42,7 +41,12 @@ interface DataTableProps<T> {
         options?: { label: string; value: any }[];
     }[];
     rowActions?: (row: T) => React.ReactNode;
-    bulkActions?: (selectedRows: T[]) => React.ReactNode;
+    bulkActions?: ((selectedRows: T[]) => React.ReactNode) | {
+        label: string;
+        icon: any;
+        onClick: (ids: (string | number)[], rows: T[]) => void;
+        variant?: 'default' | 'destructive' | 'outline' | 'ghost' | 'link';
+    }[];
     pagination?: {
         currentPage: number;
         lastPage: number;
@@ -156,58 +160,81 @@ export function DataTable<T extends Record<string, any>>({
     const hasToolbar = title || searchKey || (filters && filters.length > 0) || onRefresh || headerActions || (bulkActions && selectedIds.size > 0);
 
     return (
-        <div className="flex flex-col h-full bg-white dark:bg-black overflow-hidden shadow-none font-sans">
-            {/* Toolbar — only rendered when there is content */}
+        <div className="flex flex-col h-full bg-white dark:bg-background overflow-hidden shadow-none font-sans border-none">
+            {/* Premium Header Toolbar — Unified with Daftar Kontrak Style */}
             {hasToolbar && (
-                <div className="px-4 py-3 flex items-center gap-4 border-b border-black dark:border-white bg-white dark:bg-black">
-                    {title && (
-                        <div className="flex-shrink-0">
-                            {typeof title === 'string' ? (
-                                <h2 className="text-[13px] font-bold text-black dark:text-white">{title}</h2>
-                            ) : title}
-                        </div>
-                    )}
-
-                    {searchKey && (
-                        <div className="relative flex-1 max-w-sm">
-                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-black/30 dark:text-white/30 transition-colors" />
-                            <Input
+                <div className="px-5 py-4 flex items-center justify-between gap-6 border-b border-black/[0.05] dark:border-white/[0.05] bg-white dark:bg-background sticky top-0 z-20">
+                    <div className="flex items-center gap-6 flex-1">
+                        {searchKey && (
+                            <SearchInput
+                                containerClassName="max-w-sm flex-1"
                                 placeholder={searchPlaceholder}
-                                className="pl-10 h-10 border-black dark:border-white bg-white dark:bg-black focus:ring-0 rounded-none text-xs font-bold text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
-                        </div>
-                    )}
-                    <div className="flex items-center gap-1.5 ml-auto">
+                        )}
+
+
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        {bulkActions && selectedIds.size > 0 && (
+                            <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-4 duration-300 mr-4 pr-4 border-r border-black/[0.05] dark:border-white/[0.05]">
+                                <div className="flex flex-col items-end">
+                                    <span className="text-[9px] font-black text-black dark:text-white tracking-widest leading-none">{selectedIds.size} Selected</span>
+                                    <button onClick={() => setSelectedIds(new Set())} className="text-[8px] font-bold text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors mt-1">Clear</button>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    {typeof bulkActions === 'function' ? (
+                                        bulkActions(data.filter(row => selectedIds.has(getRowId(row))))
+                                    ) : (
+                                        bulkActions.map((action, idx) => (
+                                            <Button
+                                                key={idx}
+                                                variant={action.variant || 'outline'}
+                                                size="sm"
+                                                className="h-8 gap-2 rounded-lg text-[9px] font-black uppercase tracking-widest border-black/10 dark:border-white/10"
+                                                onClick={() => {
+                                                    const selectedRows = data.filter(row => selectedIds.has(getRowId(row)));
+                                                    action.onClick(Array.from(selectedIds), selectedRows);
+                                                }}
+                                            >
+                                                {action.icon && <action.icon className="h-3 w-3" />}
+                                                {action.label}
+                                            </Button>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
                         {filters && filters.length > 0 && (
                             <>
-                                <button
+                                <Button
+                                    variant="outline"
                                     onClick={() => setIsFilterDialogOpen(true)}
                                     className={cn(
-                                        "relative inline-flex items-center gap-2 h-9 px-4 rounded-none border text-[11px] font-bold transition-all active:scale-95 shadow-none",
-                                        activeFilterCount > 0
-                                            ? "border-black dark:border-white bg-black dark:bg-white text-white dark:text-black"
-                                            : "border-black dark:border-white bg-white dark:bg-black text-black dark:text-white hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black"
+                                        "relative h-10 px-4 transition-all active:scale-95",
+                                        activeFilterCount > 0 && "bg-[var(--primary)] text-white border-[var(--primary)]"
                                     )}
                                 >
-                                    <SlidersHorizontal className="h-3.5 w-3.5" />
+                                    <Filter size={14} />
                                     Filter
                                     {activeFilterCount > 0 && (
                                         <span className={cn(
-                                            "flex h-4 w-4 items-center justify-center text-[8px] font-bold border border-current",
-                                            activeFilterCount > 0 ? "bg-transparent" : ""
+                                            "ml-1 flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[9px] font-bold",
+                                            activeFilterCount > 0 ? "bg-white text-[var(--primary)]" : "bg-[var(--primary)] text-white"
                                         )}>
                                             {activeFilterCount}
                                         </span>
                                     )}
-                                </button>
+                                </Button>
 
                                 <FilterSheet
                                     isOpen={isFilterDialogOpen}
                                     onOpenChange={setIsFilterDialogOpen}
-                                    title="Filter Data"
-                                    description="Sesuaikan parameter untuk memfilter hasil pada tabel."
+                                    title="Filter Parameters"
+                                    description="Refine your dataset with specific criteria."
                                     categories={filters as any}
                                     activeFilters={activeFilters}
                                     onFilterChange={toggleFilterValue}
@@ -218,48 +245,59 @@ export function DataTable<T extends Record<string, any>>({
                         )}
 
                         {onRefresh && (
-                            <Button variant="ghost" size="icon" onClick={onRefresh} disabled={loading} className="h-9 w-9 rounded-none text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/5">
-                                <RefreshCcw className={cn("h-4 w-4", loading && "animate-spin")} />
+                            <Button variant="ghost" size="icon" onClick={onRefresh} disabled={loading} className="h-10 w-10 rounded-lg text-black/40 dark:text-white/40 hover:bg-black/5 dark:hover:bg-white/5 border border-black/[0.05] dark:border-white/[0.05]">
+                                <RefreshCcw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
                             </Button>
                         )}
 
-                        {headerActions && <div className="flex items-center gap-1.5">{headerActions}</div>}
-
-                        {bulkActions && selectedIds.size > 0 && (
-                            <div className="flex items-center gap-3 animate-in fade-in">
-                                <div className="h-4 w-px bg-sidebar-border" />
-                                {bulkActions(data.filter(row => selectedIds.has(getRowId(row))))}
-                            </div>
-                        )}
+                        {headerActions && <div className="flex items-center gap-2">{headerActions}</div>}
                     </div>
                 </div>
             )}
 
+
             {/* Table */}
-            <div className="flex-1 overflow-auto relative bg-white dark:bg-black">
+            <div className="flex-1 overflow-auto relative bg-white dark:bg-background">
                 {loading && (
-                    <div className="absolute inset-0 bg-white/50 dark:bg-black/50 backdrop-blur-[2px] z-20 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-white/50 dark:bg-background/50 backdrop-blur-[2px] z-20 flex items-center justify-center">
                         <Loader2 className="h-6 w-6 text-black dark:text-white animate-spin" />
                     </div>
                 )}
 
                 <table className="w-full text-left border-collapse min-w-[800px]">
-                    <thead className="sticky top-0 z-10 bg-white dark:bg-black border-b border-black dark:border-white">
+                    <thead className="sticky top-0 z-10 bg-white dark:bg-background border-b border-black/[0.05] dark:border-white/[0.05]">
                         <tr>
+                            {bulkActions && (
+                                <th className="w-12 px-6 py-6">
+                                    <div className="flex justify-center">
+                                        <Checkbox
+                                            className="h-4 w-4 rounded-md border-black/20 dark:border-white/20 data-[state=checked]:bg-black dark:data-[state=checked]:bg-white data-[state=checked]:border-black dark:data-[state=checked]:border-white"
+                                            checked={selectedIds.size > 0 && selectedIds.size === data.length}
+                                            onCheckedChange={(checked) => {
+                                                if (checked) setSelectedIds(new Set(data.map(row => getRowId(row))));
+                                                else setSelectedIds(new Set());
+                                            }}
+                                        />
+                                    </div>
+                                </th>
+                            )}
                             {columns.map((col, i) => (
                                 <th
                                     key={i}
                                     className={cn(
-                                        "px-4 py-4 text-[11px] font-bold text-black dark:text-white uppercase tracking-wider",
+                                        "px-6 py-6 text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-[0.2em]",
                                         col.thClassName
                                     )}
                                 >
-                                    <div className="flex items-center gap-1.5 group/th">
+                                    <div className="flex items-center gap-2 group/th">
                                         {col.header}
                                         {col.sortable && (
                                             <button
                                                 onClick={() => handleSort(col.accessorKey as string)}
-                                                className="opacity-20 group-hover/th:opacity-100 transition-opacity"
+                                                className={cn(
+                                                    "opacity-0 group-hover/th:opacity-100 transition-all active:scale-90",
+                                                    sortConfig.key === col.accessorKey && "opacity-100"
+                                                )}
                                             >
                                                 {sortConfig.key === col.accessorKey ? (
                                                     sortConfig.direction === 'asc' ? <ChevronUp size={12} className="text-black dark:text-white" /> : <ChevronDown size={12} className="text-black dark:text-white" />
@@ -269,16 +307,16 @@ export function DataTable<T extends Record<string, any>>({
                                     </div>
                                 </th>
                             ))}
-                            {rowActions && <th className="px-4 py-4 text-right text-[11px] font-medium text-black dark:text-white">Opsi</th>}
+                            {rowActions && <th className="px-6 py-6 text-right text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-[0.2em]">Aksi</th>}
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-sidebar-border/30">
+                    <tbody className="divide-y divide-black/[0.02] dark:divide-white/[0.02]">
                         {processedData.length === 0 && !loading ? (
                             <tr>
-                                <td colSpan={columns.length + (rowActions ? 2 : 1)} className="py-32 text-center">
-                                    <div className="flex flex-col items-center gap-4 opacity-100 text-black dark:text-white">
-                                        <Inbox size={48} strokeWidth={1} />
-                                        <span className="text-[12px] font-bold uppercase tracking-widest">Tidak ada data ditemukan</span>
+                                <td colSpan={columns.length + (rowActions ? 2 : 1)} className="py-24 text-center">
+                                    <div className="flex flex-col items-center gap-4 text-black/20 dark:text-white/20">
+                                        <Inbox size={40} strokeWidth={1.5} />
+                                        <span className="text-[10px] font-black uppercase tracking-[0.3em]">Data Kosong</span>
                                     </div>
                                 </td>
                             </tr>
@@ -288,17 +326,34 @@ export function DataTable<T extends Record<string, any>>({
                                     <tr
                                         onClick={() => onRowClick?.(row)}
                                         className={cn(
-                                            "hover:bg-black/5 dark:hover:bg-white/5 transition-all group cursor-pointer border-l-[3px] border-l-transparent active:scale-[0.998]",
-                                            (selectedRowId === getRowId(row) || (isRowExpanded && isRowExpanded(row))) && "bg-black/5 dark:bg-white/10 border-l-black dark:border-l-white"
+                                            "hover:bg-black/[0.01] dark:hover:bg-white/[0.01] transition-all group cursor-pointer active:scale-[0.999]",
+                                            (selectedRowId === getRowId(row) || (isRowExpanded && isRowExpanded(row))) && "bg-black/[0.02] dark:bg-white/[0.02]",
+                                            selectedIds.has(getRowId(row)) && "bg-black/[0.03] dark:bg-white/[0.03]"
                                         )}
                                     >
+                                        {bulkActions && (
+                                            <td className="px-6 py-5" onClick={e => e.stopPropagation()}>
+                                                <div className="flex justify-center">
+                                                    <Checkbox
+                                                        className="h-4 w-4 rounded-md border-black/10 dark:border-white/10 data-[state=checked]:bg-black dark:data-[state=checked]:bg-white data-[state=checked]:border-black dark:data-[state=checked]:border-white"
+                                                        checked={selectedIds.has(getRowId(row))}
+                                                        onCheckedChange={(checked) => {
+                                                            const newSelection = new Set(selectedIds);
+                                                            if (checked) newSelection.add(getRowId(row));
+                                                            else newSelection.delete(getRowId(row));
+                                                            setSelectedIds(newSelection);
+                                                        }}
+                                                    />
+                                                </div>
+                                            </td>
+                                        )}
                                         {columns.map((col, j) => (
-                                            <td key={j} className={cn("px-4 py-4 text-[12px] text-black dark:text-white font-bold tracking-tight", col.className)}>
+                                            <td key={j} className={cn("px-6 py-5 text-[12px] text-black dark:text-white font-bold tracking-tight", col.className)}>
                                                 {col.cell ? col.cell(row) : (String(row[col.accessorKey]) || '—')}
                                             </td>
                                         ))}
                                         {rowActions && (
-                                            <td className="px-4 py-2 text-right" onClick={e => e.stopPropagation()}>
+                                            <td className="px-6 py-5 text-right" onClick={e => e.stopPropagation()}>
                                                 <div className="flex justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-all">
                                                     {rowActions(row)}
                                                 </div>
@@ -307,7 +362,7 @@ export function DataTable<T extends Record<string, any>>({
                                     </tr>
                                     {renderExpandedRow && isRowExpanded?.(row) && (
                                         <tr>
-                                            <td colSpan={columns.length + (rowActions ? 2 : 1)} className="p-0 border-b border-black dark:border-white bg-black/5 dark:bg-white/5">
+                                            <td colSpan={columns.length + (rowActions ? 2 : 1)} className="p-0 bg-black/[0.02] dark:bg-white/[0.02]">
                                                 {renderExpandedRow(row)}
                                             </td>
                                         </tr>
@@ -319,73 +374,55 @@ export function DataTable<T extends Record<string, any>>({
                 </table>
             </div>
 
-            {/* Pagination — Unified Industrial Style */}
+            {/* Professional Pagination — Minimalist Text Focused */}
             {pagination && (
-                <div className="mt-auto flex flex-col items-center justify-between gap-4 border-t border-black dark:border-white px-6 py-4 sm:flex-row w-full bg-white dark:bg-black">
+                <div className="mt-auto px-8 py-8 w-full flex items-center justify-between border-t border-black/[0.05] dark:border-white/[0.05] bg-white dark:bg-background">
+                    {/* Left: Info & Rows Per Page */}
                     <div className="flex items-center gap-6">
-                        <div className="text-black dark:text-white text-[11px] font-bold uppercase tracking-wider">
-                            {pagination.from} - {pagination.to} / {pagination.total}
-                        </div>
-
-                        <div className="flex items-center gap-3 border-l border-black dark:border-white pl-6">
-                            <span className="text-black dark:text-white text-[11px] font-bold uppercase">Rows</span>
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-black text-black/30 dark:text-white/30 uppercase tracking-widest">Rows:</span>
                             <select
                                 value={pagination.perPage}
                                 onChange={(e) => pagination.onPerPageChange(Number(e.target.value))}
-                                className="bg-transparent border-none text-black dark:text-white font-black focus:ring-0 rounded-none px-3 py-1.5 text-[11px] outline-none cursor-pointer"
+                                className="bg-transparent border-none text-black dark:text-white font-black focus:ring-0 rounded-lg px-1 py-1 text-[10px] outline-none cursor-pointer hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
                             >
-                                {[10, 25, 50, 100].map(v => <option key={v} value={v} className="bg-white dark:bg-black">{v}</option>)}
+                                {[10, 25, 50, 100].map(v => <option key={v} value={v} className="bg-white dark:bg-background">{v}</option>)}
                             </select>
+                        </div>
+
+                        <div className="flex items-center gap-2 text-black/60 dark:text-white/60 text-[10px] font-black uppercase tracking-widest">
+                            <span className="opacity-40">Showing</span>
+                            <span>{pagination.from} - {pagination.to} / {pagination.total}</span>
                         </div>
                     </div>
 
+                    {/* Right: Modern Text Navigation */}
                     <div className="flex items-center gap-2">
-                        <button
+                        <Button
+                            variant="outline"
+                            size="sm"
                             disabled={pagination.currentPage === 1}
                             onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
-                            className={cn(
-                                "h-9 px-4 rounded-none border text-[11px] font-bold uppercase transition-all disabled:opacity-20",
-                                "border-black dark:border-white bg-white dark:bg-black text-black dark:text-white hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black"
-                            )}
+                            className="h-9 px-4 flex items-center gap-2 disabled:opacity-20 transition-all text-[10px]"
                         >
-                            Back
-                        </button>
+                            <ChevronLeft className="h-4 w-4" /> Prev
+                        </Button>
 
-                        <div className="flex items-center gap-1.5 mx-3">
-                             {Array.from({ length: Math.min(pagination.lastPage, 5) }, (_, i) => {
-                                let pageNum = i + 1;
-                                if (pagination.lastPage > 5 && pagination.currentPage > 3) {
-                                    pageNum = pagination.currentPage - 3 + i;
-                                    if (pageNum > pagination.lastPage) pageNum = pagination.lastPage - (4 - i);
-                                }
-                                const isActive = pagination.currentPage === pageNum;
-                                return (
-                                    <button
-                                        key={pageNum}
-                                        onClick={() => pagination.onPageChange(pageNum)}
-                                        className={cn(
-                                            "h-9 min-w-[36px] rounded-none text-[11px] font-black transition-all",
-                                            isActive
-                                                ? "bg-black dark:bg-white text-white dark:text-black"
-                                                : "bg-transparent text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/5"
-                                        )}
-                                    >
-                                        {pageNum}
-                                    </button>
-                                );
-                            })}
+                        <div className="flex items-center gap-1.5 px-3">
+                            <span className="text-[10px] font-black text-black dark:text-white">{pagination.currentPage}</span>
+                            <span className="text-[10px] font-black text-black/20 dark:text-white/20">/</span>
+                            <span className="text-[10px] font-black text-black/40 dark:text-white/40">{pagination.lastPage}</span>
                         </div>
 
-                        <button
+                        <Button
+                            variant="outline"
+                            size="sm"
                             disabled={pagination.currentPage === pagination.lastPage}
                             onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
-                            className={cn(
-                                "h-9 px-4 rounded-none border text-[11px] font-bold uppercase transition-all disabled:opacity-20",
-                                "border-black dark:border-white bg-white dark:bg-black text-black dark:text-white hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black"
-                            )}
+                            className="h-9 px-4 flex items-center gap-2 disabled:opacity-20 transition-all text-[10px]"
                         >
-                            Next
-                        </button>
+                            Next <ChevronRight className="h-4 w-4" />
+                        </Button>
                     </div>
                 </div>
             )}

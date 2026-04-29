@@ -126,24 +126,16 @@ export default function FormFilling({ template }: Props) {
                 <div className="flex items-center gap-3">
                      <div className="hidden items-center gap-1 rounded-full border border-border bg-muted/50 p-1 md:flex">
                          <Button
-                             variant={!showPreview ? "default" : "ghost"}
-                             size="sm"
+                             variant={!showPreview ? "primary" : "outline"}
                              onClick={() => setShowPreview(false)}
-                             className={cn(
-                                 "h-7 px-3 text-[9px] font-black tracking-widest uppercase transition-all",
-                                 !showPreview ? "bg-primary shadow-sm" : "text-muted-foreground hover:bg-muted"
-                             )}
+                             className="h-8 px-4 text-[10px] active:scale-95"
                          >
                              <LayoutIcon size={12} className="mr-1.5" /> Editor
                          </Button>
                          <Button
-                             variant={showPreview ? "default" : "ghost"}
-                             size="sm"
+                             variant={showPreview ? "primary" : "outline"}
                              onClick={() => setShowPreview(true)}
-                             className={cn(
-                                 "h-7 px-3 text-[9px] font-black tracking-widest uppercase transition-all",
-                                 showPreview ? "bg-primary shadow-sm" : "text-muted-foreground hover:bg-muted"
-                             )}
+                             className="h-8 px-4 text-[10px] active:scale-95"
                          >
                              <Eye size={12} className="mr-1.5" /> Preview PDF
                          </Button>
@@ -152,9 +144,10 @@ export default function FormFilling({ template }: Props) {
                      <div className="h-6 w-px bg-border mx-1 hidden md:block" />
  
                      <Button
+                         variant="primary"
                          onClick={handleDownloadPdf}
                          disabled={isExporting}
-                         className="h-9 bg-primary px-6 text-[10px] font-black tracking-widest uppercase shadow-[0_4px_12px_rgba(var(--primary),0.2)] dark:shadow-none transition-all hover:bg-primary/90 active:scale-95 disabled:opacity-50"
+                         className="h-10 px-6 shadow-xl active:scale-95"
                      >
                         {isExporting ? (
                             'Exporting...'
