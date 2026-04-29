@@ -260,7 +260,6 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
             filters={filterConfig as any}
             activeFilters={filters}
             onFilterChange={handleFilterChange}
-            onRefresh={handleReset}
             headerActions={
                 canCreate && (
                     <Button variant="primary" onClick={openCreate} className="h-10 px-8 shadow-xl active:scale-95">

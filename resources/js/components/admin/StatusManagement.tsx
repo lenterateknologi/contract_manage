@@ -12,9 +12,50 @@ import { AlertCircle, CheckCircle2, Palette, Plus, Tags } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 
 interface StatusManagementProps {
-    statuses: any;
-    filters: any;
+    readonly statuses: any;
+    readonly filters: any;
 }
+
+const StatusLabelCell = ({ row }: { readonly row: any }) => (
+    <div className="flex flex-col">
+        <span className="text-[13px] leading-tight font-bold text-black dark:text-white">{row.label}</span>
+        <span className="mt-0.5 font-mono text-[10px] font-bold tracking-widest text-black/30 uppercase dark:text-white/30">
+            {row.code}
+        </span>
+    </div>
+);
+
+const VisualPreviewCell = ({ row }: { readonly row: any }) => (
+    <div className="flex items-center gap-3">
+        <span className="text-[10px] font-black tracking-[0.2em] uppercase" style={{ color: row.color }}>
+            {row.label}
+        </span>
+    </div>
+);
+
+const ShowModeCell = ({ row }: { readonly row: any }) => (
+    <span className="text-[10px] font-black tracking-widest text-black/40 uppercase dark:text-white/40">
+        {row.display_mode === 'pdf' ? 'DOCUMENT PDF' : 'INTERACTIVE FORM'}
+    </span>
+);
+
+const EditInfoCell = ({ row }: { readonly row: any }) => (
+    <div className="flex items-center gap-2">
+        <div className={cn('h-1.5 w-1.5 rounded-full', row.allow_info_edit ? 'bg-black dark:bg-white' : 'bg-black/10 dark:bg-white/10')} />
+        <span className={cn('text-[10px] font-black tracking-widest uppercase', row.allow_info_edit ? 'text-black dark:text-white' : 'text-black/30 dark:text-white/30')}>
+            {row.allow_info_edit ? 'ALLOWED' : 'LOCKED'}
+        </span>
+    </div>
+);
+
+const ActiveCell = ({ row }: { readonly row: any }) => (
+    <div className="flex items-center gap-2">
+        <div className={cn('h-1.5 w-1.5 rounded-full', row.is_active ? 'bg-black dark:bg-white' : 'bg-black/10 dark:bg-white/10')} />
+        <span className={cn('text-[10px] font-black tracking-widest uppercase', row.is_active ? 'text-black dark:text-white' : 'text-black/30 dark:text-white/30')}>
+            {row.is_active ? 'AKTIF' : 'NON-AKTIF'}
+        </span>
+    </div>
+);
 
 export function StatusManagement({ statuses, filters }: StatusManagementProps) {
     const { showToast } = useToast();
@@ -40,73 +81,27 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                 header: 'Status Label',
                 accessorKey: 'label',
                 sortable: true,
-                cell: (row) => (
-                    <div className="flex flex-col">
-                        <span className="text-[13px] leading-tight font-bold text-black dark:text-white">{row.label}</span>
-                        <span className="mt-0.5 font-mono text-[10px] font-bold tracking-widest text-black/30 uppercase dark:text-white/30">
-                            {row.code}
-                        </span>
-                    </div>
-                ),
+                cell: (row) => <StatusLabelCell row={row} />,
             },
             {
                 header: 'Visual Preview',
                 accessorKey: 'color',
-                cell: (row) => (
-                    <div className="flex items-center gap-3">
-                        <span className="text-[10px] font-black tracking-[0.2em] uppercase" style={{ color: row.color }}>
-                            {row.label}
-                        </span>
-                    </div>
-                ),
+                cell: (row) => <VisualPreviewCell row={row} />,
             },
             {
                 header: 'Show Mode',
                 accessorKey: 'display_mode',
-                cell: (row) => (
-                    <span className="text-[10px] font-black tracking-widest text-black/40 uppercase dark:text-white/40">
-                        {row.display_mode === 'pdf' ? 'DOCUMENT PDF' : 'INTERACTIVE FORM'}
-                    </span>
-                ),
+                cell: (row) => <ShowModeCell row={row} />,
             },
             {
                 header: 'Edit Info',
                 accessorKey: 'allow_info_edit',
-                cell: (row) => (
-                    <div className="flex items-center gap-2">
-                        <div
-                            className={cn(
-                                'h-1.5 w-1.5 rounded-full',
-                                row.allow_info_edit ? 'bg-black dark:bg-white' : 'bg-black/10 dark:bg-white/10',
-                            )}
-                        />
-                        <span
-                            className={cn(
-                                'text-[10px] font-black tracking-widest uppercase',
-                                row.allow_info_edit ? 'text-black dark:text-white' : 'text-black/30 dark:text-white/30',
-                            )}
-                        >
-                            {row.allow_info_edit ? 'ALLOWED' : 'LOCKED'}
-                        </span>
-                    </div>
-                ),
+                cell: (row) => <EditInfoCell row={row} />,
             },
             {
                 header: 'Sistem',
                 accessorKey: 'is_active',
-                cell: (row) => (
-                    <div className="flex items-center gap-2">
-                        <div className={cn('h-1.5 w-1.5 rounded-full', row.is_active ? 'bg-black dark:bg-white' : 'bg-black/10 dark:bg-white/10')} />
-                        <span
-                            className={cn(
-                                'text-[10px] font-black tracking-widest uppercase',
-                                row.is_active ? 'text-black dark:text-white' : 'text-black/30 dark:text-white/30',
-                            )}
-                        >
-                            {row.is_active ? 'AKTIF' : 'NON-AKTIF'}
-                        </span>
-                    </div>
-                ),
+                cell: (row) => <ActiveCell row={row} />,
             },
         ],
         [],
@@ -346,8 +341,9 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                                     Kontrol Operasional
                                 </h3>
                                 <div className="space-y-5 p-1">
-                                    <div
-                                        className="group flex cursor-pointer items-center gap-4 rounded-xl border border-black/[0.05] bg-black/[0.01] p-4 shadow-sm transition-colors hover:bg-black/[0.03] dark:border-white/[0.05] dark:bg-white/[0.01] dark:hover:bg-white/[0.03]"
+                                    <button
+                                        type="button"
+                                        className="group flex w-full cursor-pointer items-center gap-4 rounded-xl border border-black/[0.05] bg-black/[0.01] p-4 text-left shadow-sm transition-colors hover:bg-black/[0.03] dark:border-white/[0.05] dark:bg-white/[0.01] dark:hover:bg-white/[0.03]"
                                         onClick={() => form.setData('allow_info_edit', !form.data.allow_info_edit)}
                                     >
                                         <Checkbox
@@ -367,10 +363,11 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                                                 User dapat memodifikasi metadata kontrak
                                             </p>
                                         </div>
-                                    </div>
+                                    </button>
 
-                                    <div
-                                        className="group flex cursor-pointer items-center gap-4 rounded-xl border border-black/[0.05] bg-black/[0.01] p-4 shadow-sm transition-colors hover:bg-black/[0.03] dark:border-white/[0.05] dark:bg-white/[0.01] dark:hover:bg-white/[0.03]"
+                                    <button
+                                        type="button"
+                                        className="group flex w-full cursor-pointer items-center gap-4 rounded-xl border border-black/[0.05] bg-black/[0.01] p-4 text-left shadow-sm transition-colors hover:bg-black/[0.03] dark:border-white/[0.05] dark:bg-white/[0.01] dark:hover:bg-white/[0.03]"
                                         onClick={() => form.setData('is_active', !form.data.is_active)}
                                     >
                                         <Checkbox
@@ -390,7 +387,7 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                                                 Status tersedia untuk alur kerja operasional
                                             </p>
                                         </div>
-                                    </div>
+                                    </button>
                                 </div>
                             </div>
 
@@ -470,7 +467,7 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                 }}
                 onRowClick={openEdit}
                 pagination={
-                    statuses && statuses.meta
+                    statuses?.meta
                         ? {
                               currentPage: statuses.meta.current_page || 1,
                               lastPage: statuses.meta.last_page || 1,

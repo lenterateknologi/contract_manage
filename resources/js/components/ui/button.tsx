@@ -11,7 +11,7 @@ const buttonVariants = cva(
             variant: {
                 default: 'bg-[var(--primary)] text-white font-black uppercase tracking-widest shadow-lg shadow-[var(--primary)]/20 hover:opacity-90',
                 primary: 'bg-[var(--primary)] text-white font-black uppercase tracking-widest shadow-lg shadow-[var(--primary)]/20 hover:opacity-90',
-                outline: 'border border-black/[0.1] dark:border-white/[0.1] bg-white dark:bg-black text-black dark:text-white font-black uppercase tracking-widest hover:bg-black/[0.02] dark:hover:bg-white/[0.02]',
+                outline: 'border border-black/20 dark:border-white/20 bg-transparent text-black dark:text-white font-black uppercase tracking-widest hover:bg-black/5 dark:hover:bg-white/10',
                 destructive: 'bg-[var(--danger)] text-[var(--white)] font-black uppercase tracking-widest hover:bg-red-700',
                 secondary: 'bg-[var(--secondary)] text-[var(--text-dark)] border border-[var(--border)] font-black uppercase tracking-widest hover:bg-gray-200',
                 ghost: 'font-black uppercase tracking-widest hover:bg-black/[0.05] dark:hover:bg-white/[0.05] text-black/50 dark:text-white/50 hover:text-black dark:hover:text-white',

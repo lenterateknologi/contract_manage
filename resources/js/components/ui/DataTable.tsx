@@ -100,9 +100,9 @@ export function DataTable<T extends Record<string, any>>({
     const [selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set());
     const [internalActiveFilters, setInternalActiveFilters] = useState<Record<string, any>>({});
 
-    const searchTerm = searchValue !== undefined ? searchValue : internalSearchTerm;
+    const searchTerm = searchValue ?? internalSearchTerm;
     const setSearchTerm = onSearchChange || setInternalSearchTerm;
-    const activeFilters = controlledActiveFilters !== undefined ? controlledActiveFilters : internalActiveFilters;
+    const activeFilters = controlledActiveFilters ?? internalActiveFilters;
     const setActiveFilters = (newFilters: Record<string, any>) => {
         if (onFilterChange) onFilterChange(newFilters);
         else setInternalActiveFilters(newFilters);
@@ -113,7 +113,9 @@ export function DataTable<T extends Record<string, any>>({
     const toggleFilterValue = (key: string, value: any) => {
         const currentValues = Array.isArray(activeFilters[key])
             ? activeFilters[key]
-            : (activeFilters[key] ? [activeFilters[key]] : []);
+            : activeFilters[key]
+              ? [activeFilters[key]]
+              : [];
 
         const stringValue = String(value);
         const newValues = currentValues.includes(stringValue)
@@ -184,6 +186,7 @@ export function DataTable<T extends Record<string, any>>({
                                     <span className="text-[9px] font-black text-black dark:text-white tracking-widest leading-none">{selectedIds.size} Selected</span>
                                     <button onClick={() => setSelectedIds(new Set())} className="text-[8px] font-bold text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white transition-colors mt-1">Clear</button>
                                 </div>
+
                                 <div className="flex items-center gap-1.5">
                                     {typeof bulkActions === 'function' ? (
                                         bulkActions(data.filter(row => selectedIds.has(getRowId(row))))
@@ -327,7 +330,7 @@ export function DataTable<T extends Record<string, any>>({
                                         onClick={() => onRowClick?.(row)}
                                         className={cn(
                                             "hover:bg-black/[0.01] dark:hover:bg-white/[0.01] transition-all group cursor-pointer active:scale-[0.999]",
-                                            (selectedRowId === getRowId(row) || (isRowExpanded && isRowExpanded(row))) && "bg-black/[0.02] dark:bg-white/[0.02]",
+                                            (selectedRowId === getRowId(row) || isRowExpanded?.(row)) && "bg-black/[0.02] dark:bg-white/[0.02]",
                                             selectedIds.has(getRowId(row)) && "bg-black/[0.03] dark:bg-white/[0.03]"
                                         )}
                                     >

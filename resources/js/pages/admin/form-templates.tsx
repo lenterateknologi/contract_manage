@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { Head, router, useForm } from '@inertiajs/react';
-import { Copy, Edit2, FileCheck, FileJson, FileText, Layout, MoreHorizontal, Plus, Settings, Filter, Trash2 } from 'lucide-react';
+import { Copy, Edit2, FileCheck, FileJson, FileText, Filter, Layout, MoreHorizontal, Plus, Settings, Trash2 } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 
 interface FormTemplate {
@@ -189,12 +189,6 @@ export default function FormTemplates({ templates, contract_types }: Props) {
         });
     };
 
-    const stats = {
-        total: templates.length,
-        f1: templates.filter((t) => t.document_type === 'f1').length,
-        f2: templates.filter((t) => t.document_type === 'f2').length,
-    };
-
     const hasActiveFilters = Object.values(activeFilters).some((v) => v.length > 0);
 
     const filterCategories: FilterCategory[] = [
@@ -236,17 +230,19 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                             variant="outline"
                             onClick={() => setIsFilterOpen(true)}
                             className={cn(
-                                "relative h-10 px-4 transition-all active:scale-95",
-                                hasActiveFilters && "bg-[var(--primary)] text-white border-[var(--primary)]"
+                                'relative h-10 px-4 transition-all active:scale-95',
+                                hasActiveFilters && 'border-[var(--primary)] bg-[var(--primary)] text-white',
                             )}
                         >
                             <Filter size={14} />
                             Filter
                             {hasActiveFilters && (
-                                <span className={cn(
-                                    "ml-1 flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[9px] font-bold",
-                                    hasActiveFilters ? "bg-white text-[var(--primary)]" : "bg-[var(--primary)] text-white"
-                                )}>
+                                <span
+                                    className={cn(
+                                        'ml-1 flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[9px] font-bold',
+                                        hasActiveFilters ? 'bg-white text-[var(--primary)]' : 'bg-[var(--primary)] text-white',
+                                    )}
+                                >
                                     {Object.values(activeFilters).flat().length}
                                 </span>
                             )}

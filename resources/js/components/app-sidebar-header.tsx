@@ -9,7 +9,7 @@ import { SiteCustomizer } from '@/components/site-customizer';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { type BreadcrumbItem as BreadcrumbItemType } from '@/types';
 
-export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItemType[] }) {
+export function AppSidebarHeader({ breadcrumbs = [] }: { readonly breadcrumbs?: BreadcrumbItemType[] }) {
     return (
         <header className="border-sidebar-border/50 bg-sidebar sticky top-0 z-10 m-2 flex h-12 shrink-0 items-center justify-between border-b px-4 transition-[width,height] ease-linear">
             <div className="flex items-center gap-3">
@@ -22,6 +22,7 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
                 <HeaderChat />
                 <HeaderNotifications />
                 <HeaderHelp />
+                {/* todo: enable this when we have a need for it */}
                 <div className="bg-sidebar-border/50 mx-1.5 h-4 w-px shrink-0" />
                 <SiteCustomizer />
                 <AppearanceToggleDropdown />

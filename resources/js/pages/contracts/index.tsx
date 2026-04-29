@@ -736,7 +736,7 @@ function ContractPage({
                                                 className={cn(
                                                     'rounded-lg px-4 py-2 text-[9px] font-black tracking-[0.2em] uppercase transition-all duration-300',
                                                     detailTab === tab.id
-                                                        ? 'z-10 scale-105 bg-[var(--primary)] text-white shadow-xl shadow-[var(--primary)]/20 dark:bg-white dark:text-[var(--primary)] dark:shadow-white/10'
+                                                        ? 'z-10 scale-105 bg-[var(--primary)] text-white shadow-xl dark:bg-white dark:text-[var(--primary)] dark:shadow-white/10'
                                                         : 'text-black/30 hover:bg-black/5 hover:text-black dark:text-white/30 dark:hover:bg-white/5 dark:hover:text-white',
                                                 )}
                                             >

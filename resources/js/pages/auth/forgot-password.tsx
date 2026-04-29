@@ -21,19 +21,24 @@ export default function ForgotPassword({ status }: { status?: string }) {
     };
 
     return (
-        <AuthSplitLayout 
-            title="Lupa Kata Sandi" 
+        <AuthSplitLayout
+            title="Lupa Kata Sandi"
             description="Masukkan email untuk tautan atur ulang."
             image="https://images.unsplash.com/photo-1512314889357-e157c22f938d?auto=format&fit=crop&q=80&w=1200"
         >
             <Head title="Lupa Kata Sandi" />
 
             <form className="flex flex-col gap-6" onSubmit={submit}>
-                {status && <div className="mb-4 text-center text-[var(--font-size-small)] font-[var(--font-weight-bold)] text-[var(--success)]">{status}</div>}
+                {status && <div className="mb-4 text-center font-[var(--font-weight-bold)] text-[var(--font-size-small)]">{status}</div>}
 
                 <div className="grid gap-5">
                     <div className="grid gap-2">
-                        <Label htmlFor="email" className="text-[var(--font-size-small)] font-[var(--font-weight-bold)] text-[var(--text-dark)] tracking-tight uppercase">Alamat Email</Label>
+                        <Label
+                            htmlFor="email"
+                            className="font-[var(--font-weight-bold)] tracking-tight text-[length:var(--font-size-small)] text-[color:var(--text-dark)] uppercase"
+                        >
+                            Alamat Email
+                        </Label>
                         <Input
                             id="email"
                             type="email"
@@ -43,14 +48,14 @@ export default function ForgotPassword({ status }: { status?: string }) {
                             autoFocus
                             onChange={(e) => setData('email', e.target.value)}
                             placeholder="email@example.com"
-                            className="h-[48px] rounded-[var(--radius-lg)] border-[var(--border)] bg-[var(--white)] px-4 text-[var(--font-size-body)] text-[var(--text-dark)] focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] transition-all"
+                            className="h-[48px] rounded-[var(--radius-lg)] border-[var(--border)] bg-[var(--white)] px-4 text-[var(--font-size-body)] text-[var(--text-dark)] transition-all focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]"
                         />
                         <InputError message={errors.email} />
                     </div>
 
-                    <Button 
-                        type="submit" 
-                        className="h-[48px] w-full rounded-[var(--radius-lg)] bg-[var(--primary)] text-[var(--font-size-body)] font-[var(--font-weight-bold)] text-[var(--white)] transition-all hover:bg-[var(--primary-hover)] active:bg-[var(--primary-active)] active:scale-[0.98]" 
+                    <Button
+                        type="submit"
+                        className="h-[48px] w-full rounded-[var(--radius-lg)] bg-[var(--primary)] font-[var(--font-weight-bold)] text-[var(--font-size-body)] text-[var(--white)] transition-all hover:bg-[var(--primary-hover)] active:scale-[0.98] active:bg-[var(--primary-active)]"
                         disabled={processing}
                     >
                         {processing && <LoaderCircle className="mr-2 size-4 animate-spin" />}
@@ -58,9 +63,12 @@ export default function ForgotPassword({ status }: { status?: string }) {
                     </Button>
                 </div>
 
-                <div className="text-center text-[var(--font-size-small)] text-[var(--text-muted)] font-[var(--font-weight-medium)]">
+                <div className="text-center font-[var(--font-weight-medium)] text-[var(--font-size-small)] text-[var(--text-muted)]">
                     Atau, kembali ke{' '}
-                    <TextLink href={route('login')} className="font-[var(--font-weight-bold)] text-[var(--primary)] hover:text-[var(--primary-hover)] hover:underline">
+                    <TextLink
+                        href={route('login')}
+                        className="font-[var(--font-weight-bold)] text-[var(--primary)] hover:text-[var(--primary-hover)] hover:underline"
+                    >
                         Halaman Masuk
                     </TextLink>
                 </div>

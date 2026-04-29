@@ -38,7 +38,7 @@ export function SearchableSelect({
 
     return (
         <div className={cn("w-full", className)}>
-            <Combobox value={value} onChange={(val: any) => {
+            <Combobox value={String(value)} onChange={(val: any) => {
                 onChange(String(val));
                 setQuery('');
             }}>

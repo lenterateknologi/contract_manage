@@ -12,11 +12,99 @@ import React, { useMemo } from 'react';
 import { FormSection, ManagementForm } from './ManagementForm';
 
 interface ContractTypeManagementProps {
-    contractTypes: any;
-    formTemplates: any[] | null | undefined;
-    contractTemplates: any[] | null | undefined;
-    filters: any;
+    readonly contractTypes: any;
+    readonly formTemplates?: any[] | null;
+    readonly contractTemplates?: any[] | null;
+    readonly filters: any;
 }
+
+const MechanismBadge = ({ mechanism }: { mechanism: string }) => {
+    let label = 'Manual';
+    if (mechanism === 'digital') label = 'Formulir Digital';
+    else if (mechanism === 'folder') label = 'Folder Kontrak';
+    
+    return (
+        <span className="text-[10px] font-black tracking-widest text-black/60 uppercase dark:text-white/60">
+            {label}
+        </span>
+    );
+};
+
+const MechanismOptions = ({
+    mechanism,
+    formTemplateId,
+    setFormTemplateId,
+    contractTemplateId,
+    setContractTemplateId,
+    templates,
+    physTemplates,
+    type,
+}: {
+    mechanism: string;
+    formTemplateId: string;
+    setFormTemplateId: (id: string) => void;
+    contractTemplateId: string;
+    setContractTemplateId: (id: string) => void;
+    templates: any[];
+    physTemplates: any[];
+    type: 'F1' | 'F2';
+}) => {
+    if (mechanism === 'digital') {
+        return (
+            <div className="animate-in fade-in slide-in-from-top-2 space-y-1.5">
+                <Label className="text-[10px] font-bold tracking-widest text-black/40 uppercase dark:text-white/40">
+                    Tautan ke Templat Digital {type}
+                </Label>
+                <Select value={formTemplateId} onValueChange={setFormTemplateId}>
+                    <SelectTrigger className="h-10 rounded-xl border-black/[0.1] bg-black/[0.02] text-[10px] font-black tracking-tight text-black uppercase dark:border-white/[0.1] dark:bg-white/[0.02] dark:text-white">
+                        <SelectValue placeholder={`PILIH ASET ${type}...`} />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[200px] rounded-xl border-black/[0.1] bg-white dark:border-white/[0.1] dark:bg-black">
+                        <SelectItem value="none" className="text-[10px] font-black text-black/20 uppercase italic dark:text-white/20">
+                            Tidak Terpaut / Tanpa Templat
+                        </SelectItem>
+                        {templates.map((t: any) => (
+                            <SelectItem key={t.id} value={t.id} className="py-3 text-[10px] font-black tracking-widest text-black uppercase dark:text-white">
+                                {t.name} <span className="ml-2 font-bold text-black/30 dark:text-white/30">({t.document_type || 'ADHOC'})</span>
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+        );
+    }
+    if (mechanism === 'folder') {
+        return (
+            <div className="animate-in fade-in slide-in-from-top-2 space-y-1.5">
+                <Label className="text-[10px] font-bold tracking-widest text-black/40 uppercase dark:text-white/40">
+                    Tautan ke Templat Folder ({type})
+                </Label>
+                <Select value={contractTemplateId} onValueChange={setContractTemplateId}>
+                    <SelectTrigger className="h-10 rounded-xl border-black/[0.1] bg-black/[0.02] text-[10px] font-black tracking-tight text-black uppercase dark:border-white/[0.1] dark:bg-white/[0.02] dark:text-white">
+                        <SelectValue placeholder="PILIH ASET FISIK..." />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[200px] rounded-xl border-black/[0.1] bg-white dark:border-white/[0.1] dark:bg-black">
+                        <SelectItem value="none" className="text-[10px] font-black text-black/20 uppercase italic dark:text-white/20">
+                            Tidak Ada Templat Terpilih
+                        </SelectItem>
+                        {physTemplates.map((t: any) => (
+                            <SelectItem key={t.id} value={t.id} className="py-3 text-[10px] font-black tracking-widest text-black uppercase dark:text-white">
+                                {t.name} <span className="ml-2 font-bold text-black/30 dark:text-white/30">({t.file_type || 'PDF'})</span>
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+        );
+    }
+    return (
+        <div className="animate-in fade-in rounded-xl border border-dashed border-black/[0.1] bg-black/[0.02] p-6 text-center dark:border-white/[0.1] dark:bg-white/[0.02]">
+            <p className="text-[10px] font-bold tracking-[0.2em] text-black/30 uppercase dark:text-white/30">
+                {type === 'F1' ? 'PENGGUNA INTERNAL' : 'VENDOR'} AKAN MENGUNGGAH PDF MANUAL UNTUK {type}
+            </p>
+        </div>
+    );
+};
 
 export function ContractTypeManagement({ contractTypes, formTemplates, contractTemplates, filters }: ContractTypeManagementProps) {
     const { showToast } = useToast();
@@ -51,28 +139,12 @@ export function ContractTypeManagement({ contractTypes, formTemplates, contractT
             {
                 header: 'F1 (Internal)',
                 accessorKey: 'f1_input_mechanism',
-                cell: (row) => (
-                    <span className="text-[10px] font-black tracking-widest text-black/60 uppercase dark:text-white/60">
-                        {row.f1_input_mechanism === 'digital'
-                            ? 'Formulir Digital'
-                            : row.f1_input_mechanism === 'folder'
-                              ? 'Folder Kontrak'
-                              : 'Manual'}
-                    </span>
-                ),
+                cell: (row) => <MechanismBadge mechanism={row.f1_input_mechanism} />
             },
             {
                 header: 'F2 (Eksternal)',
                 accessorKey: 'f2_input_mechanism',
-                cell: (row) => (
-                    <span className="text-[10px] font-black tracking-widest text-black/60 uppercase dark:text-white/60">
-                        {row.f2_input_mechanism === 'digital'
-                            ? 'Formulir Digital'
-                            : row.f2_input_mechanism === 'folder'
-                              ? 'Folder Kontrak'
-                              : 'Manual'}
-                    </span>
-                ),
+                cell: (row) => <MechanismBadge mechanism={row.f2_input_mechanism} />
             },
             {
                 header: 'Deskripsi',
@@ -247,81 +319,16 @@ export function ContractTypeManagement({ contractTypes, formTemplates, contractT
                                         </Select>
                                     </div>
 
-                                    {form.data.f1_input_mechanism === 'digital' ? (
-                                        <div className="animate-in fade-in slide-in-from-top-2 space-y-1.5">
-                                            <Label className="text-[10px] font-bold tracking-widest text-black/40 uppercase dark:text-white/40">
-                                                Tautan ke Templat Digital F1
-                                            </Label>
-                                            <Select
-                                                value={form.data.f1_form_template_id}
-                                                onValueChange={(v) => form.setData('f1_form_template_id', v)}
-                                            >
-                                                <SelectTrigger className="h-10 rounded-xl border-black/[0.1] bg-black/[0.02] text-[10px] font-black tracking-tight text-black uppercase dark:border-white/[0.1] dark:bg-white/[0.02] dark:text-white">
-                                                    <SelectValue placeholder="PILIH ASET F1..." />
-                                                </SelectTrigger>
-                                                <SelectContent className="max-h-[200px] rounded-xl border-black/[0.1] bg-white dark:border-white/[0.1] dark:bg-black">
-                                                    <SelectItem
-                                                        value="none"
-                                                        className="text-[10px] font-black text-black/20 uppercase italic dark:text-white/20"
-                                                    >
-                                                        Tidak Terpaut / Tanpa Templat
-                                                    </SelectItem>
-                                                    {templates.map((t: any) => (
-                                                        <SelectItem
-                                                            key={t.id}
-                                                            value={t.id}
-                                                            className="py-3 text-[10px] font-black tracking-widest text-black uppercase dark:text-white"
-                                                        >
-                                                            {t.name}{' '}
-                                                            <span className="ml-2 font-bold text-black/30 dark:text-white/30">
-                                                                ({t.document_type || 'ADHOC'})
-                                                            </span>
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    ) : form.data.f1_input_mechanism === 'folder' ? (
-                                        <div className="animate-in fade-in slide-in-from-top-2 space-y-1.5">
-                                            <Label className="text-[10px] font-bold tracking-widest text-black/40 uppercase dark:text-white/40">
-                                                Tautan ke Templat Folder (F1)
-                                            </Label>
-                                            <Select
-                                                value={form.data.f1_contract_template_id}
-                                                onValueChange={(v) => form.setData('f1_contract_template_id', v)}
-                                            >
-                                                <SelectTrigger className="h-10 rounded-xl border-black/[0.1] bg-black/[0.02] text-[10px] font-black tracking-tight text-black uppercase dark:border-white/[0.1] dark:bg-white/[0.02] dark:text-white">
-                                                    <SelectValue placeholder="PILIH ASET FISIK..." />
-                                                </SelectTrigger>
-                                                <SelectContent className="max-h-[200px] rounded-xl border-black/[0.1] bg-white dark:border-white/[0.1] dark:bg-black">
-                                                    <SelectItem
-                                                        value="none"
-                                                        className="text-[10px] font-black text-black/20 uppercase italic dark:text-white/20"
-                                                    >
-                                                        Tidak Ada Templat Terpilih
-                                                    </SelectItem>
-                                                    {physTemplates.map((t: any) => (
-                                                        <SelectItem
-                                                            key={t.id}
-                                                            value={t.id}
-                                                            className="py-3 text-[10px] font-black tracking-widest text-black uppercase dark:text-white"
-                                                        >
-                                                            {t.name}{' '}
-                                                            <span className="ml-2 font-bold text-black/30 dark:text-white/30">
-                                                                ({t.file_type || 'PDF'})
-                                                            </span>
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    ) : (
-                                        <div className="animate-in fade-in rounded-xl border border-dashed border-black/[0.1] bg-black/[0.02] p-6 text-center dark:border-white/[0.1] dark:bg-white/[0.02]">
-                                            <p className="text-[10px] font-bold tracking-[0.2em] text-black/30 uppercase dark:text-white/30">
-                                                PENGGUNA INTERNAL AKAN MENGUNGGAH PDF MANUAL UNTUK F1
-                                            </p>
-                                        </div>
-                                    )}
+                                    <MechanismOptions
+                                        mechanism={form.data.f1_input_mechanism}
+                                        formTemplateId={form.data.f1_form_template_id}
+                                        setFormTemplateId={(v) => form.setData('f1_form_template_id', v)}
+                                        contractTemplateId={form.data.f1_contract_template_id}
+                                        setContractTemplateId={(v) => form.setData('f1_contract_template_id', v)}
+                                        templates={templates}
+                                        physTemplates={physTemplates}
+                                        type="F1"
+                                    />
                                 </div>
                             </FormSection>
 
@@ -363,81 +370,16 @@ export function ContractTypeManagement({ contractTypes, formTemplates, contractT
                                         </Select>
                                     </div>
 
-                                    {form.data.f2_input_mechanism === 'digital' ? (
-                                        <div className="animate-in fade-in slide-in-from-top-2 space-y-1.5">
-                                            <Label className="text-[10px] font-bold tracking-widest text-black/40 uppercase dark:text-white/40">
-                                                Tautan ke Templat Digital F2
-                                            </Label>
-                                            <Select
-                                                value={form.data.f2_form_template_id}
-                                                onValueChange={(v) => form.setData('f2_form_template_id', v)}
-                                            >
-                                                <SelectTrigger className="h-10 rounded-xl border-black/[0.1] bg-black/[0.02] text-[10px] font-black tracking-tight text-black uppercase dark:border-white/[0.1] dark:bg-white/[0.02] dark:text-white">
-                                                    <SelectValue placeholder="PILIH ASET F2..." />
-                                                </SelectTrigger>
-                                                <SelectContent className="max-h-[200px] rounded-xl border-black/[0.1] bg-white dark:border-white/[0.1] dark:bg-black">
-                                                    <SelectItem
-                                                        value="none"
-                                                        className="text-[10px] font-black text-black/20 uppercase italic dark:text-white/20"
-                                                    >
-                                                        Tidak Terpaut / Tanpa Templat
-                                                    </SelectItem>
-                                                    {templates.map((t: any) => (
-                                                        <SelectItem
-                                                            key={t.id}
-                                                            value={t.id}
-                                                            className="py-3 text-[10px] font-black tracking-widest text-black uppercase dark:text-white"
-                                                        >
-                                                            {t.name}{' '}
-                                                            <span className="ml-2 font-bold text-black/30 dark:text-white/30">
-                                                                ({t.document_type || 'ADHOC'})
-                                                            </span>
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    ) : form.data.f2_input_mechanism === 'folder' ? (
-                                        <div className="animate-in fade-in slide-in-from-top-2 space-y-1.5">
-                                            <Label className="text-[10px] font-bold tracking-widest text-black/40 uppercase dark:text-white/40">
-                                                Tautan ke Templat Folder (F2)
-                                            </Label>
-                                            <Select
-                                                value={form.data.f2_contract_template_id}
-                                                onValueChange={(v) => form.setData('f2_contract_template_id', v)}
-                                            >
-                                                <SelectTrigger className="h-10 rounded-xl border-black/[0.1] bg-black/[0.02] text-[10px] font-black tracking-tight text-black uppercase dark:border-white/[0.1] dark:bg-white/[0.02] dark:text-white">
-                                                    <SelectValue placeholder="PILIH ASET FISIK..." />
-                                                </SelectTrigger>
-                                                <SelectContent className="max-h-[200px] rounded-xl border-black/[0.1] bg-white dark:border-white/[0.1] dark:bg-black">
-                                                    <SelectItem
-                                                        value="none"
-                                                        className="text-[10px] font-black text-black/20 uppercase italic dark:text-white/20"
-                                                    >
-                                                        Tidak Ada Templat Terpilih
-                                                    </SelectItem>
-                                                    {physTemplates.map((t: any) => (
-                                                        <SelectItem
-                                                            key={t.id}
-                                                            value={t.id}
-                                                            className="py-3 text-[10px] font-black tracking-widest text-black uppercase dark:text-white"
-                                                        >
-                                                            {t.name}{' '}
-                                                            <span className="ml-2 font-bold text-black/30 dark:text-white/30">
-                                                                ({t.file_type || 'PDF'})
-                                                            </span>
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    ) : (
-                                        <div className="animate-in fade-in rounded-xl border border-dashed border-black/[0.1] bg-black/[0.02] p-6 text-center dark:border-white/[0.1] dark:bg-white/[0.02]">
-                                            <p className="text-[10px] font-bold tracking-[0.2em] text-black/30 uppercase dark:text-white/30">
-                                                VENDOR AKAN MENGUNGGAH PDF MANUAL UNTUK F2
-                                            </p>
-                                        </div>
-                                    )}
+                                    <MechanismOptions
+                                        mechanism={form.data.f2_input_mechanism}
+                                        formTemplateId={form.data.f2_form_template_id}
+                                        setFormTemplateId={(v) => form.setData('f2_form_template_id', v)}
+                                        contractTemplateId={form.data.f2_contract_template_id}
+                                        setContractTemplateId={(v) => form.setData('f2_contract_template_id', v)}
+                                        templates={templates}
+                                        physTemplates={physTemplates}
+                                        type="F2"
+                                    />
                                 </div>
                             </FormSection>
                         </div>
@@ -455,7 +397,7 @@ export function ContractTypeManagement({ contractTypes, formTemplates, contractT
             searchKey="name"
             searchPlaceholder="Filter jenis klasifikasi..."
             searchValue={filters.search || ''}
-            onSearchChange={(v) => router.get(window.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })}
+            onSearchChange={(v) => router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })}
             filters={[
                 {
                     label: 'Mekanisme F1',
@@ -485,7 +427,7 @@ export function ContractTypeManagement({ contractTypes, formTemplates, contractT
                 Object.keys(updatedFilters).forEach(key => {
                     newFilters[key] = updatedFilters[key].length > 0 ? updatedFilters[key][0] : null;
                 });
-                router.get(window.location.pathname, newFilters, { preserveState: true, replace: true });
+                router.get(globalThis.location.pathname, newFilters, { preserveState: true, replace: true });
             }}
             headerActions={
                 canCreate && (
@@ -518,7 +460,7 @@ export function ContractTypeManagement({ contractTypes, formTemplates, contractT
                     : undefined
             }
             pagination={
-                contractTypes && contractTypes.meta
+                contractTypes?.meta
                     ? {
                           currentPage: contractTypes.meta.current_page || 1,
                           lastPage: contractTypes.meta.last_page || 1,
@@ -527,10 +469,10 @@ export function ContractTypeManagement({ contractTypes, formTemplates, contractT
                           to: contractTypes.meta.to || 1,
                           perPage: contractTypes.meta.per_page || 10,
                           onPageChange: (page) =>
-                              router.get(window.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                              router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
                           onPerPageChange: (pp) =>
                               router.get(
-                                  window.location.pathname,
+                                  globalThis.location.pathname,
                                   { ...filters, per_page: pp, page: 1 },
                                   { preserveState: true, preserveScroll: true },
                               ),
@@ -544,10 +486,10 @@ export function ContractTypeManagement({ contractTypes, formTemplates, contractT
                             to: contractTypes.to || 1,
                             perPage: contractTypes.per_page || 10,
                             onPageChange: (page) =>
-                                router.get(window.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                                router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
                             onPerPageChange: (pp) =>
                                 router.get(
-                                    window.location.pathname,
+                                    globalThis.location.pathname,
                                     { ...filters, per_page: pp, page: 1 },
                                     { preserveState: true, preserveScroll: true },
                                 ),

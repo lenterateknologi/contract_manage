@@ -108,14 +108,7 @@ export default function AuthSplitLayout({ children, title, description, isSucces
                     <div className="animate-in zoom-in fade-in flex flex-col items-center gap-6 transition-all duration-[var(--transition-slow)]">
                         {/* Lottie Animation Player */}
                         <div className="relative flex h-32 w-32 items-center justify-center">
-                            <lottie-player
-                                src="/assets/lottie/loading.json"
-                                background="transparent"
-                                speed="1.2"
-                                style={{ width: '160px', height: '160px' }}
-                                loop
-                                autoplay
-                            ></lottie-player>
+                            <div dangerouslySetInnerHTML={{ __html: '<lottie-player src="/assets/lottie/loading.json" background="transparent" speed="1.2" style="width: 160px; height: 160px;" loop autoplay></lottie-player>' }} />
                         </div>
                         <span className="text-[var(--font-size-small)] font-[var(--font-weight-bold)] tracking-[0.4em] text-[var(--primary)] uppercase">
                             {isSuccess ? 'BERHASIL MASUK' : 'MEMUAT'}

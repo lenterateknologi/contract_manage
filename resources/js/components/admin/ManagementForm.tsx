@@ -50,7 +50,7 @@ export function ManagementForm({
                         variant="primary"
                         onClick={onSave}
                         disabled={processing || (!isDirty && isEdit)}
-                        className="h-10 px-8 active:scale-95 transition-all shadow-xl shadow-[var(--primary)]/20"
+                        className="h-10 px-8 active:scale-95 transition-all shadow-xl"
                     >
                         <Save className="mr-2 h-4 w-4" /> Simpan Data
                     </Button>
