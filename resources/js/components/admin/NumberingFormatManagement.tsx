@@ -1,6 +1,8 @@
+import { ManagementForm, FormSection } from '@/components/admin/ManagementForm';
+import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { cn } from '@/lib/utils';
 import { useForm } from '@inertiajs/react';
-import { Hash, Info, Save } from 'lucide-react';
+import { Hash, Info, Save, Settings2, FileText, LayoutGrid, CalendarDays } from 'lucide-react';
 import React, { useState } from 'react';
 
 interface NumberingFormat {
@@ -18,76 +20,66 @@ interface Props {
 
 export function NumberingFormatManagement({ formats }: Readonly<Props>) {
     return (
-        <div className="animate-in fade-in flex flex-col gap-10 duration-500">
-            <div className="flex items-center justify-between border-b border-black/[0.05] pb-8 dark:border-white/[0.05]">
-                <div className="flex items-center gap-4">
-                    <div className="rounded-xl bg-black p-3 text-white shadow-xl shadow-black/10 dark:bg-white dark:text-black dark:shadow-white/5">
-                        <Hash size={24} />
+        <div className="animate-in fade-in flex flex-col gap-12 duration-500 bg-white dark:bg-black p-4">
+            <div className="flex items-center justify-between border-b border-primary/10 dark:border-white/10 pb-10">
+                <div className="flex items-center gap-5">
+                    <div className="h-14 w-14 rounded-2xl bg-primary text-white flex items-center justify-center shadow-2xl shadow-primary/20 dark:bg-white dark:text-black dark:shadow-white/5">
+                        <Hash size={28} />
                     </div>
                     <div>
-                        <h2 className="text-[10px] font-black tracking-[0.3em] text-black/40 uppercase dark:text-white/40">Sistem Penomoran</h2>
-                        <p className="mt-0.5 text-[16px] font-bold tracking-tight text-black dark:text-white">Konfigurasi Serial & Format Otomatis</p>
+                        <h2 className="text-[11px] font-black tracking-[0.4em] text-primary/40 dark:text-white/40 uppercase mb-1">Serial Architecture</h2>
+                        <p className="text-2xl font-black tracking-tight text-primary dark:text-white uppercase italic">Sistem Penomoran Otomatis</p>
                     </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-8">
+            <div className="grid grid-cols-1 gap-10">
                 {formats.map((format) => (
                     <FormatCard key={format.id} format={format} />
                 ))}
 
                 {formats.length === 0 && (
-                    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-black/[0.1] bg-black/[0.02] py-32 dark:border-white/[0.1] dark:bg-white/[0.02]">
-                        <Hash className="mb-4 h-12 w-12 text-black/10 dark:text-white/10" />
-                        <p className="text-[11px] font-black tracking-[0.4em] text-black/30 uppercase dark:text-white/30">
-                            Struktur Penomoran Kosong
-                        </p>
+                    <div className="flex flex-col items-center justify-center rounded-[2.5rem] border-4 border-dashed border-primary/5 bg-primary/[0.01] py-32 dark:border-white/5 dark:bg-white/[0.01]">
+                        <Hash className="mb-6 h-16 w-16 text-primary/10 dark:text-white/10" />
+                        <span className="text-[13px] font-black tracking-[0.5em] text-primary/20 uppercase dark:text-white/20">
+                            Konfigurasi Belum Terdaftar
+                        </span>
                     </div>
                 )}
             </div>
 
-            <div className="flex gap-8 rounded-lg border border-black/[0.05] bg-black/[0.03] p-8 shadow-sm dark:border-white/[0.05] dark:bg-white/[0.03]">
-                <div className="shrink-0 self-start rounded-lg bg-black p-3 text-white shadow-xl shadow-black/10 dark:bg-white dark:text-black dark:shadow-white/5">
-                    <Info size={20} />
+            <div className="rounded-[2rem] border border-primary/10 dark:border-white/10 bg-primary/[0.02] dark:bg-white/[0.02] p-10 overflow-hidden relative group">
+                <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <Info size={120} strokeWidth={1} />
                 </div>
-                <div className="flex flex-col gap-4">
-                    <span className="text-[11px] font-black tracking-[0.2em] text-black uppercase dark:text-white">Panduan Sintaks Placeholder</span>
-                    <div className="grid grid-cols-1 gap-x-12 gap-y-4 text-[10px] leading-relaxed font-bold tracking-widest text-black/40 uppercase md:grid-cols-2 lg:grid-cols-3 dark:text-white/40">
-                        <div className="flex items-center gap-3">
-                            <code className="rounded-lg border border-black/[0.05] bg-black/[0.05] px-3 py-1 font-bold text-black dark:border-white/[0.05] dark:bg-white/[0.05] dark:text-white">
-                                {'{{nomor}}'}
-                            </code>{' '}
-                            <span>Nomor urut otomatis</span>
+                <div className="flex items-start gap-6 relative z-10">
+                    <div className="h-12 w-12 rounded-xl bg-primary text-white flex items-center justify-center shadow-lg dark:bg-white dark:text-black shrink-0">
+                        <Info size={20} />
+                    </div>
+                    <div className="flex flex-col gap-8">
+                        <div className="flex flex-col">
+                            <span className="text-[11px] font-black tracking-[0.3em] text-primary dark:text-white uppercase mb-2">Panduan Sintaks Placeholder</span>
+                            <p className="text-[9px] font-bold text-primary/40 dark:text-white/40 uppercase tracking-widest">Gunakan tag di bawah ini untuk membangun pola penomoran dokumen yang dinamis</p>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <code className="rounded-lg border border-black/[0.05] bg-black/[0.05] px-3 py-1 font-bold text-black dark:border-white/[0.05] dark:bg-white/[0.05] dark:text-white">
-                                {'{{tanggal}}'}
-                            </code>{' '}
-                            <span>Hari (01-31)</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <code className="rounded-lg border border-black/[0.05] bg-black/[0.05] px-3 py-1 font-bold text-black dark:border-white/[0.05] dark:bg-white/[0.05] dark:text-white">
-                                {'{{bulan}}'}
-                            </code>{' '}
-                            <span>Bulan (01-12)</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <code className="rounded-lg border border-black/[0.05] bg-black/[0.05] px-3 py-1 font-bold text-black dark:border-white/[0.05] dark:bg-white/[0.05] dark:text-white">
-                                {'{{tahun}}'}
-                            </code>{' '}
-                            <span>Tahun (YYYY)</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <code className="rounded-lg border border-black/[0.05] bg-black/[0.05] px-3 py-1 font-bold text-black dark:border-white/[0.05] dark:bg-white/[0.05] dark:text-white">
-                                {'{{kode_departemen}}'}
-                            </code>{' '}
-                            <span>Kode Unit</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <code className="rounded-lg border border-black/[0.05] bg-black/[0.05] px-3 py-1 font-bold text-black dark:border-white/[0.05] dark:bg-white/[0.05] dark:text-white">
-                                {'{{kode_perjanjian}}'}
-                            </code>{' '}
-                            <span>Kode Tipe</span>
+                        <div className="grid grid-cols-1 gap-x-12 gap-y-6 md:grid-cols-2 lg:grid-cols-3">
+                            {[
+                                { tag: '{{nomor}}', desc: 'Nomor urut otomatis (Incremental)', icon: Hash },
+                                { tag: '{{tanggal}}', desc: 'Hari (DD) format 01-31', icon: CalendarDays },
+                                { tag: '{{bulan}}', desc: 'Bulan (MM) format 01-12', icon: CalendarDays },
+                                { tag: '{{tahun}}', desc: 'Tahun (YYYY) format lengkap', icon: CalendarDays },
+                                { tag: '{{kode_departemen}}', desc: 'Kode Unit / Departemen Penanggung Jawab', icon: LayoutGrid },
+                                { tag: '{{kode_perjanjian}}', desc: 'Kode Klasifikasi Tipe Perjanjian', icon: FileText },
+                            ].map(item => (
+                                <div key={item.tag} className="flex items-center gap-4 group/tag">
+                                    <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/[0.05] dark:bg-white/[0.05] text-primary dark:text-white group-hover/tag:bg-primary group-hover/tag:text-white dark:group-hover/tag:bg-white dark:group-hover/tag:text-black transition-all">
+                                        <item.icon size={12} />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <code className="text-[10px] font-black text-primary dark:text-white tracking-widest uppercase">{item.tag}</code>
+                                        <span className="text-[8px] font-bold text-primary/30 dark:text-white/30 uppercase mt-0.5">{item.desc}</span>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
@@ -109,135 +101,155 @@ function FormatCard({ format }: Readonly<{ format: NumberingFormat }>) {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         put(route('admin.numbering-formats.update', format.id), {
-            onSuccess: () => setIsEditing(false),
+            onSuccess: () => {
+                setIsEditing(false);
+                // We'll show a toast in the controller success handler, 
+                // but let's assume it's handled.
+            },
         });
     };
 
     return (
-        <div className="overflow-hidden rounded-lg border border-black/[0.05] bg-white shadow-sm transition-all duration-300 hover:shadow-md dark:border-white/[0.05] dark:bg-black">
-            <div className="flex items-center justify-between border-b border-black/[0.05] bg-black/[0.02] px-8 py-5 dark:border-white/[0.05] dark:bg-white/[0.02]">
-                <div className="flex items-center gap-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-black/[0.05] bg-black/[0.03] text-black/40 dark:border-white/[0.05] dark:bg-white/[0.03] dark:text-white/40">
-                        <Hash size={18} />
+        <div className={cn(
+            "rounded-[2.5rem] border transition-all duration-500 overflow-hidden",
+            isEditing 
+                ? "border-primary dark:border-white shadow-2xl ring-8 ring-primary/5 dark:ring-white/5" 
+                : "border-primary/10 dark:border-white/10 bg-white dark:bg-black hover:border-primary/30 dark:hover:border-white/30"
+        )}>
+            <div className="px-10 py-8 flex items-center justify-between border-b border-primary/10 dark:border-white/10 bg-primary/[0.01] dark:bg-white/[0.01]">
+                <div className="flex items-center gap-5">
+                    <div className="h-12 w-12 rounded-2xl bg-primary/[0.03] dark:bg-white/[0.03] border border-primary/10 dark:border-white/10 flex items-center justify-center text-primary dark:text-white shadow-inner">
+                        <Settings2 size={20} />
                     </div>
-                    <div>
-                        <h3 className="text-[12px] font-bold tracking-widest text-black uppercase dark:text-white">Modul: {format.module}</h3>
-                        <div className="mt-1 flex items-center gap-2">
-                            <div
-                                className={cn(
-                                    'h-1.5 w-1.5 rounded-full',
-                                    format.is_active ? 'bg-black dark:bg-white' : 'bg-black/10 dark:bg-white/10',
-                                )}
-                            />
-                            <span className="text-[9px] font-black tracking-[0.2em] text-black/30 uppercase dark:text-white/30">
-                                {format.is_active ? 'SISTEM AKTIF' : 'NON-AKTIF'}
+                    <div className="flex flex-col">
+                        <h3 className="text-[11px] font-black tracking-[0.3em] text-primary dark:text-white uppercase mb-1">Modul: {format.module}</h3>
+                        <div className="flex items-center gap-2">
+                            <div className={cn('h-1.5 w-1.5 rounded-full', format.is_active ? 'bg-emerald-500 animate-pulse' : 'bg-primary/20 dark:bg-white/20')} />
+                            <span className="text-[9px] font-black tracking-[0.1em] text-primary/40 dark:text-white/40 uppercase">
+                                {format.is_active ? 'Sistem Aktif & Terpantau' : 'Sistem Penomoran Non-Aktif'}
                             </span>
                         </div>
                     </div>
                 </div>
                 {!isEditing && (
-                    <button
+                    <Button
+                        variant="primary"
                         onClick={() => setIsEditing(true)}
-                        className="h-9 rounded-lg border border-black/[0.1] px-6 text-[10px] font-black tracking-widest text-black/60 uppercase shadow-sm transition-all hover:bg-black hover:text-white active:scale-95 dark:border-white/[0.1] dark:text-white/60 dark:hover:bg-white dark:hover:text-black"
+                        className="h-10 px-8 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl active:scale-95"
                     >
-                        Ubah Konfigurasi
-                    </button>
+                        Konfigurasi Serial
+                    </Button>
                 )}
             </div>
 
-            <div className="p-8">
+            <div className="p-10">
                 {isEditing ? (
-                    <form onSubmit={handleSubmit} className="flex flex-col gap-8">
-                        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-                            <div className="flex flex-col gap-2">
-                                <label htmlFor="format_pattern" className="text-[10px] font-black tracking-widest text-black/40 uppercase dark:text-white/40">
-                                    Pola Format (Pattern)
-                                </label>
-                                <input
-                                    id="format_pattern"
-                                    type="text"
+                    <form onSubmit={handleSubmit} className="space-y-10">
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+                            <div className="md:col-span-6">
+                                <CompactInput 
+                                    label="Pola Format Penomoran (Pattern)"
                                     value={data.format_pattern}
-                                    onChange={(e) => setData('format_pattern', e.target.value)}
-                                    className="h-10 rounded-lg border border-black/[0.08] bg-black/[0.02] px-5 text-[11px] font-black tracking-widest text-black uppercase transition-all outline-none focus:border-black focus:bg-white dark:border-white/[0.08] dark:bg-white/[0.02] dark:text-white dark:focus:border-white dark:focus:bg-black"
+                                    onChange={e => setData('format_pattern', e.target.value)}
+                                    placeholder="CONTOH: {{nomor}}/KONTRAK/{{tahun}}"
+                                    icon={FileText}
                                 />
                             </div>
-                            <div className="flex flex-col gap-2">
-                                <label htmlFor="current_number" className="text-[10px] font-black tracking-widest text-black/40 uppercase dark:text-white/40">
-                                    Index Terakhir
-                                </label>
-                                <input
-                                    id="current_number"
+                            <div className="md:col-span-3">
+                                <CompactInput 
+                                    label="Index Terakhir"
                                     type="number"
-                                    value={data.current_number}
-                                    onChange={(e) => setData('current_number', Number.parseInt(e.target.value))}
-                                    className="h-10 rounded-lg border border-black/[0.08] bg-black/[0.02] px-5 text-[12px] font-bold text-black transition-all outline-none focus:border-black focus:bg-white dark:border-white/[0.08] dark:bg-white/[0.02] dark:text-white dark:focus:border-white dark:focus:bg-black"
+                                    value={String(data.current_number)}
+                                    onChange={e => setData('current_number', Number(e.target.value))}
+                                    icon={Hash}
                                 />
                             </div>
-                            <div className="flex flex-col gap-2">
-                                <label htmlFor="padding" className="text-[10px] font-black tracking-widest text-black/40 uppercase dark:text-white/40">
-                                    Padding Digit
-                                </label>
-                                <input
-                                    id="padding"
+                            <div className="md:col-span-3">
+                                <CompactInput 
+                                    label="Padding Digit"
                                     type="number"
-                                    value={data.padding}
-                                    onChange={(e) => setData('padding', Number.parseInt(e.target.value))}
-                                    className="h-10 rounded-lg border border-black/[0.08] bg-black/[0.02] px-5 text-[12px] font-bold text-black transition-all outline-none focus:border-black focus:bg-white dark:border-white/[0.08] dark:bg-white/[0.02] dark:text-white dark:focus:border-white dark:focus:bg-black"
+                                    value={String(data.padding)}
+                                    onChange={e => setData('padding', Number(e.target.value))}
+                                    icon={Hash}
                                 />
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-end gap-4 border-t border-black/[0.05] pt-8 dark:border-white/[0.05]">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setIsEditing(false);
-                                    reset();
-                                }}
-                                className="h-10 rounded-lg px-8 text-[11px] font-black tracking-widest text-black/30 uppercase transition-all hover:text-black dark:text-white/30 dark:hover:text-white"
-                            >
-                                Batalkan Perubahan
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={processing}
-                                className="flex h-10 items-center gap-3 rounded-lg border-none bg-black px-10 text-[11px] font-black tracking-widest text-white uppercase shadow-xl shadow-black/10 transition-all hover:opacity-90 active:scale-95 disabled:opacity-50 dark:bg-white dark:text-black dark:shadow-white/5"
-                            >
-                                {processing ? <Save className="h-4 w-4 animate-spin" /> : <Save size={16} />}
-                                Simpan Konfigurasi
-                            </button>
+                        <div className="flex items-center justify-between border-t border-primary/10 dark:border-white/10 pt-8">
+                            <div className="flex items-center gap-4 p-4 rounded-xl bg-primary/[0.03] dark:bg-white/[0.03] border border-primary/10 dark:border-white/10 cursor-pointer group hover:bg-primary/[0.05] dark:hover:bg-white/[0.05] transition-colors" onClick={() => setData('is_active', !data.is_active)}>
+                                <Checkbox 
+                                    checked={data.is_active}
+                                    onCheckedChange={() => {}}
+                                />
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-primary dark:text-white">Aktivasi Sistem</span>
+                                    <span className="text-[8px] font-bold text-primary/30 dark:text-white/30 uppercase mt-0.5">Aktifkan generator nomor otomatis</span>
+                                </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-4">
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    onClick={() => {
+                                        setIsEditing(false);
+                                        reset();
+                                    }}
+                                    className="h-12 px-8 rounded-2xl text-[11px] font-black uppercase tracking-widest text-primary/30 hover:text-rose-500 transition-all"
+                                >
+                                    Batalkan
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    disabled={processing}
+                                    className="h-12 px-12 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-2xl active:scale-95 group"
+                                >
+                                    {processing ? <Save className="h-4 w-4 animate-spin mr-2" /> : <Save size={16} className="mr-2 group-hover:rotate-12 transition-transform" />}
+                                    Simpan Konfigurasi
+                                </Button>
+                            </div>
                         </div>
                     </form>
                 ) : (
-                    <div className="grid grid-cols-1 items-center gap-12 md:grid-cols-2">
-                        <div>
-                            <span className="mb-4 block text-[10px] font-black tracking-widest text-black/30 uppercase dark:text-white/30">
-                                Aktual Preview Format
+                    <div className="grid grid-cols-1 items-center gap-16 lg:grid-cols-12">
+                        <div className="lg:col-span-7">
+                            <span className="mb-4 block text-[10px] font-black tracking-[0.3em] text-primary/30 dark:text-white/30 uppercase italic px-1">
+                                Preview Aktual Pattern
                             </span>
-                            <div className="group relative flex items-center gap-4 overflow-hidden rounded-xl border-none bg-black p-6 font-mono text-[14px] text-white shadow-xl shadow-black/10 dark:bg-white dark:text-black dark:shadow-white/5">
-                                <div className="absolute top-0 right-0 p-2 opacity-5">
-                                    <Hash size={64} />
+                            <div className="group relative flex items-center gap-6 overflow-hidden rounded-[2rem] bg-primary dark:bg-white p-8 shadow-2xl shadow-primary/20 dark:shadow-white/5 min-h-[100px]">
+                                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-all group-hover:scale-110">
+                                    <Hash size={120} strokeWidth={3} />
                                 </div>
-                                <span className="text-2xl font-black opacity-30 select-none">#</span>
-                                <span className="relative z-10 truncate font-bold tracking-[0.2em] uppercase">{format.format_pattern}</span>
+                                <div className="h-12 w-12 rounded-2xl bg-white/10 dark:bg-black/10 flex items-center justify-center shrink-0">
+                                    <span className="text-2xl font-black text-white/40 dark:text-black/40 italic">#</span>
+                                </div>
+                                <span className="relative z-10 font-mono text-[18px] lg:text-[22px] font-black tracking-[0.1em] text-white dark:text-black uppercase truncate">
+                                    {format.format_pattern.replace('{{nomor}}', '0'.repeat(format.padding - 1) + '1')}
+                                </span>
                             </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-6">
-                            <div className="rounded-xl border border-black/[0.05] bg-black/[0.02] p-6 shadow-sm dark:border-white/[0.05] dark:bg-white/[0.02]">
-                                <span className="mb-3 block text-[9px] font-black tracking-[0.2em] text-black/30 uppercase dark:text-white/30">
-                                    Urutan Terakhir
+                        <div className="lg:col-span-5 grid grid-cols-2 gap-6">
+                            <div className="rounded-[1.5rem] border border-primary/10 dark:border-white/10 bg-primary/[0.02] dark:bg-white/[0.02] p-6 shadow-sm hover:shadow-md transition-all">
+                                <span className="mb-4 block text-[9px] font-black tracking-[0.2em] text-primary/30 dark:text-white/30 uppercase">
+                                    Index Terakhir
                                 </span>
-                                <span className="text-3xl leading-none font-bold tracking-tighter text-black tabular-nums dark:text-white">
-                                    {format.current_number}
-                                </span>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-4xl leading-none font-black tracking-tighter text-primary dark:text-white tabular-nums">
+                                        {format.current_number}
+                                    </span>
+                                    <span className="text-[9px] font-black text-primary/20 dark:text-white/20 uppercase tracking-widest italic">Serial</span>
+                                </div>
                             </div>
-                            <div className="rounded-xl border border-black/[0.05] bg-black/[0.02] p-6 shadow-sm dark:border-white/[0.05] dark:bg-white/[0.02]">
-                                <span className="mb-3 block text-[9px] font-black tracking-[0.2em] text-black/30 uppercase dark:text-white/30">
-                                    Digit Padding
+                            <div className="rounded-[1.5rem] border border-primary/10 dark:border-white/10 bg-primary/[0.02] dark:bg-white/[0.02] p-6 shadow-sm hover:shadow-md transition-all">
+                                <span className="mb-4 block text-[9px] font-black tracking-[0.2em] text-primary/30 dark:text-white/30 uppercase">
+                                    Padding Digit
                                 </span>
-                                <span className="text-3xl leading-none font-bold tracking-tighter text-black tabular-nums dark:text-white">
-                                    {format.padding} <span className="ml-1 text-[12px] font-black tracking-widest uppercase opacity-30">Digit</span>
-                                </span>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-4xl leading-none font-black tracking-tighter text-primary dark:text-white tabular-nums">
+                                        {format.padding}
+                                    </span>
+                                    <span className="text-[9px] font-black text-primary/20 dark:text-white/20 uppercase tracking-widest italic">Digit</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -247,5 +259,4 @@ function FormatCard({ format }: Readonly<{ format: NumberingFormat }>) {
     );
 }
 
-// Mock route helper if not defined (though it should be from Ziggy)
 declare var route: any;

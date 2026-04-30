@@ -12,9 +12,14 @@ class VendorRealisticSeeder extends Seeder
 {
     public function run(): void
     {
+        $admin = \App\Models\User::firstWhere('email', 'admin@example.com') ?? \App\Models\User::first();
+        $adminId = $admin ? $admin->id : null;
+
         // Bersihkan data vendor eksisting jika diperlukan
+        \Illuminate\Support\Facades\Schema::disableForeignKeyConstraints();
         Vendor::truncate();
         VendorDocument::truncate();
+        \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
 
         $vendors = [
             [
@@ -22,7 +27,7 @@ class VendorRealisticSeeder extends Seeder
                 'name' => 'PT Integra Konstruksi Nusantara',
                 'company_type' => 'PT',
                 'is_individual' => false,
-                'category' => 'Konstruksi Sipil & Bangunan',
+                'category' => 'CONTRACTOR',
                 'email' => 'contact@integrakonstruksi.co.id',
                 'phone' => '021-88997766',
                 'address' => 'Gedung Menara Mulia Lt. 15, Jl. Jend. Gatot Subroto Kav. 9-11, Jakarta Selatan, 12930',
@@ -38,9 +43,10 @@ class VendorRealisticSeeder extends Seeder
                 'bank_account_name' => 'PT Integra Konstruksi Nusantara',
                 'is_active' => true,
                 'docs' => [
+                    ['type' => 'NPWP', 'name' => 'SKT & NPWP PKP Perusahaan'],
+                    ['type' => 'NIB', 'name' => 'NIB OSS Terintegrasi'],
+                    ['type' => 'SIUP', 'name' => 'Izin Usaha Sektoral'],
                     ['type' => 'AKTA_PENDIRIAN', 'name' => 'Akta Pendirian PT Integra'],
-                    ['type' => 'TDP', 'name' => 'Tanda Daftar Perusahaan (TDP)'],
-                    ['type' => 'NPWP_PKP', 'name' => 'SKT & NPWP PKP Perusahaan'],
                 ]
             ],
             [
@@ -48,7 +54,7 @@ class VendorRealisticSeeder extends Seeder
                 'name' => 'CV Mitra Katering Bersama',
                 'company_type' => 'CV',
                 'is_individual' => false,
-                'category' => 'Food & Beverages / Katering',
+                'category' => 'SUPPLIER',
                 'email' => 'admin@mitrakatering.com',
                 'phone' => '022-7788990',
                 'address' => 'Jl. Soekarno Hatta No. 415, Buahbatu, Kota Bandung, Jawa Barat, 40286',
@@ -73,7 +79,7 @@ class VendorRealisticSeeder extends Seeder
                 'name' => 'PT Solusi Informatika Global',
                 'company_type' => 'PT',
                 'is_individual' => false,
-                'category' => 'IT Services & Software Development',
+                'category' => 'IT SERVICES',
                 'email' => 'hello@solusi-ig.co.id',
                 'phone' => '021-55661122',
                 'address' => 'Cyber 2 Tower, Jl. H. R. Rasuna Said Blok X-5, Kuningan, Kota Jakarta Selatan, 12950',
@@ -91,15 +97,15 @@ class VendorRealisticSeeder extends Seeder
                 'docs' => [
                     ['type' => 'AKTA_PENDIRIAN', 'name' => 'Akta Pendirian PT SIG'],
                     ['type' => 'AKTA_PERUBAHAN', 'name' => 'Akta Perubahan Pengurus Terakhir'],
-                    ['type' => 'NPWP_PKP', 'name' => 'Sertifikat PKP Elektronik'],
+                    ['type' => 'NPWP', 'name' => 'Sertifikat PKP Elektronik'],
                 ]
             ],
             [
                 'code' => 'VND-2026-004',
                 'name' => 'Agus Pratama (Konsultan Independen)',
-                'company_type' => 'Perorangan',
+                'company_type' => 'INDIVIDU',
                 'is_individual' => true,
-                'category' => 'Consulting Services',
+                'category' => 'CONSULTANT',
                 'email' => 'agus.pratama@consultant.id',
                 'phone' => '081234567890',
                 'address' => 'Jl. Kemang Raya No. 12, Pela Mampang, Mampang Prapatan, Jakarta Selatan, 12730',
@@ -115,9 +121,8 @@ class VendorRealisticSeeder extends Seeder
                 'bank_account_name' => 'Agus Pratama',
                 'is_active' => true,
                 'docs' => [
-                    ['type' => 'KTP_PASSPORT_DIREKSI', 'name' => 'KTP Agus Pratama'],
-                    ['type' => 'NPWP_PKP', 'name' => 'NPWP Pribadi'],
-                    ['type' => 'KARTU_KELUARGA', 'name' => 'Kartu Keluarga'],
+                    ['type' => 'KTP_DIREKTUR', 'name' => 'KTP Agus Pratama'],
+                    ['type' => 'NPWP', 'name' => 'NPWP Pribadi'],
                 ]
             ],
             [
@@ -125,7 +130,7 @@ class VendorRealisticSeeder extends Seeder
                 'name' => 'PT Mega Logistic Sentosa',
                 'company_type' => 'PT',
                 'is_individual' => false,
-                'category' => 'Logistics & Supply Chain',
+                'category' => 'LOGISTICS',
                 'email' => 'operations@megalogistic.com',
                 'phone' => '031-2345678',
                 'address' => 'Jl. Perak Timur No. 512, Pabean Cantian, Kota Surabaya, Jawa Timur, 60165',
@@ -142,7 +147,6 @@ class VendorRealisticSeeder extends Seeder
                 'is_active' => true,
                 'docs' => [
                     ['type' => 'AKTA_PENDIRIAN', 'name' => 'Akta Pendirian MLS'],
-                    ['type' => 'SIUP_BKPM', 'name' => 'Izin Usaha Logistik BKPM'],
                 ]
             ]
         ];
@@ -151,7 +155,10 @@ class VendorRealisticSeeder extends Seeder
             $docs = $vendorData['docs'];
             unset($vendorData['docs']);
 
-            $vendor = Vendor::create($vendorData);
+            $vendor = Vendor::create(array_merge($vendorData, [
+                'created_by' => $adminId,
+                'updated_by' => $adminId,
+            ]));
 
             // Seed documents realistically
             foreach ($docs as $doc) {

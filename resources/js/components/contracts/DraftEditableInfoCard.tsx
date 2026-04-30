@@ -1,7 +1,8 @@
-import { Avatar, StatusBadge } from '@/components/contracts/ui';
+import { Avatar } from '@/components/contracts/ui';
 import { Contract, ContractType } from '@/types/contracts';
-import { Info, Loader2, Check, ChevronUp, ChevronDown } from 'lucide-react';
+import { Info, Loader2, Check, ChevronUp, ChevronDown, FileText as FileIcon } from 'lucide-react';
 import { useEffect, useMemo, useState, useRef } from 'react';
+import { ContractReferenceCard } from './ContractReferenceCard';
 
 export interface FormTemplateInfo {
     id: string;
@@ -150,11 +151,11 @@ export function DraftEditableInfoCard({
 
     return (
         <div className="bg-white dark:bg-sidebar overflow-hidden rounded-xl shadow-sm">
-            <div className="flex items-center justify-between bg-[#172554] dark:bg-white p-4">
-                <div className="flex items-center gap-2 font-bold text-white dark:text-[#172554] text-[11px] uppercase tracking-widest">
-                    <Info size={14} className="text-white/40 dark:text-[#172554]/40" /> Informasi Kontrak
+            <div className="flex h-14 items-center justify-between bg-primary dark:bg-white px-4">
+                <div className="flex items-center gap-2 font-bold text-white dark:text-black text-[11px] uppercase tracking-widest">
+                    <Info size={14} className="text-white/40 dark:text-black/40" /> Informasi Kontrak
                     {isDraft && (
-                        <span className="rounded-full bg-white dark:bg-[#0f172a] px-2 py-0.5 text-[8px] font-bold tracking-widest text-[#0f172a] dark:text-white uppercase">
+                        <span className="rounded-full bg-white dark:bg-black px-2 py-0.5 text-[8px] font-bold tracking-widest text-black dark:text-white uppercase">
                             Editable
                         </span>
                     )}
@@ -182,7 +183,7 @@ export function DraftEditableInfoCard({
                     )}
                     <button
                         onClick={() => setMinimized(!minimized)}
-                        className="text-white/40 dark:text-[#0f172a]/40 hover:text-white dark:hover:text-[#0f172a] transition-all active:scale-95"
+                        className="text-white/40 dark:text-black/40 hover:text-white dark:hover:text-black transition-all active:scale-95"
                     >
                         {minimized ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
                     </button>
@@ -332,6 +333,18 @@ export function DraftEditableInfoCard({
                             Tgl Dibuat
                         </div>
                         <span className="text-black dark:text-white font-medium" style={{ fontSize: 12 }}>{selected.created_at}</span>
+                    </div>
+
+                    <div className="grid-cols-1 border-t border-black/10 pt-6 dark:border-white/10" style={{ gridColumn: '1/-1' }}>
+                        <div className="mb-4 text-[9px] font-black uppercase tracking-[0.2em] text-black/40 dark:text-white/40">
+                            Kontrak Referensi / Dasar Hukum
+                        </div>
+                        <ContractReferenceCard 
+                            selected={selected}
+                            canUpdate={canUpdate}
+                            onUpdate={onUpdate as any}
+                            processing={processing}
+                        />
                     </div>
                 </div>
             )}

@@ -2,6 +2,8 @@ import { contractApi } from '@/lib/contract-api';
 import { Contract } from '@/types/contracts';
 import React, { useEffect, useRef, useState } from 'react';
 import { Avatar } from './ui';
+import { SearchInput } from '@/components/ui/forms/SearchInput';
+import { X } from 'lucide-react';
 
 interface Props {
     contracts: Contract[];
@@ -18,7 +20,7 @@ function MsgBubble({ msg, isMe }: { msg: any; isMe: boolean }) {
         return (
             <div className="mb-1 flex flex-col items-end gap-1">
                 <div className="mr-1 flex items-center gap-1.5">
-                    <span className="text-[10px] font-bold text-blue-600">You</span>
+                    <span className="text-[10px] font-black text-black dark:text-white uppercase tracking-widest">You</span>
                     {role && (
                         <span className="px-1.2 py-0.3 rounded-md border border-gray-100 bg-gray-50 text-[10px] font-medium text-gray-400">
                             {role}
@@ -27,15 +29,14 @@ function MsgBubble({ msg, isMe }: { msg: any; isMe: boolean }) {
                 </div>
                 <div className="group relative max-w-[85%]">
                     <div
-                        className="rounded-[14px_14px_4px_14px] px-3 py-2 text-[12px] leading-relaxed text-white shadow-sm select-text"
-                        style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' }}
+                        className="rounded-[14px_14px_4px_14px] px-3 py-2 text-[12px] leading-relaxed bg-black dark:bg-white text-white dark:text-black shadow-lg select-text font-medium"
                     >
                         {msg.message}
                     </div>
                 </div>
                 <div className="mt-0.5 mr-1 flex items-center gap-1">
                     <span className="text-[10px] text-gray-400">{time}</span>
-                    {msg.read_by?.length > 1 && <i className="fa-solid fa-check-double text-[9px] text-blue-500" />}
+                    {msg.read_by?.length > 1 && <i className="fa-solid fa-check-double text-[9px] text-black/40 dark:text-white/40" />}
                 </div>
             </div>
         );
@@ -180,7 +181,7 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
-                className="fixed right-5 bottom-[10%] z-[200] flex h-12 w-12 cursor-move items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition-all select-none hover:bg-blue-700"
+                className="fixed right-5 bottom-[10%] z-[200] flex h-12 w-12 cursor-move items-center justify-center rounded-full bg-black dark:bg-white text-white dark:text-black shadow-2xl transition-all select-none hover:opacity-90 active:scale-95"
                 style={{
                     transform: `translate(${pos.x}px, ${pos.y}px)`,
                     touchAction: 'none',
@@ -188,7 +189,7 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
             >
                 <i className={`fa-solid ${open ? 'fa-xmark' : 'fa-comments'} text-[18px]`} />
                 {totalUnread > 0 && (
-                    <span className="pointer-events-none absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                    <span className="pointer-events-none absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black dark:bg-white text-[10px] font-black text-white dark:text-black shadow-lg border border-white dark:border-black">
                         {totalUnread}
                     </span>
                 )}
@@ -233,42 +234,35 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
 
                         {/* Search Sub-header for Thread */}
                         {activeId && showSearchThread && (
-                            <div className="flex items-center gap-2 border-b border-gray-50 bg-gray-50/50 px-4 py-2">
-                                <i className="fa-solid fa-magnifying-glass text-[10px] text-gray-400" />
-                                <input
+                            <div className="flex items-center gap-2 border-b border-black/5 bg-black/[0.02] dark:bg-white/[0.02] px-4 py-2 animate-in slide-in-from-top duration-300">
+                                <SearchInput 
                                     autoFocus
                                     value={searchThread}
                                     onChange={(e) => setSearchThread(e.target.value)}
                                     placeholder="Cari pesan..."
-                                    className="flex-1 border-none bg-transparent text-[11px] placeholder-gray-400 outline-none"
+                                    className="h-8 text-[11px]"
                                 />
                                 <button
                                     onClick={() => {
                                         setShowSearchThread(false);
                                         setSearchThread('');
                                     }}
-                                    className="text-gray-400 transition-colors hover:text-gray-600"
+                                    className="text-black/40 dark:text-white/40 transition-colors hover:text-black dark:hover:text-white"
                                 >
-                                    <i className="fa-solid fa-xmark text-[10px]" />
+                                    <X size={14} />
                                 </button>
                             </div>
                         )}
 
                         {/* Search header for List view */}
                         {!activeId && (
-                            <div className="flex items-center gap-2 border-b border-gray-50 px-4 py-2">
-                                <i className="fa-solid fa-magnifying-glass text-[11px] text-gray-300" />
-                                <input
+                            <div className="flex items-center gap-2 border-b border-black/5 px-4 py-3 bg-black/[0.02] dark:bg-white/[0.02]">
+                                <SearchInput 
                                     value={searchList}
                                     onChange={(e) => setSearchList(e.target.value)}
                                     placeholder="Cari kontrak..."
-                                    className="flex-1 border-none bg-transparent text-[12px] placeholder-gray-300 outline-none"
+                                    className="h-9 text-[12px]"
                                 />
-                                {searchList && (
-                                    <button onClick={() => setSearchList('')} className="text-gray-300 hover:text-gray-500">
-                                        <i className="fa-solid fa-xmark text-[11px]" />
-                                    </button>
-                                )}
                             </div>
                         )}
 
@@ -291,8 +285,8 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
                                                 className="flex cursor-pointer items-center gap-3 border-b border-gray-100 px-4 py-3 transition-colors last:border-0 hover:bg-gray-50"
                                                 style={{ width: '100%', boxSizing: 'border-box', overflow: 'hidden' }}
                                             >
-                                                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-blue-100 bg-blue-50">
-                                                    <i className="fa-solid fa-file-lines text-[13px] text-blue-400" />
+                                                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-black/10 bg-black/5 dark:bg-white/5">
+                                                    <i className="fa-solid fa-file-lines text-[13px] text-black dark:text-white" />
                                                 </div>
                                                 <div className="min-w-0 flex-1">
                                                     <div className="flex items-center justify-between">
@@ -313,7 +307,7 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
                                                     )}
                                                 </div>
                                                 {unread > 0 && (
-                                                    <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
+                                                    <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-black dark:bg-white text-[10px] font-bold text-white dark:text-black">
                                                         {unread}
                                                     </span>
                                                 )}
@@ -370,12 +364,12 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
                                         onChange={(e) => setInput(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && send()}
                                         placeholder="Tulis pesan..."
-                                        className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-[12px] placeholder-gray-300 outline-none focus:border-blue-500"
+                                        className="flex-1 rounded-lg border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-3 py-2 text-[12px] text-black dark:text-white placeholder-black/30 dark:placeholder-white/30 outline-none focus:border-black dark:focus:border-white"
                                     />
                                     <button
                                         onClick={send}
                                         disabled={sending || !input.trim()}
-                                        className="rounded-lg bg-blue-600 px-3 py-2 text-[12px] text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+                                        className="rounded-lg bg-black dark:bg-white px-3 py-2 text-[12px] text-white dark:text-black transition-all hover:opacity-90 disabled:opacity-30 shadow-lg active:scale-95"
                                     >
                                         <i className="fa-solid fa-paper-plane text-[11px]" />
                                     </button>

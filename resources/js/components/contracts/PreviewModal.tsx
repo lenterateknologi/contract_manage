@@ -24,9 +24,9 @@ export default function PreviewModal({ open, onClose, title, url, hasFile }: Pro
     if (!open) return null;
 
     return (
-        <div className="fixed inset-0 z-[60] flex flex-col bg-[#525659]">
+        <div className="fixed inset-0 z-[60] flex flex-col bg-black dark:bg-black">
             {/* Header */}
-            <div className="flex flex-shrink-0 items-center justify-between border-b border-gray-800 bg-[#323639] px-5 py-3 text-white shadow-lg">
+            <div className="flex flex-shrink-0 items-center justify-between border-b border-white/10 bg-black px-5 py-3 text-white shadow-lg">
                 <div className="flex min-w-0 items-center gap-3">
                     <button
                         onClick={onClose}
@@ -34,8 +34,8 @@ export default function PreviewModal({ open, onClose, title, url, hasFile }: Pro
                     >
                         <i className="fa-solid fa-arrow-left text-[13px]" />
                     </button>
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-red-500/30 bg-red-500/20">
-                        <i className="fa-regular fa-file-pdf text-red-500" />
+                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-white/20 bg-white/10">
+                        <i className="fa-regular fa-file-pdf text-white" />
                     </div>
                     <div className="min-w-0">
                         <div className="truncate text-[13px] font-semibold" title={title}>
@@ -62,7 +62,7 @@ export default function PreviewModal({ open, onClose, title, url, hasFile }: Pro
                     </div>
                     <button
                         onClick={onClose}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-[13px] text-gray-400 transition-all hover:bg-red-500 hover:text-white"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-[13px] text-gray-400 transition-all hover:bg-white hover:text-black"
                     >
                         <i className="fa-solid fa-xmark" />
                     </button>
@@ -72,16 +72,16 @@ export default function PreviewModal({ open, onClose, title, url, hasFile }: Pro
             {/* Content */}
             <div className="relative flex-1 overflow-hidden">
                 {loading && (
-                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-[#525659] text-gray-300">
-                        <i className="fa-solid fa-spinner fa-spin text-3xl text-blue-400" />
-                        <span className="text-[13px] font-medium">Generating PDF Preview...</span>
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-black text-white">
+                        <i className="fa-solid fa-spinner fa-spin text-3xl text-white" />
+                        <span className="text-[10px] font-black tracking-widest uppercase">Generating PDF Preview...</span>
                     </div>
                 )}
 
                 {!hasFile ? (
                     <div className="mx-auto flex h-full max-w-sm flex-col items-center justify-center gap-4 px-6 text-center text-gray-300">
-                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/5">
-                            <i className="fa-solid fa-file-circle-exclamation text-3xl text-amber-500" />
+                        <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/20 bg-white/5">
+                            <i className="fa-solid fa-file-circle-exclamation text-3xl text-white" />
                         </div>
                         <div>
                             <h3 className="mb-1 text-lg font-semibold">File Tidak Ditemukan</h3>
@@ -99,9 +99,9 @@ export default function PreviewModal({ open, onClose, title, url, hasFile }: Pro
                         onLoad={() => setLoading(false)}
                     />
                 ) : (
-                    <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-400">
-                        <i className="fa-solid fa-triangle-exclamation text-3xl text-amber-500" />
-                        <span className="text-[13px]">Gagal memuat preview PDF</span>
+                    <div className="flex h-full flex-col items-center justify-center gap-3 text-white/40">
+                        <i className="fa-solid fa-triangle-exclamation text-3xl text-white/20" />
+                        <span className="text-[11px] font-black tracking-widest uppercase">Gagal memuat preview PDF</span>
                     </div>
                 )}
             </div>

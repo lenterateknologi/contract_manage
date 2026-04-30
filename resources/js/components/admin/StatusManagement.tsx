@@ -1,14 +1,26 @@
-import { ManagementForm } from '@/components/admin/ManagementForm';
+import { ManagementForm, FormSection } from '@/components/admin/ManagementForm';
 import { useToast } from '@/components/contracts/Toast';
-import { Column, DataTable } from '@/components/ui/DataTable';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Column, DataTable } from '@/components/ui/data/DataTable';
+import { Button } from '@/components/ui/base/Button';
+import { Checkbox } from '@/components/ui/base/Checkbox';
+import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { usePermissions } from '@/hooks/use-permissions';
 import { cn } from '@/lib/utils';
 import { router, useForm } from '@inertiajs/react';
-import { AlertCircle, CheckCircle2, Palette, Plus, Tags } from 'lucide-react';
+import { 
+    AlertCircle, 
+    Palette, 
+    Plus, 
+    Tags, 
+    Settings2, 
+    LayoutTemplate, 
+    FileText, 
+    Lock, 
+    Unlock, 
+    Link2, 
+    ShieldCheck,
+    Search
+} from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 
 interface StatusManagementProps {
@@ -17,43 +29,34 @@ interface StatusManagementProps {
 }
 
 const StatusLabelCell = ({ row }: { readonly row: any }) => (
-    <div className="flex flex-col">
-        <span className="text-[13px] leading-tight font-bold text-black dark:text-white">{row.label}</span>
-        <span className="mt-0.5 font-mono text-[10px] font-bold tracking-widest text-black/30 uppercase dark:text-white/30">
+    <div className="flex flex-col group">
+        <span className="text-[13px] leading-tight font-bold text-primary dark:text-white group-hover:translate-x-1 transition-transform inline-block">{row.label}</span>
+        <span className="mt-1 font-mono text-[9px] font-black tracking-[0.2em] text-primary/30 uppercase dark:text-white/30">
             {row.code}
         </span>
     </div>
 );
 
 const VisualPreviewCell = ({ row }: { readonly row: any }) => (
-    <div className="flex items-center gap-3">
-        <span className="text-[10px] font-black tracking-[0.2em] uppercase" style={{ color: row.color }}>
+    <div className="flex items-center">
+        <div 
+            className="px-3 py-1 rounded-lg border border-primary/5 text-[10px] font-black tracking-widest uppercase shadow-sm"
+            style={{ color: row.color, backgroundColor: row.bg_color || 'transparent' }}
+        >
             {row.label}
-        </span>
+        </div>
     </div>
 );
 
-const ShowModeCell = ({ row }: { readonly row: any }) => (
-    <span className="text-[10px] font-black tracking-widest text-black/40 uppercase dark:text-white/40">
-        {row.display_mode === 'pdf' ? 'DOCUMENT PDF' : 'INTERACTIVE FORM'}
-    </span>
-);
-
-const EditInfoCell = ({ row }: { readonly row: any }) => (
-    <div className="flex items-center gap-2">
-        <div className={cn('h-1.5 w-1.5 rounded-full', row.allow_info_edit ? 'bg-black dark:bg-white' : 'bg-black/10 dark:bg-white/10')} />
-        <span className={cn('text-[10px] font-black tracking-widest uppercase', row.allow_info_edit ? 'text-black dark:text-white' : 'text-black/30 dark:text-white/30')}>
-            {row.allow_info_edit ? 'ALLOWED' : 'LOCKED'}
-        </span>
-    </div>
-);
-
-const ActiveCell = ({ row }: { readonly row: any }) => (
-    <div className="flex items-center gap-2">
-        <div className={cn('h-1.5 w-1.5 rounded-full', row.is_active ? 'bg-black dark:bg-white' : 'bg-black/10 dark:bg-white/10')} />
-        <span className={cn('text-[10px] font-black tracking-widest uppercase', row.is_active ? 'text-black dark:text-white' : 'text-black/30 dark:text-white/30')}>
-            {row.is_active ? 'AKTIF' : 'NON-AKTIF'}
-        </span>
+const ConfigBadge = ({ active, label, activeIcon: ActiveIcon, inactiveIcon: InactiveIcon }: { active: boolean, label: string, activeIcon: any, inactiveIcon: any }) => (
+    <div className={cn(
+        "flex items-center gap-2 px-2 py-1 rounded-md border text-[9px] font-black tracking-widest uppercase transition-all",
+        active 
+            ? "bg-primary/5 border-primary/10 text-primary dark:bg-white/5 dark:border-white/10 dark:text-white" 
+            : "bg-transparent border-transparent text-primary/20 dark:text-white/20"
+    )}>
+        {active ? <ActiveIcon size={10} /> : <InactiveIcon size={10} />}
+        {label}
     </div>
 );
 
@@ -73,35 +76,60 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
         is_active: true as boolean,
         display_mode: 'interactive' as 'interactive' | 'pdf',
         allow_info_edit: false as boolean,
+        allow_reference: false as boolean,
     });
 
     const columns = useMemo<Column<any>[]>(
         () => [
             {
-                header: 'Status Label',
+                header: 'Identitas Status',
                 accessorKey: 'label',
-                sortable: true,
                 cell: (row) => <StatusLabelCell row={row} />,
             },
             {
-                header: 'Visual Preview',
+                header: 'Visual Audit',
                 accessorKey: 'color',
                 cell: (row) => <VisualPreviewCell row={row} />,
             },
             {
-                header: 'Show Mode',
+                header: 'Konfigurasi Sistem',
                 accessorKey: 'display_mode',
-                cell: (row) => <ShowModeCell row={row} />,
+                className: 'hidden md:table-cell',
+                cell: (row) => (
+                    <div className="flex items-center gap-3">
+                        <ConfigBadge 
+                            active={row.display_mode === 'pdf'} 
+                            label="PDF" 
+                            activeIcon={FileText} 
+                            inactiveIcon={LayoutTemplate} 
+                        />
+                        <ConfigBadge 
+                            active={row.allow_info_edit} 
+                            label="Edit" 
+                            activeIcon={Unlock} 
+                            inactiveIcon={Lock} 
+                        />
+                        <ConfigBadge 
+                            active={row.allow_reference} 
+                            label="Ref" 
+                            activeIcon={Link2} 
+                            inactiveIcon={Link2} 
+                        />
+                    </div>
+                ),
             },
             {
-                header: 'Edit Info',
-                accessorKey: 'allow_info_edit',
-                cell: (row) => <EditInfoCell row={row} />,
-            },
-            {
-                header: 'Sistem',
+                header: 'Status',
                 accessorKey: 'is_active',
-                cell: (row) => <ActiveCell row={row} />,
+                className: 'text-right',
+                cell: (row) => (
+                    <div className="flex items-center justify-end gap-2">
+                        <div className={cn('h-1.5 w-1.5 rounded-full', row.is_active ? 'bg-emerald-500 animate-pulse' : 'bg-primary/10 dark:bg-white/10')} />
+                        <span className={cn('text-[9px] font-black tracking-widest uppercase', row.is_active ? 'text-primary dark:text-white' : 'text-primary/20 dark:text-white/20')}>
+                            {row.is_active ? 'Online' : 'Offline'}
+                        </span>
+                    </div>
+                ),
             },
         ],
         [],
@@ -125,6 +153,7 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
             is_active: !!s.is_active,
             display_mode: s.display_mode || 'interactive',
             allow_info_edit: !!s.allow_info_edit,
+            allow_reference: !!s.allow_reference,
         });
         setIsEditorOpen(true);
     };
@@ -135,19 +164,19 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
             onSuccess: () => {
                 setIsEditorOpen(false);
                 setEditingStatus(null);
-                showToast('Parameter Status Diperbarui', 'success');
+                showToast(`Parameter status ${form.data.label} berhasil diperbarui`, 'success');
             },
         };
-        if (editingStatus) form.put(`/admin/contract-statuses/${editingStatus.id}`, options);
-        else form.post('/admin/contract-statuses', options);
+        if (editingStatus) form.put(route('admin.contract-statuses.update', editingStatus.id), options);
+        else form.post(route('admin.contract-statuses.store'), options);
     };
 
     if (isEditorOpen) {
         const isEdit = !!editingStatus;
         return (
             <ManagementForm
-                title={isEdit ? 'Profil Parameter Status' : 'Registrasi Status Baru'}
-                subtitle={isEdit ? 'Konfigurasi visual dan perilaku sistem untuk status ini' : 'Definisikan kategori status baru dalam alur kerja'}
+                title={isEdit ? 'Parameter Status Kontrak' : 'Registrasi Status Baru'}
+                subtitle={isEdit ? `Mengelola perilaku sistem dan visualisasi audit untuk status ${form.data.label}` : 'Mendefinisikan entitas status baru dalam alur kerja manajemen kontrak'}
                 onClose={() => {
                     setIsEditorOpen(false);
                     setEditingStatus(null);
@@ -157,257 +186,160 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                 isDirty={form.isDirty}
                 isEdit={isEdit}
             >
-                <div className="animate-in slide-in-from-bottom-2 w-full space-y-12 px-1 pb-16 duration-700">
-                    <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
-                        {/* Primary Configuration */}
-                        <div className="space-y-12 lg:col-span-8">
-                            <div className="space-y-6">
-                                <h3 className="ml-1 border-b border-black/[0.05] pb-3 text-[11px] font-black tracking-[0.2em] text-black uppercase dark:border-white/[0.05] dark:text-white">
-                                    Arsitektur Identitas Status
-                                </h3>
-                                <div className="grid grid-cols-1 gap-x-8 gap-y-6 p-1 md:grid-cols-3">
-                                    <div className="space-y-2">
-                                        <Label className="ml-1 text-[10px] leading-none font-black tracking-widest text-black/40 uppercase dark:text-white/40">
-                                            Kode Sistem
-                                        </Label>
-                                        <Input
-                                            value={form.data.code}
-                                            onChange={(e) => form.setData('code', e.target.value)}
-                                            required
-                                            placeholder="ST-01"
-                                            className="h-10 rounded-xl border-black/[0.08] bg-black/[0.03] font-mono text-[11px] font-black text-black uppercase shadow-sm transition-all placeholder:text-black/20 focus:border-black focus-visible:ring-0 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white dark:focus:border-white"
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                    <div className="lg:col-span-8 space-y-12">
+                        {/* Section 1: Dasar */}
+                        <FormSection 
+                            title="Arsitektur Identitas" 
+                            subtitle="Parameter dasar yang mendefinisikan status dalam database"
+                        >
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <CompactInput 
+                                    label="Kode Sistem (Unique)"
+                                    value={form.data.code}
+                                    onChange={e => form.setData('code', e.target.value)}
+                                    placeholder="CONTOH: DRAFT / APPROVED"
+                                    icon={Tags}
+                                />
+                                <CompactInput 
+                                    label="Label Visual"
+                                    value={form.data.label}
+                                    onChange={e => form.setData('label', e.target.value)}
+                                    placeholder="NAMA STATUS YANG MUNCUL DI UI"
+                                />
+                                <div className="md:col-span-2">
+                                    <CompactInput 
+                                        label="Deskripsi Fungsional"
+                                        value={form.data.description}
+                                        onChange={e => form.setData('description', e.target.value)}
+                                        placeholder="Jelaskan peran status ini dalam alur bisnis..."
+                                    />
+                                </div>
+                            </div>
+                        </FormSection>
+
+                        {/* Section 2: Visuals */}
+                        <FormSection 
+                            title="Skema Warna & Tipografi" 
+                            subtitle="Pengaturan visual untuk badge dan audit trail"
+                        >
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                <div className="space-y-4">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-primary/40 dark:text-white/40 ml-1">Warna Teks</label>
+                                    <div className="flex items-center gap-3 p-3 rounded-xl border border-primary/10 dark:border-white/10 bg-primary/[0.02] dark:bg-white/[0.02]">
+                                        <input 
+                                            type="color" 
+                                            value={form.data.color}
+                                            onChange={e => form.setData('color', e.target.value)}
+                                            className="h-8 w-12 rounded-lg bg-transparent border-none cursor-pointer"
                                         />
+                                        <span className="font-mono text-[11px] font-black uppercase tracking-widest text-primary dark:text-white">{form.data.color}</span>
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label className="ml-1 text-[10px] leading-none font-black tracking-widest text-black/40 uppercase dark:text-white/40">
-                                            Label Status
-                                        </Label>
-                                        <Input
-                                            value={form.data.label}
-                                            onChange={(e) => form.setData('label', e.target.value)}
-                                            required
-                                            placeholder="CONTOH: DALAM PROSES"
-                                            className="h-10 rounded-xl border-black/[0.08] bg-black/[0.03] text-[11px] font-black text-black uppercase shadow-sm transition-all placeholder:text-black/20 focus:border-black focus-visible:ring-0 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white dark:focus:border-white"
+                                </div>
+                                <div className="space-y-4">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-primary/40 dark:text-white/40 ml-1">Warna Latar</label>
+                                    <div className="flex items-center gap-3 p-3 rounded-xl border border-primary/10 dark:border-white/10 bg-primary/[0.02] dark:bg-white/[0.02]">
+                                        <input 
+                                            type="color" 
+                                            value={form.data.bg_color}
+                                            onChange={e => form.setData('bg_color', e.target.value)}
+                                            className="h-8 w-12 rounded-lg bg-transparent border-none cursor-pointer"
                                         />
+                                        <span className="font-mono text-[11px] font-black uppercase tracking-widest text-primary dark:text-white">{form.data.bg_color}</span>
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label className="ml-1 text-[10px] leading-none font-black tracking-widest text-black/40 uppercase dark:text-white/40">
-                                            Deskripsi Fungsional
-                                        </Label>
-                                        <Input
-                                            value={form.data.description}
-                                            onChange={(e) => form.setData('description', e.target.value)}
-                                            placeholder="Jelaskan peran status ini dalam alur kerja..."
-                                            className="h-10 rounded-xl border-black/[0.08] bg-black/[0.03] text-[11px] font-bold text-black uppercase shadow-sm transition-all placeholder:text-black/20 focus:border-black focus-visible:ring-0 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white dark:focus:border-white"
-                                        />
+                                </div>
+                                <div className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-primary/10 dark:border-white/10 bg-primary/[0.01] dark:bg-white/[0.01]">
+                                    <span className="text-[8px] font-black uppercase tracking-[0.3em] text-primary/20 dark:text-white/20 mb-4">Live Badge Preview</span>
+                                    <div 
+                                        className="px-6 py-2 rounded-xl text-[11px] font-black tracking-widest uppercase shadow-xl border border-white/10"
+                                        style={{ color: form.data.color, backgroundColor: form.data.bg_color }}
+                                    >
+                                        {form.data.label || 'PREVIEW'}
                                     </div>
                                 </div>
                             </div>
+                        </FormSection>
+                    </div>
 
-                            <div className="space-y-6">
-                                <h3 className="ml-1 border-b border-black/[0.05] pb-3 text-[11px] font-black tracking-[0.2em] text-black uppercase dark:border-white/[0.05] dark:text-white">
-                                    Visual & Skema Warna
+                    <div className="lg:col-span-4 space-y-10">
+                        <div className="sticky top-6 space-y-10">
+                            {/* Mode Tampilan Widget */}
+                            <div className="rounded-2xl border border-primary/10 dark:border-white/10 bg-primary/[0.02] dark:bg-white/[0.02] p-8">
+                                <h3 className="text-[10px] font-black tracking-[0.3em] text-primary dark:text-white uppercase mb-6 flex items-center gap-2">
+                                    <LayoutTemplate size={14} /> Render Strategy
                                 </h3>
-                                <div className="grid grid-cols-1 gap-x-8 gap-y-6 p-1 md:grid-cols-3">
-                                    <div className="space-y-2">
-                                        <Label className="ml-1 flex items-center gap-2 text-[10px] leading-none font-black tracking-widest text-black/40 uppercase dark:text-white/40">
-                                            <Palette size={12} className="opacity-40" /> Warna Tipografi
-                                        </Label>
-                                        <div className="flex items-center gap-4 rounded-xl border border-black/[0.08] bg-black/[0.03] p-3 shadow-sm dark:border-white/[0.08] dark:bg-white/[0.03]">
-                                            <Input
-                                                type="color"
-                                                value={form.data.color}
-                                                onChange={(e) => form.setData('color', e.target.value)}
-                                                className="h-10 w-16 cursor-pointer rounded-lg border-none bg-transparent p-0"
-                                            />
-                                            <span className="font-mono text-[11px] font-black tracking-widest text-black uppercase dark:text-white">
-                                                {form.data.color}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="ml-1 flex items-center gap-2 text-[10px] leading-none font-black tracking-widest text-black/40 uppercase dark:text-white/40">
-                                            <Palette size={12} className="opacity-40" /> Warna Latar (Badge)
-                                        </Label>
-                                        <div className="flex items-center gap-4 rounded-xl border border-black/[0.08] bg-black/[0.03] p-3 shadow-sm dark:border-white/[0.08] dark:bg-white/[0.03]">
-                                            <Input
-                                                type="color"
-                                                value={form.data.bg_color}
-                                                onChange={(e) => form.setData('bg_color', e.target.value)}
-                                                className="h-10 w-16 cursor-pointer rounded-lg border-none bg-transparent p-0"
-                                            />
-                                            <span className="font-mono text-[11px] font-black tracking-widest text-black uppercase dark:text-white">
-                                                {form.data.bg_color}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-col items-center justify-center gap-6 rounded-2xl border border-dashed border-black/[0.1] bg-black/[0.02] px-8 py-10 dark:border-white/[0.1] dark:bg-white/[0.02]">
-                                        <span className="text-[10px] font-black tracking-[0.3em] text-black/30 uppercase dark:text-white/30">
-                                            Live Preview Badge
-                                        </span>
-                                        <div
-                                            style={{ color: form.data.color, backgroundColor: form.data.bg_color }}
-                                            className="transform rounded-xl border border-black/[0.05] px-8 py-3 text-[12px] font-black tracking-widest uppercase shadow-lg transition-all duration-300 hover:scale-105 dark:border-white/[0.05]"
-                                        >
-                                            {form.data.label || 'PREVIEW STATUS'}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
 
-                        {/* Order & Priority */}
-                        <div className="space-y-10 lg:col-span-4">
-                            <div className="space-y-6">
-                                <h3 className="ml-1 border-b border-black/[0.05] pb-3 text-[11px] font-black tracking-[0.2em] text-black uppercase dark:border-white/[0.05] dark:text-white">
-                                    Konfigurasi Preview
-                                </h3>
-                                <div className="space-y-4 p-1">
-                                    <Label className="ml-1 text-[10px] leading-none font-black tracking-widest text-black/40 uppercase dark:text-white/40">
-                                        Mode Tampilan Form (F1/F2)
-                                    </Label>
-                                    <div className="grid grid-cols-1 gap-4">
+                                <div className="space-y-4">
+                                    {[
+                                        { id: 'interactive', label: 'Interactive Form', desc: 'React component rendering for fast editing.', icon: LayoutTemplate },
+                                        { id: 'pdf', label: 'PDF Preview', desc: 'Direct server-side PDF render for print accuracy.', icon: FileText }
+                                    ].map(mode => (
                                         <button
+                                            key={mode.id}
                                             type="button"
-                                            onClick={() => form.setData('display_mode', 'interactive')}
+                                            onClick={() => form.setData('display_mode', mode.id as any)}
                                             className={cn(
-                                                'group flex flex-col items-start gap-3 rounded-2xl border p-5 text-left shadow-sm transition-all',
-                                                form.data.display_mode === 'interactive'
-                                                    ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black'
-                                                    : 'border-black/[0.08] bg-white text-black hover:border-black dark:border-white/[0.08] dark:bg-black/40 dark:text-white dark:hover:border-white',
+                                                "w-full flex items-start gap-4 p-4 rounded-xl border transition-all text-left group",
+                                                form.data.display_mode === mode.id
+                                                    ? "bg-primary border-primary text-white dark:bg-white dark:border-white dark:text-black shadow-lg"
+                                                    : "bg-white dark:bg-black/40 border-primary/10 dark:border-white/10 text-primary dark:text-white hover:border-primary dark:hover:border-white"
                                             )}
                                         >
-                                            <div className="flex items-center gap-3">
-                                                <div
-                                                    className={cn(
-                                                        'h-4 w-4 rounded-full border-2 transition-all',
-                                                        form.data.display_mode === 'interactive'
-                                                            ? 'border-white bg-white dark:border-black dark:bg-black'
-                                                            : 'border-black/20 group-hover:border-black dark:border-white/20 dark:group-hover:border-white',
-                                                    )}
-                                                />
-                                                <span className="text-[12px] font-black tracking-tight uppercase">Interactive Form</span>
+                                            <div className={cn(
+                                                "p-2 rounded-lg transition-colors",
+                                                form.data.display_mode === mode.id ? "bg-white/20 dark:bg-black/10" : "bg-primary/5 dark:bg-white/5"
+                                            )}>
+                                                <mode.icon size={16} />
                                             </div>
-                                            <p
-                                                className={cn(
-                                                    'text-[10px] leading-relaxed font-bold',
-                                                    form.data.display_mode === 'interactive'
-                                                        ? 'text-white/60 dark:text-black/60'
-                                                        : 'text-black/40 dark:text-white/40',
-                                                )}
-                                            >
-                                                Tampilan interaktif React yang dioptimalkan untuk pengisian data cepat dan responsif.
-                                            </p>
+                                            <div className="flex flex-col">
+                                                <span className="text-[11px] font-black uppercase tracking-wider">{mode.label}</span>
+                                                <span className={cn(
+                                                    "text-[9px] font-bold leading-tight mt-1 opacity-60",
+                                                )}>
+                                                    {mode.desc}
+                                                </span>
+                                            </div>
                                         </button>
+                                    ))}
+                                </div>
+                            </div>
 
-                                        <button
-                                            type="button"
-                                            onClick={() => form.setData('display_mode', 'pdf')}
-                                            className={cn(
-                                                'group flex flex-col items-start gap-3 rounded-2xl border p-5 text-left shadow-sm transition-all',
-                                                form.data.display_mode === 'pdf'
-                                                    ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black'
-                                                    : 'border-black/[0.08] bg-white text-black hover:border-black dark:border-white/[0.08] dark:bg-black/40 dark:text-white dark:hover:border-white',
-                                            )}
+                            {/* Operational Controls */}
+                            <div className="space-y-4">
+                                <h3 className="text-[10px] font-black tracking-[0.3em] text-primary dark:text-white uppercase px-1">Behavior Control</h3>
+                                <div className="space-y-3">
+                                    {[
+                                        { id: 'allow_info_edit', label: 'Allow Info Edit', desc: 'User can modify metadata in this status.', icon: Unlock },
+                                        { id: 'allow_reference', label: 'Allow Reference', desc: 'Contracts can link to this status as parent.', icon: Link2 },
+                                        { id: 'is_active', label: 'Status Is Online', desc: 'Make this status available for selection.', icon: ShieldCheck }
+                                    ].map(ctrl => (
+                                        <div 
+                                            key={ctrl.id}
+                                            onClick={() => form.setData(ctrl.id as any, !form.data[ctrl.id as keyof typeof form.data])}
+                                            className="flex items-center gap-4 p-4 rounded-xl bg-primary/[0.03] dark:bg-white/[0.03] border border-primary/10 dark:border-white/10 cursor-pointer group hover:bg-primary/[0.05] dark:hover:bg-white/[0.05] transition-colors"
                                         >
-                                            <div className="flex items-center gap-3">
-                                                <div
-                                                    className={cn(
-                                                        'h-4 w-4 rounded-full border-2 transition-all',
-                                                        form.data.display_mode === 'pdf'
-                                                            ? 'border-white bg-white dark:border-black dark:bg-black'
-                                                            : 'border-black/20 group-hover:border-black dark:border-white/20 dark:group-hover:border-white',
-                                                    )}
-                                                />
-                                                <span className="text-[12px] font-black tracking-tight uppercase">PDF Preview</span>
+                                            <Checkbox 
+                                                id={ctrl.id}
+                                                checked={!!form.data[ctrl.id as keyof typeof form.data]}
+                                                onCheckedChange={() => {}} // Handled by div
+                                                className="h-5 w-5"
+                                            />
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-primary dark:text-white">{ctrl.label}</span>
+                                                <span className="text-[8px] font-bold text-primary/30 dark:text-white/30 uppercase mt-0.5">{ctrl.desc}</span>
                                             </div>
-                                            <p
-                                                className={cn(
-                                                    'text-[10px] leading-relaxed font-bold',
-                                                    form.data.display_mode === 'pdf'
-                                                        ? 'text-white/60 dark:text-black/60'
-                                                        : 'text-black/40 dark:text-white/40',
-                                                )}
-                                            >
-                                                Tampilan file PDF statis yang dirender langsung dari server untuk akurasi cetak maksimal.
-                                            </p>
-                                        </button>
-                                    </div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
 
-                            <div className="space-y-6">
-                                <h3 className="ml-1 border-b border-black/[0.05] pb-3 text-[11px] font-black tracking-[0.2em] text-black uppercase dark:border-white/[0.05] dark:text-white">
-                                    Kontrol Operasional
-                                </h3>
-                                <div className="space-y-5 p-1">
-                                    <button
-                                        type="button"
-                                        className="group flex w-full cursor-pointer items-center gap-4 rounded-xl border border-black/[0.05] bg-black/[0.01] p-4 text-left shadow-sm transition-colors hover:bg-black/[0.03] dark:border-white/[0.05] dark:bg-white/[0.01] dark:hover:bg-white/[0.03]"
-                                        onClick={() => form.setData('allow_info_edit', !form.data.allow_info_edit)}
-                                    >
-                                        <Checkbox
-                                            id="f-edit-info"
-                                            checked={form.data.allow_info_edit}
-                                            onCheckedChange={(checked) => form.setData('allow_info_edit', checked as boolean)}
-                                            className="h-5 w-5 rounded-lg border-black/[0.1] transition-all data-[state=checked]:bg-black data-[state=checked]:text-white dark:border-white/[0.1] dark:data-[state=checked]:bg-white dark:data-[state=checked]:text-black"
-                                        />
-                                        <div className="flex flex-col">
-                                            <Label
-                                                htmlFor="f-edit-info"
-                                                className="cursor-pointer text-[11px] leading-tight font-black tracking-widest text-black uppercase dark:text-white"
-                                            >
-                                                IZINKAN EDIT INFO
-                                            </Label>
-                                            <p className="mt-1 text-[9px] font-bold tracking-tight text-black/30 uppercase dark:text-white/30">
-                                                User dapat memodifikasi metadata kontrak
-                                            </p>
-                                        </div>
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        className="group flex w-full cursor-pointer items-center gap-4 rounded-xl border border-black/[0.05] bg-black/[0.01] p-4 text-left shadow-sm transition-colors hover:bg-black/[0.03] dark:border-white/[0.05] dark:bg-white/[0.01] dark:hover:bg-white/[0.03]"
-                                        onClick={() => form.setData('is_active', !form.data.is_active)}
-                                    >
-                                        <Checkbox
-                                            id="f-active"
-                                            checked={form.data.is_active}
-                                            onCheckedChange={(checked) => form.setData('is_active', checked as boolean)}
-                                            className="h-5 w-5 rounded-lg border-black/[0.1] transition-all data-[state=checked]:bg-black data-[state=checked]:text-white dark:border-white/[0.1] dark:data-[state=checked]:bg-white dark:data-[state=checked]:text-black"
-                                        />
-                                        <div className="flex flex-col">
-                                            <Label
-                                                htmlFor="f-active"
-                                                className="cursor-pointer text-[11px] leading-tight font-black tracking-widest text-black uppercase dark:text-white"
-                                            >
-                                                STATUS AKTIF
-                                            </Label>
-                                            <p className="mt-1 text-[9px] font-bold tracking-tight text-black/30 uppercase dark:text-white/30">
-                                                Status tersedia untuk alur kerja operasional
-                                            </p>
-                                        </div>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="flex gap-4 rounded-2xl border border-black bg-black p-6 shadow-xl shadow-black/10 dark:border-white dark:bg-white dark:shadow-white/5">
-                                <AlertCircle size={16} className="mt-0.5 shrink-0 text-white dark:text-black" />
-                                <p className="text-[9px] leading-relaxed font-bold tracking-wider text-white uppercase dark:text-black">
-                                    Perubahan pada skema warna akan segera berdampak pada seluruh dashboard, laporan, dan riwayat audit kontrak secara
-                                    global.
+                            <div className="p-6 rounded-2xl bg-amber-500/5 border border-amber-500/20 flex gap-4">
+                                <AlertCircle size={16} className="text-amber-500 shrink-0 mt-1" />
+                                <p className="text-[9px] font-bold text-amber-600 dark:text-amber-400 leading-relaxed uppercase tracking-wider">
+                                    Peringatan: Perubahan parameter visual akan berdampak langsung pada audit trail dan dashboard di seluruh sistem secara global.
                                 </p>
                             </div>
                         </div>
-                    </div>
-
-                    <div className="flex items-center gap-6 py-12 opacity-10 grayscale">
-                        <div className="h-px flex-1 bg-black dark:bg-white" />
-                        <div className="flex items-center gap-3 text-black dark:text-white">
-                            <CheckCircle2 size={24} />
-                            <span className="text-[12px] font-black tracking-[0.5em] uppercase">KONFIGURASI TERSIMPAN</span>
-                        </div>
-                        <div className="h-px flex-1 bg-black dark:bg-white" />
                     </div>
                 </div>
             </ManagementForm>
@@ -415,104 +347,26 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
     }
 
     return (
-        <div className="animate-in fade-in flex h-full flex-col bg-white duration-500 dark:bg-black">
+        <div className="flex flex-col h-full bg-white dark:bg-black antialiased">
             <DataTable
-                title="Master Parameter Status"
-                columns={columns}
+                title="Manajemen Parameter Status"
                 data={statuses?.data || []}
-                searchKey="label"
-                searchPlaceholder="Filter Master Status..."
-                searchValue={filters.search || ''}
-                onSearchChange={(v) =>
-                    router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })
-                }
-                filters={[
-                    {
-                        label: 'Tampilan Formulir',
-                        key: 'display_mode',
-                        options: [
-                            { label: 'Interactive Form', value: 'interactive' },
-                            { label: 'Dokumen PDF', value: 'pdf' },
-                        ],
-                    },
-                    {
-                        label: 'Izin Edit Info',
-                        key: 'allow_info_edit',
-                        options: [
-                            { label: 'Diizinkan', value: '1' },
-                            { label: 'Dikunci', value: '0' },
-                        ],
-                    },
-                    {
-                        label: 'Status Sistem',
-                        key: 'is_active',
-                        options: [
-                            { label: 'Aktif', value: '1' },
-                            { label: 'Non-aktif', value: '0' },
-                        ],
-                    },
-                ]}
-                activeFilters={{
-                    display_mode: filters.display_mode ? [filters.display_mode] : [],
-                    allow_info_edit:
-                        filters.allow_info_edit !== undefined && filters.allow_info_edit !== null ? [String(filters.allow_info_edit)] : [],
-                    is_active: filters.is_active !== undefined && filters.is_active !== null ? [String(filters.is_active)] : [],
-                }}
-                onFilterChange={(updatedFilters) => {
-                    const newFilters: Record<string, any> = { ...filters, page: 1 };
-                    Object.keys(updatedFilters).forEach((key) => {
-                        newFilters[key] = updatedFilters[key].length > 0 ? updatedFilters[key][0] : null;
-                    });
-                    router.get(globalThis.location.pathname, newFilters, { preserveState: true, replace: true });
-                }}
+                columns={columns}
                 onRowClick={openEdit}
-                pagination={
-                    statuses?.meta
-                        ? {
-                              currentPage: statuses.meta.current_page || 1,
-                              lastPage: statuses.meta.last_page || 1,
-                              total: statuses.meta.total || 0,
-                              from: statuses.meta.from || 1,
-                              to: statuses.meta.to || 1,
-                              perPage: statuses.meta.per_page || 10,
-                              onPageChange: (page) =>
-                                  router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
-                              onPerPageChange: (pp) =>
-                                  router.get(
-                                      globalThis.location.pathname,
-                                      { ...filters, per_page: pp, page: 1 },
-                                      { preserveState: true, preserveScroll: true },
-                                  ),
-                          }
-                        : undefined
-                }
+                searchPlaceholder="Cari status, kode, atau deskripsi..."
+                searchValue={filters?.search || ''}
+                onSearchChange={(v) => router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })}
                 headerActions={
                     <Button variant="primary" onClick={openCreate} className="h-10 px-8 shadow-xl active:scale-95">
                         <Plus size={14} /> Registrasi Status Baru
                     </Button>
                 }
-                bulkActions={
-                    canUpdate
-                        ? [
-                              {
-                                  label: 'Hapus Terpilih',
-                                  icon: Tags,
-                                  variant: 'destructive',
-                                  onClick: (ids) => {
-                                      if (confirm(`Hapus ${ids.length} status terpilih?`)) {
-                                          router.post(
-                                              '/admin/contract-statuses/bulk-delete',
-                                              { ids },
-                                              {
-                                                  onSuccess: () => showToast(`${ids.length} status telah dihapus`, 'success'),
-                                              },
-                                          );
-                                      }
-                                  },
-                              },
-                          ]
-                        : undefined
-                }
+                pagination={statuses?.meta ? {
+                    currentPage: statuses.meta.current_page || 1,
+                    lastPage: statuses.meta.last_page || 1,
+                    total: statuses.meta.total || 0,
+                    onPageChange: (page: number) => router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                } : undefined}
             />
         </div>
     );

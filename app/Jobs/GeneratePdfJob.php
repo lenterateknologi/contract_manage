@@ -59,11 +59,11 @@ class GeneratePdfJob implements ShouldQueue
                     Log::info("[CHROME CONSOLE] " . $message);
                 })
                 ->timeout(300)
-                ->format('A4')
-                ->margins(10, 10, 10, 10)
+                ->paperSize(210, 297, 'mm')
+                ->margins(0, 0, 0, 0)
                 ->showBackground()
-                ->waitUntilNetworkIdle()
-                ->setDelay(500)
+                ->waitForSelector('#pdf-render-complete')
+                ->setDelay(1000)
                 ->preventUnsuccessfulResponse()
                 ->pdf();
 

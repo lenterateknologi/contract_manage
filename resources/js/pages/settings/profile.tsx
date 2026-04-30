@@ -22,12 +22,12 @@ import {
 } from 'lucide-react';
 import { FormEventHandler, useRef, useState } from 'react';
 
-import AppearanceToggleTab from '@/components/appearance-tabs';
-import DeleteUser from '@/components/delete-user';
-import InputError from '@/components/input-error';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import AppearanceToggleTab from '@/components/layout/AppearanceTabs';
+import DeleteUser from '@/components/user/DeleteUser';
+import InputError from '@/components/ui/base/InputError';
+import { Button } from '@/components/ui/base/Button';
+import { Input } from '@/components/ui/base/Input';
+import { Label } from '@/components/ui/base/Label';
 import SettingsLayout from '@/layouts/settings/layout';
 import { cn } from '@/lib/utils';
 

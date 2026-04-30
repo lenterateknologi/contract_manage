@@ -1,14 +1,14 @@
-import { useToast } from '@/components/contracts/Toast';
-import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
-import { Column, DataTable } from '@/components/ui/DataTable';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { usePermissions } from '@/hooks/use-permissions';
+import { ManagementForm, FormSection } from './ManagementForm';
+import { CompactInput } from '@/components/ui/forms/CompactInput';
+import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { router, useForm } from '@inertiajs/react';
 import { Key, LayoutGrid, Plus, ShieldCheck, Trash2 } from 'lucide-react';
 import React, { useMemo } from 'react';
-import { ManagementForm } from './ManagementForm';
+import { Column, DataTable } from '@/components/ui/data/DataTable';
+import { Button } from '@/components/ui/base/Button';
+import { usePermissions } from '@/hooks/use-permissions';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/components/contracts/Toast';
 
 interface RoleManagementProps {
     roles: any;
@@ -91,14 +91,14 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                     <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                         <Button
                             variant="outline"
-                            onClick={() => router.get(`/admin/roles/${row.id}/access`)}
+                            onClick={() => router.get(`/admin/roles/${row.id}/config?tab=access`)}
                             className="flex h-8 items-center gap-2 px-4 text-[9px] active:scale-95"
                         >
                             <Key size={11} className="opacity-40" /> Hak Akses
                         </Button>
                         <Button
                             variant="outline"
-                            onClick={() => router.get(`/admin/roles/${row.id}/navigation`)}
+                            onClick={() => router.get(`/admin/roles/${row.id}/config?tab=navigation`)}
                             className="flex h-8 items-center gap-2 px-4 text-[9px] active:scale-95"
                         >
                             <LayoutGrid size={11} className="opacity-40" /> Navigasi
@@ -160,7 +160,7 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                             type="button"
                             variant="ghost"
                             onClick={() => setIsConfirmOpen(true)}
-                            className="h-10 rounded-xl border border-black/[0.1] px-6 text-[10px] font-black tracking-widest text-black uppercase shadow-sm transition-all hover:bg-black hover:text-white dark:border-white/[0.1] dark:text-white dark:hover:bg-white dark:hover:text-black"
+                            className="h-8 hover:bg-rose-500 hover:text-white text-rose-500 rounded-xl px-4 text-[10px] font-black uppercase tracking-widest transition-all border border-rose-500/10 active:scale-95"
                         >
                             <Trash2 size={14} className="mr-2" /> Hapus Role
                         </Button>
@@ -183,59 +183,77 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                     description={`Apakah Anda yakin ingin menghapus role ${editingRole?.name}? Seluruh mapping hak akses untuk role ini akan dihapus permanen.`}
                     confirmText="Hapus Role"
                 />
-                <div className="grid grid-cols-1 gap-12 md:grid-cols-12">
-                    <div className="space-y-10 md:col-span-8">
-                        <div className="space-y-6">
-                            <h3 className="ml-1 border-b border-black/[0.05] pb-3 text-[11px] font-black tracking-[0.2em] text-black uppercase dark:border-white/[0.05] dark:text-white">
-                                Identitas Role
-                            </h3>
-                            <div className="grid grid-cols-1 gap-8 p-1">
-                                <div className="space-y-2">
-                                    <Label className="ml-1 text-[10px] leading-none font-black tracking-widest text-black/40 uppercase dark:text-white/40">
-                                        Nama Jabatan / Role
-                                    </Label>
-                                    <Input
-                                        value={form.data.name}
-                                        onChange={(e) => form.setData('name', e.target.value)}
-                                        required
-                                        placeholder="CONTOH: LEGAL MANAGER"
-                                        className="h-10 rounded-xl border-black/[0.08] bg-black/[0.03] px-5 text-sm font-black tracking-tight text-black uppercase shadow-sm transition-all placeholder:text-black/20 focus:border-black focus-visible:ring-0 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white dark:focus:border-white"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="ml-1 text-[10px] leading-none font-black tracking-widest text-black/40 uppercase dark:text-white/40">
-                                        Penjelasan Fungsi
-                                    </Label>
-                                    <Input
-                                        value={form.data.description}
-                                        onChange={(e) => form.setData('description', e.target.value)}
-                                        placeholder="Tuliskan deskripsi tanggung jawab role ini..."
-                                        className="h-10 rounded-xl border-black/[0.08] bg-black/[0.03] px-5 text-[11px] font-bold tracking-tight text-black uppercase shadow-sm transition-all placeholder:text-black/20 focus:border-black focus-visible:ring-0 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white dark:focus:border-white"
-                                    />
-                                </div>
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+                    {/* Main Column: 8 Columns */}
+                    <div className="md:col-span-8 space-y-8">
+                        <FormSection 
+                            title="Identitas Role" 
+                            subtitle="Nama jabatan dan penjelasan otoritas sistem"
+                        >
+                            <div className="grid grid-cols-1 gap-6">
+                                <CompactInput 
+                                    label="Nama Jabatan / Role"
+                                    value={form.data.name}
+                                    onChange={e => form.setData('name', e.target.value)}
+                                    placeholder="CONTOH: LEGAL MANAGER"
+                                    error={form.errors.name}
+                                />
+                                <CompactInput 
+                                    label="Penjelasan Fungsi"
+                                    value={form.data.description}
+                                    onChange={e => form.setData('description', e.target.value)}
+                                    placeholder="TULISKAN DESKRIPSI TANGGUNG JAWAB ROLE INI..."
+                                    error={form.errors.description}
+                                />
                             </div>
-                        </div>
+                        </FormSection>
                     </div>
 
-                    <div className="flex flex-col pt-6 md:col-span-4 md:pt-0">
-                        <div className="rounded-xl border border-black/[0.05] bg-black/[0.02] p-8 shadow-sm dark:border-white/[0.05] dark:bg-white/[0.02]">
-                            <div className="mb-8 flex items-center gap-3">
-                                <ShieldCheck size={18} className="text-black/20 dark:text-white/20" />
-                                <span className="text-[10px] font-black tracking-[0.3em] text-black/30 uppercase dark:text-white/30">
+                    {/* Side Column: 4 Columns */}
+                    <div className="md:col-span-4 flex flex-col pt-6 md:pt-0">
+                        <div className="rounded-2xl border border-primary/10 dark:border-white/10 bg-primary/[0.02] dark:bg-white/[0.02] p-8 shadow-sm relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <ShieldCheck size={80} strokeWidth={1} />
+                            </div>
+
+                            <div className="mb-8 flex items-center gap-3 relative z-10">
+                                <span className="text-[10px] font-black tracking-[0.3em] text-primary dark:text-white uppercase">
                                     Pusat Otoritas
                                 </span>
                             </div>
-                            <div className="mb-8 space-y-6 border-y border-dashed border-black/[0.05] py-8 dark:border-white/[0.05]">
-                                <span className="block text-sm leading-tight font-black tracking-tight text-black uppercase dark:text-white">
+                            
+                            <div className="mb-8 space-y-6 border-y border-dashed border-primary/10 dark:border-white/10 py-8 relative z-10">
+                                <span className="block text-sm leading-tight font-black tracking-tight text-primary dark:text-white uppercase">
                                     {form.data.name || 'NAMA ROLE'}
                                 </span>
-                                <p className="text-[10px] leading-relaxed font-bold tracking-widest text-black/40 uppercase italic dark:text-white/40">
+                                <p className="text-[10px] leading-relaxed font-bold tracking-widest text-primary/40 dark:text-white/40 uppercase italic">
                                     {form.data.description || 'Deskripsi belum diatur untuk role ini...'}
                                 </p>
                             </div>
-                            <p className="text-[10px] leading-normal font-bold tracking-tight text-black/30 uppercase dark:text-white/30">
-                                Role menentukan hak akses pengguna terhadap modul-modul sistem. Setelah menyimpan, Anda dapat mengatur hak akses
-                                spesifik per modul.
+
+                            {editingRole && (
+                                <div className="grid grid-cols-2 gap-3 mb-8 relative z-10">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => router.get(`/admin/roles/${editingRole.id}/config?tab=access`)}
+                                        className="h-9 gap-2 text-[10px] font-black uppercase tracking-widest active:scale-95 border-primary/10 dark:border-white/10 hover:bg-primary hover:text-white dark:hover:bg-white dark:hover:text-black transition-all"
+                                    >
+                                        <Key size={12} /> Hak Akses
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => router.get(`/admin/roles/${editingRole.id}/config?tab=navigation`)}
+                                        className="h-9 gap-2 text-[10px] font-black uppercase tracking-widest active:scale-95 border-primary/10 dark:border-white/10 hover:bg-primary hover:text-white dark:hover:bg-white dark:hover:text-black transition-all"
+                                    >
+                                        <LayoutGrid size={12} /> Navigasi
+                                    </Button>
+                                </div>
+                            )}
+
+                            <p className="text-[10px] leading-normal font-bold tracking-tight text-primary/30 dark:text-white/30 uppercase relative z-10">
+                                Role menentukan hak akses pengguna terhadap modul-modul sistem. Setelah menyimpan, Anda dapat mengatur hak akses spesifik per modul.
                             </p>
                         </div>
                     </div>
@@ -249,10 +267,9 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
             title="Database Role & Otoritas"
             columns={columns}
             data={roles.data || []}
-            searchKey="name"
             searchPlaceholder="Cari role..."
             searchValue={filters.search || ''}
-            onSearchChange={(v) =>
+            onSearchChange={(v: string) =>
                 router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })
             }
             filters={filterConfig as any}
@@ -273,7 +290,7 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                               label: 'Hapus Terpilih',
                               icon: Trash2,
                               variant: 'destructive',
-                              onClick: (ids) => {
+                              onClick: (ids: string[] | number[]) => {
                                   if (confirm(`Hapus ${ids.length} role terpilih?`)) {
                                       router.post(
                                           '/admin/roles/bulk-delete',
@@ -295,8 +312,8 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                 from: roles.from || 1,
                 to: roles.to || 1,
                 perPage: roles.per_page || 10,
-                onPageChange: (page) => router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
-                onPerPageChange: (pp) =>
+                onPageChange: (page: number) => router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                onPerPageChange: (pp: number) =>
                     router.get(globalThis.location.pathname, { ...filters, per_page: pp, page: 1 }, { preserveState: true, preserveScroll: true }),
             }}
         />

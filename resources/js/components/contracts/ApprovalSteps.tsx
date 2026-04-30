@@ -1,12 +1,13 @@
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/base/Button';
 import { cn } from '@/lib/utils';
 import { Contract, ContractApproval, UserProfile } from '@/types/contracts';
 import axios from 'axios';
 import { Check, Clock, Download, Info, ListFilter, Loader2, Search, Send, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { FilterCategory, FilterSheet } from '../ui/FilterSheet';
+import { FilterSheet, FilterCategory } from '@/components/ui/data/FilterSheet';
 import { useToast } from './Toast';
 import { Avatar, StatusBadge } from './ui';
+import { SearchInput } from '@/components/ui/forms/SearchInput';
 
 interface Props {
     contract: Contract;
@@ -32,14 +33,14 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
         waiting: 'fa-minus',
     };
     const dotCls: Record<string, string> = {
-        approved: 'bg-[#172554] text-white border-[#172554] dark:bg-white dark:text-[#172554] dark:border-white',
+        approved: 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white shadow-lg',
         pending: 'bg-white text-black border-black/20 dark:bg-sidebar dark:text-white dark:border-white/20',
-        rejected: 'bg-white text-black border-rose-500 dark:bg-sidebar dark:text-rose-500 dark:border-rose-500',
+        rejected: 'bg-white text-black border-black dark:bg-sidebar dark:text-black dark:border-white shadow-sm',
         waiting: 'bg-white text-black/20 border-black/10 dark:bg-sidebar dark:text-white/20 dark:border-white/10',
     };
     const noteCls: Record<string, string> = {
-        approved: 'border-l-[#172554] dark:border-l-white bg-[#172554]/5 dark:bg-white/5 text-[#172554] dark:text-white',
-        rejected: 'border-l-rose-500 bg-rose-50 dark:bg-rose-950/20 text-rose-600',
+        approved: 'border-l-black dark:border-l-white bg-black/5 dark:bg-white/5 text-black dark:text-white',
+        rejected: 'border-l-black bg-black/5 dark:border-l-white/5 text-black dark:text-white font-bold',
         pending: 'border-l-black/20 dark:border-l-white/20 bg-black/5 dark:bg-white/5 text-black dark:text-white',
         waiting: 'border-l-black/10 dark:border-l-white/10 bg-black/5 dark:bg-white/5 text-black/40 dark:text-white/40',
     };
@@ -240,15 +241,12 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
     return (
         <div className="animate-in fade-in relative flex flex-col gap-6 duration-500">
             <div className="mb-2 flex items-center gap-4">
-                <div className="group relative flex-1">
-                    <Search className="absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-black/40 transition-colors dark:text-white/40" />
-                    <Search className="absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-[#172554]/40 transition-colors dark:text-white/40" />
-                    <input
-                        type="text"
+                <div className="flex-1">
+                    <SearchInput 
                         placeholder="CARI NAMA / ROLE..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="w-full rounded-xl bg-[#172554]/[0.03] py-2.5 pr-4 pl-10 text-[10px] font-bold tracking-widest uppercase transition-all outline-none placeholder:text-[#172554]/20 focus:bg-white dark:bg-white/[0.03] dark:placeholder:text-white/20 dark:focus:bg-sidebar shadow-sm"
+                        className="h-10 text-[10px] tracking-widest uppercase"
                     />
                 </div>
 
@@ -258,14 +256,14 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                         size="sm"
                         onClick={() => setIsFilterOpen(true)}
                         className={cn(
-                            'h-10 gap-2 rounded-xl px-4 font-bold text-[#172554]/60 shadow-sm transition-all hover:bg-[#172554] hover:text-white dark:text-white/60 dark:hover:bg-white dark:hover:text-[#172554]',
-                            activeCount > 0 && 'bg-[#172554] text-white dark:bg-white dark:text-[#172554]',
+                            'h-10 gap-2 rounded-xl border-black/10 px-4 font-bold text-black shadow-sm transition-all hover:bg-black/5 dark:border-white/10 dark:text-white dark:hover:bg-white/5',
+                            activeCount > 0 && 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black',
                         )}
                     >
                         <ListFilter size={14} strokeWidth={3} />
                         <span className="text-[10px] tracking-widest uppercase">Filter</span>
                         {activeCount > 0 && (
-                            <span className="ml-1 flex h-4 w-4 items-center justify-center rounded-md bg-white text-[8px] font-bold text-[#172554] dark:bg-[#172554] dark:text-white">
+                            <span className="ml-1 flex h-4 w-4 items-center justify-center rounded-md bg-white text-[8px] font-bold text-black dark:bg-black dark:text-white">
                                 {activeCount}
                             </span>
                         )}

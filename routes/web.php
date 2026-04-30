@@ -137,6 +137,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/users/bulk-delete', [AdminController::class, 'bulkDestroyUser'])->name('admin.users.bulk-destroy');
 
         Route::get('/contract-types', [AdminController::class, 'contractTypes'])->name('admin.contract-types');
+        Route::get('/contract-types/create', [AdminController::class, 'createContractType'])->name('admin.contract-types.create');
+        Route::get('/contract-types/{type}/edit', [AdminController::class, 'editContractType'])->name('admin.contract-types.edit');
         Route::post('/contract-types', [AdminController::class, 'storeContractType'])->name('admin.contract-types.store');
         Route::put('/contract-types/{type}', [AdminController::class, 'updateContractType'])->name('admin.contract-types.update');
         Route::delete('/contract-types/{type}', [AdminController::class, 'destroyContractType'])->name('admin.contract-types.destroy');
@@ -172,7 +174,9 @@ Route::middleware(['auth'])->group(function () {
 
         // Workflows
         Route::get('/workflows', [AdminController::class, 'workflows'])->name('admin.workflows');
+        Route::get('/workflows/create', [AdminController::class, 'createWorkflow'])->name('admin.workflows.create');
         Route::post('/workflows', [AdminController::class, 'storeWorkflow'])->name('admin.workflows.store');
+        Route::get('/workflows/{workflow}/edit', [AdminController::class, 'editWorkflow'])->name('admin.workflows.edit');
         Route::put('/workflows/{workflow}', [AdminController::class, 'updateWorkflow'])->name('admin.workflows.update');
         Route::delete('/workflows/{workflow}', [AdminController::class, 'destroyWorkflow'])->name('admin.workflows.destroy');
         Route::post('/workflows/bulk-delete', [AdminController::class, 'bulkDestroyWorkflows'])->name('admin.workflows.bulk-destroy');
@@ -198,9 +202,8 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/roles/{role}', [AdminController::class, 'updateRole'])->name('admin.roles.update');
         Route::delete('/roles/{role}', [AdminController::class, 'destroyRole'])->name('admin.roles.destroy');
         Route::post('/roles/bulk-delete', [AdminController::class, 'bulkDestroyRole'])->name('admin.roles.bulk-destroy');
-        Route::get('/roles/{role}/access', [AdminController::class, 'roleAccess'])->name('admin.roles.access');
+        Route::get('/roles/{role}/config', [AdminController::class, 'roleConfig'])->name('admin.roles.config');
         Route::post('/roles/{role}/access', [AdminController::class, 'updateRoleAccess'])->name('admin.roles.access.update');
-        Route::get('/roles/{role}/navigation', [AdminController::class, 'roleNavigation'])->name('admin.roles.navigation');
         Route::post('/roles/{role}/reorder', [AdminController::class, 'reorderRoleNavigation'])->name('admin.roles.reorder');
 
         // Navigation Management (Combined)
@@ -240,7 +243,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/form-templates', [FormTemplateController::class, 'index'])->name('admin.form-templates.index');
         Route::get('/form-templates/builder/{template?}', [FormTemplateController::class, 'builder'])->name('admin.form-templates.builder');
         Route::post('/form-templates/save/{template?}', [FormTemplateController::class, 'save'])->name('admin.form-templates.save');
-        Route::get('/form-templates/{template}/fill', [FormTemplateController::class, 'fill'])->name('admin.form-templates.fill');
         Route::post('/form-templates/export-adhoc', [FormTemplateController::class, 'exportAdhoc'])->name('admin.form-templates.export-adhoc');
         Route::post('/form-templates/export-queue', [FormTemplateController::class, 'exportAdhocQueue'])->name('admin.form-templates.export-queue');
         Route::get('/form-templates/pdf-status/{jobId}', [FormTemplateController::class, 'checkPdfStatus'])->name('admin.form-templates.pdf-status');

@@ -1,6 +1,6 @@
 import { Contract, ContractType } from '@/types/contracts';
 import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/base/Button';
 
 interface EditContractModalProps {
     open: boolean;
@@ -127,7 +127,7 @@ export function EditContractModal({
                             <select
                                 value={vendorId}
                                 onChange={(e) => setVendorId(e.target.value)}
-                                className="bg-muted/30 border-border focus:border-primary/50 w-full rounded-lg border px-3 py-2 text-sm font-bold text-indigo-600 transition-all outline-none"
+                                className="bg-muted/30 border-border focus:border-primary/50 w-full rounded-lg border px-3 py-2 text-sm font-bold text-black dark:text-white transition-all outline-none"
                             >
                                 <option value="">Pilih Vendor</option>
                                 {vendors.map((v) => (

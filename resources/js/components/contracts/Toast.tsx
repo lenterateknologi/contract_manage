@@ -77,9 +77,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             {toast && (
                 <div
                     key={toast.id}
-                    className="animate-in slide-in-from-bottom-5 fixed bottom-10 left-1/2 z-[1000] flex -translate-x-1/2 items-center gap-3 rounded-2xl border border-white/20 bg-slate-900/90 px-6 py-3.5 text-[10px] font-black tracking-widest text-white shadow-2xl shadow-slate-900/20 backdrop-blur-xl duration-300"
+                    className="animate-in slide-in-from-bottom-5 fixed bottom-10 left-1/2 z-[1000] flex -translate-x-1/2 items-center gap-3 rounded-2xl border border-black/10 dark:border-white/20 bg-black/90 dark:bg-white/95 px-6 py-3.5 text-[10px] font-black tracking-widest text-white dark:text-black shadow-2xl backdrop-blur-xl duration-300"
                 >
-                    <i className={`fa-solid ${iconMap[toast.type]} text-[12px] ${toast.type === 'success' ? 'text-emerald-400' : 'text-rose-400'}`} />
+                    <i className={`fa-solid ${iconMap[toast.type]} text-[12px] text-white dark:text-black`} />
                     <span className="uppercase">{toast.msg}</span>
                 </div>
             )}
@@ -93,14 +93,14 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                     >
                         <div className="flex items-center justify-between mb-2.5">
                             <div className="flex items-center gap-2">
-                                <div className="animate-spin h-3 w-3 border-2 border-primary border-t-transparent rounded-full" />
-                                <span className="text-[9px] font-black tracking-widest text-slate-900 uppercase">{p.msg}</span>
+                                <div className="animate-spin h-3 w-3 border-2 border-black dark:border-white border-t-transparent rounded-full" />
+                                <span className="text-[9px] font-black tracking-widest text-black dark:text-white uppercase">{p.msg}</span>
                             </div>
-                            <span className="text-[10px] font-mono font-bold text-primary">{Math.round(p.progress)}%</span>
+                            <span className="text-[10px] font-mono font-bold text-black dark:text-white">{Math.round(p.progress)}%</span>
                         </div>
-                        <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-1.5 w-full bg-black/5 dark:bg-white/10 rounded-full overflow-hidden border border-black/5 dark:border-white/5">
                             <div 
-                                className="h-full bg-primary transition-all duration-500 ease-out"
+                                className="h-full bg-black dark:bg-white transition-all duration-500 ease-out"
                                 style={{ width: `${p.progress}%` }}
                             />
                         </div>

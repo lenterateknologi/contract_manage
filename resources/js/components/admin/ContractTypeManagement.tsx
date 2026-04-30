@@ -1,13 +1,12 @@
 import { useToast } from '@/components/contracts/Toast';
-import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
-import { Column, DataTable } from '@/components/ui/DataTable';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
+import { Column, DataTable } from '@/components/ui/data/DataTable';
+import { Button } from '@/components/ui/base/Button';
+import { CompactInput } from '@/components/ui/forms/CompactInput';
+import { CompactSelect } from '@/components/ui/forms/CompactSelect';
 import { usePermissions } from '@/hooks/use-permissions';
 import { router, useForm } from '@inertiajs/react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, FileText, Info, LayoutGrid, Settings2, ShieldCheck, ChevronRight } from 'lucide-react';
 import React, { useMemo } from 'react';
 import { FormSection, ManagementForm } from './ManagementForm';
 
@@ -19,18 +18,19 @@ interface ContractTypeManagementProps {
 }
 
 const MechanismCell = ({ mechanism }: Readonly<{ mechanism: string }>) => (
-    <span className="text-[10px] font-black tracking-widest text-black/60 uppercase dark:text-white/60">
-        {mechanism === 'digital' ? 'Formulir Digital' : mechanism === 'folder' ? 'Folder Kontrak' : 'Manual'}
-    </span>
+    <div className="flex items-center gap-2">
+        <div className="h-1.5 w-1.5 rounded-full bg-primary/20 dark:bg-white/20" />
+        <span className="text-[10px] font-black tracking-widest text-primary/60 uppercase dark:text-white/60">
+            {mechanism === 'digital' ? 'Formulir Digital' : mechanism === 'folder' ? 'Folder Kontrak' : 'Unggah Manual'}
+        </span>
+    </div>
 );
 
 const TypeDescriptionCell = ({ description }: Readonly<{ description?: string }>) => (
-    <span className="text-[10px] font-bold text-black/40 dark:text-white/40 uppercase tracking-tight truncate max-w-[200px]">
+    <span className="text-[10px] font-bold text-primary/40 dark:text-white/40 uppercase tracking-tight truncate max-w-[200px]">
         {description || '—'}
     </span>
 );
-
-// MechanismBadge replaced by MechanismCell
 
 const MechanismOptions = ({
     mechanism,
@@ -44,112 +44,92 @@ const MechanismOptions = ({
 }: {
     mechanism: string;
     formTemplateId: string;
-    setFormTemplateId: (id: string) => void;
+    setFormTemplateId: (id: string | number) => void;
     contractTemplateId: string;
-    setContractTemplateId: (id: string) => void;
+    setContractTemplateId: (id: string | number) => void;
     templates: any[];
     physTemplates: any[];
     type: 'F1' | 'F2';
 }) => {
     if (mechanism === 'digital') {
         return (
-            <div className="animate-in fade-in slide-in-from-top-2 space-y-1.5">
-                <Label className="text-[10px] font-bold tracking-widest text-black/40 uppercase dark:text-white/40">
-                    Tautan ke Templat Digital {type}
-                </Label>
-                <Select value={formTemplateId} onValueChange={setFormTemplateId}>
-                    <SelectTrigger className="h-10 rounded-xl border-black/[0.1] bg-black/[0.02] text-[10px] font-black tracking-tight text-black uppercase dark:border-white/[0.1] dark:bg-white/[0.02] dark:text-white">
-                        <SelectValue placeholder={`PILIH ASET ${type}...`} />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[200px] rounded-xl border-black/[0.1] bg-white dark:border-white/[0.1] dark:bg-black">
-                        <SelectItem value="none" className="text-[10px] font-black text-black/20 uppercase italic dark:text-white/20">
-                            Tidak Terpaut / Tanpa Templat
-                        </SelectItem>
-                        {templates.map((t: any) => (
-                            <SelectItem key={t.id} value={t.id} className="py-3 text-[10px] font-black tracking-widest text-black uppercase dark:text-white">
-                                {t.name} <span className="ml-2 font-bold text-black/30 dark:text-white/30">({t.document_type || 'ADHOC'})</span>
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+            <div className="animate-in fade-in slide-in-from-top-2">
+                <CompactSelect 
+                    label={`Tautan Templat Digital ${type}`}
+                    value={formTemplateId}
+                    onChange={setFormTemplateId}
+                    options={[
+                        { label: '-- TANPA TEMPLAT TERPAUT --', value: 'none' },
+                        ...templates.map((t: any) => ({
+                            label: `${t.name} (${t.document_type || 'ADHOC'})`,
+                            value: t.id
+                        }))
+                    ]}
+                    icon={LayoutGrid}
+                />
             </div>
         );
     }
     if (mechanism === 'folder') {
         return (
-            <div className="animate-in fade-in slide-in-from-top-2 space-y-1.5">
-                <Label className="text-[10px] font-bold tracking-widest text-black/40 uppercase dark:text-white/40">
-                    Tautan ke Templat Folder ({type})
-                </Label>
-                <Select value={contractTemplateId} onValueChange={setContractTemplateId}>
-                    <SelectTrigger className="h-10 rounded-xl border-black/[0.1] bg-black/[0.02] text-[10px] font-black tracking-tight text-black uppercase dark:border-white/[0.1] dark:bg-white/[0.02] dark:text-white">
-                        <SelectValue placeholder="PILIH ASET FISIK..." />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[200px] rounded-xl border-black/[0.1] bg-white dark:border-white/[0.1] dark:bg-black">
-                        <SelectItem value="none" className="text-[10px] font-black text-black/20 uppercase italic dark:text-white/20">
-                            Tidak Ada Templat Terpilih
-                        </SelectItem>
-                        {physTemplates.map((t: any) => (
-                            <SelectItem key={t.id} value={t.id} className="py-3 text-[10px] font-black tracking-widest text-black uppercase dark:text-white">
-                                {t.name} <span className="ml-2 font-bold text-black/30 dark:text-white/30">({t.file_type || 'PDF'})</span>
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+            <div className="animate-in fade-in slide-in-from-top-2">
+                <CompactSelect 
+                    label={`Tautan Templat Folder (${type})`}
+                    value={contractTemplateId}
+                    onChange={setContractTemplateId}
+                    options={[
+                        { label: '-- TIDAK ADA TEMPLAT TERPILIH --', value: 'none' },
+                        ...physTemplates.map((t: any) => ({
+                            label: `${t.name} (${t.file_type || 'PDF'})`,
+                            value: t.id
+                        }))
+                    ]}
+                    icon={FileText}
+                />
             </div>
         );
     }
     return (
-        <div className="animate-in fade-in rounded-xl border border-dashed border-black/[0.1] bg-black/[0.02] p-6 text-center dark:border-white/[0.1] dark:bg-white/[0.02]">
-            <p className="text-[10px] font-bold tracking-[0.2em] text-black/30 uppercase dark:text-white/30">
+        <div className="animate-in fade-in rounded-2xl border border-dashed border-primary/10 bg-primary/[0.01] p-6 text-center dark:border-white/10 dark:bg-white/[0.01]">
+            <p className="text-[10px] font-black tracking-[0.2em] text-primary/30 uppercase dark:text-white/30 italic">
                 {type === 'F1' ? 'PENGGUNA INTERNAL' : 'VENDOR'} AKAN MENGUNGGAH PDF MANUAL UNTUK {type}
             </p>
         </div>
     );
 };
 
-export function ContractTypeManagement({ contractTypes, formTemplates, contractTemplates, filters }: Readonly<ContractTypeManagementProps>) {
+export function ContractTypeManagement({ contractTypes, filters }: Readonly<ContractTypeManagementProps>) {
     const { showToast } = useToast();
     const { canCreate, canUpdate, canDelete } = usePermissions('ADMIN_TYPES');
-    const [isFormView, setIsFormView] = React.useState(false);
-    const [editingType, setEditingType] = React.useState<any>(null);
-    const [isConfirmOpen, setIsConfirmOpen] = React.useState(false);
-
-    // Defensive array handling
-    const templates = Array.isArray(formTemplates) ? formTemplates : [];
-    const physTemplates = Array.isArray(contractTemplates) ? contractTemplates : [];
-
-    const form = useForm({
-        name: '',
-        description: '',
-        f1_input_mechanism: 'digital',
-        f1_form_template_id: 'none',
-        f1_contract_template_id: 'none',
-        f2_input_mechanism: 'digital',
-        f2_form_template_id: 'none',
-        f2_contract_template_id: 'none',
-    });
 
     const columns = useMemo<Column<any>[]>(
         () => [
             {
-                header: 'Jenis Kontrak',
+                header: 'Klasifikasi Kontrak',
                 accessorKey: 'name',
                 sortable: true,
-                className: 'font-bold text-black dark:text-white text-[13px] antialiased',
+                cell: (row) => (
+                    <div className="flex flex-col group">
+                        <span className="text-[13px] font-black tracking-tight text-primary dark:text-white uppercase group-hover:translate-x-1 transition-transform">{row.name}</span>
+                        <div className="flex items-center gap-2 mt-1">
+                            <ShieldCheck size={10} className="text-primary/20 dark:text-white/20" />
+                            <span className="text-[9px] font-bold text-primary/30 dark:text-white/30 uppercase tracking-widest italic">Aset Administratif Terpantau</span>
+                        </div>
+                    </div>
+                )
             },
             {
-                header: 'F1 (Internal)',
+                header: 'Mekanisme F1 (Internal)',
                 accessorKey: 'f1_input_mechanism',
                 cell: (row) => <MechanismCell mechanism={row.f1_input_mechanism} />
             },
             {
-                header: 'F2 (Eksternal)',
+                header: 'Mekanisme F2 (Eksternal)',
                 accessorKey: 'f2_input_mechanism',
                 cell: (row) => <MechanismCell mechanism={row.f2_input_mechanism} />
             },
             {
-                header: 'Deskripsi',
+                header: 'Keterangan Konten',
                 accessorKey: 'description',
                 cell: (row) => <TypeDescriptionCell description={row.description} />,
             },
@@ -158,345 +138,91 @@ export function ContractTypeManagement({ contractTypes, formTemplates, contractT
     );
 
     const openCreate = () => {
-        setEditingType(null);
-        form.reset();
-        setIsFormView(true);
+        router.visit(route('admin.contract-types.create'));
     };
 
     const openEdit = (type: any) => {
         if (!type) return;
-        setEditingType(type);
-        form.setData({
-            name: type.name || '',
-            description: type.description || '',
-            f1_input_mechanism: type.f1_input_mechanism || 'digital',
-            f1_form_template_id: type.f1_form_template_id || 'none',
-            f1_contract_template_id: type.f1_contract_template_id || 'none',
-            f2_input_mechanism: type.f2_input_mechanism || 'digital',
-            f2_form_template_id: type.f2_form_template_id || 'none',
-            f2_contract_template_id: type.f2_contract_template_id || 'none',
-        });
-        setIsFormView(true);
+        router.visit(route('admin.contract-types.edit', type.id));
     };
 
-    const closeForm = () => {
-        setIsFormView(false);
-        setEditingType(null);
-        form.reset();
-    };
-
-    const handleSubmit = (e?: React.FormEvent) => {
-        if (e) e.preventDefault();
-
-        // Prepare data - convert 'none' back to null for DB
-        const payload = {
-            ...form.data,
-            f1_form_template_id: form.data.f1_form_template_id === 'none' ? null : form.data.f1_form_template_id,
-            f1_contract_template_id: form.data.f1_contract_template_id === 'none' ? null : form.data.f1_contract_template_id,
-            f2_form_template_id: form.data.f2_form_template_id === 'none' ? null : form.data.f2_form_template_id,
-            f2_contract_template_id: form.data.f2_contract_template_id === 'none' ? null : form.data.f2_contract_template_id,
-        };
-
-        const options = {
-            onSuccess: () => {
-                closeForm();
-                showToast(editingType ? 'Master tipe diperbarui' : 'Tipe kontrak baru ditambahkan', 'success');
-            },
-        };
-        if (editingType) router.put(`/admin/contract-types/${editingType.id}`, payload, options);
-        else router.post('/admin/contract-types', payload, options);
-    };
-
-    const handleDelete = () => {
-        setIsConfirmOpen(true);
-    };
-
-    if (isFormView) {
-        return (
-            <ManagementForm
-                title={editingType ? 'Konfigurasi Klasifikasi' : 'Klasifikasi Baru'}
-                subtitle={editingType ? 'Penyempurnaan metadata dokumen dua tahap' : 'Definisikan kategori kontrak administratif baru'}
-                onClose={closeForm}
-                onSave={handleSubmit}
-                processing={form.processing}
-                isDirty={form.isDirty}
-                isEdit={!!editingType}
+    return (
+        <div className="animate-in fade-in flex h-full flex-col bg-white dark:bg-black antialiased">
+            <DataTable
+                title="Registri Klasifikasi Kontrak"
+                columns={columns}
+                data={contractTypes?.data || []}
+                searchPlaceholder="Filter jenis klasifikasi..."
+                searchValue={filters.search || ''}
+                onSearchChange={(v) => router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })}
+                filters={[
+                    {
+                        label: 'Mekanisme F1',
+                        key: 'f1_input_mechanism',
+                        options: [
+                            { label: 'Formulir Digital', value: 'digital' },
+                            { label: 'Folder Kontrak', value: 'folder' },
+                            { label: 'Manual', value: 'manual' },
+                        ],
+                    },
+                    {
+                        label: 'Mekanisme F2',
+                        key: 'f2_input_mechanism',
+                        options: [
+                            { label: 'Formulir Digital', value: 'digital' },
+                            { label: 'Folder Kontrak', value: 'folder' },
+                            { label: 'Manual', value: 'manual' },
+                        ],
+                    },
+                ]}
+                activeFilters={{
+                    f1_input_mechanism: filters.f1_input_mechanism ? [filters.f1_input_mechanism] : [],
+                    f2_input_mechanism: filters.f2_input_mechanism ? [filters.f2_input_mechanism] : [],
+                }}
+                onFilterChange={(updatedFilters) => {
+                    const newFilters: Record<string, any> = { ...filters, page: 1 };
+                    Object.keys(updatedFilters).forEach(key => {
+                        newFilters[key] = updatedFilters[key].length > 0 ? updatedFilters[key][0] : null;
+                    });
+                    router.get(globalThis.location.pathname, newFilters, { preserveState: true, replace: true });
+                }}
                 headerActions={
-                    editingType &&
-                    canDelete && (
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={handleDelete}
-                            className="h-9 border-red-500/20 px-4 text-red-500 hover:bg-red-500 hover:text-white"
-                        >
-                            <Trash2 size={14} /> Hapus Klasifikasi
+                    canCreate && (
+                        <Button variant="primary" onClick={openCreate} className="h-10 px-8 shadow-xl active:scale-95">
+                            <Plus size={14} className="mr-2" /> Registrasi Klasifikasi
                         </Button>
                     )
                 }
-            >
-                <ConfirmationModal
-                    open={isConfirmOpen}
-                    onClose={() => setIsConfirmOpen(false)}
-                    onConfirm={() => {
-                        setIsConfirmOpen(false);
-                        router.delete(`/admin/contract-types/${editingType.id}`, {
-                            onSuccess: () => {
-                                closeForm();
-                                showToast('Tipe kontrak telah dihapus', 'success');
-                            },
-                        });
-                    }}
-                    title="Hapus Klasifikasi Kontrak"
-                    description={`Apakah Anda yakin ingin menghapus tipe kontrak ${editingType?.name}? Seluruh data yang terkait dengan klasifikasi ini mungkin akan terdampak.`}
-                    confirmText="Hapus Tipe"
-                />
-                <div className="font-inter grid grid-cols-1 gap-10 md:grid-cols-12">
-                    <div className="space-y-12 md:col-span-12 lg:col-span-9">
-                        <FormSection title="Metadata Klasifikasi Utama" subtitle="Identifikasi utama untuk kategori kontrak ini">
-                            <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-                                <div className="space-y-1.5 md:col-span-1">
-                                    <Label className="text-[10px] font-bold tracking-widest text-black/40 uppercase dark:text-white/40">
-                                        Nama Klasifikasi
-                                    </Label>
-                                    <Input
-                                        value={form.data.name}
-                                        onChange={(e) => form.setData('name', e.target.value)}
-                                        required
-                                        placeholder="CONTOH: PERJANJIAN KERJASAMA JASA"
-                                        className="h-10 rounded-xl border-black/[0.1] bg-black/[0.02] px-4 text-xs font-bold tracking-tight text-black uppercase transition-all placeholder:text-black/20 focus-visible:ring-0 dark:border-white/[0.1] dark:bg-white/[0.02] dark:text-white"
-                                    />
-                                </div>
-                                <div className="space-y-1.5 md:col-span-2">
-                                    <Label className="text-[10px] font-bold tracking-widest text-black/40 uppercase dark:text-white/40">
-                                        Deskripsi Konteks
-                                    </Label>
-                                    <Input
-                                        value={form.data.description}
-                                        onChange={(e) => form.setData('description', e.target.value)}
-                                        placeholder="Ringkasan kapan menggunakan tipe ini..."
-                                        className="h-10 rounded-xl border-black/[0.1] bg-black/[0.02] px-4 text-xs font-bold tracking-tight text-black uppercase transition-all placeholder:text-black/20 focus-visible:ring-0 dark:border-white/[0.1] dark:bg-white/[0.02] dark:text-white"
-                                    />
-                                </div>
-                            </div>
-                        </FormSection>
-
-                        <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
-                            {/* F1 Configuration */}
-                            <FormSection
-                                title="Konfigurasi Formulir F1"
-                                subtitle="Alur kerja tahap Permohonan Internal"
-                                className="border-l-4 border-l-black"
-                            >
-                                <div className="space-y-6">
-                                    <div className="space-y-1.5">
-                                        <Label className="text-[10px] font-bold tracking-widest text-black/40 uppercase dark:text-white/40">
-                                            Mekanisme Pengajuan (F1)
-                                        </Label>
-                                        <Select value={form.data.f1_input_mechanism} onValueChange={(v) => form.setData('f1_input_mechanism', v)}>
-                                            <SelectTrigger className="h-10 rounded-xl border-black/[0.1] bg-black/[0.02] text-[10px] font-black tracking-widest text-black uppercase dark:border-white/[0.1] dark:bg-white/[0.02] dark:text-white">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-xl border-black/[0.1] bg-white dark:border-white/[0.1] dark:bg-black">
-                                                <SelectItem
-                                                    value="digital"
-                                                    className="py-3 text-[10px] font-black tracking-widest text-black uppercase dark:text-white"
-                                                >
-                                                    Pengajuan Formulir Digital
-                                                </SelectItem>
-                                                <SelectItem
-                                                    value="folder"
-                                                    className="py-3 text-[10px] font-black tracking-widest text-black uppercase dark:text-white"
-                                                >
-                                                    Templat Folder Kontrak
-                                                </SelectItem>
-                                                <SelectItem
-                                                    value="manual"
-                                                    className="py-3 text-[10px] font-black tracking-widest text-black uppercase dark:text-white"
-                                                >
-                                                    Unggah Dokumen Manual
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-
-                                    <MechanismOptions
-                                        mechanism={form.data.f1_input_mechanism}
-                                        formTemplateId={form.data.f1_form_template_id}
-                                        setFormTemplateId={(v) => form.setData('f1_form_template_id', v)}
-                                        contractTemplateId={form.data.f1_contract_template_id}
-                                        setContractTemplateId={(v) => form.setData('f1_contract_template_id', v)}
-                                        templates={templates}
-                                        physTemplates={physTemplates}
-                                        type="F1"
-                                    />
-                                </div>
-                            </FormSection>
-
-                            {/* F2 Configuration */}
-                            <FormSection
-                                title="Konfigurasi Formulir F2"
-                                subtitle="Alur kerja tahap Resume Eksternal/Vendor"
-                                className="border-l-4 border-l-slate-400"
-                            >
-                                <div className="space-y-6">
-                                    <div className="space-y-1.5">
-                                        <Label className="text-[10px] font-bold tracking-widest text-black/40 uppercase dark:text-white/40">
-                                            Mekanisme Pengajuan (F2)
-                                        </Label>
-                                        <Select value={form.data.f2_input_mechanism} onValueChange={(v) => form.setData('f2_input_mechanism', v)}>
-                                            <SelectTrigger className="h-10 rounded-xl border-black/[0.1] bg-black/[0.02] text-[10px] font-black tracking-widest text-black uppercase dark:border-white/[0.1] dark:bg-white/[0.02] dark:text-white">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-xl border-black/[0.1] bg-white dark:border-white/[0.1] dark:bg-black">
-                                                <SelectItem
-                                                    value="digital"
-                                                    className="py-3 text-[10px] font-black tracking-widest text-black uppercase dark:text-white"
-                                                >
-                                                    Pengajuan Formulir Digital
-                                                </SelectItem>
-                                                <SelectItem
-                                                    value="folder"
-                                                    className="py-3 text-[10px] font-black tracking-widest text-black uppercase dark:text-white"
-                                                >
-                                                    Templat Folder Kontrak
-                                                </SelectItem>
-                                                <SelectItem
-                                                    value="manual"
-                                                    className="py-3 text-[10px] font-black tracking-widest text-black uppercase dark:text-white"
-                                                >
-                                                    Unggah Dokumen Manual
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-
-                                    <MechanismOptions
-                                        mechanism={form.data.f2_input_mechanism}
-                                        formTemplateId={form.data.f2_form_template_id}
-                                        setFormTemplateId={(v) => form.setData('f2_form_template_id', v)}
-                                        contractTemplateId={form.data.f2_contract_template_id}
-                                        setContractTemplateId={(v) => form.setData('f2_contract_template_id', v)}
-                                        templates={templates}
-                                        physTemplates={physTemplates}
-                                        type="F2"
-                                    />
-                                </div>
-                            </FormSection>
-                        </div>
-                    </div>
-                </div>
-            </ManagementForm>
-        );
-    }
-
-    return (
-        <DataTable
-            title="Registri Klasifikasi Kontrak"
-            columns={columns}
-            data={contractTypes?.data || []}
-            searchKey="name"
-            searchPlaceholder="Filter jenis klasifikasi..."
-            searchValue={filters.search || ''}
-            onSearchChange={(v) => router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })}
-            filters={[
-                {
-                    label: 'Mekanisme F1',
-                    key: 'f1_input_mechanism',
-                    options: [
-                        { label: 'Formulir Digital', value: 'digital' },
-                        { label: 'Folder Kontrak', value: 'folder' },
-                        { label: 'Manual', value: 'manual' },
-                    ],
-                },
-                {
-                    label: 'Mekanisme F2',
-                    key: 'f2_input_mechanism',
-                    options: [
-                        { label: 'Formulir Digital', value: 'digital' },
-                        { label: 'Folder Kontrak', value: 'folder' },
-                        { label: 'Manual', value: 'manual' },
-                    ],
-                },
-            ]}
-            activeFilters={{
-                f1_input_mechanism: filters.f1_input_mechanism ? [filters.f1_input_mechanism] : [],
-                f2_input_mechanism: filters.f2_input_mechanism ? [filters.f2_input_mechanism] : [],
-            }}
-            onFilterChange={(updatedFilters) => {
-                const newFilters: Record<string, any> = { ...filters, page: 1 };
-                Object.keys(updatedFilters).forEach(key => {
-                    newFilters[key] = updatedFilters[key].length > 0 ? updatedFilters[key][0] : null;
-                });
-                router.get(globalThis.location.pathname, newFilters, { preserveState: true, replace: true });
-            }}
-            headerActions={
-                canCreate && (
-                    <Button variant="primary" onClick={openCreate} className="h-10 px-8 shadow-xl active:scale-95">
-                        <Plus size={14} /> Tambah Klasifikasi Baru
-                    </Button>
-                )
-            }
-            onRowClick={openEdit}
-            bulkActions={
-                canUpdate
-                    ? [
-                          {
-                              label: 'Hapus Terpilih',
-                              icon: Trash2,
-                              variant: 'destructive',
-                              onClick: (ids) => {
-                                  if (confirm(`Hapus ${ids.length} tipe kontrak terpilih?`)) {
-                                      router.post(
-                                          '/admin/contract-types/bulk-delete',
-                                          { ids },
-                                          {
-                                              onSuccess: () => showToast(`${ids.length} tipe kontrak telah dihapus`, 'success'),
-                                          },
-                                      );
-                                  }
-                              },
-                          },
-                      ]
-                    : undefined
-            }
-            pagination={
-                contractTypes?.meta
-                    ? {
-                          currentPage: contractTypes.meta.current_page || 1,
-                          lastPage: contractTypes.meta.last_page || 1,
-                          total: contractTypes.meta.total || 0,
-                          from: contractTypes.meta.from || 1,
-                          to: contractTypes.meta.to || 1,
-                          perPage: contractTypes.meta.per_page || 10,
-                          onPageChange: (page) =>
-                              router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
-                          onPerPageChange: (pp) =>
-                              router.get(
-                                  globalThis.location.pathname,
-                                  { ...filters, per_page: pp, page: 1 },
-                                  { preserveState: true, preserveScroll: true },
-                              ),
-                      }
-                    : contractTypes
-                      ? {
-                            currentPage: contractTypes.current_page || 1,
-                            lastPage: contractTypes.last_page || 1,
-                            total: contractTypes.total || 0,
-                            from: contractTypes.from || 1,
-                            to: contractTypes.to || 1,
-                            perPage: contractTypes.per_page || 10,
-                            onPageChange: (page) =>
-                                router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
-                            onPerPageChange: (pp) =>
-                                router.get(
-                                    globalThis.location.pathname,
-                                    { ...filters, per_page: pp, page: 1 },
-                                    { preserveState: true, preserveScroll: true },
-                                ),
-                        }
-                      : undefined
-            }
-        />
+                onRowClick={openEdit}
+                bulkActions={
+                    canDelete
+                        ? [
+                                {
+                                    label: 'Hapus Terpilih',
+                                    icon: Trash2,
+                                    variant: 'destructive',
+                                    onClick: (ids: string[]) => {
+                                        if (confirm(`Apakah Anda yakin ingin menghapus ${ids.length} tipe kontrak terpilih secara permanen?`)) {
+                                            router.post(
+                                                route('admin.contract-types.bulk-destroy'),
+                                                { ids },
+                                                {
+                                                    onSuccess: () => showToast(`${ids.length} tipe kontrak telah dihapus dari registri`, 'success'),
+                                                },
+                                            );
+                                        }
+                                    },
+                                },
+                            ]
+                        : undefined
+                }
+                pagination={contractTypes?.meta ? {
+                    currentPage: contractTypes.meta.current_page || 1,
+                    lastPage: contractTypes.meta.last_page || 1,
+                    total: contractTypes.meta.total || 0,
+                    onPageChange: (page) => router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                } : undefined}
+            />
+        </div>
     );
 }

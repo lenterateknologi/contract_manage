@@ -5,11 +5,11 @@ import { FormSubmissionTab } from '@/components/contracts/FormSubmissionTab';
 import PreviewModal from '@/components/contracts/PreviewModal';
 // No RejectModal import needed
 import { ToastProvider, useToast } from '@/components/contracts/Toast';
-import { FilterSheet } from '@/components/ui/FilterSheet';
-import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { LayoutToggle, LayoutType } from '@/components/ui/layout-toggle';
-import { SearchInput } from '@/components/ui/search-input';
+import { Button } from '@/components/ui/base/Button';
+import { FilterSheet } from '@/components/ui/data/FilterSheet';
+import { SearchInput } from '@/components/ui/forms/SearchInput';
+import { LayoutToggle, LayoutType } from '@/components/ui/navigation/LayoutToggle';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/overlays/DropdownMenu';
 import { contractApi } from '@/lib/contract-api';
 import { cn } from '@/lib/utils';
 import { Contract, ContractType, PaginatedData } from '@/types/contracts';
@@ -27,6 +27,7 @@ import {
     Download,
     Eye,
     FileEdit,
+    FileText,
     FileType,
     Filter,
     Layers,
@@ -48,9 +49,9 @@ import { DraftEditableInfoCard } from '@/components/contracts/DraftEditableInfoC
 import { EditContractModal } from '@/components/contracts/EditContractModal';
 import { ProfileView } from '@/components/contracts/ProfileView';
 import SendApprovalModal from '@/components/contracts/SendApprovalModal';
-import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
-import { Column, DataTable } from '@/components/ui/DataTable';
-import LoadingLottie from '@/components/ui/LoadingLottie';
+import { Column, DataTable } from '@/components/ui/data/DataTable';
+import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
+import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { usePermissions } from '@/hooks/use-permissions';
 
 const ensureArray = (val: any): any[] => {
@@ -68,19 +69,19 @@ function ExpiryBadge({ endDate }: Readonly<{ endDate: string | null }>) {
     const diffTime = end.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    let color = 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20';
+    let color = 'bg-black text-white border-black/10 dark:bg-white dark:text-black';
     let icon = 'fa-circle-check';
     let label = `${diffDays} Hari Lagi`;
 
     if (diffDays < 0) {
-        color = 'bg-rose-50 text-rose-600 border-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20';
+        color = 'bg-black/10 text-black border-black/10 dark:bg-white/10 dark:text-white';
         icon = 'fa-circle-exclamation';
         label = `Expired ${Math.abs(diffDays)} Hari`;
     } else if (diffDays <= 30) {
-        color = 'bg-rose-50 text-rose-600 border-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20';
+        color = 'bg-black text-white border-black/10 dark:bg-white dark:text-black';
         icon = 'fa-triangle-exclamation';
     } else if (diffDays <= 90) {
-        color = 'text-amber-500';
+        color = 'text-black dark:text-white border border-black/10';
         icon = 'fa-clock';
     }
 
@@ -93,16 +94,16 @@ function ExpiryBadge({ endDate }: Readonly<{ endDate: string | null }>) {
 }
 
 const StatusBadge = ({ status }: { status: string }) => {
-    const config = {
-        draft: { color: 'bg-slate-400', label: 'Draft' },
-        in_review: { color: 'bg-amber-400', label: 'Review' },
-        revision: { color: 'bg-rose-400', label: 'Revisi' },
-        pending: { color: 'bg-amber-500', label: 'Pending' },
-        approved: { color: 'bg-emerald-500', label: 'Disetujui' },
-        active: { color: 'bg-emerald-600', label: 'Aktif' },
-        expired: { color: 'bg-rose-600', label: 'Expired' },
-        archived: { color: 'bg-slate-300', label: 'Arsip' },
-        rejected: { color: 'bg-rose-500', label: 'Ditolak' },
+    const config: Record<string, { color: string; label: string }> = {
+        draft: { color: 'bg-black/10 text-black dark:bg-white/10 dark:text-white', label: 'Draft' },
+        in_review: { color: 'bg-black/20 text-black dark:bg-white/20 dark:text-white', label: 'Review' },
+        revision: { color: 'bg-black text-white dark:bg-white dark:text-black', label: 'Revisi' },
+        pending: { color: 'bg-black/20 text-black dark:bg-white/20 dark:text-white', label: 'Pending' },
+        approved: { color: 'bg-black text-white dark:bg-white dark:text-black', label: 'Disetujui' },
+        active: { color: 'bg-black text-white dark:bg-white dark:text-black', label: 'Aktif' },
+        expired: { color: 'bg-black text-white dark:bg-white dark:text-black', label: 'Expired' },
+        archived: { color: 'bg-black/10 text-black dark:bg-white/10 dark:text-white', label: 'Arsip' },
+        rejected: { color: 'bg-black text-white dark:bg-white dark:text-black', label: 'Ditolak' },
     };
 
     const s = config[status as keyof typeof config] || config.draft;
@@ -158,10 +159,10 @@ const SLACountdown = ({ deadline, status }: Readonly<{ deadline: string | null; 
 
     const getUrgencyStyles = () => {
         if (urgency === 'danger') {
-            return 'bg-rose-500/10 text-rose-600 ring-rose-500/20 dark:bg-rose-500/20 dark:text-rose-400';
+            return 'bg-black text-white border-black/20 dark:bg-white dark:text-black';
         }
         if (urgency === 'warning') {
-            return 'bg-amber-500/10 text-amber-600 ring-amber-500/20 dark:bg-amber-500/20 dark:text-amber-400';
+            return 'bg-black/5 text-black border-black/10 dark:bg-white/10 dark:text-white';
         }
         return 'bg-black/5 text-black ring-black/10 dark:bg-white/5 dark:text-white dark:ring-white/10';
     };
@@ -502,7 +503,11 @@ const ContractDetailView = ({
                 </div>
                 <div className="flex items-center gap-2">
                     {contract.status === 'draft' && (
-                        <Button variant="primary" onClick={() => setSendOpen(true)} className="h-10 px-6 active:scale-95">
+                        <Button
+                            variant="primary"
+                            onClick={() => setSendOpen(true)}
+                            className="h-10 px-6 active:scale-95 dark:bg-white dark:text-black dark:hover:bg-white/90"
+                        >
                             <Send size={14} /> Kirim Approval
                         </Button>
                     )}
@@ -531,7 +536,7 @@ const ContractDetailView = ({
                             <div className="my-1.5 h-px bg-black/10 dark:bg-white/10" />
                             <DropdownMenuItem
                                 onClick={() => setDeleteOpen(true)}
-                                className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-bold tracking-tight text-rose-500 uppercase focus:bg-rose-500 focus:text-white"
+                                className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-bold tracking-tight text-black dark:text-white uppercase focus:bg-black focus:text-white dark:focus:bg-white dark:focus:text-black"
                             >
                                 <Trash2 size={14} /> Hapus Kontrak
                             </DropdownMenuItem>
@@ -542,15 +547,47 @@ const ContractDetailView = ({
             <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[1fr_400px]">
                 <div className="flex flex-col gap-6">
                     <div className="dark:bg-sidebar overflow-hidden rounded-xl bg-white shadow-sm">
+                        <div className="bg-primary flex h-14 items-center justify-between px-4 dark:bg-white">
+                            <div className="flex items-center gap-2 text-[11px] font-bold tracking-widest text-white uppercase dark:text-black">
+                                <FileText size={14} className="text-white/40 dark:text-black/40" /> Detail Dokumen & Alur Kerja
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <button className="flex h-7 w-7 items-center justify-center rounded-lg text-white/40 transition-all hover:text-white active:scale-95 dark:text-black/40 dark:hover:text-black">
+                                            <MoreVertical size={14} />
+                                        </button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-56 rounded-xl p-1.5">
+                                        <div className="mb-1 px-2 py-1.5 text-[9px] font-black tracking-widest text-black/40 uppercase dark:text-white/40">
+                                            Menu Tambahan
+                                        </div>
+                                        <DropdownMenuItem
+                                            onClick={() => setDetailTab('audit')}
+                                            className={cn(
+                                                'flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-black tracking-tight uppercase transition-all',
+                                                detailTab === 'audit'
+                                                    ? 'bg-sidebar-primary text-white'
+                                                    : 'text-black hover:bg-black/5 dark:text-white dark:hover:bg-white/5',
+                                            )}
+                                        >
+                                            <Clock
+                                                size={14}
+                                                className={cn(detailTab === 'audit' ? 'text-white' : 'text-black/40 dark:text-white/40')}
+                                            />{' '}
+                                            Audit Trail
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                        </div>
                         <div className="flex flex-wrap gap-1 bg-black/[0.02] p-1.5 dark:bg-white/[0.02]">
                             {[
                                 { id: 'form_template', label: 'F1' },
                                 { id: 'f2', label: 'F2' },
                                 { id: 'agreement', label: 'Agreement' },
                                 { id: 'attachments', label: 'Lampiran' },
-                                { id: 'audit', label: 'Audit Trail' },
                                 { id: 'timeline', label: 'Alur Approval' },
-                                { id: 'references', label: 'Referensi' },
                                 { id: 'chat', label: 'Chat' },
                             ].map((tab) => (
                                 <button
@@ -559,7 +596,7 @@ const ContractDetailView = ({
                                     className={cn(
                                         'rounded-lg px-4 py-2 text-[9px] font-black tracking-[0.2em] uppercase transition-all duration-300',
                                         detailTab === tab.id
-                                            ? 'z-10 scale-105 bg-[var(--primary)] text-white shadow-xl dark:bg-white dark:text-[var(--primary)] dark:shadow-white/10'
+                                            ? 'z-10 scale-105 bg-primary text-white shadow-xl dark:bg-white dark:text-black dark:shadow-white/10'
                                             : 'text-black/30 hover:bg-black/5 hover:text-black dark:text-white/30 dark:hover:bg-white/5 dark:hover:text-white',
                                     )}
                                 >
@@ -567,7 +604,7 @@ const ContractDetailView = ({
                                 </button>
                             ))}
                         </div>
-                        <div className={cn('flex min-h-[600px] flex-1 flex-col', detailTab !== 'agreement' && 'p-5')}>
+                        <div className={cn('flex min-h-[600px] flex-1 flex-col')}>
                             {detailTab === 'form_template' && (
                                 <FormSubmissionTab docType="f1" selected={contract} formTemplates={formTemplates} onContractUpdated={onUpdate} />
                             )}
@@ -578,40 +615,7 @@ const ContractDetailView = ({
                             {detailTab === 'attachments' && <ContractAttachments contract={contract} onUpdated={onUpdate} showToast={showToast} />}
                             {detailTab === 'audit' && <ContractAuditTrail contract={contract} />}
                             {detailTab === 'timeline' && (
-                                <div className="flex flex-col gap-8">
-                                    <div className="flex flex-col gap-6 rounded-2xl border border-black/5 bg-black/[0.01] p-6 dark:border-white/5 dark:bg-white/[0.01]">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex flex-col gap-1">
-                                                <h4 className="text-[10px] font-black tracking-widest text-black/40 uppercase dark:text-white/40">
-                                                    Status Approval
-                                                </h4>
-                                                <div className="flex items-center gap-2">
-                                                    <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500" />
-                                                    <p className="text-[11px] font-bold text-black dark:text-white">
-                                                        Sedang dalam peninjauan oleh tim terkait
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={handleExportTimelinePdf}
-                                                disabled={isExportingTimeline}
-                                                className="h-8 border-black/10 px-3 text-[10px] font-bold tracking-wider uppercase transition-all active:scale-95 dark:border-white/10"
-                                            >
-                                                {isExportingTimeline ? (
-                                                    <>
-                                                        <div className="mr-2 h-3 w-3 animate-spin rounded-full border-2 border-black/20 border-t-black dark:border-white/20 dark:border-t-white" />
-                                                        Exporting...
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Download size={12} className="mr-1.5" /> Export PDF
-                                                    </>
-                                                )}
-                                            </Button>
-                                        </div>
-                                    </div>
+                                <div className="mb-10 flex flex-col gap-8 p-5">
                                     <ApprovalSteps
                                         contract={contract}
                                         approvals={contract.approvals}
@@ -636,7 +640,7 @@ const ContractDetailView = ({
                     {canApprove && (
                         <div className="flex flex-col gap-4 overflow-hidden rounded-2xl border border-black/10 bg-white p-6 shadow-xl dark:border-white/10 dark:bg-black">
                             <div className="flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:bg-blue-400/10 dark:text-blue-400">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-black/5 text-black dark:bg-white/10 dark:text-white">
                                     <Zap size={20} />
                                 </div>
                                 <div className="flex flex-col gap-0.5">
@@ -740,6 +744,7 @@ function ContractPage({
     const [timelinePdfPreviewUrl, setTimelinePdfPreviewUrl] = useState<string | null>(null);
 
     const [layout, setLayout] = useState<'table' | 'grid'>('table');
+    const [selectedRows, setSelectedRows] = useState<Contract[]>([]);
 
     useEffect(() => {
         if (currentView && currentView !== view) setView(currentView);
@@ -940,8 +945,14 @@ function ContractPage({
                 header: 'Dibuat',
                 cell: renderCreatedAt,
             },
+            {
+                accessorKey: 'actions',
+                header: '',
+                cell: renderRowActions,
+                className: 'w-10 text-right',
+            },
         ],
-        [types],
+        [types, renderRowActions],
     );
 
     return (
@@ -1020,26 +1031,17 @@ function ContractPage({
                                             columns={columns}
                                             data={contractsPaged.data}
                                             loading={processing}
-                                            searchPlaceholder="Cari data..."
                                             onRowClick={openDetail}
-                                            bulkActions={renderBulkActions}
+                                            onSelectionChange={setSelectedRows}
+                                            selectedRows={selectedRows}
+                                            bulkActions={renderBulkActions(selectedRows)}
                                             pagination={{
                                                 currentPage: contractsPaged.current_page,
                                                 lastPage: contractsPaged.last_page,
                                                 total: contractsPaged.total,
-                                                from: contractsPaged.from,
-                                                to: contractsPaged.to,
-                                                perPage: contractsPaged.per_page,
-                                                onPageChange: (page) =>
+                                                onPageChange: (page: number) =>
                                                     router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true }),
-                                                onPerPageChange: (pp) =>
-                                                    router.get(
-                                                        globalThis.location.pathname,
-                                                        { ...filters, per_page: pp, page: 1 },
-                                                        { preserveState: true },
-                                                    ),
                                             }}
-                                            rowActions={renderRowActions}
                                         />
                                     ) : (
                                         <div className="flex flex-col gap-8 p-6">
@@ -1203,11 +1205,11 @@ function ContractPage({
                         type: 'searchable',
                         options: [
                             { label: 'Draft', value: 'draft', icon: Layers, color: 'bg-slate-50 text-slate-400' },
-                            { label: 'Pending', value: 'pending', icon: Clock, color: 'bg-amber-50 text-amber-500' },
-                            { label: 'In Review', value: 'in_review', icon: Zap, color: 'bg-blue-50 text-blue-500' },
-                            { label: 'Revision', value: 'revision', icon: AlertTriangle, color: 'bg-rose-50 text-rose-500' },
-                            { label: 'Approved', value: 'approved', icon: CheckCircle2, color: 'bg-emerald-50 text-emerald-500' },
-                            { label: 'Rejected', value: 'rejected', icon: AlertCircle, color: 'bg-rose-50 text-rose-500' },
+                            { label: 'Pending', value: 'pending', icon: Clock, color: 'bg-black/5 text-black' },
+                            { label: 'In Review', value: 'in_review', icon: Zap, color: 'bg-black/5 text-black' },
+                            { label: 'Revision', value: 'revision', icon: AlertTriangle, color: 'bg-black/5 text-black' },
+                            { label: 'Approved', value: 'approved', icon: CheckCircle2, color: 'bg-black text-white' },
+                            { label: 'Rejected', value: 'rejected', icon: AlertCircle, color: 'bg-black/5 text-black' },
                         ],
                     },
                     {
@@ -1250,7 +1252,7 @@ function ContractPage({
                     <div className="border-border flex h-16 items-center justify-between border-b bg-slate-50 px-6">
                         <div className="flex flex-col">
                             <h3 className="text-foreground flex items-center gap-2 text-sm font-bold tracking-widest uppercase">
-                                <i className="fa-solid fa-file-pdf text-rose-500" /> Export Alur Approval
+                                <i className="fa-solid fa-file-pdf text-black dark:text-white" /> Export Alur Approval
                             </h3>
                             <span className="text-muted-foreground text-[10px] font-bold">{selected?.contract_no} — Generation Complete</span>
                         </div>

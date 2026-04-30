@@ -1,8 +1,8 @@
 import { FilterChips } from '@/components/contracts/FilterChips';
-import { AdvancedFilters } from '@/components/ui/AdvancedSearch';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { SimpleFilters } from '@/components/ui/SimpleFilters';
+import { AdvancedFilters } from '@/types/filters';
+import { Button } from '@/components/ui/base/Button';
+import { Input } from '@/components/ui/base/Input';
+import { SimpleFilters } from '@/components/ui/data/SimpleFilters';
 import { router } from '@inertiajs/react';
 import { LayoutGrid, List as ListIcon, RefreshCcw, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';

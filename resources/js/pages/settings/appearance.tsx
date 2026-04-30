@@ -1,7 +1,7 @@
 import { Head } from '@inertiajs/react';
 import { Palette } from 'lucide-react';
 
-import AppearanceTabs from '@/components/appearance-tabs';
+import AppearanceTabs from '@/components/layout/AppearanceTabs';
 import SettingsLayout from '@/layouts/settings/layout';
 
 export default function Appearance() {

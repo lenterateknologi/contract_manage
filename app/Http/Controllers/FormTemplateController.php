@@ -155,11 +155,11 @@ class FormTemplateController extends Controller
                     '--disable-extensions'
                 ])
                 ->timeout(180)
-                ->format('A4')
+                ->paperSize(210, 297, 'mm')
                 ->margins(0, 0, 0, 0)
                 ->showBackground()
                 ->waitForSelector('#pdf-render-complete')
-                ->setDelay(200)
+                ->setDelay(1000)
                 ->pdf();
 
 
@@ -267,24 +267,6 @@ class FormTemplateController extends Controller
         });
     }
 
-    /**
-     * Show the form for filling.
-     */
-    public function fill(FormTemplate $template)
-    {
-        $template->load(['fields' => function ($q) {
-            $q->orderBy('order');
-        }]);
-
-        return Inertia::render('admin/form-filling', [
-            'template' => $template,
-            'breadcrumbs' => [
-                ['title' => 'Administrasi', 'href' => '#'],
-                ['title' => 'Form Template', 'href' => route('admin.form-templates.index')],
-                ['title' => 'Isi Form', 'href' => '#'],
-            ],
-        ]);
-    }
 
     /**
      * Render the form in a minimalist printable layout (Inertia).
@@ -350,11 +332,11 @@ class FormTemplateController extends Controller
                     '--disable-extensions'
                 ])
                 ->timeout(180)
-                ->format('A4')
+                ->paperSize(210, 297, 'mm')
                 ->margins(0, 0, 0, 0)
                 ->showBackground()
                 ->waitForSelector('#pdf-render-complete')
-                ->setDelay(200)
+                ->setDelay(1000)
                 ->pdf();
 
 
@@ -421,11 +403,11 @@ class FormTemplateController extends Controller
                     '--disable-extensions'
                 ])
                 ->timeout(180)
-                ->format('A4')
+                ->paperSize(210, 297, 'mm')
                 ->margins(0, 0, 0, 0)
                 ->showBackground()
                 ->waitForSelector('#pdf-render-complete')
-                ->setDelay(200)
+                ->setDelay(1000)
                 ->pdf();
 
 

@@ -1,10 +1,11 @@
 import { useToast } from '@/components/contracts/Toast';
+import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
+import { SearchInput } from '@/components/ui/forms/SearchInput';
 import { cn } from '@/lib/utils';
 import { Contract } from '@/types/contracts';
 import axios from 'axios';
-import { Diff, FileText, History, Loader2, Upload, ChevronDown, Search, MoreVertical, RefreshCw, ArrowRight } from 'lucide-react';
+import { ArrowRight, ChevronDown, Diff, FileText, History, Loader2, MoreVertical, RefreshCw, Upload } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import LoadingLottie from '../ui/LoadingLottie';
 
 interface AgreementVersion {
     id: string;
@@ -117,21 +118,19 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
     return (
         <div className="bg-card animate-in fade-in flex flex-1 flex-col overflow-hidden duration-300">
             {/* Header Area */}
-            <div className="border-[#172554]/10 dark:border-white/10 sticky top-0 z-40 flex h-[72px] shrink-0 items-center justify-between border-b bg-white/80 dark:bg-sidebar/80 px-6 backdrop-blur-md">
+            <div className="dark:bg-sidebar/80 sticky top-0 z-40 flex h-[72px] shrink-0 items-center justify-between border-b border-[#172554]/10 bg-white/80 px-6 backdrop-blur-md dark:border-white/10">
                 <div className="flex items-center gap-4">
                     <div className="flex flex-col">
                         <div className="flex items-center gap-2">
-                            <div className="h-4 w-1 rounded-full bg-[#172554] dark:bg-white" />
-                            <h4 className="text-sm font-bold text-[#172554] dark:text-white">Preview Persetujuan</h4>
+                            <div className="h-4 w-1 rounded-full bg-black dark:bg-white" />
+                            <h4 className="text-sm font-bold text-black dark:text-white">Preview Persetujuan</h4>
                             {selectedVno && (
-                                <div className="rounded bg-[#172554] dark:bg-white px-1.5 py-0.5">
-                                    <span className="text-[10px] font-bold text-white dark:text-[#172554]">
-                                        V{selectedVno}
-                                    </span>
+                                <div className="bg-background rounded px-1.5 py-0.5 dark:bg-white">
+                                    <span className="text-[10px] font-bold text-white dark:text-black">V{selectedVno}</span>
                                 </div>
                             )}
                         </div>
-                        <span className="mt-0.5 text-[10px] font-bold text-[#172554] dark:text-white">
+                        <span className="mt-0.5 text-[10px] font-bold text-black/40 dark:text-white/40">
                             High-Fidelity PDF Preview &bull; Layout Preserved
                         </span>
                     </div>
@@ -145,54 +144,53 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
                                 className={cn(
                                     'group flex h-9 items-center gap-2.5 rounded-lg border px-4 transition-all active:scale-95',
                                     showVersions
-                                        ? 'border-[#172554] bg-[#172554] text-white dark:border-white dark:bg-white dark:text-[#172554]'
-                                        : 'border-[#172554] bg-white text-[#172554] hover:border-[#172554]/20 dark:border-white dark:bg-transparent dark:text-white',
+                                        ? 'border-black bg-black text-white shadow-lg dark:border-white dark:bg-white dark:text-black'
+                                        : 'border-black/10 bg-white text-black hover:border-black/20 dark:border-white/10 dark:bg-transparent dark:text-white',
                                 )}
                             >
-                                <History size={16} className={showVersions ? 'text-white dark:text-black' : 'text-[#172554] dark:text-white'} />
+                                <History size={16} className={showVersions ? 'text-white dark:text-black' : 'text-black/40 dark:text-white/40'} />
                                 <span className="text-xs font-bold">{versions.length} Versi</span>
                                 <ChevronDown size={12} className={cn('ml-1 transition-transform', showVersions && 'rotate-180')} />
                             </button>
 
                             {showVersions && (
-                                <div className="animate-in fade-in zoom-in-95 absolute top-full left-0 z-[999] mt-2 w-72 origin-top-left rounded-xl border border-[#172554]/10 dark:border-white/10 bg-white dark:bg-sidebar p-1 shadow-2xl duration-200">
-                                    <div className="border-b border-[#172554]/5 dark:border-white/5 p-2">
-                                        <div className="relative">
-                                            <Search size={14} className="absolute top-1/2 left-3.5 -translate-y-1/2 text-[#172554] dark:text-white" />
-                                            <input
-                                                autoFocus
-                                                type="text"
-                                                placeholder="Cari riwayat versi..."
-                                                value={searchQuery}
-                                                onChange={(e) => setSearchQuery(e.target.value)}
-                                                className="w-full rounded-xl border border-[#172554] bg-white py-2.5 pr-4 pl-10 text-xs font-bold transition-all outline-none focus:ring-2 focus:ring-[#172554] dark:border-white dark:bg-transparent dark:text-white dark:focus:ring-white"
-                                            />
-                                        </div>
+                                <div className="animate-in fade-in zoom-in-95 dark:bg-sidebar absolute top-full left-0 z-[999] mt-2 w-72 origin-top-left rounded-xl border border-black/10 bg-white p-1 shadow-2xl duration-200 dark:border-white/10">
+                                    <div className="border-b border-black/5 p-2 dark:border-white/5">
+                                        <SearchInput
+                                            autoFocus
+                                            placeholder="Cari riwayat versi..."
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            className="h-9 text-[11px]"
+                                        />
                                     </div>
                                     <div className="max-h-[300px] overflow-y-auto py-1">
                                         {filteredVersions.map((v) => (
                                             <button
                                                 key={v.id}
                                                 onClick={() => handlePreview(v.version_no)}
-                                                className="group flex w-full items-center justify-between rounded-lg px-3 py-3 text-left transition-all hover:bg-[#172554]/5 dark:hover:bg-white/5"
+                                                className="group flex w-full items-center justify-between rounded-lg px-3 py-3 text-left transition-all hover:bg-black/5 dark:hover:bg-white/5"
                                             >
                                                 <div className="flex flex-col">
                                                     <div className="flex items-center gap-2">
                                                         <span
                                                             className={cn(
-                                                                'flex h-6 w-6 items-center justify-center rounded bg-[#172554] text-[10px] font-bold text-white transition-colors dark:bg-white dark:text-[#172554]',
-                                                                selectedVno !== v.version_no && 'bg-[#172554] dark:bg-white',
+                                                                'flex h-6 w-6 items-center justify-center rounded bg-black text-[10px] font-bold text-white shadow-sm transition-colors dark:bg-white dark:text-black',
+                                                                selectedVno !== v.version_no && 'bg-black/10 dark:bg-white/10',
                                                             )}
                                                         >
                                                             {v.version_no}
                                                         </span>
-                                                        <span className="text-xs font-bold text-[#172554] dark:text-white">{v.file_name}</span>
+                                                        <span className="text-xs font-bold text-black dark:text-white">{v.file_name}</span>
                                                     </div>
-                                                    <span className="mt-1 text-[10px] font-bold text-[#172554] dark:text-white">
+                                                    <span className="mt-1 text-[10px] font-bold text-black/30 dark:text-white/30">
                                                         {v.created_at} &bull; {v.uploader?.name || 'System'}
                                                     </span>
                                                 </div>
-                                                <ArrowRight size={14} className="opacity-0 transition-all group-hover:opacity-100 text-[#172554] dark:text-white" />
+                                                <ArrowRight
+                                                    size={14}
+                                                    className="text-black opacity-0 transition-all group-hover:opacity-100 dark:text-white"
+                                                />
                                             </button>
                                         ))}
                                     </div>
@@ -207,23 +205,23 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
                             className={cn(
                                 'flex h-9 w-9 items-center justify-center rounded-lg border transition-all active:scale-95',
                                 showMoreActions
-                                    ? 'border-[#172554] bg-[#172554] text-white dark:border-white dark:bg-white dark:text-[#172554]'
-                                    : 'border-[#172554] bg-white text-[#172554] hover:bg-[#172554]/5 dark:border-white dark:bg-transparent dark:text-white',
+                                    ? 'border-black bg-black text-white shadow-lg dark:border-white dark:bg-white dark:text-black'
+                                    : 'border-black/10 bg-white text-black hover:bg-black/5 dark:border-white/10 dark:bg-transparent dark:text-white',
                             )}
                         >
                             <MoreVertical size={16} />
                         </button>
 
                         {showMoreActions && (
-                            <div className="animate-in fade-in zoom-in-95 absolute top-full right-0 z-[999] mt-2 w-48 origin-top-right rounded-xl border border-[#172554]/10 dark:border-white/10 bg-white dark:bg-sidebar p-1 shadow-2xl duration-200">
+                            <div className="animate-in fade-in zoom-in-95 dark:bg-sidebar absolute top-full right-0 z-[999] mt-2 w-48 origin-top-right rounded-xl border border-black/10 bg-white p-1 shadow-2xl duration-200 dark:border-white/10">
                                 <button
                                     onClick={() => {
                                         loadVersions();
                                         setShowMoreActions(false);
                                     }}
-                                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-xs font-bold text-[#172554] dark:text-white transition-all hover:bg-[#172554]/5 dark:hover:bg-white/5 uppercase tracking-widest"
+                                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-xs font-bold tracking-widest text-black uppercase transition-all hover:bg-black/5 dark:text-white dark:hover:bg-white/5"
                                 >
-                                    <RefreshCw size={14} className="text-[#172554] dark:text-white" />
+                                    <RefreshCw size={14} className="text-black dark:text-white" />
                                     REFRESH LIST
                                 </button>
 
@@ -233,9 +231,9 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
                                             handleCompare();
                                             setShowMoreActions(false);
                                         }}
-                                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-xs font-bold text-[#172554] dark:text-white transition-all hover:bg-[#172554]/5 dark:hover:bg-white/5 uppercase tracking-widest"
+                                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-xs font-bold tracking-widest text-black uppercase transition-all hover:bg-black/5 dark:text-white dark:hover:bg-white/5"
                                     >
-                                        <Diff size={14} className="text-[#172554] dark:text-white" />
+                                        <Diff size={14} className="text-black dark:text-white" />
                                         COMPARE VERSIONS
                                     </button>
                                 )}
@@ -246,7 +244,7 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
                     {isDraft && (
                         <label
                             className={cn(
-                                'flex h-9 cursor-pointer items-center gap-2 rounded-lg bg-[#172554] px-6 text-xs font-bold text-white shadow-lg transition-all hover:opacity-90 active:scale-95 dark:bg-white dark:text-[#172554]',
+                                'bg-primary flex h-9 cursor-pointer items-center gap-2 rounded-lg px-6 text-xs font-bold text-white shadow-lg transition-all hover:opacity-90 active:scale-95 dark:bg-white dark:text-black',
                                 uploading && 'pointer-events-none opacity-50',
                             )}
                         >
@@ -259,7 +257,7 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
             </div>
 
             {/* Main Preview Area - PDF Iframe */}
-            <div className="relative flex min-h-[1000px] flex-1 flex-col overflow-hidden border-t border-[#172554] dark:border-white bg-white dark:bg-transparent">
+            <div className="relative flex min-h-[1000px] flex-1 flex-col overflow-hidden border-t border-black/10 bg-white dark:border-white/10 dark:bg-transparent">
                 {loading ? (
                     <div className="flex h-full flex-col items-center justify-center gap-4">
                         <LoadingLottie width={120} height={120} />
@@ -267,11 +265,11 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
                     </div>
                 ) : versions.length === 0 ? (
                     <div className="flex flex-1 flex-col items-center justify-center p-20 text-center">
-                        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-dashed border-[#172554] dark:border-white">
-                            <FileText size={40} className="text-[#172554] dark:text-white" />
+                        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-dashed border-black/20 dark:border-white/20">
+                            <FileText size={40} className="text-black/40 dark:text-white/40" />
                         </div>
-                        <h4 className="mb-2 text-xs font-bold text-[#172554] dark:text-white">Dokumen Tidak Tersedia</h4>
-                        <p className="max-w-sm text-[11px] font-bold text-[#172554] dark:text-white">
+                        <h4 className="mb-2 text-xs font-bold text-black dark:text-white">Dokumen Tidak Tersedia</h4>
+                        <p className="max-w-sm text-[11px] font-bold text-black/40 dark:text-white/40">
                             Upload draf final persetujuan Anda (.docx) untuk mulai melacak versi dan melakukan audit per poin.
                         </p>
                     </div>

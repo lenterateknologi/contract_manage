@@ -132,6 +132,7 @@ export interface Contract {
     status: ContractStatus;
     display_mode?: 'interactive' | 'pdf';
     allow_info_edit?: boolean;
+    allow_reference?: boolean;
     current_version: number;
     created_at: string;
     submitted_at: string | null;

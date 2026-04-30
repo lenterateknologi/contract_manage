@@ -1,5 +1,5 @@
-import AppLogoIcon from '@/components/app-logo-icon';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import AppLogoIcon from '@/components/layout/AppLogoIcon';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/base/Card';
 import { Link } from '@inertiajs/react';
 
 export default function AuthCardLayout({

@@ -1,10 +1,10 @@
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/base/Badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/base/Card';
 import { cn } from '@/lib/utils';
 import { router } from '@inertiajs/react';
 import { BarChart3, Clock, FileText, Filter, Shield, X } from 'lucide-react';
 import React from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/base/Button';
 import { Area, Bar, ComposedChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 // Data Tetap Sama

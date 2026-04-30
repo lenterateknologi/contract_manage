@@ -8,6 +8,19 @@ interface Props {
 }
 
 export default function FormPrint({ template, formData }: Props) {
+    const [ready, setReady] = React.useState(false);
+
+    React.useEffect(() => {
+        // Ensure fonts are loaded and give a small buffer for layout calculation
+        if (typeof document !== 'undefined' && (document as any).fonts) {
+            (document as any).fonts.ready.then(() => {
+                setTimeout(() => setReady(true), 1000);
+            });
+        } else {
+            setTimeout(() => setReady(true), 1500);
+        }
+    }, []);
+
     return (
         <div className="bg-white min-h-screen">
             <Head>
@@ -28,7 +41,7 @@ export default function FormPrint({ template, formData }: Props) {
             </div>
 
             {/* Signal for Browsershot that React has finished mounting and rendering */}
-            <div id="pdf-render-complete" style={{ display: 'none' }} aria-hidden="true" />
+            {ready && <div id="pdf-render-complete" style={{ display: 'none' }} aria-hidden="true" />}
 
             {/* Print-specific style to ensure no backgrounds are lost and margins are handled */}
 
@@ -54,11 +67,17 @@ export default function FormPrint({ template, formData }: Props) {
                     max-width: none !important;
                 }
 
-                /* Prevent breaking in the middle of a field */
+                /* Prevent breaking in the middle of an atomic field, but allow breaking inside containers */
                 .form-element-container {
                     page-break-inside: avoid;
                     break-inside: avoid;
-                    margin-bottom: 8mm; 
+                }
+                
+                /* Allow containers (groups, grids) to span multiple pages if needed */
+                .form-element-container:has(> .flex-wrap),
+                .form-element-container:has(> .grid) {
+                    page-break-inside: auto;
+                    break-inside: auto;
                 }
             `}} />
         </div>

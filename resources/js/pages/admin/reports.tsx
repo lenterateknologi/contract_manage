@@ -2,14 +2,14 @@ import { Head } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem } from '@/types';
 import { FileText, Download, Table, Calendar, Users, Filter, Check, ChevronDown, History, BarChart3, Search, ListFilter } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/base/Button';
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import axios from 'axios';
 import { cn } from '@/lib/utils';
 import { StatusBadge } from '@/components/contracts/ui';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { FilterSheet, FilterCategory } from '@/components/ui/FilterSheet';
+import { Label } from '@/components/ui/base/Label';
+import { Input } from '@/components/ui/base/Input';
+import { FilterSheet, FilterCategory } from '@/components/ui/data/FilterSheet';
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Admin', href: '/admin/users' },

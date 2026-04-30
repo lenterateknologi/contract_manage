@@ -1,16 +1,15 @@
+import { ManagementForm, FormDangerZone, FormSection } from './ManagementForm';
+import { CompactInput } from '@/components/ui/forms/CompactInput';
+import { CompactSwitch } from '@/components/ui/forms/CompactSwitch';
+import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
+import { router, useForm } from '@inertiajs/react';
+import { Building2, Plus, Trash2 } from 'lucide-react';
 import React, { useMemo } from 'react';
-import { Column, DataTable } from '@/components/ui/DataTable';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useForm, router } from '@inertiajs/react';
-import { Plus, Trash2, Building2 } from 'lucide-react';
+import { Column, DataTable } from '@/components/ui/data/DataTable';
+import { Button } from '@/components/ui/base/Button';
 import { usePermissions } from '@/hooks/use-permissions';
-import { useToast } from '@/components/contracts/Toast';
 import { cn } from '@/lib/utils';
-import { ManagementForm, FormDangerZone } from './ManagementForm';
-import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
+import { useToast } from '@/components/contracts/Toast';
 
 interface DepartmentManagementProps {
     departments: any;
@@ -155,9 +154,9 @@ export function DepartmentManagement({ departments, filters }: Readonly<Departme
                             type="button" 
                             variant="ghost" 
                             onClick={() => setIsConfirmOpen(true)}
-                            className="h-8 hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black text-black/50 dark:text-white/50 rounded-none px-4 text-[10px] font-black uppercase tracking-widest transition-all"
+                            className="h-8 hover:bg-rose-500 hover:text-white text-rose-500 rounded-xl px-4 text-[10px] font-black uppercase tracking-widest transition-all border border-rose-500/10 active:scale-95"
                         >
-                            <Trash2 size={14} className="mr-2" /> Hapus Data
+                            <Trash2 size={14} className="mr-2" /> Hapus Departemen
                         </Button>
                     )
                 }
@@ -178,62 +177,63 @@ export function DepartmentManagement({ departments, filters }: Readonly<Departme
                     description={`Apakah Anda yakin ingin menghapus departemen ${editingDept?.name}? Tindakan ini tidak dapat dibatalkan.`}
                     confirmText="Hapus Departemen"
                 />
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
-                    <div className="md:col-span-8 space-y-10">
-                        <div className="space-y-6">
-                            <h3 className="text-[11px] font-black tracking-[0.2em] text-black dark:text-white uppercase border-b border-black/[0.05] dark:border-white/[0.05] pb-3 ml-1">Data Organisasi</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-1">
-                                <div className="md:col-span-1 space-y-2">
-                                    <Label className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-widest ml-1">Kode / Singkatan</Label>
-                                    <Input 
-                                        value={form.data.code} 
-                                        onChange={e => form.setData('code', e.target.value)} 
-                                        required 
-                                        placeholder="CONTOH: IT" 
-                                        className="h-10 rounded-xl border-black/[0.08] dark:border-white/[0.08] bg-black/[0.03] dark:bg-white/[0.03] text-[11px] font-mono font-black uppercase tracking-widest px-5 focus-visible:ring-0 transition-all text-black dark:text-white focus:border-black dark:focus:border-white shadow-sm" 
-                                    />
-                                </div>
-                                <div className="md:col-span-2 space-y-2">
-                                    <Label className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-widest ml-1">Nama Unit Struktural</Label>
-                                    <Input 
-                                        value={form.data.name} 
-                                        onChange={e => form.setData('name', e.target.value)} 
-                                        required 
-                                        placeholder="NAMA LENGKAP DIVISI" 
-                                        className="h-10 rounded-xl border-black/[0.08] dark:border-white/[0.08] bg-black/[0.03] dark:bg-white/[0.03] text-sm font-black uppercase tracking-tight px-5 focus-visible:ring-0 transition-all text-black dark:text-white focus:border-black dark:focus:border-white shadow-sm" 
-                                    />
-                                </div>
-                                <div className="md:col-span-3 space-y-2">
-                                    <Label className="text-[10px] font-black text-black/40 dark:text-white/40 uppercase tracking-widest ml-1">Keterangan Fungsi</Label>
-                                    <Input 
-                                        value={form.data.description} 
-                                        onChange={e => form.setData('description', e.target.value)} 
-                                        placeholder="Tuliskan deskripsi unit kerja ini..." 
-                                        className="h-10 rounded-xl border-black/[0.08] dark:border-white/[0.08] bg-black/[0.03] dark:bg-white/[0.03] text-xs font-bold uppercase px-5 focus-visible:ring-0 transition-all text-black dark:text-white focus:border-black dark:focus:border-white shadow-sm" 
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="md:col-span-4 flex flex-col pt-6 md:pt-0">
-                         <div className="border border-black/[0.05] dark:border-white/[0.05] p-8 bg-black/[0.02] dark:bg-white/[0.02] rounded-xl shadow-sm">
-                            <div className="flex items-center gap-4 bg-white dark:bg-black/40 p-3 rounded-xl border border-black/[0.05] dark:border-white/[0.05] shadow-sm mb-8">
-                                <span className={cn("text-[10px] font-black uppercase tracking-widest ml-1", form.data.is_active ? "text-black dark:text-white" : "text-black/30 dark:text-white/30")}>
-                                     {form.data.is_active ? 'Unit Terlihat' : 'Unit Tersembunyi'}
-                                </span>
-                                <Checkbox 
-                                    checked={form.data.is_active} 
-                                    onCheckedChange={(c) => form.setData('is_active', !!c)} 
-                                    className="w-5 h-5 rounded-lg border-black/[0.1] dark:border-white/[0.1] data-[state=checked]:bg-black dark:data-[state=checked]:bg-white data-[state=checked]:text-white dark:data-[state=checked]:text-black transition-all"
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+                    {/* Main Column: 8 Columns */}
+                    <div className="md:col-span-8 space-y-8">
+                        <FormSection 
+                            title="Data Organisasi" 
+                            subtitle="Identitas unik dan deskripsi unit kerja"
+                        >
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <CompactInput 
+                                    label="Kode / Singkatan"
+                                    value={form.data.code}
+                                    onChange={e => form.setData('code', e.target.value)}
+                                    placeholder="CONTOH: IT"
+                                    error={form.errors.code}
+                                />
+                                <CompactInput 
+                                    label="Nama Unit Struktural"
+                                    value={form.data.name}
+                                    onChange={e => form.setData('name', e.target.value)}
+                                    placeholder="NAMA LENGKAP DIVISI"
+                                    error={form.errors.name}
+                                    containerClassName="md:col-span-2"
+                                />
+                                <CompactInput 
+                                    label="Keterangan Fungsi"
+                                    value={form.data.description}
+                                    onChange={e => form.setData('description', e.target.value)}
+                                    placeholder="TULISKAN DESKRIPSI UNIT KERJA INI..."
+                                    error={form.errors.description}
+                                    containerClassName="md:col-span-3"
                                 />
                             </div>
-                            <div className="flex items-center gap-3 mb-4">
-                                <Building2 size={18} className="text-black/20 dark:text-white/20" />
-                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-black/30 dark:text-white/30">Arsitektur Unit</span>
+                        </FormSection>
+                    </div>
+
+                    {/* Side Column: 4 Columns */}
+                    <div className="md:col-span-4 flex flex-col gap-8">
+                        <FormSection title="Status Visibilitas">
+                            <CompactSwitch 
+                                label="Unit Terlihat"
+                                description="Tampilkan unit ini di seluruh aplikasi"
+                                checked={form.data.is_active}
+                                onCheckedChange={c => form.setData('is_active', c)}
+                            />
+                        </FormSection>
+
+                        <div className="border border-primary/10 dark:border-white/10 p-8 bg-primary/[0.02] dark:bg-white/[0.02] rounded-2xl shadow-sm relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <Building2 size={80} strokeWidth={1} />
                             </div>
-                            <p className="text-[11px] text-black/40 dark:text-white/40 font-bold uppercase leading-relaxed tracking-tight italic border-t border-black/[0.05] dark:border-white/[0.05] pt-4">
-                                Departemen digunakan untuk mengelompokkan pengguna dan menentukan keterlibatan dalam alur persetujuan (Workflow) berbasis departemen secara otomatis.
+                            
+                            <div className="flex items-center gap-3 mb-8 relative z-10">
+                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary dark:text-white">Arsitektur Unit</span>
+                            </div>
+
+                            <p className="text-[11px] text-primary dark:text-white font-bold uppercase leading-relaxed tracking-tight italic relative z-10">
+                                Departemen digunakan untuk mengelompokkan pengguna dan menentukan keterlibatan dalam alur persetujuan (Workflow) secara otomatis.
                             </p>
                         </div>
                     </div>
@@ -247,10 +247,9 @@ export function DepartmentManagement({ departments, filters }: Readonly<Departme
             title="Database Unit / Departemen"
             columns={columns}
             data={departments.data || []}
-            searchKey="name"
             searchPlaceholder="Cari departemen..."
             searchValue={filters.search || ''}
-            onSearchChange={(v) => router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })}
+            onSearchChange={(v: string) => router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })}
             filters={filterConfig as any}
             activeFilters={filters}
             onFilterChange={handleFilterChange}
@@ -271,7 +270,7 @@ export function DepartmentManagement({ departments, filters }: Readonly<Departme
                     label: 'Hapus Terpilih',
                     icon: Trash2,
                     variant: 'destructive',
-                    onClick: (ids) => {
+                    onClick: (ids: string[] | number[]) => {
                         if (confirm(`Hapus ${ids.length} departemen terpilih?`)) {
                             router.post('/admin/departments/bulk-delete', { ids }, {
                                 onSuccess: () => showToast(`${ids.length} departemen telah dihapus`, 'success')
@@ -287,8 +286,8 @@ export function DepartmentManagement({ departments, filters }: Readonly<Departme
                 from: departments.from || 1,
                 to: departments.to || 1,
                 perPage: departments.per_page || 10,
-                onPageChange: (page) => router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
-                onPerPageChange: (pp) => router.get(globalThis.location.pathname, { ...filters, per_page: pp, page: 1 }, { preserveState: true, preserveScroll: true }),
+                onPageChange: (page: number) => router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                onPerPageChange: (pp: number) => router.get(globalThis.location.pathname, { ...filters, per_page: pp, page: 1 }, { preserveState: true, preserveScroll: true }),
             }}
         />
     );

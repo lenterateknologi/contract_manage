@@ -3,10 +3,10 @@ import { Head, useForm } from '@inertiajs/react';
 import { FormEventHandler, useRef } from 'react';
 import { KeyRound, ShieldAlert, Lock, CheckCircle2 } from 'lucide-react';
 
-import InputError from '@/components/input-error';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import InputError from '@/components/ui/base/InputError';
+import { Button } from '@/components/ui/base/Button';
+import { Input } from '@/components/ui/base/Input';
+import { Label } from '@/components/ui/base/Label';
 import SettingsLayout from '@/layouts/settings/layout';
 
 export default function Password() {

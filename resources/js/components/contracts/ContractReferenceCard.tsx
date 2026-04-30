@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Contract } from '@/types/contracts';
+import { Button } from '@/components/ui/base/Button';
+import { SearchInput } from '@/components/ui/forms/SearchInput';
 import { cn } from '@/lib/utils';
-import { ExternalLink, Search, X, Link as LinkIcon, Plus, Loader2, Trash2 } from 'lucide-react';
-import { router } from '@inertiajs/react';
+import { Contract } from '@/types/contracts';
 import axios from 'axios';
-import { Button } from '@/components/ui/button';
+import { ExternalLink, Link as LinkIcon, Loader2, Plus, Search, Trash2, X } from 'lucide-react';
+import { useState } from 'react';
 
 interface ContractReferenceCardProps {
     selected: Contract;
@@ -13,13 +13,8 @@ interface ContractReferenceCardProps {
     processing: boolean;
 }
 
-export function ContractReferenceCard({ 
-    selected, 
-    canUpdate, 
-    onUpdate, 
-    processing 
-}: ContractReferenceCardProps) {
-    const isDraft = selected.status === 'draft' && canUpdate;
+export function ContractReferenceCard({ selected, canUpdate, onUpdate, processing }: ContractReferenceCardProps) {
+    const canModifyRef = selected.allow_reference && canUpdate;
     const [isEditing, setIsEditing] = useState(false);
     const [search, setSearch] = useState('');
     const [results, setResults] = useState<any[]>([]);
@@ -36,7 +31,7 @@ export function ContractReferenceCard({
         setIsSearching(true);
         try {
             const res = await axios.get('/api/contracts', {
-                params: { search: val, per_page: 5, view: 'all' }
+                params: { search: val, per_page: 5, view: 'all' },
             });
             setResults(res.data.data.filter((c: any) => c.id !== selected.id));
         } catch (error) {
@@ -64,69 +59,67 @@ export function ContractReferenceCard({
     };
 
     return (
-        <div className="animate-in fade-in duration-500 flex flex-col gap-6">
-            {!parent && isDraft && (
+        <div className="animate-in fade-in flex flex-col gap-6 duration-500">
+            {!parent && canModifyRef && (
                 <div className="flex justify-end">
-                    <Button 
-                        variant="outline" 
-                        size="sm" 
+                    <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => setIsEditing(true)}
-                        className="h-10 gap-2 text-black/60 dark:text-white/60 font-bold rounded-xl hover:bg-[#172554] hover:text-white dark:hover:bg-white dark:hover:text-[#172554] transition-all shadow-sm"
+                        className="h-10 gap-2 rounded-xl border-black/10 font-bold text-black shadow-sm transition-all hover:bg-black/5 dark:border-white/10 dark:text-white dark:hover:bg-white/5"
                     >
                         <Plus size={14} strokeWidth={3} />
-                        <span className="text-[10px] uppercase tracking-widest">Hubungkan Kontrak</span>
+                        <span className="text-[10px] tracking-widest uppercase">Hubungkan Kontrak</span>
                     </Button>
                 </div>
             )}
 
             <div className="relative">
                 {parent ? (
-                    <div className="bg-black/[0.03] dark:bg-white/[0.03] rounded-xl overflow-hidden group transition-all">
-                        <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                            <div className="flex-1 flex gap-5">
-                                <div className="h-14 w-14 rounded-xl bg-white dark:bg-sidebar flex items-center justify-center text-black/20 dark:text-white/20 shrink-0 shadow-sm">
-                                    <FileIcon size={24} />
-                                </div>
-                                <div className="flex flex-col min-w-0">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <span className="font-mono text-[10px] font-bold text-black/40 dark:text-white/40 uppercase tracking-widest">
+                    <div className="group overflow-hidden rounded-xl bg-black/[0.03] transition-all dark:bg-white/[0.03]">
+                        <div className="flex flex-col justify-between gap-4 p-4">
+                            <div className="flex flex-1 gap-5">
+                                <div className="flex min-w-0 flex-col">
+                                    <div className="mb-2 flex items-center gap-2">
+                                        <span className="font-mono text-[10px] font-bold tracking-widest text-black/40 uppercase dark:text-white/40">
                                             {parent.contract_no || 'DRAFT'}
                                         </span>
                                         <span className="h-1 w-1 rounded-full bg-black/10 dark:bg-white/10" />
-                                        <span className="text-[9px] font-bold text-black/60 dark:text-white/60 uppercase tracking-widest bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded shadow-sm">
+                                        <span className="rounded bg-black/5 px-2 py-0.5 text-[9px] font-bold tracking-widest text-black/60 uppercase shadow-sm dark:bg-white/5 dark:text-white/60">
                                             {parent.status}
                                         </span>
                                     </div>
-                                    <h4 className="text-[15px] font-bold text-black dark:text-white leading-tight line-clamp-2 uppercase tracking-tight">
+                                    <h4 className="line-clamp-2 text-[13px] leading-tight font-bold tracking-tight text-black uppercase dark:text-white">
                                         {parent.title}
                                     </h4>
-                                    <div className="mt-2 text-[10px] text-black/20 dark:text-white/20 font-bold uppercase tracking-widest">
-                                        DIBUAT {new Date(parent.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                    <div className="mt-2 text-[10px] font-bold tracking-widest text-black/20 uppercase dark:text-white/20">
+                                        DIBUAT{' '}
+                                        {new Date(parent.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-2 shrink-0">
-                                {isDraft && (
+                            <div className="flex shrink-0 items-center gap-2">
+                                {canModifyRef && (
                                     <Button
                                         onClick={() => setIsEditing(true)}
                                         variant="outline"
-                                        className="h-9 px-4 gap-2 text-black/60 font-bold text-[11px] hover:bg-[#172554] hover:text-white rounded-lg transition-all active:scale-95 shadow-sm"
+                                        className="h-9 gap-2 rounded-lg border-black/10 px-4 text-[11px] font-bold text-black shadow-sm transition-all hover:bg-black/5 active:scale-95 dark:border-white/10 dark:text-white dark:hover:bg-white/5"
                                     >
                                         GANTI
                                     </Button>
                                 )}
                                 <Button
                                     onClick={handleRedirect}
-                                    className="h-9 px-4 gap-2 bg-[#172554] dark:bg-white text-white dark:text-[#172554] font-bold text-[11px] hover:scale-95 rounded-lg transition-all shadow-lg shadow-[#172554]/10"
+                                    className="h-9 gap-2 rounded-lg bg-black px-4 text-[11px] font-bold text-white shadow-lg transition-all hover:scale-95 dark:bg-white dark:text-black"
                                 >
                                     <ExternalLink size={13} strokeWidth={2.5} /> LIHAT DETAIL
                                 </Button>
-                                {isDraft && (
+                                {canModifyRef && (
                                     <Button
                                         onClick={handleRemove}
                                         variant="ghost"
-                                        className="h-9 w-9 p-0 text-black/20 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all active:scale-95"
+                                        className="h-9 w-9 rounded-lg p-0 text-black/20 transition-all hover:bg-rose-50 hover:text-rose-600 active:scale-95"
                                         title="Hapus Referensi"
                                     >
                                         <Trash2 size={16} strokeWidth={2.5} />
@@ -136,21 +129,21 @@ export function ContractReferenceCard({
                         </div>
                     </div>
                 ) : (
-                    <div className="flex flex-col items-center justify-center py-20 px-4 bg-black/[0.03] dark:bg-white/[0.03] rounded-xl text-center animate-in zoom-in-95 duration-300">
-                        <div className="h-16 w-16 bg-black/5 dark:bg-white/5 rounded-full flex items-center justify-center text-black/10 dark:text-white/10 mb-6">
-                            <LinkIcon size={24} />
+                    <div className="animate-in zoom-in-95 flex flex-col items-center justify-center rounded-xl bg-black/[0.03] px-4 py-3 text-center duration-300 dark:bg-white/[0.03]">
+                        <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-black/5 text-black/10 dark:bg-white/5 dark:text-white/10">
+                            <LinkIcon size={20} />
                         </div>
-                        <h4 className="text-[11px] font-bold text-black dark:text-white uppercase tracking-[0.3em] mb-2">Tidak Ada Referensi</h4>
-                        <p className="text-[10px] text-black/40 dark:text-white/40 max-w-[240px] leading-relaxed font-bold uppercase tracking-widest">
-                            Kontrak ini tidak terhubung dengan dokumen atau kontrak lama.
+                        <h4 className="text-[10px] font-bold tracking-[0.3em] text-black uppercase dark:text-white">Tidak Ada Referensi</h4>
+                        <p className="max-w-[200px] text-[9px] leading-relaxed font-bold tracking-widest text-black/40 uppercase dark:text-white/40">
+                            Kontrak ini tidak terhubung dengan referensi.
                         </p>
-                        {isDraft && (
-                            <Button 
+                        {canModifyRef && (
+                            <Button
                                 size="sm"
                                 onClick={() => setIsEditing(true)}
-                                className="mt-8 h-9 px-6 text-[10px] font-bold bg-[#172554] dark:bg-white text-white dark:text-[#172554] uppercase hover:scale-95 rounded-lg transition-all shadow-md"
+                                className="mt-2 h-8 rounded-lg bg-black px-4 text-[9px] font-bold text-white uppercase shadow-md transition-all hover:scale-95 dark:bg-white dark:text-black"
                             >
-                                Cari Kontrak Sekarang
+                                Cari Kontrak
                             </Button>
                         )}
                     </div>
@@ -160,45 +153,48 @@ export function ContractReferenceCard({
             {/* Search Dialog - Standardized Look */}
             {isEditing && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
-                    <div 
-                        className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm animate-in fade-in duration-300"
+                    <div
+                        className="animate-in fade-in absolute inset-0 bg-slate-950/40 backdrop-blur-sm duration-300"
                         onClick={() => setIsEditing(false)}
                     />
-                    
-                    <div className="relative bg-white w-full max-w-lg rounded-xl shadow-2xl flex flex-col max-h-[80vh] overflow-hidden animate-in zoom-in-95 duration-200">
-                        <div className="px-5 py-4 border-b border-slate-200 bg-white flex items-center justify-between">
+
+                    <div className="dark:bg-sidebar animate-in zoom-in-95 relative flex max-h-[80vh] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-black/10 bg-white shadow-2xl duration-200 dark:border-white/10">
+                        <div className="dark:bg-sidebar flex items-center justify-between border-b border-black/5 bg-white px-5 py-4">
                             <div className="flex items-center gap-3">
-                                <Search size={16} className="text-slate-900" strokeWidth={3} />
-                                <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-900">Hubungkan Kontrak Lama</h3>
+                                <Search size={16} className="text-black dark:text-white" strokeWidth={3} />
+                                <h3 className="text-[11px] font-black tracking-widest text-black uppercase dark:text-white">
+                                    Hubungkan Kontrak Lama
+                                </h3>
                             </div>
                             <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setIsEditing(false)}
-                                className="h-8 w-8 p-0 text-slate-400 hover:text-slate-900 rounded-md"
+                                className="h-8 w-8 rounded-md p-0 text-black/40 hover:text-black dark:text-white/40 dark:hover:text-white"
                             >
                                 <X size={16} strokeWidth={3} />
                             </Button>
                         </div>
 
-                        <div className="p-5 border-b border-slate-100">
-                            <div className="relative group">
-                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-900 pointer-events-none transition-colors" />
-                                <input
+                        <div className="border-b border-black/5 p-5">
+                            <div className="flex-1">
+                                <SearchInput
                                     autoFocus
                                     value={search}
                                     onChange={(e) => handleSearch(e.target.value)}
                                     placeholder="CARI BERDASARKAN NO. KONTRAK ATAU JUDUL..."
-                                    className="w-full text-xs bg-slate-50 rounded-lg pl-11 pr-4 py-3 outline-none focus:bg-slate-100 transition-all font-bold uppercase tracking-widest placeholder:text-slate-300"
+                                    className="h-11 text-xs tracking-widest uppercase"
                                 />
                             </div>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto min-h-[300px] p-2">
+                        <div className="min-h-[300px] flex-1 overflow-y-auto p-2">
                             {isSearching ? (
-                                <div className="flex flex-col items-center justify-center py-20 text-slate-900">
-                                    <Loader2 className="animate-spin h-6 w-6 mb-3" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Searching Datastore...</span>
+                                <div className="flex flex-col items-center justify-center py-20">
+                                    <Loader2 className="mb-3 h-6 w-6 animate-spin text-black dark:text-white" />
+                                    <span className="text-[10px] font-black tracking-widest text-black/40 uppercase dark:text-white/40">
+                                        Searching Datastore...
+                                    </span>
                                 </div>
                             ) : results.length > 0 ? (
                                 <div className="flex flex-col gap-1">
@@ -206,40 +202,50 @@ export function ContractReferenceCard({
                                         <button
                                             key={c.id}
                                             onClick={() => handleSelect(c)}
-                                            className="w-full text-left p-4 hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all group flex items-center justify-between gap-4"
+                                            className="group flex w-full items-center justify-between gap-4 rounded-xl border border-transparent p-4 text-left transition-all hover:border-black/5 hover:bg-black/[0.02] dark:hover:border-white/5 dark:hover:bg-white/[0.02]"
                                         >
-                                            <div className="flex-1 min-w-0">
-                                                <div className="text-[9px] font-black text-slate-400 uppercase tracking-tight mb-1 font-mono">
+                                            <div className="min-w-0 flex-1">
+                                                <div className="mb-1 font-mono text-[9px] font-black tracking-tight text-black/40 uppercase dark:text-white/40">
                                                     {c.contract_no || 'NO NUMBER'}
                                                 </div>
-                                                <div className="text-[13px] font-bold text-slate-900 group-hover:text-black transition-colors line-clamp-1 uppercase">
+                                                <div className="line-clamp-1 text-[13px] font-bold text-black uppercase transition-colors group-hover:text-black dark:text-white dark:group-hover:text-white">
                                                     {c.title}
                                                 </div>
                                                 <div className="mt-2 flex items-center gap-3">
-                                                    <span className={cn(
-                                                        "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest",
-                                                        c.status === 'approved' ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"
-                                                    )}>
+                                                    <span
+                                                        className={cn(
+                                                            'rounded px-2 py-0.5 text-[8px] font-black tracking-widest uppercase',
+                                                            c.status === 'approved'
+                                                                ? 'bg-black text-white dark:bg-white dark:text-black'
+                                                                : 'bg-black/5 text-black/40 dark:bg-white/5 dark:text-white/40',
+                                                        )}
+                                                    >
                                                         {c.status}
                                                     </span>
                                                 </div>
                                             </div>
-                                            <div className="h-8 w-8 rounded-md bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-slate-900 group-hover:text-white transition-all">
+                                            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-black/5 text-black/20 transition-all group-hover:bg-black group-hover:text-white dark:bg-white/5 dark:text-white/20 dark:group-hover:bg-white dark:group-hover:text-black">
                                                 <Plus size={14} strokeWidth={3} />
                                             </div>
                                         </button>
                                     ))}
                                 </div>
                             ) : search.length >= 2 ? (
-                                <div className="flex flex-col items-center justify-center py-20 text-slate-300 text-center px-10">
-                                    <Search size={32} className="mb-4 opacity-10" />
-                                    <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">DATA TIDAK DITEMUKAN</p>
-                                    <p className="text-[10px] font-medium text-slate-300 mt-2">Pastikan kata kunci pencarian Anda benar.</p>
+                                <div className="flex flex-col items-center justify-center px-10 py-20 text-center">
+                                    <Search size={32} className="mb-4 text-black opacity-10 dark:text-white" />
+                                    <p className="text-[11px] font-black tracking-widest text-black/40 uppercase dark:text-white/40">
+                                        DATA TIDAK DITEMUKAN
+                                    </p>
+                                    <p className="mt-2 text-[10px] font-bold tracking-widest text-black/20 uppercase dark:text-white/20">
+                                        Pastikan kata kunci pencarian Anda benar.
+                                    </p>
                                 </div>
                             ) : (
-                                <div className="flex flex-col items-center justify-center py-20 text-slate-200 text-center px-10">
-                                    <LinkIcon size={32} className="mb-4 opacity-10" />
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-300">Siap Menghubungkan Kontrak</p>
+                                <div className="flex flex-col items-center justify-center px-10 py-20 text-center">
+                                    <LinkIcon size={32} className="mb-4 text-black opacity-10 dark:text-white" />
+                                    <p className="text-[10px] font-black tracking-widest text-black/20 uppercase dark:text-white/20">
+                                        Siap Menghubungkan Kontrak
+                                    </p>
                                 </div>
                             )}
                         </div>
@@ -252,15 +258,15 @@ export function ContractReferenceCard({
 
 function FileIcon({ size, className }: { size: number; className?: string }) {
     return (
-        <svg 
-            width={size} 
-            height={size} 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-            strokeLinejoin="round" 
+        <svg
+            width={size}
+            height={size}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
             className={className}
         >
             <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />

@@ -1083,6 +1083,7 @@ class ContractController extends Controller
             'status' => $c->status,
             'display_mode' => $c->statusDetail?->display_mode ?? 'interactive',
             'allow_info_edit' => $c->statusDetail?->allow_info_edit ?? ($c->status === 'draft'),
+            'allow_reference' => $c->statusDetail?->allow_reference ?? ($c->status === 'draft'),
             'current_version' => $c->current_version,
             'created_at' => $c->created_at->format('d/m/Y'),
             'submitted_at' => $c->submitted_at ? $c->submitted_at->format('d/m/Y H:i') : null,

@@ -119,8 +119,9 @@ class AdminController extends Controller
         return back()->with('success', count($ids) . ' roles deleted successfully.');
     }
 
-    public function roleAccess(Role $role)
+    public function roleConfig(Role $role, Request $request)
     {
+        // 1. Get Modules with Access for the Matrix Tab
         $modules = Module::with(['moduleGroup', 'accessModules' => function ($query) use ($role) {
             $query->where('role_id', $role->id);
         }])->orderBy('module_group_id')->orderBy('id')->get();
@@ -128,17 +129,32 @@ class AdminController extends Controller
         $modules->transform(function ($module) {
             $module->access = $module->accessModules->first();
             unset($module->accessModules);
-
             return $module;
         });
 
-        return Inertia::render('admin/role-access', [
+        // 2. Get Navigation Structure for the Drag & Drop Tab
+        $groups = ModuleGroup::orderBy('name')->get()->map(function ($group) use ($role) {
+            $group->modules = Module::whereHas('accessModules', function ($q) use ($role, $group) {
+                $q->where('role_id', $role->id)
+                    ->where('module_group_id', $group->id)
+                    ->where('can_read', true);
+            })->orderBy('name')->get();
+
+            return $group;
+        })->values();
+
+        $allModules = Module::orderBy('name')->get();
+
+        return Inertia::render('admin/role-config', [
             'role' => $role,
             'modules' => $modules,
+            'navigation' => $groups,
+            'allModules' => $allModules,
+            'defaultTab' => $request->query('tab', 'access'),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Manajemen Role', 'href' => route('admin.roles'), 'icon' => 'ShieldCheck'],
-                ['title' => 'Hak Akses', 'href' => '#', 'description' => "Otorisasi modul untuk role {$role->name}.", 'icon' => 'Settings2'],
+                ['title' => 'Konfigurasi Role', 'href' => '#', 'description' => "Pengaturan menyeluruh untuk role {$role->name}.", 'icon' => 'Settings2'],
             ],
         ]);
     }
@@ -158,52 +174,45 @@ class AdminController extends Controller
         ]);
 
         foreach ($data['accesses'] as $accessData) {
+            // Logic: If any permission is true, can_read MUST be true
+            $canRead = $accessData['can_read'] || 
+                       $accessData['can_create'] || 
+                       $accessData['can_update'] || 
+                       $accessData['can_delete'] || 
+                       ($accessData['can_approve'] ?? false) || 
+                       ($accessData['can_bulk_approve'] ?? false) || 
+                       ($accessData['can_bulk_delete'] ?? false);
+
+            $existingAccess = \App\Models\AccessModule::where('role_id', $role->id)
+                ->where('module_id', $accessData['module_id'])
+                ->first();
+
+            // Auto-assign module_group_id if it's new read access and group is empty
+            $targetGroupId = $existingAccess?->module_group_id;
+            if ($canRead && !$targetGroupId) {
+                $module = \App\Models\Module::find($accessData['module_id']);
+                $targetGroupId = $module?->module_group_id;
+            }
+
             \App\Models\AccessModule::updateOrCreate(
                 [
                     'role_id' => $role->id,
                     'module_id' => $accessData['module_id'],
                 ],
                 [
-                    'can_read' => $accessData['can_read'],
+                    'can_read' => $canRead,
                     'can_create' => $accessData['can_create'],
                     'can_update' => $accessData['can_update'],
                     'can_delete' => $accessData['can_delete'],
                     'can_approve' => $accessData['can_approve'] ?? false,
                     'can_bulk_approve' => $accessData['can_bulk_approve'] ?? false,
                     'can_bulk_delete' => $accessData['can_bulk_delete'] ?? false,
+                    'module_group_id' => $targetGroupId,
                 ]
             );
         }
 
         return back()->with('success', 'Role access updated successfully.');
-    }
-
-    public function roleNavigation(Role $role)
-    {
-        // Get all groups and their modules for this role
-        $groups = ModuleGroup::orderBy('name')->get()->map(function ($group) use ($role) {
-            // Get modules that belong to this group FOR THIS ROLE
-            $group->modules = Module::whereHas('accessModules', function ($q) use ($role, $group) {
-                $q->where('role_id', $role->id)
-                    ->where('module_group_id', $group->id)
-                    ->where('can_read', true);
-            })->orderBy('name')->get();
-
-            return $group;
-        })->values();
-
-        $allModules = Module::orderBy('name')->get();
-
-        return Inertia::render('admin/role-navigation', [
-            'role' => $role,
-            'navigation' => $groups,
-            'allModules' => $allModules,
-            'breadcrumbs' => [
-                ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
-                ['title' => 'Manajemen Role', 'href' => route('admin.roles'), 'icon' => 'ShieldCheck'],
-                ['title' => 'Struktur Navigasi', 'href' => '#', 'description' => "Kelola urutan menu untuk role {$role->name}.", 'icon' => 'LayoutGrid'],
-            ],
-        ]);
     }
 
     public function reorderRoleNavigation(Request $request, Role $role)
@@ -352,6 +361,23 @@ class AdminController extends Controller
         ]);
     }
 
+    public function createContractType()
+    {
+        return Inertia::render('admin/contract-types/form', [
+            'formTemplates' => \App\Models\FormTemplate::where('is_active', true)->orderBy('name')->get(),
+            'contractTemplates' => \App\Models\ContractTemplate::orderBy('name')->get(),
+        ]);
+    }
+
+    public function editContractType(ContractType $type)
+    {
+        return Inertia::render('admin/contract-types/form', [
+            'contractType' => $type,
+            'formTemplates' => \App\Models\FormTemplate::where('is_active', true)->orderBy('name')->get(),
+            'contractTemplates' => \App\Models\ContractTemplate::orderBy('name')->get(),
+        ]);
+    }
+
     public function storeContractType(Request $request)
     {
         $data = $request->validate([
@@ -367,7 +393,7 @@ class AdminController extends Controller
 
         ContractType::create($data);
 
-        return back()->with('success', 'Contract type created successfully.');
+        return redirect()->route('admin.contract-types')->with('success', 'Contract type created successfully.');
     }
 
     public function updateContractType(Request $request, ContractType $type)
@@ -385,14 +411,14 @@ class AdminController extends Controller
 
         $type->update($data);
 
-        return back()->with('success', 'Contract type updated successfully.');
+        return redirect()->route('admin.contract-types')->with('success', 'Contract type updated successfully.');
     }
 
     public function destroyContractType(ContractType $type)
     {
         $type->delete();
 
-        return back()->with('success', 'Contract type deleted successfully.');
+        return redirect()->route('admin.contract-types')->with('success', 'Contract type deleted successfully.');
     }
 
     public function contractStatuses(Request $request)
@@ -427,6 +453,7 @@ class AdminController extends Controller
             'is_active' => 'boolean',
             'display_mode' => 'nullable|string|in:interactive,pdf',
             'allow_info_edit' => 'boolean',
+            'allow_reference' => 'boolean',
         ]);
 
         ContractStatus::create($data);
@@ -446,6 +473,7 @@ class AdminController extends Controller
             'is_active' => 'boolean',
             'display_mode' => 'nullable|string|in:interactive,pdf',
             'allow_info_edit' => 'boolean',
+            'allow_reference' => 'boolean',
         ]);
 
         $status->update($data);
@@ -774,6 +802,55 @@ class AdminController extends Controller
         ]);
     }
 
+    public function createWorkflow()
+    {
+        return Inertia::render('admin/workflows/form', [
+            'workflow' => null,
+            'contractTypes' => ContractType::all(),
+            'departments' => Department::all(),
+            'roles' => Role::all(),
+            'users' => User::all(),
+            'contractStatuses' => ContractStatus::orderBy('label')->get(),
+            'breadcrumbs' => [
+                ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
+                ['title' => 'Alur Kerja (Workflows)', 'href' => route('admin.workflows'), 'icon' => 'GitBranch'],
+                ['title' => 'Registrasi Alur Baru', 'href' => '#', 'description' => 'Mendefinisikan alur approval baru.'],
+            ],
+        ]);
+    }
+
+    public function editWorkflow(Workflow $workflow)
+    {
+        $workflow->load(['steps.approverRoles', 'steps.approverDepartments', 'steps.approverUsers', 'initiatorRolesData', 'initiatorDepartmentsData', 'initiatorUsersData']);
+        
+        $workflowData = $workflow->toArray();
+        $workflowData['initiator_roles'] = $workflow->initiatorRolesData->pluck('role_name')->toArray();
+        $workflowData['initiator_users'] = $workflow->initiatorUsersData->pluck('user_id')->toArray();
+        $workflowData['initiator_departments'] = $workflow->initiatorDepartmentsData->pluck('department_id')->toArray();
+        
+        $workflowData['steps'] = $workflow->steps->map(function($s) {
+            $sd = $s->toArray();
+            $sd['role'] = $s->approverRoles->pluck('role_name')->toArray();
+            $sd['user_ids'] = $s->approverUsers->pluck('user_id')->toArray();
+            $sd['department_ids'] = $s->approverDepartments->pluck('department_id')->toArray();
+            return $sd;
+        });
+
+        return Inertia::render('admin/workflows/form', [
+            'workflow' => $workflowData,
+            'contractTypes' => ContractType::all(),
+            'departments' => Department::all(),
+            'roles' => Role::all(),
+            'users' => User::all(),
+            'contractStatuses' => ContractStatus::orderBy('label')->get(),
+            'breadcrumbs' => [
+                ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
+                ['title' => 'Alur Kerja (Workflows)', 'href' => route('admin.workflows'), 'icon' => 'GitBranch'],
+                ['title' => 'Parameter Alur Kerja', 'href' => '#', 'description' => "Konfigurasi tahapan untuk {$workflow->name}."],
+            ],
+        ]);
+    }
+
     public function storeWorkflow(Request $request)
     {
         Log::info('Incoming Workflow Store Request', $request->all());
@@ -848,7 +925,7 @@ class AdminController extends Controller
                     }
                 }
 
-                return back()->with('success', 'Workflow created successfully.');
+                return redirect()->route('admin.workflows')->with('success', 'Workflow created successfully.');
             });
         } catch (\Exception $e) {
             Log::error('Workflow Store Error: ' . $e->getMessage(), [
@@ -948,7 +1025,7 @@ class AdminController extends Controller
                     }
                 }
 
-                return back()->with('success', 'Workflow updated successfully.');
+                return redirect()->route('admin.workflows')->with('success', 'Workflow updated successfully.');
             });
         } catch (\Exception $e) {
             Log::error('Workflow Update Error: ' . $e->getMessage());

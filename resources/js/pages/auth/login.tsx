@@ -2,12 +2,12 @@ import { Head, useForm } from '@inertiajs/react';
 import { Eye, EyeOff, LoaderCircle } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 
-import InputError from '@/components/input-error';
-import TextLink from '@/components/text-link';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import InputError from '@/components/ui/base/InputError';
+import TextLink from '@/components/ui/base/TextLink';
+import { Button } from '@/components/ui/base/Button';
+import { Checkbox } from '@/components/ui/base/Checkbox';
+import { Input } from '@/components/ui/base/Input';
+import { Label } from '@/components/ui/base/Label';
 import AuthSplitLayout from '@/layouts/auth/auth-split-layout';
 
 interface LoginForm {

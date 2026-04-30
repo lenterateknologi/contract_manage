@@ -16,13 +16,13 @@ const STATUS_LABEL: Record<string, string> = {
 
 const STATUS_CLS: Record<string, string> = {
     draft: 'bg-black/5 text-black/60 dark:bg-white/5 dark:text-white/60 border border-black/10 dark:border-white/10',
-    in_review: 'bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-900/30',
-    revision: 'bg-red-50 text-red-800 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/30',
-    approved: 'bg-green-50 text-green-800 border border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-900/30',
-    locked: 'bg-violet-50 text-violet-800 border border-violet-200 dark:bg-violet-900/20 dark:text-violet-400 dark:border-violet-900/30',
+    in_review: 'bg-black/10 text-black dark:bg-white/10 dark:text-white border border-black/20 dark:border-white/20',
+    revision: 'bg-black text-white dark:bg-white dark:text-black border border-black dark:border-white',
+    approved: 'bg-black text-white dark:bg-white dark:text-black border border-black dark:border-white',
+    locked: 'bg-black text-white dark:bg-white dark:text-black border border-black dark:border-white',
     archived: 'bg-black/5 text-black/60 dark:bg-white/5 dark:text-white/60 border border-black/10 dark:border-white/10',
-    pending: 'bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-900/30',
-    rejected: 'bg-red-50 text-red-800 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/30',
+    pending: 'bg-black/10 text-black dark:bg-white/10 dark:text-white border border-black/20 dark:border-white/20',
+    rejected: 'bg-black text-white dark:bg-white dark:text-black border border-black dark:border-white',
     waiting: 'bg-black/5 text-black/60 dark:bg-white/5 dark:text-white/60 border border-black/10 dark:border-white/10',
 };
 
@@ -49,8 +49,7 @@ export function Avatar({
     if (!user) return null;
     return (
         <span
-            className={`inline-flex flex-shrink-0 items-center justify-center rounded-full font-bold ${sizeMap[size]} ${className}`}
-            style={{ background: user.bg_color, color: user.text_color }}
+            className={`inline-flex flex-shrink-0 items-center justify-center rounded-full font-bold bg-black text-white dark:bg-white dark:text-black shadow-sm ${sizeMap[size]} ${className}`}
         >
             {user.initials}
         </span>
@@ -64,8 +63,8 @@ export function ProgressBar({ done, total, pct }: { done: number; total: number;
             <div className="text-black/40 dark:text-white/40 mb-1 text-xs">
                 {done}/{total}
             </div>
-            <div className="bg-black/5 dark:bg-white/5 h-1 w-20 overflow-hidden rounded-full">
-                <div className="bg-primary h-full rounded-full transition-all" style={{ width: `${pct}%` }} />
+            <div className="bg-black/5 dark:bg-white/5 h-1 w-20 overflow-hidden rounded-full border border-black/5 dark:border-white/5">
+                <div className="bg-black dark:bg-white h-full rounded-full transition-all" style={{ width: `${pct}%` }} />
             </div>
         </div>
     );
@@ -73,9 +72,9 @@ export function ProgressBar({ done, total, pct }: { done: number; total: number;
 
 // ─── Action icon colors ──────────────────────────────────────────────
 export const ACTION_COLORS: Record<string, string> = {
-    CONTRACT_CREATED: 'var(--chart-1)',
-    FILE_UPLOADED: 'var(--chart-2)',
-    APPROVAL_APPROVED: 'var(--chart-3)',
-    APPROVAL_REJECTED: 'var(--destructive)',
-    CONTRACT_APPROVED: 'var(--chart-4)',
+    CONTRACT_CREATED: '#000000',
+    FILE_UPLOADED: '#000000',
+    APPROVAL_APPROVED: '#000000',
+    APPROVAL_REJECTED: '#000000',
+    CONTRACT_APPROVED: '#000000',
 };

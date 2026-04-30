@@ -3,9 +3,10 @@ import { Contract, ContractMessage } from '@/types/contracts';
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Avatar } from './ui';
 import { MessageSquare, Calendar, Send, Clock, User, Search, FileIcon, Paperclip, X, RefreshCw, Download } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/base/Button';
+import { SearchInput } from '@/components/ui/forms/SearchInput';
+import { Badge } from '@/components/ui/base/Badge';
+import { ScrollArea } from '@/components/ui/base/ScrollArea';
 import { cn } from '@/lib/utils';
 import DocumentPreviewModal from './DocumentPreviewModal';
 
@@ -31,7 +32,7 @@ function MsgBubble({ msg, isMe, highlight, onPreview }: { msg: ContractMessage; 
             const parts = text.split(new RegExp(`(${term})`, 'gi'));
             content = parts.map((part, i) => 
                 part.toLowerCase() === term.toLowerCase() 
-                    ? <span key={i} className="bg-amber-100 text-black font-bold px-0.5 rounded shadow-sm">{part}</span> 
+                    ? <span key={i} className="bg-black dark:bg-white text-white dark:text-black font-bold px-0.5 rounded shadow-sm">{part}</span> 
                     : part
             );
         }
@@ -40,7 +41,7 @@ function MsgBubble({ msg, isMe, highlight, onPreview }: { msg: ContractMessage; 
             const mentionParts = content.split(/(@[\w\s.-]+(?:\s|$))/g);
             return mentionParts.map((part, i) => {
                 if (part.startsWith('@')) {
-                    return <span key={i} className={cn("font-black tracking-tight", isMe ? "text-white underline decoration-white/30 underline-offset-2" : "text-blue-600 dark:text-blue-400")}>{part}</span>;
+                    return <span key={i} className={cn("font-black tracking-tight", isMe ? "text-white dark:text-black underline decoration-white/30 dark:decoration-black/30 underline-offset-2" : "text-black dark:text-white underline decoration-black/30 dark:decoration-white/30 underline-offset-2")}>{part}</span>;
                 }
                 return part;
             });
@@ -50,7 +51,7 @@ function MsgBubble({ msg, isMe, highlight, onPreview }: { msg: ContractMessage; 
                     const subParts = item.split(/(@[\w\s.-]+(?:\s|$))/g);
                     return subParts.map((sp, i) => {
                          if (sp.startsWith('@')) {
-                            return <span key={`${idx}-${i}`} className={cn("font-black tracking-tight", isMe ? "text-white underline decoration-white/30 underline-offset-2" : "text-blue-600 dark:text-blue-400")}>{sp}</span>;
+                            return <span key={`${idx}-${i}`} className={cn("font-black tracking-tight", isMe ? "text-white dark:text-black underline decoration-white/30 dark:decoration-black/30 underline-offset-2" : "text-black dark:text-white underline decoration-black/30 dark:decoration-white/30 underline-offset-2")}>{sp}</span>;
                         }
                         return sp;
                     });
@@ -69,11 +70,21 @@ function MsgBubble({ msg, isMe, highlight, onPreview }: { msg: ContractMessage; 
                     {isMe ? "Anda" : name}
                 </span>
                 {role && (
-                    <span className="rounded-full bg-[#172554]/5 dark:bg-white/5 px-2 py-0.5 text-[7px] font-black text-[#172554]/40 dark:text-white/30 uppercase tracking-[0.05em] border border-[#172554]/5 dark:border-white/5">
+                    <span className="rounded-full bg-black/10 dark:bg-white/15 px-2 py-0.5 text-[7px] font-black text-black/60 dark:text-white/80 uppercase tracking-[0.05em] border border-black/5 dark:border-white/5">
                         {role}
                     </span>
                 )}
-                <span className="text-[7.5px] font-bold text-black/10 dark:text-white/10 uppercase tabular-nums">{time}</span>
+                {msg.user?.department_name && (
+                    <span className="rounded-full border border-black/10 dark:border-white/20 px-2 py-0.5 text-[7px] font-black text-black/40 dark:text-white/60 uppercase tracking-[0.05em]">
+                        {msg.user.department_name}
+                    </span>
+                )}
+                {!msg.user?.department_name && msg.user?.department?.name && (
+                    <span className="rounded-full border border-black/10 dark:border-white/20 px-2 py-0.5 text-[7px] font-black text-black/40 dark:text-white/60 uppercase tracking-[0.05em]">
+                        {msg.user.department.name}
+                    </span>
+                )}
+                <span className="text-[7.5px] font-bold text-black/30 dark:text-white/40 uppercase tabular-nums">{time}</span>
             </div>
             
             <div className={cn("group relative max-w-[80%] min-w-[60px]", isMe ? "text-right" : "text-left")}>
@@ -81,7 +92,7 @@ function MsgBubble({ msg, isMe, highlight, onPreview }: { msg: ContractMessage; 
                     className={cn(
                         "rounded-xl transition-all duration-300 shadow-sm",
                         isMe 
-                            ? "bg-[#172554] dark:bg-white text-white dark:text-[#172554] shadow-[#172554]/10 dark:shadow-white/5" 
+                            ? "bg-primary dark:bg-white text-white dark:text-black shadow-primary/10 dark:shadow-white/5" 
                             : "bg-black/[0.03] dark:bg-white/[0.03] text-black dark:text-white"
                     )}
                 >
@@ -113,12 +124,12 @@ function MsgBubble({ msg, isMe, highlight, onPreview }: { msg: ContractMessage; 
                                     "flex items-center gap-2.5 p-2 rounded-lg border transition-all cursor-pointer group/file",
                                     isMe 
                                         ? "bg-white/5 border-white/10 text-white hover:bg-white/10" 
-                                        : "bg-[#172554]/[0.03] dark:bg-white/[0.03] border-[#172554]/5 dark:border-white/5 text-[#172554] dark:text-white hover:bg-[#172554]/[0.06] dark:hover:bg-white/[0.06]"
+                                        : "bg-black/[0.03] dark:bg-white/[0.03] border-black/5 dark:border-white/5 text-black dark:text-white hover:bg-black/[0.06] dark:hover:bg-white/[0.06]"
                                 )}
                             >
                                 <div className={cn(
                                     "h-7 w-7 flex items-center justify-center shrink-0 rounded-lg border shadow-sm transition-transform group-hover/file:scale-110",
-                                    isMe ? "bg-white/10 border-white/10 text-white" : "bg-white dark:bg-sidebar border-[#172554]/10 dark:border-white/10 text-[#172554]/40 dark:text-white/40"
+                                    isMe ? "bg-white/10 border-white/10 text-white" : "bg-white dark:bg-sidebar border-black/10 dark:border-white/10 text-black/40 dark:text-white/40"
                                 )}>
                                     <FileIcon size={12} strokeWidth={2.5} />
                                 </div>
@@ -260,30 +271,26 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
     }, {} as Record<string, ContractMessage[]>);
 
     return (
-<div className="flex flex-col h-[550px] animate-in fade-in duration-500 relative">
-            <div className="flex items-center justify-between border-b border-[#172554]/5 dark:border-white/5 pb-3 mb-1">
+<div className="flex flex-col h-[550px] animate-in fade-in duration-500 relative p-5">
+            <div className="flex items-center justify-between border-b border-black/5 dark:border-white/5 pb-3 mb-1">
                 <div className="flex-1">
-                    <div className="relative max-w-[200px] group">
-                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-[#172554]/30 dark:text-white/30 transition-colors group-focus-within:text-[#172554] dark:group-focus-within:text-white" />
-                        <input 
-                            type="text"
-                            placeholder="CARI NAMA / ROLE..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="w-full rounded-xl bg-black/[0.03] py-2.5 pr-4 pl-10 text-[10px] font-bold tracking-widest uppercase transition-all outline-none placeholder:text-black/20 focus:bg-white dark:bg-white/[0.03] dark:placeholder:text-white/20 dark:focus:bg-sidebar shadow-sm"
-                        />
-                    </div>
+                    <SearchInput 
+                        placeholder="CARI NAMA / ROLE..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="h-9 text-[10px] tracking-widest uppercase"
+                    />
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <div className="hidden sm:flex items-center px-3 h-7 border-r border-[#172554]/5 dark:border-white/5">
-                        <span className="text-[8px] font-black text-[#172554]/20 dark:text-white/20 uppercase tracking-[0.2em] tabular-nums">{msgs.length} LOGS</span>
+                    <div className="hidden sm:flex items-center px-3 h-7 border-r border-black/10 dark:border-white/10">
+                        <span className="text-[8px] font-black text-black/40 dark:text-white/40 uppercase tracking-[0.2em] tabular-nums">{msgs.length} LOGS</span>
                     </div>
                     <button 
                         onClick={handleRefresh}
                         className={cn(
-                            "h-7 w-7 flex items-center justify-center rounded-lg border border-[#172554]/5 dark:border-white/5 text-[#172554]/30 dark:text-white/30 hover:text-[#172554] dark:hover:text-white transition-all active:scale-90 shadow-sm",
-                            refreshing && "animate-spin text-[#172554] dark:text-white border-[#172554] dark:border-white shadow-lg"
+                            "h-7 w-7 flex items-center justify-center rounded-lg border border-black/10 dark:border-white/10 text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-all active:scale-90 shadow-sm",
+                            refreshing && "animate-spin text-black dark:text-white border-black dark:border-white shadow-lg"
                         )}
                     >
                         <RefreshCw size={12} strokeWidth={2.5} />
@@ -301,13 +308,11 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                     ) : (
                         Object.entries(groupedMessages).map(([day, dayMessages]) => (
                             <div key={day} className="flex flex-col">
-                                <div className="flex items-center gap-4 my-4">
-                                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#172554]/5 to-transparent dark:via-white/5" />
-                                    <span className="text-[7.5px] font-black text-[#172554]/20 dark:text-white/20 uppercase tracking-[0.3em] whitespace-nowrap">
+                                    <div className="h-px flex-1 bg-black/10 dark:bg-white/10" />
+                                    <span className="text-[7.5px] font-black text-black/40 dark:text-white/50 uppercase tracking-[0.3em] whitespace-nowrap">
                                         {day}
                                     </span>
-                                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#172554]/5 to-transparent dark:via-white/5" />
-                                </div>
+                                    <div className="h-px flex-1 bg-black/10 dark:bg-white/10" />
                                 {dayMessages.map((m) => (
                                     <MsgBubble 
                                         key={m.id} 
@@ -324,11 +329,11 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                 </div>
             </ScrollArea>
 
-            <div className="pt-3 border-t border-[#172554]/5 dark:border-white/5">
+            <div className="pt-3 border-t border-black/5 dark:border-white/5">
                 {selectedFile && (
-                    <div className="mb-3 flex items-center justify-between bg-[#172554] dark:bg-white text-white dark:text-[#172554] p-2.5 rounded-lg animate-in slide-in-from-bottom-1 duration-300 shadow-xl">
+                    <div className="mb-3 flex items-center justify-between bg-black dark:bg-white text-white dark:text-black p-2.5 rounded-lg animate-in slide-in-from-bottom-1 duration-300 shadow-xl">
                         <div className="flex items-center gap-2.5">
-                            <div className="h-8 w-8 bg-white/10 dark:bg-[#172554]/10 flex items-center justify-center text-white dark:text-[#172554] border border-white/10 dark:border-[#172554]/10 rounded-lg">
+                            <div className="h-8 w-8 bg-white/10 dark:bg-black/10 flex items-center justify-center text-white dark:text-black border border-white/10 dark:border-black/10 rounded-lg">
                                 <FileIcon size={14} strokeWidth={2.5} />
                             </div>
                             <div className="flex flex-col">
@@ -347,9 +352,9 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
 
                 <div className="relative flex items-end gap-2 group">
                     {showMentions && filteredUsers.length > 0 && (
-                        <div className="absolute bottom-full left-0 mb-2 w-52 bg-white dark:bg-[#18181b] border border-[#172554]/10 dark:border-white/10 rounded-lg shadow-2xl overflow-hidden z-50 animate-in slide-in-from-bottom-1 duration-200">
-                            <div className="bg-[#172554] dark:bg-white p-2 border-b border-[#172554]/10 dark:border-white/10">
-                                <span className="text-[7.5px] font-black text-white dark:text-[#172554] uppercase tracking-widest">MENTION</span>
+                        <div className="absolute bottom-full left-0 mb-2 w-52 bg-white dark:bg-[#18181b] border border-black/10 dark:border-white/10 rounded-lg shadow-2xl overflow-hidden z-50 animate-in slide-in-from-bottom-1 duration-200">
+                            <div className="bg-black dark:bg-white p-2 border-b border-black/10 dark:border-white/10">
+                                <span className="text-[7.5px] font-black text-white dark:text-black uppercase tracking-widest">MENTION</span>
                             </div>
                             <div className="max-h-[180px] overflow-y-auto">
                                 {filteredUsers.map((u: any, i: number) => (
@@ -359,13 +364,13 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                                         onMouseEnter={() => setMentionIndex(i)}
                                         className={cn(
                                             "w-full flex items-center gap-2 p-2 text-left transition-all",
-                                            i === mentionIndex ? "bg-[#172554] text-white dark:bg-white dark:text-[#172554]" : "hover:bg-[#172554]/[0.02] dark:hover:bg-white/[0.02]"
+                                            i === mentionIndex ? "bg-black text-white dark:bg-white dark:text-black" : "hover:bg-black/[0.02] dark:hover:bg-white/[0.02]"
                                         )}
                                     >
                                         <Avatar user={u} size="sm" />
                                         <div className="flex flex-col min-w-0">
-                                            <span className="text-[9.5px] font-black uppercase tracking-tight truncate">{u.name}</span>
-                                            <span className={cn("text-[7px] font-bold uppercase tracking-widest opacity-40", i === mentionIndex ? "text-inherit" : "")}>{u.role || 'Member'}</span>
+                                            <span className={cn("text-[9.5px] font-black uppercase tracking-tight truncate", i === mentionIndex ? "text-inherit" : "text-black dark:text-white")}>{u.name}</span>
+                                            <span className={cn("text-[7px] font-bold uppercase tracking-widest opacity-40", i === mentionIndex ? "text-inherit" : "text-black dark:text-white")}>{u.role || 'Member'}</span>
                                         </div>
                                     </button>
                                 ))}
@@ -373,11 +378,11 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                         </div>
                     )}
 
-                    <div className="flex-1 relative flex items-end bg-[#172554]/[0.03] dark:bg-white/[0.03] rounded-xl focus-within:bg-white dark:focus-within:bg-sidebar transition-all duration-300 shadow-sm">
+                    <div className="flex-1 relative flex items-end bg-black/[0.05] dark:bg-white/5 rounded-xl focus-within:bg-white dark:focus-within:bg-sidebar transition-all duration-300 shadow-sm border border-black/10 dark:border-white/20">
                         <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileSelect} />
                         <button 
                             onClick={() => fileInputRef.current?.click()}
-                            className="h-[40px] w-[40px] shrink-0 flex items-center justify-center text-[#172554]/20 dark:text-white/20 hover:text-[#172554] dark:hover:text-white transition-colors"
+                            className="h-[40px] w-[40px] shrink-0 flex items-center justify-center text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white transition-colors"
                         >
                             <Paperclip size={14} strokeWidth={2.5} />
                         </button>
@@ -388,15 +393,15 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                             onKeyDown={handleKeyDown}
                             placeholder="TAG DENGAN @..."
                             rows={1}
-                            className="flex-1 bg-transparent border-none focus:ring-0 text-[12px] font-bold resize-none py-2.5 px-0 min-h-[40px] max-h-[120px] transition-all placeholder:text-[#172554]/10 dark:placeholder:text-white/10 leading-normal uppercase tracking-tight"
+                            className="flex-1 bg-transparent border-none focus:ring-0 text-[12px] font-bold resize-none py-2.5 px-0 min-h-[40px] max-h-[120px] transition-all placeholder:text-black/40 dark:placeholder:text-white/40 leading-normal uppercase tracking-tight text-black dark:text-white"
                         />
                     </div>
                     <button 
                         className={cn(
-                            "h-[40px] px-5 rounded-xl font-black text-[9px] tracking-[0.15em] uppercase transition-all shrink-0 shadow-sm",
+                            "h-[40px] px-5 rounded-xl font-black text-[9px] tracking-[0.15em] uppercase transition-all shrink-0 shadow-sm border",
                             (input.trim() || selectedFile) 
-                                ? "bg-[#172554] dark:bg-white text-white dark:text-[#172554] hover:scale-95 active:scale-90" 
-                                : "bg-[#172554]/[0.03] dark:bg-white/[0.03] text-[#172554]/10 dark:text-white/10 cursor-not-allowed"
+                                ? "bg-black dark:bg-white text-white dark:text-black border-black dark:border-white hover:scale-95 active:scale-90" 
+                                : "bg-black/[0.05] dark:bg-white/20 text-black/20 dark:text-white/30 border-black/10 dark:border-white/20 cursor-not-allowed"
                         )}
                         onClick={send}
                         disabled={(!input.trim() && !selectedFile) || sending}

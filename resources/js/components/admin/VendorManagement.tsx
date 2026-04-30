@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
-import { Column, DataTable } from '@/components/ui/DataTable';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Column, DataTable } from '@/components/ui/data/DataTable';
+import { Badge } from '@/components/ui/base/Badge';
+import { Button } from '@/components/ui/base/Button';
 import { router } from '@inertiajs/react';
 import { Plus, Trash2, Edit2, Truck, ExternalLink, ShieldCheck, Mail, Phone, MapPin } from 'lucide-react';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -61,12 +61,25 @@ const PicCell = ({ picName, directorName, picPosition }: Readonly<{ picName?: st
     </div>
 );
 
-const ComplianceCell = ({ docCount }: Readonly<{ docCount?: number }>) => (
-    <div className="flex flex-col items-end">
-       <span className="text-[13px] font-bold text-black dark:text-white leading-none">{Math.round(((docCount || 3) / 5) * 100)}%</span>
-       <span className="text-[9px] font-black text-black/20 dark:text-white/20 uppercase tracking-[0.2em] mt-1 leading-none">COMPLIANCE</span>
-    </div>
-);
+const ComplianceCell = ({ docCount }: Readonly<{ docCount?: number }>) => {
+    const score = Math.round(((docCount || 0) / 10) * 100);
+    const status = score >= 80 ? 'EXCELLENT' : score >= 50 ? 'AVERAGE' : 'CRITICAL';
+    const colorClass = score >= 80 ? "text-emerald-500 bg-emerald-500/10" : score >= 50 ? "text-amber-500 bg-amber-500/10" : "text-rose-500 bg-rose-500/10";
+
+    return (
+        <div className="flex flex-col items-end gap-1.5">
+            <div className={cn("px-2 py-0.5 rounded text-[9px] font-black tracking-widest", colorClass)}>
+                {status}
+            </div>
+            <div className="flex items-center gap-2">
+                <div className="h-1 w-16 bg-black/[0.05] dark:bg-white/[0.05] rounded-full overflow-hidden">
+                    <div className={cn("h-full", score >= 80 ? "bg-emerald-500" : score >= 50 ? "bg-amber-500" : "bg-rose-500")} style={{ width: `${score}%` }} />
+                </div>
+                <span className="text-[11px] font-black text-black/40 dark:text-white/40">{score}%</span>
+            </div>
+        </div>
+    );
+};
 
 export function VendorManagement({ vendors, filters }: Readonly<VendorManagementProps>) {
     const { showToast } = useToast();
@@ -133,7 +146,6 @@ export function VendorManagement({ vendors, filters }: Readonly<VendorManagement
             title="Database Rekanan / Vendor"
             data={vendors?.data || []}
             columns={columns}
-            searchKey="name"
             searchPlaceholder="Cari vendor, kode, atau email..."
             searchValue={filters?.search || ''}
             onSearchChange={(v) => router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })}
@@ -157,7 +169,7 @@ export function VendorManagement({ vendors, filters }: Readonly<VendorManagement
                     label: 'Hapus Terpilih',
                     icon: Trash2,
                     variant: 'destructive',
-                    onClick: (ids) => {
+                    onClick: (ids: string[] | number[]) => {
                         if (confirm(`Hapus ${ids.length} vendor terpilih?`)) {
                             router.post('/admin/vendors/bulk-delete', { ids }, {
                                 onSuccess: () => showToast(`${ids.length} vendor telah dihapus`, 'success')

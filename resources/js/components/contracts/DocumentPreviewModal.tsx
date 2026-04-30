@@ -1,4 +1,4 @@
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/overlays/Dialog';
 import axios from 'axios';
 import { renderAsync } from 'docx-preview';
 import { Download, Loader2, X } from 'lucide-react';
@@ -66,7 +66,7 @@ export default function DocumentPreviewModal({ isOpen, onClose, url, fileName }:
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="flex h-[95vh] w-full max-w-[95vw] flex-col gap-0 overflow-hidden border-none bg-slate-50 p-0 shadow-2xl">
+            <DialogContent className="flex h-[95vh] w-full max-w-[95vw] flex-col gap-0 overflow-hidden border-none bg-white p-0 shadow-2xl dark:bg-black">
                 <style>{DOCX_STYLES}</style>
 
                 {/* HUD Header - Mirroring AgreementView */}
@@ -74,13 +74,13 @@ export default function DocumentPreviewModal({ isOpen, onClose, url, fileName }:
                     <div className="flex items-center gap-4">
                         <div className="flex flex-col">
                             <div className="flex items-center gap-2">
-                                <div className="h-4 w-1 rounded-full bg-indigo-600" />
-                                <h3 className="text-[11px] font-black tracking-tighter text-slate-900 uppercase">{fileName}</h3>
-                                <span className="rounded bg-slate-950 px-1.5 py-0.5 text-[8px] font-black tracking-widest text-white uppercase">
+                                <div className="h-4 w-1 rounded-full bg-black dark:bg-white" />
+                                <h3 className="text-[11px] font-black tracking-tighter text-black uppercase dark:text-white">{fileName}</h3>
+                                <span className="bg-background rounded px-1.5 py-0.5 text-[8px] font-black tracking-widest text-white uppercase dark:bg-white dark:text-black">
                                     Preview
                                 </span>
                             </div>
-                            <span className="mt-1.5 text-[9px] leading-none font-black tracking-[0.2em] text-indigo-500 uppercase">
+                            <span className="mt-1.5 text-[9px] leading-none font-black tracking-[0.2em] text-black/40 uppercase dark:text-white/40">
                                 Documentation Inspection &bull; Format Preserved
                             </span>
                         </div>
@@ -90,9 +90,9 @@ export default function DocumentPreviewModal({ isOpen, onClose, url, fileName }:
                         <a
                             href={url}
                             download={fileName}
-                            className="flex h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 text-[10px] font-black tracking-widest text-slate-900 uppercase shadow-sm transition-all hover:bg-slate-50 active:scale-95"
+                            className="flex h-9 items-center gap-2 rounded-xl border border-black/10 bg-white px-5 text-[10px] font-black tracking-widest text-black uppercase shadow-sm transition-all hover:bg-black/5 active:scale-95 dark:border-white/10 dark:bg-black dark:text-white dark:hover:bg-white/5"
                         >
-                            <Download size={14} className="text-indigo-500" /> Download
+                            <Download size={14} className="text-black dark:text-white" /> Download
                         </a>
                         <div className="mx-1 h-6 w-px bg-slate-200" />
                         <button
@@ -108,9 +108,9 @@ export default function DocumentPreviewModal({ isOpen, onClose, url, fileName }:
                 <div className="custom-scrollbar flex flex-1 justify-center overflow-y-auto bg-slate-100/50 p-12">
                     <div className="relative mb-12 min-h-full w-full max-w-[210mm] rounded-sm bg-white shadow-2xl ring-1 ring-slate-200">
                         {loading && (
-                            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm transition-all">
-                                <Loader2 className="mb-4 h-10 w-10 animate-spin text-indigo-600" />
-                                <span className="animate-pulse text-[10px] font-black tracking-[0.3em] text-indigo-600 uppercase">
+                            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm transition-all dark:bg-black/80">
+                                <Loader2 className="mb-4 h-10 w-10 animate-spin text-black dark:text-white" />
+                                <span className="animate-pulse text-[10px] font-black tracking-[0.3em] text-black uppercase dark:text-white">
                                     Rendering Layout...
                                 </span>
                             </div>

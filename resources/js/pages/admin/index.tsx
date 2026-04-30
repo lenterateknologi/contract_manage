@@ -101,10 +101,6 @@ export default function AdminIndex({
                     <WorkflowManagement
                         workflows={workflows}
                         contractTypes={typesArray}
-                        departments={deptsArray}
-                        roles={rolesArray}
-                        users={usersArray}
-                        contractStatuses={contractStatuses || []}
                         filters={filters}
                     />
                 );
@@ -114,8 +110,6 @@ export default function AdminIndex({
                 return (
                     <ContractTypeManagement
                         contractTypes={contractTypes || types}
-                        formTemplates={formTemplates}
-                        contractTemplates={contractTemplates}
                         filters={filters}
                     />
                 );
