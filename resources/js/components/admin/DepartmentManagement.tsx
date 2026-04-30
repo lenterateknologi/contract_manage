@@ -16,14 +16,17 @@ interface DepartmentManagementProps {
     filters: any;
 }
 
+const DEPT_COLORS = ['bg-indigo-100 text-indigo-600','bg-teal-100 text-teal-600','bg-violet-100 text-violet-600','bg-blue-100 text-blue-600','bg-cyan-100 text-cyan-600'];
+function deptColor(name: string) { let h=0; for(let i=0;i<name.length;i++) h=name.charCodeAt(i)+((h<<5)-h); return DEPT_COLORS[Math.abs(h)%DEPT_COLORS.length]; }
+
 const DeptCell = ({ name, code }: Readonly<{ name: string; code: string }>) => (
     <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-black/[0.03] dark:bg-white/[0.03] text-black/30 dark:text-white/30 group-hover:text-black dark:group-hover:text-white transition-colors border border-black/[0.05] dark:border-white/[0.05]">
-            <Building2 size={16} />
+        <div className={cn('flex h-9 w-9 items-center justify-center rounded-xl shrink-0', deptColor(name))}>
+            <Building2 size={15} />
         </div>
         <div className="flex flex-col min-w-0">
-            <span className="text-[13px] font-bold text-black dark:text-white leading-tight mb-1 truncate">{name}</span>
-            <div className="flex items-center gap-1.5 font-mono text-[10px] font-bold text-black/40 dark:text-white/40 uppercase tracking-widest leading-none">
+            <span className="text-[13px] font-semibold text-sidebar-foreground leading-tight mb-0.5 truncate font-sans">{name}</span>
+            <div className="flex items-center gap-1.5 font-mono text-[10px] font-bold text-sidebar-foreground/40 uppercase tracking-widest leading-none">
                 {code}
             </div>
         </div>
@@ -31,22 +34,16 @@ const DeptCell = ({ name, code }: Readonly<{ name: string; code: string }>) => (
 );
 
 const DescriptionCell = ({ description }: Readonly<{ description?: string }>) => (
-    <span className="text-[11px] font-bold text-black/40 dark:text-white/40 uppercase tracking-tight line-clamp-1 max-w-[300px]">
+    <span className="text-[11px] font-bold text-sidebar-foreground/40 uppercase tracking-tight line-clamp-1 max-w-[300px]">
         {description || '—'}
     </span>
 );
 
 const VisibilityCell = ({ isActive }: Readonly<{ isActive: boolean }>) => (
     <div className="flex items-center gap-2">
-        <div className={cn(
-            "w-1.5 h-1.5 rounded-full shrink-0",
-            isActive ? "bg-black dark:bg-white" : "bg-black/20 dark:bg-white/20"
-        )} />
-        <span className={cn(
-            "text-[10px] font-black uppercase tracking-widest",
-            isActive ? "text-black dark:text-white" : "text-black/30 dark:text-white/30"
-        )}>
-            {isActive ? 'TERLIHAT' : 'HIDDEN'}
+        <div className={cn('w-1.5 h-1.5 rounded-full shrink-0', isActive ? 'bg-emerald-500' : 'bg-rose-400')} />
+        <span className={cn('text-[10px] font-semibold uppercase tracking-widest font-sans', isActive ? 'text-emerald-600' : 'text-rose-500')}>
+            {isActive ? 'Aktif' : 'Nonaktif'}
         </span>
     </div>
 );

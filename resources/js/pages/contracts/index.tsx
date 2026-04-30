@@ -94,25 +94,25 @@ function ExpiryBadge({ endDate }: Readonly<{ endDate: string | null }>) {
 }
 
 const StatusBadge = ({ status }: { status: string }) => {
-    const config: Record<string, { color: string; label: string }> = {
-        draft: { color: 'bg-black/10 text-black dark:bg-white/10 dark:text-white', label: 'Draft' },
-        in_review: { color: 'bg-black/20 text-black dark:bg-white/20 dark:text-white', label: 'Review' },
-        revision: { color: 'bg-black text-white dark:bg-white dark:text-black', label: 'Revisi' },
-        pending: { color: 'bg-black/20 text-black dark:bg-white/20 dark:text-white', label: 'Pending' },
-        approved: { color: 'bg-black text-white dark:bg-white dark:text-black', label: 'Disetujui' },
-        active: { color: 'bg-black text-white dark:bg-white dark:text-black', label: 'Aktif' },
-        expired: { color: 'bg-black text-white dark:bg-white dark:text-black', label: 'Expired' },
-        archived: { color: 'bg-black/10 text-black dark:bg-white/10 dark:text-white', label: 'Arsip' },
-        rejected: { color: 'bg-black text-white dark:bg-white dark:text-black', label: 'Ditolak' },
+    const config: Record<string, { bg: string; dot: string; text: string; label: string }> = {
+        draft:     { bg: 'bg-slate-100',   dot: 'bg-slate-400',   text: 'text-slate-600',   label: 'Draft' },
+        in_review: { bg: 'bg-amber-100',   dot: 'bg-amber-500',   text: 'text-amber-700',   label: 'Review' },
+        revision:  { bg: 'bg-rose-100',    dot: 'bg-rose-500',    text: 'text-rose-700',    label: 'Revisi' },
+        pending:   { bg: 'bg-orange-100',  dot: 'bg-orange-500',  text: 'text-orange-700',  label: 'Pending' },
+        approved:  { bg: 'bg-emerald-100', dot: 'bg-emerald-500', text: 'text-emerald-700', label: 'Disetujui' },
+        active:    { bg: 'bg-blue-100',    dot: 'bg-blue-500',    text: 'text-blue-700',    label: 'Aktif' },
+        expired:   { bg: 'bg-red-100',     dot: 'bg-red-500',     text: 'text-red-700',     label: 'Expired' },
+        archived:  { bg: 'bg-zinc-100',    dot: 'bg-zinc-400',    text: 'text-zinc-500',    label: 'Arsip' },
+        rejected:  { bg: 'bg-red-100',     dot: 'bg-red-500',     text: 'text-red-700',     label: 'Ditolak' },
     };
 
     const s = config[status as keyof typeof config] || config.draft;
 
     return (
-        <div className="inline-flex items-center gap-2 text-[12px] font-medium">
-            <span className={cn('h-2 w-2 rounded-full', s.color)} />
-            <span className="font-bold text-black dark:text-white">{s.label}</span>
-        </div>
+        <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-semibold', s.bg, s.text)}>
+            <span className={cn('h-1.5 w-1.5 rounded-full', s.dot)} />
+            {s.label}
+        </span>
     );
 };
 
@@ -159,12 +159,12 @@ const SLACountdown = ({ deadline, status }: Readonly<{ deadline: string | null; 
 
     const getUrgencyStyles = () => {
         if (urgency === 'danger') {
-            return 'bg-black text-white border-black/20 dark:bg-white dark:text-black';
+            return 'bg-rose-500 text-white ring-rose-400/40';
         }
         if (urgency === 'warning') {
-            return 'bg-black/5 text-black border-black/10 dark:bg-white/10 dark:text-white';
+            return 'bg-amber-100 text-amber-700 ring-amber-300/40';
         }
-        return 'bg-black/5 text-black ring-black/10 dark:bg-white/5 dark:text-white dark:ring-white/10';
+        return 'bg-sidebar-accent text-sidebar-foreground/60 ring-sidebar-border/40';
     };
 
     return (
@@ -177,23 +177,23 @@ const SLACountdown = ({ deadline, status }: Readonly<{ deadline: string | null; 
 const ContractInfoCell = ({ c }: Readonly<{ c: Contract }>) => (
     <div className="flex flex-col">
         <div className="flex items-center gap-2">
-            <span className="text-[13px] leading-tight font-bold text-black dark:text-white">{c.title}</span>
+            <span className="text-[13px] leading-tight font-bold text-sidebar-foreground">{c.title}</span>
             {!!c.current_version && (
-                <div className="flex-shrink-0 rounded bg-black px-1.5 py-0.5 dark:bg-white">
-                    <span className="text-[9px] font-black text-white uppercase dark:text-black">V{c.current_version}</span>
+                <div className="flex-shrink-0 rounded bg-sidebar-primary px-1.5 py-0.5">
+                    <span className="text-[9px] font-black text-white uppercase">V{c.current_version}</span>
                 </div>
             )}
         </div>
         <div className="mt-1.5 flex items-center gap-2">
-            <span className="text-[10px] font-bold tracking-wide text-black/50 uppercase dark:text-white/50">{c.contract_type}</span>
-            <span className="h-1 w-1 rounded-full bg-black/20 dark:bg-white/20" />
-            <span className="text-[10px] font-bold tracking-wide text-black/50 uppercase dark:text-white/50">{c.vendor?.name || 'No Vendor'}</span>
+            <span className="text-[10px] font-bold tracking-wide text-sidebar-foreground/40 uppercase">{c.contract_type}</span>
+            <span className="h-1 w-1 rounded-full bg-sidebar-foreground/20" />
+            <span className="text-[10px] font-bold tracking-wide text-sidebar-foreground/40 uppercase">{c.vendor?.name || 'No Vendor'}</span>
         </div>
     </div>
 );
 
 const DepartmentCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <span className="text-[11px] font-semibold tracking-wide text-black/60 uppercase dark:text-white/60">
+    <span className="text-[11px] font-semibold tracking-wide text-sidebar-foreground/50 uppercase">
         {c.initiator?.department_name || 'UMUM'}
     </span>
 );
@@ -205,20 +205,33 @@ const ProgressCell = ({ c }: Readonly<{ c: Contract }>) => (
 );
 
 const CreatedAtCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <span className="text-[11px] font-medium text-black/40 dark:text-white/40">{c.created_at}</span>
+    <span className="text-[11px] font-medium text-sidebar-foreground/40">{c.created_at}</span>
 );
 
 const ContractNoCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <span className="text-[11px] font-bold text-black/40 dark:text-white/40">{c.contract_no || 'N/A'}</span>
+    <span className="font-mono text-[10px] font-bold text-sidebar-primary/70">{c.contract_no || 'N/A'}</span>
 );
 
 const TitleCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <span className="line-clamp-1 text-[11px] font-bold text-black dark:text-white">{c.title}</span>
+    <span className="line-clamp-1 text-[11px] font-bold text-sidebar-foreground">{c.title}</span>
 );
 
 const TypeCell = ({ c, types }: Readonly<{ c: Contract; types: ContractType[] }>) => {
+    const TYPE_COLORS = [
+        'bg-violet-100 text-violet-700',
+        'bg-blue-100 text-blue-700',
+        'bg-cyan-100 text-cyan-700',
+        'bg-teal-100 text-teal-700',
+        'bg-indigo-100 text-indigo-700',
+        'bg-purple-100 text-purple-700',
+    ];
     const type = types.find((t) => t.id === c.contract_type_id);
-    return <span className="text-[11px] font-medium text-black/60 dark:text-white/60">{type?.name || 'N/A'}</span>;
+    const colorIdx = type ? type.name.charCodeAt(0) % TYPE_COLORS.length : 0;
+    return (
+        <span className={cn('inline-block rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wide', TYPE_COLORS[colorIdx])}>
+            {(type?.name || 'N/A').replace('Perjanjian ', '').replace('Addendum / ', '')}
+        </span>
+    );
 };
 
 // Stable cell renderers to satisfy linting
@@ -581,7 +594,7 @@ const ContractDetailView = ({
                                 </DropdownMenu>
                             </div>
                         </div>
-                        <div className="flex flex-wrap gap-1 bg-black/[0.02] p-1.5 dark:bg-white/[0.02]">
+                        <div className="flex flex-wrap gap-2 border-b border-black/5 bg-black/[0.01] px-4 py-2 dark:border-white/5 dark:bg-white/[0.01]">
                             {[
                                 { id: 'form_template', label: 'F1' },
                                 { id: 'f2', label: 'F2' },
@@ -594,13 +607,16 @@ const ContractDetailView = ({
                                     key={tab.id}
                                     onClick={() => setDetailTab(tab.id as any)}
                                     className={cn(
-                                        'rounded-lg px-4 py-2 text-[9px] font-black tracking-[0.2em] uppercase transition-all duration-300',
+                                        'relative px-3 py-2 text-[10px] font-bold tracking-tight uppercase transition-all',
                                         detailTab === tab.id
-                                            ? 'z-10 scale-105 bg-primary text-white shadow-xl dark:bg-white dark:text-black dark:shadow-white/10'
-                                            : 'text-black/30 hover:bg-black/5 hover:text-black dark:text-white/30 dark:hover:bg-white/5 dark:hover:text-white',
+                                            ? 'text-black dark:text-white'
+                                            : 'text-black/40 hover:text-black/60 dark:text-white/40 dark:hover:text-white/60',
                                     )}
                                 >
                                     {tab.label}
+                                    {detailTab === tab.id && (
+                                        <div className="absolute right-0 bottom-0 left-0 h-0.5 bg-black dark:bg-white" />
+                                    )}
                                 </button>
                             ))}
                         </div>
@@ -980,7 +996,7 @@ function ContractPage({
                     />
                 ) : (
                     <div className="flex flex-col gap-4">
-                        {view === 'dashboard' && <DashboardMetrics metrics={metrics} roles={roles} departments={departments} filters={filters} />}
+                        {view === 'dashboard' && <div className="p-5"><DashboardMetrics metrics={metrics} /></div>}
                         {view === 'profile' && <ProfileView meUser={meUser} showToast={showToast} />}
                         {view !== 'profile' && view !== 'dashboard' && (
                             <div className="border-sidebar-border bg-sidebar flex min-h-0 flex-1 flex-col gap-0 overflow-hidden">

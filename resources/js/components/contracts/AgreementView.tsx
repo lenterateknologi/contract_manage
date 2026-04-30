@@ -118,40 +118,43 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
     return (
         <div className="bg-card animate-in fade-in flex flex-1 flex-col overflow-hidden duration-300">
             {/* Header Area */}
-            <div className="dark:bg-sidebar/80 sticky top-0 z-40 flex h-[72px] shrink-0 items-center justify-between border-b border-[#172554]/10 bg-white/80 px-6 backdrop-blur-md dark:border-white/10">
+            <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between border-b border-black/5 bg-white/50 px-6 backdrop-blur-md dark:border-white/5 dark:bg-black/50">
                 <div className="flex items-center gap-4">
                     <div className="flex flex-col">
                         <div className="flex items-center gap-2">
-                            <div className="h-4 w-1 rounded-full bg-black dark:bg-white" />
-                            <h4 className="text-sm font-bold text-black dark:text-white">Preview Persetujuan</h4>
+                            <h4 className="text-xs font-bold tracking-tight text-black dark:text-white uppercase">Preview Persetujuan</h4>
                             {selectedVno && (
-                                <div className="bg-background rounded px-1.5 py-0.5 dark:bg-white">
-                                    <span className="text-[10px] font-bold text-white dark:text-black">V{selectedVno}</span>
-                                </div>
+                                <span className="rounded bg-black/5 px-1.5 py-0.5 text-[9px] font-bold text-black/60 dark:bg-white/10 dark:text-white/60">
+                                    V{selectedVno}
+                                </span>
                             )}
                         </div>
-                        <span className="mt-0.5 text-[10px] font-bold text-black/40 dark:text-white/40">
-                            High-Fidelity PDF Preview &bull; Layout Preserved
-                        </span>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-2.5" ref={dropdownRef}>
                     {versions.length > 0 && (
                         <div className="relative">
-                            <button
-                                onClick={() => setShowVersions(!showVersions)}
+                        <button
+                            onClick={() => setShowVersions(!showVersions)}
+                            className={cn(
+                                'group flex h-8 items-center gap-2 rounded-lg border text-[11px] font-bold uppercase transition-all active:scale-95',
+                                showVersions
+                                    ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black'
+                                    : 'border-black/5 bg-white text-black/60 hover:border-black/20 hover:text-black dark:border-white/5 dark:bg-transparent dark:text-white/60 dark:hover:text-white',
+                            )}
+                        >
+                            <History
+                                size={14}
                                 className={cn(
-                                    'group flex h-9 items-center gap-2.5 rounded-lg border px-4 transition-all active:scale-95',
+                                    'ml-3 transition-colors',
                                     showVersions
-                                        ? 'border-black bg-black text-white shadow-lg dark:border-white dark:bg-white dark:text-black'
-                                        : 'border-black/10 bg-white text-black hover:border-black/20 dark:border-white/10 dark:bg-transparent dark:text-white',
+                                        ? 'text-white'
+                                        : 'text-black/40 group-hover:text-black dark:text-white/40 dark:group-hover:text-white',
                                 )}
-                            >
-                                <History size={16} className={showVersions ? 'text-white dark:text-black' : 'text-black/40 dark:text-white/40'} />
-                                <span className="text-xs font-bold">{versions.length} Versi</span>
-                                <ChevronDown size={12} className={cn('ml-1 transition-transform', showVersions && 'rotate-180')} />
-                            </button>
+                            />
+                            <span className="mr-3">{versions.length} Versi</span>
+                        </button>
 
                             {showVersions && (
                                 <div className="animate-in fade-in zoom-in-95 dark:bg-sidebar absolute top-full left-0 z-[999] mt-2 w-72 origin-top-left rounded-xl border border-black/10 bg-white p-1 shadow-2xl duration-200 dark:border-white/10">
@@ -203,13 +206,13 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
                         <button
                             onClick={() => setShowMoreActions(!showMoreActions)}
                             className={cn(
-                                'flex h-9 w-9 items-center justify-center rounded-lg border transition-all active:scale-95',
+                                'flex h-8 w-8 items-center justify-center rounded-lg border transition-all active:scale-95',
                                 showMoreActions
-                                    ? 'border-black bg-black text-white shadow-lg dark:border-white dark:bg-white dark:text-black'
-                                    : 'border-black/10 bg-white text-black hover:bg-black/5 dark:border-white/10 dark:bg-transparent dark:text-white',
+                                    ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black'
+                                    : 'border-black/5 bg-white text-black/40 hover:bg-black/5 dark:border-white/5 dark:bg-transparent dark:text-white/40',
                             )}
                         >
-                            <MoreVertical size={16} />
+                            <MoreVertical size={14} />
                         </button>
 
                         {showMoreActions && (

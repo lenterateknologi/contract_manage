@@ -52,7 +52,7 @@ class TransactionSeeder extends Seeder
         $this->createContract9();
         $this->createContract10();
 
-        $this->seedRandomContracts(50);
+        $this->seedRandomContracts(20);
     }
 
     private function seedRandomContracts(int $count): void

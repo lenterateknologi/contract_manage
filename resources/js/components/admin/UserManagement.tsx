@@ -19,16 +19,42 @@ interface UserManagementProps {
     filters: any;
 }
 
+// Consistent color palette from name hash
+const AVATAR_COLORS = [
+    'bg-violet-100 text-violet-700',
+    'bg-blue-100 text-blue-700',
+    'bg-emerald-100 text-emerald-700',
+    'bg-amber-100 text-amber-700',
+    'bg-rose-100 text-rose-700',
+    'bg-cyan-100 text-cyan-700',
+    'bg-indigo-100 text-indigo-700',
+    'bg-teal-100 text-teal-700',
+];
+
+const ROLE_COLORS: Record<string, string> = {
+    Admin:    'bg-violet-100 text-violet-700',
+    Manager:  'bg-blue-100 text-blue-700',
+    Staff:    'bg-slate-100 text-slate-600',
+    Reviewer: 'bg-amber-100 text-amber-700',
+    Approver: 'bg-emerald-100 text-emerald-700',
+};
+
+function avatarColor(name: string): string {
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
 const UserCell = ({ name, email }: Readonly<{ name: string; email: string }>) => (
     <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-black/[0.03] dark:bg-white/[0.03] text-black dark:text-white flex items-center justify-center font-black text-[11px] shrink-0 border border-black/[0.05] dark:border-white/[0.05]">
+        <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center font-bold text-[12px] shrink-0', avatarColor(name))}>
             {name.charAt(0).toUpperCase()}
         </div>
         <div className="flex flex-col min-w-0">
-            <span className="font-bold text-black dark:text-white text-[13px] truncate leading-tight">
+            <span className="font-semibold text-sidebar-foreground text-[13px] truncate leading-tight font-sans">
                 {name}
             </span>
-            <span className="text-[10px] font-bold text-black/40 dark:text-white/40 truncate leading-none uppercase tracking-widest mt-1">
+            <span className="text-[10px] font-medium text-sidebar-foreground/40 truncate leading-none mt-0.5 font-sans">
                 {email}
             </span>
         </div>
@@ -37,13 +63,13 @@ const UserCell = ({ name, email }: Readonly<{ name: string; email: string }>) =>
 
 const IdentityCell = ({ username, phone }: Readonly<{ username: string; phone?: string }>) => (
     <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-1.5 text-[10px] font-black text-black/60 dark:text-white/60 uppercase tracking-widest">
-            <Fingerprint size={10} className="text-black/30 dark:text-white/30" />
+        <div className="flex items-center gap-1.5 text-[10px] font-semibold text-sidebar-foreground/60 uppercase tracking-widest font-sans">
+            <Fingerprint size={10} className="text-sidebar-primary/40" />
             {username}
         </div>
         {phone && (
-            <div className="flex items-center gap-1.5 text-[10px] font-bold text-black/40 dark:text-white/40 tracking-tight uppercase">
-                <Phone size={10} className="text-black/30 dark:text-white/30" />
+            <div className="flex items-center gap-1.5 text-[10px] font-medium text-sidebar-foreground/40 tracking-tight font-sans">
+                <Phone size={10} className="text-sidebar-foreground/30" />
                 {phone}
             </div>
         )}
@@ -52,17 +78,20 @@ const IdentityCell = ({ username, phone }: Readonly<{ username: string; phone?: 
 
 const PlacementCell = ({ departmentName, position }: Readonly<{ departmentName?: string; position?: string }>) => (
     <div className="flex flex-col gap-1">
-        <span className="text-[11px] font-black text-black dark:text-white uppercase tracking-wider">
-            {departmentName || 'GLOBAL'}
+        <span className="inline-block rounded-full bg-indigo-50 text-indigo-700 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide font-sans w-fit">
+            {departmentName || 'Global'}
         </span>
-        <span className="text-[10px] font-bold text-black/40 dark:text-white/40 uppercase tracking-widest mt-0.5">
-            {position || 'STAF'}
+        <span className="text-[10px] font-medium text-sidebar-foreground/40 uppercase tracking-widest mt-0.5 font-sans">
+            {position || 'Staf'}
         </span>
     </div>
 );
 
 const AuthorityCell = ({ role }: Readonly<{ role: string }>) => (
-    <span className="text-[10px] font-black tracking-[0.15em] text-black/60 dark:text-white/60 uppercase">
+    <span className={cn(
+        'inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide font-sans',
+        ROLE_COLORS[role] ?? 'bg-slate-100 text-slate-600'
+    )}>
         {role}
     </span>
 );
@@ -70,14 +99,14 @@ const AuthorityCell = ({ role }: Readonly<{ role: string }>) => (
 const AccessCell = ({ isActive }: Readonly<{ isActive: boolean }>) => (
     <div className="flex items-center gap-2">
         <div className={cn(
-            "w-1.5 h-1.5 rounded-full shrink-0",
-            isActive ? "bg-black dark:bg-white" : "bg-black/20 dark:bg-white/20"
+            'w-1.5 h-1.5 rounded-full shrink-0',
+            isActive ? 'bg-emerald-500' : 'bg-rose-400'
         )} />
         <span className={cn(
-            "text-[10px] font-black uppercase tracking-widest",
-            isActive ? "text-black dark:text-white" : "text-black/30 dark:text-white/30"
+            'text-[10px] font-semibold uppercase tracking-widest font-sans',
+            isActive ? 'text-emerald-600' : 'text-rose-500'
         )}>
-            {isActive ? 'AKTIF' : 'SUSPENDED'}
+            {isActive ? 'Aktif' : 'Nonaktif'}
         </span>
     </div>
 );

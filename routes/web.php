@@ -184,14 +184,23 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/workflows/{workflow}/steps', [AdminController::class, 'updateWorkflowSteps'])->name('admin.workflows.steps.update');
 
 
-        Route::get('/reports', function () {
-            return Inertia::render('admin/reports', [
+        Route::get('/reports/analytics', function () {
+            return Inertia::render('admin/reports/analytics', [
                 'breadcrumbs' => [
                     ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
-                    ['title' => 'Laporan & Statistik', 'href' => route('admin.reports'), 'description' => 'Rekapitulasi data dan statistik kontrak.', 'icon' => 'BarChart3'],
+                    ['title' => 'Analitik Kontrak', 'href' => route('admin.reports.analytics'), 'description' => 'Statistik dan rekapitulasi data kontrak.', 'icon' => 'BarChart3'],
                 ],
             ]);
-        })->name('admin.reports');
+        })->name('admin.reports.analytics');
+
+        Route::get('/reports/audit', function () {
+            return Inertia::render('admin/reports/audit', [
+                'breadcrumbs' => [
+                    ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
+                    ['title' => 'Jejak Audit', 'href' => route('admin.reports.audit'), 'description' => 'Log aktivitas dan riwayat perubahan sistem.', 'icon' => 'History'],
+                ],
+            ]);
+        })->name('admin.reports.audit');
         Route::post('/api/reports/data', [ReportController::class, 'index']);
         Route::get('/api/reports/export', [ReportController::class, 'exportCsv']);
         Route::get('/api/reports/audit/export', [ReportController::class, 'exportAuditCsv']);
@@ -265,6 +274,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/api/contracts/message-attachment/{messageId}', [ContractMessageController::class, 'downloadAttachment'])->name('contracts.message-attachment');
 
         Route::get('/api/templates/data', [TemplateController::class, 'getApiData'])->name('admin.templates.api.data');
+
+        // API aliases under admin prefix (called by frontend with /admin/api/... prefix)
+        Route::get('/api/contracts/submission-types', [ContractController::class, 'getSubmissionTypes'])->name('admin.api.contracts.submission-types');
     });
 });
 

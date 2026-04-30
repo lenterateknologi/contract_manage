@@ -15,6 +15,22 @@ interface RoleManagementProps {
     filters: any;
 }
 
+const ROLE_PALETTE = [
+    'bg-violet-100 text-violet-600',
+    'bg-blue-100 text-blue-600',
+    'bg-emerald-100 text-emerald-600',
+    'bg-amber-100 text-amber-600',
+    'bg-rose-100 text-rose-600',
+    'bg-cyan-100 text-cyan-600',
+    'bg-indigo-100 text-indigo-600',
+    'bg-teal-100 text-teal-600',
+];
+function roleColor(name: string) {
+    let h = 0;
+    for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+    return ROLE_PALETTE[Math.abs(h) % ROLE_PALETTE.length];
+}
+
 export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>) {
     const { showToast } = useToast();
     const { canCreate, canDelete } = usePermissions('ADMIN_ROLES');
@@ -58,13 +74,13 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                 sortable: true,
                 cell: (row) => (
                     <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-black/[0.05] bg-black/[0.03] text-black/30 transition-colors group-hover:text-black dark:border-white/[0.05] dark:bg-white/[0.03] dark:text-white/30 dark:group-hover:text-white">
-                            <ShieldCheck size={18} />
+                        <div className={cn('flex h-10 w-10 items-center justify-center rounded-xl shrink-0', roleColor(row.name))}>
+                            <ShieldCheck size={17} />
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-[13px] leading-tight font-bold text-black dark:text-white">{row.name}</span>
-                            <span className="mt-0.5 text-[10px] font-bold tracking-widest text-black/30 uppercase dark:text-white/30">
-                                TERDAFTAR: {new Date(row.created_at).toLocaleDateString('id-ID')}
+                            <span className="text-[13px] leading-tight font-semibold text-sidebar-foreground font-sans">{row.name}</span>
+                            <span className="mt-0.5 text-[10px] font-medium tracking-widest text-sidebar-foreground/30 uppercase font-sans">
+                                Terdaftar: {new Date(row.created_at).toLocaleDateString('id-ID')}
                             </span>
                         </div>
                     </div>
@@ -75,11 +91,11 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                 accessorKey: 'description',
                 cell: (row) =>
                     row.description ? (
-                        <span className="block max-w-sm truncate text-[11px] leading-tight font-bold tracking-tight text-black/40 uppercase dark:text-white/40">
+                        <span className="block max-w-sm truncate text-[11px] leading-tight font-medium tracking-tight text-sidebar-foreground/50 font-sans">
                             {row.description}
                         </span>
                     ) : (
-                        <span className="text-[10px] leading-none font-bold tracking-widest text-black/20 uppercase italic dark:text-white/20">
+                        <span className="text-[10px] leading-none font-medium tracking-widest text-sidebar-foreground/20 italic font-sans">
                             —
                         </span>
                     ),
@@ -92,14 +108,14 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                         <Button
                             variant="outline"
                             onClick={() => router.get(`/admin/roles/${row.id}/config?tab=access`)}
-                            className="flex h-8 items-center gap-2 px-4 text-[9px] active:scale-95"
+                            className="flex h-8 items-center gap-1.5 px-3 text-[9px] active:scale-95"
                         >
                             <Key size={11} className="opacity-40" /> Hak Akses
                         </Button>
                         <Button
                             variant="outline"
                             onClick={() => router.get(`/admin/roles/${row.id}/config?tab=navigation`)}
-                            className="flex h-8 items-center gap-2 px-4 text-[9px] active:scale-95"
+                            className="flex h-8 items-center gap-1.5 px-3 text-[9px] active:scale-95"
                         >
                             <LayoutGrid size={11} className="opacity-40" /> Navigasi
                         </Button>
@@ -211,22 +227,22 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
 
                     {/* Side Column: 4 Columns */}
                     <div className="md:col-span-4 flex flex-col pt-6 md:pt-0">
-                        <div className="rounded-2xl border border-primary/10 dark:border-white/10 bg-primary/[0.02] dark:bg-white/[0.02] p-8 shadow-sm relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <div className="rounded-2xl border border-sidebar-border bg-sidebar-accent/40 p-8 shadow-sm relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                                 <ShieldCheck size={80} strokeWidth={1} />
                             </div>
 
                             <div className="mb-8 flex items-center gap-3 relative z-10">
-                                <span className="text-[10px] font-black tracking-[0.3em] text-primary dark:text-white uppercase">
+                                <span className="text-[10px] font-semibold tracking-[0.3em] text-sidebar-foreground/50 uppercase font-sans">
                                     Pusat Otoritas
                                 </span>
                             </div>
                             
-                            <div className="mb-8 space-y-6 border-y border-dashed border-primary/10 dark:border-white/10 py-8 relative z-10">
-                                <span className="block text-sm leading-tight font-black tracking-tight text-primary dark:text-white uppercase">
-                                    {form.data.name || 'NAMA ROLE'}
+                            <div className="mb-8 space-y-3 border-y border-dashed border-sidebar-border py-8 relative z-10">
+                                <span className="block text-sm leading-tight font-semibold tracking-tight text-sidebar-foreground uppercase font-sans">
+                                    {form.data.name || 'Nama Role'}
                                 </span>
-                                <p className="text-[10px] leading-relaxed font-bold tracking-widest text-primary/40 dark:text-white/40 uppercase italic">
+                                <p className="text-[10px] leading-relaxed font-medium tracking-wide text-sidebar-foreground/40 italic font-sans">
                                     {form.data.description || 'Deskripsi belum diatur untuk role ini...'}
                                 </p>
                             </div>
@@ -237,7 +253,7 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                                         type="button"
                                         variant="outline"
                                         onClick={() => router.get(`/admin/roles/${editingRole.id}/config?tab=access`)}
-                                        className="h-9 gap-2 text-[10px] font-black uppercase tracking-widest active:scale-95 border-primary/10 dark:border-white/10 hover:bg-primary hover:text-white dark:hover:bg-white dark:hover:text-black transition-all"
+                                        className="h-9 gap-2 text-[9px] active:scale-95 hover:bg-sidebar-primary hover:text-white transition-all"
                                     >
                                         <Key size={12} /> Hak Akses
                                     </Button>
@@ -245,14 +261,14 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                                         type="button"
                                         variant="outline"
                                         onClick={() => router.get(`/admin/roles/${editingRole.id}/config?tab=navigation`)}
-                                        className="h-9 gap-2 text-[10px] font-black uppercase tracking-widest active:scale-95 border-primary/10 dark:border-white/10 hover:bg-primary hover:text-white dark:hover:bg-white dark:hover:text-black transition-all"
+                                        className="h-9 gap-2 text-[9px] active:scale-95 hover:bg-sidebar-primary hover:text-white transition-all"
                                     >
                                         <LayoutGrid size={12} /> Navigasi
                                     </Button>
                                 </div>
                             )}
 
-                            <p className="text-[10px] leading-normal font-bold tracking-tight text-primary/30 dark:text-white/30 uppercase relative z-10">
+                            <p className="text-[10px] leading-normal font-medium tracking-tight text-sidebar-foreground/30 relative z-10 font-sans">
                                 Role menentukan hak akses pengguna terhadap modul-modul sistem. Setelah menyimpan, Anda dapat mengatur hak akses spesifik per modul.
                             </p>
                         </div>

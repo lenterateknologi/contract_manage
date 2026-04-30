@@ -1,5 +1,4 @@
 import { Head } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem } from '@/types';
 import { FileText, Download, Table, Calendar, Users, Filter, Check, ChevronDown, History, BarChart3, Search, ListFilter } from 'lucide-react';
 import { Button } from '@/components/ui/base/Button';

@@ -300,23 +300,18 @@ class ContractController extends Controller
     private function getDashboardMetrics(Request $request)
     {
         $user = Auth::user();
+        $isAdmin = $user->role === 'Admin';
         $baseQuery = Contract::query();
 
-        // Apply shared filters
-        if ($request->filled('role_id')) {
-            $baseQuery->whereHas('creator', fn($q) => $q->where('role_id', $request->role_id));
-        }
-        if ($request->filled('department_id')) {
-            $baseQuery->whereHas('creator', fn($q) => $q->where('department_id', $request->department_id));
-        }
-
-        if ($user->role !== 'Admin') {
+        if (!$isAdmin) {
             $baseQuery->where('t_contracts.created_by', $user->id);
         }
 
+        // --- KPI Metrics ---
+        $totalContracts = (clone $baseQuery)->count();
+
         $approvedContracts = (clone $baseQuery)->where('status', 'approved')->get();
         $avgDays = 0;
-
         if ($approvedContracts->count() > 0) {
             $totalDays = $approvedContracts->sum(function ($c) {
                 $firstSentAt = Approval::where('contract_id', $c->id)->oldest()->value('created_at');
@@ -325,38 +320,136 @@ class ContractController extends Controller
             $avgDays = round($totalDays / $approvedContracts->count(), 1);
         }
 
-        $monthlyTrend = (clone $baseQuery)->leftJoin('m_contract_types', 't_contracts.contract_type_id', '=', 'm_contract_types.id')
-            ->select(
-                DB::raw("to_char(t_contracts.created_at, 'YYYY-MM') as month"),
-                'm_contract_types.name as type_name',
-                DB::raw('count(*) as count')
-            )
-            ->where('t_contracts.created_at', '>=', now()->subMonths(6))
-            ->groupBy('month', 'type_name')
-            ->orderBy('month')
+        $pendingApprovals = Approval::where('user_id', Auth::id())->where('status', 'pending')->count();
+
+        $approvedThisMonth = (clone $baseQuery)
+            ->where('status', 'approved')
+            ->where('updated_at', '>=', now()->startOfMonth())
+            ->count();
+
+        $revisionCount = (clone $baseQuery)->where('status', 'revision')->count();
+        $expiringCount = (clone $baseQuery)
+            ->whereNotNull('end_date')
+            ->whereDate('end_date', '>=', now())
+            ->whereDate('end_date', '<=', now()->addDays(30))
+            ->count();
+        $attentionCount = $revisionCount + $expiringCount;
+
+        // --- Status Distribution ---
+        $statusDistribution = (clone $baseQuery)
+            ->select('status', DB::raw('count(*) as count'))
+            ->groupBy('status')
             ->get()
-            ->groupBy('month')
-            ->map(function ($items, $month) {
-                return [
-                    'month' => $month,
-                    'types' => $items->map(fn ($i) => [
-                        'name' => $i->type_name ?? 'Unspecified',
-                        'count' => (int) $i->count,
-                    ])->values(),
-                    'total' => $items->sum('count'),
-                ];
-            })->values();
+            ->map(fn($item) => [
+                'status' => $item->status,
+                'count' => (int) $item->count,
+            ])
+            ->values();
+
+        // --- Type Distribution (Top 5) ---
+        $typeDistribution = DB::table('t_contracts')
+            ->join('m_contract_types', 't_contracts.contract_type_id', '=', 'm_contract_types.id')
+            ->when(!$isAdmin, fn($q) => $q->where('t_contracts.created_by', $user->id))
+            ->select('m_contract_types.name as type_name', DB::raw('count(*) as count'))
+            ->groupBy('m_contract_types.name')
+            ->orderByDesc('count')
+            ->limit(5)
+            ->get()
+            ->map(fn($item) => [
+                'name' => $item->type_name,
+                'count' => (int) $item->count,
+            ])
+            ->values();
+
+        // --- Monthly Trend (last 6 months) ---
+        $monthlyTrend = DB::table('t_contracts')
+            ->when(!$isAdmin, fn($q) => $q->where('t_contracts.created_by', $user->id))
+            ->select(
+                DB::raw("to_char(created_at, 'YYYY-MM') as month_key"),
+                DB::raw("to_char(created_at, 'Mon') as month_label"),
+                DB::raw('count(*) as total')
+            )
+            ->where('created_at', '>=', now()->subMonths(6))
+            ->groupBy('month_key', 'month_label')
+            ->orderBy('month_key')
+            ->get()
+            ->map(fn($item) => [
+                'month' => $item->month_label,
+                'total' => (int) $item->total,
+            ])
+            ->values();
+
+        // --- Recent Activity Feed ---
+        $recentActivity = DB::table('t_contract_h')
+            ->leftJoin('m_users', 't_contract_h.actor_id', '=', 'm_users.id')
+            ->leftJoin('t_contracts', 't_contract_h.contract_id', '=', 't_contracts.id')
+            ->when(!$isAdmin, fn($q) => $q->where('t_contracts.created_by', $user->id))
+            ->select(
+                't_contract_h.id',
+                't_contract_h.action',
+                't_contract_h.description',
+                't_contract_h.created_at',
+                'm_users.name as actor_name',
+                't_contracts.id as contract_id',
+                't_contracts.title as contract_title',
+                't_contracts.contract_no',
+            )
+            ->orderByDesc('t_contract_h.created_at')
+            ->limit(10)
+            ->get()
+            ->map(fn($item) => [
+                'id' => $item->id,
+                'action' => $item->action,
+                'description' => $item->description,
+                'actor' => $item->actor_name ?? 'Sistem',
+                'contract_id' => $item->contract_id,
+                'contract_title' => $item->contract_title,
+                'contract_no' => $item->contract_no,
+                'created_at' => $item->created_at,
+            ])
+            ->values();
+
+        // --- Recent Contracts (5 latest) ---
+        $recentContracts = DB::table('t_contracts')
+            ->leftJoin('m_users', 't_contracts.created_by', '=', 'm_users.id')
+            ->leftJoin('m_contract_types', 't_contracts.contract_type_id', '=', 'm_contract_types.id')
+            ->when(!$isAdmin, fn($q) => $q->where('t_contracts.created_by', $user->id))
+            ->select(
+                't_contracts.id',
+                't_contracts.contract_no',
+                't_contracts.title',
+                't_contracts.status',
+                't_contracts.created_at',
+                'm_users.name as creator_name',
+                'm_contract_types.name as type_name',
+            )
+            ->orderByDesc('t_contracts.created_at')
+            ->limit(5)
+            ->get()
+            ->map(fn($item) => [
+                'id' => $item->id,
+                'contract_no' => $item->contract_no,
+                'title' => $item->title,
+                'status' => $item->status,
+                'creator' => $item->creator_name,
+                'type' => $item->type_name,
+                'created_at' => $item->created_at,
+            ])
+            ->values();
 
         return [
             'metrics' => [
+                'totalContracts' => $totalContracts,
+                'pendingApprovals' => $pendingApprovals,
+                'approvedThisMonth' => $approvedThisMonth,
+                'attentionCount' => $attentionCount,
                 'avgCycleTime' => $avgDays,
-                'totalContracts' => $baseQuery->count(),
-                'pendingApprovals' => Approval::where('user_id', Auth::id())->where('status', 'pending')->count(),
-                'approvedThisMonth' => (clone $baseQuery)->where('status', 'approved')
-                    ->where('updated_at', '>=', now()->startOfMonth())
-                    ->count(),
             ],
+            'statusDistribution' => $statusDistribution,
+            'typeDistribution' => $typeDistribution,
             'monthlyTrend' => $monthlyTrend,
+            'recentActivity' => $recentActivity,
+            'recentContracts' => $recentContracts,
         ];
     }
 

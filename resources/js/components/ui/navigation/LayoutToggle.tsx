@@ -12,32 +12,32 @@ export interface LayoutToggleProps {
 
 const LayoutToggle = ({ value, onChange, className }: LayoutToggleProps) => {
     return (
-        <div className={cn("flex rounded-lg bg-black/[0.03] p-1 dark:bg-white/[0.03]", className)}>
+        <div className={cn("flex rounded-lg bg-sidebar-accent p-1 gap-0.5", className)}>
             <button
                 type="button"
                 onClick={() => onChange('table')}
                 className={cn(
-                    'flex h-8 items-center gap-2 rounded-md px-3 text-[11px] font-black uppercase tracking-widest transition-all',
+                    'flex h-7 items-center gap-1.5 rounded-md px-3 text-[10px] font-semibold uppercase tracking-widest transition-all font-sans',
                     value === 'table'
-                        ? 'bg-primary text-white dark:bg-white dark:text-black shadow-md active:scale-95'
-                        : 'text-black/60 hover:text-black dark:text-white/60 dark:hover:text-white',
+                        ? 'bg-sidebar-primary text-white shadow-sm'
+                        : 'text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/80',
                 )}
             >
-                <LayoutList size={14} strokeWidth={3} />
-                Table
+                <LayoutList size={13} strokeWidth={2.5} />
+                Tabel
             </button>
             <button
                 type="button"
                 onClick={() => onChange('grid')}
                 className={cn(
-                    'flex h-8 items-center gap-2 rounded-md px-3 text-[11px] font-black uppercase tracking-widest transition-all',
+                    'flex h-7 items-center gap-1.5 rounded-md px-3 text-[10px] font-semibold uppercase tracking-widest transition-all font-sans',
                     value === 'grid'
-                        ? 'bg-primary text-white dark:bg-white dark:text-black shadow-md active:scale-95'
-                        : 'text-black/60 hover:text-black dark:text-white/60 dark:hover:text-white',
+                        ? 'bg-sidebar-primary text-white shadow-sm'
+                        : 'text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/80',
                 )}
             >
-                <LayoutGrid size={14} strokeWidth={3} />
-                Grid
+                <LayoutGrid size={13} strokeWidth={2.5} />
+                Kartu
             </button>
         </div>
     );

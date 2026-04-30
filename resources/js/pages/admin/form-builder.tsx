@@ -68,7 +68,6 @@ const WIDTH_OPTIONS = Array.from({ length: 20 }, (_, i) => {
         label: `${pct}%`,
         value: pct.toString(),
         cols: `col-span-${i + 1}`,
-        wClass: `w-[${pct}%]`,
     };
 });
 
@@ -104,7 +103,7 @@ function FormBuilder({ template }: Props) {
             }
 
             // Standardize font defaults during migration
-            if (!options.font_family) options.font_family = "'Inter', sans-serif";
+            if (!options.font_family) options.font_family = "'Montserrat', sans-serif";
             if (!options.font_size) options.font_size = type === 'static_text' ? 14 : 11;
             if (!options.font_weight) options.font_weight = 'bold';
 
@@ -778,7 +777,7 @@ function FormBuilder({ template }: Props) {
     const allFieldIds = useMemo(() => (data?.fields || []).map((f) => f.id), [data.fields]);
 
     return (
-        <div className="font-inter bg-muted/10 text-foreground flex h-screen flex-col overflow-hidden">
+        <div className="font-sans bg-muted/10 text-foreground flex h-screen flex-col overflow-hidden">
             <Head title={template.id ? `Edit ${template.name}` : 'Form Builder'} />
 
             {/* Custom Dialog — replaces all native alert/confirm */}
@@ -801,7 +800,7 @@ function FormBuilder({ template }: Props) {
                             </Link>
                         </Button>
                         <div className="flex flex-col">
-                            <h1 className="text-foreground text-sm font-black tracking-tight uppercase">{data.name}</h1>
+                            <h1 className="text-foreground text-sm font-semibold font-sans tracking-tight uppercase">{data.name}</h1>
                             <div className="flex items-center gap-1.5 opacity-60">
                                 <Layout size={10} className="text-primary" />
                                 <span className="text-[9px] font-bold tracking-[0.2em] uppercase">Visual Multi-Block Designer</span>
@@ -835,9 +834,9 @@ function FormBuilder({ template }: Props) {
                         >
                             <div className="border-border bg-muted/20 border-b p-4">
                                 <div className="mb-4 flex items-center justify-between">
-                                    <h2 className="text-muted-foreground/60 text-[10px] font-black tracking-[0.2em] uppercase">Workspace</h2>
+                                    <h2 className="text-muted-foreground/60 text-[10px] font-semibold font-sans tracking-[0.2em] uppercase">Workspace</h2>
                                     <div className="bg-primary/10 rounded-lg px-2 py-0.5">
-                                        <span className="text-primary text-[8px] font-black uppercase">v2.0</span>
+                                        <span className="text-primary text-[8px] font-semibold font-sans uppercase">v2.0</span>
                                     </div>
                                 </div>
 
@@ -858,7 +857,7 @@ function FormBuilder({ template }: Props) {
                                             )}
                                         >
                                             <tab.icon size={12} strokeWidth={3} />
-                                            <span className="hidden text-[10px] font-black tracking-tight uppercase sm:inline-block">
+                                            <span className="hidden text-[10px] font-semibold font-sans tracking-tight uppercase sm:inline-block">
                                                 {tab.label}
                                             </span>
                                         </button>
@@ -915,7 +914,7 @@ function FormBuilder({ template }: Props) {
                             className="border-border bg-card z-20 flex shrink-0 flex-col overflow-hidden border-l"
                         >
                             <div className="border-border bg-muted/20 flex items-center justify-between border-b px-4 py-3">
-                                <h1 className="text-muted-foreground text-[10px] font-black tracking-[0.2em] uppercase">
+                                <h1 className="text-muted-foreground text-[10px] font-semibold font-sans tracking-[0.2em] uppercase">
                                     {selectedFieldId ? 'Block Properties' : 'Template Settings'}
                                 </h1>
                                 <Layout size={12} className="text-primary opacity-50" />
@@ -942,7 +941,7 @@ function FormBuilder({ template }: Props) {
                     <TrashZone />
                     <DragOverlay>
                         {activeLibItem && (
-                            <div className="bg-primary border-primary-foreground/20 flex items-center gap-3 rounded-2xl border-2 px-6 py-4 text-[10px] font-black text-white uppercase shadow-2xl backdrop-blur-md">
+                            <div className="bg-primary border-primary-foreground/20 flex items-center gap-3 rounded-2xl border-2 px-6 py-4 text-[10px] font-semibold font-sans text-white uppercase shadow-2xl backdrop-blur-md">
                                 <Plus size={16} strokeWidth={3} /> New {activeLibItem.replace('_', ' ')}
                             </div>
                         )}
@@ -972,7 +971,7 @@ const ContextMenuItem = ({
             onClick();
         }}
         className={cn(
-            'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[10px] font-black uppercase transition-colors',
+            'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[10px] font-semibold font-sans uppercase transition-colors',
             variant === 'destructive' ? 'text-red-500 hover:bg-red-50' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
         )}
     >
@@ -996,7 +995,7 @@ const TrashZone = () => {
         >
             <Trash2 size={24} className={cn(isOver && 'animate-bounce')} />
             <div>
-                <p className="text-[10px] font-black tracking-[0.2em] uppercase">Lepas untuk menghapus</p>
+                <p className="text-[10px] font-semibold font-sans tracking-[0.2em] uppercase">Lepas untuk menghapus</p>
                 <p className="text-[8px] font-bold uppercase opacity-60">Elemen akan dihapus permanen</p>
             </div>
         </div>

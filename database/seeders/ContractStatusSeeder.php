@@ -24,7 +24,6 @@ class ContractStatusSeeder extends Seeder
                 'bg_color' => '#f1f5f9',
                 'icon' => 'file-text',
                 'description' => 'Kontrak baru yang masih dalam tahap awal.',
-                'sequence' => 1,
             ],
             [
                 'code' => 'in_review',
@@ -33,7 +32,6 @@ class ContractStatusSeeder extends Seeder
                 'bg_color' => '#eff6ff',
                 'icon' => 'clock',
                 'description' => 'Kontrak sedang dalam proses persetujuan (approval).',
-                'sequence' => 2,
             ],
             [
                 'code' => 'revision',
@@ -42,7 +40,6 @@ class ContractStatusSeeder extends Seeder
                 'bg_color' => '#fffbeb',
                 'icon' => 'edit-3',
                 'description' => 'Kontrak dikembalikan untuk perbaikan.',
-                'sequence' => 3,
             ],
             [
                 'code' => 'approved',
@@ -51,7 +48,6 @@ class ContractStatusSeeder extends Seeder
                 'bg_color' => '#ecfdf5',
                 'icon' => 'check-circle',
                 'description' => 'Kontrak telah disetujui oleh seluruh pihak.',
-                'sequence' => 4,
             ],
             [
                 'code' => 'locked',
@@ -60,7 +56,6 @@ class ContractStatusSeeder extends Seeder
                 'bg_color' => '#eef2ff',
                 'icon' => 'lock',
                 'description' => 'Kontrak telah difinalisasi dan tidak dapat diubah.',
-                'sequence' => 5,
             ],
             [
                 'code' => 'archived',
@@ -69,7 +64,6 @@ class ContractStatusSeeder extends Seeder
                 'bg_color' => '#f8fafc',
                 'icon' => 'archive',
                 'description' => 'Kontrak yang sudah tidak aktif atau selesai.',
-                'sequence' => 6,
             ],
             [
                 'code' => 'rejected',
@@ -78,7 +72,6 @@ class ContractStatusSeeder extends Seeder
                 'bg_color' => '#fef2f2',
                 'icon' => 'x-circle',
                 'description' => 'Kontrak ditolak.',
-                'sequence' => 7,
             ],
         ];
 

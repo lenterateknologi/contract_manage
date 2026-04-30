@@ -85,44 +85,44 @@ export function DataTable<T extends Record<string, any>>({
     const activeCount = Object.values(activeFilters).flat().filter(v => v !== '' && v !== null).length;
 
     return (
-        <div className="flex flex-col gap-3 antialiased px-2 py-5 bg-white dark:bg-background">
+        <div className="flex flex-col gap-3 antialiased px-2 py-5 bg-white">
             {/* Premium Header Section - More Compact */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 px-1 mb-1">
                 <div className="space-y-0.5">
-                    {title && <h2 className="text-sm font-black tracking-tight text-primary dark:text-white uppercase leading-none">{title}</h2>}
+                {title && <h2 className="text-sm font-semibold tracking-tight text-sidebar-primary uppercase leading-none font-sans">{title}</h2>}
                     <div className="flex items-center gap-2">
-                        <div className="h-0.5 w-8 bg-primary dark:bg-white rounded-full" />
-                        <span className="text-[8px] font-black tracking-[0.2em] text-primary dark:text-white uppercase italic">DATA REPOSITORY</span>
+                        <div className="h-0.5 w-8 bg-sidebar-primary/30 rounded-full" />
+                        <span className="text-[8px] font-bold tracking-[0.2em] text-sidebar-foreground/30 uppercase">Repositori Data</span>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-2">
                     {onSearchChange && (
                         <div className="w-full md:w-64">
-                            <SearchInput
-                                placeholder={searchPlaceholder}
-                                value={searchValue}
-                                onChange={(e) => onSearchChange?.(e.target.value)}
-                                className="h-9 bg-white dark:bg-primary/[0.03] border-primary/5 text-[11px]"
-                            />
-                        </div>
+                                <SearchInput
+                                    placeholder={searchPlaceholder}
+                                    value={searchValue}
+                                    onChange={(e) => onSearchChange?.(e.target.value)}
+                                    className="h-9 bg-sidebar-accent border-sidebar-border text-[11px]"
+                                />
+                            </div>
                     )}
 
                     {filters.length > 0 && (
                         <Button
-                            variant="outline"
-                            onClick={() => setIsFilterOpen(true)}
-                            className={cn(
-                                "h-9 px-3.5 rounded-xl border-primary/10 dark:border-white/10 gap-2 text-[10px] font-black uppercase tracking-widest transition-all",
-                                activeCount > 0
-                                    ? "bg-primary text-white border-primary shadow-lg shadow-primary/20"
-                                    : "bg-white dark:bg-primary/[0.03] hover:border-primary dark:hover:border-white"
-                            )}
-                        >
-                            <SlidersHorizontal size={13} />
-                            Filter
-                            {activeCount > 0 && <span className="ml-1 h-4 min-w-[16px] px-1 flex items-center justify-center bg-white dark:bg-primary text-primary dark:text-white rounded-full text-[8px]">{activeCount}</span>}
-                        </Button>
+                                variant="outline"
+                                onClick={() => setIsFilterOpen(true)}
+                                className={cn(
+                                    "h-9 px-3.5 rounded-xl border-sidebar-border gap-2 text-[10px] font-semibold uppercase tracking-widest transition-all font-sans",
+                                    activeCount > 0
+                                        ? "bg-sidebar-primary text-white border-sidebar-primary shadow-md shadow-sidebar-primary/20"
+                                        : "bg-sidebar-accent hover:border-sidebar-primary/30"
+                                )}
+                            >
+                                <SlidersHorizontal size={13} />
+                                Filter
+                                {activeCount > 0 && <span className="ml-1 h-4 min-w-[16px] px-1 flex items-center justify-center bg-white text-sidebar-primary rounded-full text-[8px] font-bold">{activeCount}</span>}
+                            </Button>
                     )}
 
                     {headerActions}
@@ -131,10 +131,10 @@ export function DataTable<T extends Record<string, any>>({
 
             {/* Bulk Actions Bar - More Compact */}
             {selectedRows.length > 0 && bulkActions.length > 0 && (
-                <div className="flex items-center justify-between p-2 bg-primary dark:bg-white rounded-xl shadow-xl animate-in slide-in-from-top-2 duration-300 mx-1">
+                <div className="flex items-center justify-between p-2 bg-sidebar-primary rounded-xl shadow-xl animate-in slide-in-from-top-2 duration-300 mx-1">
                     <div className="flex items-center gap-3 pl-2">
-                        <div className="h-1.5 w-1.5 rounded-full bg-white dark:bg-primary animate-pulse" />
-                        <span className="text-[9px] font-black text-white dark:text-primary uppercase tracking-[0.15em]">
+                        <div className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+                        <span className="text-[9px] font-semibold text-white uppercase tracking-[0.15em] font-sans">
                             {selectedRows.length} Terpilih
                         </span>
                     </div>
@@ -146,10 +146,10 @@ export function DataTable<T extends Record<string, any>>({
                                 size="sm"
                                 onClick={() => action.onClick(selectedRows.map(r => r.id))}
                                 className={cn(
-                                    "h-8 px-4 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
+                                    "h-8 px-4 rounded-lg text-[9px] font-semibold uppercase tracking-widest transition-all font-sans",
                                     action.variant === 'destructive'
                                         ? "bg-rose-500 text-white hover:bg-rose-600 border-none shadow-sm"
-                                        : "text-white dark:text-primary hover:bg-white/10 dark:hover:bg-primary/5"
+                                        : "text-white hover:bg-white/10"
                                 )}
                             >
                                 {action.icon && <action.icon size={12} className="mr-1.5" />}
@@ -161,28 +161,28 @@ export function DataTable<T extends Record<string, any>>({
             )}
 
             {/* Table Container - Consistent Background */}
-            <div className="rounded-2xl border border-primary/10 dark:border-white/10 dark:bg-black/10 overflow-hidden shadow-xl shadow-primary/[0.02]">
+            <div className="rounded-2xl border border-sidebar-border overflow-hidden shadow-sm">
                 <div className="overflow-x-auto custom-scrollbar">
                     <table className="w-full text-left border-collapse min-w-[800px]">
                         <thead>
-                            <tr className="border-b border-primary/10 dark:border-white/10 bg-primary/[0.02] dark:bg-white/[0.02]">
+                            <tr className="border-b border-sidebar-border/60 bg-sidebar-accent/50">
                                 {onSelectionChange && (
                                     <th className="p-3 w-10">
-                                        <Checkbox
-                                            checked={isAllSelected}
-                                            onCheckedChange={handleSelectAll}
-                                            className="border-primary/20 dark:border-white/20"
-                                        />
-                                    </th>
+                                            <Checkbox
+                                                checked={isAllSelected}
+                                                onCheckedChange={handleSelectAll}
+                                                className="border-sidebar-border"
+                                            />
+                                        </th>
                                 )}
                                 {columns.map((col, idx) => (
                                     <th
-                                        key={idx}
-                                        className={cn(
-                                            "p-3 text-[9px] font-black uppercase tracking-[0.2em] text-primary dark:text-white antialiased",
-                                            col.className
-                                        )}
-                                    >
+                                            key={idx}
+                                            className={cn(
+                                                "p-3 text-[9px] font-bold uppercase tracking-[0.2em] text-sidebar-foreground/40 font-sans",
+                                                col.className
+                                            )}
+                                        >
                                         {col.header}
                                     </th>
                                 ))}
@@ -192,9 +192,9 @@ export function DataTable<T extends Record<string, any>>({
                             {loading && (
                                 <tr>
                                     <td colSpan={columns.length + (onSelectionChange ? 1 : 0)} className="p-0">
-                                        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm dark:bg-primary/80 py-10 gap-3">
+                                        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm py-10 gap-3">
                                             <LoadingLottie width={80} height={80} />
-                                            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-primary dark:text-white animate-pulse">Syncing...</p>
+                                            <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-sidebar-primary animate-pulse font-sans">Memuat data...</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -203,9 +203,9 @@ export function DataTable<T extends Record<string, any>>({
                             {data.length === 0 && !loading ? (
                                 <tr>
                                     <td colSpan={columns.length + (onSelectionChange ? 1 : 0)} className="p-16 text-center">
-                                        <div className="flex flex-col items-center gap-3 opacity-10">
+                                        <div className="flex flex-col items-center gap-3 opacity-20">
                                             <Search size={40} strokeWidth={1} />
-                                            <p className="text-[10px] font-black uppercase tracking-widest">No matching results</p>
+                                            <p className="text-[10px] font-semibold uppercase tracking-widest font-sans text-sidebar-foreground">Tidak ada data</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -215,8 +215,8 @@ export function DataTable<T extends Record<string, any>>({
                                         key={row.id || rowIdx}
                                         onClick={() => onRowClick?.(row)}
                                         className={cn(
-                                            "border-b border-primary/[0.05] dark:border-white/[0.05] transition-all hover:bg-primary/[0.02] dark:hover:bg-white/[0.02] cursor-pointer group",
-                                            selectedRows.some(r => r.id === row.id) ? "bg-primary/[0.04] dark:bg-white/[0.04]" : ""
+                                            "border-b border-sidebar-border/30 transition-all hover:bg-sidebar-accent/40 cursor-pointer group",
+                                            selectedRows.some(r => r.id === row.id) ? "bg-sidebar-accent" : ""
                                         )}
                                     >
                                         {onSelectionChange && (
@@ -224,12 +224,12 @@ export function DataTable<T extends Record<string, any>>({
                                                 <Checkbox
                                                     checked={selectedRows.some(r => r.id === row.id)}
                                                     onCheckedChange={(checked) => handleSelectRow(row, !!checked)}
-                                                    className="border-primary/20 dark:border-white/20"
+                                                    className="border-sidebar-border"
                                                 />
                                             </td>
                                         )}
                                         {columns.map((col, colIdx) => (
-                                            <td key={colIdx} className={cn("p-3 align-middle text-[12px] font-medium text-primary/80 dark:text-white/80", col.className)}>
+                                            <td key={colIdx} className={cn("p-3 align-middle text-[12px] font-medium text-sidebar-foreground/80 font-sans", col.className)}>
                                                 {col.cell ? col.cell(row) : (row[col.accessorKey as keyof T] as React.ReactNode)}
                                             </td>
                                         ))}
@@ -245,22 +245,22 @@ export function DataTable<T extends Record<string, any>>({
             {pagination && pagination.lastPage > 1 && (
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-1 py-1">
                     <div className="flex items-center gap-3 order-2 sm:order-1">
-                        <span className="text-[10px] font-bold text-primary/30 dark:text-white/30 tracking-tight">
-                            Showing <span className="text-primary dark:text-white">{data.length}</span> of <span className="text-primary dark:text-white">{pagination.total}</span>
+                        <span className="text-[10px] font-medium text-sidebar-foreground/30 tracking-tight font-sans">
+                            Menampilkan <span className="font-bold text-sidebar-foreground">{data.length}</span> dari <span className="font-bold text-sidebar-foreground">{pagination.total}</span> data
                         </span>
                     </div>
 
                     <div className="flex items-center gap-4 order-1 sm:order-2">
                         {pagination.onPerPageChange && (
                             <div className="flex items-center gap-2 mr-2">
-                                <span className="text-[9px] font-black uppercase text-primary/30 dark:text-white/30 tracking-widest">Baris:</span>
-                                <select 
-                                    className="bg-primary/[0.03] dark:bg-white/[0.03] border border-primary/10 dark:border-white/10 rounded-lg text-[10px] font-black text-primary dark:text-white px-2 py-1 outline-none focus:border-primary dark:focus:border-white transition-all cursor-pointer"
+                                <span className="text-[9px] font-semibold uppercase text-sidebar-foreground/30 tracking-widest font-sans">Baris:</span>
+                                <select
+                                    className="bg-sidebar-accent border border-sidebar-border rounded-lg text-[10px] font-semibold text-sidebar-foreground px-2 py-1 outline-none focus:border-sidebar-primary transition-all cursor-pointer font-sans"
                                     value={pagination.perPage || 10}
                                     onChange={(e) => pagination.onPerPageChange?.(Number(e.target.value))}
                                 >
                                     {[10, 25, 50, 100].map(n => (
-                                        <option key={n} value={n} className="bg-white dark:bg-primary text-black dark:text-white font-bold">{n}</option>
+                                        <option key={n} value={n}>{n}</option>
                                     ))}
                                 </select>
                             </div>
@@ -272,15 +272,15 @@ export function DataTable<T extends Record<string, any>>({
                                 size="sm"
                                 disabled={pagination.currentPage === 1}
                                 onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
-                                className="h-8 px-4 flex items-center gap-2 disabled:opacity-20 transition-all text-[9px] font-black uppercase tracking-widest border-primary/10 dark:border-white/10 rounded-lg"
+                                className="h-8 px-3.5 flex items-center gap-1.5 disabled:opacity-30 text-[9px] font-semibold uppercase tracking-widest border-sidebar-border font-sans"
                             >
-                                <ChevronLeft className="h-3 w-3" /> Prev
+                                <ChevronLeft className="h-3 w-3" /> Sebelumnya
                             </Button>
 
-                            <div className="flex items-center gap-2 px-3 h-8 bg-primary/[0.03] dark:bg-white/[0.03] rounded-lg border border-primary/5 dark:border-white/5">
-                                <span className="text-[10px] font-black text-primary dark:text-white">{pagination.currentPage}</span>
-                                <span className="text-[9px] font-black opacity-10">/</span>
-                                <span className="text-[10px] font-black text-primary dark:text-white">{pagination.lastPage}</span>
+                            <div className="flex items-center gap-2 px-3 h-8 bg-sidebar-accent rounded-lg border border-sidebar-border">
+                                <span className="text-[10px] font-bold text-sidebar-primary font-sans">{pagination.currentPage}</span>
+                                <span className="text-[9px] font-bold text-sidebar-foreground/20">/</span>
+                                <span className="text-[10px] font-bold text-sidebar-primary font-sans">{pagination.lastPage}</span>
                             </div>
 
                             <Button
@@ -288,9 +288,9 @@ export function DataTable<T extends Record<string, any>>({
                                 size="sm"
                                 disabled={pagination.currentPage === pagination.lastPage}
                                 onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
-                                className="h-8 px-4 flex items-center gap-2 disabled:opacity-20 transition-all text-[9px] font-black uppercase tracking-widest border-primary/10 dark:border-white/10 rounded-lg"
+                                className="h-8 px-3.5 flex items-center gap-1.5 disabled:opacity-30 text-[9px] font-semibold uppercase tracking-widest border-sidebar-border font-sans"
                             >
-                                Next <ChevronRight className="h-3 w-3" />
+                                Berikutnya <ChevronRight className="h-3 w-3" />
                             </Button>
                         </div>
                     </div>

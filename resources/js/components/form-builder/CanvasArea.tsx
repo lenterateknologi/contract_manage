@@ -51,7 +51,7 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
                             )}
                         >
                             <mode.icon size={14} strokeWidth={2.5} />
-                            <span className="text-[10px] font-black tracking-[0.1em] uppercase">{mode.label}</span>
+                            <span className="text-[10px] font-semibold font-sans tracking-[0.1em] uppercase">{mode.label}</span>
                         </button>
                     ))}
                 </div>

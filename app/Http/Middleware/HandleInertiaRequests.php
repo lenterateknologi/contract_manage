@@ -106,24 +106,24 @@ class HandleInertiaRequests extends Middleware
             return [];
         }
 
-        $modules = Module::where('showed_as_menu', true)
+        $modules = Module::where('m_modules.showed_as_menu', true)
             ->join('m_access_modules', 'm_modules.id', '=', 'm_access_modules.module_id')
             ->join('m_module_groups', 'm_access_modules.module_group_id', '=', 'm_module_groups.id')
-            ->leftJoin('m_role_module_groups', function ($join) use ($role) {
-                $join->on('m_module_groups.id', '=', 'm_role_module_groups.module_group_id')
-                    ->where('m_role_module_groups.role_id', '=', $role->id);
-            })
             ->where('m_access_modules.role_id', $role->id)
             ->where('m_access_modules.can_read', true)
             ->select(
-                'm_modules.*', 
+                'm_modules.id',
+                'm_modules.name',
+                'm_modules.route',
+                'm_modules.icon',
                 'm_module_groups.name as group_title'
             )
+            ->groupBy('m_modules.id', 'm_modules.name', 'm_modules.route', 'm_modules.icon', 'm_module_groups.name')
             ->orderBy('m_module_groups.name')
             ->orderBy('m_modules.name')
             ->get();
 
-        return $modules->groupBy('group_title')
+        return $modules->groupBy(fn ($item) => trim($item->group_title))
             ->map(function ($items, $title) {
                 return [
                     'title' => $title,

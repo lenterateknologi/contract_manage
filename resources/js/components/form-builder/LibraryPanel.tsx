@@ -29,8 +29,8 @@ const LibDraggable = ({ type, color, onClick }: { type: any; color: string; onCl
                 <type.icon size={16} strokeWidth={2.5} />
             </div>
             <div className="flex flex-col">
-                <span className="text-[10px] font-black tracking-tight text-slate-800 uppercase">{type.label}</span>
-                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Element</span>
+                <span className="text-[10px] font-semibold font-sans tracking-tight text-sidebar-foreground uppercase">{type.label}</span>
+                <span className="text-[8px] font-medium font-sans text-sidebar-foreground/40 uppercase tracking-widest">Element</span>
             </div>
         </div>
     );
@@ -41,7 +41,7 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({ onAddField }) => {
         <div className="animate-in fade-in slide-in-from-left-4 space-y-8 pb-12 duration-300">
             {FIELD_TYPES.map((cat: any) => (
                 <div key={cat.category} className="space-y-4">
-                    <h3 className="text-muted-foreground/30 flex items-center gap-2 text-[9px] font-black tracking-[0.3em] uppercase">
+                    <h3 className="text-muted-foreground/30 flex items-center gap-2 text-[9px] font-semibold font-sans tracking-[0.3em] uppercase">
                         <div className={cn('h-1 w-3 rounded-full', cat.color)} />
                         {cat.category}
                     </h3>

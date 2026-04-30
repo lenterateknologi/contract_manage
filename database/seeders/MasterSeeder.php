@@ -67,48 +67,48 @@ class MasterSeeder extends Seeder
         ModuleGroup::query()->forceDelete();
 
         $groups = [
-            ['name' => 'Dashboard', 'icon' => 'LayoutGrid', 'sequence' => 1],
-            ['name' => 'Manajemen Kontrak', 'icon' => 'FileText', 'sequence' => 2],
-            ['name' => 'Template Library', 'icon' => 'Library', 'sequence' => 3],
-            ['name' => 'Workflow Engine', 'icon' => 'GitBranch', 'sequence' => 4],
-            ['name' => 'Master Data', 'icon' => 'Database', 'sequence' => 5],
-            ['name' => 'System & Security', 'icon' => 'ShieldCheck', 'sequence' => 6],
+            ['name' => 'Beranda', 'icon' => 'LayoutGrid'],
+            ['name' => 'Modul Kontrak', 'icon' => 'FileText'],
+            ['name' => 'Desain Template', 'icon' => 'Library'],
+            ['name' => 'Konfigurasi Alur', 'icon' => 'GitBranch'],
+            ['name' => 'Data Master', 'icon' => 'Database'],
+            ['name' => 'Sistem & Laporan', 'icon' => 'ShieldCheck'],
         ];
         foreach ($groups as $g) {
             ModuleGroup::create([
                 'name' => $g['name'],
                 'icon' => $g['icon'],
-                'sequence' => $g['sequence']
             ]);
         }
-
+ 
         $mods = [
-            // Dashboard
-            ['name' => 'Dashboard', 'identifier' => 'DASH', 'group' => 'Dashboard', 'route' => '/dashboard', 'icon' => 'LayoutGrid', 'seq' => 1],
+            // Beranda
+            ['name' => 'Dashboard Utama', 'identifier' => 'DASH', 'group' => 'Beranda', 'route' => '/dashboard', 'icon' => 'LayoutGrid'],
             
-            // Manajemen Kontrak
-            ['name' => 'Daftar Kontrak', 'identifier' => 'CONTRACTS', 'group' => 'Manajemen Kontrak', 'route' => '/contracts', 'icon' => 'FileText', 'seq' => 1],
-            ['name' => 'Kontrak Saya', 'identifier' => 'MY_CTC', 'group' => 'Manajemen Kontrak', 'route' => '/contracts/mine', 'icon' => 'UserCheck', 'seq' => 2],
-            ['name' => 'Persetujuan', 'identifier' => 'PENDING', 'group' => 'Manajemen Kontrak', 'route' => '/contracts/pending', 'icon' => 'Clock', 'seq' => 3],
-            ['name' => 'Masa Berlaku', 'identifier' => 'EXPIRY', 'group' => 'Manajemen Kontrak', 'route' => '/contracts/expiry', 'icon' => 'History', 'seq' => 4],
-
-            // Template Library
-            ['name' => 'Folder Kontrak', 'identifier' => 'ADMIN_TYPES', 'group' => 'Template Library', 'route' => '/admin/contract-types', 'icon' => 'FolderClosed', 'seq' => 1],
-            ['name' => 'Isi Kontrak', 'identifier' => 'ADMIN_TEMPLATES', 'group' => 'Template Library', 'route' => '/admin/templates', 'icon' => 'FileCode', 'seq' => 2],
-            ['name' => 'Digital Form', 'identifier' => 'ADMIN_FORMS', 'group' => 'Template Library', 'route' => '/admin/form-templates', 'icon' => 'ScanLine', 'seq' => 3],
-
-            // Workflow Engine
-            ['name' => 'Alur Persetujuan', 'identifier' => 'ADMIN_WORKFLOWS', 'group' => 'Workflow Engine', 'route' => '/admin/workflows', 'icon' => 'Workflow', 'seq' => 1],
-            ['name' => 'Label Status', 'identifier' => 'ADMIN_STATUS', 'group' => 'Workflow Engine', 'route' => '/admin/contract-statuses', 'icon' => 'Tags', 'seq' => 2],
-
-            // Master Data
-            ['name' => 'Database User', 'identifier' => 'ADMIN_USERS', 'group' => 'Master Data', 'route' => '/admin/users', 'icon' => 'UserCog', 'seq' => 1],
-            ['name' => 'Izin & Akses', 'identifier' => 'ADMIN_ROLES', 'group' => 'Master Data', 'route' => '/admin/roles', 'icon' => 'KeyRound', 'seq' => 2],
-            ['name' => 'Departemen', 'identifier' => 'ADMIN_DEPTS', 'group' => 'Master Data', 'route' => '/admin/departments', 'icon' => 'Building2', 'seq' => 3],
-            ['name' => 'Rekan Vendor', 'identifier' => 'ADMIN_VENDORS', 'group' => 'Master Data', 'route' => '/admin/vendors', 'icon' => 'Truck', 'seq' => 4],
-
-            // System & Security
-            ['name' => 'Laporan Analitikal', 'identifier' => 'ANLTX', 'group' => 'System & Security', 'route' => '/admin/reports', 'icon' => 'BarChart3', 'seq' => 1],
+            // Modul Kontrak
+            ['name' => 'Semua Kontrak', 'identifier' => 'CONTRACTS', 'group' => 'Modul Kontrak', 'route' => '/contracts', 'icon' => 'Files'],
+            ['name' => 'Draft Saya', 'identifier' => 'MY_CTC', 'group' => 'Modul Kontrak', 'route' => '/contracts/mine', 'icon' => 'UserCheck'],
+            ['name' => 'Perlu Persetujuan', 'identifier' => 'PENDING', 'group' => 'Modul Kontrak', 'route' => '/contracts/pending', 'icon' => 'Clock'],
+            ['name' => 'Masa Berlaku', 'identifier' => 'EXPIRY', 'group' => 'Modul Kontrak', 'route' => '/contracts/expiry', 'icon' => 'CalendarClock'],
+ 
+            // Desain Template
+            ['name' => 'Kategori Kontrak', 'identifier' => 'ADMIN_TYPES', 'group' => 'Desain Template', 'route' => '/admin/contract-types', 'icon' => 'FolderClosed'],
+            // ['name' => 'Isi Kontrak', 'identifier' => 'ADMIN_TEMPLATES', 'group' => 'Desain Template', 'route' => '/admin/templates', 'icon' => 'FileCode'], // HIDDEN
+            ['name' => 'Formulir Digital', 'identifier' => 'ADMIN_FORMS', 'group' => 'Desain Template', 'route' => '/admin/form-templates', 'icon' => 'ScanLine'],
+ 
+            // Konfigurasi Alur
+            ['name' => 'Alur Persetujuan', 'identifier' => 'ADMIN_WORKFLOWS', 'group' => 'Konfigurasi Alur', 'route' => '/admin/workflows', 'icon' => 'Workflow'],
+            ['name' => 'Master Status', 'identifier' => 'ADMIN_STATUS', 'group' => 'Konfigurasi Alur', 'route' => '/admin/contract-statuses', 'icon' => 'Tags'],
+ 
+            // Data Master
+            ['name' => 'Manajemen Pengguna', 'identifier' => 'ADMIN_USERS', 'group' => 'Data Master', 'route' => '/admin/users', 'icon' => 'UserCog'],
+            ['name' => 'Hak Akses & Peran', 'identifier' => 'ADMIN_ROLES', 'group' => 'Data Master', 'route' => '/admin/roles', 'icon' => 'KeyRound'],
+            ['name' => 'Data Departemen', 'identifier' => 'ADMIN_DEPTS', 'group' => 'Data Master', 'route' => '/admin/departments', 'icon' => 'Building2'],
+            ['name' => 'Daftar Vendor', 'identifier' => 'ADMIN_VENDORS', 'group' => 'Data Master', 'route' => '/admin/vendors', 'icon' => 'Truck'],
+ 
+            // Sistem & Laporan
+            ['name' => 'Analitik Kontrak', 'identifier' => 'ANLTX', 'group' => 'Sistem & Laporan', 'route' => '/admin/reports/analytics', 'icon' => 'BarChart3'],
+            ['name' => 'Jejak Audit', 'identifier' => 'AUDIT', 'group' => 'Sistem & Laporan', 'route' => '/admin/reports/audit', 'icon' => 'History'],
         ];
 
         foreach ($mods as $m) {
@@ -119,7 +119,6 @@ class MasterSeeder extends Seeder
                 'module_group_id' => $groupId,
                 'route' => $m['route'],
                 'icon' => $m['icon'],
-                'sequence' => $m['seq'],
                 'showed_as_menu' => true,
             ]);
         }
@@ -207,7 +206,6 @@ class MasterSeeder extends Seeder
                 DB::table('m_role_module_groups')->insert([
                     'role_id' => $role->id,
                     'module_group_id' => $g->id,
-                    'sequence' => $g->sequence,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
@@ -233,7 +231,6 @@ class MasterSeeder extends Seeder
                     'can_update' => $isAdmin || $isManager,
                     'can_delete' => $isAdmin,
                     'can_approve' => $isAdmin || $isManager || $role->name === 'Director',
-                    'sequence' => $module->sequence,
                 ]);
             }
         }

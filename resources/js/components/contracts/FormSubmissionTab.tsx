@@ -597,28 +597,16 @@ function GenericFormTab({
                 </div>
             )}
 
-            <div className="dark:bg-sidebar/80 sticky top-0 z-40 flex h-[72px] shrink-0 items-center justify-between border-b border-black/10 bg-white/80 px-6 backdrop-blur-md dark:border-white/10">
-                <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-4">
-                        <div className="h-10 w-[3px] rounded-full bg-black dark:bg-white" />
-                        <div className="flex flex-col">
-                            <div className="flex items-center gap-2">
-                                <h4 className="text-sm font-bold text-black dark:text-white">
-                                    {docType === 'f1' ? 'Formulir F1 (Internal)' : 'Formulir F2 (Resume)'}
-                                </h4>
-                                <div className="bg-primary rounded px-1.5 py-0.5 dark:bg-white">
-                                    <span className="text-[10px] font-bold text-white dark:text-black">V{submissionInfo?.current_version || 1}</span>
-                                </div>
-                            </div>
-                            <div className="mt-0.5 flex items-center gap-2">
-                                <span className="text-[10px] font-bold text-black dark:text-white">
-                                    {docType === 'f1' ? 'Submission Document' : 'Agreement Resume'}
-                                </span>
-                                <div className="h-1 w-1 rounded-full bg-black dark:bg-white" />
-                                <span className="text-[10px] font-bold text-black dark:text-white">
-                                    {submissionInfo ? 'Sudah Diisi' : 'Draft Mode'}
-                                </span>
-                            </div>
+            <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between border-b border-black/5 bg-white/50 px-6 backdrop-blur-md dark:border-white/5 dark:bg-black/50">
+                <div className="flex items-center gap-4">
+                    <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                            <h4 className="text-xs font-bold tracking-tight text-black dark:text-white uppercase">
+                                {docType === 'f1' ? 'F1 Internal' : 'F2 Summary'}
+                            </h4>
+                            <span className="rounded bg-black/5 px-1.5 py-0.5 text-[9px] font-bold text-black/60 dark:bg-white/10 dark:text-white/60">
+                                V{submissionInfo?.current_version || 1}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -644,23 +632,22 @@ function GenericFormTab({
                         <button
                             onClick={() => setShowVersions(!showVersions)}
                             className={cn(
-                                'group flex h-9 items-center gap-2.5 rounded-lg border px-4 transition-all active:scale-95',
+                                'group flex h-8 items-center gap-2 rounded-lg border text-[11px] font-bold uppercase transition-all active:scale-95',
                                 showVersions
                                     ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black'
-                                    : 'border-black bg-white text-black hover:border-black/20 dark:border-white dark:bg-transparent dark:text-white',
+                                    : 'border-black/5 bg-white text-black/60 hover:border-black/20 hover:text-black dark:border-white/5 dark:bg-transparent dark:text-white/60 dark:hover:text-white',
                             )}
                         >
                             <History
-                                size={16}
+                                size={14}
                                 className={cn(
-                                    'transition-colors',
+                                    'ml-3 transition-colors',
                                     showVersions
                                         ? 'text-white'
                                         : 'text-black/40 group-hover:text-black dark:text-white/40 dark:group-hover:text-white',
                                 )}
                             />
-                            <span className="text-xs font-semibold">{versions.length || 0} Versi</span>
-                            <ChevronDown size={14} className={cn('ml-1 transition-transform', showVersions && 'rotate-180')} />
+                            <span className="mr-3">{versions.length || 0} Versi</span>
                         </button>
 
                         {showVersions && (
@@ -722,13 +709,13 @@ function GenericFormTab({
                         <button
                             onClick={() => setShowMoreActions(!showMoreActions)}
                             className={cn(
-                                'flex h-9 w-9 items-center justify-center rounded-lg border transition-all active:scale-95',
+                                'flex h-8 w-8 items-center justify-center rounded-lg border transition-all active:scale-95',
                                 showMoreActions
                                     ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black'
-                                    : 'border-black bg-white text-black hover:bg-black/5 dark:border-white dark:bg-transparent dark:text-white',
+                                    : 'border-black/5 bg-white text-black/40 hover:bg-black/5 dark:border-white/5 dark:bg-transparent dark:text-white/40',
                             )}
                         >
-                            <MoreVertical size={16} />
+                            <MoreVertical size={14} />
                         </button>
 
                         {showMoreActions && (
