@@ -32,7 +32,7 @@ export interface DataTableProps<T> {
     onRowClick?: (row: T) => void;
     onSelectionChange?: (selectedRows: T[]) => void;
     selectedRows?: T[];
-    bulkActions?: any[];
+    bulkActions?: React.ReactNode;
 
     // Search & Filter
     searchPlaceholder?: string;
@@ -53,7 +53,7 @@ export function DataTable<T extends Record<string, any>>({
     onRowClick,
     onSelectionChange,
     selectedRows = [],
-    bulkActions = [],
+    bulkActions,
     searchPlaceholder = "Cari data...",
     searchValue = "",
     onSearchChange,
@@ -129,8 +129,8 @@ export function DataTable<T extends Record<string, any>>({
                 </div>
             </div>
 
-            {/* Bulk Actions Bar - More Compact */}
-            {selectedRows.length > 0 && bulkActions.length > 0 && (
+            {/* Bulk Actions Bar */}
+            {selectedRows.length > 0 && bulkActions && (
                 <div className="flex items-center justify-between p-2 bg-sidebar-primary rounded-xl shadow-xl animate-in slide-in-from-top-2 duration-300 mx-1">
                     <div className="flex items-center gap-3 pl-2">
                         <div className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
@@ -139,23 +139,7 @@ export function DataTable<T extends Record<string, any>>({
                         </span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                        {bulkActions.map((action, idx) => (
-                            <Button
-                                key={idx}
-                                variant={action.variant || 'ghost'}
-                                size="sm"
-                                onClick={() => action.onClick(selectedRows.map(r => r.id))}
-                                className={cn(
-                                    "h-8 px-4 rounded-lg text-[9px] font-semibold uppercase tracking-widest transition-all font-sans",
-                                    action.variant === 'destructive'
-                                        ? "bg-rose-500 text-white hover:bg-rose-600 border-none shadow-sm"
-                                        : "text-white hover:bg-white/10"
-                                )}
-                            >
-                                {action.icon && <action.icon size={12} className="mr-1.5" />}
-                                {action.label}
-                            </Button>
-                        ))}
+                        {bulkActions}
                     </div>
                 </div>
             )}

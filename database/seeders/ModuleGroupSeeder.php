@@ -14,34 +14,35 @@ class ModuleGroupSeeder extends Seeder
         $adminId = $admin ? $admin->id : null;
 
         $groups = [
-            'Dashboard',
-            'Manajemen Kontrak',
-            'Template Library',
-            'Workflow Engine',
-            'Master Data',
-            'System & Security',
+            ['name' => 'Beranda',           'icon' => 'LayoutDashboard'],
+            ['name' => 'Manajemen Kontrak', 'icon' => 'FileText'],
+            ['name' => 'Desain Template',   'icon' => 'Library'],
+            ['name' => 'Konfigurasi Alur',  'icon' => 'GitBranch'],
+            ['name' => 'Data Master',       'icon' => 'Database'],
+            ['name' => 'Sistem & Laporan',  'icon' => 'ShieldCheck'],
         ];
 
-        foreach ($groups as $index => $name) {
-            $group = ModuleGroup::withTrashed()->where('name', $name)->first();
+        $names = array_column($groups, 'name');
+
+        foreach ($groups as $data) {
+            $group = ModuleGroup::withTrashed()->where('name', $data['name'])->first();
             if ($group) {
                 if ($group->trashed()) $group->restore();
                 $group->update([
-                    'sequence' => $index,
-                    'created_by' => $adminId,
+                    'icon'       => $data['icon'],
                     'updated_by' => $adminId,
                 ]);
             } else {
                 ModuleGroup::create([
-                    'name' => $name,
-                    'sequence' => $index,
+                    'name'       => $data['name'],
+                    'icon'       => $data['icon'],
                     'created_by' => $adminId,
                     'updated_by' => $adminId,
                 ]);
             }
         }
 
-        // Clean up removed groups
-        ModuleGroup::whereNotIn('name', $groups)->delete();
+        // Soft-delete removed groups
+        ModuleGroup::whereNotIn('name', $names)->delete();
     }
 }
