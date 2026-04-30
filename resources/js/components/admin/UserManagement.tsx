@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
 import { Column, DataTable } from '@/components/ui/DataTable';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,7 +9,7 @@ import { Trash2, Plus, Mail, Fingerprint, Phone, UserCircle, ShieldAlert } from 
 import { usePermissions } from '@/hooks/use-permissions';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/contracts/Toast';
-import { ManagementForm, FormSection, FormDangerZone } from './ManagementForm';
+import { ManagementForm, FormDangerZone } from './ManagementForm';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 
@@ -21,9 +20,72 @@ interface UserManagementProps {
     filters: any;
 }
 
-export function UserManagement({ users, roles, departments, filters }: UserManagementProps) {
+const UserCell = ({ name, email }: Readonly<{ name: string; email: string }>) => (
+    <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-xl bg-black/[0.03] dark:bg-white/[0.03] text-black dark:text-white flex items-center justify-center font-black text-[11px] shrink-0 border border-black/[0.05] dark:border-white/[0.05]">
+            {name.charAt(0).toUpperCase()}
+        </div>
+        <div className="flex flex-col min-w-0">
+            <span className="font-bold text-black dark:text-white text-[13px] truncate leading-tight">
+                {name}
+            </span>
+            <span className="text-[10px] font-bold text-black/40 dark:text-white/40 truncate leading-none uppercase tracking-widest mt-1">
+                {email}
+            </span>
+        </div>
+    </div>
+);
+
+const IdentityCell = ({ username, phone }: Readonly<{ username: string; phone?: string }>) => (
+    <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-1.5 text-[10px] font-black text-black/60 dark:text-white/60 uppercase tracking-widest">
+            <Fingerprint size={10} className="text-black/30 dark:text-white/30" />
+            {username}
+        </div>
+        {phone && (
+            <div className="flex items-center gap-1.5 text-[10px] font-bold text-black/40 dark:text-white/40 tracking-tight uppercase">
+                <Phone size={10} className="text-black/30 dark:text-white/30" />
+                {phone}
+            </div>
+        )}
+    </div>
+);
+
+const PlacementCell = ({ departmentName, position }: Readonly<{ departmentName?: string; position?: string }>) => (
+    <div className="flex flex-col gap-1">
+        <span className="text-[11px] font-black text-black dark:text-white uppercase tracking-wider">
+            {departmentName || 'GLOBAL'}
+        </span>
+        <span className="text-[10px] font-bold text-black/40 dark:text-white/40 uppercase tracking-widest mt-0.5">
+            {position || 'STAF'}
+        </span>
+    </div>
+);
+
+const AuthorityCell = ({ role }: Readonly<{ role: string }>) => (
+    <span className="text-[10px] font-black tracking-[0.15em] text-black/60 dark:text-white/60 uppercase">
+        {role}
+    </span>
+);
+
+const AccessCell = ({ isActive }: Readonly<{ isActive: boolean }>) => (
+    <div className="flex items-center gap-2">
+        <div className={cn(
+            "w-1.5 h-1.5 rounded-full shrink-0",
+            isActive ? "bg-black dark:bg-white" : "bg-black/20 dark:bg-white/20"
+        )} />
+        <span className={cn(
+            "text-[10px] font-black uppercase tracking-widest",
+            isActive ? "text-black dark:text-white" : "text-black/30 dark:text-white/30"
+        )}>
+            {isActive ? 'AKTIF' : 'SUSPENDED'}
+        </span>
+    </div>
+);
+
+export function UserManagement({ users, roles, departments, filters }: Readonly<UserManagementProps>) {
     const { showToast } = useToast();
-    const { canCreate, canUpdate, canDelete } = usePermissions('ADMIN_USERS');
+    const { canCreate, canDelete } = usePermissions('ADMIN_USERS');
     const [isFormView, setIsFormView] = React.useState(false);
     const [editingUser, setEditingUser] = React.useState<any>(null);
     const [isConfirmOpen, setIsConfirmOpen] = React.useState(false);
@@ -56,7 +118,7 @@ export function UserManagement({ users, roles, departments, filters }: UserManag
     ], [roles, departments]);
 
     const handleFilterChange = (newFilters: Record<string, any>) => {
-        router.get(window.location.pathname, { 
+        router.get(globalThis.location.pathname, { 
             ...filters, 
             ...newFilters, 
             page: 1 
@@ -68,80 +130,27 @@ export function UserManagement({ users, roles, departments, filters }: UserManag
             header: 'Pengguna',
             accessorKey: 'name',
             sortable: true,
-            cell: (row) => (
-                <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-black/[0.03] dark:bg-white/[0.03] text-black dark:text-white flex items-center justify-center font-black text-[11px] shrink-0 border border-black/[0.05] dark:border-white/[0.05]">
-                        {row.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex flex-col min-w-0">
-                        <span className="font-bold text-black dark:text-white text-[13px] truncate leading-tight">
-                            {row.name}
-                        </span>
-                        <span className="text-[10px] font-bold text-black/40 dark:text-white/40 truncate leading-none uppercase tracking-widest mt-1">
-                            {row.email}
-                        </span>
-                    </div>
-                </div>
-            )
+            cell: (row) => <UserCell name={row.name} email={row.email} />
         },
         {
             header: 'Identitas',
             accessorKey: 'username',
-            cell: (row) => (
-                <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-1.5 text-[10px] font-black text-black/60 dark:text-white/60 uppercase tracking-widest">
-                        <Fingerprint size={10} className="text-black/30 dark:text-white/30" />
-                        {row.username}
-                    </div>
-                    {row.phone && (
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-black/40 dark:text-white/40 tracking-tight uppercase">
-                            <Phone size={10} className="text-black/30 dark:text-white/30" />
-                            {row.phone}
-                        </div>
-                    )}
-                </div>
-            )
+            cell: (row) => <IdentityCell username={row.username} phone={row.phone} />
         },
         {
             header: 'Penempatan',
             accessorKey: 'department.name',
-            cell: (row) => (
-                <div className="flex flex-col gap-1">
-                    <span className="text-[11px] font-black text-black dark:text-white uppercase tracking-wider">
-                        {row.department?.name || 'GLOBAL'}
-                    </span>
-                    <span className="text-[10px] font-bold text-black/40 dark:text-white/40 uppercase tracking-widest mt-0.5">
-                        {row.position || 'STAF'}
-                    </span>
-                </div>
-            )
+            cell: (row) => <PlacementCell departmentName={row.department?.name} position={row.position} />
         },
         {
             header: 'Otoritas',
             accessorKey: 'role',
-            cell: (row) => (
-                <span className="text-[10px] font-black tracking-[0.15em] text-black/60 dark:text-white/60 uppercase">
-                    {row.role}
-                </span>
-            ),
+            cell: (row) => <AuthorityCell role={row.role} />,
         },
         {
             header: 'Akses',
             accessorKey: 'is_active',
-            cell: (row) => (
-                <div className="flex items-center gap-2">
-                    <div className={cn(
-                        "w-1.5 h-1.5 rounded-full shrink-0",
-                        row.is_active ? "bg-black dark:bg-white" : "bg-black/20 dark:bg-white/20"
-                    )} />
-                    <span className={cn(
-                        "text-[10px] font-black uppercase tracking-widest",
-                        row.is_active ? "text-black dark:text-white" : "text-black/30 dark:text-white/30"
-                    )}>
-                        {row.is_active ? 'AKTIF' : 'SUSPENDED'}
-                    </span>
-                </div>
-            ),
+            cell: (row) => <AccessCell isActive={row.is_active} />,
         },
     ], []);
 
@@ -397,7 +406,7 @@ export function UserManagement({ users, roles, departments, filters }: UserManag
             searchKey="name"
             searchPlaceholder="Cari nama, email, atau username..."
             searchValue={filters.search || ''}
-            onSearchChange={(v) => router.get(window.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })}
+            onSearchChange={(v) => router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })}
             filters={filterConfig as any}
             activeFilters={filters}
             onFilterChange={handleFilterChange}
@@ -434,8 +443,8 @@ export function UserManagement({ users, roles, departments, filters }: UserManag
                 from: users.from || 1,
                 to: users.to || 1,
                 perPage: users.per_page || 10,
-                onPageChange: (page) => router.get(window.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
-                onPerPageChange: (perPage) => router.get(window.location.pathname, { ...filters, per_page: perPage, page: 1 }, { preserveState: true, preserveScroll: true }),
+                onPageChange: (page) => router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                onPerPageChange: (perPage) => router.get(globalThis.location.pathname, { ...filters, per_page: perPage, page: 1 }, { preserveState: true, preserveScroll: true }),
             }}
         />
     );

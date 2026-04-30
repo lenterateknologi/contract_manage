@@ -28,7 +28,7 @@ function SortableStepItem({
     contractStatuses,
     updateLocalStep,
     removeLocalStep,
-}: {
+}: Readonly<{
     step: any;
     idx: number;
     users: any[];
@@ -37,7 +37,7 @@ function SortableStepItem({
     contractStatuses: any[];
     updateLocalStep: (idx: number, data: any) => void;
     removeLocalStep: (idx: number) => void;
-}) {
+}>) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: step.id });
     const [userSearchText, setUserSearchText] = useState('');
     const [roleSearchText, setRoleSearchText] = useState('');
@@ -483,9 +483,7 @@ const StepsCell = ({ row }: { readonly row: any }) => (
                 </div>
             )}
         </div>
-        <span className="text-[10px] font-black tracking-widest text-black/40 uppercase dark:text-white/40">
-            {row.steps?.length || 0} TAHAPAN
-        </span>
+        <span className="text-[10px] font-black tracking-widest text-black/40 uppercase dark:text-white/40">{row.steps?.length || 0} TAHAPAN</span>
     </div>
 );
 
@@ -500,7 +498,7 @@ interface WorkflowManagementProps {
     readonly filters: any;
 }
 
-export function WorkflowManagement({ workflows, contractTypes, departments, roles, users, contractStatuses, filters }: WorkflowManagementProps) {
+export function WorkflowManagement({ workflows, contractTypes, departments, roles, users, contractStatuses, filters }: Readonly<WorkflowManagementProps>) {
     const { showToast } = useToast();
     const { canUpdate } = usePermissions('ADMIN_WORKFLOWS');
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -523,7 +521,6 @@ export function WorkflowManagement({ workflows, contractTypes, departments, role
         initiator_departments: [] as string[],
         steps: [] as any[],
     });
-
 
     const columns = useMemo<Column<any>[]>(
         () => [
@@ -1096,7 +1093,7 @@ export function WorkflowManagement({ workflows, contractTypes, departments, role
                 searchPlaceholder="Cari alur kerja atau tipe..."
                 searchValue={filters.search || ''}
                 onSearchChange={(v) =>
-                    router.get(window.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })
+                    router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })
                 }
                 filters={[
                     {
@@ -1123,7 +1120,7 @@ export function WorkflowManagement({ workflows, contractTypes, departments, role
                     Object.keys(updatedFilters).forEach((key) => {
                         newFilters[key] = updatedFilters[key].length > 0 ? updatedFilters[key][0] : null;
                     });
-                    router.get(window.location.pathname, newFilters, { preserveState: true, replace: true });
+                    router.get(globalThis.location.pathname, newFilters, { preserveState: true, replace: true });
                 }}
                 onRowClick={openEdit}
                 headerActions={

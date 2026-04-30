@@ -13,10 +13,10 @@ interface NumberingFormat {
 }
 
 interface Props {
-    formats: NumberingFormat[];
+    readonly formats: readonly NumberingFormat[];
 }
 
-export default function NumberingFormatManagement({ formats }: Props) {
+export function NumberingFormatManagement({ formats }: Readonly<Props>) {
     return (
         <div className="animate-in fade-in flex flex-col gap-10 duration-500">
             <div className="flex items-center justify-between border-b border-black/[0.05] pb-8 dark:border-white/[0.05]">
@@ -96,7 +96,7 @@ export default function NumberingFormatManagement({ formats }: Props) {
     );
 }
 
-function FormatCard({ format }: { format: NumberingFormat }) {
+function FormatCard({ format }: Readonly<{ format: NumberingFormat }>) {
     const { data, setData, put, processing, reset } = useForm({
         format_pattern: format.format_pattern,
         current_number: format.current_number,

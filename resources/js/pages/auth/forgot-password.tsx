@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AuthSplitLayout from '@/layouts/auth/auth-split-layout';
 
-export default function ForgotPassword({ status }: { status?: string }) {
+export default function ForgotPassword({ status }: Readonly<{ status?: string }>) {
     const { data, setData, post, processing, errors } = useForm({
         email: '',
     });
@@ -35,7 +35,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
                     <div className="grid gap-2">
                         <Label
                             htmlFor="email"
-                            className="font-[var(--font-weight-bold)] tracking-tight text-[length:var(--font-size-small)] text-[color:var(--text-dark)] uppercase"
+                            className="text-[length:var(--font-size-small)] font-[var(--font-weight-bold)] tracking-tight text-[color:var(--text-dark)] uppercase"
                         >
                             Alamat Email
                         </Label>
@@ -48,14 +48,14 @@ export default function ForgotPassword({ status }: { status?: string }) {
                             autoFocus
                             onChange={(e) => setData('email', e.target.value)}
                             placeholder="email@example.com"
-                            className="h-[48px] rounded-[var(--radius-lg)] border-[var(--border)] bg-[var(--white)] px-4 text-[var(--font-size-body)] text-[var(--text-dark)] transition-all focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]"
+                            className="h-[48px] rounded-[var(--radius-lg)] border-[var(--border)] bg-[var(--white)] px-4 text-[var(--font-size-body)] transition-all focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]"
                         />
                         <InputError message={errors.email} />
                     </div>
 
                     <Button
                         type="submit"
-                        className="h-[48px] w-full rounded-[var(--radius-lg)] bg-[var(--primary)] font-[var(--font-weight-bold)] text-[var(--font-size-body)] text-[var(--white)] transition-all hover:bg-[var(--primary-hover)] active:scale-[0.98] active:bg-[var(--primary-active)]"
+                        className="h-[48px] w-full rounded-[var(--radius-lg)] bg-[var(--primary)] font-[var(--font-weight-bold)] text-[var(--font-size-body)] transition-all hover:bg-[var(--primary-hover)] active:scale-[0.98] active:bg-[var(--primary-active)]"
                         disabled={processing}
                     >
                         {processing && <LoaderCircle className="mr-2 size-4 animate-spin" />}
@@ -63,7 +63,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
                     </Button>
                 </div>
 
-                <div className="text-center font-[var(--font-weight-medium)] text-[var(--font-size-small)] text-[var(--text-muted)]">
+                <div className="text-center font-[var(--font-weight-medium)] text-[var(--font-size-small)]">
                     Atau, kembali ke{' '}
                     <TextLink
                         href={route('login')}

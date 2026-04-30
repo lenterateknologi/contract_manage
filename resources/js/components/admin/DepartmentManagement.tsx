@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
 import { Column, DataTable } from '@/components/ui/DataTable';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,7 +9,7 @@ import { Plus, Trash2, Building2 } from 'lucide-react';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useToast } from '@/components/contracts/Toast';
 import { cn } from '@/lib/utils';
-import { ManagementForm, FormSection, FormDangerZone } from './ManagementForm';
+import { ManagementForm, FormDangerZone } from './ManagementForm';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 
 interface DepartmentManagementProps {
@@ -18,7 +17,42 @@ interface DepartmentManagementProps {
     filters: any;
 }
 
-export function DepartmentManagement({ departments, filters }: DepartmentManagementProps) {
+const DeptCell = ({ name, code }: Readonly<{ name: string; code: string }>) => (
+    <div className="flex items-center gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-black/[0.03] dark:bg-white/[0.03] text-black/30 dark:text-white/30 group-hover:text-black dark:group-hover:text-white transition-colors border border-black/[0.05] dark:border-white/[0.05]">
+            <Building2 size={16} />
+        </div>
+        <div className="flex flex-col min-w-0">
+            <span className="text-[13px] font-bold text-black dark:text-white leading-tight mb-1 truncate">{name}</span>
+            <div className="flex items-center gap-1.5 font-mono text-[10px] font-bold text-black/40 dark:text-white/40 uppercase tracking-widest leading-none">
+                {code}
+            </div>
+        </div>
+    </div>
+);
+
+const DescriptionCell = ({ description }: Readonly<{ description?: string }>) => (
+    <span className="text-[11px] font-bold text-black/40 dark:text-white/40 uppercase tracking-tight line-clamp-1 max-w-[300px]">
+        {description || '—'}
+    </span>
+);
+
+const VisibilityCell = ({ isActive }: Readonly<{ isActive: boolean }>) => (
+    <div className="flex items-center gap-2">
+        <div className={cn(
+            "w-1.5 h-1.5 rounded-full shrink-0",
+            isActive ? "bg-black dark:bg-white" : "bg-black/20 dark:bg-white/20"
+        )} />
+        <span className={cn(
+            "text-[10px] font-black uppercase tracking-widest",
+            isActive ? "text-black dark:text-white" : "text-black/30 dark:text-white/30"
+        )}>
+            {isActive ? 'TERLIHAT' : 'HIDDEN'}
+        </span>
+    </div>
+);
+
+export function DepartmentManagement({ departments, filters }: Readonly<DepartmentManagementProps>) {
     const { showToast } = useToast();
     const { canCreate, canUpdate, canDelete } = usePermissions('ADMIN_DEPTS');
     const [isFormView, setIsFormView] = React.useState(false);
@@ -44,7 +78,7 @@ export function DepartmentManagement({ departments, filters }: DepartmentManagem
     ], []);
 
     const handleFilterChange = (newFilters: Record<string, any>) => {
-        router.get(window.location.pathname, { 
+        router.get(globalThis.location.pathname, { 
             ...filters, 
             ...newFilters, 
             page: 1 
@@ -56,46 +90,17 @@ export function DepartmentManagement({ departments, filters }: DepartmentManagem
             header: 'Departemen / Unit',
             accessorKey: 'name',
             sortable: true,
-            cell: (row) => (
-                <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-black/[0.03] dark:bg-white/[0.03] text-black/30 dark:text-white/30 group-hover:text-black dark:group-hover:text-white transition-colors border border-black/[0.05] dark:border-white/[0.05]">
-                        <Building2 size={16} />
-                    </div>
-                    <div className="flex flex-col min-w-0">
-                        <span className="text-[13px] font-bold text-black dark:text-white leading-tight mb-1 truncate">{row.name}</span>
-                        <div className="flex items-center gap-1.5 font-mono text-[10px] font-bold text-black/40 dark:text-white/40 uppercase tracking-widest leading-none">
-                            {row.code}
-                        </div>
-                    </div>
-                </div>
-            )
+            cell: (row) => <DeptCell name={row.name} code={row.code} />
         },
         {
             header: 'Deskripsi',
             accessorKey: 'description',
-            cell: (row) => (
-                <span className="text-[11px] font-bold text-black/40 dark:text-white/40 uppercase tracking-tight line-clamp-1 max-w-[300px]">
-                    {row.description || '—'}
-                </span>
-            )
+            cell: (row) => <DescriptionCell description={row.description} />
         },
         {
             header: 'Visibilitas',
             accessorKey: 'is_active',
-            cell: (row) => (
-                <div className="flex items-center gap-2">
-                    <div className={cn(
-                        "w-1.5 h-1.5 rounded-full shrink-0",
-                        row.is_active ? "bg-black dark:bg-white" : "bg-black/20 dark:bg-white/20"
-                    )} />
-                    <span className={cn(
-                        "text-[10px] font-black uppercase tracking-widest",
-                        row.is_active ? "text-black dark:text-white" : "text-black/30 dark:text-white/30"
-                    )}>
-                        {row.is_active ? 'TERLIHAT' : 'HIDDEN'}
-                    </span>
-                </div>
-            )
+            cell: (row) => <VisibilityCell isActive={row.is_active} />
         },
     ], []);
 
@@ -245,7 +250,7 @@ export function DepartmentManagement({ departments, filters }: DepartmentManagem
             searchKey="name"
             searchPlaceholder="Cari departemen..."
             searchValue={filters.search || ''}
-            onSearchChange={(v) => router.get(window.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })}
+            onSearchChange={(v) => router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })}
             filters={filterConfig as any}
             activeFilters={filters}
             onFilterChange={handleFilterChange}
@@ -282,8 +287,8 @@ export function DepartmentManagement({ departments, filters }: DepartmentManagem
                 from: departments.from || 1,
                 to: departments.to || 1,
                 perPage: departments.per_page || 10,
-                onPageChange: (page) => router.get(window.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
-                onPerPageChange: (pp) => router.get(window.location.pathname, { ...filters, per_page: pp, page: 1 }, { preserveState: true, preserveScroll: true }),
+                onPageChange: (page) => router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                onPerPageChange: (pp) => router.get(globalThis.location.pathname, { ...filters, per_page: pp, page: 1 }, { preserveState: true, preserveScroll: true }),
             }}
         />
     );

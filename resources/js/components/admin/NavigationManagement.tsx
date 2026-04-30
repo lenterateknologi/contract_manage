@@ -1,27 +1,54 @@
 import React, { useMemo } from 'react';
 import { Column, DataTable } from '@/components/ui/DataTable';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { useForm, router } from '@inertiajs/react';
-import { LayoutGrid, Pencil, Plus, Trash2, Link } from 'lucide-react';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useToast } from '@/components/contracts/Toast';
-import { cn } from '@/lib/utils';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 
 interface NavigationManagementProps {
-    groups: any;
-    modules: any;
-    isModuleView?: boolean;
-    filters: any;
+    readonly groups: any;
+    readonly modules: any;
+    readonly isModuleView?: boolean;
+    readonly filters: any;
 }
 
-export function NavigationManagement({ groups, modules, isModuleView = false, filters }: NavigationManagementProps) {
+const GroupNameCell = ({ name }: Readonly<{ name: string }>) => (
+    <div className="flex items-center gap-3">
+        <span className="font-bold">{name}</span>
+    </div>
+);
+
+const ModulesCountCell = ({ count }: Readonly<{ count: number }>) => (
+    <span className="text-[10px] font-black uppercase tracking-widest text-black/60 dark:text-white/60">
+        {count || 0} MODULS
+    </span>
+);
+
+const ModuleNameCell = ({ name, identifier }: Readonly<{ name: string; identifier: string }>) => (
+    <div className="flex flex-col">
+        <span className="font-bold truncate leading-tight">{name}</span>
+        <span className="text-[10px] font-bold text-black/40 dark:text-white/40 mt-1 uppercase tracking-widest">{identifier}</span>
+    </div>
+);
+
+const ModuleGroupCell = ({ groupId, groups, route }: Readonly<{ groupId: any; groups: any; route?: string }>) => {
+    const grps = (groups.data || groups);
+    const group = Array.isArray(grps) ? grps.find((g: any) => g.id === groupId) : null;
+    return (
+        <div className="flex items-center gap-3">
+            <span className="text-[10px] font-black text-black/60 dark:text-white/60 uppercase tracking-widest border-r border-black/10 dark:border-white/10 pr-3">{group?.name || 'GENERAL'}</span>
+            <span className="text-[10px] text-black/40 dark:text-white/40 font-bold font-mono tracking-tight">{route || '#'}</span>
+        </div>
+    );
+};
+
+export function NavigationManagement({ groups, modules, isModuleView = false, filters }: Readonly<NavigationManagementProps>) {
     const { showToast } = useToast();
     const { canCreate, canUpdate, canDelete } = usePermissions('NAV_MGMT');
     const [isModalOpen, setIsModalOpen] = React.useState(false);
@@ -50,17 +77,12 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
             accessorKey: 'name',
             sortable: true,
             className: 'font-bold text-black dark:text-white text-[13px]',
-            cell: (row) => (
-                <div className="flex items-center gap-3">
-                    <span className="font-bold">{row.name}</span>
-                </div>
-            )
+            cell: (row) => <GroupNameCell name={row.name} />
         },
-
         {
             header: 'Total Modul',
             accessorKey: 'modules_count',
-            cell: (row) => <span className="text-[10px] font-black uppercase tracking-widest text-black/60 dark:text-white/60">{row.modules_count || 0} MODULS</span>
+            cell: (row) => <ModulesCountCell count={row.modules_count} />
         }
     ], []);
 
@@ -70,26 +92,12 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
             accessorKey: 'name',
             sortable: true,
             className: 'font-bold text-black dark:text-white text-[13px]',
-            cell: (row) => (
-                <div className="flex flex-col">
-                    <span className="font-bold truncate leading-tight">{row.name}</span>
-                    <span className="text-[10px] font-bold text-black/40 dark:text-white/40 mt-1 uppercase tracking-widest">{row.identifier}</span>
-                </div>
-            )
+            cell: (row) => <ModuleNameCell name={row.name} identifier={row.identifier} />
         },
         {
             header: 'Grup / Navigasi',
             accessorKey: 'module_group_id',
-            cell: (row) => {
-                const grps = (groups.data || groups);
-                const group = Array.isArray(grps) ? grps.find((g:any) => g.id === row.module_group_id) : null;
-                return (
-                    <div className="flex items-center gap-3">
-                        <span className="text-[10px] font-black text-black/60 dark:text-white/60 uppercase tracking-widest border-r border-black/10 dark:border-white/10 pr-3">{group?.name || 'GENERAL'}</span>
-                        <span className="text-[10px] text-black/40 dark:text-white/40 font-bold font-mono tracking-tight">{row.route || '#'}</span>
-                    </div>
-                )
-            }
+            cell: (row) => <ModuleGroupCell groupId={row.module_group_id} groups={groups} route={row.route} />
         },
 
     ], [groups]);
@@ -179,8 +187,8 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
                     from: modules.meta.from || 1,
                     to: modules.meta.to || 1,
                     perPage: modules.meta.per_page || 10,
-                    onPageChange: (page) => router.get(window.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
-                    onPerPageChange: (pp) => router.get(window.location.pathname, { ...filters, per_page: pp, page: 1 }, { preserveState: true, preserveScroll: true }),
+                    onPageChange: (page) => router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                    onPerPageChange: (pp) => router.get(globalThis.location.pathname, { ...filters, per_page: pp, page: 1 }, { preserveState: true, preserveScroll: true }),
                 } : (groups && groups.meta ? {
                     currentPage: groups.meta.current_page || 1,
                     lastPage: groups.meta.last_page || 1,
@@ -188,8 +196,8 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
                     from: groups.meta.from || 1,
                     to: groups.meta.to || 1,
                     perPage: groups.meta.per_page || 10,
-                    onPageChange: (page) => router.get(window.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
-                    onPerPageChange: (pp) => router.get(window.location.pathname, { ...filters, per_page: pp, page: 1 }, { preserveState: true, preserveScroll: true }),
+                    onPageChange: (page) => router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                    onPerPageChange: (pp) => router.get(globalThis.location.pathname, { ...filters, per_page: pp, page: 1 }, { preserveState: true, preserveScroll: true }),
                 }: undefined)}
                 rowActions={(row) => (
                     <div className="flex items-center gap-1">

@@ -24,7 +24,7 @@ export function SearchableSelect({
     placeholder = 'Pilih...',
     className,
     error
-}: SearchableSelectProps) {
+}: Readonly<SearchableSelectProps>) {
     const [query, setQuery] = useState('');
 
     const selectedOption = options.find((opt) => String(opt.id) === String(value));
@@ -33,7 +33,7 @@ export function SearchableSelect({
         query === ''
             ? options
             : options.filter((opt) =>
-                  opt.name.toLowerCase().replace(/\s+/g, '').includes(query.toLowerCase().replace(/\s+/g, ''))
+                  opt.name.toLowerCase().includes(query.toLowerCase())
               );
 
     return (
@@ -62,7 +62,7 @@ export function SearchableSelect({
                             />
                         </ComboboxButton>
                     </div>
-                    
+
                     <Transition
                         as={Fragment}
                         leave="transition ease-in duration-100"

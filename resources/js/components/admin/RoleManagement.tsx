@@ -40,7 +40,7 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
 
     const handleFilterChange = (newFilters: Record<string, any>) => {
         router.get(
-            window.location.pathname,
+            globalThis.location.pathname,
             {
                 ...filters,
                 ...newFilters,
@@ -48,10 +48,6 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
             },
             { preserveState: true, replace: true },
         );
-    };
-
-    const handleReset = () => {
-        router.get(window.location.pathname, { search: filters.search }, { preserveState: true, replace: true });
     };
 
     const columns = useMemo<Column<any>[]>(
@@ -256,7 +252,9 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
             searchKey="name"
             searchPlaceholder="Cari role..."
             searchValue={filters.search || ''}
-            onSearchChange={(v) => router.get(window.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })}
+            onSearchChange={(v) =>
+                router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })
+            }
             filters={filterConfig as any}
             activeFilters={filters}
             onFilterChange={handleFilterChange}
@@ -297,9 +295,9 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                 from: roles.from || 1,
                 to: roles.to || 1,
                 perPage: roles.per_page || 10,
-                onPageChange: (page) => router.get(window.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                onPageChange: (page) => router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
                 onPerPageChange: (pp) =>
-                    router.get(window.location.pathname, { ...filters, per_page: pp, page: 1 }, { preserveState: true, preserveScroll: true }),
+                    router.get(globalThis.location.pathname, { ...filters, per_page: pp, page: 1 }, { preserveState: true, preserveScroll: true }),
             }}
         />
     );

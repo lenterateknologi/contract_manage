@@ -8,9 +8,8 @@ import { ToastProvider, useToast } from '@/components/contracts/Toast';
 import { FilterSheet } from '@/components/ui/FilterSheet';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
-import { SearchInput } from '@/components/ui/search-input';
 import { LayoutToggle, LayoutType } from '@/components/ui/layout-toggle';
+import { SearchInput } from '@/components/ui/search-input';
 import { contractApi } from '@/lib/contract-api';
 import { cn } from '@/lib/utils';
 import { Contract, ContractType, PaginatedData } from '@/types/contracts';
@@ -28,14 +27,12 @@ import {
     Download,
     Eye,
     FileEdit,
-    FileText,
     FileType,
     Filter,
     Layers,
     MoreVertical,
     PlusCircle,
     Save,
-    Search,
     Send,
     Trash2,
     Zap,
@@ -56,9 +53,14 @@ import { Column, DataTable } from '@/components/ui/DataTable';
 import LoadingLottie from '@/components/ui/LoadingLottie';
 import { usePermissions } from '@/hooks/use-permissions';
 
+const ensureArray = (val: any): any[] => {
+    if (Array.isArray(val)) return val;
+    return val ? [val] : [];
+};
+
 type View = 'dashboard' | 'contracts' | 'pending' | 'audit' | 'f1' | 'f2' | 'profile' | 'mine' | 'expiry';
 
-function ExpiryBadge({ endDate }: { endDate: string | null }) {
+function ExpiryBadge({ endDate }: Readonly<{ endDate: string | null }>) {
     if (!endDate) return null;
     const end = new Date(endDate);
     const now = new Date();
@@ -78,7 +80,6 @@ function ExpiryBadge({ endDate }: { endDate: string | null }) {
         color = 'bg-rose-50 text-rose-600 border-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20';
         icon = 'fa-triangle-exclamation';
     } else if (diffDays <= 90) {
-        color = 'bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20';
         color = 'text-amber-500';
         icon = 'fa-clock';
     }
@@ -109,12 +110,12 @@ const StatusBadge = ({ status }: { status: string }) => {
     return (
         <div className="inline-flex items-center gap-2 text-[12px] font-medium">
             <span className={cn('h-2 w-2 rounded-full', s.color)} />
-            <span className="text-black dark:text-white font-bold">{s.label}</span>
+            <span className="font-bold text-black dark:text-white">{s.label}</span>
         </div>
     );
 };
 
-const SLACountdown = ({ deadline, status }: { deadline: string | null; status: string }) => {
+const SLACountdown = ({ deadline, status }: Readonly<{ deadline: string | null; status: string }>) => {
     const [timeLeft, setTimeLeft] = useState<string>('');
     const [urgency, setUrgency] = useState<'normal' | 'warning' | 'danger'>('normal');
 
@@ -125,7 +126,7 @@ const SLACountdown = ({ deadline, status }: { deadline: string | null; status: s
         }
 
         const tick = () => {
-            const now = new Date().getTime();
+            const now = Date.now();
             const target = new Date(deadline).getTime();
             const diff = target - now;
 
@@ -153,327 +154,220 @@ const SLACountdown = ({ deadline, status }: { deadline: string | null; status: s
         return () => clearInterval(timer);
     }, [deadline, status]);
 
-    if (!deadline || status === 'archived' || status === 'approved') return <span className="text-black/40 dark:text-white/40 text-[10px]">—</span>;
+    if (!deadline || status === 'archived' || status === 'approved') return <span className="text-[10px] text-black/40 dark:text-white/40">—</span>;
+
+    const getUrgencyStyles = () => {
+        if (urgency === 'danger') {
+            return 'bg-rose-500/10 text-rose-600 ring-rose-500/20 dark:bg-rose-500/20 dark:text-rose-400';
+        }
+        if (urgency === 'warning') {
+            return 'bg-amber-500/10 text-amber-600 ring-amber-500/20 dark:bg-amber-500/20 dark:text-amber-400';
+        }
+        return 'bg-black/5 text-black ring-black/10 dark:bg-white/5 dark:text-white dark:ring-white/10';
+    };
 
     return (
-        <div
-            className={cn(
-                'flex w-fit items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-bold ring-1',
-                urgency === 'danger'
-                    ? 'bg-rose-500/10 text-rose-600 ring-rose-500/20 dark:bg-rose-500/20 dark:text-rose-400'
-                    : urgency === 'warning'
-                      ? 'bg-amber-500/10 text-amber-600 ring-amber-500/20 dark:bg-amber-500/20 dark:text-amber-400'
-                      : 'bg-black/5 text-black ring-black/10 dark:bg-white/5 dark:text-white dark:ring-white/10',
-            )}
-        >
+        <div className={cn('flex w-fit items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-bold ring-1', getUrgencyStyles())}>
             <Clock size={10} className={urgency === 'danger' ? 'animate-pulse' : ''} />
             {timeLeft}
         </div>
     );
 };
+const ContractInfoCell = ({ c }: Readonly<{ c: Contract }>) => (
+    <div className="flex flex-col">
+        <div className="flex items-center gap-2">
+            <span className="text-[13px] leading-tight font-bold text-black dark:text-white">{c.title}</span>
+            {!!c.current_version && (
+                <div className="flex-shrink-0 rounded bg-black px-1.5 py-0.5 dark:bg-white">
+                    <span className="text-[9px] font-black text-white uppercase dark:text-black">V{c.current_version}</span>
+                </div>
+            )}
+        </div>
+        <div className="mt-1.5 flex items-center gap-2">
+            <span className="text-[10px] font-bold tracking-wide text-black/50 uppercase dark:text-white/50">{c.contract_type}</span>
+            <span className="h-1 w-1 rounded-full bg-black/20 dark:bg-white/20" />
+            <span className="text-[10px] font-bold tracking-wide text-black/50 uppercase dark:text-white/50">{c.vendor?.name || 'No Vendor'}</span>
+        </div>
+    </div>
+);
 
-function ContractPage({
-    contracts: contractsPaged,
+const DepartmentCell = ({ c }: Readonly<{ c: Contract }>) => (
+    <span className="text-[11px] font-semibold tracking-wide text-black/60 uppercase dark:text-white/60">
+        {c.initiator?.department_name || 'UMUM'}
+    </span>
+);
+
+const ProgressCell = ({ c }: Readonly<{ c: Contract }>) => (
+    <span className="text-sidebar-foreground/90 text-[10px] font-bold tracking-tight">
+        {c.progress.done}/{c.progress.total}
+    </span>
+);
+
+const CreatedAtCell = ({ c }: Readonly<{ c: Contract }>) => (
+    <span className="text-[11px] font-medium text-black/40 dark:text-white/40">{c.created_at}</span>
+);
+
+const ContractNoCell = ({ c }: Readonly<{ c: Contract }>) => (
+    <span className="text-[11px] font-bold text-black/40 dark:text-white/40">{c.contract_no || 'N/A'}</span>
+);
+
+const TitleCell = ({ c }: Readonly<{ c: Contract }>) => (
+    <span className="line-clamp-1 text-[11px] font-bold text-black dark:text-white">{c.title}</span>
+);
+
+const TypeCell = ({ c, types }: Readonly<{ c: Contract; types: ContractType[] }>) => {
+    const type = types.find((t) => t.id === c.contract_type_id);
+    return <span className="text-[11px] font-medium text-black/60 dark:text-white/60">{type?.name || 'N/A'}</span>;
+};
+
+// Stable cell renderers to satisfy linting
+const renderContractNo = (c: Contract) => <ContractNoCell c={c} />;
+const renderTitle = (c: Contract) => <TitleCell c={c} />;
+const renderStatus = (c: Contract) => <StatusBadge status={c.status} />;
+const renderCreatedAt = (c: Contract) => <CreatedAtCell c={c} />;
+
+const BulkActions = ({
+    selectedRows,
+    canBulkApprove,
+    handleBulkApprove,
+    canBulkDelete,
+    handleBulkDelete,
+}: Readonly<{
+    selectedRows: Contract[];
+    canBulkApprove: boolean;
+    handleBulkApprove: (rows: Contract[]) => void;
+    canBulkDelete: boolean;
+    handleBulkDelete: (rows: Contract[]) => void;
+}>) => (
+    <div className="flex items-center gap-2">
+        {canBulkApprove && (
+            <Button
+                variant="outline"
+                size="sm"
+                className="h-8 border-black/10 px-3 dark:border-white/10"
+                onClick={() => handleBulkApprove(selectedRows)}
+            >
+                <Check className="mr-1.5 h-3 w-3" /> Approve
+            </Button>
+        )}
+        {canBulkDelete && (
+            <Button
+                variant="outline"
+                size="sm"
+                className="h-8 border-rose-500/20 px-3 text-rose-600 hover:bg-rose-600 hover:text-white"
+                onClick={() => handleBulkDelete(selectedRows)}
+            >
+                <Trash2 className="mr-1.5 h-3 w-3" /> Hapus
+            </Button>
+        )}
+    </div>
+);
+
+const RowActions = ({
+    c,
+    openDetail,
+    setSelected,
+    setEditOpen,
+    setDeleteOpen,
+}: Readonly<{
+    c: Contract;
+    openDetail: (c: Contract) => void;
+    setSelected: (c: Contract) => void;
+    setEditOpen: (open: boolean) => void;
+    setDeleteOpen: (open: boolean) => void;
+}>) => (
+    <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+            <Button
+                variant="ghost"
+                className="border-sidebar-border dark:bg-sidebar-accent/50 hover:bg-sidebar-accent group h-8 w-8 rounded-lg border bg-white p-0 transition-all"
+            >
+                <MoreVertical size={14} className="text-sidebar-foreground/40 group-hover:text-sidebar-primary" />
+            </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+            align="end"
+            className="border-sidebar-border dark:bg-sidebar-accent/90 w-52 rounded-xl bg-white p-1.5 shadow-2xl backdrop-blur-md"
+        >
+            <DropdownMenuItem
+                onClick={() => openDetail(c)}
+                className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-bold tracking-tight text-slate-600 uppercase"
+            >
+                <Eye size={14} /> Lihat Detail
+            </DropdownMenuItem>
+            <DropdownMenuItem
+                onClick={() => {
+                    setSelected(c);
+                    setEditOpen(true);
+                }}
+                className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-bold tracking-tight text-slate-600 uppercase"
+            >
+                <FileEdit size={14} /> Perbarui
+            </DropdownMenuItem>
+            <div className="my-1 h-px bg-slate-50" />
+            <DropdownMenuItem
+                onClick={() => {
+                    setSelected(c);
+                    setDeleteOpen(true);
+                }}
+                className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-bold tracking-tight text-rose-600 uppercase focus:bg-rose-50 focus:text-rose-600"
+            >
+                <Trash2 size={14} /> Hapus Data
+            </DropdownMenuItem>
+        </DropdownMenuContent>
+    </DropdownMenu>
+);
+const ContractDetailView = ({
+    contract,
     meId,
-    meUser,
-    initialSelected,
     types,
-    submissionTypes = [],
-    currentView,
-    metrics,
-    filters,
-    formTemplates = [],
-    users = [],
-    vendors = [],
-    departments = [],
-    roles = [],
+    submissionTypes,
+    vendors,
+    formTemplates,
+    canUpdate,
+    onClose,
+    onUpdate,
+    showToast,
+    setSendOpen,
+    setDeleteOpen,
+    setPreviewTitle,
+    setPreviewUrl,
+    setPreviewHasFile,
+    setPreviewOpen,
 }: {
-    contracts: PaginatedData<Contract>;
+    contract: Contract;
     meId: string;
-    meUser: any;
-    initialSelected?: Contract | null;
     types: ContractType[];
     submissionTypes: any[];
-    currentView: View;
-    metrics: any;
-    filters: {
-        search?: string;
-        status?: string;
-        contract_type_id?: string;
-        per_page?: number;
-        role_id?: string;
-        department_id?: string;
-        created_from?: string;
-        created_to?: string;
-    };
-    formTemplates?: any[];
-    users?: any[];
-    vendors?: any[];
-    departments?: any[];
-    roles?: any[];
-}) {
-    const contracts = contractsPaged.data;
-    const { showToast, showProgress, hideProgress } = useToast();
-    const { canUpdate, canBulkApprove, canBulkDelete } = usePermissions('CONTRACTS');
-
-    // PDF Queue States
-    const [isExportingTimeline, setIsExportingTimeline] = useState(false);
-    const [timelinePdfJobId, setTimelinePdfJobId] = useState<string | null>(null);
-    const [timelinePdfJobStatus, setTimelinePdfJobStatus] = useState<any>(null);
-    const [timelinePdfPreviewUrl, setTimelinePdfPreviewUrl] = useState<string | null>(null);
-
-    const [view, setView] = useState<View>(currentView);
-    const [selected, setSelected] = useState<Contract | null>(initialSelected ?? null);
-
-    // Sync view and selection when props change (Inertia navigation)
-    useEffect(() => {
-        if (currentView && currentView !== view) {
-            setView(currentView);
-        }
-    }, [currentView]);
-
-    useEffect(() => {
-        // Sync selected with initialSelected prop whenever it changes
-        setSelected(initialSelected ?? null);
-    }, [initialSelected]);
-
+    vendors: any[];
+    formTemplates: any[];
+    canUpdate: boolean;
+    onClose: () => void;
+    onUpdate: (c: Contract, silent?: boolean) => void;
+    showToast: (msg: string, type: any) => void;
+    setSendOpen: (open: boolean) => void;
+    setDeleteOpen: (open: boolean) => void;
+    setPreviewTitle: (title: string) => void;
+    setPreviewUrl: (url: string) => void;
+    setPreviewHasFile: (has: boolean) => void;
+    setPreviewOpen: (open: boolean) => void;
+}) => {
     const [detailTab, setDetailTab] = useState<'form_template' | 'f2' | 'agreement' | 'attachments' | 'audit' | 'chat' | 'timeline' | 'references'>(
         'form_template',
     );
-    const [search, setSearch] = useState(filters?.search || '');
-    const [approvalNote, setApprovalNote] = useState('');
-    const [filterOpen, setFilterOpen] = useState(false);
-    const [layout, setLayout] = useState<'table' | 'grid'>('table');
-
-    const handleFilterChange = useCallback(
-        (newFilters: any) => {
-            const merged = {
-                ...filters,
-                ...newFilters,
-            };
-            const query = Object.fromEntries(
-                Object.entries(merged).filter(([_, v]) => v !== undefined && v !== '' && (Array.isArray(v) ? v.length > 0 : true)),
-            ) as any;
-            router.get(window.location.pathname, query, { preserveState: true, preserveScroll: true, replace: true });
-        },
-        [filters],
-    );
-
-    const handleSingleFilterToggle = (key: string, value: any) => {
-        const f = filters as any;
-        const current: any[] = f[key] ? (Array.isArray(f[key]) ? f[key] : [f[key]]) : [];
-        const stringValue = String(value);
-        const newValues = current.includes(stringValue) ? current.filter((v: any) => String(v) !== stringValue) : [...current, stringValue];
-        handleFilterChange({ [key]: newValues });
-    };
-
-    const handleClearAllFilters = () => {
-        router.get(window.location.pathname, { view: currentView }, { preserveState: true, preserveScroll: true });
-    };
-
-    useEffect(() => {
-        if (search === (filters?.search || '')) return;
-        const timer = setTimeout(() => handleFilterChange({ search }), 500);
-        return () => clearTimeout(timer);
-    }, [search, handleFilterChange, filters?.search]);
-
-    const [createOpen, setCreateOpen] = useState(false);
-    const [rejectOpen, setRejectOpen] = useState(false);
-    const [sendOpen, setSendOpen] = useState(false);
-    const [previewOpen, setPreviewOpen] = useState(false);
-    const [previewTitle, setPreviewTitle] = useState('');
-    const [previewUrl, setPreviewUrl] = useState('');
-    const [previewHasFile, setPreviewHasFile] = useState(false);
-    const [editOpen, setEditOpen] = useState(false);
-    const [deleteOpen, setDeleteOpen] = useState(false);
     const [processing, setProcessing] = useState(false);
+    const { showProgress, hideProgress } = useToast();
 
-    const columns = useMemo<Column<Contract>[]>(() => {
-        const baseColumns: Column<Contract>[] = [
-            {
-                header: 'No. Pengajuan',
-                accessorKey: 'contract_no',
-                sortable: true,
-                className: 'font-mono text-[11px] font-semibold text-black dark:text-white',
-            },
-            {
-                header: 'Informasi Kontrak',
-                accessorKey: 'title',
-                sortable: true,
-                cell: (c) => (
-                    <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                            <span className="text-[13px] leading-tight font-bold text-black dark:text-white">{c.title}</span>
-                            {c.current_version && (
-                                <div className="rounded bg-black dark:bg-white px-1.5 py-0.5 flex-shrink-0">
-                                    <span className="text-[9px] font-black text-white dark:text-black uppercase">V{c.current_version}</span>
-                                </div>
-                            )}
-                        </div>
-                        <div className="mt-1.5 flex items-center gap-2">
-                            <span className="text-[10px] font-bold tracking-wide text-black/50 dark:text-white/50 uppercase">{c.contract_type}</span>
-                            <span className="h-1 w-1 rounded-full bg-black/20 dark:bg-white/20" />
-                            <span className="text-[10px] font-bold tracking-wide text-black/50 dark:text-white/50 uppercase">{c.vendor?.name || 'No Vendor'}</span>
-                        </div>
-                    </div>
-                ),
-            },
-            {
-                header: 'Departemen',
-                accessorKey: 'initiator.department_name',
-                sortable: true,
-                cell: (c) => (
-                    <span className="text-[11px] font-semibold tracking-wide text-black/60 dark:text-white/60 uppercase">{c.initiator?.department_name || 'UMUM'}</span>
-                ),
-            },
-            { header: 'Status', accessorKey: 'status', sortable: true, cell: (c) => <StatusBadge status={c.status} /> },
-            {
-                header: 'Progress',
-                accessorKey: 'progress',
-                sortable: true,
-                cell: (c) => (
-                    <span className="text-sidebar-foreground/90 text-[10px] font-bold tracking-tight">
-                        {c.progress.done}/{c.progress.total}
-                    </span>
-                ),
-            },
-            { header: 'SLA Sisa', accessorKey: 'sla_deadline', sortable: true, cell: (c) => <SLACountdown deadline={c.sla_deadline ?? null} status={c.status} /> },
-        ];
-        baseColumns.push({
-            header: 'Tgl Dibuat',
-            accessorKey: 'created_at',
-            sortable: true,
-            className: 'text-black/40 dark:text-white/40 text-[11px] font-medium',
-            cell: (c) => c.created_at,
-        });
-        return baseColumns;
-    }, [view]);
-
-    const renderRowActions = useCallback(
-        (c: Contract) => (
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button
-                        variant="ghost"
-                        className="border-sidebar-border dark:bg-sidebar-accent/50 hover:bg-sidebar-accent group h-8 w-8 rounded-lg border bg-white p-0 transition-all"
-                    >
-                        <MoreVertical size={14} className="text-sidebar-foreground/40 group-hover:text-sidebar-primary" />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                    align="end"
-                    className="border-sidebar-border dark:bg-sidebar-accent/90 w-52 rounded-xl bg-white p-1.5 shadow-2xl backdrop-blur-md"
-                >
-                    <DropdownMenuItem
-                        onClick={() => openDetail(c)}
-                        className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-bold tracking-tight text-slate-600 uppercase"
-                    >
-                        <Eye size={14} /> Lihat Detail
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                        onClick={() => {
-                            setSelected(c);
-                            setEditOpen(true);
-                        }}
-                        className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-bold tracking-tight text-slate-600 uppercase"
-                    >
-                        <FileEdit size={14} /> Perbarui
-                    </DropdownMenuItem>
-                    <div className="my-1 h-px bg-slate-50" />
-                    <DropdownMenuItem
-                        onClick={() => {
-                            setSelected(c);
-                            setDeleteOpen(true);
-                        }}
-                        className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-bold tracking-tight text-rose-600 uppercase focus:bg-rose-50 focus:text-rose-600"
-                    >
-                        <Trash2 size={14} /> Hapus Data
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-        ),
-        [],
-    );
-
-    const updateContract = useCallback(
-        (c: Contract, silent = false) => {
-            if (!silent) router.reload({ preserveScroll: true, preserveState: true } as any);
-            if (selected?.id === c.id) setSelected(c);
-        },
-        [selected?.id],
-    );
-
-    const openDetail = (c: Contract) => {
-        setSelected(c);
-        router.get(route('contracts.show', c.id), {}, { preserveState: true, preserveScroll: true });
-        setDetailTab('form_template');
-        setApprovalNote('');
-    };
-
-    const closeDetail = () => {
-        setSelected(null);
-        router.get(route('contracts'), {}, { preserveState: true, preserveScroll: true });
-        setDetailTab('form_template');
-    };
-
-    const pendingApprovalForMe = selected?.approvals.find((a) => a.status === 'pending' && a.user_id === meId);
-    const firstPending = selected?.approvals.find((a) => a.status === 'pending');
-    const hasAnyPending = !!firstPending;
-    const [approversExpanded, setApproversExpanded] = useState(false);
-    const canApprove = (selected?.status === 'in_review' || selected?.status === 'revision') && !!pendingApprovalForMe;
-
-    const handleCreate = async (fd: FormData) => {
-        try {
-            const newContract = await contractApi.create(fd);
-            router.visit(route('contracts.show', { id: newContract.id }));
-            showToast('Kontrak berhasil dibuat!', 'success');
-        } catch (err: any) {
-            showToast(err.response?.data?.message || 'Gagal membuat kontrak.', 'danger');
-        }
-    };
-
-    const handleApprove = async () => {
-        if (!selected) return;
-        if (approvalNote.length < 10) {
-            showToast('Catatan wajib diisi minimal 10 karakter.', 'info');
-            return;
-        }
-        try {
-            const c = await contractApi.approve(selected.id, approvalNote);
-            updateContract(c);
-            setApprovalNote('');
-            showToast('Kontrak berhasil disetujui!', 'success');
-        } catch {
-            showToast('Gagal approve.', 'danger');
-        }
-    };
-
-    const handleReject = async () => {
-        if (!selected) return;
-        if (approvalNote.length < 10) {
-            showToast('Catatan penolakan wajib diisi minimal 10 karakter.', 'info');
-            return;
-        }
-        try {
-            const c = await contractApi.reject(selected.id, approvalNote);
-            updateContract(c);
-            setApprovalNote('');
-            showToast('Kontrak ditolak.', 'info');
-        } catch {
-            showToast('Gagal reject.', 'danger');
-        }
-    };
+    // Export Logic
+    const [isExportingTimeline, setIsExportingTimeline] = useState(false);
 
     const handleExportTimelinePdf = async () => {
-        if (!selected) return;
         setIsExportingTimeline(true);
-        setTimelinePdfJobStatus({ progress: 0, status: 'pending' });
 
         // Open window immediately to avoid pop-up blocker
-        const win = window.open('about:blank', '_blank');
-        (window as any)._timelineWindow = win;
+        const win = globalThis.window.open('about:blank', '_blank');
         if (win) {
-            win.document.write(`
+            win.document.writeln(`
                 <html>
                     <head>
                         <title>Mempersiapkan Alur Approval...</title>
@@ -499,13 +393,12 @@ function ContractPage({
         }
 
         try {
-            const res = await axios.get(`/api/contracts/${selected.id}/approval/pdf/queue`, {
+            const res = await axios.get(`/api/contracts/${contract.id}/approval/pdf/queue`, {
                 headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' },
                 withCredentials: true,
             });
 
             const jobId = res.data.job_id;
-            setTimelinePdfJobId(jobId);
 
             const interval = setInterval(async () => {
                 try {
@@ -514,31 +407,24 @@ function ContractPage({
                         withCredentials: true,
                     });
                     const statusData = statusRes.data;
-                    setTimelinePdfJobStatus(statusData);
 
                     showProgress(jobId, 'Mempersiapkan Laporan Approval...', statusData.progress || 0);
 
                     if (statusData.status === 'completed') {
                         clearInterval(interval);
-                        if ((window as any)._timelineWindow) {
-                            (window as any)._timelineWindow.location.href = statusData.url;
-                            (window as any)._timelineWindow = null;
+                        if (win) {
+                            win.location.href = statusData.url;
                         } else {
-                            window.open(statusData.url, '_blank');
+                            globalThis.window.open(statusData.url, '_blank');
                         }
-                        setIsExportingTimeline(false);
-                        setTimelinePdfJobId(null);
                         hideProgress(jobId);
+                        setIsExportingTimeline(false);
                     } else if (statusData.status === 'failed') {
                         clearInterval(interval);
-                        setIsExportingTimeline(false);
-                        setTimelinePdfJobId(null);
                         hideProgress(jobId);
                         showToast('Export PDF gagal: ' + (statusData.error || 'Unknown error'), 'danger');
-                        if ((window as any)._timelineWindow) {
-                            (window as any)._timelineWindow.close();
-                            (window as any)._timelineWindow = null;
-                        }
+                        if (win) win.close();
+                        setIsExportingTimeline(false);
                     }
                 } catch (pollErr) {
                     console.error('Polling error', pollErr);
@@ -546,25 +432,386 @@ function ContractPage({
             }, 2000);
         } catch (err: any) {
             console.error('Export failed', err);
-            setIsExportingTimeline(false);
             showToast('Gagal mengekspor PDF.', 'danger');
+            setIsExportingTimeline(false);
+            if (win) win.close();
         }
     };
 
     const handleUpdate = async (data: any, silent = false) => {
-        if (!selected) return;
         if (!silent) setProcessing(true);
         try {
-            const c = await contractApi.update(selected.id, data);
-            updateContract(c, silent);
-            if (!silent) {
-                setEditOpen(false);
-                showToast('Informasi kontrak diperbarui.', 'success');
-            }
+            const c = await contractApi.update(contract.id, data);
+            onUpdate(c, silent);
+            if (!silent) showToast('Informasi kontrak diperbarui.', 'success');
         } catch {
             if (!silent) showToast('Gagal memperbarui kontrak.', 'danger');
         } finally {
             if (!silent) setProcessing(false);
+        }
+    };
+
+    const handleApprove = async () => {
+        const note = prompt('Masukkan catatan approval (opsional):');
+        if (note === null) return;
+        try {
+            const c = await contractApi.approve(contract.id, note);
+            onUpdate(c);
+            showToast('Kontrak disetujui.', 'success');
+        } catch {
+            showToast('Gagal approve.', 'danger');
+        }
+    };
+
+    const handleReject = async () => {
+        const note = prompt('Masukkan alasan penolakan (wajib):');
+        if (!note) return;
+        try {
+            const c = await contractApi.reject(contract.id, note);
+            onUpdate(c);
+            showToast('Kontrak ditolak.', 'info');
+        } catch {
+            showToast('Gagal reject.', 'danger');
+        }
+    };
+
+    const pendingApprovalForMe = contract.approvals.find((a) => a.status === 'pending' && a.user_id === meId);
+    const canApprove = (contract.status === 'in_review' || contract.status === 'revision') && !!pendingApprovalForMe;
+
+    return (
+        <div className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-6 p-4">
+            <div className="flex flex-col gap-2 px-1 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-6">
+                    <button
+                        onClick={onClose}
+                        className="flex items-center gap-2 text-black transition-all hover:opacity-70 active:scale-95 dark:text-white"
+                    >
+                        <ChevronLeft size={20} strokeWidth={2.5} />
+                        <span className="text-[10px] font-bold tracking-widest uppercase">Kembali</span>
+                    </button>
+                    <div className="h-10 w-px bg-black/10 dark:bg-white/10" />
+                    <div className="flex flex-col">
+                        <div className="flex items-center gap-3">
+                            <h2 className="text-lg leading-none font-bold tracking-tight text-black uppercase dark:text-white">{contract.title}</h2>
+                            <StatusBadge status={contract.status} />
+                        </div>
+                        <span className="mt-1.5 text-[10px] font-bold tracking-[0.2em] text-black/40 uppercase dark:text-white/40">
+                            #{contract.contract_no || 'NO-REQ'}
+                        </span>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2">
+                    {contract.status === 'draft' && (
+                        <Button variant="primary" onClick={() => setSendOpen(true)} className="h-10 px-6 active:scale-95">
+                            <Send size={14} /> Kirim Approval
+                        </Button>
+                    )}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="icon" className="h-10 w-10 active:scale-95">
+                                <MoreVertical size={18} />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                            align="end"
+                            className="dark:bg-sidebar w-56 rounded-xl border-black/10 bg-white p-1.5 shadow-2xl dark:border-white/10"
+                        >
+                            <div className="mb-1 px-2 py-1.5">
+                                <p className="text-[10px] font-bold tracking-widest text-black/40 uppercase dark:text-white/40">Opsi Kontrak</p>
+                            </div>
+                            <DropdownMenuItem
+                                onClick={() => handleUpdate({}, true)}
+                                className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-bold tracking-tight text-black uppercase focus:bg-black/5 dark:text-white dark:focus:bg-white/5"
+                            >
+                                <Save size={14} className="text-black dark:text-white" /> Paksa Simpan (Force Sync)
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-bold tracking-tight text-black uppercase focus:bg-black/5 dark:text-white dark:focus:bg-white/5">
+                                <Archive size={14} className="text-black/40 dark:text-white/40" /> Arsipkan Kontrak
+                            </DropdownMenuItem>
+                            <div className="my-1.5 h-px bg-black/10 dark:bg-white/10" />
+                            <DropdownMenuItem
+                                onClick={() => setDeleteOpen(true)}
+                                className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-bold tracking-tight text-rose-500 uppercase focus:bg-rose-500 focus:text-white"
+                            >
+                                <Trash2 size={14} /> Hapus Kontrak
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+            </div>
+            <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[1fr_400px]">
+                <div className="flex flex-col gap-6">
+                    <div className="dark:bg-sidebar overflow-hidden rounded-xl bg-white shadow-sm">
+                        <div className="flex flex-wrap gap-1 bg-black/[0.02] p-1.5 dark:bg-white/[0.02]">
+                            {[
+                                { id: 'form_template', label: 'F1' },
+                                { id: 'f2', label: 'F2' },
+                                { id: 'agreement', label: 'Agreement' },
+                                { id: 'attachments', label: 'Lampiran' },
+                                { id: 'audit', label: 'Audit Trail' },
+                                { id: 'timeline', label: 'Alur Approval' },
+                                { id: 'references', label: 'Referensi' },
+                                { id: 'chat', label: 'Chat' },
+                            ].map((tab) => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setDetailTab(tab.id as any)}
+                                    className={cn(
+                                        'rounded-lg px-4 py-2 text-[9px] font-black tracking-[0.2em] uppercase transition-all duration-300',
+                                        detailTab === tab.id
+                                            ? 'z-10 scale-105 bg-[var(--primary)] text-white shadow-xl dark:bg-white dark:text-[var(--primary)] dark:shadow-white/10'
+                                            : 'text-black/30 hover:bg-black/5 hover:text-black dark:text-white/30 dark:hover:bg-white/5 dark:hover:text-white',
+                                    )}
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
+                        <div className={cn('flex min-h-[600px] flex-1 flex-col', detailTab !== 'agreement' && 'p-5')}>
+                            {detailTab === 'form_template' && (
+                                <FormSubmissionTab docType="f1" selected={contract} formTemplates={formTemplates} onContractUpdated={onUpdate} />
+                            )}
+                            {detailTab === 'f2' && (
+                                <FormSubmissionTab docType="f2" selected={contract} formTemplates={formTemplates} onContractUpdated={onUpdate} />
+                            )}
+                            {detailTab === 'agreement' && <AgreementView contract={contract} onUpdate={onUpdate} />}
+                            {detailTab === 'attachments' && <ContractAttachments contract={contract} onUpdated={onUpdate} showToast={showToast} />}
+                            {detailTab === 'audit' && <ContractAuditTrail contract={contract} />}
+                            {detailTab === 'timeline' && (
+                                <div className="flex flex-col gap-8">
+                                    <div className="flex flex-col gap-6 rounded-2xl border border-black/5 bg-black/[0.01] p-6 dark:border-white/5 dark:bg-white/[0.01]">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex flex-col gap-1">
+                                                <h4 className="text-[10px] font-black tracking-widest text-black/40 uppercase dark:text-white/40">
+                                                    Status Approval
+                                                </h4>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500" />
+                                                    <p className="text-[11px] font-bold text-black dark:text-white">
+                                                        Sedang dalam peninjauan oleh tim terkait
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={handleExportTimelinePdf}
+                                                disabled={isExportingTimeline}
+                                                className="h-8 border-black/10 px-3 text-[10px] font-bold tracking-wider uppercase transition-all active:scale-95 dark:border-white/10"
+                                            >
+                                                {isExportingTimeline ? (
+                                                    <>
+                                                        <div className="mr-2 h-3 w-3 animate-spin rounded-full border-2 border-black/20 border-t-black dark:border-white/20 dark:border-t-white" />
+                                                        Exporting...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Download size={12} className="mr-1.5" /> Export PDF
+                                                    </>
+                                                )}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    <ApprovalSteps
+                                        contract={contract}
+                                        approvals={contract.approvals}
+                                        creator={contract.creator}
+                                        submittedAt={contract.submitted_at ?? undefined}
+                                    />
+                                </div>
+                            )}
+                            {detailTab === 'references' && (
+                                <ContractReferenceCard
+                                    selected={contract}
+                                    canUpdate={canUpdate}
+                                    onUpdate={(d) => handleUpdate(d, true)}
+                                    processing={processing}
+                                />
+                            )}
+                            {detailTab === 'chat' && <ContractChat contract={contract} meId={meId} users={vendors} onNewMessage={onUpdate} />}
+                        </div>
+                    </div>
+                </div>
+                <div className="flex flex-col gap-4">
+                    {canApprove && (
+                        <div className="flex flex-col gap-4 overflow-hidden rounded-2xl border border-black/10 bg-white p-6 shadow-xl dark:border-white/10 dark:bg-black">
+                            <div className="flex items-center gap-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:bg-blue-400/10 dark:text-blue-400">
+                                    <Zap size={20} />
+                                </div>
+                                <div className="flex flex-col gap-0.5">
+                                    <h3 className="text-[12px] font-black tracking-tight text-black uppercase dark:text-white">
+                                        Approval Dibutuhkan
+                                    </h3>
+                                    <p className="text-[10px] font-medium text-black/40 dark:text-white/40">
+                                        Anda terdaftar sebagai salah satu reviewer
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex flex-col gap-2 pt-2">
+                                <Button variant="primary" onClick={handleApprove} className="h-11 w-full font-bold shadow-lg shadow-blue-500/20">
+                                    <CheckCircle2 size={16} /> Setujui Kontrak
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={handleReject}
+                                    className="h-11 w-full border-black/10 font-bold hover:bg-rose-500 hover:text-white dark:border-white/10"
+                                >
+                                    <AlertCircle size={16} /> Kembalikan / Tolak
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                    <DraftEditableInfoCard
+                        selected={contract}
+                        types={types}
+                        submissionTypes={submissionTypes}
+                        vendors={vendors}
+                        formTemplates={formTemplates}
+                        canUpdate={canUpdate}
+                        onUpdate={(d) => handleUpdate(d, true)}
+                        processing={processing}
+                        setPreviewTitle={setPreviewTitle}
+                        setPreviewUrl={setPreviewUrl}
+                        setPreviewHasFile={setPreviewHasFile}
+                        setPreviewOpen={setPreviewOpen}
+                    />
+                </div>
+            </div>
+        </div>
+    );
+};
+
+function ContractPage({
+    contracts: contractsPaged,
+    meId,
+    meUser,
+    initialSelected,
+    types,
+    submissionTypes = [],
+    currentView,
+    metrics,
+    filters,
+    formTemplates = [],
+    users = [],
+    vendors = [],
+    departments = [],
+    roles = [],
+}: Readonly<{
+    contracts: PaginatedData<Contract>;
+    meId: string;
+    meUser: any;
+    initialSelected?: Contract | null;
+    types: ContractType[];
+    submissionTypes: any[];
+    currentView: View;
+    metrics: any;
+    filters: {
+        search?: string;
+        status?: string;
+        contract_type_id?: string;
+        per_page?: number;
+        role_id?: string;
+        department_id?: string;
+        created_from?: string;
+        created_to?: string;
+    };
+    formTemplates?: any[];
+    users?: any[];
+    vendors?: any[];
+    departments?: any[];
+    roles?: any[];
+}>) {
+    const { showToast } = useToast();
+    const { canUpdate } = usePermissions('CONTRACTS');
+    const [view, setView] = useState<View>(currentView);
+    const [selected, setSelected] = useState<Contract | null>(initialSelected ?? null);
+    const [search, setSearch] = useState(filters?.search || '');
+    const [filterOpen, setFilterOpen] = useState(false);
+    const [createOpen, setCreateOpen] = useState(false);
+    const [editOpen, setEditOpen] = useState(false);
+    const [deleteOpen, setDeleteOpen] = useState(false);
+    const [sendOpen, setSendOpen] = useState(false);
+    const [processing, setProcessing] = useState(false);
+    const [previewOpen, setPreviewOpen] = useState(false);
+    const [previewTitle, setPreviewTitle] = useState('');
+    const [previewUrl, setPreviewUrl] = useState('');
+    const [previewHasFile, setPreviewHasFile] = useState(false);
+    const [timelinePdfPreviewUrl, setTimelinePdfPreviewUrl] = useState<string | null>(null);
+
+    const [layout, setLayout] = useState<'table' | 'grid'>('table');
+
+    useEffect(() => {
+        if (currentView && currentView !== view) setView(currentView);
+    }, [currentView, view]);
+
+    useEffect(() => {
+        setSelected(initialSelected ?? null);
+    }, [initialSelected]);
+
+    const handleFilterChange = useCallback(
+        (newFilters: any) => {
+            const merged = { ...filters, ...newFilters };
+            const query = Object.fromEntries(
+                Object.entries(merged).filter(([_, v]) => v !== undefined && v !== '' && (Array.isArray(v) ? v.length > 0 : true)),
+            ) as any;
+            router.get(globalThis.location.pathname, query, { preserveState: true, preserveScroll: true, replace: true });
+        },
+        [filters],
+    );
+
+    const updateContract = useCallback(
+        (c: Contract, silent = false) => {
+            if (!silent) router.reload({ preserveScroll: true, preserveState: true } as any);
+            if (selected?.id === c.id) setSelected(c);
+        },
+        [selected?.id],
+    );
+
+    const openDetail = (c: Contract) => {
+        setSelected(c);
+        router.get(route('contracts.show', c.id), {}, { preserveState: true, preserveScroll: true });
+    };
+
+    const closeDetail = () => {
+        setSelected(null);
+        router.get(route('contracts'), {}, { preserveState: true, preserveScroll: true });
+    };
+
+    const activeFiltersCount = useMemo(() => {
+        const getCount = (val: any) => {
+            if (Array.isArray(val)) return val.length;
+            return val ? 1 : 0;
+        };
+        return getCount(filters.status) + getCount(filters.contract_type_id);
+    }, [filters.status, filters.contract_type_id]);
+
+    const handleCreate = async (data: any) => {
+        setProcessing(true);
+        try {
+            await contractApi.create(data);
+            showToast('Kontrak baru berhasil dibuat.', 'success');
+            setCreateOpen(false);
+            router.reload();
+        } catch {
+            showToast('Gagal membuat kontrak.', 'danger');
+        } finally {
+            setProcessing(false);
+        }
+    };
+
+    const handleUpdateFromList = async (data: any) => {
+        if (!selected) return;
+        setProcessing(true);
+        try {
+            await contractApi.update(selected.id, data);
+            showToast('Kontrak berhasil diperbarui.', 'success');
+            setEditOpen(false);
+            router.reload();
+        } catch {
+            showToast('Gagal memperbarui kontrak.', 'danger');
+        } finally {
+            setProcessing(false);
         }
     };
 
@@ -573,10 +820,10 @@ function ContractPage({
         setProcessing(true);
         try {
             await contractApi.delete(selected.id);
-            router.reload({ preserveScroll: true } as any);
-            setSelected(null);
-            setDeleteOpen(false);
             showToast('Kontrak berhasil dihapus.', 'success');
+            setDeleteOpen(false);
+            setSelected(null);
+            router.reload();
         } catch {
             showToast('Gagal menghapus kontrak.', 'danger');
         } finally {
@@ -586,226 +833,140 @@ function ContractPage({
 
     const handleSendSubmit = async (data: any) => {
         if (!selected) return;
-        try {
-            const c = await contractApi.send(selected.id, data);
-            updateContract(c);
-            showToast('Kontrak berhasil dikirim untuk approval!', 'success');
-        } catch (err: any) {
-            showToast(err.response?.data?.message || 'Gagal mengirim kontrak.', 'danger');
-        }
-    };
-
-    const handleBulkDelete = async (selectedContracts: Contract[]) => {
-        if (!confirm(`Hapus ${selectedContracts.length} kontrak terpilih?`)) return;
         setProcessing(true);
         try {
-            await axios.post('/api/contracts/bulk-delete', { ids: selectedContracts.map(c => c.id) });
-            router.reload({ preserveScroll: true, preserveState: true } as any);
-            showToast(`${selectedContracts.length} kontrak berhasil dihapus.`, 'success');
-        } catch (err: any) {
-            showToast('Gagal menghapus beberapa kontrak.', 'danger');
+            await contractApi.send(selected.id, data);
+            showToast('Kontrak berhasil dikirim untuk approval.', 'success');
+            setSendOpen(false);
+            router.reload();
+        } catch {
+            showToast('Gagal mengirim approval.', 'danger');
         } finally {
             setProcessing(false);
         }
     };
 
-    const handleBulkApprove = async (selectedContracts: Contract[]) => {
-        const note = prompt(`Masukkan catatan untuk ${selectedContracts.length} kontrak yang akan disetujui:`);
-        if (note === null) return;
-        if (note.length < 10) {
-            showToast('Catatan wajib diisi minimal 10 karakter.', 'info');
-            return;
-        }
+    const canBulkApprove = !!meUser?.is_admin;
+    const canBulkDelete = !!meUser?.is_admin;
+
+    const handleBulkApprove = async (rows: Contract[]) => {
+        if (!confirm(`Setujui ${rows.length} kontrak terpilih?`)) return;
         setProcessing(true);
         try {
-            await axios.post('/api/contracts/bulk-approve', { ids: selectedContracts.map(c => c.id), note });
-            router.reload({ preserveScroll: true, preserveState: true } as any);
-            showToast(`${selectedContracts.length} kontrak berhasil disetujui.`, 'success');
-        } catch (err: any) {
-            showToast('Gagal menyetujui beberapa kontrak.', 'danger');
+            await Promise.all(rows.map((r) => contractApi.approve(r.id, 'Bulk Approval')));
+            showToast('Bulk approval berhasil.', 'success');
+            router.reload();
+        } catch {
+            showToast('Gagal melakukan bulk approval.', 'danger');
         } finally {
             setProcessing(false);
         }
     };
+
+    const handleBulkDelete = async (rows: Contract[]) => {
+        if (!confirm(`Hapus ${rows.length} kontrak terpilih?`)) return;
+        setProcessing(true);
+        try {
+            await Promise.all(rows.map((r) => contractApi.delete(r.id)));
+            showToast('Bulk delete berhasil.', 'success');
+            router.reload();
+        } catch {
+            showToast('Gagal melakukan bulk delete.', 'danger');
+        } finally {
+            setProcessing(false);
+        }
+    };
+
+    const handleSingleFilterToggle = (key: string, value: any) => {
+        const f = filters as any;
+        const currentValues = ensureArray(f[key]);
+        const stringValue = String(value);
+        const newValues = currentValues.includes(stringValue)
+            ? currentValues.filter((v: any) => String(v) !== stringValue)
+            : [...currentValues, stringValue];
+        handleFilterChange({ [key]: newValues });
+    };
+
+    const handleClearAllFilters = () => {
+        handleFilterChange({ status: [], contract_type_id: [], department_id: [], created_from: '', created_to: '' });
+    };
+
+    const renderBulkActions = useCallback(
+        (selectedRows: Contract[]) => (
+            <BulkActions
+                selectedRows={selectedRows}
+                canBulkApprove={canBulkApprove}
+                handleBulkApprove={handleBulkApprove}
+                canBulkDelete={canBulkDelete}
+                handleBulkDelete={handleBulkDelete}
+            />
+        ),
+        [canBulkApprove, handleBulkApprove, canBulkDelete, handleBulkDelete],
+    );
+
+    const renderRowActions = useCallback(
+        (row: Contract) => (
+            <RowActions c={row} openDetail={openDetail} setSelected={setSelected} setEditOpen={setEditOpen} setDeleteOpen={setDeleteOpen} />
+        ),
+        [openDetail, setSelected, setEditOpen, setDeleteOpen],
+    );
+
+    const renderType = useCallback((c: Contract) => <TypeCell c={c} types={types} />, [types]);
+
+    const columns: Column<Contract>[] = useMemo(
+        () => [
+            {
+                accessorKey: 'contract_no',
+                header: 'No. Kontrak',
+                cell: renderContractNo,
+            },
+            {
+                accessorKey: 'title',
+                header: 'Judul Kontrak',
+                cell: renderTitle,
+            },
+            {
+                accessorKey: 'contract_type_id',
+                header: 'Tipe',
+                cell: renderType,
+            },
+            {
+                accessorKey: 'status',
+                header: 'Status',
+                cell: renderStatus,
+            },
+            {
+                accessorKey: 'created_at',
+                header: 'Dibuat',
+                cell: renderCreatedAt,
+            },
+        ],
+        [types],
+    );
 
     return (
         <>
-            <Head title={currentView} />
+            <Head title={view} />
             <div className="bg-background dark:bg-background/50 flex min-h-0 flex-1 flex-col">
                 {selected ? (
-                    <div className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-6 p-4">
-                        <div className="flex flex-col gap-2 px-1 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="flex items-center gap-6">
-                                <button
-                                    onClick={closeDetail}
-                                    className="flex items-center gap-2 text-black transition-all hover:opacity-70 active:scale-95 dark:text-white"
-                                >
-                                    <ChevronLeft size={20} strokeWidth={2.5} />
-                                    <span className="text-[10px] font-bold tracking-widest uppercase">Kembali</span>
-                                </button>
-
-                                <div className="h-10 w-px bg-black/10 dark:bg-white/10" />
-
-                                <div className="flex flex-col">
-                                    <div className="flex items-center gap-3">
-                                        <h2 className="text-lg leading-none font-bold tracking-tight text-black uppercase dark:text-white">
-                                            {selected.title}
-                                        </h2>
-                                        <StatusBadge status={selected.status} />
-                                    </div>
-                                    <span className="mt-1.5 text-[10px] font-bold tracking-[0.2em] text-black/40 uppercase dark:text-white/40">
-                                        #{selected.contract_no || 'NO-REQ'}
-                                    </span>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                {/* {canUpdate && selected.status === 'draft' && (
-                                    <button onClick={() => setEditOpen(true)} className="bg-card border-border hover:bg-muted inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-xs font-bold transition-all active:scale-95 shadow-sm">
-                                        <i className="fa-solid fa-pen-to-square" /> Edit Kontrak
-                                    </button>
-                                )} */}
-                                {selected.status === 'draft' && (
-                                    <Button
-                                        variant="primary"
-                                        onClick={() => setSendOpen(true)}
-                                        className="h-10 px-6 active:scale-95"
-                                    >
-                                        <Send size={14} /> Kirim Approval
-                                    </Button>
-                                )}
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="outline" size="icon" className="h-10 w-10 active:scale-95">
-                                            <MoreVertical size={18} />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent
-                                        align="end"
-                                        className="dark:bg-sidebar w-56 rounded-xl border-black/10 bg-white p-1.5 shadow-2xl dark:border-white/10"
-                                    >
-                                        <div className="mb-1 px-2 py-1.5">
-                                            <p className="text-[10px] font-bold tracking-widest text-black/40 uppercase dark:text-white/40">
-                                                Opsi Kontrak
-                                            </p>
-                                        </div>
-                                        <DropdownMenuItem
-                                            onClick={() => {
-                                                handleUpdate({}, true);
-                                            }}
-                                            className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-bold tracking-tight text-black uppercase focus:bg-black/5 dark:text-white dark:focus:bg-white/5"
-                                        >
-                                            <Save size={14} className="text-black dark:text-white" /> Paksa Simpan (Force Sync)
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-bold tracking-tight text-black uppercase focus:bg-black/5 dark:text-white dark:focus:bg-white/5">
-                                            <Archive size={14} className="text-black/40 dark:text-white/40" /> Arsipkan Kontrak
-                                        </DropdownMenuItem>
-                                        <div className="my-1.5 h-px bg-black/10 dark:bg-white/10" />
-                                        <DropdownMenuItem
-                                            onClick={() => setDeleteOpen(true)}
-                                            className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-bold tracking-tight text-rose-500 uppercase focus:bg-rose-500 focus:text-white"
-                                        >
-                                            <Trash2 size={14} /> Hapus Kontrak
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
-                        </div>
-
-                        <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[1fr_400px]">
-                            <div className="flex flex-col gap-6">
-                                <div className="dark:bg-sidebar overflow-hidden rounded-xl bg-white shadow-sm">
-                                    <div className="flex items-center justify-between bg-[var(--primary)] p-4 dark:bg-white">
-                                        <div className="flex items-center gap-2 text-[11px] font-black tracking-widest text-white uppercase dark:text-[var(--primary)]">
-                                            <FileText size={14} className="text-white/40 dark:text-[var(--primary)]/40" /> Detail & Dokumen Kontrak
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-wrap gap-1 bg-black/[0.02] p-1.5 dark:bg-white/[0.02]">
-                                        {[
-                                            { id: 'form_template', label: 'F1' },
-                                            { id: 'f2', label: 'F2' },
-                                            { id: 'agreement', label: 'Agreement' },
-                                            { id: 'attachments', label: 'Lampiran' },
-                                            { id: 'audit', label: 'Audit Trail' },
-                                            { id: 'timeline', label: 'Alur Approval' },
-                                            { id: 'references', label: 'Referensi' },
-                                            { id: 'chat', label: 'Chat' },
-                                        ].map((tab) => (
-                                            <button
-                                                key={tab.id}
-                                                onClick={() => setDetailTab(tab.id as any)}
-                                                className={cn(
-                                                    'rounded-lg px-4 py-2 text-[9px] font-black tracking-[0.2em] uppercase transition-all duration-300',
-                                                    detailTab === tab.id
-                                                        ? 'z-10 scale-105 bg-[var(--primary)] text-white shadow-xl dark:bg-white dark:text-[var(--primary)] dark:shadow-white/10'
-                                                        : 'text-black/30 hover:bg-black/5 hover:text-black dark:text-white/30 dark:hover:bg-white/5 dark:hover:text-white',
-                                                )}
-                                            >
-                                                {tab.label}
-                                            </button>
-                                        ))}
-                                    </div>
-                                    <div className={cn('flex min-h-[600px] flex-1 flex-col', detailTab !== 'agreement' && 'p-5')}>
-                                        {detailTab === 'form_template' && (
-                                            <FormSubmissionTab
-                                                docType="f1"
-                                                selected={selected}
-                                                formTemplates={formTemplates}
-                                                onContractUpdated={updateContract}
-                                            />
-                                        )}
-                                        {detailTab === 'f2' && (
-                                            <FormSubmissionTab
-                                                docType="f2"
-                                                selected={selected}
-                                                formTemplates={formTemplates}
-                                                onContractUpdated={updateContract}
-                                            />
-                                        )}
-                                        {detailTab === 'agreement' && <AgreementView contract={selected} onUpdate={updateContract} />}
-                                        {detailTab === 'attachments' && (
-                                            <ContractAttachments contract={selected} onUpdated={updateContract} showToast={showToast} />
-                                        )}
-                                        {detailTab === 'audit' && <ContractAuditTrail contract={selected} />}
-                                        {detailTab === 'timeline' && (
-                                            <ApprovalSteps
-                                                contract={selected}
-                                                approvals={selected.approvals}
-                                                creator={selected.creator}
-                                                submittedAt={selected.submitted_at ?? undefined}
-                                            />
-                                        )}
-                                        {detailTab === 'references' && (
-                                            <ContractReferenceCard
-                                                selected={selected}
-                                                canUpdate={!!canUpdate}
-                                                onUpdate={(d) => handleUpdate(d, true)}
-                                                processing={processing}
-                                            />
-                                        )}
-                                        {detailTab === 'chat' && (
-                                            <ContractChat contract={selected} meId={meId} users={users} onNewMessage={updateContract} />
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="flex flex-col gap-4">
-                                <DraftEditableInfoCard
-                                    selected={selected}
-                                    types={types}
-                                    submissionTypes={submissionTypes}
-                                    vendors={vendors}
-                                    formTemplates={formTemplates}
-                                    canUpdate={!!canUpdate}
-                                    onUpdate={(d) => handleUpdate(d, true)}
-                                    processing={processing}
-                                    setPreviewTitle={setPreviewTitle}
-                                    setPreviewUrl={setPreviewUrl}
-                                    setPreviewHasFile={setPreviewHasFile}
-                                    setPreviewOpen={setPreviewOpen}
-                                />{' '}
-                            </div>
-                        </div>
-                    </div>
+                    <ContractDetailView
+                        contract={selected}
+                        meId={meId}
+                        types={types}
+                        submissionTypes={submissionTypes}
+                        vendors={vendors}
+                        formTemplates={formTemplates}
+                        canUpdate={!!canUpdate}
+                        onClose={closeDetail}
+                        onUpdate={updateContract}
+                        showToast={showToast}
+                        setSendOpen={setSendOpen}
+                        setDeleteOpen={setDeleteOpen}
+                        setPreviewTitle={setPreviewTitle}
+                        setPreviewUrl={setPreviewUrl}
+                        setPreviewHasFile={setPreviewHasFile}
+                        setPreviewOpen={setPreviewOpen}
+                    />
                 ) : (
                     <div className="flex flex-col gap-4">
                         {view === 'dashboard' && <DashboardMetrics metrics={metrics} roles={roles} departments={departments} filters={filters} />}
@@ -822,46 +983,32 @@ function ContractPage({
                                     />
 
                                     <div className="ml-auto flex items-center gap-2">
-                                        <LayoutToggle 
-                                            value={layout as LayoutType} 
-                                            onChange={(val) => setLayout(val)} 
-                                        />
+                                        <LayoutToggle value={layout as LayoutType} onChange={(val) => setLayout(val)} />
 
                                         <Button
                                             variant="outline"
                                             onClick={() => setFilterOpen(true)}
                                             className={cn(
                                                 'relative h-10 px-4 transition-all active:scale-95',
-                                                (filters.status?.length || filters.contract_type_id?.length) && 'bg-[var(--primary)] text-white border-[var(--primary)]'
+                                                activeFiltersCount > 0 && 'border-[var(--primary)] bg-[var(--primary)] text-white',
                                             )}
                                         >
                                             <Filter size={14} />
                                             Filter
-                                            {(Array.isArray(filters.status) ? filters.status.length : filters.status ? 1 : 0) +
-                                                (Array.isArray(filters.contract_type_id)
-                                                    ? filters.contract_type_id.length
-                                                    : filters.contract_type_id
-                                                      ? 1
-                                                      : 0) >
-                                                0 && (
-                                                <span className={cn(
-                                                    "ml-1 flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[9px] font-bold",
-                                                    (filters.status?.length || filters.contract_type_id?.length) ? "bg-white text-[var(--primary)]" : "bg-[var(--primary)] text-white"
-                                                )}>
-                                                    {(Array.isArray(filters.status) ? filters.status.length : filters.status ? 1 : 0) +
-                                                        (Array.isArray(filters.contract_type_id)
-                                                            ? filters.contract_type_id.length
-                                                            : filters.contract_type_id
-                                                              ? 1
-                                                              : 0)}
+                                            {activeFiltersCount > 0 && (
+                                                <span
+                                                    className={cn(
+                                                        'ml-1 flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[9px] font-bold',
+                                                        filters.status?.length || filters.contract_type_id?.length
+                                                            ? 'bg-white text-[var(--primary)]'
+                                                            : 'bg-[var(--primary)] text-white',
+                                                    )}
+                                                >
+                                                    {activeFiltersCount}
                                                 </span>
                                             )}
                                         </Button>
-                                        <Button
-                                            variant="primary"
-                                            onClick={() => setCreateOpen(true)}
-                                            className="h-10 px-6 active:scale-95"
-                                        >
+                                        <Button variant="primary" onClick={() => setCreateOpen(true)} className="h-10 px-6 active:scale-95">
                                             <PlusCircle size={16} /> Kontrak Baru
                                         </Button>
                                     </div>
@@ -875,30 +1022,7 @@ function ContractPage({
                                             loading={processing}
                                             searchPlaceholder="Cari data..."
                                             onRowClick={openDetail}
-                                            bulkActions={(selectedRows) => (
-                                                <div className="flex items-center gap-2">
-                                                    {canBulkApprove && (
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            className="h-8 px-3 border-black/10 dark:border-white/10"
-                                                            onClick={() => handleBulkApprove(selectedRows)}
-                                                        >
-                                                            <Check className="h-3 w-3 mr-1.5" /> Approve
-                                                        </Button>
-                                                    )}
-                                                    {canBulkDelete && (
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            className="h-8 px-3 border-rose-500/20 text-rose-600 hover:bg-rose-600 hover:text-white"
-                                                            onClick={() => handleBulkDelete(selectedRows)}
-                                                        >
-                                                            <Trash2 className="h-3 w-3 mr-1.5" /> Hapus
-                                                        </Button>
-                                                    )}
-                                                </div>
-                                            )}
+                                            bulkActions={renderBulkActions}
                                             pagination={{
                                                 currentPage: contractsPaged.current_page,
                                                 lastPage: contractsPaged.last_page,
@@ -907,27 +1031,24 @@ function ContractPage({
                                                 to: contractsPaged.to,
                                                 perPage: contractsPaged.per_page,
                                                 onPageChange: (page) =>
-                                                    router.get(
-                                                        window.location.pathname,
-                                                        { ...filters, page },
-                                                        { preserveState: true, preserveScroll: true },
-                                                    ),
+                                                    router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true }),
                                                 onPerPageChange: (pp) =>
                                                     router.get(
-                                                        window.location.pathname,
+                                                        globalThis.location.pathname,
                                                         { ...filters, per_page: pp, page: 1 },
-                                                        { preserveState: true, preserveScroll: true },
+                                                        { preserveState: true },
                                                     ),
                                             }}
+                                            rowActions={renderRowActions}
                                         />
                                     ) : (
                                         <div className="flex flex-col gap-8 p-6">
                                             <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                                                {contracts.map((c) => (
-                                                    <div
+                                                {contractsPaged.data.map((c) => (
+                                                    <button
                                                         key={c.id}
                                                         onClick={() => openDetail(c)}
-                                                        className="group border-sidebar-border bg-sidebar hover:border-sidebar-primary hover:shadow-sidebar-primary/10 dark:hover:bg-sidebar-accent/10 relative flex cursor-pointer flex-col gap-4 rounded-xl border p-5 transition-all hover:shadow-xl"
+                                                        className="group border-sidebar-border bg-sidebar hover:border-sidebar-primary hover:shadow-sidebar-primary/10 dark:hover:bg-sidebar-accent/10 relative flex cursor-pointer flex-col gap-4 rounded-xl border p-5 text-left transition-all hover:shadow-xl focus:ring-2 focus:ring-[var(--primary)] focus:outline-none"
                                                     >
                                                         <div className="flex items-start justify-between gap-3">
                                                             <div className="flex min-w-0 flex-col gap-1">
@@ -968,41 +1089,43 @@ function ContractPage({
                                                                 <SLACountdown deadline={c.sla_deadline ?? null} status={c.status} />
                                                             </div>
                                                         </div>
-                                                    </div>
+                                                    </button>
                                                 ))}
                                             </div>
 
                                             {/* Grid Pagination Footer — Standardizing with DataTable logic */}
-                                            <div className="mt-8 mb-10 w-full flex items-center justify-between">
+                                            <div className="mt-8 mb-10 flex w-full items-center justify-between">
                                                 {/* Left Pill: Info */}
-                                                <div className="flex items-center gap-4 px-6 py-2 bg-[#0f2a4a]/[0.03] dark:bg-white/[0.03] rounded-xl border border-[#0f2a4a]/10 dark:border-white/10 shadow-sm transition-all duration-500">
-                                                    <div className="flex items-center gap-4 text-[#0f2a4a]/60 dark:text-white/60 text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
-                                                        <span className="opacity-40 hidden sm:inline text-[9px]">Menampilkan</span>
-                                                        <span>{contractsPaged.from} - {contractsPaged.to} / {contractsPaged.total}</span>
+                                                <div className="flex items-center gap-4 rounded-xl border border-[#0f2a4a]/10 bg-[#0f2a4a]/[0.03] px-6 py-2 shadow-sm transition-all duration-500 dark:border-white/10 dark:bg-white/[0.03]">
+                                                    <div className="flex items-center gap-4 text-[10px] font-black tracking-widest whitespace-nowrap text-[#0f2a4a]/60 uppercase dark:text-white/60">
+                                                        <span className="hidden text-[9px] opacity-40 sm:inline">Menampilkan</span>
+                                                        <span>
+                                                            {contractsPaged.from} - {contractsPaged.to} / {contractsPaged.total}
+                                                        </span>
                                                     </div>
                                                 </div>
 
                                                 {/* Right Pill: Navigation */}
-                                                <div className="flex items-center gap-1 px-3 py-1 bg-[#0f2a4a]/[0.03] dark:bg-white/[0.03] rounded-xl border border-[#0f2a4a]/10 dark:border-white/10 shadow-sm transition-all duration-500">
+                                                <div className="flex items-center gap-1 rounded-xl border border-[#0f2a4a]/10 bg-[#0f2a4a]/[0.03] px-3 py-1 shadow-sm transition-all duration-500 dark:border-white/10 dark:bg-white/[0.03]">
                                                     <button
                                                         disabled={contractsPaged.current_page === 1}
                                                         onClick={() =>
                                                             router.get(
-                                                                window.location.pathname,
+                                                                globalThis.location.pathname,
                                                                 { ...filters, page: contractsPaged.current_page - 1 },
-                                                                { preserveState: true, preserveScroll: true },
+                                                                { preserveState: true },
                                                             )
                                                         }
-                                                        className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-[#0f2a4a]/5 dark:hover:bg-white/10 disabled:opacity-20 transition-all text-[#0f2a4a]/60 dark:text-white/60"
+                                                        className="flex h-8 w-8 items-center justify-center rounded-lg text-[#0f2a4a]/60 transition-all hover:bg-[#0f2a4a]/5 disabled:opacity-20 dark:text-white/60 dark:hover:bg-white/10"
                                                     >
                                                         <ChevronLeft className="h-4 w-4" />
                                                     </button>
 
-                                                    <div className="flex items-center gap-1 mx-1">
-                                                        <div className="h-8 min-w-[32px] px-3 rounded-lg text-[10px] font-black flex items-center justify-center bg-[#0f2a4a] text-white shadow-md shadow-[#0f2a4a]/20">
+                                                    <div className="mx-1 flex items-center gap-1">
+                                                        <div className="flex h-8 min-w-[32px] items-center justify-center rounded-lg bg-[#0f2a4a] px-3 text-[10px] font-black text-white shadow-md shadow-[#0f2a4a]/20">
                                                             {contractsPaged.current_page}
                                                         </div>
-                                                        <span className="text-[10px] font-black text-black/20 dark:text-white/20 mx-1">/</span>
+                                                        <span className="mx-1 text-[10px] font-black text-black/20 dark:text-white/20">/</span>
                                                         <div className="text-[10px] font-black text-[#0f2a4a]/40 dark:text-white/40">
                                                             {contractsPaged.last_page}
                                                         </div>
@@ -1012,12 +1135,12 @@ function ContractPage({
                                                         disabled={contractsPaged.current_page === contractsPaged.last_page}
                                                         onClick={() =>
                                                             router.get(
-                                                                window.location.pathname,
+                                                                globalThis.location.pathname,
                                                                 { ...filters, page: contractsPaged.current_page + 1 },
-                                                                { preserveState: true, preserveScroll: true },
+                                                                { preserveState: true },
                                                             )
                                                         }
-                                                        className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-[#0f2a4a]/5 dark:hover:bg-white/10 disabled:opacity-20 transition-all text-[#0f2a4a]/60 dark:text-white/60"
+                                                        className="flex h-8 w-8 items-center justify-center rounded-lg text-[#0f2a4a]/60 transition-all hover:bg-[#0f2a4a]/5 disabled:opacity-20 dark:text-white/60 dark:hover:bg-white/10"
                                                     >
                                                         <ChevronRight className="h-4 w-4" />
                                                     </button>
@@ -1051,7 +1174,7 @@ function ContractPage({
             <EditContractModal
                 open={editOpen}
                 onClose={() => setEditOpen(false)}
-                onSubmit={handleUpdate}
+                onSubmit={handleUpdateFromList}
                 contract={selected}
                 types={types}
                 submissionTypes={submissionTypes}
@@ -1065,17 +1188,9 @@ function ContractPage({
                 description="Saring data kontrak berdasarkan status dan tipe dokumen"
                 totalResults={contractsPaged.total}
                 activeFilters={{
-                    status: filters.status ? (Array.isArray(filters.status) ? filters.status : [filters.status]) : [],
-                    contract_type_id: filters.contract_type_id
-                        ? Array.isArray(filters.contract_type_id)
-                            ? filters.contract_type_id
-                            : [filters.contract_type_id]
-                        : [],
-                    department_id: filters.department_id
-                        ? Array.isArray(filters.department_id)
-                            ? filters.department_id
-                            : [filters.department_id]
-                        : [],
+                    status: ensureArray(filters.status),
+                    contract_type_id: ensureArray(filters.contract_type_id),
+                    department_id: ensureArray(filters.department_id),
                     created_from: filters.created_from || '',
                     created_to: filters.created_to || '',
                 }}
@@ -1183,7 +1298,20 @@ export default function ContractsIndex({
     vendors = [],
     departments = [],
     roles = [],
-}: any) {
+}: Readonly<{
+    currentView?: View;
+    contracts?: PaginatedData<Contract>;
+    types?: ContractType[];
+    submissionTypes?: any[];
+    formTemplates?: any[];
+    metrics?: any;
+    initialSelected?: Contract | null;
+    filters?: any;
+    users?: any[];
+    vendors?: any[];
+    departments?: any[];
+    roles?: any[];
+}>) {
     const { auth } = usePage<{ auth: { user: any } }>().props;
     const meId = auth?.user?.id ?? '';
     const meUser = auth?.user ?? null;
@@ -1226,7 +1354,9 @@ export default function ContractsIndex({
         }
 
         // If we really need to fetch (e.g. direct URL visit with partial props)
-        if (!hasCriticalData) {
+        if (hasCriticalData) {
+            setBootLoading(false);
+        } else {
             setBootLoading(true);
             Promise.all([
                 contractApi.list({ view: currentView }),
@@ -1243,13 +1373,11 @@ export default function ContractsIndex({
                 .then(([cData, tData, sData, mData]) => {
                     setContractsPaged(cData as any);
                     setTypes(tData);
-                    setSubmissionTypes(sData as any);
+                    setSubmissionTypes(sData);
                     setMetrics(mData);
                     setBootLoading(false);
                 })
                 .catch(() => setBootLoading(false));
-        } else {
-            setBootLoading(false);
         }
     }, [currentView]); // Only re-run if view changes drastically
 

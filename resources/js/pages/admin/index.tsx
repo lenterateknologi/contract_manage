@@ -3,7 +3,7 @@ import { Head } from '@inertiajs/react';
 import { ContractTypeManagement } from '@/components/admin/ContractTypeManagement';
 import { DepartmentManagement } from '@/components/admin/DepartmentManagement';
 import { NavigationManagement } from '@/components/admin/NavigationManagement';
-import NumberingFormatManagement from '@/components/admin/NumberingFormatManagement';
+import { NumberingFormatManagement } from '@/components/admin/NumberingFormatManagement';
 import { RoleManagement } from '@/components/admin/RoleManagement';
 import { StatusManagement } from '@/components/admin/StatusManagement';
 import { UserManagement } from '@/components/admin/UserManagement';
@@ -66,7 +66,7 @@ export default function AdminIndex({
     contractTemplates,
     contractStatuses,
     filters = {},
-}: Props) {
+}: Readonly<Props>) {
     // View Metadata Mapping
     const viewTitleMap: Record<string, string> = {
         users: 'Manajemen Pengguna',

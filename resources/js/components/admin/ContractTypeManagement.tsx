@@ -18,17 +18,19 @@ interface ContractTypeManagementProps {
     readonly filters: any;
 }
 
-const MechanismBadge = ({ mechanism }: { mechanism: string }) => {
-    let label = 'Manual';
-    if (mechanism === 'digital') label = 'Formulir Digital';
-    else if (mechanism === 'folder') label = 'Folder Kontrak';
-    
-    return (
-        <span className="text-[10px] font-black tracking-widest text-black/60 uppercase dark:text-white/60">
-            {label}
-        </span>
-    );
-};
+const MechanismCell = ({ mechanism }: Readonly<{ mechanism: string }>) => (
+    <span className="text-[10px] font-black tracking-widest text-black/60 uppercase dark:text-white/60">
+        {mechanism === 'digital' ? 'Formulir Digital' : mechanism === 'folder' ? 'Folder Kontrak' : 'Manual'}
+    </span>
+);
+
+const TypeDescriptionCell = ({ description }: Readonly<{ description?: string }>) => (
+    <span className="text-[10px] font-bold text-black/40 dark:text-white/40 uppercase tracking-tight truncate max-w-[200px]">
+        {description || '—'}
+    </span>
+);
+
+// MechanismBadge replaced by MechanismCell
 
 const MechanismOptions = ({
     mechanism,
@@ -106,7 +108,7 @@ const MechanismOptions = ({
     );
 };
 
-export function ContractTypeManagement({ contractTypes, formTemplates, contractTemplates, filters }: ContractTypeManagementProps) {
+export function ContractTypeManagement({ contractTypes, formTemplates, contractTemplates, filters }: Readonly<ContractTypeManagementProps>) {
     const { showToast } = useToast();
     const { canCreate, canUpdate, canDelete } = usePermissions('ADMIN_TYPES');
     const [isFormView, setIsFormView] = React.useState(false);
@@ -139,18 +141,17 @@ export function ContractTypeManagement({ contractTypes, formTemplates, contractT
             {
                 header: 'F1 (Internal)',
                 accessorKey: 'f1_input_mechanism',
-                cell: (row) => <MechanismBadge mechanism={row.f1_input_mechanism} />
+                cell: (row) => <MechanismCell mechanism={row.f1_input_mechanism} />
             },
             {
                 header: 'F2 (Eksternal)',
                 accessorKey: 'f2_input_mechanism',
-                cell: (row) => <MechanismBadge mechanism={row.f2_input_mechanism} />
+                cell: (row) => <MechanismCell mechanism={row.f2_input_mechanism} />
             },
             {
                 header: 'Deskripsi',
                 accessorKey: 'description',
-                className: 'text-[10px] font-bold text-black/40 dark:text-white/40 uppercase tracking-tight truncate max-w-[200px]',
-                cell: (row) => row.description || '—',
+                cell: (row) => <TypeDescriptionCell description={row.description} />,
             },
         ],
         [],

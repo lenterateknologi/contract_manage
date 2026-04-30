@@ -94,7 +94,7 @@ export function DataTable<T extends Record<string, any>>({
     onSearchChange,
     activeFilters: controlledActiveFilters,
     onFilterChange,
-}: DataTableProps<T>) {
+}: Readonly<DataTableProps<T>>) {
     const [internalSearchTerm, setInternalSearchTerm] = useState("");
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' | null }>({ key: '', direction: null });
     const [selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set());

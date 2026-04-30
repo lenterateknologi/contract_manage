@@ -1,5 +1,5 @@
 import { Head, useForm } from '@inertiajs/react';
-import { LoaderCircle, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, LoaderCircle } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 
 import InputError from '@/components/input-error';
@@ -23,7 +23,7 @@ interface LoginProps {
     canTestEmail?: boolean;
 }
 
-export default function Login({ status, canResetPassword, canTestEmail }: LoginProps) {
+export default function Login({ status, canResetPassword }: Readonly<LoginProps>) {
     const [showPassword, setShowPassword] = useState(false);
     const { data, setData, post, processing, errors, reset, wasSuccessful } = useForm<LoginForm>({
         email: '',
@@ -39,37 +39,42 @@ export default function Login({ status, canResetPassword, canTestEmail }: LoginP
     };
 
     return (
-        <AuthSplitLayout 
-            title="Selamat Datang!" 
-            description="Masuk ke akun Anda dengan aman."
-            isSuccess={wasSuccessful}
-        >
+        <AuthSplitLayout title="Selamat Datang!" description="Masuk ke akun Anda dengan aman." isSuccess={wasSuccessful}>
             <Head title="Masuk" />
 
             <form className="flex flex-col gap-6" onSubmit={submit}>
                 <div className="grid gap-5">
                     <div className="grid gap-2">
-                        <Label htmlFor="email" className="text-[var(--font-size-small)] font-[var(--font-weight-bold)] text-[var(--text-dark)] tracking-tight uppercase">ALAMAT EMAIL</Label>
+                        <Label htmlFor="email" className="font-[var(--font-weight-bold)] tracking-tight text-[var(--font-size-small)] uppercase">
+                            ALAMAT EMAIL
+                        </Label>
                         <Input
                             id="email"
                             type="text"
                             required
                             autoFocus
-                            tabIndex={1}
                             autoComplete="email"
                             value={data.email}
                             onChange={(e) => setData('email', e.target.value)}
                             placeholder="Alamat Email Anda"
-                            className="h-[48px] rounded-[var(--radius-lg)] border-[var(--border)] bg-[var(--white)] px-4 text-[var(--font-size-body)] text-[var(--text-dark)] focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] transition-all"
+                            className="h-[48px] rounded-[var(--radius-lg)] border-[var(--border)] bg-[var(--white)] px-4 text-[var(--font-size-body)] transition-all focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]"
                         />
                         <InputError message={errors.email} />
                     </div>
 
                     <div className="grid gap-2">
                         <div className="flex items-center justify-between">
-                            <Label htmlFor="password" className="text-[var(--font-size-small)] font-[var(--font-weight-bold)] text-[var(--text-dark)] tracking-tight uppercase">KATA SANDI</Label>
+                            <Label
+                                htmlFor="password"
+                                className="font-[var(--font-weight-bold)] tracking-tight text-[var(--font-size-small)] uppercase"
+                            >
+                                KATA SANDI
+                            </Label>
                             {canResetPassword && (
-                                <TextLink href={route('password.request')} className="text-[var(--font-size-small)] font-[var(--font-weight-bold)] text-[var(--primary)] hover:text-[var(--primary-hover)]" tabIndex={5}>
+                                <TextLink
+                                    href={route('password.request')}
+                                    className="font-[var(--font-weight-bold)] text-[var(--font-size-small)] hover:text-[var(--primary-hover)]"
+                                >
                                     Lupa?
                                 </TextLink>
                             )}
@@ -79,38 +84,38 @@ export default function Login({ status, canResetPassword, canTestEmail }: LoginP
                                 id="password"
                                 type={showPassword ? 'text' : 'password'}
                                 required
-                                tabIndex={2}
                                 autoComplete="current-password"
                                 value={data.password}
                                 onChange={(e) => setData('password', e.target.value)}
                                 placeholder="Kata Sandi Anda"
-                                className="h-[48px] rounded-[var(--radius-lg)] border-[var(--border)] bg-[var(--white)] pr-12 px-4 text-[var(--font-size-body)] text-[var(--text-dark)] focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] transition-all"
+                                className="h-[48px] rounded-[var(--radius-lg)] border-[var(--border)] bg-[var(--white)] px-4 pr-12 text-[var(--font-size-body)] transition-all focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]"
                             />
                             <button
                                 type="button"
                                 tabIndex={-1}
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-light)]"
+                                className="absolute top-1/2 right-4 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-light)]"
                             >
-                                {showPassword ? (
-                                    <EyeOff className="size-4" />
-                                ) : (
-                                    <Eye className="size-4" />
-                                )}
+                                {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                             </button>
                         </div>
                         <InputError message={errors.password} />
                     </div>
 
                     <div className="flex items-center space-x-2">
-                        <Checkbox id="remember" name="remember" tabIndex={3} className="h-4 w-4 rounded-[var(--radius-sm)] border-[var(--border)] data-[state=checked]:bg-[var(--primary)]" />
-                        <Label htmlFor="remember" className="text-[var(--font-size-small)] font-[var(--font-weight-medium)] text-[var(--text-light)]">Ingat saya</Label>
+                        <Checkbox
+                            id="remember"
+                            name="remember"
+                            className="h-4 w-4 rounded-[var(--radius-sm)] border-[var(--border)] data-[state=checked]:bg-[var(--primary)]"
+                        />
+                        <Label htmlFor="remember" className="font-[var(--font-weight-medium)] text-[var(--font-size-small)]">
+                            Ingat saya
+                        </Label>
                     </div>
 
-                    <Button 
-                        type="submit" 
-                        className="h-[48px] w-full rounded-[var(--radius-lg)] bg-[var(--primary)] text-[var(--font-size-body)] font-[var(--font-weight-bold)] text-[var(--white)] transition-all hover:bg-[var(--primary-hover)] active:bg-[var(--primary-active)] active:scale-[0.98]" 
-                        tabIndex={4} 
+                    <Button
+                        type="submit"
+                        className="h-[48px] w-full rounded-[var(--radius-lg)] bg-[var(--primary)] font-[var(--font-weight-bold)] text-[var(--font-size-body)] transition-all hover:bg-[var(--primary-hover)] active:scale-[0.98] active:bg-[var(--primary-active)]"
                         disabled={processing}
                     >
                         {processing && <LoaderCircle className="mr-2 size-4 animate-spin" />}
@@ -118,9 +123,12 @@ export default function Login({ status, canResetPassword, canTestEmail }: LoginP
                     </Button>
                 </div>
 
-                <div className="text-center text-[var(--font-size-small)] text-[var(--text-muted)] font-[var(--font-weight-medium)]">
+                <div className="text-center font-[var(--font-weight-medium)] text-[var(--font-size-small)]">
                     Belum punya akun?{' '}
-                    <TextLink href={route('register')} className="font-[var(--font-weight-bold)] text-[var(--primary)] hover:text-[var(--primary-hover)] hover:underline" tabIndex={5}>
+                    <TextLink
+                        href={route('register')}
+                        className="font-[var(--font-weight-bold)] text-[var(--primary)] hover:text-[var(--primary-hover)] hover:underline"
+                    >
                         Daftar Gratis
                     </TextLink>
                 </div>

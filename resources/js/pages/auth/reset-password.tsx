@@ -20,7 +20,7 @@ interface ResetPasswordForm extends Record<string, any> {
     password_confirmation: string;
 }
 
-export default function ResetPassword({ token, email }: ResetPasswordProps) {
+export default function ResetPassword({ token, email }: Readonly<ResetPasswordProps>) {
     const { data, setData, post, processing, errors, reset } = useForm<ResetPasswordForm>({
         token: token,
         email: email,
