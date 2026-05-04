@@ -95,15 +95,15 @@ function ExpiryBadge({ endDate }: Readonly<{ endDate: string | null }>) {
 
 const StatusBadge = ({ status }: { status: string }) => {
     const config: Record<string, { bg: string; dot: string; text: string; label: string }> = {
-        draft:     { bg: 'bg-slate-100',   dot: 'bg-slate-400',   text: 'text-slate-600',   label: 'Draft' },
-        in_review: { bg: 'bg-amber-100',   dot: 'bg-amber-500',   text: 'text-amber-700',   label: 'Review' },
-        revision:  { bg: 'bg-rose-100',    dot: 'bg-rose-500',    text: 'text-rose-700',    label: 'Revisi' },
-        pending:   { bg: 'bg-orange-100',  dot: 'bg-orange-500',  text: 'text-orange-700',  label: 'Pending' },
-        approved:  { bg: 'bg-emerald-100', dot: 'bg-emerald-500', text: 'text-emerald-700', label: 'Disetujui' },
-        active:    { bg: 'bg-blue-100',    dot: 'bg-blue-500',    text: 'text-blue-700',    label: 'Aktif' },
-        expired:   { bg: 'bg-red-100',     dot: 'bg-red-500',     text: 'text-red-700',     label: 'Expired' },
-        archived:  { bg: 'bg-zinc-100',    dot: 'bg-zinc-400',    text: 'text-zinc-500',    label: 'Arsip' },
-        rejected:  { bg: 'bg-red-100',     dot: 'bg-red-500',     text: 'text-red-700',     label: 'Ditolak' },
+        draft: { bg: 'bg-slate-100', dot: 'bg-slate-400', text: 'text-slate-600', label: 'Draft' },
+        in_review: { bg: 'bg-amber-100', dot: 'bg-amber-500', text: 'text-amber-700', label: 'Review' },
+        revision: { bg: 'bg-rose-100', dot: 'bg-rose-500', text: 'text-rose-700', label: 'Revisi' },
+        pending: { bg: 'bg-orange-100', dot: 'bg-orange-500', text: 'text-orange-700', label: 'Pending' },
+        approved: { bg: 'bg-emerald-100', dot: 'bg-emerald-500', text: 'text-emerald-700', label: 'Disetujui' },
+        active: { bg: 'bg-blue-100', dot: 'bg-blue-500', text: 'text-blue-700', label: 'Aktif' },
+        expired: { bg: 'bg-red-100', dot: 'bg-red-500', text: 'text-red-700', label: 'Expired' },
+        archived: { bg: 'bg-zinc-100', dot: 'bg-zinc-400', text: 'text-zinc-500', label: 'Arsip' },
+        rejected: { bg: 'bg-red-100', dot: 'bg-red-500', text: 'text-red-700', label: 'Ditolak' },
     };
 
     const s = config[status as keyof typeof config] || config.draft;
@@ -1380,7 +1380,7 @@ export default function ContractsIndex({
                 contractApi.list({ view: currentView }),
                 contractApi.getTypes(),
                 axios
-                    .get('/admin/api/contracts/submission-types')
+                    .get('/api/contracts/submission-types')
                     .then((res) => res.data)
                     .catch(() => []),
                 axios

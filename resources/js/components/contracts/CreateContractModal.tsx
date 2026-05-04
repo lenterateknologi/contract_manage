@@ -1,11 +1,11 @@
 import { usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
-import { 
-    FilePlus2, 
-    X, 
-    ShieldCheck, 
-    Check, 
-    Loader2, 
+import {
+    FilePlus2,
+    X,
+    ShieldCheck,
+    Check,
+    Loader2,
     AlertCircle,
     FileText,
     Settings2
@@ -112,8 +112,8 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                         <FilePlus2 size={20} strokeWidth={2.5} />
                         <h2 className="text-[14px] font-bold text-sidebar-foreground">Buat Kontrak Baru</h2>
                     </div>
-                    <button 
-                        onClick={onClose} 
+                    <button
+                        onClick={onClose}
                         className="text-black/50 dark:text-white/50 hover:text-black dark:hover:text-white p-1.5 rounded-lg transition-all"
                     >
                         <X size={18} />
@@ -134,7 +134,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                             >
                                 <option value={auth.user.id}>Diri Sendiri ({auth.user.name})</option>
                                 <optgroup label="Pilih User Lain (Legal Helper Mode)">
-                                    {users
+                                    {Array.isArray(users) && users
                                         .filter((u) => u.id !== auth.user.id)
                                         .map((u) => (
                                             <option key={u.id} value={u.id}>
@@ -153,15 +153,15 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <label className="text-[11px] font-semibold text-black dark:text-white px-1">
-                                Perjanjian <span className="text-rose-500">*</span>
+                                Tipe Pengajuan <span className="text-rose-500">*</span>
                             </label>
                             <select
                                 value={submissionTypeId}
                                 onChange={(e) => setSubmissionTypeId(e.target.value)}
                                 className="w-full rounded-lg border border-sidebar-border bg-sidebar-accent/20 px-3 py-2.5 text-[12px] text-sidebar-foreground outline-none focus:ring-1 focus:ring-sidebar-primary transition-all"
                             >
-                                <option value="">Pilih Tipe</option>
-                                {submissionTypes.map((st) => (
+                                <option value="">Tipe Pengajuan</option>
+                                {Array.isArray(submissionTypes) && submissionTypes.map((st) => (
                                     <option key={st.id} value={st.id}>
                                         {st.name}
                                     </option>
@@ -172,20 +172,20 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
 
                         <div className="space-y-2">
                             <label className="text-[11px] font-semibold text-black dark:text-white px-1">
-                                Tipe Kontrak <span className="text-rose-500">*</span>
+                                Jenis Kontrak <span className="text-rose-500">*</span>
                             </label>
                             <select
                                 value={typeId}
                                 onChange={(e) => {
                                     const val = e.target.value;
                                     setTypeId(val);
-                                    const selectedType = types.find((t) => String(t.id) === val);
+                                    const selectedType = Array.isArray(types) ? types.find((t) => String(t.id) === val) : undefined;
                                     if (selectedType) setTitle(selectedType.name);
                                 }}
                                 className="w-full rounded-lg border border-sidebar-border bg-sidebar-accent/20 px-3 py-2.5 text-[12px] text-sidebar-foreground outline-none focus:ring-1 focus:ring-sidebar-primary transition-all"
                             >
                                 <option value="">Pilih Tipe</option>
-                                {types.map((t) => (
+                                {Array.isArray(types) && types.map((t) => (
                                     <option key={t.id} value={t.id}>
                                         {t.name}
                                     </option>
