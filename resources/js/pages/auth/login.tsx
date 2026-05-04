@@ -2,12 +2,12 @@ import { Head, useForm } from '@inertiajs/react';
 import { Eye, EyeOff, LoaderCircle } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 
-import InputError from '@/components/ui/base/InputError';
-import TextLink from '@/components/ui/base/TextLink';
 import { Button } from '@/components/ui/base/Button';
 import { Checkbox } from '@/components/ui/base/Checkbox';
 import { Input } from '@/components/ui/base/Input';
+import InputError from '@/components/ui/base/InputError';
 import { Label } from '@/components/ui/base/Label';
+import TextLink from '@/components/ui/base/TextLink';
 import AuthSplitLayout from '@/layouts/auth/auth-split-layout';
 
 interface LoginForm {
@@ -45,8 +45,8 @@ export default function Login({ status, canResetPassword }: Readonly<LoginProps>
             <form className="flex flex-col gap-6" onSubmit={submit}>
                 <div className="grid gap-5">
                     <div className="grid gap-2">
-                        <Label htmlFor="email" className="font-[var(--font-weight-bold)] tracking-tight text-[var(--font-size-small)] uppercase">
-                            ALAMAT EMAIL
+                        <Label htmlFor="email" className="text-sm font-semibold text-slate-700">
+                            Alamat Email
                         </Label>
                         <Input
                             id="email"
@@ -56,28 +56,17 @@ export default function Login({ status, canResetPassword }: Readonly<LoginProps>
                             autoComplete="email"
                             value={data.email}
                             onChange={(e) => setData('email', e.target.value)}
-                            placeholder="Alamat Email Anda"
-                            className="h-[48px] rounded-[var(--radius-lg)] border-[var(--border)] bg-[var(--white)] px-4 text-[var(--font-size-body)] transition-all focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]"
+                            placeholder="Alamat email Anda"
+                            className="focus:border-primary focus:ring-primary h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 transition-all focus:ring-1"
                         />
                         <InputError message={errors.email} />
                     </div>
 
                     <div className="grid gap-2">
                         <div className="flex items-center justify-between">
-                            <Label
-                                htmlFor="password"
-                                className="font-[var(--font-weight-bold)] tracking-tight text-[var(--font-size-small)] uppercase"
-                            >
-                                KATA SANDI
+                            <Label htmlFor="password" className="text-sm font-semibold text-slate-700">
+                                Kata Sandi
                             </Label>
-                            {canResetPassword && (
-                                <TextLink
-                                    href={route('password.request')}
-                                    className="font-[var(--font-weight-bold)] text-[var(--font-size-small)] hover:text-[var(--primary-hover)]"
-                                >
-                                    Lupa?
-                                </TextLink>
-                            )}
                         </div>
                         <div className="relative">
                             <Input
@@ -87,14 +76,14 @@ export default function Login({ status, canResetPassword }: Readonly<LoginProps>
                                 autoComplete="current-password"
                                 value={data.password}
                                 onChange={(e) => setData('password', e.target.value)}
-                                placeholder="Kata Sandi Anda"
-                                className="h-[48px] rounded-[var(--radius-lg)] border-[var(--border)] bg-[var(--white)] px-4 pr-12 text-[var(--font-size-body)] transition-all focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]"
+                                placeholder="Kata sandi Anda"
+                                className="focus:border-primary focus:ring-primary h-11 rounded-xl border border-slate-200 bg-white px-4 pr-12 text-sm text-slate-900 transition-all focus:ring-1"
                             />
                             <button
                                 type="button"
                                 tabIndex={-1}
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="absolute top-1/2 right-4 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-light)]"
+                                className="absolute top-1/2 right-4 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                             >
                                 {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                             </button>
@@ -102,38 +91,44 @@ export default function Login({ status, canResetPassword }: Readonly<LoginProps>
                         <InputError message={errors.password} />
                     </div>
 
-                    <div className="flex items-center space-x-2">
-                        <Checkbox
-                            id="remember"
-                            name="remember"
-                            className="h-4 w-4 rounded-[var(--radius-sm)] border-[var(--border)] data-[state=checked]:bg-[var(--primary)]"
-                        />
-                        <Label htmlFor="remember" className="font-[var(--font-weight-medium)] text-[var(--font-size-small)]">
-                            Ingat saya
-                        </Label>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                            <Checkbox
+                                id="remember"
+                                name="remember"
+                                className="text-primary focus:ring-primary h-4 w-4 rounded border-slate-300 bg-white"
+                                checked={data.remember}
+                                onCheckedChange={(checked) => setData('remember', !!checked)}
+                            />
+                            <Label htmlFor="remember" className="cursor-pointer text-sm font-medium text-slate-600 select-none">
+                                Ingat saya
+                            </Label>
+                        </div>
+                        {canResetPassword && (
+                            <TextLink href={route('password.request')} className="text-primary hover:text-primary/80 text-sm font-medium">
+                                Lupa sandi?
+                            </TextLink>
+                        )}
                     </div>
 
                     <Button
                         type="submit"
-                        className="h-[48px] w-full rounded-[var(--radius-lg)] bg-[var(--primary)] font-[var(--font-weight-bold)] text-[var(--font-size-body)] transition-all hover:bg-[var(--primary-hover)] active:scale-[0.98] active:bg-[var(--primary-active)]"
+                        className="bg-primary text-primary-foreground hover:bg-primary/90 h-11 w-full rounded-xl text-sm font-bold shadow-sm transition-all active:scale-[0.98]"
                         disabled={processing}
                     >
                         {processing && <LoaderCircle className="mr-2 size-4 animate-spin" />}
-                        Masuk Ke Akun
+                        Masuk ke Akun
                     </Button>
                 </div>
 
-                <div className="text-center font-[var(--font-weight-medium)] text-[var(--font-size-small)]">
+                <div className="text-center text-sm font-medium text-slate-600">
                     Belum punya akun?{' '}
-                    <TextLink
-                        href={route('register')}
-                        className="font-[var(--font-weight-bold)] text-[var(--primary)] hover:text-[var(--primary-hover)] hover:underline"
-                    >
-                        Daftar Gratis
+                    <TextLink href={route('register')} className="text-primary hover:text-primary/80 font-bold hover:underline">
+                        Daftar gratis
                     </TextLink>
                 </div>
 
-                {status && <div className="mt-4 text-center text-sm font-semibold text-[var(--success)]">{status}</div>}
+                {status && <div className="mt-4 text-center text-sm font-semibold text-emerald-600">{status}</div>}
             </form>
         </AuthSplitLayout>
     );

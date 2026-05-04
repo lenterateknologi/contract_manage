@@ -6,7 +6,7 @@ import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { router, useForm } from '@inertiajs/react';
 import { Fingerprint, Mail, Phone, Plus, ShieldAlert, Trash2, UserCircle } from 'lucide-react';
 import React, { useMemo } from 'react';
-import { Column, DataTable } from '@/components/ui/data/DataTable';
+import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
 import { Button } from '@/components/ui/base/Button';
 import { usePermissions } from '@/hooks/use-permissions';
 import { cn } from '@/lib/utils';
@@ -47,14 +47,14 @@ function avatarColor(name: string): string {
 
 const UserCell = ({ name, email }: Readonly<{ name: string; email: string }>) => (
     <div className="flex items-center gap-3">
-        <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center font-bold text-[12px] shrink-0', avatarColor(name))}>
+        <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm shrink-0', avatarColor(name))}>
             {name.charAt(0).toUpperCase()}
         </div>
         <div className="flex flex-col min-w-0">
-            <span className="font-semibold text-sidebar-foreground text-[13px] truncate leading-tight font-sans">
+            <span className="font-semibold text-foreground text-sm truncate leading-tight">
                 {name}
             </span>
-            <span className="text-[10px] font-medium text-sidebar-foreground/40 truncate leading-none mt-0.5 font-sans">
+            <span className="text-xs font-medium text-muted-foreground/60 truncate leading-none mt-0.5">
                 {email}
             </span>
         </div>
@@ -63,13 +63,13 @@ const UserCell = ({ name, email }: Readonly<{ name: string; email: string }>) =>
 
 const IdentityCell = ({ username, phone }: Readonly<{ username: string; phone?: string }>) => (
     <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-1.5 text-[10px] font-semibold text-sidebar-foreground/60 uppercase tracking-widest font-sans">
-            <Fingerprint size={10} className="text-sidebar-primary/40" />
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+            <Fingerprint size={12} className="opacity-40" />
             {username}
         </div>
         {phone && (
-            <div className="flex items-center gap-1.5 text-[10px] font-medium text-sidebar-foreground/40 tracking-tight font-sans">
-                <Phone size={10} className="text-sidebar-foreground/30" />
+            <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground/60 tracking-tight">
+                <Phone size={12} className="opacity-40" />
                 {phone}
             </div>
         )}
@@ -78,10 +78,10 @@ const IdentityCell = ({ username, phone }: Readonly<{ username: string; phone?: 
 
 const PlacementCell = ({ departmentName, position }: Readonly<{ departmentName?: string; position?: string }>) => (
     <div className="flex flex-col gap-1">
-        <span className="inline-block rounded-full bg-indigo-50 text-indigo-700 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide font-sans w-fit">
+        <span className="inline-block rounded-full bg-indigo-50 text-indigo-700 px-2.5 py-0.5 text-xs font-semibold w-fit">
             {departmentName || 'Global'}
         </span>
-        <span className="text-[10px] font-medium text-sidebar-foreground/40 uppercase tracking-widest mt-0.5 font-sans">
+        <span className="text-xs font-medium text-muted-foreground/60 mt-0.5">
             {position || 'Staf'}
         </span>
     </div>
@@ -89,7 +89,7 @@ const PlacementCell = ({ departmentName, position }: Readonly<{ departmentName?:
 
 const AuthorityCell = ({ role }: Readonly<{ role: string }>) => (
     <span className={cn(
-        'inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide font-sans',
+        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold',
         ROLE_COLORS[role] ?? 'bg-slate-100 text-slate-600'
     )}>
         {role}
@@ -99,11 +99,11 @@ const AuthorityCell = ({ role }: Readonly<{ role: string }>) => (
 const AccessCell = ({ isActive }: Readonly<{ isActive: boolean }>) => (
     <div className="flex items-center gap-2">
         <div className={cn(
-            'w-1.5 h-1.5 rounded-full shrink-0',
+            'w-2 h-2 rounded-full shrink-0',
             isActive ? 'bg-emerald-500' : 'bg-rose-400'
         )} />
         <span className={cn(
-            'text-[10px] font-semibold uppercase tracking-widest font-sans',
+            'text-xs font-semibold',
             isActive ? 'text-emerald-600' : 'text-rose-500'
         )}>
             {isActive ? 'Aktif' : 'Nonaktif'}
@@ -158,7 +158,6 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
         {
             header: 'Pengguna',
             accessorKey: 'name',
-            sortable: true,
             cell: (row) => <UserCell name={row.name} email={row.email} />
         },
         {
@@ -227,10 +226,6 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
         }
     };
 
-    const handleDelete = () => {
-        setIsConfirmOpen(true);
-    };
-
     if (isFormView) {
         return (
             <ManagementForm
@@ -247,9 +242,9 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                             type="button" 
                             variant="ghost" 
                             onClick={() => setIsConfirmOpen(true)}
-                            className="h-8 hover:bg-rose-500 hover:text-white text-rose-500 rounded-xl px-4 text-[10px] font-black uppercase tracking-widest transition-all border border-rose-500/10 active:scale-95"
+                            className="h-9 hover:bg-rose-500 hover:text-white text-rose-500 rounded-xl px-4 text-xs font-semibold transition-all border border-rose-500/10 active:scale-95"
                         >
-                            <Trash2 size={14} className="mr-2" /> Hapus Akun
+                            <Trash2 size={15} className="mr-2" /> Hapus
                         </Button>
                     )
                 }
@@ -371,33 +366,33 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                             />
                         </FormSection>
 
-                        <div className="border border-primary/10 dark:border-white/10 p-8 bg-primary/[0.02] dark:bg-white/[0.02] rounded-2xl shadow-sm relative overflow-hidden group">
+                        <div className="border border-border p-6 bg-muted/30 rounded-2xl relative overflow-hidden group">
                             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                                 <UserCircle size={80} strokeWidth={1} />
                             </div>
                             
-                            <div className="flex items-center gap-3 mb-8 relative z-10">
-                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary dark:text-white">Preview Profil</span>
+                            <div className="flex items-center gap-3 mb-4 relative z-10">
+                                <span className="text-xs font-bold tracking-wide text-foreground">Preview Profil</span>
                             </div>
 
-                            <div className="flex flex-col items-center py-6 border-y border-primary/5 dark:border-white/5 border-dashed relative z-10">
-                                <div className="w-20 h-20 bg-primary dark:bg-white text-white dark:text-primary flex items-center justify-center font-black text-3xl mb-6 rounded-2xl shadow-xl shadow-primary/10 dark:shadow-white/5">
+                            <div className="flex flex-col items-center py-4 border-y border-border border-dashed relative z-10">
+                                <div className="w-16 h-16 bg-primary text-white flex items-center justify-center font-bold text-2xl mb-4 rounded-xl shadow-md">
                                     {form.data.name ? form.data.name.charAt(0).toUpperCase() : '?'}
                                 </div>
-                                <span className="text-[15px] font-black uppercase text-center leading-tight tracking-tight text-primary dark:text-white px-4">
+                                <span className="text-sm font-semibold text-center leading-tight text-foreground px-4">
                                     {form.data.name || 'Nama Belum Diisi'}
                                 </span>
-                                <span className="text-[10px] font-bold text-primary dark:text-white uppercase mt-2 tracking-widest px-4 text-center">
+                                <span className="text-xs font-medium text-muted-foreground/60 uppercase mt-1 tracking-wide px-4 text-center">
                                     {form.data.position || 'Jabatan Belum Diatur'}
                                 </span>
                                 
-                                <div className="mt-8 pt-6 border-t border-primary/5 dark:border-white/5 w-full flex flex-col items-center gap-3">
-                                    <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-primary/60 dark:text-white/60">
-                                        <Mail size={12} strokeWidth={3} />
+                                <div className="mt-4 pt-4 border-t border-border w-full flex flex-col items-center gap-2">
+                                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                                        <Mail size={13} />
                                         {form.data.email || 'Email Belum Set'}
                                     </div>
-                                    <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-primary/60 dark:text-white/60">
-                                        <ShieldAlert size={12} strokeWidth={3} />
+                                    <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+                                        <ShieldAlert size={13} />
                                         {form.data.role}
                                     </div>
                                 </div>
@@ -410,52 +405,55 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
     }
 
     return (
-        <DataTable
-            title="Database Pengguna"
-            columns={columns}
-            data={users.data || []}
-            searchPlaceholder="Cari nama, email, atau username..."
-            searchValue={filters.search || ''}
-            onSearchChange={(v: string) => router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })}
-            filters={filterConfig as any}
-            activeFilters={filters}
-            onFilterChange={handleFilterChange}
-            headerActions={
-                canCreate && (
-                    <Button 
-                        variant="primary"
-                        onClick={openCreate} 
-                        className="h-10 px-8 shadow-xl active:scale-95"
-                    >
-                        <Plus className="h-4 w-4" /> Registrasi User Baru
-                    </Button>
-                )
-            }
-            onRowClick={openEdit}
-            bulkActions={canDelete ? [
-                {
-                    label: 'Hapus Terpilih',
-                    icon: Trash2,
-                    variant: 'destructive',
-                    onClick: (ids: string[] | number[]) => {
-                        if (confirm(`Apakah Anda yakin ingin menghapus ${ids.length} user terpilih?`)) {
-                            router.post('/admin/users/bulk-delete', { ids }, {
-                                onSuccess: () => showToast(`${ids.length} user telah dihapus`, 'success')
-                            });
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+            <TableMasterData
+                title="Database Pengguna"
+                columns={columns}
+                borderless={true}
+                data={users.data || []}
+                searchPlaceholder="Cari nama, email, atau username..."
+                searchValue={filters.search || ''}
+                onSearchChange={(v: string) => router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })}
+                filters={filterConfig as any}
+                activeFilters={filters}
+                onFilterChange={handleFilterChange}
+                headerActions={
+                    canCreate && (
+                        <Button 
+                            variant="white"
+                            onClick={openCreate} 
+                            className="h-10 px-6 rounded-xl gap-2 text-xs font-bold transition-all duration-200 border border-border/40 bg-card text-foreground shadow-sm hover:bg-muted/60 hover:border-border/60 hover:shadow-md active:scale-95"
+                        >
+                            <Plus className="h-4 w-4" /> Tambah User
+                        </Button>
+                    )
+                }
+                onRowClick={openEdit}
+                bulkActions={canDelete ? [
+                    {
+                        label: 'Hapus Terpilih',
+                        icon: Trash2,
+                        variant: 'destructive',
+                        onClick: (ids: string[] | number[]) => {
+                            if (confirm(`Apakah Anda yakin ingin menghapus ${ids.length} user terpilih?`)) {
+                                router.post('/admin/users/bulk-delete', { ids }, {
+                                    onSuccess: () => showToast(`${ids.length} user telah dihapus`, 'success')
+                                });
+                            }
                         }
                     }
-                }
-            ] : undefined}
-            pagination={{
-                currentPage: users.current_page || 1,
-                lastPage: users.last_page || 1,
-                total: users.total || 0,
-                from: users.from || 1,
-                to: users.to || 1,
-                perPage: users.per_page || 10,
-                onPageChange: (page: number) => router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
-                onPerPageChange: (perPage: number) => router.get(globalThis.location.pathname, { ...filters, per_page: perPage, page: 1 }, { preserveState: true, preserveScroll: true }),
-            }}
-        />
+                ] : undefined}
+                pagination={{
+                    currentPage: users.current_page || 1,
+                    lastPage: users.last_page || 1,
+                    total: users.total || 0,
+                    from: users.from || 1,
+                    to: users.to || 1,
+                    perPage: users.per_page || 10,
+                    onPageChange: (page: number) => router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                    onPerPageChange: (perPage: number) => router.get(globalThis.location.pathname, { ...filters, per_page: perPage, page: 1 }, { preserveState: true, preserveScroll: true }),
+                }}
+            />
+        </div>
     );
 }

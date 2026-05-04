@@ -1,6 +1,6 @@
 import { ManagementForm, FormSection } from '@/components/admin/ManagementForm';
 import { useToast } from '@/components/contracts/Toast';
-import { Column, DataTable } from '@/components/ui/data/DataTable';
+import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
 import { Button } from '@/components/ui/base/Button';
 import { Checkbox } from '@/components/ui/base/Checkbox';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
@@ -31,7 +31,7 @@ interface StatusManagementProps {
 const StatusLabelCell = ({ row }: { readonly row: any }) => (
     <div className="flex flex-col group">
         <span className="text-[13px] leading-tight font-bold text-primary dark:text-white group-hover:translate-x-1 transition-transform inline-block">{row.label}</span>
-        <span className="mt-1 font-mono text-[9px] font-black tracking-[0.2em] text-primary/30 uppercase dark:text-white/30">
+        <span className="mt-1 font-mono text-[9px] font-semibold tracking-[0.2em] text-primary/30 uppercase dark:text-white/30">
             {row.code}
         </span>
     </div>
@@ -40,7 +40,7 @@ const StatusLabelCell = ({ row }: { readonly row: any }) => (
 const VisualPreviewCell = ({ row }: { readonly row: any }) => (
     <div className="flex items-center">
         <div 
-            className="px-3 py-1 rounded-lg border border-primary/5 text-[10px] font-black tracking-widest uppercase shadow-sm"
+            className="px-3 py-1 rounded-lg border border-primary/5 text-[10px] font-bold tracking-widest uppercase shadow-sm"
             style={{ color: row.color, backgroundColor: row.bg_color || 'transparent' }}
         >
             {row.label}
@@ -50,7 +50,7 @@ const VisualPreviewCell = ({ row }: { readonly row: any }) => (
 
 const ConfigBadge = ({ active, label, activeIcon: ActiveIcon, inactiveIcon: InactiveIcon }: { active: boolean, label: string, activeIcon: any, inactiveIcon: any }) => (
     <div className={cn(
-        "flex items-center gap-2 px-2 py-1 rounded-md border text-[9px] font-black tracking-widest uppercase transition-all",
+        "flex items-center gap-2 px-2 py-1 rounded-md border text-[9px] font-semibold tracking-widest uppercase transition-all",
         active 
             ? "bg-primary/5 border-primary/10 text-primary dark:bg-white/5 dark:border-white/10 dark:text-white" 
             : "bg-transparent border-transparent text-primary/20 dark:text-white/20"
@@ -125,7 +125,7 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                 cell: (row) => (
                     <div className="flex items-center justify-end gap-2">
                         <div className={cn('h-1.5 w-1.5 rounded-full', row.is_active ? 'bg-emerald-500 animate-pulse' : 'bg-primary/10 dark:bg-white/10')} />
-                        <span className={cn('text-[9px] font-black tracking-widest uppercase', row.is_active ? 'text-primary dark:text-white' : 'text-primary/20 dark:text-white/20')}>
+                        <span className={cn('text-[9px] font-bold tracking-widest uppercase', row.is_active ? 'text-primary dark:text-white' : 'text-primary/20 dark:text-white/20')}>
                             {row.is_active ? 'Online' : 'Offline'}
                         </span>
                     </div>
@@ -225,7 +225,7 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                         >
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                 <div className="space-y-4">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-primary/40 dark:text-white/40 ml-1">Warna Teks</label>
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-primary/40 dark:text-white/40 ml-1">Warna Teks</label>
                                     <div className="flex items-center gap-3 p-3 rounded-xl border border-primary/10 dark:border-white/10 bg-primary/[0.02] dark:bg-white/[0.02]">
                                         <input 
                                             type="color" 
@@ -233,11 +233,11 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                                             onChange={e => form.setData('color', e.target.value)}
                                             className="h-8 w-12 rounded-lg bg-transparent border-none cursor-pointer"
                                         />
-                                        <span className="font-mono text-[11px] font-black uppercase tracking-widest text-primary dark:text-white">{form.data.color}</span>
+                                        <span className="font-mono text-[11px] font-bold uppercase tracking-widest text-primary dark:text-white">{form.data.color}</span>
                                     </div>
                                 </div>
                                 <div className="space-y-4">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-primary/40 dark:text-white/40 ml-1">Warna Latar</label>
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-primary/40 dark:text-white/40 ml-1">Warna Latar</label>
                                     <div className="flex items-center gap-3 p-3 rounded-xl border border-primary/10 dark:border-white/10 bg-primary/[0.02] dark:bg-white/[0.02]">
                                         <input 
                                             type="color" 
@@ -245,13 +245,13 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                                             onChange={e => form.setData('bg_color', e.target.value)}
                                             className="h-8 w-12 rounded-lg bg-transparent border-none cursor-pointer"
                                         />
-                                        <span className="font-mono text-[11px] font-black uppercase tracking-widest text-primary dark:text-white">{form.data.bg_color}</span>
+                                        <span className="font-mono text-[11px] font-bold uppercase tracking-widest text-primary dark:text-white">{form.data.bg_color}</span>
                                     </div>
                                 </div>
                                 <div className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-primary/10 dark:border-white/10 bg-primary/[0.01] dark:bg-white/[0.01]">
-                                    <span className="text-[8px] font-black uppercase tracking-[0.3em] text-primary/20 dark:text-white/20 mb-4">Live Badge Preview</span>
+                                    <span className="text-[8px] font-bold uppercase tracking-[0.3em] text-primary/20 dark:text-white/20 mb-4">Live Badge Preview</span>
                                     <div 
-                                        className="px-6 py-2 rounded-xl text-[11px] font-black tracking-widest uppercase shadow-xl border border-white/10"
+                                        className="px-6 py-2 rounded-xl text-[11px] font-bold tracking-widest uppercase shadow-xl border border-white/10"
                                         style={{ color: form.data.color, backgroundColor: form.data.bg_color }}
                                     >
                                         {form.data.label || 'PREVIEW'}
@@ -265,7 +265,7 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                         <div className="sticky top-6 space-y-10">
                             {/* Mode Tampilan Widget */}
                             <div className="rounded-2xl border border-primary/10 dark:border-white/10 bg-primary/[0.02] dark:bg-white/[0.02] p-8">
-                                <h3 className="text-[10px] font-black tracking-[0.3em] text-primary dark:text-white uppercase mb-6 flex items-center gap-2">
+                                <h3 className="text-[10px] font-bold tracking-[0.3em] text-primary dark:text-white uppercase mb-6 flex items-center gap-2">
                                     <LayoutTemplate size={14} /> Render Strategy
                                 </h3>
 
@@ -292,7 +292,7 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                                                 <mode.icon size={16} />
                                             </div>
                                             <div className="flex flex-col">
-                                                <span className="text-[11px] font-black uppercase tracking-wider">{mode.label}</span>
+                                                <span className="text-[11px] font-bold uppercase tracking-wider">{mode.label}</span>
                                                 <span className={cn(
                                                     "text-[9px] font-bold leading-tight mt-1 opacity-60",
                                                 )}>
@@ -306,7 +306,7 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
 
                             {/* Operational Controls */}
                             <div className="space-y-4">
-                                <h3 className="text-[10px] font-black tracking-[0.3em] text-primary dark:text-white uppercase px-1">Behavior Control</h3>
+                                <h3 className="text-[10px] font-bold tracking-[0.3em] text-primary dark:text-white uppercase px-1">Behavior Control</h3>
                                 <div className="space-y-3">
                                     {[
                                         { id: 'allow_info_edit', label: 'Allow Info Edit', desc: 'User can modify metadata in this status.', icon: Unlock },
@@ -325,7 +325,7 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                                                 className="h-5 w-5"
                                             />
                                             <div className="flex flex-col">
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-primary dark:text-white">{ctrl.label}</span>
+                                                <span className="text-[10px] font-bold uppercase tracking-widest text-primary dark:text-white">{ctrl.label}</span>
                                                 <span className="text-[8px] font-bold text-primary/30 dark:text-white/30 uppercase mt-0.5">{ctrl.desc}</span>
                                             </div>
                                         </div>
@@ -347,17 +347,22 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
     }
 
     return (
-        <div className="flex flex-col h-full bg-white dark:bg-black antialiased">
-            <DataTable
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+            <TableMasterData
                 title="Manajemen Parameter Status"
+                borderless={true}
                 data={statuses?.data || []}
                 columns={columns}
                 onRowClick={openEdit}
                 searchPlaceholder="Cari status, kode, atau deskripsi..."
                 searchValue={filters?.search || ''}
-                onSearchChange={(v) => router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })}
+                onSearchChange={(v: string) => router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })}
                 headerActions={
-                    <Button variant="primary" onClick={openCreate} className="h-10 px-8 shadow-xl active:scale-95">
+                    <Button 
+                        variant="white" 
+                        onClick={openCreate} 
+                        className="h-10 px-6 rounded-xl gap-2 text-xs font-bold transition-all duration-200 border border-border/40 bg-card text-foreground shadow-sm hover:bg-muted/60 hover:border-border/60 hover:shadow-md active:scale-95"
+                    >
                         <Plus size={14} /> Registrasi Status Baru
                     </Button>
                 }

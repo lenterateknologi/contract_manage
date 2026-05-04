@@ -36,7 +36,7 @@ interface ActivityFeedProps {
 
 export function ActivityFeed({ items }: ActivityFeedProps) {
     return (
-        <div className="rounded-2xl border border-sidebar-border/60 bg-white shadow-sm lg:col-span-5">
+        <div className="rounded-2xl border border-sidebar-border/60 bg-card text-card-foreground shadow-sm lg:col-span-5">
             <div className="flex items-center justify-between border-b border-sidebar-border/40 px-6 py-4">
                 <SectionTitle>Aktivitas Terbaru</SectionTitle>
                 <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />

@@ -5,7 +5,7 @@ import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { router, useForm } from '@inertiajs/react';
 import { Building2, Plus, Trash2 } from 'lucide-react';
 import React, { useMemo } from 'react';
-import { Column, DataTable } from '@/components/ui/data/DataTable';
+import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
 import { Button } from '@/components/ui/base/Button';
 import { usePermissions } from '@/hooks/use-permissions';
 import { cn } from '@/lib/utils';
@@ -22,11 +22,11 @@ function deptColor(name: string) { let h=0; for(let i=0;i<name.length;i++) h=nam
 const DeptCell = ({ name, code }: Readonly<{ name: string; code: string }>) => (
     <div className="flex items-center gap-3">
         <div className={cn('flex h-9 w-9 items-center justify-center rounded-xl shrink-0', deptColor(name))}>
-            <Building2 size={15} />
+            <Building2 size={16} />
         </div>
         <div className="flex flex-col min-w-0">
-            <span className="text-[13px] font-semibold text-sidebar-foreground leading-tight mb-0.5 truncate font-sans">{name}</span>
-            <div className="flex items-center gap-1.5 font-mono text-[10px] font-bold text-sidebar-foreground/40 uppercase tracking-widest leading-none">
+            <span className="text-sm font-semibold text-foreground leading-tight mb-0.5 truncate">{name}</span>
+            <div className="flex items-center gap-1.5 font-mono text-xs font-medium text-muted-foreground/70 leading-none">
                 {code}
             </div>
         </div>
@@ -34,15 +34,15 @@ const DeptCell = ({ name, code }: Readonly<{ name: string; code: string }>) => (
 );
 
 const DescriptionCell = ({ description }: Readonly<{ description?: string }>) => (
-    <span className="text-[11px] font-bold text-sidebar-foreground/40 uppercase tracking-tight line-clamp-1 max-w-[300px]">
+    <span className="text-sm font-medium text-muted-foreground/70 line-clamp-1 max-w-[300px]">
         {description || '—'}
     </span>
 );
 
 const VisibilityCell = ({ isActive }: Readonly<{ isActive: boolean }>) => (
     <div className="flex items-center gap-2">
-        <div className={cn('w-1.5 h-1.5 rounded-full shrink-0', isActive ? 'bg-emerald-500' : 'bg-rose-400')} />
-        <span className={cn('text-[10px] font-semibold uppercase tracking-widest font-sans', isActive ? 'text-emerald-600' : 'text-rose-500')}>
+        <div className={cn('w-2 h-2 rounded-full shrink-0', isActive ? 'bg-emerald-500' : 'bg-rose-400')} />
+        <span className={cn('text-xs font-semibold', isActive ? 'text-emerald-600' : 'text-rose-500')}>
             {isActive ? 'Aktif' : 'Nonaktif'}
         </span>
     </div>
@@ -85,7 +85,6 @@ export function DepartmentManagement({ departments, filters }: Readonly<Departme
         {
             header: 'Departemen / Unit',
             accessorKey: 'name',
-            sortable: true,
             cell: (row) => <DeptCell name={row.name} code={row.code} />
         },
         {
@@ -138,7 +137,7 @@ export function DepartmentManagement({ departments, filters }: Readonly<Departme
     if (isFormView) {
         return (
             <ManagementForm
-                title={editingDept ? 'Update Master Departemen' : 'Registrasi Departemen Baru'}
+                title={editingDept ? 'Update Master Departemen' : 'Registrasi Master Departemen'}
                 subtitle={editingDept ? 'Pengaturan detail unit organisasi' : 'Registrasi divisi atau unit organisasi'}
                 onClose={closeForm}
                 onSave={handleSubmit}
@@ -151,9 +150,9 @@ export function DepartmentManagement({ departments, filters }: Readonly<Departme
                             type="button" 
                             variant="ghost" 
                             onClick={() => setIsConfirmOpen(true)}
-                            className="h-8 hover:bg-rose-500 hover:text-white text-rose-500 rounded-xl px-4 text-[10px] font-black uppercase tracking-widest transition-all border border-rose-500/10 active:scale-95"
+                            className="h-9 hover:bg-rose-500 hover:text-white text-rose-500 rounded-xl px-4 text-xs font-semibold transition-all border border-rose-500/10 active:scale-95"
                         >
-                            <Trash2 size={14} className="mr-2" /> Hapus Departemen
+                            <Trash2 size={15} className="mr-2" /> Hapus
                         </Button>
                     )
                 }
@@ -220,16 +219,16 @@ export function DepartmentManagement({ departments, filters }: Readonly<Departme
                             />
                         </FormSection>
 
-                        <div className="border border-primary/10 dark:border-white/10 p-8 bg-primary/[0.02] dark:bg-white/[0.02] rounded-2xl shadow-sm relative overflow-hidden group">
+                        <div className="border border-border p-6 bg-muted/30 rounded-2xl relative overflow-hidden group">
                             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                                 <Building2 size={80} strokeWidth={1} />
                             </div>
                             
-                            <div className="flex items-center gap-3 mb-8 relative z-10">
-                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary dark:text-white">Arsitektur Unit</span>
+                            <div className="flex items-center gap-3 mb-4 relative z-10">
+                                <span className="text-xs font-bold tracking-wide text-foreground">Arsitektur Unit</span>
                             </div>
 
-                            <p className="text-[11px] text-primary dark:text-white font-bold uppercase leading-relaxed tracking-tight italic relative z-10">
+                            <p className="text-xs text-muted-foreground leading-relaxed relative z-10">
                                 Departemen digunakan untuk mengelompokkan pengguna dan menentukan keterlibatan dalam alur persetujuan (Workflow) secara otomatis.
                             </p>
                         </div>
@@ -240,52 +239,55 @@ export function DepartmentManagement({ departments, filters }: Readonly<Departme
     }
 
     return (
-        <DataTable
-            title="Database Unit / Departemen"
-            columns={columns}
-            data={departments.data || []}
-            searchPlaceholder="Cari departemen..."
-            searchValue={filters.search || ''}
-            onSearchChange={(v: string) => router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })}
-            filters={filterConfig as any}
-            activeFilters={filters}
-            onFilterChange={handleFilterChange}
-            headerActions={
-                canUpdate && (
-                    <Button 
-                        variant="primary"
-                        onClick={openCreate} 
-                        className="h-10 px-8 shadow-xl active:scale-95"
-                    >
-                        <Plus size={14} /> Registrasi Unit Baru
-                    </Button>
-                )
-            }
-            onRowClick={openEdit}
-            bulkActions={canUpdate ? [
-                {
-                    label: 'Hapus Terpilih',
-                    icon: Trash2,
-                    variant: 'destructive',
-                    onClick: (ids: string[] | number[]) => {
-                        if (confirm(`Hapus ${ids.length} departemen terpilih?`)) {
-                            router.post('/admin/departments/bulk-delete', { ids }, {
-                                onSuccess: () => showToast(`${ids.length} departemen telah dihapus`, 'success')
-                            });
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+            <TableMasterData
+                title="Database Unit / Departemen"
+                columns={columns}
+                borderless={true}
+                data={departments.data || []}
+                searchPlaceholder="Cari departemen..."
+                searchValue={filters.search || ''}
+                onSearchChange={(v: string) => router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })}
+                filters={filterConfig as any}
+                activeFilters={filters}
+                onFilterChange={handleFilterChange}
+                headerActions={
+                    canUpdate && (
+                        <Button 
+                            variant="white"
+                            onClick={openCreate} 
+                            className="h-10 px-6 rounded-xl gap-2 text-xs font-bold transition-all duration-200 border border-border/40 bg-card text-foreground shadow-sm hover:bg-muted/60 hover:border-border/60 hover:shadow-md active:scale-95"
+                        >
+                            <Plus size={15} /> Tambah Unit
+                        </Button>
+                    )
+                }
+                onRowClick={openEdit}
+                bulkActions={canUpdate ? [
+                    {
+                        label: 'Hapus Terpilih',
+                        icon: Trash2,
+                        variant: 'destructive',
+                        onClick: (ids: string[] | number[]) => {
+                            if (confirm(`Hapus ${ids.length} departemen terpilih?`)) {
+                                router.post('/admin/departments/bulk-delete', { ids }, {
+                                    onSuccess: () => showToast(`${ids.length} departemen telah dihapus`, 'success')
+                                });
+                            }
                         }
                     }
-                }
-            ] : undefined}
-            pagination={{
-                currentPage: departments.current_page || 1,
-                lastPage: departments.last_page || 1,
-                total: departments.total || 0,
-                from: departments.from || 1,
-                to: departments.to || 1,
-                perPage: departments.per_page || 10,
-                onPageChange: (page: number) => router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
-                onPerPageChange: (pp: number) => router.get(globalThis.location.pathname, { ...filters, per_page: pp, page: 1 }, { preserveState: true, preserveScroll: true }),
-            }}
-        />
+                ] : undefined}
+                pagination={{
+                    currentPage: departments.current_page || 1,
+                    lastPage: departments.last_page || 1,
+                    total: departments.total || 0,
+                    from: departments.from || 1,
+                    to: departments.to || 1,
+                    perPage: departments.per_page || 10,
+                    onPageChange: (page: number) => router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                    onPerPageChange: (pp: number) => router.get(globalThis.location.pathname, { ...filters, per_page: pp, page: 1 }, { preserveState: true, preserveScroll: true }),
+                }}
+            />
+        </div>
     );
 }

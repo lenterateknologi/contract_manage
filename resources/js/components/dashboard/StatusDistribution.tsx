@@ -10,7 +10,7 @@ export function StatusDistribution({ items }: StatusDistributionProps) {
     const total = items.reduce((sum, s) => sum + s.count, 0) || 1;
 
     return (
-        <div className="rounded-2xl border border-sidebar-border/60 bg-white p-6 shadow-sm lg:col-span-4">
+        <div className="rounded-2xl border border-sidebar-border/60 bg-card text-card-foreground p-6 shadow-sm lg:col-span-4">
             <SectionTitle>Distribusi Status</SectionTitle>
             <div className="space-y-3">
                 {items.length === 0 ? (

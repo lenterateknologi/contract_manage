@@ -4,7 +4,7 @@ import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { router, useForm } from '@inertiajs/react';
 import { Key, LayoutGrid, Plus, ShieldCheck, Trash2 } from 'lucide-react';
 import React, { useMemo } from 'react';
-import { Column, DataTable } from '@/components/ui/data/DataTable';
+import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
 import { Button } from '@/components/ui/base/Button';
 import { usePermissions } from '@/hooks/use-permissions';
 import { cn } from '@/lib/utils';
@@ -71,15 +71,14 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
             {
                 header: 'Nama Role / Jabatan',
                 accessorKey: 'name',
-                sortable: true,
                 cell: (row) => (
                     <div className="flex items-center gap-3">
-                        <div className={cn('flex h-10 w-10 items-center justify-center rounded-xl shrink-0', roleColor(row.name))}>
-                            <ShieldCheck size={17} />
+                        <div className={cn('flex h-9 w-9 items-center justify-center rounded-xl shrink-0', roleColor(row.name))}>
+                            <ShieldCheck size={16} />
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-[13px] leading-tight font-semibold text-sidebar-foreground font-sans">{row.name}</span>
-                            <span className="mt-0.5 text-[10px] font-medium tracking-widest text-sidebar-foreground/30 uppercase font-sans">
+                            <span className="text-sm leading-tight font-semibold text-foreground">{row.name}</span>
+                            <span className="mt-0.5 text-xs font-medium text-muted-foreground/60">
                                 Terdaftar: {new Date(row.created_at).toLocaleDateString('id-ID')}
                             </span>
                         </div>
@@ -91,11 +90,11 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                 accessorKey: 'description',
                 cell: (row) =>
                     row.description ? (
-                        <span className="block max-w-sm truncate text-[11px] leading-tight font-medium tracking-tight text-sidebar-foreground/50 font-sans">
+                        <span className="block max-w-sm truncate text-sm leading-tight font-medium text-muted-foreground">
                             {row.description}
                         </span>
                     ) : (
-                        <span className="text-[10px] leading-none font-medium tracking-widest text-sidebar-foreground/20 italic font-sans">
+                        <span className="text-sm leading-none font-medium text-muted-foreground/30 italic">
                             —
                         </span>
                     ),
@@ -107,17 +106,19 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                     <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                         <Button
                             variant="outline"
+                            size="sm"
                             onClick={() => router.get(`/admin/roles/${row.id}/config?tab=access`)}
-                            className="flex h-8 items-center gap-1.5 px-3 text-[9px] active:scale-95"
+                            className="flex h-8 items-center gap-1.5 px-3 text-xs active:scale-95"
                         >
-                            <Key size={11} className="opacity-40" /> Hak Akses
+                            <Key size={12} className="opacity-40" /> Hak Akses
                         </Button>
                         <Button
                             variant="outline"
+                            size="sm"
                             onClick={() => router.get(`/admin/roles/${row.id}/config?tab=navigation`)}
-                            className="flex h-8 items-center gap-1.5 px-3 text-[9px] active:scale-95"
+                            className="flex h-8 items-center gap-1.5 px-3 text-xs active:scale-95"
                         >
-                            <LayoutGrid size={11} className="opacity-40" /> Navigasi
+                            <LayoutGrid size={12} className="opacity-40" /> Navigasi
                         </Button>
                     </div>
                 ),
@@ -176,9 +177,9 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                             type="button"
                             variant="ghost"
                             onClick={() => setIsConfirmOpen(true)}
-                            className="h-8 hover:bg-rose-500 hover:text-white text-rose-500 rounded-xl px-4 text-[10px] font-black uppercase tracking-widest transition-all border border-rose-500/10 active:scale-95"
+                            className="h-9 hover:bg-rose-500 hover:text-white text-rose-500 rounded-xl px-4 text-xs font-semibold transition-all border border-rose-500/10 active:scale-95"
                         >
-                            <Trash2 size={14} className="mr-2" /> Hapus Role
+                            <Trash2 size={15} className="mr-2" /> Hapus
                         </Button>
                     )
                 }
@@ -227,33 +228,33 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
 
                     {/* Side Column: 4 Columns */}
                     <div className="md:col-span-4 flex flex-col pt-6 md:pt-0">
-                        <div className="rounded-2xl border border-sidebar-border bg-sidebar-accent/40 p-8 shadow-sm relative overflow-hidden group">
+                        <div className="rounded-2xl border border-border bg-muted/30 p-6 shadow-sm relative overflow-hidden group">
                             <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                                 <ShieldCheck size={80} strokeWidth={1} />
                             </div>
 
-                            <div className="mb-8 flex items-center gap-3 relative z-10">
-                                <span className="text-[10px] font-semibold tracking-[0.3em] text-sidebar-foreground/50 uppercase font-sans">
+                            <div className="mb-4 flex items-center gap-3 relative z-10">
+                                <span className="text-xs font-bold tracking-wide text-foreground">
                                     Pusat Otoritas
                                 </span>
                             </div>
                             
-                            <div className="mb-8 space-y-3 border-y border-dashed border-sidebar-border py-8 relative z-10">
-                                <span className="block text-sm leading-tight font-semibold tracking-tight text-sidebar-foreground uppercase font-sans">
+                            <div className="mb-4 space-y-3 border-y border-dashed border-border py-4 relative z-10">
+                                <span className="block text-sm leading-tight font-semibold tracking-tight text-foreground">
                                     {form.data.name || 'Nama Role'}
                                 </span>
-                                <p className="text-[10px] leading-relaxed font-medium tracking-wide text-sidebar-foreground/40 italic font-sans">
+                                <p className="text-xs leading-relaxed font-medium tracking-wide text-muted-foreground">
                                     {form.data.description || 'Deskripsi belum diatur untuk role ini...'}
                                 </p>
                             </div>
 
                             {editingRole && (
-                                <div className="grid grid-cols-2 gap-3 mb-8 relative z-10">
+                                <div className="grid grid-cols-2 gap-3 mb-4 relative z-10">
                                     <Button
                                         type="button"
                                         variant="outline"
                                         onClick={() => router.get(`/admin/roles/${editingRole.id}/config?tab=access`)}
-                                        className="h-9 gap-2 text-[9px] active:scale-95 hover:bg-sidebar-primary hover:text-white transition-all"
+                                        className="h-9 gap-2 text-xs active:scale-95 transition-all"
                                     >
                                         <Key size={12} /> Hak Akses
                                     </Button>
@@ -261,14 +262,14 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                                         type="button"
                                         variant="outline"
                                         onClick={() => router.get(`/admin/roles/${editingRole.id}/config?tab=navigation`)}
-                                        className="h-9 gap-2 text-[9px] active:scale-95 hover:bg-sidebar-primary hover:text-white transition-all"
+                                        className="h-9 gap-2 text-xs active:scale-95 transition-all"
                                     >
                                         <LayoutGrid size={12} /> Navigasi
                                     </Button>
                                 </div>
                             )}
 
-                            <p className="text-[10px] leading-normal font-medium tracking-tight text-sidebar-foreground/30 relative z-10 font-sans">
+                            <p className="text-xs leading-normal font-medium tracking-tight text-muted-foreground/60 relative z-10">
                                 Role menentukan hak akses pengguna terhadap modul-modul sistem. Setelah menyimpan, Anda dapat mengatur hak akses spesifik per modul.
                             </p>
                         </div>
@@ -279,59 +280,66 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
     }
 
     return (
-        <DataTable
-            title="Database Role & Otoritas"
-            columns={columns}
-            data={roles.data || []}
-            searchPlaceholder="Cari role..."
-            searchValue={filters.search || ''}
-            onSearchChange={(v: string) =>
-                router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })
-            }
-            filters={filterConfig as any}
-            activeFilters={filters}
-            onFilterChange={handleFilterChange}
-            headerActions={
-                canCreate && (
-                    <Button variant="primary" onClick={openCreate} className="h-10 px-8 shadow-xl active:scale-95">
-                        <Plus size={14} /> Registrasi Role Baru
-                    </Button>
-                )
-            }
-            onRowClick={openEdit}
-            bulkActions={
-                canDelete
-                    ? [
-                          {
-                              label: 'Hapus Terpilih',
-                              icon: Trash2,
-                              variant: 'destructive',
-                              onClick: (ids: string[] | number[]) => {
-                                  if (confirm(`Hapus ${ids.length} role terpilih?`)) {
-                                      router.post(
-                                          '/admin/roles/bulk-delete',
-                                          { ids },
-                                          {
-                                              onSuccess: () => showToast(`${ids.length} role telah dihapus`, 'success'),
-                                          },
-                                      );
-                                  }
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+            <TableMasterData
+                title="Database Role & Otoritas"
+                columns={columns}
+                borderless={true}
+                data={roles.data || []}
+                searchPlaceholder="Cari role..."
+                searchValue={filters.search || ''}
+                onSearchChange={(v: string) =>
+                    router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })
+                }
+                filters={filterConfig as any}
+                activeFilters={filters}
+                onFilterChange={handleFilterChange}
+                headerActions={
+                    canCreate && (
+                        <Button 
+                            variant="white"
+                            onClick={openCreate} 
+                            className="h-10 px-6 rounded-xl gap-2 text-xs font-bold transition-all duration-200 border border-border/40 bg-card text-foreground shadow-sm hover:bg-muted/60 hover:border-border/60 hover:shadow-md active:scale-95"
+                        >
+                            <Plus size={15} /> Tambah Role
+                        </Button>
+                    )
+                }
+                onRowClick={openEdit}
+                bulkActions={
+                    canDelete
+                        ? [
+                              {
+                                  label: 'Hapus Terpilih',
+                                  icon: Trash2,
+                                  variant: 'destructive',
+                                  onClick: (ids: string[] | number[]) => {
+                                      if (confirm(`Hapus ${ids.length} role terpilih?`)) {
+                                          router.post(
+                                              '/admin/roles/bulk-delete',
+                                              { ids },
+                                              {
+                                                  onSuccess: () => showToast(`${ids.length} role telah dihapus`, 'success'),
+                                              },
+                                          );
+                                      }
+                                  },
                               },
-                          },
-                      ]
-                    : undefined
-            }
-            pagination={{
-                currentPage: roles.current_page || 1,
-                lastPage: roles.last_page || 1,
-                total: roles.total || 0,
-                from: roles.from || 1,
-                to: roles.to || 1,
-                perPage: roles.per_page || 10,
-                onPageChange: (page: number) => router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
-                onPerPageChange: (pp: number) =>
-                    router.get(globalThis.location.pathname, { ...filters, per_page: pp, page: 1 }, { preserveState: true, preserveScroll: true }),
-            }}
-        />
+                          ]
+                        : undefined
+                }
+                pagination={{
+                    currentPage: roles.current_page || 1,
+                    lastPage: roles.last_page || 1,
+                    total: roles.total || 0,
+                    from: roles.from || 1,
+                    to: roles.to || 1,
+                    perPage: roles.per_page || 10,
+                    onPageChange: (page: number) => router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                    onPerPageChange: (pp: number) =>
+                        router.get(globalThis.location.pathname, { ...filters, per_page: pp, page: 1 }, { preserveState: true, preserveScroll: true }),
+                }}
+            />
+        </div>
     );
 }

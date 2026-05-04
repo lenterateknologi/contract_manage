@@ -1,14 +1,11 @@
 import { useToast } from '@/components/contracts/Toast';
-import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
-import { Column, DataTable } from '@/components/ui/data/DataTable';
 import { Button } from '@/components/ui/base/Button';
-import { CompactInput } from '@/components/ui/forms/CompactInput';
+import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
 import { CompactSelect } from '@/components/ui/forms/CompactSelect';
 import { usePermissions } from '@/hooks/use-permissions';
-import { router, useForm } from '@inertiajs/react';
-import { Plus, Trash2, FileText, Info, LayoutGrid, Settings2, ShieldCheck, ChevronRight } from 'lucide-react';
-import React, { useMemo } from 'react';
-import { FormSection, ManagementForm } from './ManagementForm';
+import { router } from '@inertiajs/react';
+import { FileText, LayoutGrid, Plus, ShieldCheck, Trash2 } from 'lucide-react';
+import { useMemo } from 'react';
 
 interface ContractTypeManagementProps {
     readonly contractTypes: any;
@@ -19,15 +16,15 @@ interface ContractTypeManagementProps {
 
 const MechanismCell = ({ mechanism }: Readonly<{ mechanism: string }>) => (
     <div className="flex items-center gap-2">
-        <div className="h-1.5 w-1.5 rounded-full bg-primary/20 dark:bg-white/20" />
-        <span className="text-[10px] font-black tracking-widest text-primary/60 uppercase dark:text-white/60">
+        <div className="bg-primary/20 h-1.5 w-1.5 rounded-full dark:bg-white/20" />
+        <span className="text-primary/60 text-[10px] font-semibold tracking-widest uppercase dark:text-white/60">
             {mechanism === 'digital' ? 'Formulir Digital' : mechanism === 'folder' ? 'Folder Kontrak' : 'Unggah Manual'}
         </span>
     </div>
 );
 
 const TypeDescriptionCell = ({ description }: Readonly<{ description?: string }>) => (
-    <span className="text-[10px] font-bold text-primary/40 dark:text-white/40 uppercase tracking-tight truncate max-w-[200px]">
+    <span className="text-primary/40 max-w-[200px] truncate text-[10px] font-bold tracking-tight uppercase dark:text-white/40">
         {description || '—'}
     </span>
 );
@@ -54,7 +51,7 @@ const MechanismOptions = ({
     if (mechanism === 'digital') {
         return (
             <div className="animate-in fade-in slide-in-from-top-2">
-                <CompactSelect 
+                <CompactSelect
                     label={`Tautan Templat Digital ${type}`}
                     value={formTemplateId}
                     onChange={setFormTemplateId}
@@ -62,8 +59,8 @@ const MechanismOptions = ({
                         { label: '-- TANPA TEMPLAT TERPAUT --', value: 'none' },
                         ...templates.map((t: any) => ({
                             label: `${t.name} (${t.document_type || 'ADHOC'})`,
-                            value: t.id
-                        }))
+                            value: t.id,
+                        })),
                     ]}
                     icon={LayoutGrid}
                 />
@@ -73,7 +70,7 @@ const MechanismOptions = ({
     if (mechanism === 'folder') {
         return (
             <div className="animate-in fade-in slide-in-from-top-2">
-                <CompactSelect 
+                <CompactSelect
                     label={`Tautan Templat Folder (${type})`}
                     value={contractTemplateId}
                     onChange={setContractTemplateId}
@@ -81,8 +78,8 @@ const MechanismOptions = ({
                         { label: '-- TIDAK ADA TEMPLAT TERPILIH --', value: 'none' },
                         ...physTemplates.map((t: any) => ({
                             label: `${t.name} (${t.file_type || 'PDF'})`,
-                            value: t.id
-                        }))
+                            value: t.id,
+                        })),
                     ]}
                     icon={FileText}
                 />
@@ -90,8 +87,8 @@ const MechanismOptions = ({
         );
     }
     return (
-        <div className="animate-in fade-in rounded-2xl border border-dashed border-primary/10 bg-primary/[0.01] p-6 text-center dark:border-white/10 dark:bg-white/[0.01]">
-            <p className="text-[10px] font-black tracking-[0.2em] text-primary/30 uppercase dark:text-white/30 italic">
+        <div className="animate-in fade-in border-primary/10 bg-primary/[0.01] rounded-2xl border border-dashed p-6 text-center dark:border-white/10 dark:bg-white/[0.01]">
+            <p className="text-primary/30 text-[10px] font-bold tracking-[0.2em] uppercase italic dark:text-white/30">
                 {type === 'F1' ? 'PENGGUNA INTERNAL' : 'VENDOR'} AKAN MENGUNGGAH PDF MANUAL UNTUK {type}
             </p>
         </div>
@@ -109,24 +106,28 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
                 accessorKey: 'name',
                 sortable: true,
                 cell: (row) => (
-                    <div className="flex flex-col group">
-                        <span className="text-[13px] font-black tracking-tight text-primary dark:text-white uppercase group-hover:translate-x-1 transition-transform">{row.name}</span>
-                        <div className="flex items-center gap-2 mt-1">
+                    <div className="group flex flex-col">
+                        <span className="text-primary text-[13px] font-bold tracking-tight uppercase transition-transform group-hover:translate-x-1 dark:text-white">
+                            {row.name}
+                        </span>
+                        <div className="mt-1 flex items-center gap-2">
                             <ShieldCheck size={10} className="text-primary/20 dark:text-white/20" />
-                            <span className="text-[9px] font-bold text-primary/30 dark:text-white/30 uppercase tracking-widest italic">Aset Administratif Terpantau</span>
+                            <span className="text-primary/30 text-[9px] font-bold tracking-widest uppercase italic dark:text-white/30">
+                                Aset Administratif Terpantau
+                            </span>
                         </div>
                     </div>
-                )
+                ),
             },
             {
                 header: 'Mekanisme F1 (Internal)',
                 accessorKey: 'f1_input_mechanism',
-                cell: (row) => <MechanismCell mechanism={row.f1_input_mechanism} />
+                cell: (row) => <MechanismCell mechanism={row.f1_input_mechanism} />,
             },
             {
                 header: 'Mekanisme F2 (Eksternal)',
                 accessorKey: 'f2_input_mechanism',
-                cell: (row) => <MechanismCell mechanism={row.f2_input_mechanism} />
+                cell: (row) => <MechanismCell mechanism={row.f2_input_mechanism} />,
             },
             {
                 header: 'Keterangan Konten',
@@ -147,14 +148,17 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
     };
 
     return (
-        <div className="animate-in fade-in flex h-full flex-col bg-white dark:bg-black antialiased">
-            <DataTable
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+            <TableMasterData
                 title="Registri Klasifikasi Kontrak"
+                borderless={true}
                 columns={columns}
                 data={contractTypes?.data || []}
                 searchPlaceholder="Filter jenis klasifikasi..."
                 searchValue={filters.search || ''}
-                onSearchChange={(v) => router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })}
+                onSearchChange={(v: string) =>
+                    router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })
+                }
                 filters={[
                     {
                         label: 'Mekanisme F1',
@@ -179,16 +183,20 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
                     f1_input_mechanism: filters.f1_input_mechanism ? [filters.f1_input_mechanism] : [],
                     f2_input_mechanism: filters.f2_input_mechanism ? [filters.f2_input_mechanism] : [],
                 }}
-                onFilterChange={(updatedFilters) => {
+                onFilterChange={(updatedFilters: any) => {
                     const newFilters: Record<string, any> = { ...filters, page: 1 };
-                    Object.keys(updatedFilters).forEach(key => {
+                    Object.keys(updatedFilters).forEach((key) => {
                         newFilters[key] = updatedFilters[key].length > 0 ? updatedFilters[key][0] : null;
                     });
                     router.get(globalThis.location.pathname, newFilters, { preserveState: true, replace: true });
                 }}
                 headerActions={
                     canCreate && (
-                        <Button variant="primary" onClick={openCreate} className="h-10 px-8 shadow-xl active:scale-95">
+                        <Button 
+                            variant="white" 
+                            onClick={openCreate} 
+                            className="h-10 px-6 rounded-xl gap-2 text-xs font-bold transition-all duration-200 border border-border/40 bg-card text-foreground shadow-sm hover:bg-muted/60 hover:border-border/60 hover:shadow-md active:scale-95"
+                        >
                             <Plus size={14} className="mr-2" /> Registrasi Klasifikasi
                         </Button>
                     )
@@ -197,31 +205,36 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
                 bulkActions={
                     canDelete
                         ? [
-                                {
-                                    label: 'Hapus Terpilih',
-                                    icon: Trash2,
-                                    variant: 'destructive',
-                                    onClick: (ids: string[]) => {
-                                        if (confirm(`Apakah Anda yakin ingin menghapus ${ids.length} tipe kontrak terpilih secara permanen?`)) {
-                                            router.post(
-                                                route('admin.contract-types.bulk-destroy'),
-                                                { ids },
-                                                {
-                                                    onSuccess: () => showToast(`${ids.length} tipe kontrak telah dihapus dari registri`, 'success'),
-                                                },
-                                            );
-                                        }
-                                    },
-                                },
-                            ]
+                              {
+                                  label: 'Hapus Terpilih',
+                                  icon: Trash2,
+                                  variant: 'destructive',
+                                  onClick: (ids: string[]) => {
+                                      if (confirm(`Apakah Anda yakin ingin menghapus ${ids.length} tipe kontrak terpilih secara permanen?`)) {
+                                          router.post(
+                                              route('admin.contract-types.bulk-destroy'),
+                                              { ids },
+                                              {
+                                                  onSuccess: () => showToast(`${ids.length} tipe kontrak telah dihapus dari registri`, 'success'),
+                                              },
+                                          );
+                                      }
+                                  },
+                              },
+                          ]
                         : undefined
                 }
-                pagination={contractTypes?.meta ? {
-                    currentPage: contractTypes.meta.current_page || 1,
-                    lastPage: contractTypes.meta.last_page || 1,
-                    total: contractTypes.meta.total || 0,
-                    onPageChange: (page) => router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
-                } : undefined}
+                pagination={
+                    contractTypes?.meta
+                        ? {
+                              currentPage: contractTypes.meta.current_page || 1,
+                              lastPage: contractTypes.meta.last_page || 1,
+                              total: contractTypes.meta.total || 0,
+                              onPageChange: (page: number) =>
+                                  router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                          }
+                        : undefined
+                }
             />
         </div>
     );

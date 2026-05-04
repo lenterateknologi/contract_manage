@@ -23,23 +23,23 @@
 
     /* Theme Colors mapped to Tailwind v4 theme keys */
     --color-background: var(--background);
-    --color-foreground: var(--text-dark);
+    --color-foreground: var(--foreground);
 
     --color-primary: var(--primary);
-    --color-primary-foreground: var(--white);
+    --color-primary-foreground: var(--primary-foreground);
 
     --color-secondary: var(--secondary);
-    --color-secondary-foreground: var(--text-dark);
+    --color-secondary-foreground: var(--secondary-foreground);
 
-    --color-muted: var(--secondary);
-    --color-muted-foreground: var(--text-light);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
 
     --color-accent: var(--accent);
-    --color-accent-foreground: var(--white);
+    --color-accent-foreground: var(--accent-foreground);
 
     --color-border: var(--border);
-    --color-input: var(--white);
-    --color-ring: var(--primary);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
 
     --color-success: var(--success);
     --color-warning: var(--warning);
@@ -64,6 +64,10 @@
 }
 
 :root {
+    /* Base theme definitions */
+    --background: #f8fafc;
+    --foreground: #1a2332;
+
     /* Sidebar colors - Light Mode (Clean White) */
     --sidebar-background: #ffffff;
     --sidebar-foreground: #0f2a4a;
@@ -76,19 +80,25 @@
 
     /* Colors - Professional Dark Blue Theme */
     --primary: #172554;
+    --primary-foreground: #ffffff;
     --primary-hover: #1e1b4b;
     --primary-active: #0f172a;
     --primary-light: #e0e7ff;
 
     --secondary: #f5f7fa;
+    --secondary-foreground: #1a2332;
+
     --accent: #00a86b;
+    --accent-foreground: #ffffff;
+
+    --muted: #f1f5f9;
+    --muted-foreground: #64748b;
 
     --text-dark: #1a2332;
     --text-light: #4a5568;
     --text-muted: #718096;
 
     --border: #e2e8f0;
-    --background: #f8fafc;
     --white: #ffffff;
 
     --popover: #ffffff;
@@ -96,13 +106,17 @@
     --card: #ffffff;
     --card-foreground: #0f2a4a;
 
+    --input: #ffffff;
+
     --success: #1a7f37;
     --warning: #9a6700;
     --danger: #d73a49;
     --info: #0550ae;
 
+    --ring: #172554;
+
     /* Typography */
-    --font-primary: 'Inter', sans-serif;
+    --font-primary: 'Montserrat', 'Inter', sans-serif;
     --font-mono: 'Courier New', monospace;
 
     --font-size-h1: 28px;
@@ -148,37 +162,41 @@
 }
 
 .dark {
-    --background: #0b1a2d;
+    --background: #0f172a;
     --foreground: #f8fafc;
-    --card: hsl(0, 0%, 3.9%);
-    --card-foreground: hsl(0, 0%, 98%);
-    --popover: hsl(0, 0%, 3.9%);
-    --popover-foreground: hsl(0, 0%, 98%);
-    --primary: #4f46e5;
+
+    /* Colors - Dark Mode Indigo/Navy */
+    --primary: #3b82f6;
     --primary-foreground: #ffffff;
-    --secondary: hsl(0, 0%, 14.9%);
-    --secondary-foreground: hsl(0, 0%, 98%);
-    --muted: hsl(0, 0%, 6.9%);
-    --muted-foreground: hsl(0, 0%, 63.9%);
-    --accent: hsl(0, 0%, 14.9%);
-    --accent-foreground: hsl(0, 0%, 98%);
-    --destructive: hsl(0, 84%, 60%);
-    --destructive-foreground: hsl(0, 0%, 98%);
-    --border: hsl(0, 0%, 14.9%);
-    --input: hsl(0, 0%, 14.9%);
-    --ring: hsl(0, 0%, 83.1%);
-    --chart-1: hsl(220, 70%, 50%);
-    --chart-2: hsl(160, 60%, 45%);
-    --chart-3: hsl(30, 80%, 55%);
-    --chart-4: hsl(280, 65%, 60%);
-    --chart-5: hsl(340, 75%, 55%);
-    --sidebar-background: #0b1a2d;
+    --primary-hover: #2563eb;
+    --primary-active: #1d4ed8;
+    --primary-light: #1e293b;
+
+    --secondary: #1e293b;
+    --secondary-foreground: #f8fafc;
+
+    --accent: #10b981;
+    --accent-foreground: #ffffff;
+
+    --muted: #1e293b;
+    --muted-foreground: #94a3b8;
+
+    --border: #334155;
+    --input: #1e293b;
+    --ring: #3b82f6;
+
+    --popover: #1e293b;
+    --popover-foreground: #f8fafc;
+    --card: #1e293b;
+    --card-foreground: #f8fafc;
+
+    --sidebar-background: #0b1329;
     --sidebar-foreground: #f8fafc;
     --sidebar-primary: #3b82f6;
     --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent: rgba(255, 255, 255, 0.05);
-    --sidebar-accent-foreground: #ffffff;
-    --sidebar-border: rgba(255, 255, 255, 0.1);
+    --sidebar-accent: #1e293b;
+    --sidebar-accent-foreground: #f8fafc;
+    --sidebar-border: #334155;
     --sidebar-ring: #3b82f6;
 }
 

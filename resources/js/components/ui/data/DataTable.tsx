@@ -6,6 +6,7 @@ import { Checkbox } from '@/components/ui/base/Checkbox';
 import { SearchInput } from '@/components/ui/forms/SearchInput';
 import { FilterSheet } from './FilterSheet';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
+import { router } from '@inertiajs/react';
 
 export interface Column<T> {
     header: string;
@@ -32,7 +33,7 @@ export interface DataTableProps<T> {
     onRowClick?: (row: T) => void;
     onSelectionChange?: (selectedRows: T[]) => void;
     selectedRows?: T[];
-    bulkActions?: React.ReactNode;
+    bulkActions?: any;
 
     // Search & Filter
     searchPlaceholder?: string;
@@ -42,6 +43,7 @@ export interface DataTableProps<T> {
     activeFilters?: Record<string, any>;
     onFilterChange?: (filters: Record<string, any>) => void;
     headerActions?: React.ReactNode;
+    borderless?: boolean;
 }
 
 export function DataTable<T extends Record<string, any>>({
@@ -61,8 +63,16 @@ export function DataTable<T extends Record<string, any>>({
     activeFilters = {},
     onFilterChange,
     headerActions,
+    borderless = false,
 }: DataTableProps<T>) {
     const [isFilterOpen, setIsFilterOpen] = React.useState(false);
+    const [localPerPage, setLocalPerPage] = React.useState(pagination?.perPage || 10);
+
+    React.useEffect(() => {
+        if (pagination?.perPage) {
+            setLocalPerPage(pagination.perPage);
+        }
+    }, [pagination?.perPage]);
 
     const handleSelectAll = (checked: boolean) => {
         if (checked) {
@@ -85,45 +95,44 @@ export function DataTable<T extends Record<string, any>>({
     const activeCount = Object.values(activeFilters).flat().filter(v => v !== '' && v !== null).length;
 
     return (
-        <div className="flex flex-col gap-3 antialiased px-2 py-5 bg-white">
-            {/* Premium Header Section - More Compact */}
+        <div className="flex flex-col gap-3 antialiased px-2 py-5 text-foreground">
+            {/* Premium Header Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 px-1 mb-1">
                 <div className="space-y-0.5">
-                {title && <h2 className="text-sm font-semibold tracking-tight text-sidebar-primary uppercase leading-none font-sans">{title}</h2>}
+                    {title && <h2 className="text-base font-bold tracking-tight text-foreground">{title}</h2>}
                     <div className="flex items-center gap-2">
-                        <div className="h-0.5 w-8 bg-sidebar-primary/30 rounded-full" />
-                        <span className="text-[8px] font-bold tracking-[0.2em] text-sidebar-foreground/30 uppercase">Repositori Data</span>
+                        <div className="h-0.5 w-8 bg-primary/30 rounded-full" />
+                        <span className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wide">Repositori Data</span>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-2">
                     {onSearchChange && (
                         <div className="w-full md:w-64">
-                                <SearchInput
-                                    placeholder={searchPlaceholder}
-                                    value={searchValue}
-                                    onChange={(e) => onSearchChange?.(e.target.value)}
-                                    className="h-9 bg-sidebar-accent border-sidebar-border text-[11px]"
-                                />
-                            </div>
+                            <SearchInput
+                                placeholder={searchPlaceholder}
+                                value={searchValue}
+                                onChange={(e) => onSearchChange?.(e.target.value)}
+                                className="h-10 bg-card border-border text-xs"
+                            />
+                        </div>
                     )}
 
                     {filters.length > 0 && (
                         <Button
-                                variant="outline"
-                                onClick={() => setIsFilterOpen(true)}
-                                className={cn(
-                                    "h-9 px-3.5 rounded-xl border-sidebar-border gap-2 text-[10px] font-semibold uppercase tracking-widest transition-all font-sans",
-                                    activeCount > 0
-                                        ? "bg-sidebar-primary text-white border-sidebar-primary shadow-md shadow-sidebar-primary/20"
-                                        : "bg-sidebar-accent hover:border-sidebar-primary/30"
-                                )}
-                            >
-                                <SlidersHorizontal size={13} />
-                                Filter
-                                {activeCount > 0 && <span className="ml-1 h-4 min-w-[16px] px-1 flex items-center justify-center bg-white text-sidebar-primary rounded-full text-[8px] font-bold">{activeCount}</span>}
-                            </Button>
+                            variant={activeCount > 0 ? "primary" : "white"}
+                            onClick={() => setIsFilterOpen(true)}
+                            className={cn(
+                                "h-10 px-4 rounded-xl gap-2 text-xs font-bold tracking-wide transition-all duration-200 border border-border/40 bg-card text-foreground shadow-sm hover:bg-muted/60 hover:border-border/60 hover:shadow-md",
+                                activeCount > 0 && "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/20 border-0"
+                            )}
+                        >
+                            <SlidersHorizontal size={14} />
+                            Filter
+                            {activeCount > 0 && <span className="ml-1 h-4 min-w-[16px] px-1 flex items-center justify-center bg-background text-primary rounded-full text-[10px] font-bold">{activeCount}</span>}
+                        </Button>
                     )}
+
 
                     {headerActions}
                 </div>
@@ -131,42 +140,59 @@ export function DataTable<T extends Record<string, any>>({
 
             {/* Bulk Actions Bar */}
             {selectedRows.length > 0 && bulkActions && (
-                <div className="flex items-center justify-between p-2 bg-sidebar-primary rounded-xl shadow-xl animate-in slide-in-from-top-2 duration-300 mx-1">
+                <div className="flex items-center justify-between p-3 bg-primary rounded-xl shadow-md animate-in slide-in-from-top-2 duration-300 mx-1">
                     <div className="flex items-center gap-3 pl-2">
-                        <div className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-                        <span className="text-[9px] font-semibold text-white uppercase tracking-[0.15em] font-sans">
+                        <div className="h-2 w-2 rounded-full bg-primary-foreground animate-pulse" />
+                        <span className="text-xs font-bold text-primary-foreground uppercase tracking-wide">
                             {selectedRows.length} Terpilih
                         </span>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                        {bulkActions}
+                    <div className="flex items-center gap-2">
+                        {Array.isArray(bulkActions) ? bulkActions.map((action: any, actionIdx: number) => {
+                            const Icon = action.icon;
+                            return (
+                                <Button
+                                    key={actionIdx}
+                                    variant={action.variant || 'default'}
+                                    size="sm"
+                                    onClick={() => action.onClick?.(selectedRows.map(r => r.id))}
+                                    className="h-8 px-3 text-xs font-bold uppercase tracking-wide bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+                                >
+                                    {Icon && <Icon className="mr-1.5 h-3.5 w-3.5" />}
+                                    {action.label}
+                                </Button>
+                            );
+                        }) : bulkActions}
                     </div>
                 </div>
             )}
 
-            {/* Table Container - Consistent Background */}
-            <div className="rounded-2xl border border-sidebar-border overflow-hidden shadow-sm">
+            {/* Table Container */}
+            <div className={cn(
+                "overflow-hidden bg-card",
+                borderless ? "rounded-none border-0 shadow-none" : "rounded-2xl border-2 border-border shadow-sm"
+            )}>
                 <div className="overflow-x-auto custom-scrollbar">
                     <table className="w-full text-left border-collapse min-w-[800px]">
                         <thead>
-                            <tr className="border-b border-sidebar-border/60 bg-sidebar-accent/50">
+                            <tr className="border-b border-border bg-muted/40">
                                 {onSelectionChange && (
-                                    <th className="p-3 w-10">
-                                            <Checkbox
-                                                checked={isAllSelected}
-                                                onCheckedChange={handleSelectAll}
-                                                className="border-sidebar-border"
-                                            />
-                                        </th>
+                                    <th className="p-4 w-10">
+                                        <Checkbox
+                                            checked={isAllSelected}
+                                            onCheckedChange={handleSelectAll}
+                                            className="border-border"
+                                        />
+                                    </th>
                                 )}
                                 {columns.map((col, idx) => (
                                     <th
-                                            key={idx}
-                                            className={cn(
-                                                "p-3 text-[9px] font-bold uppercase tracking-[0.2em] text-sidebar-foreground/40 font-sans",
-                                                col.className
-                                            )}
-                                        >
+                                        key={idx}
+                                        className={cn(
+                                            "p-4 text-xs font-bold uppercase tracking-wide text-muted-foreground",
+                                            col.className
+                                        )}
+                                    >
                                         {col.header}
                                     </th>
                                 ))}
@@ -178,7 +204,7 @@ export function DataTable<T extends Record<string, any>>({
                                     <td colSpan={columns.length + (onSelectionChange ? 1 : 0)} className="p-0">
                                         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm py-10 gap-3">
                                             <LoadingLottie width={80} height={80} />
-                                            <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-sidebar-primary animate-pulse font-sans">Memuat data...</p>
+                                            <p className="text-xs font-bold uppercase tracking-wide text-primary animate-pulse">Memuat data...</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -187,9 +213,9 @@ export function DataTable<T extends Record<string, any>>({
                             {data.length === 0 && !loading ? (
                                 <tr>
                                     <td colSpan={columns.length + (onSelectionChange ? 1 : 0)} className="p-16 text-center">
-                                        <div className="flex flex-col items-center gap-3 opacity-20">
+                                        <div className="flex flex-col items-center gap-3 opacity-30 select-none">
                                             <Search size={40} strokeWidth={1} />
-                                            <p className="text-[10px] font-semibold uppercase tracking-widest font-sans text-sidebar-foreground">Tidak ada data</p>
+                                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tidak ada data</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -199,21 +225,21 @@ export function DataTable<T extends Record<string, any>>({
                                         key={row.id || rowIdx}
                                         onClick={() => onRowClick?.(row)}
                                         className={cn(
-                                            "border-b border-sidebar-border/30 transition-all hover:bg-sidebar-accent/40 cursor-pointer group",
-                                            selectedRows.some(r => r.id === row.id) ? "bg-sidebar-accent" : ""
+                                            "border-b border-border/40 transition-all hover:bg-muted/30 cursor-pointer group",
+                                            selectedRows.some(r => r.id === row.id) ? "bg-muted/50" : ""
                                         )}
                                     >
                                         {onSelectionChange && (
-                                            <td className="p-3 w-10" onClick={(e) => e.stopPropagation()}>
+                                            <td className="p-4 w-10" onClick={(e) => e.stopPropagation()}>
                                                 <Checkbox
                                                     checked={selectedRows.some(r => r.id === row.id)}
                                                     onCheckedChange={(checked) => handleSelectRow(row, !!checked)}
-                                                    className="border-sidebar-border"
+                                                    className="border-border"
                                                 />
                                             </td>
                                         )}
                                         {columns.map((col, colIdx) => (
-                                            <td key={colIdx} className={cn("p-3 align-middle text-[12px] font-medium text-sidebar-foreground/80 font-sans", col.className)}>
+                                            <td key={colIdx} className={cn("p-4 align-middle text-sm font-medium text-foreground", col.className)}>
                                                 {col.cell ? col.cell(row) : (row[col.accessorKey as keyof T] as React.ReactNode)}
                                             </td>
                                         ))}
@@ -225,30 +251,39 @@ export function DataTable<T extends Record<string, any>>({
                 </div>
             </div>
 
-            {/* Pagination - Compact */}
-            {pagination && pagination.lastPage > 1 && (
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-1 py-1">
+            {/* Pagination - Compact & Always Visible */}
+            {pagination && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-1 py-2">
                     <div className="flex items-center gap-3 order-2 sm:order-1">
-                        <span className="text-[10px] font-medium text-sidebar-foreground/30 tracking-tight font-sans">
-                            Menampilkan <span className="font-bold text-sidebar-foreground">{data.length}</span> dari <span className="font-bold text-sidebar-foreground">{pagination.total}</span> data
+                        <span className="text-xs font-medium text-muted-foreground">
+                            Menampilkan <span className="font-bold text-foreground">{data.length}</span> dari <span className="font-bold text-foreground">{pagination.total}</span> data
                         </span>
                     </div>
 
                     <div className="flex items-center gap-4 order-1 sm:order-2">
-                        {pagination.onPerPageChange && (
-                            <div className="flex items-center gap-2 mr-2">
-                                <span className="text-[9px] font-semibold uppercase text-sidebar-foreground/30 tracking-widest font-sans">Baris:</span>
-                                <select
-                                    className="bg-sidebar-accent border border-sidebar-border rounded-lg text-[10px] font-semibold text-sidebar-foreground px-2 py-1 outline-none focus:border-sidebar-primary transition-all cursor-pointer font-sans"
-                                    value={pagination.perPage || 10}
-                                    onChange={(e) => pagination.onPerPageChange?.(Number(e.target.value))}
-                                >
-                                    {[10, 25, 50, 100].map(n => (
-                                        <option key={n} value={n}>{n}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        )}
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-muted-foreground tracking-wide uppercase">Baris:</span>
+                            <select
+                                className="bg-card border border-border rounded-xl text-xs font-bold text-foreground px-3 py-1.5 outline-none focus:border-primary transition-all cursor-pointer shadow-sm select-none"
+                                value={localPerPage}
+                                onChange={(e) => {
+                                    const val = Number(e.target.value);
+                                    setLocalPerPage(val);
+                                    if (pagination.onPerPageChange) {
+                                        pagination.onPerPageChange(val);
+                                    } else {
+                                        const url = new URL(globalThis.location.href);
+                                        url.searchParams.set('per_page', String(val));
+                                        url.searchParams.set('page', '1');
+                                        router.get(url.pathname + url.search, {}, { preserveState: true, preserveScroll: true });
+                                    }
+                                }}
+                            >
+                                {[10, 25, 50, 100].map(n => (
+                                    <option key={n} value={n}>{n}</option>
+                                ))}
+                            </select>
+                        </div>
 
                         <div className="flex items-center gap-1.5">
                             <Button
@@ -256,25 +291,25 @@ export function DataTable<T extends Record<string, any>>({
                                 size="sm"
                                 disabled={pagination.currentPage === 1}
                                 onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
-                                className="h-8 px-3.5 flex items-center gap-1.5 disabled:opacity-30 text-[9px] font-semibold uppercase tracking-widest border-sidebar-border font-sans"
+                                className="h-9 px-3.5 flex items-center gap-1.5 disabled:opacity-30 text-xs font-bold border-border"
                             >
-                                <ChevronLeft className="h-3 w-3" /> Sebelumnya
+                                <ChevronLeft className="h-4 w-4" />
                             </Button>
 
-                            <div className="flex items-center gap-2 px-3 h-8 bg-sidebar-accent rounded-lg border border-sidebar-border">
-                                <span className="text-[10px] font-bold text-sidebar-primary font-sans">{pagination.currentPage}</span>
-                                <span className="text-[9px] font-bold text-sidebar-foreground/20">/</span>
-                                <span className="text-[10px] font-bold text-sidebar-primary font-sans">{pagination.lastPage}</span>
+                            <div className="flex items-center gap-2 px-3 h-9 bg-muted rounded-xl border border-border">
+                                <span className="text-xs font-bold text-primary">{pagination.currentPage}</span>
+                                <span className="text-xs font-bold text-muted-foreground/30">/</span>
+                                <span className="text-xs font-bold text-primary">{pagination.lastPage || 1}</span>
                             </div>
 
                             <Button
                                 variant="outline"
                                 size="sm"
-                                disabled={pagination.currentPage === pagination.lastPage}
+                                disabled={pagination.currentPage === pagination.lastPage || pagination.lastPage === 0}
                                 onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
-                                className="h-8 px-3.5 flex items-center gap-1.5 disabled:opacity-30 text-[9px] font-semibold uppercase tracking-widest border-sidebar-border font-sans"
+                                className="h-9 px-3.5 flex items-center gap-1.5 disabled:opacity-30 text-xs font-bold border-border"
                             >
-                                Berikutnya <ChevronRight className="h-3 w-3" />
+                                <ChevronRight className="h-4 w-4" />
                             </Button>
                         </div>
                     </div>
@@ -292,7 +327,6 @@ export function DataTable<T extends Record<string, any>>({
                     activeFilters={activeFilters}
                     onFilterChange={(key, value) => {
                         if (onFilterChange) {
-                            // Extract values if it's a toggle, or pass directly
                             onFilterChange({ ...activeFilters, [key]: value });
                         }
                     }}

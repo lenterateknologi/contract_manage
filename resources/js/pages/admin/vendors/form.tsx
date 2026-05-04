@@ -75,7 +75,7 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
     const handleSave = (e?: FormEvent) => {
         if (e) e.preventDefault();
         const options = {
-            onSuccess: () => showToast(`Data vendor berhasil diperbarui`, 'success'),
+            onSuccess: () => showToast(`Data vendor berhasil disimpan`, 'success'),
             onError: () => showToast('Gagal menyimpan data vendor.', 'danger'),
         };
         if (isEdit) {
@@ -130,7 +130,6 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
             ];
         }
 
-        // Default to PT / Persero / Firma (Full Docs)
         return [
             { label: 'Legalitas Utama', types: ['NPWP', 'NIB', 'SIUP', 'TDP', 'SPPKP', 'SK_KEMENKUMHAM'] },
             { label: 'Dokumen Notaril', types: ['AKTA_PENDIRIAN', 'AKTA_PERUBAHAN'] },
@@ -162,19 +161,19 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
                                 type="button"
                                 variant="ghost"
                                 onClick={() => setIsDeleteVendorOpen(true)}
-                                className="h-9 hover:bg-rose-500 hover:text-white text-rose-500 rounded-xl px-4 text-[10px] font-black uppercase tracking-widest transition-all border border-rose-500/10 active:scale-95"
+                                className="h-9 hover:bg-rose-500 hover:text-white text-rose-500 rounded-xl px-4 text-xs font-semibold transition-all border border-rose-500/10 active:scale-95"
                             >
                                 <Trash2 size={14} className="mr-2" /> Hapus Vendor
                             </Button>
                         )}
                         <div className="flex items-center gap-4 bg-primary/5 dark:bg-white/5 px-4 py-2 rounded-2xl border border-primary/10 dark:border-white/10">
                             <div className="flex flex-col items-end">
-                                <span className="text-[9px] font-black tracking-widest text-primary/40 dark:text-white/40 uppercase">Audit Compliance</span>
+                                <span className="text-xs font-semibold text-primary/40 dark:text-white/40 uppercase">Kepatuhan Audit</span>
                                 <span className={cn(
-                                    "text-[11px] font-black tracking-tight",
+                                    "text-sm font-bold tracking-tight",
                                     auditScore >= 80 ? "text-emerald-500" : auditScore >= 50 ? "text-amber-500" : "text-rose-500"
                                 )}>
-                                    {auditScore}% SECURE
+                                    {auditScore}% AMAN
                                 </span>
                             </div>
                             <div className="h-8 w-[1px] bg-primary/10 dark:bg-white/10" />
@@ -183,8 +182,8 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
                                     "h-2 w-2 rounded-full animate-pulse",
                                     data.is_active ? "bg-emerald-500" : "bg-rose-500"
                                 )} />
-                                <span className="text-[10px] font-black uppercase tracking-widest text-primary dark:text-white">
-                                    {data.is_active ? 'Active' : 'Suspended'}
+                                <span className="text-xs font-bold text-primary dark:text-white">
+                                    {data.is_active ? 'Aktif' : 'Nonaktif'}
                                 </span>
                             </div>
                         </div>
@@ -234,7 +233,7 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
                                 label="Internal Vendor Code"
                                 value={data.code}
                                 onChange={e => setData('code', e.target.value)}
-                                placeholder="AUTO-GENERATE"
+                                placeholder="DIBUAT OTOMATIS"
                                 error={errors.code}
                             />
                             <CompactSelect 
@@ -299,7 +298,7 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
                                     checked={data.is_individual}
                                     onCheckedChange={c => setData('is_individual', !!c)}
                                 />
-                                <label htmlFor="is_individual" className="text-[10px] font-black uppercase tracking-widest text-primary/60 dark:text-white/60 cursor-pointer">
+                                <label htmlFor="is_individual" className="text-xs font-semibold text-primary/60 dark:text-white/60 cursor-pointer">
                                     Registrasi Sebagai Perorangan / Individu
                                 </label>
                             </div>
@@ -376,13 +375,13 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
                 <div className="md:col-span-4 space-y-10">
                     <div className="sticky top-6 space-y-10">
                          {/* Status Widget */}
-                        <div className="rounded-2xl border border-primary/10 dark:border-white/10 bg-primary/[0.02] dark:bg-white/[0.02] p-8 shadow-sm relative overflow-hidden group">
+                        <div className="rounded-2xl border border-primary/10 dark:border-white/10 bg-primary/[0.02] dark:bg-white/[0.02] p-6 shadow-sm relative overflow-hidden group">
                             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                                 <ShieldCheck size={80} strokeWidth={1} />
                             </div>
 
-                            <h3 className="text-[10px] font-black tracking-[0.3em] text-primary dark:text-white uppercase mb-6 flex items-center gap-2">
-                                <ShieldCheck size={14} /> Kendali Status
+                            <h3 className="text-xs font-bold text-primary dark:text-white uppercase mb-4 flex items-center gap-2">
+                                <ShieldCheck size={16} /> Kendali Status
                             </h3>
 
                             <div className="flex items-center gap-4 p-4 rounded-xl bg-white dark:bg-black/40 border border-primary/10 dark:border-white/10 shadow-sm mb-6">
@@ -393,19 +392,19 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
                                     className="h-5 w-5"
                                 />
                                 <div className="flex flex-col">
-                                    <label htmlFor="is_active" className="text-[11px] font-black text-primary dark:text-white uppercase tracking-wider cursor-pointer">
+                                    <label htmlFor="is_active" className="text-xs font-bold text-primary dark:text-white uppercase cursor-pointer">
                                         Vendor Aktif
                                     </label>
-                                    <span className="text-[9px] font-bold text-primary/30 dark:text-white/30 uppercase">Siap untuk penugasan kontrak</span>
+                                    <span className="text-xs font-medium text-primary/40 dark:text-white/40">Siap untuk penugasan kontrak</span>
                                 </div>
                             </div>
 
-                            <div className="space-y-4 pt-6 border-t border-dashed border-primary/10 dark:border-white/10">
+                            <div className="space-y-4 pt-4 border-t border-dashed border-primary/10 dark:border-white/10">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-[9px] font-black text-primary/40 dark:text-white/40 uppercase tracking-widest">Audit Score</span>
-                                    <span className="text-[11px] font-black text-primary dark:text-white">{auditScore}%</span>
+                                    <span className="text-xs font-semibold text-primary/50 dark:text-white/50 uppercase">Skor Audit</span>
+                                    <span className="text-xs font-bold text-primary dark:text-white">{auditScore}%</span>
                                 </div>
-                                <div className="h-1.5 w-full bg-primary/10 dark:bg-white/10 rounded-full overflow-hidden">
+                                <div className="h-2 w-full bg-primary/10 dark:bg-white/10 rounded-full overflow-hidden">
                                     <div 
                                         className={cn(
                                             "h-full transition-all duration-1000",
@@ -420,16 +419,16 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
                         {/* Audit Documents Section */}
                         <div className="space-y-6">
                             <div className="flex items-center justify-between px-1">
-                                <h3 className="text-[10px] font-black tracking-[0.3em] text-primary dark:text-white uppercase">Compliance Docs</h3>
-                                <span className="bg-primary/10 dark:bg-white/10 px-2 py-0.5 rounded text-[9px] font-black text-primary dark:text-white">
-                                    {vendor?.documents?.length || 0} / 10
+                                <h3 className="text-xs font-bold text-primary dark:text-white uppercase">Dokumen Kepatuhan</h3>
+                                <span className="bg-primary/10 dark:bg-white/10 px-2.5 py-1 rounded text-xs font-bold text-primary dark:text-white">
+                                    {vendor?.documents?.length || 0} / {docCats.flatMap(c => c.types).length}
                                 </span>
                             </div>
 
                             {!isEdit ? (
                                 <div className="p-8 text-center rounded-2xl border-2 border-dashed border-primary/10 dark:border-white/10 bg-primary/[0.01] dark:bg-white/[0.01]">
                                     <Clock className="mx-auto mb-4 text-primary/20 dark:text-white/20" size={32} strokeWidth={1} />
-                                    <p className="text-[9px] font-black text-primary/30 dark:text-white/30 uppercase tracking-widest leading-loose">
+                                    <p className="text-xs font-semibold text-primary/40 dark:text-white/40 uppercase tracking-wide leading-relaxed">
                                         SIMPAN PROFIL UNTUK<br/>MENGAKTIFKAN MODUL AUDIT
                                     </p>
                                 </div>
@@ -437,7 +436,7 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
                                 <div className="space-y-6">
                                     {docCats.map(cat => (
                                         <div key={cat.label} className="space-y-3">
-                                            <div className="px-2 text-[9px] font-black text-primary/40 dark:text-white/40 uppercase tracking-[0.2em]">
+                                            <div className="px-2 text-xs font-bold text-primary/40 dark:text-white/40 uppercase">
                                                 {cat.label}
                                             </div>
                                             <div className="space-y-2">
@@ -447,40 +446,40 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
                                                         <div 
                                                             key={type}
                                                             className={cn(
-                                                                "group flex items-center justify-between p-3 rounded-xl border transition-all",
+                                                                "group flex items-center justify-between p-3.5 rounded-xl border transition-all",
                                                                 doc 
                                                                     ? "bg-white dark:bg-white/[0.02] border-primary/10 dark:border-white/10" 
                                                                     : "bg-primary/[0.01] dark:bg-white/[0.01] border-dashed border-primary/10 dark:border-white/10"
                                                             )}
                                                         >
                                                             <div className="min-w-0">
-                                                                <div className="text-[10px] font-black uppercase tracking-tight text-primary dark:text-white truncate">
+                                                                <div className="text-xs font-bold uppercase tracking-tight text-primary dark:text-white truncate">
                                                                     {type.replace(/_/g, ' ')}
                                                                 </div>
-                                                                <div className="flex items-center gap-1.5">
+                                                                <div className="flex items-center gap-1.5 mt-1">
                                                                     {doc ? (
-                                                                        <CheckCircle2 size={10} className="text-emerald-500" />
+                                                                        <CheckCircle2 size={12} className="text-emerald-500" />
                                                                     ) : (
-                                                                        <Clock size={10} className="text-primary/20 dark:text-white/20" />
+                                                                        <Clock size={12} className="text-primary/20 dark:text-white/20" />
                                                                     )}
-                                                                    <span className="text-[8px] font-bold text-primary/30 dark:text-white/30 uppercase truncate">
-                                                                        {doc ? 'Verified' : 'Pending Upload'}
+                                                                    <span className="text-xs font-medium text-primary/50 dark:text-white/50">
+                                                                        {doc ? 'Terverifikasi' : 'Belum Diunggah'}
                                                                     </span>
                                                                 </div>
                                                             </div>
                                                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                                 {doc ? (
                                                                     <>
-                                                                        <Button size="icon" variant="ghost" className="h-7 w-7 rounded-lg" onClick={() => window.open(doc.file_url, '_blank')}>
-                                                                            <ExternalLink size={12} />
+                                                                        <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg" onClick={() => window.open(doc.file_url, '_blank')}>
+                                                                            <ExternalLink size={14} />
                                                                         </Button>
-                                                                        <Button size="icon" variant="ghost" className="h-7 w-7 rounded-lg text-rose-500 hover:bg-rose-500/10" onClick={() => { setDocToDelete(doc.id); setIsDeleteDocOpen(true); }}>
-                                                                            <Trash2 size={12} />
+                                                                        <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg text-rose-500 hover:bg-rose-500/10" onClick={() => { setDocToDelete(doc.id); setIsDeleteDocOpen(true); }}>
+                                                                            <Trash2 size={14} />
                                                                         </Button>
                                                                     </>
                                                                 ) : (
-                                                                    <Button size="icon" variant="ghost" className="h-7 w-7 rounded-lg text-primary dark:text-white hover:bg-primary/10 dark:hover:bg-white/10" onClick={() => { docForm.setData('document_type', type); setIsUploadModalOpen(true); }}>
-                                                                        <UploadCloud size={14} />
+                                                                    <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg text-primary dark:text-white hover:bg-primary/10 dark:hover:bg-white/10" onClick={() => { docForm.setData('document_type', type); setIsUploadModalOpen(true); }}>
+                                                                        <UploadCloud size={16} />
                                                                     </Button>
                                                                 )}
                                                             </div>
@@ -500,24 +499,24 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
             {/* Modals */}
             <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
                 <DialogContent className="rounded-2xl border border-primary/10 dark:border-white/10 bg-white dark:bg-black p-8 shadow-2xl sm:max-w-[450px]">
-                    <DialogTitle className="mb-8 border-b border-primary/5 dark:border-white/5 pb-4 text-[12px] font-black tracking-[0.2em] text-primary dark:text-white uppercase flex items-center gap-3">
-                        <UploadCloud size={18} /> Upload Berkas Kepatuhan
+                    <DialogTitle className="mb-8 border-b border-primary/5 dark:border-white/5 pb-4 text-sm font-bold text-primary dark:text-white uppercase flex items-center gap-3">
+                        <UploadCloud size={18} /> Unggah Berkas Kepatuhan
                     </DialogTitle>
                     <form onSubmit={handleUploadDoc} className="space-y-8">
                         <div className="space-y-4">
                             <div className="p-4 rounded-xl bg-primary/[0.03] dark:bg-white/[0.03] border border-primary/10 dark:border-white/10">
-                                <span className="text-[9px] font-black text-primary/40 dark:text-white/40 uppercase tracking-widest block mb-1">Tipe Dokumen</span>
-                                <span className="text-[11px] font-black text-primary dark:text-white uppercase">{docForm.data.document_type.replace(/_/g, ' ')}</span>
+                                <span className="text-xs font-semibold text-primary/40 dark:text-white/40 uppercase block mb-1">Tipe Dokumen</span>
+                                <span className="text-xs font-bold text-primary dark:text-white uppercase">{docForm.data.document_type.replace(/_/g, ' ')}</span>
                             </div>
                             
                             <div className="space-y-3">
-                                <label className="ml-1 text-[10px] font-black tracking-widest text-primary/40 dark:text-white/40 uppercase">Pilih File (PDF/JPG/PNG)</label>
+                                <label className="ml-1 text-xs font-semibold text-primary/40 dark:text-white/40 uppercase">Pilih Berkas (PDF/JPG/PNG)</label>
                                 <input
                                     type="file"
                                     ref={fileInputRef}
                                     onChange={(e) => docForm.setData('document_file', e.target.files?.[0] || null)}
                                     required
-                                    className="w-full text-xs text-primary/60 dark:text-white/60 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:uppercase file:tracking-widest file:bg-primary file:text-white dark:file:bg-white dark:file:text-black cursor-pointer"
+                                    className="w-full text-xs text-primary/60 dark:text-white/60 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:uppercase file:bg-primary file:text-white dark:file:bg-white dark:file:text-black cursor-pointer"
                                 />
                             </div>
                             

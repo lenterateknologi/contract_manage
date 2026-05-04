@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Column, DataTable } from '@/components/ui/data/DataTable';
+import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
 import { Badge } from '@/components/ui/base/Badge';
 import { Button } from '@/components/ui/base/Button';
 import { router } from '@inertiajs/react';
@@ -31,13 +31,13 @@ const VendorCell = ({ name, companyType, code, isActive }: Readonly<{ name: stri
         </div>
         <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-2 mb-0.5">
-                <span className="text-[13px] font-semibold text-sidebar-foreground truncate leading-tight font-sans">{name}</span>
-                <span className="text-[9px] font-bold uppercase tracking-wide text-sidebar-foreground/40 border-l border-sidebar-border pl-2 leading-none">{companyType || 'CV'}</span>
+                <span className="text-sm font-semibold text-foreground truncate leading-tight">{name}</span>
+                <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground border-l border-border pl-2 leading-none">{companyType || 'CV'}</span>
             </div>
-            <div className="flex items-center gap-2 font-mono text-[10px] font-bold text-sidebar-foreground/40 uppercase tracking-widest leading-none">
+            <div className="flex items-center gap-2 font-mono text-xs font-medium text-muted-foreground leading-none">
                 {code}
                 <div className={cn('w-1.5 h-1.5 rounded-full', isActive ? 'bg-emerald-500' : 'bg-rose-400')} />
-                <span className={cn('text-[9px] font-semibold font-sans', isActive ? 'text-emerald-600' : 'text-rose-500')}>
+                <span className={cn('text-xs font-semibold', isActive ? 'text-emerald-600' : 'text-rose-500')}>
                     {isActive ? 'Aktif' : 'Nonaktif'}
                 </span>
             </div>
@@ -47,18 +47,18 @@ const VendorCell = ({ name, companyType, code, isActive }: Readonly<{ name: stri
 
 const CategoryCell = ({ category, email, phone }: Readonly<{ category?: string; email?: string; phone?: string }>) => (
     <div className="flex flex-col gap-1.5">
-        <span className={cn('inline-block rounded-full px-2.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide font-sans w-fit', CATEGORY_COLORS[category ?? ''] ?? 'bg-slate-100 text-slate-600')}>
+        <span className={cn('inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold w-fit', CATEGORY_COLORS[category ?? ''] ?? 'bg-slate-100 text-slate-600')}>
             {category || 'General Supplier'}
         </span>
         <div className="flex flex-col">
             {email && (
-                <div className="flex items-center gap-1.5 lowercase font-medium text-[10px] text-sidebar-foreground/30">
-                    <Mail size={10} className="shrink-0" /> {email}
+                <div className="flex items-center gap-1.5 lowercase font-medium text-xs text-muted-foreground">
+                    <Mail size={12} className="shrink-0 opacity-60" /> {email}
                 </div>
             )}
             {phone && (
-                <div className="flex items-center gap-1.5 font-medium text-[10px] text-sidebar-foreground/30">
-                    <Phone size={10} className="shrink-0" /> {phone}
+                <div className="flex items-center gap-1.5 font-medium text-xs text-muted-foreground">
+                    <Phone size={12} className="shrink-0 opacity-60" /> {phone}
                 </div>
             )}
         </div>
@@ -67,8 +67,8 @@ const CategoryCell = ({ category, email, phone }: Readonly<{ category?: string; 
 
 const PicCell = ({ picName, directorName, picPosition }: Readonly<{ picName?: string; directorName?: string; picPosition?: string }>) => (
     <div className="flex flex-col">
-        <span className="text-[12px] font-bold text-sidebar-foreground truncate">{picName || directorName || '—'}</span>
-        <span className="text-[9px] text-sidebar-foreground/40 font-black uppercase tracking-widest mt-0.5 leading-none">{picPosition || 'DIREKTUR UTAMA'}</span>
+        <span className="text-sm font-bold text-foreground truncate">{picName || directorName || '—'}</span>
+        <span className="text-xs text-muted-foreground font-medium mt-0.5 leading-none">{picPosition || 'DIREKTUR UTAMA'}</span>
     </div>
 );
 
@@ -79,14 +79,14 @@ const ComplianceCell = ({ docCount }: Readonly<{ docCount?: number }>) => {
 
     return (
         <div className="flex flex-col items-end gap-1.5">
-            <div className={cn("px-2 py-0.5 rounded text-[9px] font-black tracking-widest", colorClass)}>
+            <div className={cn("px-2 py-0.5 rounded text-xs font-bold tracking-wide", colorClass)}>
                 {status}
             </div>
             <div className="flex items-center gap-2">
-                <div className="h-1 w-16 bg-sidebar-accent/80 rounded-full overflow-hidden">
+                <div className="h-1.5 w-16 bg-muted rounded-full overflow-hidden">
                     <div className={cn("h-full", score >= 80 ? "bg-emerald-500" : score >= 50 ? "bg-amber-500" : "bg-rose-500")} style={{ width: `${score}%` }} />
                 </div>
-                <span className="text-[11px] font-black text-sidebar-foreground/40">{score}%</span>
+                <span className="text-xs font-bold text-muted-foreground">{score}%</span>
             </div>
         </div>
     );
@@ -95,6 +95,7 @@ const ComplianceCell = ({ docCount }: Readonly<{ docCount?: number }>) => {
 export function VendorManagement({ vendors, filters }: Readonly<VendorManagementProps>) {
     const { showToast } = useToast();
     const { canCreate, canUpdate, canDelete } = usePermissions('ADMIN_VENDORS');
+    const [selectedRows, setSelectedRows] = React.useState<any[]>([]);
 
     const filterConfig = useMemo(() => [
         {
@@ -153,52 +154,57 @@ export function VendorManagement({ vendors, filters }: Readonly<VendorManagement
     ], []);
 
     return (
-        <DataTable
-            title="Database Rekanan / Vendor"
-            data={vendors?.data || []}
-            columns={columns}
-            searchPlaceholder="Cari vendor, kode, atau email..."
-            searchValue={filters?.search || ''}
-            onSearchChange={(v) => router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })}
-            onRowClick={(row) => router.get(`/admin/vendors/${row.id}/edit`)}
-            filters={filterConfig as any}
-            activeFilters={filters}
-            onFilterChange={handleFilterChange}
-            headerActions={
-                canCreate && (
-                    <Button 
-                        variant="primary"
-                        onClick={() => router.get('/admin/vendors/create')} 
-                        className="h-10 px-8 shadow-xl active:scale-95"
-                    >
-                        <Plus size={14} /> Registrasi Vendor Baru
-                    </Button>
-                )
-            }
-            bulkActions={canDelete ? [
-                {
-                    label: 'Hapus Terpilih',
-                    icon: Trash2,
-                    variant: 'destructive',
-                    onClick: (ids: string[] | number[]) => {
-                        if (confirm(`Hapus ${ids.length} vendor terpilih?`)) {
-                            router.post('/admin/vendors/bulk-delete', { ids }, {
-                                onSuccess: () => showToast(`${ids.length} vendor telah dihapus`, 'success')
-                            });
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+            <TableMasterData
+                title="Database Rekanan / Vendor"
+                data={vendors?.data || []}
+                columns={columns}
+                borderless={true}
+                selectedRows={selectedRows}
+                onSelectionChange={setSelectedRows}
+                searchPlaceholder="Cari vendor, kode, atau email..."
+                searchValue={filters?.search || ''}
+                onSearchChange={(v: string) => router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })}
+                onRowClick={(row: any) => router.get(`/admin/vendors/${row.id}/edit`)}
+                filters={filterConfig as any}
+                activeFilters={filters}
+                onFilterChange={handleFilterChange}
+                headerActions={
+                    canCreate && (
+                        <Button 
+                            variant="white"
+                            onClick={() => router.get('/admin/vendors/create')} 
+                            className="h-10 px-6 rounded-xl gap-2 text-xs font-bold transition-all duration-200 border border-border/40 bg-card text-foreground shadow-sm hover:bg-muted/60 hover:border-border/60 hover:shadow-md active:scale-95"
+                        >
+                            <Plus size={15} /> Registrasi Vendor
+                        </Button>
+                    )
+                }
+                bulkActions={canDelete ? [
+                    {
+                        label: 'Hapus Terpilih',
+                        icon: Trash2,
+                        variant: 'destructive',
+                        onClick: (ids: string[] | number[]) => {
+                            if (confirm(`Hapus ${ids.length} vendor terpilih?`)) {
+                                router.post('/admin/vendors/bulk-delete', { ids }, {
+                                    onSuccess: () => showToast(`${ids.length} vendor telah dihapus`, 'success')
+                                });
+                            }
                         }
                     }
-                }
-            ] : undefined}
-            pagination={vendors ? {
-                currentPage: vendors.current_page || 1,
-                lastPage: vendors.last_page || 1,
-                total: vendors.total || 0,
-                from: vendors.from || 1,
-                to: vendors.to || 1,
-                perPage: vendors.per_page || 10,
-                onPageChange: (page) => router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
-                onPerPageChange: (pp) => router.get(globalThis.location.pathname, { ...filters, per_page: pp, page: 1 }, { preserveState: true, preserveScroll: true }),
-            } : undefined}
-        />
+                ] : undefined}
+                pagination={vendors ? {
+                    currentPage: vendors.current_page || 1,
+                    lastPage: vendors.last_page || 1,
+                    total: vendors.total || 0,
+                    from: vendors.from || 1,
+                    to: vendors.to || 1,
+                    perPage: vendors.per_page || 10,
+                    onPageChange: (page: number) => router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                    onPerPageChange: (pp: number) => router.get(globalThis.location.pathname, { ...filters, per_page: pp, page: 1 }, { preserveState: true, preserveScroll: true }),
+                } : undefined}
+            />
+        </div>
     );
 }

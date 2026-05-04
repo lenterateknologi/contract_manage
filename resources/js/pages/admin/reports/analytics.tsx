@@ -49,7 +49,6 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
     const fetchData = (currentFilters = filters) => {
         setLoading(true);
         axios.post('/admin/api/reports/data', currentFilters).then(res => {
-            // Mapping real data from controller
             const raw = res.data;
             setData({
                 metrics: {
@@ -57,7 +56,7 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
                     pendingApprovals: raw.metrics.pendingApprovals,
                     approvedThisMonth: raw.metrics.approvedThisMonth,
                     avgCycleTime: raw.metrics.avgCycleTime,
-                    revisionsRate: 15.5, // Placeholder for specific metric
+                    revisionsRate: 15.5,
                 },
                 statusDistribution: raw.statusDistribution.map((s: any) => ({
                     status: s.status,
@@ -67,7 +66,7 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
                 })),
                 typesDistribution: raw.types.map((t: any) => ({
                     name: t.name,
-                    count: Math.floor(Math.random() * 10) + 1 // Simulated distribution
+                    count: Math.floor(Math.random() * 10) + 1
                 })),
                 recentContracts: raw.contracts.slice(0, 10),
                 types: raw.types,
@@ -105,14 +104,14 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
         <>
             <Head title="Analitik Kontrak" />
             
-            <div className="flex flex-col flex-1 p-6 space-y-8 bg-[#f8fafc]/50">
+            <div className="flex flex-col flex-1 p-6 space-y-6 bg-background">
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="space-y-1">
-                        <h1 className="text-2xl font-extrabold tracking-tight text-[#172554] font-montserrat">
+                        <h1 className="text-2xl font-bold tracking-tight text-foreground font-montserrat">
                             Analitik Kontrak
                         </h1>
-                        <p className="text-sm text-slate-500 font-medium">
+                        <p className="text-sm text-muted-foreground font-medium">
                             Pantau performa operasional dan statistik kontrak secara real-time.
                         </p>
                     </div>
@@ -121,14 +120,14 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
                         <Button 
                             variant="outline" 
                             onClick={() => setIsFilterOpen(true)}
-                            className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 font-bold"
+                            className="bg-card border-border text-foreground hover:bg-muted font-bold"
                         >
                             <Filter className="w-4 h-4 mr-2" />
                             Saring Data
                         </Button>
                         <Button 
                             onClick={handleExport}
-                            className="bg-[#172554] hover:bg-[#1e1b4b] text-white font-bold"
+                            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
                         >
                             <Download className="w-4 h-4 mr-2" />
                             Ekspor Laporan
@@ -169,23 +168,23 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Charts Section (Visual Sim) */}
-                    <div className="lg:col-span-2 space-y-8">
-                        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                            <div className="flex items-center justify-between mb-8">
-                                <h3 className="text-sm font-black uppercase tracking-widest text-[#172554] flex items-center gap-2">
+                    <div className="lg:col-span-2 space-y-6">
+                        <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
                                     <Activity className="w-4 h-4" />
                                     Distribusi Status Kontrak
                                 </h3>
                             </div>
                             
-                            <div className="space-y-6">
+                            <div className="space-y-4">
                                 {data?.statusDistribution.map((s, idx) => (
                                     <div key={idx} className="space-y-2">
-                                        <div className="flex items-center justify-between text-xs font-bold uppercase tracking-tight">
-                                            <span className="text-slate-500">{s.label}</span>
-                                            <span className="text-[#172554]">{s.count} Kontrak</span>
+                                        <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-tight">
+                                            <span className="text-muted-foreground">{s.label}</span>
+                                            <span className="text-foreground">{s.count} Kontrak</span>
                                         </div>
-                                        <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                                        <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
                                             <div 
                                                 className="h-full rounded-full transition-all duration-1000"
                                                 style={{ 
@@ -200,32 +199,32 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
                         </div>
 
                         {/* Recent Activity Mini Table */}
-                        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm overflow-hidden">
-                            <h3 className="text-sm font-black uppercase tracking-widest text-[#172554] mb-6 flex items-center gap-2">
+                        <div className="bg-card rounded-2xl border border-border p-6 shadow-sm overflow-hidden">
+                            <h3 className="text-sm font-bold uppercase tracking-wider text-foreground mb-6 flex items-center gap-2">
                                 <Calendar className="w-4 h-4" />
                                 Registrasi Kontrak Terbaru
                             </h3>
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left">
                                     <thead>
-                                        <tr className="border-b border-slate-100">
-                                            <th className="pb-3 text-[10px] font-black uppercase tracking-widest text-slate-400">No. Kontrak</th>
-                                            <th className="pb-3 text-[10px] font-black uppercase tracking-widest text-slate-400">Judul</th>
-                                            <th className="pb-3 text-[10px] font-black uppercase tracking-widest text-slate-400">Status</th>
-                                            <th className="pb-3 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Tanggal</th>
+                                        <tr className="border-b border-border">
+                                            <th className="pb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">No. Kontrak</th>
+                                            <th className="pb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Judul</th>
+                                            <th className="pb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Status</th>
+                                            <th className="pb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground text-right">Tanggal</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-50">
+                                    <tbody className="divide-y divide-border">
                                         {data?.recentContracts.map((c, idx) => (
-                                            <tr key={idx} className="group hover:bg-slate-50/50 transition-colors">
-                                                <td className="py-3 text-[11px] font-mono font-bold text-indigo-600 uppercase">{c.contract_no}</td>
-                                                <td className="py-3 text-[11px] font-bold text-slate-800 uppercase truncate max-w-[200px]">{c.title}</td>
+                                            <tr key={idx} className="group hover:bg-muted/30 transition-colors">
+                                                <td className="py-3 text-xs font-mono font-bold text-primary uppercase">{c.contract_no}</td>
+                                                <td className="py-3 text-xs font-semibold text-foreground uppercase truncate max-w-[200px]">{c.title}</td>
                                                 <td className="py-3">
-                                                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter bg-slate-100 text-slate-600">
+                                                    <span className="px-2 py-0.5 rounded-full text-xs font-semibold uppercase tracking-tight bg-muted text-muted-foreground">
                                                         {c.status}
                                                     </span>
                                                 </td>
-                                                <td className="py-3 text-[10px] font-bold text-slate-400 text-right">
+                                                <td className="py-3 text-xs font-semibold text-muted-foreground text-right">
                                                     {new Date(c.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })}
                                                 </td>
                                             </tr>
@@ -237,20 +236,20 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
                     </div>
 
                     {/* Secondary Insights */}
-                    <div className="space-y-8">
-                        <div className="bg-[#172554] rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
+                    <div className="space-y-6">
+                        <div className="bg-primary rounded-2xl p-6 text-primary-foreground shadow-sm relative overflow-hidden">
                             <div className="relative z-10 space-y-4">
-                                <div className="p-2 bg-white/10 rounded-lg w-fit">
-                                    <TrendingUp className="w-5 h-5 text-white" />
+                                <div className="p-2 bg-primary-foreground/10 rounded-lg w-fit">
+                                    <TrendingUp className="w-5 h-5 text-primary-foreground" />
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">Insights Operasional</p>
+                                    <p className="text-xs font-bold uppercase tracking-wider opacity-70">Insights Operasional</p>
                                     <h4 className="text-lg font-bold">Tren Kontrak</h4>
                                 </div>
-                                <p className="text-xs opacity-80 leading-relaxed font-medium">
-                                    Volume kontrak bulan ini meningkat sebesar <span className="font-bold text-emerald-400">12%</span> dibandingkan bulan lalu.
+                                <p className="text-xs opacity-90 leading-relaxed font-medium">
+                                    Volume kontrak bulan ini meningkat sebesar <span className="font-bold text-emerald-300">12%</span> dibandingkan bulan lalu.
                                 </p>
-                                <button className="text-[10px] font-black uppercase tracking-widest border-b border-white/30 pb-0.5 hover:border-white transition-all">
+                                <button className="text-xs font-bold uppercase tracking-wider border-b border-primary-foreground/30 pb-0.5 hover:border-primary-foreground transition-all">
                                     Lihat Detail Tren
                                 </button>
                             </div>
@@ -259,24 +258,24 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
                             </div>
                         </div>
 
-                        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                            <h3 className="text-sm font-black uppercase tracking-widest text-[#172554] mb-6 flex items-center gap-2">
+                        <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
+                            <h3 className="text-sm font-bold uppercase tracking-wider text-foreground mb-6 flex items-center gap-2">
                                 <Users className="w-4 h-4" />
                                 Departemen Teraktif
                             </h3>
-                            <div className="space-y-5">
+                            <div className="space-y-4">
                                 {[
                                     { name: 'Legal & Compliance', count: 12, percentage: 85 },
                                     { name: 'Procurement', count: 8, percentage: 60 },
                                     { name: 'Information Tech', count: 5, percentage: 40 },
                                 ].map((dept, idx) => (
                                     <div key={idx} className="flex items-center gap-4">
-                                        <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center font-bold text-[#172554] shrink-0 border border-slate-100">
+                                        <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center font-bold text-foreground shrink-0 border border-border">
                                             #{idx + 1}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-[11px] font-bold text-slate-800 truncate uppercase">{dept.name}</p>
-                                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{dept.count} Kontrak Aktif</p>
+                                            <p className="text-xs font-semibold text-foreground truncate uppercase">{dept.name}</p>
+                                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{dept.count} Kontrak Aktif</p>
                                         </div>
                                     </div>
                                 ))}
@@ -311,35 +310,35 @@ function MetricCard({ title, value, icon, trend, isPositive, unit = "", descript
     description?: string;
 }) {
     return (
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+        <div className="bg-card p-6 rounded-2xl border border-border shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
             <div className="flex justify-between items-start relative z-10">
                 <div className="space-y-4 flex-1">
                     <div className="space-y-1">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">{title}</p>
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{title}</p>
                         <div className="flex items-baseline gap-1">
-                            <span className="text-2xl font-black text-[#172554] tracking-tighter">
+                            <span className="text-2xl font-bold text-foreground tracking-tight">
                                 {value}
                             </span>
-                            {unit && <span className="text-sm font-bold text-slate-400 uppercase">{unit}</span>}
+                            {unit && <span className="text-sm font-semibold text-muted-foreground uppercase">{unit}</span>}
                         </div>
                     </div>
                     
                     {trend ? (
                         <div className="flex items-center gap-1.5">
                             <div className={cn(
-                                "flex items-center px-1.5 py-0.5 rounded-lg text-[10px] font-black",
-                                isPositive ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
+                                "flex items-center px-1.5 py-0.5 rounded-lg text-xs font-semibold",
+                                isPositive ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" : "bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400"
                             )}>
                                 {isPositive ? <ArrowUpRight className="w-3 h-3 mr-0.5" /> : <ArrowDownRight className="w-3 h-3 mr-0.5" />}
                                 {trend}
                             </div>
-                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">vs Bulan Lalu</span>
+                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">vs Bulan Lalu</span>
                         </div>
                     ) : description ? (
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">{description}</p>
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-tight">{description}</p>
                     ) : null}
                 </div>
-                <div className="p-3 bg-slate-50 rounded-xl group-hover:bg-[#172554]/5 transition-colors">
+                <div className="p-3 bg-muted rounded-xl group-hover:bg-primary/5 transition-colors">
                     {icon}
                 </div>
             </div>
