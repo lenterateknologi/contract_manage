@@ -27,54 +27,37 @@ export function ManagementForm({
     headerActions,
 }: ManagementFormProps) {
     return (
-        <div className="animate-in fade-in slide-in-from-right-10 dark:bg-primary font-inter flex min-h-[calc(100vh-64px)] flex-col overflow-hidden bg-white text-black antialiased transition-all duration-300 dark:text-white">
+        <div className="animate-in fade-in slide-in-from-right-5 bg-card border-border/60 text-foreground m-5 flex flex-col overflow-hidden rounded-2xl border font-sans antialiased shadow-sm">
             {/* COMPACT STICKY HEADER */}
-            <div className="border-primary/10 dark:bg-background sticky top-0 z-40 flex h-12 shrink-0 items-center justify-between bg-white/10 px-5 backdrop-blur-md border-b">
-                <div className="flex items-center gap-4">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className={cn(
-                            'h-7 w-7 shrink-0 rounded-lg transition-all duration-300 active:scale-90',
-                            'bg-primary/[0.05] border-primary/10 border dark:border-white/10 dark:bg-white/[0.05]',
-                            'hover:bg-primary dark:hover:text-primary hover:text-white dark:hover:bg-white',
-                        )}
-                        onClick={onClose}
-                    >
-                        <ArrowLeft size={12} strokeWidth={3} />
+            <div className="border-border/60 bg-muted/40 z-40 flex shrink-0 items-center justify-between border-b px-6 py-4">
+                <div className="flex items-center gap-3">
+                    <Button variant="ghost" size="icon" className="hover:bg-muted h-8 w-8 shrink-0 rounded-xl" onClick={onClose}>
+                        <ArrowLeft size={16} />
                     </Button>
 
-                    <div className="flex flex-col">
+                    <div className="flex flex-col gap-0.5">
                         <div className="flex items-center gap-2">
-                            <h1 className="text-primary text-[12px] leading-none font-black tracking-tight uppercase dark:text-white">{title}</h1>
-                            {isEdit && <div className="bg-primary h-1 w-1 animate-pulse rounded-full dark:bg-white" />}
+                            <h1 className="text-foreground text-base font-bold tracking-tight">{title}</h1>
+                            {isEdit && <div className="bg-primary h-1.5 w-1.5 animate-pulse rounded-full" />}
                         </div>
-                        {subtitle && (
-                            <p className="text-primary/40 mt-1 text-[7px] leading-none font-bold tracking-[0.2em] uppercase dark:text-white">
-                                {subtitle}
-                            </p>
-                        )}
+                        {subtitle && <p className="text-muted-foreground text-xs font-medium">{subtitle}</p>}
                     </div>
                 </div>
 
                 <div className="flex items-center gap-3">
                     {headerActions}
-                    <div className="bg-primary/10 mx-1 h-4 w-px dark:bg-white/10" />
                     <Button
                         variant="primary"
                         onClick={onSave}
                         disabled={processing || (!isDirty && isEdit)}
-                        className={cn(
-                            'shadow-primary/10 h-8 rounded-lg px-5 text-[8px] font-black tracking-[0.15em] uppercase shadow-lg transition-all duration-300 active:scale-95',
-                            'bg-primary border-none text-white dark:bg-white dark:text-black',
-                        )}
+                        className="h-9 rounded-xl px-5 text-xs font-semibold shadow-sm"
                     >
                         {processing ? (
-                            <div className="dark:border-primary/20 dark:border-t-primary h-3 w-3 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                            <div className="border-primary-foreground/20 border-t-primary-foreground h-4 w-4 animate-spin rounded-full border-2" />
                         ) : (
-                            <div className="flex items-center gap-2">
-                                <Save size={10} strokeWidth={3} />
-                                <span>{isEdit ? 'UPDATE' : 'SIMPAN'}</span>
+                            <div className="flex items-center gap-1.5">
+                                <Save size={14} />
+                                <span>{isEdit ? 'Update' : 'Simpan'}</span>
                             </div>
                         )}
                     </Button>
@@ -82,8 +65,8 @@ export function ManagementForm({
             </div>
 
             {/* COMPACT FORM BODY */}
-            <div className="dark:bg-background flex-1 overflow-y-auto bg-white">
-                <div className="w-full p-5 lg:p-8 max-w-[1600px] mx-auto">{children}</div>
+            <div className="bg-card flex-1 p-6 md:p-8">
+                <div className="mx-auto w-full max-w-[1600px]">{children}</div>
             </div>
         </div>
     );
@@ -103,27 +86,18 @@ export function FormSection({
     headerAction?: React.ReactNode;
 }) {
     return (
-        <div
-            className={cn(
-                'dark:bg-primary/[0.03] border-primary/10 overflow-hidden rounded-xl border bg-white shadow-sm dark:border-white/10',
-                className,
-            )}
-        >
-            <div className="border-primary/5 bg-primary/[0.01] flex items-center justify-between border-b px-5 py-3 dark:border-white/5 dark:bg-white/[0.01]">
-                <div className="space-y-1">
+        <div className={cn('border-border/60 bg-card overflow-hidden rounded-xl border shadow-sm', className)}>
+            <div className="bg-muted/30 border-border/40 flex items-center justify-between border-b px-5 py-3.5">
+                <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
-                        <Sparkles size={10} className="text-primary/20 dark:text-white/20" />
-                        <span className="text-primary block text-[10px] leading-none font-black tracking-widest uppercase dark:text-white">
-                            {title}
-                        </span>
+                        <Sparkles size={13} className="text-primary/50" />
+                        <span className="text-foreground text-sm font-bold tracking-wide">{title}</span>
                     </div>
-                    {subtitle && (
-                        <p className="text-primary/30 text-[7px] leading-none font-bold tracking-[0.2em] uppercase dark:text-white">{subtitle}</p>
-                    )}
+                    {subtitle && <p className="text-muted-foreground text-xs font-medium">{subtitle}</p>}
                 </div>
                 {headerAction}
             </div>
-            <div className="p-5 text-black dark:text-white">{children}</div>
+            <div className="text-foreground p-6">{children}</div>
         </div>
     );
 }
@@ -141,22 +115,15 @@ export function FormDangerZone({
 }) {
     return (
         <div
-            className={cn(
-                'border-primary/10 bg-primary/[0.03] rounded-xl border p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]',
-                className,
-            )}
+            className={cn('rounded-xl border border-rose-200/60 bg-rose-50/40 p-5 shadow-sm dark:border-rose-900/40 dark:bg-rose-950/20', className)}
         >
             <div className="flex items-center justify-between gap-6">
                 <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                        <div className="bg-primary dark:text-primary flex h-4 w-4 items-center justify-center rounded-md text-[9px] font-black text-white shadow-sm dark:bg-white">
-                            !
-                        </div>
-                        <span className="text-primary text-[10px] leading-none font-black tracking-widest uppercase dark:text-white">{title}</span>
+                        <div className="flex h-5 w-5 items-center justify-center rounded-md bg-rose-500 text-xs font-bold text-white">!</div>
+                        <span className="text-foreground text-sm font-bold">{title}</span>
                     </div>
-                    <p className="text-primary/30 max-w-sm text-[8px] leading-relaxed font-bold tracking-widest uppercase dark:text-white/30">
-                        {description}
-                    </p>
+                    <p className="text-muted-foreground max-w-sm text-xs leading-relaxed font-medium">{description}</p>
                 </div>
                 {children}
             </div>

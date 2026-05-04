@@ -110,7 +110,7 @@ class ContractWorkflowService
     /**
      * Create approval records for a workflow step
      */
-    private function createApprovalForStep(Contract $contract, WorkflowStep $step): void
+    public function createApprovalForStep(Contract $contract, WorkflowStep $step): void
     {
         // Get roles list (handle both array and string cases)
         $roles = (array)$step->role;
@@ -131,14 +131,35 @@ class ContractWorkflowService
             // Find all users with any of the required roles and in the same department
             $query = User::whereIn('role', $roles);
             
-            // Prioritize step-level department, then fallback to initiator's department if not specified
-            $targetDeptId = $step->department_id ?: $contract->initiator->department_id;
+            // Prioritize step-level departments via pivot, then fallback to single column, then fallback to initiator department if not specified
+            $targetDeptIds = !empty($step->department_ids) ? $step->department_ids : ($step->department_id ? [$step->department_id] : []);
             
-            if ($targetDeptId) {
-                $query->where('department_id', $targetDeptId);
+            if (!empty($targetDeptIds)) {
+                $query->whereIn('department_id', $targetDeptIds);
+            } elseif ($contract->initiator && $contract->initiator->department_id) {
+                // If it's step 1 (Atasan), only then match the initiator's department
+                if (in_array('atasan', (array)$step->step_type)) {
+                    $query->where('department_id', $contract->initiator->department_id);
+                }
             }
             
             $approvers = $query->get();
+
+            // If still empty, fallback to users with those roles regardless of department
+            if ($approvers->isEmpty()) {
+                $approvers = User::whereIn('role', $roles)->get();
+            }
+        }
+
+        // Replace or merge in any custom management users if this is the Review Manajemen step (step 3)
+        if ($step->step === 3 || str_contains(strtolower($step->description ?? ''), 'manajemen') || str_contains(strtolower($step->description ?? ''), 'coo')) {
+            $customUserIds = $contract->metadata['custom_management_users'] ?? [];
+            if (!empty($customUserIds)) {
+                $customApprovers = User::whereIn('id', $customUserIds)->get();
+                if ($customApprovers->isNotEmpty()) {
+                    $approvers = $customApprovers;
+                }
+            }
         }
 
         foreach ($approvers as $approver) {
@@ -282,6 +303,12 @@ class ContractWorkflowService
     private function shouldExecuteStep(Contract $contract, WorkflowStep $step): bool
     {
         $condition = $step->condition_expression ?? '';
+
+        // Condition: Tax Required
+        if (str_contains($condition, 'has_tax') || str_contains($condition, 'contract.has_tax')) {
+            $taxRequired = $contract->metadata['tax_required'] ?? false;
+            return (bool) $taxRequired;
+        }
 
         // Condition: Direct Supervisor Review (only if initiator is Staff)
         if (str_contains($condition, 'initiator_is_staff')) {

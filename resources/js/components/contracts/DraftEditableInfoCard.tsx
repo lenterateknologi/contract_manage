@@ -3,6 +3,9 @@ import { Contract, ContractType } from '@/types/contracts';
 import { Info, Loader2, Check, ChevronUp, ChevronDown, FileText as FileIcon } from 'lucide-react';
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { ContractReferenceCard } from './ContractReferenceCard';
+import { cn } from '@/lib/utils';
+import { contractApi } from '@/lib/contract-api';
+import { Modal } from '@/components/ui/overlays/Modal';
 
 export interface FormTemplateInfo {
     id: string;
@@ -56,6 +59,20 @@ export function DraftEditableInfoCard({
     const [kopSubTopik, setKopSubTopik] = useState((selected as any).kop_sub_topik || '');
     const [crownNo, setCrownNo] = useState(selected.crown_no || '');
     const [minimized, setMinimized] = useState(false);
+    const [allUsers, setAllUsers] = useState<any[]>([]);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isAddApproverOpen, setIsAddApproverOpen] = useState(false);
+    const [localSelectedUsers, setLocalSelectedUsers] = useState<string[]>([]);
+
+    useEffect(() => {
+        if (isAddApproverOpen) {
+            setLocalSelectedUsers(selected.metadata?.custom_management_users || []);
+        }
+    }, [isAddApproverOpen, selected.metadata?.custom_management_users]);
+
+    useEffect(() => {
+        contractApi.getUsers().then(setAllUsers).catch(console.error);
+    }, []);
 
     useEffect(() => {
         setTitle(selected.title);
@@ -150,12 +167,12 @@ export function DraftEditableInfoCard({
     );
 
     return (
-        <div className="bg-white dark:bg-sidebar overflow-hidden rounded-xl shadow-sm">
-            <div className="flex h-14 items-center justify-between bg-primary dark:bg-white px-4">
-                <div className="flex items-center gap-2 font-bold text-white dark:text-black text-[11px] uppercase tracking-widest">
-                    <Info size={14} className="text-white/40 dark:text-black/40" /> Informasi Kontrak
+        <div className="bg-card text-foreground overflow-hidden rounded-xl border border-border shadow-sm">
+            <div className="flex h-12 items-center justify-between bg-muted/40 px-4 border-b border-border">
+                <div className="flex items-center gap-2 font-semibold text-foreground text-sm">
+                    <Info size={16} className="text-primary" /> Informasi Kontrak
                     {isDraft && (
-                        <span className="rounded-full bg-white dark:bg-black px-2 py-0.5 text-[8px] font-bold tracking-widest text-black dark:text-white uppercase">
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
                             Editable
                         </span>
                     )}
@@ -165,61 +182,58 @@ export function DraftEditableInfoCard({
                         <div className="flex items-center gap-2 px-2">
                             {localSaving ? (
                                 <>
-                                    <Loader2 size={12} className="animate-spin text-white/40 dark:text-[#0f172a]/40" />
-                                    <span className="text-[10px] font-bold text-white/40 dark:text-[#0f172a]/40 uppercase tracking-widest">Menyimpan...</span>
+                                    <Loader2 size={12} className="animate-spin text-muted-foreground" />
+                                    <span className="text-xs text-muted-foreground">Menyimpan...</span>
                                 </>
                             ) : hasChanges ? (
                                 <>
-                                    <div className="h-1.5 w-1.5 rounded-full bg-white dark:bg-[#0f172a] animate-pulse" />
-                                    <span className="text-[10px] font-bold text-white dark:text-[#0f172a] uppercase tracking-widest">Berubah</span>
+                                    <div className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                                    <span className="text-xs text-muted-foreground">Berubah</span>
                                 </>
                             ) : (
                                 <>
-                                    <Check size={12} className="text-white dark:text-[#0f172a]" />
-                                    <span className="text-[10px] font-bold text-white dark:text-[#0f172a] uppercase tracking-widest">Tersimpan</span>
+                                    <Check size={12} className="text-emerald-500" />
+                                    <span className="text-xs text-muted-foreground">Tersimpan</span>
                                 </>
                             )}
                         </div>
                     )}
                     <button
                         onClick={() => setMinimized(!minimized)}
-                        className="text-white/40 dark:text-black/40 hover:text-white dark:hover:text-black transition-all active:scale-95"
+                        className="text-muted-foreground hover:text-foreground transition-all active:scale-95"
                     >
                         {minimized ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
                     </button>
                 </div>
             </div>
             {!minimized && (
-                <div style={{ padding: 16, display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
+                <div className="p-4 grid grid-cols-1 gap-4">
                     <div>
-                        <div className="text-black/40 dark:text-white/40 font-bold tracking-[0.2em] uppercase" style={{ fontSize: 9, marginBottom: 6 }}>
+                        <div className="text-muted-foreground font-semibold text-xs mb-1">
                             No. Pengajuan
                         </div>
-                        <span
-                            className="rounded bg-black/[0.03] dark:bg-white/[0.03] px-3 py-1.5 font-mono font-bold text-black dark:text-white inline-block shadow-sm"
-                            style={{ fontSize: 12 }}
-                        >
+                        <span className="rounded bg-muted px-3 py-1.5 font-mono font-bold text-foreground inline-block shadow-sm text-sm">
                             {selected.contract_no}
                         </span>
                     </div>
 
                     {isDraft ? (
-                        <div style={{ gridColumn: '1/-1' }}>
-                            <div className="text-black/40 dark:text-white/40 font-bold tracking-[0.2em] uppercase" style={{ fontSize: 9, marginBottom: 6 }}>
+                        <div className="col-span-full">
+                            <div className="text-muted-foreground font-semibold text-xs mb-1">
                                 Judul Kontrak
                             </div>
                             <input
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
                                 placeholder="Nama kontrak..."
-                                className={inputCls + ' font-medium'}
+                                className={inputCls + ' font-medium text-sm'}
                             />
                         </div>
                     ) : null}
 
                     <div className="flex flex-col gap-4">
                         <div>
-                            <div className="text-black/40 dark:text-white/40 font-bold tracking-[0.2em] uppercase" style={{ fontSize: 9, marginBottom: 6 }}>
+                            <div className="text-muted-foreground font-semibold text-xs mb-1">
                                 No. Kontrak
                             </div>
                             {isDraft ? (
@@ -227,20 +241,17 @@ export function DraftEditableInfoCard({
                                     value={crownNo}
                                     onChange={(e) => setCrownNo(e.target.value)}
                                     placeholder="CROWN-XXX..."
-                                    className={inputCls + ' font-mono font-bold'}
+                                    className={inputCls + ' font-mono font-bold text-sm'}
                                 />
                             ) : (
-                                <span
-                                    className="rounded bg-black/[0.03] dark:bg-white/[0.03] px-3 py-1.5 font-mono font-bold text-black dark:text-white inline-block shadow-sm"
-                                    style={{ fontSize: 12 }}
-                                >
+                                <span className="rounded bg-muted px-3 py-1.5 font-mono font-bold text-foreground inline-block shadow-sm text-sm">
                                     {selected.crown_no || '—'}
                                 </span>
                             )}
                         </div>
 
                         <div>
-                            <div className="text-black/40 dark:text-white/40 font-bold tracking-[0.2em] uppercase" style={{ fontSize: 9, marginBottom: 6 }}>
+                            <div className="text-muted-foreground font-semibold text-xs mb-1">
                                 Sifat Kontrak
                             </div>
                             {isDraft ? (
@@ -252,100 +263,298 @@ export function DraftEditableInfoCard({
                                     <option value="Lainnya">Lainnya</option>
                                 </select>
                             ) : (
-                                <span className="text-xs font-bold text-black dark:text-white uppercase">
+                                <span className="text-sm font-semibold text-foreground">
                                     {selected.transaction_type || '—'}
                                 </span>
                             )}
                         </div>
                     </div>
 
-
                     <div>
-                        <div className="text-black/40 dark:text-white/40 font-bold tracking-[0.2em] uppercase" style={{ fontSize: 9, marginBottom: 6 }}>
+                        <div className="text-muted-foreground font-semibold text-xs mb-1">
                             Jenis Kontrak
                         </div>
                         {isDraft ? (
                             <select value={typeId} onChange={(e) => setTypeId(e.target.value)} className={inputCls}>
                                 <option value="">Pilih Tipe</option>
-                                {types.map((t) => (
+                                {Array.isArray(types) && types.map((t) => (
                                     <option key={t.id} value={t.id}>
                                         {t.name}
                                     </option>
                                 ))}
                             </select>
                         ) : (
-                                <span className="rounded-full bg-[#172554] dark:bg-white px-3 py-1 text-[10px] font-bold tracking-[0.1em] text-white dark:text-[#172554] uppercase shadow-sm">
-                                    {selected.contract_type}
-                                </span>
+                            <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary shadow-sm">
+                                {selected.contract_type}
+                            </span>
                         )}
                     </div>
 
                     <div>
-                        <div className="text-black/40 dark:text-white/40 font-bold tracking-[0.2em] uppercase" style={{ fontSize: 9, marginBottom: 6 }}>
+                        <div className="text-muted-foreground font-semibold text-xs mb-1">
                             Perjanjian
                         </div>
                         {isDraft ? (
                             <select value={submissionTypeId} onChange={(e) => setSubmissionTypeId(e.target.value)} className={inputCls}>
                                 <option value="">Pilih Tipe</option>
-                                {submissionTypes.map((st) => (
+                                {Array.isArray(submissionTypes) && submissionTypes.map((st) => (
                                     <option key={st.id} value={st.id}>
                                         {st.name}
                                     </option>
                                 ))}
                             </select>
                         ) : (
-                            <span className="text-black dark:text-white font-medium" style={{ fontSize: 12 }}>{selected.submission_type || '—'}</span>
+                            <span className="text-foreground font-medium text-sm">{selected.submission_type || '—'}</span>
                         )}
                     </div>
 
                     <div>
-                        <div className="text-black/40 dark:text-white/40 font-bold tracking-[0.2em] uppercase" style={{ fontSize: 9, marginBottom: 6 }}>
+                        <div className="text-muted-foreground font-semibold text-xs mb-1">
                             Pihak Kedua (Vendor)
                         </div>
                         {isDraft ? (
                             <select value={vendorId} onChange={(e) => setVendorId(e.target.value)} className={inputCls}>
                                 <option value="">Pilih Vendor</option>
-                                {vendors.map((v) => (
+                                {Array.isArray(vendors) && vendors.map((v) => (
                                     <option key={v.id} value={v.id}>
                                         {v.name}
                                     </option>
                                 ))}
                             </select>
                         ) : (
-                                <span className="rounded-full bg-black/[0.03] dark:bg-white/[0.03] px-3 py-1 text-[10px] font-bold tracking-[0.1em] text-black dark:text-white uppercase shadow-sm">
-                                    {(selected as any).vendor?.name || '-'}
-                                </span>
+                            <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-foreground shadow-sm">
+                                {(selected as any).vendor?.name || '-'}
+                            </span>
                         )}
                     </div>
 
                     <div>
-                        <div className="text-black/40 dark:text-white/40 font-bold tracking-widest uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
+                        <div className="text-muted-foreground font-semibold text-xs mb-1">
                             Dibuat Oleh
                         </div>
                         <div className="flex items-center gap-1.5">
                             <Avatar user={selected.creator} size="sm" />
-                            <span className="text-black dark:text-white font-medium" style={{ fontSize: 12 }}>{selected.creator?.name}</span>
+                            <span className="text-foreground font-medium text-sm">{selected.creator?.name}</span>
                         </div>
                     </div>
 
                     <div>
-                        <div className="text-black/40 dark:text-white/40 font-bold tracking-widest uppercase" style={{ fontSize: 10, marginBottom: 4 }}>
+                        <div className="text-muted-foreground font-semibold text-xs mb-1">
                             Tgl Dibuat
                         </div>
-                        <span className="text-black dark:text-white font-medium" style={{ fontSize: 12 }}>{selected.created_at}</span>
+                        <span className="text-foreground font-medium text-sm">{selected.created_at}</span>
                     </div>
 
-                    <div className="grid-cols-1 border-t border-black/10 pt-6 dark:border-white/10" style={{ gridColumn: '1/-1' }}>
-                        <div className="mb-4 text-[9px] font-black uppercase tracking-[0.2em] text-black/40 dark:text-white/40">
-                            Kontrak Referensi / Dasar Hukum
+                    {selected.workflow_step && (
+                        <div className="col-span-full border-t border-border pt-4">
+                            <div className="mb-2 text-xs font-semibold text-muted-foreground">
+                                Posisi Kontrak Saat Ini (Workflow)
+                            </div>
+                            <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-800/30 rounded-xl shadow-sm animate-in fade-in">
+                                <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                                    <i className="fa-solid fa-clock animate-pulse text-sm" />
+                                </div>
+                                <div className="flex flex-col gap-0.5">
+                                    <span className="text-xs font-bold text-amber-700 dark:text-amber-300">
+                                        Sedang Di: {selected.workflow_step.description}
+                                    </span>
+                                    <span className="text-xs text-amber-600/70 dark:text-amber-400/70 font-semibold">
+                                        Peran: {selected.workflow_step.role}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
-                        <ContractReferenceCard 
-                            selected={selected}
-                            canUpdate={canUpdate}
-                            onUpdate={onUpdate as any}
-                            processing={processing}
-                        />
-                    </div>
+                    )}
+
+                    {isDraft ? (
+                        <div className="col-span-full border-t border-border pt-4 mt-2">
+                            <div className="mb-4 p-3.5 bg-muted/30 border border-border rounded-xl">
+                                <label className="flex items-center justify-between cursor-pointer">
+                                    <div className="flex flex-col">
+                                        <span className="text-sm font-semibold text-foreground">Review Kepatuhan Pajak</span>
+                                        <span className="text-xs text-muted-foreground mt-0.5">Sertakan departemen pajak dalam alur persetujuan</span>
+                                    </div>
+                                    <input 
+                                        type="checkbox"
+                                        checked={!!selected.metadata?.tax_required}
+                                        onChange={(e) => {
+                                            const isChecked = e.target.checked;
+                                            onUpdate({ metadata: { ...selected.metadata, tax_required: isChecked } });
+                                        }}
+                                        className="w-4 h-4 accent-primary cursor-pointer"
+                                    />
+                                </label>
+                            </div>
+
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="text-xs font-semibold text-muted-foreground">
+                                    Disetujui
+                                </span>
+                                <button 
+                                    type="button"
+                                    onClick={() => setIsAddApproverOpen(true)}
+                                    className="text-xs font-bold text-primary hover:text-primary-hover transition-colors flex items-center gap-1 bg-primary/10 px-2.5 py-1 rounded-lg"
+                                >
+                                    + tambah
+                                </button>
+                            </div>
+
+                            <div className="space-y-2">
+                                {selected.metadata?.custom_management_users && selected.metadata.custom_management_users.length > 0 ? (
+                                    selected.metadata.custom_management_users.map((userId: string, idx: number) => {
+                                        const approval = selected.approvals?.find(a => a.user_id === userId);
+                                        const userObj = allUsers.find(u => u.id === userId);
+                                        return (
+                                            <div key={idx} className="flex items-center justify-between p-2.5 rounded-lg bg-muted/40 border border-border animate-in fade-in">
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-bold text-foreground">
+                                                        {userObj ? userObj.name : approval ? approval.approver_name : `User ID: ${userId}`}
+                                                    </span>
+                                                    <span className="text-xs font-medium text-muted-foreground">
+                                                        {userObj ? `${userObj.department?.name || userObj.department_name || ''} • ${userObj.role}` : approval ? approval.role : 'COO/VP/Deputy'}
+                                                    </span>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const currentUsers = selected.metadata?.custom_management_users || [];
+                                                        const newUsers = currentUsers.filter((id: string) => id !== userId);
+                                                        onUpdate({ metadata: { ...selected.metadata, custom_management_users: newUsers } });
+                                                    }}
+                                                    className="text-red-500 hover:text-red-600 p-1 transition-colors"
+                                                >
+                                                    <i className="fa-solid fa-trash-can text-xs" />
+                                                </button>
+                                            </div>
+                                        );
+                                    })
+                                ) : (
+                                    <div className="p-3 text-center text-xs text-muted-foreground italic">
+                                        Belum ada approver tambahan yang ditambahkan.
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Modal to add custom management approvers */}
+                            <Modal
+                                isOpen={isAddApproverOpen}
+                                onClose={() => setIsAddApproverOpen(false)}
+                                title="Tambah Approver Manajemen"
+                                description="Pilih hingga maksimal 3 orang sebagai approver tambahan untuk persetujuan manajemen."
+                                maxWidth="md"
+                            >
+                                <div className="space-y-4">
+                                    {/* Search Input */}
+                                    <div className="relative">
+                                        <input 
+                                            type="text"
+                                            placeholder="Cari nama, departemen, atau peran..."
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            className="w-full bg-card border border-border h-10 px-3 text-sm font-medium rounded-lg appearance-none focus:ring-1 focus:ring-primary transition-all outline-none text-foreground"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
+                                        {allUsers
+                                            .filter(u => u.role !== 'Vendor' && u.role?.toLowerCase() !== 'staff')
+                                            .filter(u => !searchQuery || u.name?.toLowerCase().includes(searchQuery.toLowerCase()) || u.role?.toLowerCase().includes(searchQuery.toLowerCase()) || u.department?.name?.toLowerCase().includes(searchQuery.toLowerCase()))
+                                            .map((u: any) => {
+                                                const isSelected = localSelectedUsers.includes(u.id);
+                                                return (
+                                                    <label 
+                                                        key={u.id}
+                                                        className={cn(
+                                                            "flex items-center justify-between p-2.5 rounded-lg border cursor-pointer transition-all hover:bg-muted/30",
+                                                            isSelected 
+                                                                ? "bg-primary/5 border-primary" 
+                                                                : "border-border bg-card"
+                                                        )}
+                                                    >
+                                                        <div className="flex flex-col">
+                                                            <span className="text-sm font-semibold text-foreground">{u.name}</span>
+                                                            <span className="text-xs text-muted-foreground">
+                                                                {u.department?.name ? `${u.department.name} • ` : u.department_name ? `${u.department_name} • ` : ''}{u.role}
+                                                            </span>
+                                                        </div>
+                                                        <input 
+                                                            type="checkbox"
+                                                            checked={isSelected}
+                                                            onChange={() => {
+                                                                if (isSelected) {
+                                                                    setLocalSelectedUsers(localSelectedUsers.filter(id => id !== u.id));
+                                                                } else {
+                                                                    if (localSelectedUsers.length >= 3) {
+                                                                        alert('Maksimal 3 orang approver tambahan.');
+                                                                        return;
+                                                                    }
+                                                                    setLocalSelectedUsers([...localSelectedUsers, u.id]);
+                                                                }
+                                                            }}
+                                                            className="w-4 h-4 accent-primary cursor-pointer"
+                                                        />
+                                                    </label>
+                                                );
+                                            })}
+                                    </div>
+
+                                    <div className="flex justify-end gap-3 pt-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsAddApproverOpen(false)}
+                                            className="px-4 h-9 text-xs font-bold text-muted-foreground hover:text-foreground"
+                                        >
+                                            Batal
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                onUpdate({ metadata: { ...selected.metadata, custom_management_users: localSelectedUsers } });
+                                                setIsAddApproverOpen(false);
+                                            }}
+                                            className="px-5 h-9 bg-primary text-white text-xs font-semibold rounded-lg hover:opacity-90 active:scale-95 transition-all shadow"
+                                        >
+                                            Simpan
+                                        </button>
+                                    </div>
+                                </div>
+                            </Modal>
+                        </div>
+                    ) : (
+                        selected.metadata?.custom_management_users && Array.isArray(selected.metadata.custom_management_users) && selected.metadata.custom_management_users.length > 0 && (
+                            <div className="col-span-full border-t border-border pt-4 mt-2">
+                                <div className="mb-3 text-xs font-semibold text-muted-foreground">
+                                    Disetujui
+                                </div>
+                                <div className="p-3 bg-muted/40 border border-border rounded-xl space-y-2 animate-in fade-in">
+                                    {selected.metadata.custom_management_users.map((userId: string, idx: number) => {
+                                        const approval = selected.approvals?.find(a => a.user_id === userId);
+                                        const userObj = allUsers.find(u => u.id === userId);
+                                        return (
+                                            <div key={idx} className="flex items-center justify-between p-2.5 rounded-lg bg-card border border-border">
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-bold text-foreground">
+                                                        {userObj ? userObj.name : approval ? approval.approver_name : `User ID: ${userId}`}
+                                                    </span>
+                                                    <span className="text-xs font-medium text-muted-foreground">
+                                                        {userObj ? `${userObj.department?.name || userObj.department_name || ''} • ${userObj.role}` : approval ? approval.role : 'COO/VP/Deputy'}
+                                                    </span>
+                                                </div>
+                                                <span className={cn(
+                                                    "text-xs font-semibold px-2 py-0.5 rounded",
+                                                    approval?.status === 'approved' ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400" :
+                                                    approval?.status === 'rejected' ? "bg-red-50 text-red-600 dark:bg-red-950/20 dark:text-red-400" :
+                                                    "bg-amber-50 text-amber-600 dark:bg-amber-950/20 dark:text-amber-400"
+                                                )}>
+                                                    {approval ? approval.status : 'pending'}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )
+                    )}
                 </div>
             )}
         </div>

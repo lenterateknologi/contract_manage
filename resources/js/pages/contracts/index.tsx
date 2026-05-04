@@ -47,9 +47,11 @@ import { ContractReferenceCard } from '@/components/contracts/ContractReferenceC
 import { DashboardMetrics } from '@/components/contracts/DashboardMetrics';
 import { DraftEditableInfoCard } from '@/components/contracts/DraftEditableInfoCard';
 import { EditContractModal } from '@/components/contracts/EditContractModal';
+import ApproveModal from '@/components/contracts/ApproveModal';
+import RejectModal from '@/components/contracts/RejectModal';
 import { ProfileView } from '@/components/contracts/ProfileView';
 import SendApprovalModal from '@/components/contracts/SendApprovalModal';
-import { Column, DataTable } from '@/components/ui/data/DataTable';
+import { Column, TableContract } from '@/components/ui/data/TableContract';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -95,15 +97,15 @@ function ExpiryBadge({ endDate }: Readonly<{ endDate: string | null }>) {
 
 const StatusBadge = ({ status }: { status: string }) => {
     const config: Record<string, { bg: string; dot: string; text: string; label: string }> = {
-        draft:     { bg: 'bg-slate-100',   dot: 'bg-slate-400',   text: 'text-slate-600',   label: 'Draft' },
-        in_review: { bg: 'bg-amber-100',   dot: 'bg-amber-500',   text: 'text-amber-700',   label: 'Review' },
-        revision:  { bg: 'bg-rose-100',    dot: 'bg-rose-500',    text: 'text-rose-700',    label: 'Revisi' },
-        pending:   { bg: 'bg-orange-100',  dot: 'bg-orange-500',  text: 'text-orange-700',  label: 'Pending' },
-        approved:  { bg: 'bg-emerald-100', dot: 'bg-emerald-500', text: 'text-emerald-700', label: 'Disetujui' },
-        active:    { bg: 'bg-blue-100',    dot: 'bg-blue-500',    text: 'text-blue-700',    label: 'Aktif' },
-        expired:   { bg: 'bg-red-100',     dot: 'bg-red-500',     text: 'text-red-700',     label: 'Expired' },
-        archived:  { bg: 'bg-zinc-100',    dot: 'bg-zinc-400',    text: 'text-zinc-500',    label: 'Arsip' },
-        rejected:  { bg: 'bg-red-100',     dot: 'bg-red-500',     text: 'text-red-700',     label: 'Ditolak' },
+        draft: { bg: 'bg-slate-100', dot: 'bg-slate-400', text: 'text-slate-600', label: 'Draft' },
+        in_review: { bg: 'bg-amber-100', dot: 'bg-amber-500', text: 'text-amber-700', label: 'Review' },
+        revision: { bg: 'bg-rose-100', dot: 'bg-rose-500', text: 'text-rose-700', label: 'Revisi' },
+        pending: { bg: 'bg-orange-100', dot: 'bg-orange-500', text: 'text-orange-700', label: 'Pending' },
+        approved: { bg: 'bg-emerald-100', dot: 'bg-emerald-500', text: 'text-emerald-700', label: 'Disetujui' },
+        active: { bg: 'bg-blue-100', dot: 'bg-blue-500', text: 'text-blue-700', label: 'Aktif' },
+        expired: { bg: 'bg-red-100', dot: 'bg-red-500', text: 'text-red-700', label: 'Expired' },
+        archived: { bg: 'bg-zinc-100', dot: 'bg-zinc-400', text: 'text-zinc-500', label: 'Arsip' },
+        rejected: { bg: 'bg-red-100', dot: 'bg-red-500', text: 'text-red-700', label: 'Ditolak' },
     };
 
     const s = config[status as keyof typeof config] || config.draft;
@@ -177,67 +179,111 @@ const SLACountdown = ({ deadline, status }: Readonly<{ deadline: string | null; 
 const ContractInfoCell = ({ c }: Readonly<{ c: Contract }>) => (
     <div className="flex flex-col">
         <div className="flex items-center gap-2">
-            <span className="text-[13px] leading-tight font-bold text-sidebar-foreground">{c.title}</span>
+            <span className="text-sidebar-foreground text-sm leading-tight font-bold">{c.title}</span>
             {!!c.current_version && (
-                <div className="flex-shrink-0 rounded bg-sidebar-primary px-1.5 py-0.5">
-                    <span className="text-[9px] font-black text-white uppercase">V{c.current_version}</span>
+                <div className="bg-sidebar-primary flex-shrink-0 rounded px-1.5 py-0.5">
+                    <span className="text-xs font-bold text-white uppercase">V{c.current_version}</span>
                 </div>
             )}
         </div>
         <div className="mt-1.5 flex items-center gap-2">
-            <span className="text-[10px] font-bold tracking-wide text-sidebar-foreground/40 uppercase">{c.contract_type}</span>
-            <span className="h-1 w-1 rounded-full bg-sidebar-foreground/20" />
-            <span className="text-[10px] font-bold tracking-wide text-sidebar-foreground/40 uppercase">{c.vendor?.name || 'No Vendor'}</span>
+            <span className="text-sidebar-foreground/40 text-xs font-semibold tracking-wide uppercase">{c.contract_type}</span>
+            <span className="bg-sidebar-foreground/20 h-1 w-1 rounded-full" />
+            <span className="text-sidebar-foreground/40 text-xs font-semibold tracking-wide uppercase">{c.vendor?.name || 'No Vendor'}</span>
         </div>
     </div>
 );
 
 const DepartmentCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <span className="text-[11px] font-semibold tracking-wide text-sidebar-foreground/50 uppercase">
-        {c.initiator?.department_name || 'UMUM'}
-    </span>
+    <span className="text-sidebar-foreground/50 text-xs font-semibold tracking-wide uppercase">{c.initiator?.department_name || 'UMUM'}</span>
 );
 
 const ProgressCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <span className="text-sidebar-foreground/90 text-[10px] font-bold tracking-tight">
+    <span className="text-sidebar-foreground/90 text-xs font-bold tracking-tight">
         {c.progress.done}/{c.progress.total}
     </span>
 );
 
 const CreatedAtCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <span className="text-[11px] font-medium text-sidebar-foreground/40">{c.created_at}</span>
+    <span className="text-sidebar-foreground/40 text-xs font-medium">{c.created_at}</span>
 );
 
 const ContractNoCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <span className="font-mono text-[10px] font-bold text-sidebar-primary/70">{c.contract_no || 'N/A'}</span>
+    <span className="text-sidebar-primary/70 font-mono text-xs font-bold">{c.contract_no || 'N/A'}</span>
 );
 
-const TitleCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <span className="line-clamp-1 text-[11px] font-bold text-sidebar-foreground">{c.title}</span>
-);
+const TitleCell = ({ c }: Readonly<{ c: Contract }>) => <span className="text-sidebar-foreground line-clamp-1 text-xs font-bold">{c.title}</span>;
 
-const TypeCell = ({ c, types }: Readonly<{ c: Contract; types: ContractType[] }>) => {
+const TypeAndVendorCell = ({ c, types }: Readonly<{ c: Contract; types: ContractType[] }>) => {
     const TYPE_COLORS = [
-        'bg-violet-100 text-violet-700',
-        'bg-blue-100 text-blue-700',
-        'bg-cyan-100 text-cyan-700',
-        'bg-teal-100 text-teal-700',
-        'bg-indigo-100 text-indigo-700',
-        'bg-purple-100 text-purple-700',
+        'bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300',
+        'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300',
+        'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300',
+        'bg-teal-100 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300',
+        'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300',
+        'bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300',
     ];
     const type = types.find((t) => t.id === c.contract_type_id);
     const colorIdx = type ? type.name.charCodeAt(0) % TYPE_COLORS.length : 0;
+    const vendorName = c.vendor?.name || '-';
+
     return (
-        <span className={cn('inline-block rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wide', TYPE_COLORS[colorIdx])}>
-            {(type?.name || 'N/A').replace('Perjanjian ', '').replace('Addendum / ', '')}
-        </span>
+        <div className="flex flex-col gap-1 py-0.5">
+            <span className={cn('inline-block w-fit rounded-full px-2.5 py-0.5 text-xs font-bold tracking-wide uppercase leading-none', TYPE_COLORS[colorIdx])}>
+                {(type?.name || 'N/A').replace('Perjanjian ', '').replace('Addendum / ', '')}
+            </span>
+            <span className="text-xs font-medium text-sidebar-foreground/70 truncate">{vendorName}</span>
+        </div>
+    );
+};
+
+const ContractNoAndTitleCell = ({ c }: Readonly<{ c: Contract }>) => (
+    <div className="flex flex-col gap-0.5 py-0.5">
+        <span className="text-sidebar-primary/70 font-mono text-xs font-bold leading-none">{c.contract_no || 'N/A'}</span>
+        <span className="text-sidebar-foreground line-clamp-1 text-sm font-semibold leading-tight mt-1">{c.title}</span>
+    </div>
+);
+
+const InitiatorCell = ({ c }: Readonly<{ c: Contract }>) => {
+    const role = c.initiator?.role || '';
+    const dept = c.initiator?.department_name || '';
+    const roleDept = [role, dept].filter(Boolean).join(' ');
+
+    return (
+        <div className="flex flex-col gap-0.5 py-0.5">
+            <span className="text-sidebar-foreground/60 text-xs font-semibold leading-none">
+                {roleDept || 'Staff UMUM'}
+            </span>
+            <span className="text-sidebar-foreground text-sm font-semibold leading-tight mt-1 truncate">
+                {c.initiator?.name || '—'}
+            </span>
+        </div>
+    );
+};
+
+const StatusAndStepCell = ({ c }: Readonly<{ c: Contract }>) => {
+    let stepDesc = c.workflow_step?.description || c.workflow_step?.role || '';
+    if (!stepDesc && c.status === 'draft') {
+        stepDesc = c.initiator?.role || '';
+    }
+    return (
+        <div className="flex flex-col gap-1 py-0.5">
+            <div className="flex items-center">
+                <StatusBadge status={c.status} />
+            </div>
+            {!!stepDesc && (
+                <span className="text-xs font-semibold text-sidebar-foreground/60 truncate leading-tight capitalize">
+                    {stepDesc}
+                </span>
+            )}
+        </div>
     );
 };
 
 // Stable cell renderers to satisfy linting
-const renderContractNo = (c: Contract) => <ContractNoCell c={c} />;
-const renderTitle = (c: Contract) => <TitleCell c={c} />;
-const renderStatus = (c: Contract) => <StatusBadge status={c.status} />;
+const renderContractNoAndTitle = (c: Contract) => <ContractNoAndTitleCell c={c} />;
+const renderInitiator = (c: Contract) => <InitiatorCell c={c} />;
+const renderStatusAndStep = (c: Contract) => <StatusAndStepCell c={c} />;
 const renderCreatedAt = (c: Contract) => <CreatedAtCell c={c} />;
 
 const BulkActions = ({
@@ -371,6 +417,8 @@ const ContractDetailView = ({
     );
     const [processing, setProcessing] = useState(false);
     const { showProgress, hideProgress } = useToast();
+    const [approveOpen, setApproveOpen] = useState(false);
+    const [rejectOpen, setRejectOpen] = useState(false);
 
     // Export Logic
     const [isExportingTimeline, setIsExportingTimeline] = useState(false);
@@ -465,9 +513,7 @@ const ContractDetailView = ({
         }
     };
 
-    const handleApprove = async () => {
-        const note = prompt('Masukkan catatan approval (opsional):');
-        if (note === null) return;
+    const handleApprove = async (note: string) => {
         try {
             const c = await contractApi.approve(contract.id, note);
             onUpdate(c);
@@ -477,9 +523,7 @@ const ContractDetailView = ({
         }
     };
 
-    const handleReject = async () => {
-        const note = prompt('Masukkan alasan penolakan (wajib):');
-        if (!note) return;
+    const handleReject = async (note: string) => {
         try {
             const c = await contractApi.reject(contract.id, note);
             onUpdate(c);
@@ -509,9 +553,11 @@ const ContractDetailView = ({
                             <h2 className="text-lg leading-none font-bold tracking-tight text-black uppercase dark:text-white">{contract.title}</h2>
                             <StatusBadge status={contract.status} />
                         </div>
-                        <span className="mt-1.5 text-[10px] font-bold tracking-[0.2em] text-black/40 uppercase dark:text-white/40">
-                            #{contract.contract_no || 'NO-REQ'}
-                        </span>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-3">
+                            <span className="text-[10px] font-bold tracking-[0.2em] text-black/40 uppercase dark:text-white/40">
+                                #{contract.contract_no || 'NO-REQ'}
+                            </span>
+                        </div>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -549,7 +595,7 @@ const ContractDetailView = ({
                             <div className="my-1.5 h-px bg-black/10 dark:bg-white/10" />
                             <DropdownMenuItem
                                 onClick={() => setDeleteOpen(true)}
-                                className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-bold tracking-tight text-black dark:text-white uppercase focus:bg-black focus:text-white dark:focus:bg-white dark:focus:text-black"
+                                className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-bold tracking-tight text-black uppercase focus:bg-black focus:text-white dark:text-white dark:focus:bg-white dark:focus:text-black"
                             >
                                 <Trash2 size={14} /> Hapus Kontrak
                             </DropdownMenuItem>
@@ -572,13 +618,13 @@ const ContractDetailView = ({
                                         </button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end" className="w-56 rounded-xl p-1.5">
-                                        <div className="mb-1 px-2 py-1.5 text-[9px] font-black tracking-widest text-black/40 uppercase dark:text-white/40">
+                                        <div className="mb-1 px-2 py-1.5 text-[10px] font-bold tracking-wider text-black/40 uppercase dark:text-white/40">
                                             Menu Tambahan
                                         </div>
                                         <DropdownMenuItem
                                             onClick={() => setDetailTab('audit')}
                                             className={cn(
-                                                'flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-black tracking-tight uppercase transition-all',
+                                                'flex cursor-pointer items-center gap-2 rounded-lg text-xs font-semibold tracking-tight uppercase transition-all',
                                                 detailTab === 'audit'
                                                     ? 'bg-sidebar-primary text-white'
                                                     : 'text-black hover:bg-black/5 dark:text-white dark:hover:bg-white/5',
@@ -602,6 +648,7 @@ const ContractDetailView = ({
                                 { id: 'attachments', label: 'Lampiran' },
                                 { id: 'timeline', label: 'Alur Approval' },
                                 { id: 'chat', label: 'Chat' },
+                                { id: 'references', label: 'Kontrak Referensi' },
                             ].map((tab) => (
                                 <button
                                     key={tab.id}
@@ -614,9 +661,7 @@ const ContractDetailView = ({
                                     )}
                                 >
                                     {tab.label}
-                                    {detailTab === tab.id && (
-                                        <div className="absolute right-0 bottom-0 left-0 h-0.5 bg-black dark:bg-white" />
-                                    )}
+                                    {detailTab === tab.id && <div className="absolute right-0 bottom-0 left-0 h-0.5 bg-black dark:bg-white" />}
                                 </button>
                             ))}
                         </div>
@@ -660,7 +705,7 @@ const ContractDetailView = ({
                                     <Zap size={20} />
                                 </div>
                                 <div className="flex flex-col gap-0.5">
-                                    <h3 className="text-[12px] font-black tracking-tight text-black uppercase dark:text-white">
+                                    <h3 className="text-sm font-bold text-black uppercase dark:text-white">
                                         Approval Dibutuhkan
                                     </h3>
                                     <p className="text-[10px] font-medium text-black/40 dark:text-white/40">
@@ -669,12 +714,12 @@ const ContractDetailView = ({
                                 </div>
                             </div>
                             <div className="flex flex-col gap-2 pt-2">
-                                <Button variant="primary" onClick={handleApprove} className="h-11 w-full font-bold shadow-lg shadow-blue-500/20">
+                                <Button variant="primary" onClick={() => setApproveOpen(true)} className="h-11 w-full font-bold shadow-lg shadow-blue-500/20">
                                     <CheckCircle2 size={16} /> Setujui Kontrak
                                 </Button>
                                 <Button
                                     variant="outline"
-                                    onClick={handleReject}
+                                    onClick={() => setRejectOpen(true)}
                                     className="h-11 w-full border-black/10 font-bold hover:bg-rose-500 hover:text-white dark:border-white/10"
                                 >
                                     <AlertCircle size={16} /> Kembalikan / Tolak
@@ -698,6 +743,17 @@ const ContractDetailView = ({
                     />
                 </div>
             </div>
+
+            <ApproveModal
+                open={approveOpen}
+                onClose={() => setApproveOpen(false)}
+                onSubmit={handleApprove}
+            />
+            <RejectModal
+                open={rejectOpen}
+                onClose={() => setRejectOpen(false)}
+                onSubmit={handleReject}
+            />
         </div>
     );
 };
@@ -810,10 +866,14 @@ function ContractPage({
     const handleCreate = async (data: any) => {
         setProcessing(true);
         try {
-            await contractApi.create(data);
+            const newContract = await contractApi.create(data);
             showToast('Kontrak baru berhasil dibuat.', 'success');
             setCreateOpen(false);
-            router.reload();
+            if (newContract && newContract.id) {
+                openDetail(newContract);
+            } else {
+                router.reload();
+            }
         } catch {
             showToast('Gagal membuat kontrak.', 'danger');
         } finally {
@@ -901,10 +961,15 @@ function ContractPage({
     const handleSingleFilterToggle = (key: string, value: any) => {
         const f = filters as any;
         const currentValues = ensureArray(f[key]);
-        const stringValue = String(value);
-        const newValues = currentValues.includes(stringValue)
-            ? currentValues.filter((v: any) => String(v) !== stringValue)
-            : [...currentValues, stringValue];
+        let newValues: any[];
+        if (Array.isArray(value)) {
+            newValues = value;
+        } else {
+            const stringValue = String(value);
+            newValues = currentValues.map(String).includes(stringValue)
+                ? currentValues.filter((v: any) => String(v) !== stringValue)
+                : [...currentValues, stringValue];
+        }
         handleFilterChange({ [key]: newValues });
     };
 
@@ -932,43 +997,37 @@ function ContractPage({
         [openDetail, setSelected, setEditOpen, setDeleteOpen],
     );
 
-    const renderType = useCallback((c: Contract) => <TypeCell c={c} types={types} />, [types]);
+    const renderTypeAndVendor = useCallback((c: Contract) => <TypeAndVendorCell c={c} types={types} />, [types]);
 
     const columns: Column<Contract>[] = useMemo(
         () => [
             {
-                accessorKey: 'contract_no',
-                header: 'No. Kontrak',
-                cell: renderContractNo,
-            },
-            {
-                accessorKey: 'title',
-                header: 'Judul Kontrak',
-                cell: renderTitle,
+                accessorKey: 'contract_no_title',
+                header: 'No. & Judul Kontrak',
+                cell: renderContractNoAndTitle,
             },
             {
                 accessorKey: 'contract_type_id',
-                header: 'Tipe',
-                cell: renderType,
+                header: 'Tipe & Vendor',
+                cell: renderTypeAndVendor,
+            },
+            {
+                accessorKey: 'initiator',
+                header: 'Pembuat',
+                cell: renderInitiator,
             },
             {
                 accessorKey: 'status',
-                header: 'Status',
-                cell: renderStatus,
+                header: 'Status & Step',
+                cell: renderStatusAndStep,
             },
             {
                 accessorKey: 'created_at',
                 header: 'Dibuat',
                 cell: renderCreatedAt,
             },
-            {
-                accessorKey: 'actions',
-                header: '',
-                cell: renderRowActions,
-                className: 'w-10 text-right',
-            },
         ],
-        [types, renderRowActions],
+        [types, renderTypeAndVendor],
     );
 
     return (
@@ -996,12 +1055,16 @@ function ContractPage({
                     />
                 ) : (
                     <div className="flex flex-col gap-4">
-                        {view === 'dashboard' && <div className="p-5"><DashboardMetrics metrics={metrics} /></div>}
+                        {view === 'dashboard' && (
+                            <div className="p-5">
+                                <DashboardMetrics metrics={metrics} />
+                            </div>
+                        )}
                         {view === 'profile' && <ProfileView meUser={meUser} showToast={showToast} />}
                         {view !== 'profile' && view !== 'dashboard' && (
                             <div className="border-sidebar-border bg-sidebar flex min-h-0 flex-1 flex-col gap-0 overflow-hidden">
                                 {/* Unified Toolbar — Identical for both modes */}
-                                <div className="border-sidebar-border bg-sidebar sticky top-0 z-20 flex items-center gap-6 border-b px-5 py-4">
+                                <div className="border-sidebar-border bg-background sticky top-0 z-20 flex items-center gap-6 border-b px-5 py-4">
                                     <SearchInput
                                         containerClassName="max-w-sm flex-1"
                                         placeholder="Cari kontrak..."
@@ -1041,9 +1104,9 @@ function ContractPage({
                                     </div>
                                 </div>
 
-                                <div className="flex-1 overflow-auto">
+                                <div className={cn("flex-1 overflow-auto", layout === 'grid' && "p-4")}>
                                     {layout === 'table' ? (
-                                        <DataTable
+                                        <TableContract
                                             columns={columns}
                                             data={contractsPaged.data}
                                             loading={processing}
@@ -1060,7 +1123,7 @@ function ContractPage({
                                             }}
                                         />
                                     ) : (
-                                        <div className="flex flex-col gap-8 p-6">
+                                        <div className="flex flex-col gap-8">
                                             <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                                                 {contractsPaged.data.map((c) => (
                                                     <button
@@ -1070,13 +1133,13 @@ function ContractPage({
                                                     >
                                                         <div className="flex items-start justify-between gap-3">
                                                             <div className="flex min-w-0 flex-col gap-1">
-                                                                <span className="group-hover:text-sidebar-primary text-[10px] font-medium text-black/40 transition-all dark:text-white/40">
+                                                                <span className="group-hover:text-sidebar-primary text-xs font-medium text-black/40 transition-all dark:text-white/40">
                                                                     {c.contract_no || 'No Req'}
                                                                 </span>
-                                                                <h3 className="group-hover:text-sidebar-primary line-clamp-2 text-[12px] leading-tight font-semibold text-black transition-colors dark:text-white">
+                                                                <h3 className="group-hover:text-sidebar-primary line-clamp-2 text-sm leading-tight font-semibold text-black transition-colors dark:text-white">
                                                                     {c.title}
                                                                 </h3>
-                                                                <span className="mt-0.5 text-[10px] font-medium text-black/30 dark:text-white/30">
+                                                                <span className="mt-0.5 text-xs font-medium text-black/30 dark:text-white/30">
                                                                     {c.contract_type}
                                                                 </span>
                                                             </div>
@@ -1087,14 +1150,14 @@ function ContractPage({
 
                                                         <div className="border-sidebar-border/50 bg-sidebar-accent/30 dark:bg-sidebar-accent/10 group-hover:border-sidebar-primary/20 flex flex-col gap-3 rounded-lg border p-3 transition-all">
                                                             <div className="flex items-center justify-between">
-                                                                <span className="text-[10px] font-medium text-black/40 dark:text-white/40">
+                                                                <span className="text-xs font-medium text-black/40 dark:text-white/40">
                                                                     Departemen
                                                                 </span>
-                                                                <span className="truncate text-[11px] font-semibold text-black dark:text-white">
+                                                                <span className="truncate text-xs font-semibold text-black dark:text-white">
                                                                     {c.initiator?.department_name || 'Umum'}
                                                                 </span>
                                                             </div>
-                                                            <div className="flex items-center justify-between pt-1 text-[11px] font-medium">
+                                                            <div className="flex items-center justify-between pt-1 text-xs font-medium">
                                                                 <span className="text-black/40 dark:text-white/40">Progress</span>
                                                                 <span className="font-semibold text-black dark:text-white">
                                                                     {c.progress.done}/{c.progress.total}
@@ -1115,8 +1178,8 @@ function ContractPage({
                                             <div className="mt-8 mb-10 flex w-full items-center justify-between">
                                                 {/* Left Pill: Info */}
                                                 <div className="flex items-center gap-4 rounded-xl border border-[#0f2a4a]/10 bg-[#0f2a4a]/[0.03] px-6 py-2 shadow-sm transition-all duration-500 dark:border-white/10 dark:bg-white/[0.03]">
-                                                    <div className="flex items-center gap-4 text-[10px] font-black tracking-widest whitespace-nowrap text-[#0f2a4a]/60 uppercase dark:text-white/60">
-                                                        <span className="hidden text-[9px] opacity-40 sm:inline">Menampilkan</span>
+                                                    <div className="flex items-center gap-4 text-xs font-semibold whitespace-nowrap text-slate-700 dark:text-slate-300">
+                                                        <span className="hidden sm:inline">Menampilkan</span>
                                                         <span>
                                                             {contractsPaged.from} - {contractsPaged.to} / {contractsPaged.total}
                                                         </span>
@@ -1124,7 +1187,7 @@ function ContractPage({
                                                 </div>
 
                                                 {/* Right Pill: Navigation */}
-                                                <div className="flex items-center gap-1 rounded-xl border border-[#0f2a4a]/10 bg-[#0f2a4a]/[0.03] px-3 py-1 shadow-sm transition-all duration-500 dark:border-white/10 dark:bg-white/[0.03]">
+                                                <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-1 shadow-sm transition-all duration-500 dark:border-white/10 dark:bg-white/[0.03]">
                                                     <button
                                                         disabled={contractsPaged.current_page === 1}
                                                         onClick={() =>
@@ -1134,17 +1197,17 @@ function ContractPage({
                                                                 { preserveState: true },
                                                             )
                                                         }
-                                                        className="flex h-8 w-8 items-center justify-center rounded-lg text-[#0f2a4a]/60 transition-all hover:bg-[#0f2a4a]/5 disabled:opacity-20 dark:text-white/60 dark:hover:bg-white/10"
+                                                        className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 transition-all hover:bg-slate-100 disabled:opacity-20 dark:text-white/60 dark:hover:bg-white/10"
                                                     >
                                                         <ChevronLeft className="h-4 w-4" />
                                                     </button>
 
                                                     <div className="mx-1 flex items-center gap-1">
-                                                        <div className="flex h-8 min-w-[32px] items-center justify-center rounded-lg bg-[#0f2a4a] px-3 text-[10px] font-black text-white shadow-md shadow-[#0f2a4a]/20">
+                                                        <div className="flex h-8 min-w-[32px] items-center justify-center rounded-lg bg-[#0f2a4a] px-3 text-xs font-bold text-white shadow-sm">
                                                             {contractsPaged.current_page}
                                                         </div>
-                                                        <span className="mx-1 text-[10px] font-black text-black/20 dark:text-white/20">/</span>
-                                                        <div className="text-[10px] font-black text-[#0f2a4a]/40 dark:text-white/40">
+                                                        <span className="mx-1 text-xs font-medium text-slate-400">/</span>
+                                                        <div className="text-xs font-bold text-slate-600 dark:text-slate-400">
                                                             {contractsPaged.last_page}
                                                         </div>
                                                     </div>
@@ -1380,7 +1443,7 @@ export default function ContractsIndex({
                 contractApi.list({ view: currentView }),
                 contractApi.getTypes(),
                 axios
-                    .get('/admin/api/contracts/submission-types')
+                    .get('/api/contracts/submission-types')
                     .then((res) => res.data)
                     .catch(() => []),
                 axios
@@ -1404,7 +1467,7 @@ export default function ContractsIndex({
             <Head title="Contract Manager" />
             <ToastProvider>
                 {bootLoading ? (
-                    <div className="flex h-screen flex-col items-center justify-center gap-6 bg-white dark:bg-[#09090b]">
+                    <div className="bg-background flex h-screen flex-col items-center justify-center gap-6">
                         <div className="relative flex items-center justify-center">
                             <LoadingLottie width={180} height={180} />
                             <div className="absolute inset-0 flex items-center justify-center">
@@ -1412,7 +1475,7 @@ export default function ContractsIndex({
                             </div>
                         </div>
                         <div className="flex flex-col items-center gap-2">
-                            <span className="animate-pulse text-[11px] font-black tracking-[0.5em] text-black uppercase dark:text-white">
+                            <span className="animate-pulse text-xs font-semibold tracking-wider text-slate-700 dark:text-slate-300 uppercase">
                                 Memuat Sistem Kontrak
                             </span>
                             <div className="h-0.5 w-48 overflow-hidden rounded-full bg-slate-100 dark:bg-white/10">

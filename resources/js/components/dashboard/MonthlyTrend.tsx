@@ -9,7 +9,7 @@ export function MonthlyTrend({ items }: MonthlyTrendProps) {
     const max = Math.max(...items.map((t) => t.total), 1);
 
     return (
-        <div className="rounded-2xl border border-sidebar-border/60 bg-white p-6 shadow-sm lg:col-span-5">
+        <div className="rounded-2xl border border-sidebar-border/60 bg-card text-card-foreground p-6 shadow-sm lg:col-span-5">
             <SectionTitle>Tren 6 Bulan Terakhir</SectionTitle>
             {items.length > 0 ? (
                 <div className="flex h-[120px] items-end gap-2">

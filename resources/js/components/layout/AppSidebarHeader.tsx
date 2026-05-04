@@ -17,8 +17,8 @@ export const AppSidebarHeader = memo(function AppSidebarHeader({ breadcrumbs = [
             className={cn(
                 'sticky top-0 z-40 transition-all duration-300',
                 'm-4 flex h-14 items-center justify-between rounded-2xl px-6',
-                'dark:bg-background bg-white/80 backdrop-blur-xl',
-                'border-primary/10 shadow-primary/5 border shadow-2xl dark:border-white/10 dark:shadow-black/20',
+                'bg-card/90 dark:bg-card/90 backdrop-blur-xl',
+                'border border-border/60 shadow-xl dark:border-border/60 dark:shadow-black/20',
             )}
         >
             {/* Left Section: Context & Navigation */}
@@ -27,14 +27,14 @@ export const AppSidebarHeader = memo(function AppSidebarHeader({ breadcrumbs = [
                     <SidebarTrigger
                         className={cn(
                             'h-9 w-9 rounded-xl transition-all duration-300',
-                            'text-primary/60 dark:text-white/60',
-                            'hover:text-primary hover:bg-primary/[0.08] dark:hover:bg-white/[0.08] dark:hover:text-white',
+                            'text-foreground/70 dark:text-foreground/70',
+                            'hover:text-foreground hover:bg-muted dark:hover:bg-muted dark:hover:text-foreground',
                             'active:scale-90',
                         )}
                     />
                 </div>
 
-                <div className="bg-primary/10 hidden h-4 w-px md:block dark:bg-white/10" />
+                <div className="bg-border hidden h-4 w-px md:block dark:bg-border" />
 
                 <div className="hidden md:block">
                     <Breadcrumbs breadcrumbs={breadcrumbs} />
@@ -44,7 +44,7 @@ export const AppSidebarHeader = memo(function AppSidebarHeader({ breadcrumbs = [
             {/* Right Section: Actions & Profile */}
             <div className="flex items-center gap-1.5">
                 {/* Action Group */}
-                <div className="bg-primary/[0.03] border-primary/5 flex items-center gap-0.5 rounded-xl border px-1 py-1 dark:border-white/5 dark:bg-white/[0.03]">
+                <div className="bg-muted flex items-center gap-0.5 rounded-xl border border-border px-1 py-1">
                     <HeaderLanguage />
                     <HeaderChat />
                     <HeaderNotifications />
@@ -52,7 +52,7 @@ export const AppSidebarHeader = memo(function AppSidebarHeader({ breadcrumbs = [
                 </div>
 
                 {/* Separator */}
-                <div className="bg-primary/10 mx-1 h-5 w-px dark:bg-white/10" />
+                <div className="bg-border mx-1 h-5 w-px dark:bg-border" />
 
                 {/* System Group */}
                 <div className="flex items-center gap-1">
@@ -61,7 +61,7 @@ export const AppSidebarHeader = memo(function AppSidebarHeader({ breadcrumbs = [
                 </div>
 
                 {/* Profile Section */}
-                <div className="border-primary/10 ml-2 border-l pl-2 dark:border-white/10">
+                <div className="border-border ml-2 border-l pl-2 dark:border-border">
                     <HeaderUserMenu />
                 </div>
             </div>

@@ -80,7 +80,7 @@ const MechanismOptions = ({
     }
     return (
         <div className="animate-in fade-in rounded-2xl border border-dashed border-primary/10 bg-primary/[0.01] p-6 text-center dark:border-white/10 dark:bg-white/[0.01]">
-            <p className="text-[10px] font-black tracking-[0.2em] text-primary/30 uppercase dark:text-white/30 italic">
+            <p className="text-[10px] font-bold tracking-[0.2em] text-primary/30 uppercase dark:text-white/30 italic">
                 {type === 'F1' ? 'PENGGUNA INTERNAL' : 'VENDOR'} AKAN MENGUNGGAH PDF MANUAL UNTUK {type}
             </p>
         </div>
@@ -145,7 +145,7 @@ export default function ContractTypeForm({ contractType, formTemplates, contract
                                 type="button"
                                 variant="outline"
                                 onClick={() => setIsConfirmOpen(true)}
-                                className="h-10 rounded-xl border-rose-500/20 px-6 text-[10px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-500 hover:text-white transition-all active:scale-95"
+                                className="h-10 rounded-xl border-rose-500/20 px-6 text-[10px] font-bold uppercase tracking-widest text-rose-500 hover:bg-rose-500 hover:text-white transition-all active:scale-95"
                             >
                                 <Trash2 size={14} className="mr-2" /> Hapus Klasifikasi
                             </Button>
@@ -216,7 +216,7 @@ export default function ContractTypeForm({ contractType, formTemplates, contract
                                     <div className="pt-4">
                                         <div className="flex items-center gap-3 mb-4">
                                             <ChevronRight size={14} className="text-primary/20" />
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-primary/40">Opsi Keterkaitan Aset</span>
+                                            <span className="text-[10px] font-semibold uppercase tracking-widest text-primary/40">Opsi Keterkaitan Aset</span>
                                         </div>
                                         <MechanismOptions
                                             mechanism={form.data.f1_input_mechanism}
@@ -254,7 +254,7 @@ export default function ContractTypeForm({ contractType, formTemplates, contract
                                     <div className="pt-4">
                                         <div className="flex items-center gap-3 mb-4">
                                             <ChevronRight size={14} className="text-primary/20" />
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-primary/40">Opsi Keterkaitan Aset</span>
+                                            <span className="text-[10px] font-semibold uppercase tracking-widest text-primary/40">Opsi Keterkaitan Aset</span>
                                         </div>
                                         <MechanismOptions
                                             mechanism={form.data.f2_input_mechanism}

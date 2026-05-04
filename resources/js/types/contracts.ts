@@ -171,6 +171,12 @@ export interface Contract {
             type: string;
         }>;
     };
+    workflow_step?: {
+        id: string;
+        step: number;
+        role: string;
+        description: string;
+    } | null;
 }
 
 export type ContractStatus = 'draft' | 'in_review' | 'revision' | 'approved' | 'locked' | 'archived';

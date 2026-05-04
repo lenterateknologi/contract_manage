@@ -31,7 +31,7 @@ interface Props {
 }
 
 export default function SendApprovalModal({ open, onClose, onSubmit, contractType }: Props) {
-    const [workflows, setWorkflows] = useState<Workflow[]>([]);
+    const [workflows, setWorkflows] = useState<any[]>([]);
     const [selectedWorkflowId, setSelectedWorkflowId] = useState<string>('');
     const [loading, setLoading] = useState(false);
     const [initLoading, setInitLoading] = useState(true);
@@ -51,9 +51,9 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
             const w = await contractApi.getWorkflows(contractType);
             setWorkflows(w);
 
-            // Auto-select logic
+            // Auto-select logic based on initial tax checkbox
             if (w.length > 0) {
-                const defaultW = w.find(wf => wf.is_default) || w[0];
+                const defaultW = w.find(wf => !!wf.is_tax_involved === !!metadata.tax_required) || w.find(wf => wf.is_default) || w[0];
                 setSelectedWorkflowId(defaultW.id);
             }
         } finally {
@@ -123,7 +123,14 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
                                 type="checkbox"
                                 className="hidden"
                                 checked={metadata.tax_required}
-                                onChange={() => setMetadata({ ...metadata, tax_required: !metadata.tax_required })}
+                                onChange={() => {
+                                    const nextTax = !metadata.tax_required;
+                                    setMetadata({ ...metadata, tax_required: nextTax });
+                                    const matched = workflows.find(wf => !!wf.is_tax_involved === nextTax) || workflows.find(wf => wf.is_default) || workflows[0];
+                                    if (matched) {
+                                        setSelectedWorkflowId(matched.id);
+                                    }
+                                }}
                             />
                             <div className={cn("w-5 h-5 rounded border-2 flex items-center justify-center transition-all", metadata.tax_required ? "bg-black border-black text-white dark:bg-white dark:border-white dark:text-black" : "bg-white border-black/10 dark:bg-black dark:border-white/10")}>
                                 {metadata.tax_required && <CheckCircle2 size={12} />}
@@ -153,7 +160,7 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
                                             onChange={(e) => setSelectedWorkflowId(e.target.value)}
                                             className="w-full bg-black/[0.02] dark:bg-white/[0.02] border border-black/10 dark:border-white/10 h-11 px-4 text-xs font-bold rounded-lg appearance-none focus:ring-1 focus:ring-black dark:focus:ring-white transition-all outline-none text-black dark:text-white"
                                         >
-                                            {workflows.map(wf => (
+                                            {workflows.filter(wf => !!wf.is_tax_involved === !!metadata.tax_required).map(wf => (
                                                 <option key={wf.id} value={wf.id} className="text-black bg-white dark:bg-black dark:text-white">
                                                     {wf.name} {wf.is_default ? '(DEFAULT)' : ''}
                                                 </option>

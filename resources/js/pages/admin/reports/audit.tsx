@@ -77,15 +77,15 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
         <>
             <Head title="Jejak Audit Sistem" />
             
-            <div className="flex flex-col flex-1 p-6 space-y-6 bg-[#f8fafc]">
+            <div className="flex flex-col flex-1 p-6 space-y-6 bg-background">
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="space-y-1">
-                        <h1 className="text-2xl font-extrabold tracking-tight text-[#172554] font-montserrat flex items-center gap-3">
+                        <h1 className="text-2xl font-bold tracking-tight text-foreground font-montserrat flex items-center gap-3">
                             <ShieldCheck className="w-7 h-7 text-emerald-600" />
                             Jejak Audit Sistem
                         </h1>
-                        <p className="text-sm text-slate-500 font-medium">
+                        <p className="text-sm text-muted-foreground font-medium">
                             Rekam jejak seluruh aktivitas dan perubahan data dalam sistem kontrak.
                         </p>
                     </div>
@@ -94,14 +94,14 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
                         <Button 
                             variant="outline" 
                             onClick={() => setIsFilterOpen(true)}
-                            className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 font-bold shadow-sm"
+                            className="bg-card border-border text-foreground hover:bg-muted font-bold shadow-sm"
                         >
                             <Filter className="w-4 h-4 mr-2" />
                             Filter Log
                         </Button>
                         <Button 
                             onClick={handleExport}
-                            className="bg-[#172554] hover:bg-[#1e1b4b] text-white font-bold shadow-md"
+                            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-sm"
                         >
                             <Download className="w-4 h-4 mr-2" />
                             Ekspor Audit Trail
@@ -110,53 +110,53 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
                 </div>
 
                 {/* Audit Console */}
-                <div className="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
-                    <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                <div className="flex-1 bg-card rounded-2xl border border-border shadow-sm flex flex-col overflow-hidden">
+                    <div className="p-4 border-b border-border bg-muted/30 flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <Terminal className="w-4 h-4 text-slate-400" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Activity_Logs_Terminal</span>
+                            <Terminal className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Activity_Logs_Terminal</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Live Monitor Active</span>
+                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-tight">Live Monitor Active</span>
                         </div>
                     </div>
 
                     <div className="flex-1 overflow-auto p-0">
                         <table className="w-full text-left border-collapse">
-                            <thead className="sticky top-0 bg-white border-b border-slate-100 z-10">
+                            <thead className="sticky top-0 bg-card border-b border-border z-10">
                                 <tr>
-                                    <th className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-slate-400 w-48">Waktu & Tanggal</th>
-                                    <th className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-slate-400 w-32 text-center">Aksi</th>
-                                    <th className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-slate-400">Detail Aktivitas</th>
-                                    <th className="py-4 px-6 text-[10px] font-black uppercase tracking-widest text-slate-400 w-48 text-right">Pelaku</th>
+                                    <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-muted-foreground w-48">Waktu & Tanggal</th>
+                                    <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-muted-foreground w-32 text-center">Aksi</th>
+                                    <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-muted-foreground">Detail Aktivitas</th>
+                                    <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-muted-foreground w-48 text-right">Pelaku</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-50">
+                            <tbody className="divide-y divide-border">
                                 {loading ? (
                                     <tr>
                                         <td colSpan={4} className="py-20 text-center">
                                             <div className="flex flex-col items-center gap-3">
-                                                <i className="fa-solid fa-spinner fa-spin text-2xl text-indigo-600" />
-                                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Memuat database log...</p>
+                                                <i className="fa-solid fa-spinner fa-spin text-2xl text-primary" />
+                                                <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Memuat database log...</p>
                                             </div>
                                         </td>
                                     </tr>
                                 ) : data?.histories.length === 0 ? (
                                     <tr>
-                                        <td colSpan={4} className="py-20 text-center text-slate-400">
+                                        <td colSpan={4} className="py-20 text-center text-muted-foreground">
                                             Tidak ada data log yang ditemukan.
                                         </td>
                                     </tr>
                                 ) : (
                                     data?.histories.map((log) => (
-                                        <tr key={log.id} className="group hover:bg-slate-50/50 transition-all">
+                                        <tr key={log.id} className="group hover:bg-muted/20 transition-all">
                                             <td className="py-4 px-6">
                                                 <div className="flex flex-col">
-                                                    <span className="text-[12px] font-mono font-bold text-slate-700">
+                                                    <span className="text-sm font-mono font-bold text-foreground">
                                                         {new Date(log.created_at).toLocaleTimeString('id-ID', { hour12: false })}
                                                     </span>
-                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
+                                                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                                                         {new Date(log.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
                                                     </span>
                                                 </div>
@@ -169,12 +169,12 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
                                             <td className="py-4 px-6">
                                                 <div className="flex flex-col gap-1">
                                                     <div className="flex items-center gap-2">
-                                                        <FileText className="w-3.5 h-3.5 text-indigo-400" />
-                                                        <span className="text-[11px] font-black text-indigo-600 tracking-tight uppercase">
+                                                        <FileText className="w-4 h-4 text-primary/70" />
+                                                        <span className="text-xs font-bold text-primary tracking-wide uppercase">
                                                             {log.contract_no}
                                                         </span>
                                                     </div>
-                                                    <p className="text-[12px] text-slate-600 font-medium leading-relaxed">
+                                                    <p className="text-sm text-foreground/80 font-medium leading-relaxed">
                                                         {log.description}
                                                     </p>
                                                 </div>
@@ -182,15 +182,15 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
                                             <td className="py-4 px-6 text-right">
                                                 <div className="flex items-center justify-end gap-3 group-hover:translate-x-[-4px] transition-transform">
                                                     <div className="flex flex-col">
-                                                        <span className="text-[11px] font-black text-[#172554] uppercase tracking-tighter italic">
+                                                        <span className="text-xs font-bold text-primary uppercase tracking-tight">
                                                             @{log.actor.split(' ')[0]}
                                                         </span>
-                                                        <span className="text-[9px] font-bold text-slate-400 uppercase">
+                                                        <span className="text-xs font-medium text-muted-foreground">
                                                             {log.actor}
                                                         </span>
                                                     </div>
-                                                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200">
-                                                        <User className="w-4 h-4 text-slate-500" />
+                                                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center border border-border">
+                                                        <User className="w-4 h-4 text-muted-foreground" />
                                                     </div>
                                                 </div>
                                             </td>
@@ -201,12 +201,12 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
                         </table>
                     </div>
                     
-                    <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                    <div className="p-4 border-t border-border bg-muted/30 flex items-center justify-between">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                             Showing {data?.histories.length || 0} transaction records
                         </p>
                         <div className="flex items-center gap-4">
-                             <span className="text-[9px] font-black text-slate-300 uppercase tracking-[0.4em]">SYSTEM_V2.0_AUDIT_LOG_END</span>
+                             <span className="text-xs font-bold text-muted-foreground/40 uppercase tracking-widest">SYSTEM_V2.0_AUDIT_LOG_END</span>
                         </div>
                     </div>
                 </div>
@@ -232,8 +232,8 @@ function ActionBadge({ action }: { action: string }) {
     
     if (act.includes('approve') || act.includes('success')) {
         return (
-            <span className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center gap-1.5 w-fit">
-                <CheckCircle className="w-3 h-3" />
+            <span className="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20 flex items-center gap-1.5 w-fit">
+                <CheckCircle className="w-3.5 h-3.5" />
                 {action}
             </span>
         );
@@ -241,8 +241,8 @@ function ActionBadge({ action }: { action: string }) {
     
     if (act.includes('reject') || act.includes('delete') || act.includes('cancel')) {
         return (
-            <span className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-rose-50 text-rose-700 border border-rose-100 flex items-center gap-1.5 w-fit">
-                <AlertCircle className="w-3 h-3" />
+            <span className="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 border border-rose-100 dark:border-rose-500/20 flex items-center gap-1.5 w-fit">
+                <AlertCircle className="w-3.5 h-3.5" />
                 {action}
             </span>
         );
@@ -250,16 +250,16 @@ function ActionBadge({ action }: { action: string }) {
 
     if (act.includes('create') || act.includes('submit')) {
         return (
-            <span className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-blue-50 text-blue-700 border border-blue-100 flex items-center gap-1.5 w-fit">
-                <ArrowRight className="w-3 h-3" />
+            <span className="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border border-blue-100 dark:border-blue-500/20 flex items-center gap-1.5 w-fit">
+                <ArrowRight className="w-3.5 h-3.5" />
                 {action}
             </span>
         );
     }
 
     return (
-        <span className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-slate-100 text-slate-600 border border-slate-200 flex items-center gap-1.5 w-fit">
-            <Clock className="w-3 h-3" />
+        <span className="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-muted text-muted-foreground border border-border flex items-center gap-1.5 w-fit">
+            <Clock className="w-3.5 h-3.5" />
             {action}
         </span>
     );

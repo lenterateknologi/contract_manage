@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Column, DataTable } from '@/components/ui/data/DataTable';
+import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
 import { Button } from '@/components/ui/base/Button';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { CompactSelect } from '@/components/ui/forms/CompactSelect';
@@ -160,7 +160,7 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
 
     return (
         <div className="flex flex-col h-full bg-white dark:bg-black animate-in fade-in duration-500 antialiased">
-            <DataTable
+            <TableMasterData
                 title={isModuleView ? "Master Modul Navigasi" : "Struktur Grup Menu"}
                 columns={isModuleView ? moduleColumns : groupColumns}
                 data={isModuleView ? (modules?.data || modules || []) : (groups?.data || groups || [])}
@@ -182,7 +182,7 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
                         label: 'Hapus Terpilih',
                         icon: Trash2,
                         variant: 'destructive',
-                        onClick: (ids) => {
+                        onClick: (ids: string[] | number[]) => {
                             const typeLabel = isModuleView ? 'modul' : 'grup menu';
                             if (confirm(`Hapus ${ids.length} ${typeLabel} terpilih? Tindakan ini akan menghapus akses permanen.`)) {
                                 const path = isModuleView ? 'modules' : 'module-groups';
@@ -197,15 +197,15 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
                     currentPage: modules.meta.current_page || 1,
                     lastPage: modules.meta.last_page || 1,
                     total: modules.meta.total || 0,
-                    onPageChange: (page) => router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                    onPageChange: (page: number) => router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
                 } : (groups && groups.meta ? {
                     currentPage: groups.meta.current_page || 1,
                     lastPage: groups.meta.last_page || 1,
                     total: groups.meta.total || 0,
-                    onPageChange: (page) => router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                    onPageChange: (page: number) => router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
                 }: undefined)}
-                rowActions={(row) => (
-                    <div className="flex items-center gap-1">
+                rowActions={(row: any) => (
+                    <div className="flex items-center justify-end gap-1">
                         {canUpdate && <Button variant="ghost" size="icon" onClick={() => openEdit(row)} className="h-9 w-9 text-primary/20 dark:text-white/20 hover:text-primary dark:hover:text-white hover:bg-primary/[0.05] dark:hover:bg-white/[0.05] rounded-xl transition-all"><Pencil size={14} /></Button>}
                         {canDelete && <Button variant="ghost" size="icon" onClick={() => setConfirmDelete({id: row.id, name: row.name})} className="h-9 w-9 text-primary/20 dark:text-white/20 hover:text-rose-500 hover:bg-rose-500/5 rounded-xl transition-all"><Trash2 size={14} /></Button>}
                     </div>

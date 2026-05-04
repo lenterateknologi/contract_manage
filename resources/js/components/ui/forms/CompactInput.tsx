@@ -16,14 +16,14 @@ const CompactInput = React.forwardRef<HTMLInputElement, CompactInputProps>(
                 <div className="flex items-center justify-between px-0.5">
                     <Label 
                         className={cn(
-                            "text-[9px] font-black uppercase tracking-widest transition-colors",
+                            "text-xs font-bold uppercase tracking-widest transition-colors",
                             error ? "text-rose-500" : "text-primary/60 dark:text-white/60"
                         )}
                     >
                         {label}
                     </Label>
                     {error && (
-                        <span className="text-[8px] font-bold text-rose-500 uppercase animate-in fade-in slide-in-from-right-1">
+                        <span className="text-xs font-semibold text-rose-500 uppercase animate-in fade-in slide-in-from-right-1">
                             {error}
                         </span>
                     )}
@@ -38,7 +38,7 @@ const CompactInput = React.forwardRef<HTMLInputElement, CompactInputProps>(
                     <input
                         type={type}
                         className={cn(
-                            "flex h-9 w-full rounded-lg border bg-white dark:bg-white/[0.02] px-3 text-[11px] font-bold transition-all outline-none",
+                            "flex h-9 w-full rounded-lg border bg-white dark:bg-white/[0.02] px-3 text-sm font-medium transition-all outline-none",
                             "placeholder:text-primary/10 dark:placeholder:text-white/10",
                             Icon && "pl-9",
                             error 

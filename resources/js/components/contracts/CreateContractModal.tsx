@@ -1,17 +1,7 @@
-import { usePage } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
-import { 
-    FilePlus2, 
-    X, 
-    ShieldCheck, 
-    Check, 
-    Loader2, 
-    AlertCircle,
-    FileText,
-    Settings2
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/base/Button';
+import { usePage } from '@inertiajs/react';
+import { AlertCircle, Check, FilePlus2, FileText, Loader2, ShieldCheck, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface Props {
     open: boolean;
@@ -99,7 +89,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-[2px] p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-[2px]"
             onClick={(e) => e.target === e.currentTarget && onClose()}
         >
             <div
@@ -107,44 +97,45 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                 style={{ animation: 'modal-in .2s cubic-bezier(0.16, 1, 0.3, 1)' }}
             >
                 {/* Header */}
-                <div className="border-sidebar-border/50 flex items-center justify-between border-b bg-sidebar-accent/20 px-6 py-5">
-                    <div className="flex items-center gap-3 text-sidebar-primary">
-                        <FilePlus2 size={20} strokeWidth={2.5} />
-                        <h2 className="text-[14px] font-bold text-sidebar-foreground">Buat Kontrak Baru</h2>
+                <div className="border-border bg-muted/30 flex items-center justify-between border-b px-6 py-4">
+                    <div className="text-foreground flex items-center gap-3">
+                        <FilePlus2 size={20} className="text-primary" />
+                        <h2 className="text-sm font-semibold">Buat Kontrak Baru</h2>
                     </div>
-                    <button 
-                        onClick={onClose} 
-                        className="text-black/50 dark:text-white/50 hover:text-black dark:hover:text-white p-1.5 rounded-lg transition-all"
+                    <button
+                        onClick={onClose}
+                        className="rounded-lg p-1.5 text-muted-foreground transition-all hover:text-foreground"
                     >
                         <X size={18} />
                     </button>
                 </div>
 
                 {/* Form Content */}
-                <div className="max-h-[75vh] space-y-6 overflow-y-auto p-6 custom-scrollbar">
+                <div className="custom-scrollbar max-h-[75vh] space-y-6 overflow-y-auto p-6">
                     {isLegalOrAdmin && (
-                        <div className="rounded-xl border border-sidebar-primary/20 bg-sidebar-primary/5 p-4 space-y-3">
-                            <label className="flex items-center gap-2 text-[11px] font-semibold text-black dark:text-white">
-                                <ShieldCheck size={14} /> Dibuat Untuk (Initiator)
+                        <div className="border-border bg-muted/40 space-y-3 rounded-xl border p-4">
+                            <label className="flex items-center gap-2 text-xs font-semibold text-foreground">
+                                <ShieldCheck size={14} className="text-primary" /> Dibuat Untuk (Initiator)
                             </label>
                             <select
                                 value={initiatedById}
                                 onChange={(e) => setInitiatedById(e.target.value)}
-                                className="w-full rounded-lg border border-sidebar-primary/20 bg-sidebar px-3 py-2.5 text-[12px] font-medium text-sidebar-foreground outline-none focus:ring-1 focus:ring-sidebar-primary"
+                                className="border-border bg-card text-foreground focus:ring-primary w-full rounded-lg border px-3 py-2.5 text-sm font-medium outline-none focus:ring-1"
                             >
                                 <option value={auth.user.id}>Diri Sendiri ({auth.user.name})</option>
                                 <optgroup label="Pilih User Lain (Legal Helper Mode)">
-                                    {users
-                                        .filter((u) => u.id !== auth.user.id)
-                                        .map((u) => (
-                                            <option key={u.id} value={u.id}>
-                                                {u.name} — {u.role} ({u.department_name || 'No Dept'})
-                                            </option>
-                                        ))}
+                                    {Array.isArray(users) &&
+                                        users
+                                            .filter((u) => u.id !== auth.user.id)
+                                            .map((u) => (
+                                                <option key={u.id} value={u.id}>
+                                                    {u.name} — {u.role} ({u.department_name || 'No Dept'})
+                                                </option>
+                                            ))}
                                 </optgroup>
                             </select>
-                            <div className="flex gap-2 text-[10px] leading-relaxed text-black dark:text-white italic">
-                                <span className="font-bold shrink-0">Legal Helper:</span>
+                            <div className="flex gap-2 text-xs leading-relaxed text-muted-foreground italic">
+                                <span className="shrink-0 font-bold">Legal Helper:</span>
                                 <span>Workflow akan disesuaikan dengan departemen initiator yang dipilih.</span>
                             </div>
                         </div>
@@ -152,67 +143,73 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-[11px] font-semibold text-black dark:text-white px-1">
-                                Perjanjian <span className="text-rose-500">*</span>
+                            <label className="px-1 text-xs font-semibold text-foreground">
+                                Tipe Pengajuan <span className="text-rose-500">*</span>
                             </label>
                             <select
                                 value={submissionTypeId}
                                 onChange={(e) => setSubmissionTypeId(e.target.value)}
-                                className="w-full rounded-lg border border-sidebar-border bg-sidebar-accent/20 px-3 py-2.5 text-[12px] text-sidebar-foreground outline-none focus:ring-1 focus:ring-sidebar-primary transition-all"
+                                className="border-border bg-card text-foreground focus:ring-primary w-full rounded-lg border px-3 py-2.5 text-sm transition-all outline-none focus:ring-1"
                             >
-                                <option value="">Pilih Tipe</option>
-                                {submissionTypes.map((st) => (
-                                    <option key={st.id} value={st.id}>
-                                        {st.name}
-                                    </option>
-                                ))}
+                                <option value="">Tipe Pengajuan</option>
+                                {Array.isArray(submissionTypes) &&
+                                    submissionTypes.map((st) => (
+                                        <option key={st.id} value={st.id}>
+                                            {st.name}
+                                        </option>
+                                    ))}
                             </select>
-                            {errors.submission_type_id && <div className="mt-1 px-1 text-[10px] text-rose-500 font-medium">{errors.submission_type_id}</div>}
+                            {errors.submission_type_id && (
+                                <div className="mt-1 px-1 text-xs font-medium text-rose-500">{errors.submission_type_id}</div>
+                            )}
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-[11px] font-semibold text-black dark:text-white px-1">
-                                Tipe Kontrak <span className="text-rose-500">*</span>
+                            <label className="px-1 text-xs font-semibold text-foreground">
+                                Jenis Kontrak <span className="text-rose-500">*</span>
                             </label>
                             <select
                                 value={typeId}
                                 onChange={(e) => {
                                     const val = e.target.value;
                                     setTypeId(val);
-                                    const selectedType = types.find((t) => String(t.id) === val);
+                                    const selectedType = Array.isArray(types) ? types.find((t) => String(t.id) === val) : undefined;
                                     if (selectedType) setTitle(selectedType.name);
                                 }}
-                                className="w-full rounded-lg border border-sidebar-border bg-sidebar-accent/20 px-3 py-2.5 text-[12px] text-sidebar-foreground outline-none focus:ring-1 focus:ring-sidebar-primary transition-all"
+                                className="border-border bg-card text-foreground focus:ring-primary w-full rounded-lg border px-3 py-2.5 text-sm transition-all outline-none focus:ring-1"
                             >
                                 <option value="">Pilih Tipe</option>
-                                {types.map((t) => (
-                                    <option key={t.id} value={t.id}>
-                                        {t.name}
-                                    </option>
-                                ))}
+                                {Array.isArray(types) &&
+                                    types.map((t) => (
+                                        <option key={t.id} value={t.id}>
+                                            {t.name}
+                                        </option>
+                                    ))}
                             </select>
-                            {errors.contract_type_id && <div className="mt-1 px-1 text-[10px] text-rose-500 font-medium">{errors.contract_type_id}</div>}
+                            {errors.contract_type_id && (
+                                <div className="mt-1 px-1 text-xs font-medium text-rose-500">{errors.contract_type_id}</div>
+                            )}
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-[11px] font-semibold text-black dark:text-white px-1">
+                        <label className="px-1 text-xs font-semibold text-foreground">
                             Judul Kontrak <span className="text-rose-500">*</span>
                         </label>
                         <div className="relative">
-                            <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-black/30 dark:text-white/30" />
+                            <FileText className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             <input
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
                                 placeholder="Masukkan judul kontrak"
-                                className="w-full rounded-lg border border-sidebar-border bg-sidebar-accent/20 pl-10 pr-4 py-2.5 text-[13px] font-medium text-black dark:text-white outline-none focus:ring-1 focus:ring-sidebar-primary transition-all placeholder:text-black/30 dark:placeholder:text-white/30"
+                                className="border-border bg-card focus:ring-primary w-full rounded-lg border py-2.5 pr-4 pl-10 text-sm font-medium text-foreground transition-all outline-none placeholder:text-muted-foreground focus:ring-1"
                             />
                         </div>
-                        {errors.title && <div className="mt-1 px-1 text-[10px] text-rose-500 font-medium">{errors.title}</div>}
+                        {errors.title && <div className="mt-1 px-1 text-xs font-medium text-rose-500">{errors.title}</div>}
                     </div>
 
                     {errors.general && (
-                        <div className="rounded-lg border border-rose-500/20 bg-rose-500/5 p-3 text-[11px] text-rose-500 flex items-center gap-2">
+                        <div className="flex items-center gap-2 rounded-lg border border-rose-500/20 bg-rose-500/5 p-3 text-xs text-rose-500">
                             <AlertCircle size={14} />
                             {errors.general}
                         </div>
@@ -220,24 +217,20 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                 </div>
 
                 {/* Footer */}
-                <div className="border-sidebar-border/50 flex items-center justify-end gap-3 border-t bg-sidebar-accent/20 px-6 py-5">
+                <div className="border-border bg-muted/30 flex items-center justify-end gap-3 border-t px-6 py-4">
                     <Button
                         variant="ghost"
                         onClick={onClose}
-                        className="text-black/50 dark:text-white/50 hover:text-black dark:hover:text-white px-4 h-10 text-[11px] font-bold uppercase tracking-widest transition-all"
+                        className="h-10 px-4 text-xs font-bold text-muted-foreground transition-all hover:text-foreground"
                     >
                         Batal
                     </Button>
                     <Button
                         onClick={handleSubmit}
                         disabled={loading}
-                        className="h-10 gap-2 rounded-lg px-8 text-[11px] font-black uppercase tracking-widest shadow-lg active:scale-95 disabled:opacity-50"
+                        className="h-10 gap-2 rounded-lg px-6 text-sm font-semibold shadow-sm transition-all active:scale-95 disabled:opacity-50"
                     >
-                        {loading ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                            <Check size={16} strokeWidth={3} />
-                        )}
+                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check size={16} />}
                         Buat Kontrak
                     </Button>
                 </div>

@@ -99,8 +99,7 @@ export function EditContractModal({
                                 onChange={(e) => setTypeId(e.target.value)}
                                 className="bg-muted/30 border-border focus:border-primary/50 w-full rounded-lg border px-3 py-2 text-sm transition-all outline-none"
                             >
-                                <option value="">Pilih Tipe</option>
-                                {types.map((t) => (
+                                {Array.isArray(types) && types.map((t) => (
                                     <option key={t.id} value={t.id}>
                                         {t.name}
                                     </option>
@@ -115,7 +114,7 @@ export function EditContractModal({
                                 className="bg-muted/30 border-border focus:border-primary/50 w-full rounded-lg border px-3 py-2 text-sm transition-all outline-none"
                             >
                                 <option value="">Pilih Tipe</option>
-                                {submissionTypes.map((st) => (
+                                {Array.isArray(submissionTypes) && submissionTypes.map((st) => (
                                     <option key={st.id} value={st.id}>
                                         {st.name}
                                     </option>
@@ -130,7 +129,7 @@ export function EditContractModal({
                                 className="bg-muted/30 border-border focus:border-primary/50 w-full rounded-lg border px-3 py-2 text-sm font-bold text-black dark:text-white transition-all outline-none"
                             >
                                 <option value="">Pilih Vendor</option>
-                                {vendors.map((v) => (
+                                {Array.isArray(vendors) && vendors.map((v) => (
                                     <option key={v.id} value={v.id}>
                                         {v.name}
                                     </option>

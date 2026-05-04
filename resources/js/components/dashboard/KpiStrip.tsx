@@ -17,7 +17,7 @@ function KpiCard({ label, value, subtext, icon, accentClass, onClick }: KpiCardP
         <div
             onClick={onClick}
             className={cn(
-                'group relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-sidebar-border/60 bg-white p-5 shadow-sm transition-all duration-300',
+                'group relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-sidebar-border/60 bg-card p-5 shadow-sm transition-all duration-300',
                 onClick && 'cursor-pointer hover:shadow-md hover:-translate-y-0.5',
             )}
         >
@@ -25,11 +25,11 @@ function KpiCard({ label, value, subtext, icon, accentClass, onClick }: KpiCardP
                 <div className={cn('flex h-11 w-11 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110', accentClass)}>
                     {icon}
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-sidebar-foreground/30">{subtext}</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-card-foreground/40">{subtext}</span>
             </div>
             <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/50 mb-1">{label}</p>
-                <span className="text-3xl font-bold tracking-tight text-sidebar-foreground">{value}</span>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-card-foreground/60 mb-1">{label}</p>
+                <span className="text-3xl font-bold tracking-tight text-card-foreground">{value}</span>
             </div>
         </div>
     );

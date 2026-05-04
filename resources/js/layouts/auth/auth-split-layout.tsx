@@ -59,23 +59,23 @@ export default function AuthSplitLayout({ children, title, description, isSucces
     const rightTransform = isMoving ? 'translate-x-full' : 'translate-x-0';
 
     return (
-        <div className="relative flex min-h-svh w-full items-center justify-center overflow-hidden bg-[var(--background)] font-sans text-[var(--text-dark)]">
+        <div className="relative flex min-h-svh w-full items-center justify-center overflow-hidden bg-slate-50 font-sans text-slate-900">
             {/* Split Screen Container */}
             <div className="flex min-h-svh w-full overflow-hidden">
                 {/* Left Panel: Form Content - Using Theme Colors */}
                 <div
                     className={cn(
-                        'cubic-bezier(0.23, 1, 0.32, 1) fixed inset-y-0 left-0 z-40 flex w-full flex-col items-center justify-center border-r border-[var(--border)] bg-[var(--white)] shadow-[var(--shadow-xl)] transition-all duration-[800ms] md:w-1/2',
+                        'cubic-bezier(0.23, 1, 0.32, 1) fixed inset-y-0 left-0 z-40 flex w-full flex-col items-center justify-center border-r border-slate-200 bg-white shadow-xl transition-all duration-[800ms] md:w-1/2',
                         leftTransform,
                     )}
                 >
                     {/* Main Content Area - Vertically Centered and High-Density */}
                     <div className="w-full max-w-[380px] p-6 md:max-w-[480px] lg:p-8">
                         <div className="mb-8 space-y-1.5 text-center md:text-left">
-                            <h1 className="leading-[var(--line-height-heading)] font-[var(--font-weight-bold)] tracking-tight text-[var(--font-size-h1)]">
+                            <h1 className="text-2xl font-bold tracking-tight text-slate-900 leading-tight">
                                 {title || 'Selamat Datang!'}
                             </h1>
-                            <p className="leading-[var(--line-height-body)] font-[var(--font-weight-medium)] text-[var(--font-size-small)]">
+                            <p className="text-sm font-medium text-slate-500 leading-normal">
                                 {description || 'Silakan lengkapi data Anda untuk melanjutkan.'}
                             </p>
                         </div>
@@ -87,7 +87,7 @@ export default function AuthSplitLayout({ children, title, description, isSucces
                 {/* Right Panel: Fullscreen Visual Mockup */}
                 <div
                     className={cn(
-                        'cubic-bezier(0.23, 1, 0.32, 1) fixed inset-y-0 right-0 z-40 hidden flex-col items-center justify-center overflow-hidden border-l border-[var(--primary-active)] bg-[var(--primary-active)] transition-transform duration-[1000ms] md:flex md:w-1/2',
+                        'cubic-bezier(0.23, 1, 0.32, 1) fixed inset-y-0 right-0 z-40 hidden flex-col items-center justify-center overflow-hidden border-l border-slate-900 bg-slate-900 transition-transform duration-[1000ms] md:flex md:w-1/2',
                         rightTransform,
                     )}
                 >
@@ -98,14 +98,14 @@ export default function AuthSplitLayout({ children, title, description, isSucces
                         className="h-full w-full object-cover object-left opacity-90 transition-opacity duration-700 hover:opacity-100"
                     />
                     {/* Professional Blue Gradient Overlay */}
-                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[var(--primary-active)]/50 to-transparent" />
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-slate-900/50 to-transparent" />
                 </div>
             </div>
 
             {/* Success/Navigation Overlay - High Contrast */}
             {(isSuccess || isExiting) && (
-                <div className="pointer-events-none fixed inset-0 z-[100] flex items-center justify-center bg-[var(--white)]/40 backdrop-blur-[4px]">
-                    <div className="animate-in zoom-in fade-in flex flex-col items-center gap-6 transition-all duration-[var(--transition-slow)]">
+                <div className="pointer-events-none fixed inset-0 z-[100] flex items-center justify-center bg-white/40 backdrop-blur-[4px]">
+                    <div className="animate-in zoom-in fade-in flex flex-col items-center gap-6 transition-all duration-300">
                         {/* Lottie Animation Player */}
                         <div className="relative flex h-32 w-32 items-center justify-center">
                             <div
@@ -114,7 +114,7 @@ export default function AuthSplitLayout({ children, title, description, isSucces
                                 }}
                             />
                         </div>
-                        <span className="font-[var(--font-weight-bold)] tracking-[0.4em] text-[var(--font-size-small)] uppercase">
+                        <span className="font-bold tracking-[0.4em] text-sm uppercase text-slate-900">
                             {isSuccess ? 'BERHASIL MASUK' : 'MEMUAT'}
                         </span>
                     </div>

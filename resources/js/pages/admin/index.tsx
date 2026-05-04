@@ -97,22 +97,11 @@ export default function AdminIndex({
             case 'roles':
                 return <RoleManagement roles={roles} filters={filters} />;
             case 'workflows':
-                return (
-                    <WorkflowManagement
-                        workflows={workflows}
-                        contractTypes={typesArray}
-                        filters={filters}
-                    />
-                );
+                return <WorkflowManagement workflows={workflows} contractTypes={typesArray} filters={filters} />;
             case 'departments':
                 return <DepartmentManagement departments={departments} filters={filters} />;
             case 'contract-types':
-                return (
-                    <ContractTypeManagement
-                        contractTypes={contractTypes || types}
-                        filters={filters}
-                    />
-                );
+                return <ContractTypeManagement contractTypes={contractTypes || types} filters={filters} />;
             case 'contract-statuses':
                 return <StatusManagement statuses={statuses} filters={filters} />;
             case 'module-groups':
@@ -136,8 +125,8 @@ export default function AdminIndex({
         <ToastProvider>
             <Head title={`Admin - ${viewTitle}`} />
 
-            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden bg-[var(--background)]">
-                <div className="flex-1 overflow-hidden">{renderView()}</div>
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                <div>{renderView()}</div>
             </div>
         </ToastProvider>
     );
