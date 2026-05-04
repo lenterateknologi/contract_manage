@@ -1,14 +1,14 @@
-import { ManagementForm, FormSection } from './ManagementForm';
+import { useToast } from '@/components/contracts/Toast';
+import { Button } from '@/components/ui/base/Button';
+import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
+import { usePermissions } from '@/hooks/use-permissions';
+import { cn } from '@/lib/utils';
 import { router, useForm } from '@inertiajs/react';
 import { Key, LayoutGrid, Plus, ShieldCheck, Trash2 } from 'lucide-react';
 import React, { useMemo } from 'react';
-import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
-import { Button } from '@/components/ui/base/Button';
-import { usePermissions } from '@/hooks/use-permissions';
-import { cn } from '@/lib/utils';
-import { useToast } from '@/components/contracts/Toast';
+import { FormSection, ManagementForm } from './ManagementForm';
 
 interface RoleManagementProps {
     roles: any;
@@ -73,12 +73,12 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                 accessorKey: 'name',
                 cell: (row) => (
                     <div className="flex items-center gap-3">
-                        <div className={cn('flex h-9 w-9 items-center justify-center rounded-xl shrink-0', roleColor(row.name))}>
+                        <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-xl', roleColor(row.name))}>
                             <ShieldCheck size={16} />
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-sm leading-tight font-semibold text-foreground">{row.name}</span>
-                            <span className="mt-0.5 text-xs font-medium text-muted-foreground/60">
+                            <span className="text-foreground text-sm leading-tight font-semibold">{row.name}</span>
+                            <span className="text-muted-foreground/60 mt-0.5 text-xs font-medium">
                                 Terdaftar: {new Date(row.created_at).toLocaleDateString('id-ID')}
                             </span>
                         </div>
@@ -90,13 +90,9 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                 accessorKey: 'description',
                 cell: (row) =>
                     row.description ? (
-                        <span className="block max-w-sm truncate text-sm leading-tight font-medium text-muted-foreground">
-                            {row.description}
-                        </span>
+                        <span className="text-muted-foreground block max-w-sm truncate text-sm leading-tight font-medium">{row.description}</span>
                     ) : (
-                        <span className="text-sm leading-none font-medium text-muted-foreground/30 italic">
-                            —
-                        </span>
+                        <span className="text-muted-foreground/30 text-sm leading-none font-medium italic">—</span>
                     ),
             },
             {
@@ -177,7 +173,7 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                             type="button"
                             variant="ghost"
                             onClick={() => setIsConfirmOpen(true)}
-                            className="h-9 hover:bg-rose-500 hover:text-white text-rose-500 rounded-xl px-4 text-xs font-semibold transition-all border border-rose-500/10 active:scale-95"
+                            className="h-9 rounded-xl border border-rose-500/10 px-4 text-xs font-semibold text-rose-500 transition-all hover:bg-rose-500 hover:text-white active:scale-95"
                         >
                             <Trash2 size={15} className="mr-2" /> Hapus
                         </Button>
@@ -200,25 +196,22 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                     description={`Apakah Anda yakin ingin menghapus role ${editingRole?.name}? Seluruh mapping hak akses untuk role ini akan dihapus permanen.`}
                     confirmText="Hapus Role"
                 />
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+                <div className="grid grid-cols-1 gap-8 md:grid-cols-12">
                     {/* Main Column: 8 Columns */}
-                    <div className="md:col-span-8 space-y-8">
-                        <FormSection 
-                            title="Identitas Role" 
-                            subtitle="Nama jabatan dan penjelasan otoritas sistem"
-                        >
+                    <div className="space-y-8 md:col-span-8">
+                        <FormSection title="Identitas Role" subtitle="Nama jabatan dan penjelasan otoritas sistem">
                             <div className="grid grid-cols-1 gap-6">
-                                <CompactInput 
+                                <CompactInput
                                     label="Nama Jabatan / Role"
                                     value={form.data.name}
-                                    onChange={e => form.setData('name', e.target.value)}
+                                    onChange={(e) => form.setData('name', e.target.value)}
                                     placeholder="CONTOH: LEGAL MANAGER"
                                     error={form.errors.name}
                                 />
-                                <CompactInput 
+                                <CompactInput
                                     label="Penjelasan Fungsi"
                                     value={form.data.description}
-                                    onChange={e => form.setData('description', e.target.value)}
+                                    onChange={(e) => form.setData('description', e.target.value)}
                                     placeholder="TULISKAN DESKRIPSI TANGGUNG JAWAB ROLE INI..."
                                     error={form.errors.description}
                                 />
@@ -227,34 +220,32 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                     </div>
 
                     {/* Side Column: 4 Columns */}
-                    <div className="md:col-span-4 flex flex-col pt-6 md:pt-0">
-                        <div className="rounded-2xl border border-border bg-muted/30 p-6 shadow-sm relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <div className="flex flex-col pt-6 md:col-span-4 md:pt-0">
+                        <div className="border-border bg-muted/30 group relative overflow-hidden rounded-2xl border p-6 shadow-sm">
+                            <div className="absolute top-0 right-0 p-4 opacity-5 transition-opacity group-hover:opacity-10">
                                 <ShieldCheck size={80} strokeWidth={1} />
                             </div>
 
-                            <div className="mb-4 flex items-center gap-3 relative z-10">
-                                <span className="text-xs font-bold tracking-wide text-foreground">
-                                    Pusat Otoritas
-                                </span>
+                            <div className="relative z-10 mb-4 flex items-center gap-3">
+                                <span className="text-foreground text-xs font-bold tracking-wide">Pusat Otoritas</span>
                             </div>
-                            
-                            <div className="mb-4 space-y-3 border-y border-dashed border-border py-4 relative z-10">
-                                <span className="block text-sm leading-tight font-semibold tracking-tight text-foreground">
+
+                            <div className="border-border relative z-10 mb-4 space-y-3 border-y border-dashed py-4">
+                                <span className="text-foreground block text-sm leading-tight font-semibold tracking-tight">
                                     {form.data.name || 'Nama Role'}
                                 </span>
-                                <p className="text-xs leading-relaxed font-medium tracking-wide text-muted-foreground">
+                                <p className="text-muted-foreground text-xs leading-relaxed font-medium tracking-wide">
                                     {form.data.description || 'Deskripsi belum diatur untuk role ini...'}
                                 </p>
                             </div>
 
                             {editingRole && (
-                                <div className="grid grid-cols-2 gap-3 mb-4 relative z-10">
+                                <div className="relative z-10 mb-4 grid grid-cols-2 gap-3">
                                     <Button
                                         type="button"
                                         variant="outline"
                                         onClick={() => router.get(`/admin/roles/${editingRole.id}/config?tab=access`)}
-                                        className="h-9 gap-2 text-xs active:scale-95 transition-all"
+                                        className="h-9 gap-2 text-xs transition-all active:scale-95"
                                     >
                                         <Key size={12} /> Hak Akses
                                     </Button>
@@ -262,15 +253,16 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                                         type="button"
                                         variant="outline"
                                         onClick={() => router.get(`/admin/roles/${editingRole.id}/config?tab=navigation`)}
-                                        className="h-9 gap-2 text-xs active:scale-95 transition-all"
+                                        className="h-9 gap-2 text-xs transition-all active:scale-95"
                                     >
                                         <LayoutGrid size={12} /> Navigasi
                                     </Button>
                                 </div>
                             )}
 
-                            <p className="text-xs leading-normal font-medium tracking-tight text-muted-foreground/60 relative z-10">
-                                Role menentukan hak akses pengguna terhadap modul-modul sistem. Setelah menyimpan, Anda dapat mengatur hak akses spesifik per modul.
+                            <p className="text-muted-foreground/60 relative z-10 text-xs leading-normal font-medium tracking-tight">
+                                Role menentukan hak akses pengguna terhadap modul-modul sistem. Setelah menyimpan, Anda dapat mengatur hak akses
+                                spesifik per modul.
                             </p>
                         </div>
                     </div>
@@ -280,7 +272,7 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
     }
 
     return (
-        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+        <div className="border-border bg-card m-5 rounded-2xl border p-5 shadow-sm">
             <TableMasterData
                 title="Database Role & Otoritas"
                 columns={columns}
@@ -296,10 +288,10 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                 onFilterChange={handleFilterChange}
                 headerActions={
                     canCreate && (
-                        <Button 
+                        <Button
                             variant="white"
-                            onClick={openCreate} 
-                            className="h-10 px-6 rounded-xl gap-2 text-xs font-bold transition-all duration-200 border border-border/40 bg-card text-foreground shadow-sm hover:bg-muted/60 hover:border-border/60 hover:shadow-md active:scale-95"
+                            onClick={openCreate}
+                            className="border-border/40 bg-card text-foreground hover:bg-muted/60 hover:border-border/60 h-10 gap-2 rounded-xl border px-6 text-xs font-bold shadow-sm transition-all duration-200 hover:shadow-md active:scale-95"
                         >
                             <Plus size={15} /> Tambah Role
                         </Button>
@@ -335,9 +327,14 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                     from: roles.from || 1,
                     to: roles.to || 1,
                     perPage: roles.per_page || 10,
-                    onPageChange: (page: number) => router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                    onPageChange: (page: number) =>
+                        router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
                     onPerPageChange: (pp: number) =>
-                        router.get(globalThis.location.pathname, { ...filters, per_page: pp, page: 1 }, { preserveState: true, preserveScroll: true }),
+                        router.get(
+                            globalThis.location.pathname,
+                            { ...filters, per_page: pp, page: 1 },
+                            { preserveState: true, preserveScroll: true },
+                        ),
                 }}
             />
         </div>

@@ -148,7 +148,7 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
     };
 
     return (
-        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+        <div className="border-border bg-card m-5 rounded-2xl border p-5 shadow-sm">
             <TableMasterData
                 title="Registri Klasifikasi Kontrak"
                 borderless={true}
@@ -192,10 +192,10 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
                 }}
                 headerActions={
                     canCreate && (
-                        <Button 
-                            variant="white" 
-                            onClick={openCreate} 
-                            className="h-10 px-6 rounded-xl gap-2 text-xs font-bold transition-all duration-200 border border-border/40 bg-card text-foreground shadow-sm hover:bg-muted/60 hover:border-border/60 hover:shadow-md active:scale-95"
+                        <Button
+                            variant="white"
+                            onClick={openCreate}
+                            className="border-border/40 bg-card text-foreground hover:bg-muted/60 hover:border-border/60 h-10 gap-2 rounded-xl border px-6 text-xs font-bold shadow-sm transition-all duration-200 hover:shadow-md active:scale-95"
                         >
                             <Plus size={14} className="mr-2" /> Registrasi Klasifikasi
                         </Button>

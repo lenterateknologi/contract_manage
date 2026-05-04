@@ -138,28 +138,14 @@ class MasterSeeder extends Seeder
                     ['role' => 'Director', 'desc' => 'Final Approval', 'dept' => 'FIN'],
                 ]
             ],
-            [
-                'name' => 'PKS with Tax Review',
-                'type_id' => $pksTypeId,
-                'type_name' => 'Perjanjian Kerja Sama',
-                'is_tax' => true,
-                'steps' => [
-                    ['role' => 'Manager', 'desc' => 'Direct Review', 'dept' => 'LGL'],
-                    ['role' => 'Manager', 'desc' => 'Tax Validation', 'dept' => 'TAX'],
-                    ['role' => 'Director', 'desc' => 'Final Approval', 'dept' => 'FIN'],
-                ]
-            ],
-            [
-                'name' => 'Jasa Standard',
-                'type_id' => $jasaTypeId,
-                'type_name' => 'Perjanjian Jasa',
-                'is_tax' => false,
-                'steps' => [
-                    ['role' => 'Manager', 'desc' => 'Service Validation', 'dept' => 'IT'],
-                    ['role' => 'Director', 'desc' => 'Final Approval', 'dept' => 'FIN'],
-                ]
-            ]
         ];
+
+        // Clear existing workflows first
+        \App\Models\WorkflowStepRole::query()->delete();
+        \App\Models\WorkflowStepDepartment::query()->delete();
+        \App\Models\WorkflowStepUser::query()->delete();
+        \App\Models\WorkflowStep::withTrashed()->forceDelete();
+        \App\Models\Workflow::withTrashed()->forceDelete();
 
         foreach ($workflowConfigs as $wf) {
             $workflow = \App\Models\Workflow::updateOrCreate([

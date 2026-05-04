@@ -1,17 +1,7 @@
-import { usePage } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
-import { 
-    FilePlus2, 
-    X, 
-    ShieldCheck, 
-    Check, 
-    Loader2, 
-    AlertCircle,
-    FileText,
-    Settings2
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/base/Button';
+import { usePage } from '@inertiajs/react';
+import { AlertCircle, Check, FilePlus2, FileText, Loader2, ShieldCheck, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface Props {
     open: boolean;
@@ -99,119 +89,127 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-[1px] p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-[2px]"
             onClick={(e) => e.target === e.currentTarget && onClose()}
         >
             <div
-                className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 w-[520px] max-w-full overflow-hidden rounded-xl shadow-xl"
-                style={{ animation: 'modal-in .2s ease-out' }}
+                className="bg-sidebar border-sidebar-border w-[520px] max-w-full overflow-hidden rounded-2xl border shadow-2xl ring-1 ring-black/5"
+                style={{ animation: 'modal-in .2s cubic-bezier(0.16, 1, 0.3, 1)' }}
             >
                 {/* Header */}
-                <div className="border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between px-6 py-4">
-                    <div className="flex items-center gap-2">
-                        <FilePlus2 size={18} className="text-zinc-600 dark:text-zinc-400" />
-                        <h2 className="text-sm font-semibold text-zinc-900 dark:text-white">Buat Kontrak Baru</h2>
+                <div className="border-border bg-muted/30 flex items-center justify-between border-b px-6 py-4">
+                    <div className="text-foreground flex items-center gap-3">
+                        <FilePlus2 size={20} className="text-primary" />
+                        <h2 className="text-sm font-semibold">Buat Kontrak Baru</h2>
                     </div>
-                    <button 
-                        onClick={onClose} 
-                        className="text-zinc-400 hover:text-zinc-600 dark:hover:text-white p-1 rounded-lg transition-all"
+                    <button
+                        onClick={onClose}
+                        className="rounded-lg p-1.5 text-muted-foreground transition-all hover:text-foreground"
                     >
-                        <X size={16} />
+                        <X size={18} />
                     </button>
                 </div>
 
                 {/* Form Content */}
-                <div className="max-h-[70vh] space-y-5 overflow-y-auto p-6 custom-scrollbar">
+                <div className="custom-scrollbar max-h-[75vh] space-y-6 overflow-y-auto p-6">
                     {isLegalOrAdmin && (
-                        <div className="rounded-lg border border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/30 p-3.5 space-y-2">
-                            <label className="flex items-center gap-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                                <ShieldCheck size={14} className="text-zinc-500" /> Dibuat Untuk (Initiator)
+                        <div className="border-border bg-muted/40 space-y-3 rounded-xl border p-4">
+                            <label className="flex items-center gap-2 text-xs font-semibold text-foreground">
+                                <ShieldCheck size={14} className="text-primary" /> Dibuat Untuk (Initiator)
                             </label>
                             <select
                                 value={initiatedById}
                                 onChange={(e) => setInitiatedById(e.target.value)}
-                                className="w-full rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3 py-2 text-xs font-normal text-zinc-900 dark:text-zinc-100 outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-700"
+                                className="border-border bg-card text-foreground focus:ring-primary w-full rounded-lg border px-3 py-2.5 text-sm font-medium outline-none focus:ring-1"
                             >
                                 <option value={auth.user.id}>Diri Sendiri ({auth.user.name})</option>
-                                <optgroup label="Pilih User Lain">
-                                    {users
-                                        .filter((u) => u.id !== auth.user.id)
-                                        .map((u) => (
-                                            <option key={u.id} value={u.id}>
-                                                {u.name} — {u.role} ({u.department_name || 'No Dept'})
-                                            </option>
-                                        ))}
+                                <optgroup label="Pilih User Lain (Legal Helper Mode)">
+                                    {Array.isArray(users) &&
+                                        users
+                                            .filter((u) => u.id !== auth.user.id)
+                                            .map((u) => (
+                                                <option key={u.id} value={u.id}>
+                                                    {u.name} — {u.role} ({u.department_name || 'No Dept'})
+                                                </option>
+                                            ))}
                                 </optgroup>
                             </select>
-                            <div className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                                <strong>Legal Helper:</strong> Workflow akan disesuaikan dengan departemen initiator yang dipilih.
+                            <div className="flex gap-2 text-xs leading-relaxed text-muted-foreground italic">
+                                <span className="shrink-0 font-bold">Legal Helper:</span>
+                                <span>Workflow akan disesuaikan dengan departemen initiator yang dipilih.</span>
                             </div>
                         </div>
                     )}
 
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300 px-0.5">
-                                Perjanjian <span className="text-rose-500">*</span>
+                        <div className="space-y-2">
+                            <label className="px-1 text-xs font-semibold text-foreground">
+                                Tipe Pengajuan <span className="text-rose-500">*</span>
                             </label>
                             <select
                                 value={submissionTypeId}
                                 onChange={(e) => setSubmissionTypeId(e.target.value)}
-                                className="w-full rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3 py-2 text-xs text-zinc-900 dark:text-zinc-100 outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-700 transition-all"
+                                className="border-border bg-card text-foreground focus:ring-primary w-full rounded-lg border px-3 py-2.5 text-sm transition-all outline-none focus:ring-1"
                             >
-                                <option value="">Pilih Tipe</option>
-                                {submissionTypes.map((st) => (
-                                    <option key={st.id} value={st.id}>
-                                        {st.name}
-                                    </option>
-                                ))}
+                                <option value="">Tipe Pengajuan</option>
+                                {Array.isArray(submissionTypes) &&
+                                    submissionTypes.map((st) => (
+                                        <option key={st.id} value={st.id}>
+                                            {st.name}
+                                        </option>
+                                    ))}
                             </select>
-                            {errors.submission_type_id && <div className="mt-1 text-[10px] text-rose-500 font-medium">{errors.submission_type_id}</div>}
+                            {errors.submission_type_id && (
+                                <div className="mt-1 px-1 text-xs font-medium text-rose-500">{errors.submission_type_id}</div>
+                            )}
                         </div>
 
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300 px-0.5">
-                                Tipe Kontrak <span className="text-rose-500">*</span>
+                        <div className="space-y-2">
+                            <label className="px-1 text-xs font-semibold text-foreground">
+                                Jenis Kontrak <span className="text-rose-500">*</span>
                             </label>
                             <select
                                 value={typeId}
                                 onChange={(e) => {
                                     const val = e.target.value;
                                     setTypeId(val);
-                                    const selectedType = types.find((t) => String(t.id) === val);
+                                    const selectedType = Array.isArray(types) ? types.find((t) => String(t.id) === val) : undefined;
                                     if (selectedType) setTitle(selectedType.name);
                                 }}
-                                className="w-full rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3 py-2 text-xs text-zinc-900 dark:text-zinc-100 outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-700 transition-all"
+                                className="border-border bg-card text-foreground focus:ring-primary w-full rounded-lg border px-3 py-2.5 text-sm transition-all outline-none focus:ring-1"
                             >
                                 <option value="">Pilih Tipe</option>
-                                {types.map((t) => (
-                                    <option key={t.id} value={t.id}>
-                                        {t.name}
-                                    </option>
-                                ))}
+                                {Array.isArray(types) &&
+                                    types.map((t) => (
+                                        <option key={t.id} value={t.id}>
+                                            {t.name}
+                                        </option>
+                                    ))}
                             </select>
-                            {errors.contract_type_id && <div className="mt-1 text-[10px] text-rose-500 font-medium">{errors.contract_type_id}</div>}
+                            {errors.contract_type_id && (
+                                <div className="mt-1 px-1 text-xs font-medium text-rose-500">{errors.contract_type_id}</div>
+                            )}
                         </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300 px-0.5">
+                    <div className="space-y-2">
+                        <label className="px-1 text-xs font-semibold text-foreground">
                             Judul Kontrak <span className="text-rose-500">*</span>
                         </label>
                         <div className="relative">
-                            <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+                            <FileText className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             <input
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
                                 placeholder="Masukkan judul kontrak"
-                                className="w-full rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 pl-9 pr-4 py-2 text-xs font-normal text-zinc-900 dark:text-zinc-100 outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-700 transition-all placeholder:text-zinc-400"
+                                className="border-border bg-card focus:ring-primary w-full rounded-lg border py-2.5 pr-4 pl-10 text-sm font-medium text-foreground transition-all outline-none placeholder:text-muted-foreground focus:ring-1"
                             />
                         </div>
-                        {errors.title && <div className="mt-1 text-[10px] text-rose-500 font-medium">{errors.title}</div>}
+                        {errors.title && <div className="mt-1 px-1 text-xs font-medium text-rose-500">{errors.title}</div>}
                     </div>
 
                     {errors.general && (
-                        <div className="rounded-lg border border-rose-500/20 bg-rose-500/5 p-3 text-xs text-rose-500 flex items-center gap-2">
+                        <div className="flex items-center gap-2 rounded-lg border border-rose-500/20 bg-rose-500/5 p-3 text-xs text-rose-500">
                             <AlertCircle size={14} />
                             {errors.general}
                         </div>
@@ -219,24 +217,20 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                 </div>
 
                 {/* Footer */}
-                <div className="border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-end gap-3 px-6 py-4 bg-zinc-50/50 dark:bg-zinc-800/20">
+                <div className="border-border bg-muted/30 flex items-center justify-end gap-3 border-t px-6 py-4">
                     <Button
                         variant="ghost"
                         onClick={onClose}
-                        className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 h-9 px-4 text-xs font-medium transition-all"
+                        className="h-10 px-4 text-xs font-bold text-muted-foreground transition-all hover:text-foreground"
                     >
                         Batal
                     </Button>
                     <Button
                         onClick={handleSubmit}
                         disabled={loading}
-                        className="h-9 gap-1.5 rounded-lg px-5 text-xs font-medium shadow-sm transition-all"
+                        className="h-10 gap-2 rounded-lg px-6 text-sm font-semibold shadow-sm transition-all active:scale-95 disabled:opacity-50"
                     >
-                        {loading ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                            <Check size={14} />
-                        )}
+                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check size={16} />}
                         Buat Kontrak
                     </Button>
                 </div>

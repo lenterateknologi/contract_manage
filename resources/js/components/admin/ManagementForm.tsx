@@ -27,7 +27,7 @@ export function ManagementForm({
     headerActions,
 }: ManagementFormProps) {
     return (
-        <div className="animate-in fade-in slide-in-from-right-5 bg-card border-border/60 text-foreground flex flex-col overflow-hidden rounded-2xl border font-sans antialiased shadow-sm">
+        <div className="animate-in fade-in slide-in-from-right-5 bg-card border-border/60 text-foreground m-5 flex flex-col overflow-hidden rounded-2xl border font-sans antialiased shadow-sm">
             {/* COMPACT STICKY HEADER */}
             <div className="border-border/60 bg-muted/40 z-40 flex shrink-0 items-center justify-between border-b px-6 py-4">
                 <div className="flex items-center gap-3">

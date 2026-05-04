@@ -236,7 +236,7 @@ export default function CompareModal({ open, onClose, contract, initialVersion, 
                             </div>
                         </>
                     ) : (
-                        <div className="flex-1 overflow-auto p-5 font-mono text-[12px] leading-relaxed whitespace-pre-wrap">
+                        <div>
                             {diffLines.map((l, i) =>
                                 l.type === 'chg' ? (
                                     <React.Fragment key={i}>

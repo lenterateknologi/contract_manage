@@ -639,6 +639,7 @@ class ContractController extends Controller
             'p2_signer'        => 'nullable|string',
             'p2_signer_position' => 'nullable|string',
             'p2_address'       => 'nullable|string',
+            'metadata'         => 'nullable|array',
         ]);
 
         $contract->update($validated);

@@ -4,10 +4,10 @@
 
 Sistem ini dirancang untuk mengelola dokumen kontrak dengan fitur:
 
-* Multi-level approval
-* Upload & download file (Word / .docx)
-* Versioning (web & file storage)
-* Audit trail lengkap
+- Multi-level approval
+- Upload & download file (Word / .docx)
+- Versioning (web & file storage)
+- Audit trail lengkap
 
 ---
 
@@ -104,9 +104,9 @@ Table contract_files_metadata {
 
 ### A. Versioning (Database)
 
-* Menggunakan `version_no` increment
-* `current_version_id` sebagai versi aktif
-* Semua perubahan disimpan (audit trail)
+- Menggunakan `version_no` increment
+- `current_version_id` sebagai versi aktif
+- Semua perubahan disimpan (audit trail)
 
 Contoh:
 
@@ -139,9 +139,9 @@ Atau:
 
 ### C. File Integrity
 
-* Gunakan hash (SHA256)
-* Validasi saat upload & download
-* Hindari manipulasi file
+- Gunakan hash (SHA256)
+- Validasi saat upload & download
+- Hindari manipulasi file
 
 ---
 
@@ -156,7 +156,7 @@ Atau:
 
 ### Rule:
 
-* Approval hanya bisa dilakukan jika sequence sebelumnya sudah approve
+- Approval hanya bisa dilakukan jika sequence sebelumnya sudah approve
 
 ---
 
@@ -228,16 +228,16 @@ S3 / ELO / Local
 
 ### DO
 
-* Simpan semua versi (immutable)
-* Gunakan audit trail
-* Lock contract saat final
-* Gunakan hash untuk validasi file
+- Simpan semua versi (immutable)
+- Gunakan audit trail
+- Lock contract saat final
+- Gunakan hash untuk validasi file
 
 ### DON'T
 
-* Overwrite file lama
-* Hard delete version
-* Skip approval sequence
+- Overwrite file lama
+- Hard delete version
+- Skip approval sequence
 
 ---
 
@@ -245,29 +245,29 @@ S3 / ELO / Local
 
 ### 🔍 Compare Version
 
-* Bandingkan perubahan antar versi
+- Bandingkan perubahan antar versi
 
 ### 📝 Comment System
 
-* Inline comment seperti Google Docs
+- Inline comment seperti Google Docs
 
 ### 🔔 Notification
 
-* Email / in-app
-* Trigger approval & revisi
+- Email / in-app
+- Trigger approval & revisi
 
 ### 🔐 Access Control
 
-* Role-based access
+- Role-based access
 
 ---
 
 ## 🧠 Insight Tambahan
 
-* Digital signature (e-sign)
-* SLA tracking approval
-* Auto contract numbering
-* Dashboard bottleneck approval
+- Digital signature (e-sign)
+- SLA tracking approval
+- Auto contract numbering
+- Dashboard bottleneck approval
 
 ---
 
@@ -275,7 +275,15 @@ S3 / ELO / Local
 
 Sistem ini memastikan:
 
-* Transparansi proses contract
-* Versioning aman (web & file)
-* Approval terstruktur
-* Audit trai
+- Transparansi proses contract
+- Versioning aman (web & file)
+- Approval terstruktur
+- Audit trai
+
+# seed data
+
+php artisan seed master
+
+php artisan seed transaction
+
+php artisan db:seed --class=NewContractWorkflowSeeder

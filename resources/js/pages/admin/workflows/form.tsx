@@ -211,6 +211,93 @@ function SortableStepItem({
                                     ]}
                                     icon={LayoutTemplate}
                                 />
+                                <CompactSelect
+                                    label="Fase Alur"
+                                    value={step.phase || 'f1_request'}
+                                    onChange={(v) => updateLocalStep(idx, { phase: String(v) })}
+                                    options={[
+                                        { label: 'PERMOHONAN F1', value: 'f1_request' },
+                                        { label: 'PEMBUATAN KONTRAK', value: 'contract_creation' },
+                                    ]}
+                                    icon={GitBranch}
+                                />
+                                <CompactSelect
+                                    label="Tipe Langkah"
+                                    value={step.step_type || 'approval'}
+                                    onChange={(v) => updateLocalStep(idx, { step_type: String(v) })}
+                                    options={[
+                                        { label: 'APPROVAL', value: 'approval' },
+                                        { label: 'DRAFTING', value: 'drafting' },
+                                        { label: 'REVIEW', value: 'review' },
+                                        { label: 'UPLOAD DOKUMEN TTD', value: 'upload_signed_doc' },
+                                        { label: 'CLOSING CHECK', value: 'closing_check' },
+                                    ]}
+                                    icon={CheckCircle2}
+                                />
+                                <CompactSelect
+                                    label="Jenis Pemeran"
+                                    value={step.approver_type || 'role'}
+                                    onChange={(v) => updateLocalStep(idx, { approver_type: String(v) })}
+                                    options={[
+                                        { label: 'ROLE SPESIFIK', value: 'role' },
+                                        { label: 'ATASAN LANGSUNG', value: 'atasan' },
+                                        { label: 'USER SPESIFIK', value: 'user' },
+                                    ]}
+                                    icon={UsersIcon}
+                                />
+                                {step.approver_type === 'atasan' && (
+                                    <CompactSelect
+                                        label="Tingkat Atasan"
+                                        value={String(step.hierarchy_level || '1')}
+                                        onChange={(v) => updateLocalStep(idx, { hierarchy_level: Number(v) })}
+                                        options={[
+                                            { label: 'LEVEL 1 (SPV/MANAGER)', value: '1' },
+                                            { label: 'LEVEL 2 (n+1)', value: '2' },
+                                        ]}
+                                        icon={Shield}
+                                    />
+                                )}
+                                {step.approver_type === 'role' && (
+                                    <CompactSelect
+                                        label="Target Role"
+                                        value={step.role_id || 'none'}
+                                        onChange={(v) => updateLocalStep(idx, { role_id: v === 'none' ? null : String(v) })}
+                                        options={[
+                                            { label: '-- PILIH --', value: 'none' },
+                                            ...roles.map((r: any) => ({ label: r.name, value: r.id })),
+                                        ]}
+                                        icon={Shield}
+                                    />
+                                )}
+                                {step.step_type === 'upload_signed_doc' && (
+                                    <CompactSelect
+                                        label="Dokumen Diupload Oleh"
+                                        value={step.uploader_type || 'legal'}
+                                        onChange={(v) => updateLocalStep(idx, { uploader_type: String(v) })}
+                                        options={[
+                                            { label: 'LEGAL STAFF', value: 'legal' },
+                                            { label: 'INITIATOR', value: 'initiator' },
+                                        ]}
+                                        icon={Briefcase}
+                                    />
+                                )}
+                                <CompactSelect
+                                    label="Jika Ditolak"
+                                    value={step.reject_target || 'initiator'}
+                                    onChange={(v) => updateLocalStep(idx, { reject_target: String(v) })}
+                                    options={[
+                                        { label: 'KEMBALI KE INITIATOR', value: 'initiator' },
+                                        { label: 'KEMBALI KE STEP SEBELUMNYA', value: 'previous' },
+                                    ]}
+                                    icon={GitBranch}
+                                />
+                                <CompactInput
+                                    label="Kondisi Dinamis (Expression)"
+                                    value={step.condition_expression || ''}
+                                    onChange={(e) => updateLocalStep(idx, { condition_expression: e.target.value })}
+                                    placeholder="Contoh: contract.has_tax == true"
+                                    icon={Info}
+                                />
                             </div>
 
                             <div className="grid min-h-[400px] grid-cols-3 gap-6 p-6">
@@ -363,6 +450,8 @@ export default function WorkflowEditor({ auth, workflow, contractTypes, departme
         description: workflow?.description || '',
         is_default: !!workflow?.is_default,
         initiator_type: workflow?.initiator_type || 'all',
+        scope: workflow?.scope || 'HO',
+        workflow_category: workflow?.workflow_category || 'unified',
         initiator_roles: workflow?.initiator_roles || [],
         initiator_users: workflow?.initiator_users || [],
         initiator_departments: workflow?.initiator_departments || [],
@@ -438,6 +527,28 @@ export default function WorkflowEditor({ auth, workflow, contractTypes, departme
                                             ...contractTypes.map((t: any) => ({ label: t.name, value: t.name })),
                                         ]}
                                         icon={LayoutTemplate}
+                                    />
+                                    <CompactSelect
+                                        label="Scope Wilayah"
+                                        value={form.data.scope || 'HO'}
+                                        onChange={(v) => form.setData('scope', String(v))}
+                                        options={[
+                                            { label: 'HO', value: 'HO' },
+                                            { label: 'REGION', value: 'REGION' },
+                                            { label: 'ALL', value: 'ALL' },
+                                        ]}
+                                        icon={Briefcase}
+                                    />
+                                    <CompactSelect
+                                        label="Kategori Alur"
+                                        value={form.data.workflow_category || 'unified'}
+                                        onChange={(v) => form.setData('workflow_category', String(v))}
+                                        options={[
+                                            { label: 'UNIFIED', value: 'unified' },
+                                            { label: 'F1 ONLY', value: 'f1' },
+                                            { label: 'CONTRACT ONLY', value: 'contract' },
+                                        ]}
+                                        icon={GitBranch}
                                     />
                                     <div
                                         onClick={() => form.setData('is_default', !form.data.is_default)}

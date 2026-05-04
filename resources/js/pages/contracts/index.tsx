@@ -47,6 +47,8 @@ import { ContractReferenceCard } from '@/components/contracts/ContractReferenceC
 import { DashboardMetrics } from '@/components/contracts/DashboardMetrics';
 import { DraftEditableInfoCard } from '@/components/contracts/DraftEditableInfoCard';
 import { EditContractModal } from '@/components/contracts/EditContractModal';
+import ApproveModal from '@/components/contracts/ApproveModal';
+import RejectModal from '@/components/contracts/RejectModal';
 import { ProfileView } from '@/components/contracts/ProfileView';
 import SendApprovalModal from '@/components/contracts/SendApprovalModal';
 import { Column, TableContract } from '@/components/ui/data/TableContract';
@@ -415,6 +417,8 @@ const ContractDetailView = ({
     );
     const [processing, setProcessing] = useState(false);
     const { showProgress, hideProgress } = useToast();
+    const [approveOpen, setApproveOpen] = useState(false);
+    const [rejectOpen, setRejectOpen] = useState(false);
 
     // Export Logic
     const [isExportingTimeline, setIsExportingTimeline] = useState(false);
@@ -509,9 +513,7 @@ const ContractDetailView = ({
         }
     };
 
-    const handleApprove = async () => {
-        const note = prompt('Masukkan catatan approval (opsional):');
-        if (note === null) return;
+    const handleApprove = async (note: string) => {
         try {
             const c = await contractApi.approve(contract.id, note);
             onUpdate(c);
@@ -521,9 +523,7 @@ const ContractDetailView = ({
         }
     };
 
-    const handleReject = async () => {
-        const note = prompt('Masukkan alasan penolakan (wajib):');
-        if (!note) return;
+    const handleReject = async (note: string) => {
         try {
             const c = await contractApi.reject(contract.id, note);
             onUpdate(c);
@@ -553,9 +553,11 @@ const ContractDetailView = ({
                             <h2 className="text-lg leading-none font-bold tracking-tight text-black uppercase dark:text-white">{contract.title}</h2>
                             <StatusBadge status={contract.status} />
                         </div>
-                        <span className="mt-1.5 text-[10px] font-bold tracking-[0.2em] text-black/40 uppercase dark:text-white/40">
-                            #{contract.contract_no || 'NO-REQ'}
-                        </span>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-3">
+                            <span className="text-[10px] font-bold tracking-[0.2em] text-black/40 uppercase dark:text-white/40">
+                                #{contract.contract_no || 'NO-REQ'}
+                            </span>
+                        </div>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -646,6 +648,7 @@ const ContractDetailView = ({
                                 { id: 'attachments', label: 'Lampiran' },
                                 { id: 'timeline', label: 'Alur Approval' },
                                 { id: 'chat', label: 'Chat' },
+                                { id: 'references', label: 'Kontrak Referensi' },
                             ].map((tab) => (
                                 <button
                                     key={tab.id}
@@ -711,12 +714,12 @@ const ContractDetailView = ({
                                 </div>
                             </div>
                             <div className="flex flex-col gap-2 pt-2">
-                                <Button variant="primary" onClick={handleApprove} className="h-11 w-full font-bold shadow-lg shadow-blue-500/20">
+                                <Button variant="primary" onClick={() => setApproveOpen(true)} className="h-11 w-full font-bold shadow-lg shadow-blue-500/20">
                                     <CheckCircle2 size={16} /> Setujui Kontrak
                                 </Button>
                                 <Button
                                     variant="outline"
-                                    onClick={handleReject}
+                                    onClick={() => setRejectOpen(true)}
                                     className="h-11 w-full border-black/10 font-bold hover:bg-rose-500 hover:text-white dark:border-white/10"
                                 >
                                     <AlertCircle size={16} /> Kembalikan / Tolak
@@ -740,6 +743,17 @@ const ContractDetailView = ({
                     />
                 </div>
             </div>
+
+            <ApproveModal
+                open={approveOpen}
+                onClose={() => setApproveOpen(false)}
+                onSubmit={handleApprove}
+            />
+            <RejectModal
+                open={rejectOpen}
+                onClose={() => setRejectOpen(false)}
+                onSubmit={handleReject}
+            />
         </div>
     );
 };
@@ -1429,7 +1443,7 @@ export default function ContractsIndex({
                 contractApi.list({ view: currentView }),
                 contractApi.getTypes(),
                 axios
-                    .get('/admin/api/contracts/submission-types')
+                    .get('/api/contracts/submission-types')
                     .then((res) => res.data)
                     .catch(() => []),
                 axios

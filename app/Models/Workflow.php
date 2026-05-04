@@ -31,6 +31,8 @@ class Workflow extends Model
         'sla_drafting_hours',
         'sla_total_hours',
         'sla_cutoff_hour',
+        'scope',
+        'workflow_category',
         'created_by',
         'updated_by',
     ];

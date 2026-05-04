@@ -115,7 +115,7 @@ export function TableMasterData<T extends Record<string, any>>({
     }, [data, localSearch, searchKey, onSearchChange]);
 
     return (
-        <div className="flex flex-col gap-3 antialiased text-foreground">
+        <div className="flex flex-col gap-3 antialiased text-foreground m-5">
             {/* Premium Header Section without any extra decorative lines */}
             {(title || onSearchChange || localSearch !== undefined || headerActions || filters.length > 0) && (
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 px-1 mb-1">
