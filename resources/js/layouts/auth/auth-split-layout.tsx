@@ -2,8 +2,6 @@ import { cn } from '@/lib/utils';
 import { router } from '@inertiajs/react';
 import React, { useEffect, useState } from 'react';
 
-// Import the generated mockup image
-import cmsMockup from '../../../../../../../../.gemini/antigravity/brain/77afdc7b-862e-4047-af9f-554820df3e2f/cms_dashboard_mockup_1777367947628.png';
 
 interface AuthSplitLayoutProps {
     children: React.ReactNode;
@@ -20,7 +18,7 @@ export default function AuthSplitLayout({ children, title, description, isSucces
     const onAnimationEnd = (url: URL, visit: any) => {
         router.visit(url, {
             ...visit,
-            onStart: () => {}, // Clear interceptor loop
+            onStart: () => { }, // Clear interceptor loop
         });
     };
 
@@ -91,9 +89,8 @@ export default function AuthSplitLayout({ children, title, description, isSucces
                         rightTransform,
                     )}
                 >
-                    {/* Fullscreen Sample Image */}
                     <img
-                        src={image || cmsMockup}
+                        src={image || 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1920&q=80'}
                         alt="CMS Dashboard"
                         className="h-full w-full object-cover object-left opacity-90 transition-opacity duration-700 hover:opacity-100"
                     />
