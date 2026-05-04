@@ -69,7 +69,7 @@ class ContractController extends Controller
             'contracts' => $contracts,
             'types' => ContractType::all(),
             'submissionTypes' => SubmissionType::where('is_active', true)->get(),
-            'users' => User::orderBy('name')->get()->map(fn($u) => $this->formatUser($u)),
+            'users' => User::with('department')->orderBy('name')->get()->map(fn($u) => $this->formatUser($u)),
             'vendors' => Vendor::with('documents')->where('is_active', true)->orderBy('name')->get()->map(fn($v) => [
                 'id' => $v->id,
                 'name' => $v->name,
@@ -82,14 +82,14 @@ class ContractController extends Controller
                     'type' => $d->document_type,
                 ]),
             ]),
-            'formTemplates' => \App\Models\FormTemplate::where('is_active', true)->with('contractType')->get()->map(fn ($ft) => [
+            'formTemplates' => \App\Models\FormTemplate::where('is_active', true)->with('contractType')->withCount('fields')->get()->map(fn ($ft) => [
                 'id' => $ft->id,
                 'name' => $ft->name,
                 'description' => $ft->description,
                 'document_type' => $ft->document_type,
                 'contract_type_id' => $ft->contract_type_id,
                 'contract_type_name' => $ft->contractType?->name,
-                'fields_count' => $ft->fields()->count(),
+                'fields_count' => $ft->fields_count,
             ]),
             'departments' => \App\Models\Department::orderBy('name')->get(),
             'roles' => \App\Models\Role::orderBy('name')->get(),
@@ -171,7 +171,7 @@ class ContractController extends Controller
             'initialSelected' => $this->formatContract($contract),
             'types' => ContractType::all(),
             'submissionTypes' => SubmissionType::where('is_active', true)->get(),
-            'users' => User::orderBy('name')->get()->map(fn($u) => $this->formatUser($u)),
+            'users' => User::with('department')->orderBy('name')->get()->map(fn($u) => $this->formatUser($u)),
             'vendors' => Vendor::where('is_active', true)->orderBy('name')->get()->map(fn($v) => [
                 'id' => $v->id,
                 'name' => $v->name,
@@ -179,14 +179,14 @@ class ContractController extends Controller
                 'pic_position' => $v->pic_position,
                 'address' => $v->address,
             ]),
-            'formTemplates' => \App\Models\FormTemplate::where('is_active', true)->with('contractType')->get()->map(fn ($ft) => [
+            'formTemplates' => \App\Models\FormTemplate::where('is_active', true)->with('contractType')->withCount('fields')->get()->map(fn ($ft) => [
                 'id' => $ft->id,
                 'name' => $ft->name,
                 'description' => $ft->description,
                 'document_type' => $ft->document_type,
                 'contract_type_id' => $ft->contract_type_id,
                 'contract_type_name' => $ft->contractType?->name,
-                'fields_count' => $ft->fields()->count(),
+                'fields_count' => $ft->fields_count,
             ]),
             'filters' => array_merge($request->only(['search', 'status', 'contract_type_id']), [
                 'per_page' => $request->integer('per_page', 10),
@@ -310,15 +310,27 @@ class ContractController extends Controller
         // --- KPI Metrics ---
         $totalContracts = (clone $baseQuery)->count();
 
-        $approvedContracts = (clone $baseQuery)->where('status', 'approved')->get();
+        $approvedContracts = (clone $baseQuery)
+            ->where('status', 'approved')
+            ->orderByDesc('updated_at')
+            ->limit(50)
+            ->get();
         $avgDays = 0;
         if ($approvedContracts->count() > 0) {
-            $totalDays = $approvedContracts->sum(function ($c) {
-                $firstSentAt = Approval::where('contract_id', $c->id)->oldest()->value('created_at');
+            $contractIds = $approvedContracts->pluck('id');
+            $firstApprovals = Approval::whereIn('contract_id', $contractIds)
+                ->select('contract_id', DB::raw('MIN(created_at) as first_sent_at'))
+                ->groupBy('contract_id')
+                ->pluck('first_sent_at', 'contract_id')
+                ->all();
+
+            $totalDays = $approvedContracts->sum(function ($c) use ($firstApprovals) {
+                $firstSentAt = $firstApprovals[$c->id] ?? null;
                 return $firstSentAt ? Carbon::parse($firstSentAt)->diffInHours($c->updated_at) / 24 : 0;
             });
             $avgDays = round($totalDays / $approvedContracts->count(), 1);
         }
+
 
         $pendingApprovals = Approval::where('user_id', Auth::id())->where('status', 'pending')->count();
 
@@ -497,7 +509,7 @@ class ContractController extends Controller
 
     public function getUsers(): JsonResponse
     {
-        return response()->json(User::orderBy('name')->get()->map(fn($u) => $this->formatUser($u)));
+        return response()->json(User::with('department')->orderBy('name')->get()->map(fn($u) => $this->formatUser($u)));
     }
 
     public function getRoles(): JsonResponse
@@ -758,6 +770,7 @@ class ContractController extends Controller
                 if ($approval) {
                     $contract = Contract::find($id);
                     if ($contract) {
+                        assert($contract instanceof Contract);
                         $this->workflowService->approveContract($contract, $approval, $note);
                         $count++;
                     }
