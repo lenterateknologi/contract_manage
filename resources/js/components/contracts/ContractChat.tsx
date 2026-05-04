@@ -2,13 +2,14 @@ import { contractApi } from '@/lib/contract-api';
 import { Contract, ContractMessage } from '@/types/contracts';
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Avatar } from './ui';
-import { MessageSquare, Calendar, Send, Clock, User, Search, FileIcon, Paperclip, X, RefreshCw, Download } from 'lucide-react';
+import { MessageSquare, Calendar, Send, Clock, User, Search, FileIcon, Paperclip, X, RefreshCw, Download, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/base/Button';
 import { SearchInput } from '@/components/ui/forms/SearchInput';
 import { Badge } from '@/components/ui/base/Badge';
 import { ScrollArea } from '@/components/ui/base/ScrollArea';
 import { cn } from '@/lib/utils';
 import DocumentPreviewModal from './DocumentPreviewModal';
+import { MentionDropdown } from './MentionDropdown';
 
 interface Props {
     contract: Contract;
@@ -31,9 +32,18 @@ function MsgBubble({
     const time = msg.created_at.split(' ')[1]?.substring(0, 5) ?? '';
     const name = msg.user?.name ?? 'Unknown';
     const role = msg.user?.role ?? '';
-    const attachmentUrl = (msg as any).attachment_url;
-    const attachmentName = (msg as any).attachment_name;
-    const isImage = attachmentUrl?.match(/\.(jpg|jpeg|png|gif|webp|svg)/i) || attachmentName?.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i);
+    let attachmentUrl = (msg as any).attachment_url || (msg as any).attachment_path;
+    if (attachmentUrl && !attachmentUrl.startsWith('http') && !attachmentUrl.startsWith('/')) {
+        attachmentUrl = `/storage/${attachmentUrl}`;
+    }
+    const attachmentName = (msg as any).attachment_name || (msg as any).file_name || 'Berkas';
+    const isImage = 
+        attachmentUrl?.match(/\.(jpg|jpeg|png|gif|webp|svg)/i) || 
+        attachmentName?.match(/\.(jpg|jpeg|png|gif|webp|svg)/i) ||
+        (typeof attachmentName === 'string' &&
+            ['.png', '.jpg', '.jpeg', '.svg', '.webp', '.gif'].some((ext) =>
+                attachmentName.toLowerCase().includes(ext)
+            ));
 
     const renderMessage = (text: string, term?: string) => {
         let content: any = text;
@@ -42,7 +52,7 @@ function MsgBubble({
             const parts = text.split(new RegExp(`(${term})`, 'gi'));
             content = parts.map((part, i) =>
                 part.toLowerCase() === term.toLowerCase() ? (
-                    <span key={i} className="rounded px-0.5 font-bold text-black shadow-sm dark:text-white">
+                    <span key={i} className="rounded px-0.5 font-bold text-primary dark:text-white bg-primary/10">
                         {part}
                     </span>
                 ) : (
@@ -56,7 +66,7 @@ function MsgBubble({
             return mentionParts.map((part, i) => {
                 if (part.startsWith('@')) {
                     return (
-                        <span key={i} className="font-bold tracking-tight text-blue-500 underline underline-offset-2 dark:text-blue-400">
+                        <span key={i} className={cn('font-bold underline underline-offset-2 tracking-tight', isMe ? 'text-amber-200 dark:text-amber-200' : 'text-primary dark:text-amber-300')}>
                             {part}
                         </span>
                     );
@@ -72,7 +82,7 @@ function MsgBubble({
                             return (
                                 <span
                                     key={`${idx}-${i}`}
-                                    className="font-bold tracking-tight text-blue-500 underline underline-offset-2 dark:text-blue-400"
+                                    className={cn('font-bold underline underline-offset-2 tracking-tight', isMe ? 'text-amber-200 dark:text-amber-200' : 'text-primary dark:text-amber-300')}
                                 >
                                     {sp}
                                 </span>
@@ -89,38 +99,51 @@ function MsgBubble({
     };
 
     return (
-        <div className={cn('mb-4 flex flex-col gap-1 animate-in slide-in-from-bottom-1 duration-300', isMe ? 'items-end' : 'items-start')}>
-            <div className={cn('flex items-center gap-1.5 px-1', isMe ? 'flex-row-reverse' : 'flex-row')}>
-                <span className={cn('text-[10px] font-bold', isMe ? 'text-black dark:text-white' : 'text-black/60 dark:text-white/60')}>
+        <div className={cn('mb-4 flex flex-col gap-1.5 animate-in slide-in-from-bottom-1 duration-300', isMe ? 'items-end' : 'items-start')}>
+            <div className={cn('flex items-center gap-2 px-1', isMe ? 'flex-row-reverse' : 'flex-row')}>
+                <span className={cn('text-[11px] font-bold', isMe ? 'text-foreground dark:text-white' : 'text-foreground/80 dark:text-white/80')}>
                     {isMe ? 'Anda' : name}
                 </span>
                 {role && (
-                    <span className="rounded-full bg-black/5 px-2 py-0.5 text-[8px] font-bold text-black/40 uppercase tracking-tight dark:bg-white/5 dark:text-white/40">
+                    <span className="rounded-full bg-muted/60 px-2.5 py-0.5 text-[9px] font-bold text-muted-foreground uppercase tracking-tight dark:bg-white/5 dark:text-white/50">
                         {role}
                     </span>
                 )}
-                <span className="text-[9px] tabular-nums text-black/20 dark:text-white/20">{time}</span>
+                <span className="text-[10px] tabular-nums text-muted-foreground/60 dark:text-white/30">{time}</span>
             </div>
 
-            <div className={cn('group relative max-w-[85%] min-w-[60px]', isMe ? 'text-right' : 'text-left')}>
+            <div className={cn('group relative max-w-[82%] min-w-[65px]', isMe ? 'text-right' : 'text-left')}>
                 <div
                     className={cn(
                         'rounded-2xl shadow-sm transition-all duration-300',
-                        isMe ? 'bg-black text-white dark:bg-white dark:text-black' : 'bg-black/[0.03] text-black dark:bg-white/[0.03] dark:text-white',
+                        isMe 
+                          ? 'bg-primary text-white dark:bg-primary dark:text-white' 
+                          : 'bg-muted/80 text-foreground dark:bg-slate-800/80 dark:text-white',
                     )}
                 >
                     {attachmentUrl && isImage && (
-                        <div className="group/img relative overflow-hidden rounded-t-2xl border-b border-inherit bg-black/5 dark:bg-white/5">
+                        <div 
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                onPreview(attachmentUrl, attachmentName);
+                            }}
+                            className="group/img relative overflow-hidden rounded-t-2xl border-b border-inherit bg-black/5 dark:bg-white/5 cursor-pointer"
+                        >
                             <img
                                 src={attachmentUrl}
                                 alt={attachmentName || 'Image'}
                                 className="h-auto max-h-[250px] w-full cursor-pointer object-cover transition-transform duration-500 group-hover/img:scale-105"
-                                onClick={() => onPreview(attachmentUrl, attachmentName)}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    onPreview(attachmentUrl, attachmentName);
+                                }}
                             />
                         </div>
                     )}
 
-                    <div className="p-3">
+                    <div className="p-3.5">
                         {msg.message && (
                             <div
                                 className={cn(
@@ -134,7 +157,11 @@ function MsgBubble({
 
                         {attachmentUrl && !isImage && (
                             <div
-                                onClick={() => onPreview(attachmentUrl, attachmentName)}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    onPreview(attachmentUrl, attachmentName);
+                                }}
                                 className={cn(
                                     'group/file flex cursor-pointer items-center gap-2.5 rounded-xl border p-2 transition-all',
                                     isMe
@@ -179,6 +206,8 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
     const [mentionSearch, setMentionSearch] = useState('');
     const [showMentions, setShowMentions] = useState(false);
     const [mentionIndex, setMentionIndex] = useState(0);
+    const [allUsers, setAllUsers] = useState<any[]>([]);
+    const [showScrollDown, setShowScrollDown] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     const endRef = useRef<HTMLDivElement>(null);
@@ -187,10 +216,15 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
     const isFirstRender = useRef(true);
 
     useEffect(() => {
-        if (!isFirstRender.current) {
-            endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-        isFirstRender.current = false;
+        contractApi.getUsers().then(setAllUsers).catch(console.error);
+    }, []);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            endRef.current?.scrollIntoView({ behavior: isFirstRender.current ? 'auto' : 'smooth', block: 'end' });
+            isFirstRender.current = false;
+        }, 100);
+        return () => clearTimeout(timer);
     }, [msgs.length]);
 
     const handleRefresh = async () => {
@@ -210,10 +244,10 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
     };
 
     const filteredUsers = useMemo(() => {
-        if (!mentionSearch) return users.slice(0, 5);
+        if (!mentionSearch) return allUsers;
         const s = mentionSearch.toLowerCase();
-        return users.filter(u => u.name.toLowerCase().includes(s)).slice(0, 5);
-    }, [users, mentionSearch]);
+        return allUsers.filter(u => u.name.toLowerCase().includes(s));
+    }, [allUsers, mentionSearch]);
 
     const insertMention = (user: any) => {
         const parts = input.split(' ');
@@ -292,14 +326,14 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
     }, {} as Record<string, ContractMessage[]>);
 
     return (
-        <div className="relative flex h-[550px] flex-col p-5 animate-in fade-in duration-500">
+        <div className="relative flex min-h-[620px] h-[680px] flex-col p-5 animate-in fade-in duration-500">
             <div className="mb-1 flex items-center justify-between border-b border-black/5 pb-3 dark:border-white/5">
                 <div className="flex-1">
                     <SearchInput
                         placeholder="CARI NAMA / ROLE..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="h-9 text-[10px] tracking-widest uppercase"
+                        className="h-9 text-[10px] tracking-widest"
                     />
                 </div>
 
@@ -321,7 +355,14 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                 </div>
             </div>
 
-            <ScrollArea className="flex-1 px-1">
+            <div
+                onScroll={(e) => {
+                    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+                    const isAtBottom = scrollHeight - scrollTop - clientHeight < 120;
+                    setShowScrollDown(!isAtBottom);
+                }}
+                className="flex-1 overflow-y-auto px-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+            >
                 <div className="flex flex-col py-3">
                     {msgs.length === 0 ? (
                         <div className="flex flex-col items-center justify-center gap-2 pt-20 text-center opacity-40">
@@ -347,7 +388,16 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                     )}
                     <div ref={endRef} />
                 </div>
-            </ScrollArea>
+            </div>
+
+            {showScrollDown && (
+                <button
+                    onClick={() => endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })}
+                    className="absolute bottom-[105px] right-8 z-50 flex h-9 w-9 items-center justify-center rounded-full bg-primary text-white shadow-lg active:scale-95 transition-all animate-in fade-in slide-in-from-bottom-2 duration-300 hover:bg-primary/90"
+                >
+                    <ArrowDown size={16} />
+                </button>
+            )}
 
             <div className="border-t border-black/5 pt-3 dark:border-white/5">
                 {selectedFile && (
@@ -373,50 +423,13 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                 )}
 
                 <div className="group relative flex items-end gap-2">
-                    {showMentions && filteredUsers.length > 0 && (
-                        <div className="absolute bottom-full left-0 z-50 mb-2 w-52 overflow-hidden rounded-lg border border-black/10 bg-white shadow-2xl animate-in slide-in-from-bottom-1 duration-200 dark:border-white/10 dark:bg-[#18181b]">
-                            <div className="border-b border-black/10 bg-black p-2 dark:border-white/10 dark:bg-white">
-                                <span className="text-[7.5px] font-black text-white uppercase tracking-widest dark:text-black">
-                                    MENTION
-                                </span>
-                            </div>
-                            <div className="max-h-[180px] overflow-y-auto">
-                                {filteredUsers.map((u: any, i: number) => (
-                                    <button
-                                        key={u.id}
-                                        onClick={() => insertMention(u)}
-                                        onMouseEnter={() => setMentionIndex(i)}
-                                        className={cn(
-                                            'flex w-full items-center gap-2 p-2 text-left transition-all',
-                                            i === mentionIndex
-                                                ? 'bg-black text-white dark:bg-white dark:text-black'
-                                                : 'hover:bg-black/[0.02] dark:hover:bg-white/[0.02]',
-                                        )}
-                                    >
-                                        <Avatar user={u} size="sm" />
-                                        <div className="flex min-w-0 flex-col">
-                                            <span
-                                                className={cn(
-                                                    'truncate text-[9.5px] font-black uppercase tracking-tight',
-                                                    i === mentionIndex ? 'text-inherit' : 'text-black dark:text-white',
-                                                )}
-                                            >
-                                                {u.name}
-                                            </span>
-                                            <span
-                                                className={cn(
-                                                    'text-[7px] font-bold opacity-40 uppercase tracking-widest',
-                                                    i === mentionIndex ? 'text-inherit' : 'text-black dark:text-white',
-                                                )}
-                                            >
-                                                {u.role || 'Member'}
-                                            </span>
-                                        </div>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    )}
+                    <MentionDropdown
+                        isOpen={showMentions}
+                        users={filteredUsers}
+                        mentionIndex={mentionIndex}
+                        setMentionIndex={setMentionIndex}
+                        insertMention={insertMention}
+                    />
 
                     <div className="relative flex flex-1 items-end rounded-2xl border border-black/5 bg-black/[0.02] transition-all duration-300 focus-within:border-black/10 focus-within:bg-black/[0.04] dark:border-white/5 dark:bg-white/5 dark:focus-within:border-white/10 dark:focus-within:bg-white/10">
                         <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileSelect} />
@@ -440,8 +453,8 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                         className={cn(
                             'flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl transition-all',
                             input.trim() || selectedFile
-                                ? 'bg-black text-white shadow-lg active:scale-95 dark:bg-white dark:text-black'
-                                : 'bg-black/5 text-black/20 dark:bg-white/5 dark:text-white/20',
+                                ? 'bg-primary text-white shadow-lg active:scale-95 hover:bg-primary/90'
+                                : 'bg-muted text-muted-foreground/40 dark:bg-white/5 dark:text-white/20',
                         )}
                         onClick={send}
                         disabled={(!input.trim() && !selectedFile) || sending}

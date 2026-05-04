@@ -222,20 +222,20 @@ export default function CompareForms({ contract, docType, template, versions, in
 
                 {/* SIDE B: CHANGE TARGET */}
                 <div ref={ref2} onScroll={() => handleScroll('right')} className="scrollbar-thin relative flex-1 overflow-auto bg-slate-50">
-                    <div className="sticky top-0 z-[60] flex items-center justify-between border-b border-black bg-black px-8 py-5">
+                    <div className="sticky top-0 z-[60] flex items-center justify-between border-b border-black/5 bg-white/95 px-8 py-5 backdrop-blur-md">
                         <div className="flex items-center gap-4">
-                            <div className="h-10 w-[3px] rounded-full bg-white" />
+                            <div className="h-10 w-[3px] rounded-full bg-black" />
                             <div className="flex flex-col">
-                                <span className="text-[10px] font-bold text-white">Perbandingan Aktif (Baru)</span>
-                                <h3 className="text-sm font-bold text-white">VERSI {v2}</h3>
+                                <span className="text-[10px] font-bold text-black">Perbandingan Aktif (Baru)</span>
+                                <h3 className="text-sm font-bold text-black">VERSI {v2}</h3>
                             </div>
-                            <div className="mx-4 h-8 w-px bg-white/20" />
+                            <div className="mx-4 h-8 w-px bg-black/10" />
                             <div className="flex flex-col">
-                                <div className="flex items-center gap-2 text-[10px] font-bold text-white">
+                                <div className="flex items-center gap-2 text-[10px] font-bold text-black">
                                     <User size={12} />
                                     {meta2?.created_by || '-'}
                                 </div>
-                                <div className="mt-1 flex items-center gap-2 text-[10px] font-bold text-white">
+                                <div className="mt-1 flex items-center gap-2 text-[10px] font-bold text-black">
                                     <CalendarDays size={12} />
                                     {meta2?.created_at || '-'}
                                 </div>
@@ -244,7 +244,7 @@ export default function CompareForms({ contract, docType, template, versions, in
                         <select
                             value={v2}
                             onChange={(e) => setV2(Number(e.target.value))}
-                            className="cursor-pointer rounded-lg border-2 border-white bg-white px-4 py-2 text-xs font-bold text-black outline-none transition-all hover:bg-transparent hover:text-white"
+                            className="cursor-pointer rounded-lg border-2 border-black bg-white px-4 py-2 text-xs font-bold text-black outline-none transition-all hover:bg-black hover:text-white"
                         >
                             {sortedVersions.map((v) => <option key={v.id} value={v.version_no} className="text-black">Versi {v.version_no}</option>)}
                         </select>
@@ -259,7 +259,7 @@ export default function CompareForms({ contract, docType, template, versions, in
                                     readOnly={true}
                                     diffData={diffDataB}
                                     comparisonData={data1}
-                                    className="border border-indigo-100 shadow-[0_20px_50px_rgba(0,0,0,0.05)] ring-2 ring-indigo-50"
+                                    className="border border-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.05)]"
                                 />
                             )}
                         </div>

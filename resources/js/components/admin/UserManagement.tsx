@@ -19,24 +19,23 @@ interface UserManagementProps {
     filters: any;
 }
 
-// Consistent color palette from name hash
 const AVATAR_COLORS = [
-    'bg-violet-100 text-violet-700',
-    'bg-blue-100 text-blue-700',
-    'bg-emerald-100 text-emerald-700',
-    'bg-amber-100 text-amber-700',
-    'bg-rose-100 text-rose-700',
-    'bg-cyan-100 text-cyan-700',
-    'bg-indigo-100 text-indigo-700',
-    'bg-teal-100 text-teal-700',
+    'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400',
+    'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+    'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+    'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+    'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
+    'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
+    'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
+    'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
 ];
 
 const ROLE_COLORS: Record<string, string> = {
-    Admin: 'bg-violet-100 text-violet-700',
-    Manager: 'bg-blue-100 text-blue-700',
-    Staff: 'bg-slate-100 text-slate-600',
-    Reviewer: 'bg-amber-100 text-amber-700',
-    Approver: 'bg-emerald-100 text-emerald-700',
+    Admin: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-400 border border-violet-500/20',
+    Manager: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 border border-blue-500/20',
+    Staff: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-500/20',
+    Reviewer: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 border border-amber-500/20',
+    Approver: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 border border-emerald-500/20',
 };
 
 function avatarColor(name: string): string {
@@ -46,25 +45,25 @@ function avatarColor(name: string): string {
 }
 
 const UserCell = ({ name, email }: Readonly<{ name: string; email: string }>) => (
-    <div className="flex items-center gap-3">
-        <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold', avatarColor(name))}>
+    <div className="flex items-center gap-3 select-none">
+        <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold shadow-sm backdrop-blur-sm transition-all duration-200', avatarColor(name))}>
             {name.charAt(0).toUpperCase()}
         </div>
         <div className="flex min-w-0 flex-col">
-            <span className="text-foreground truncate text-sm leading-tight font-semibold">{name}</span>
-            <span className="text-muted-foreground/60 mt-0.5 truncate text-xs leading-none font-medium">{email}</span>
+            <span className="text-slate-900 dark:text-slate-100 truncate text-sm leading-tight font-bold tracking-wide">{name}</span>
+            <span className="text-muted-foreground/80 dark:text-slate-400 mt-0.5 truncate text-xs leading-none font-medium">{email}</span>
         </div>
     </div>
 );
 
 const IdentityCell = ({ username, phone }: Readonly<{ username: string; phone?: string }>) => (
-    <div className="flex flex-col gap-1">
-        <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold">
-            <Fingerprint size={12} className="opacity-40" />
+    <div className="flex flex-col gap-1 select-none">
+        <div className="text-muted-foreground dark:text-slate-300 flex items-center gap-1.5 text-xs font-bold tracking-wide">
+            <Fingerprint size={12} className="opacity-60 text-primary" />
             {username}
         </div>
         {phone && (
-            <div className="text-muted-foreground/60 flex items-center gap-1.5 text-xs font-medium tracking-tight">
+            <div className="text-muted-foreground/60 dark:text-slate-400 flex items-center gap-1.5 text-xs font-medium tracking-tight">
                 <Phone size={12} className="opacity-40" />
                 {phone}
             </div>
@@ -73,19 +72,19 @@ const IdentityCell = ({ username, phone }: Readonly<{ username: string; phone?: 
 );
 
 const PlacementCell = ({ departmentName, position }: Readonly<{ departmentName?: string; position?: string }>) => (
-    <div className="flex flex-col gap-1">
-        <span className="inline-block w-fit rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
+    <div className="flex flex-col gap-1 select-none">
+        <span className="inline-block w-fit rounded-xl bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1 text-xs font-bold text-indigo-700 dark:text-indigo-400 backdrop-blur-md border border-indigo-500/20 shadow-sm">
             {departmentName || 'Global'}
         </span>
-        <span className="text-muted-foreground/60 mt-0.5 text-xs font-medium">{position || 'Staf'}</span>
+        <span className="text-muted-foreground dark:text-slate-400/80 mt-0.5 text-xs font-medium pl-1">{position || 'Staf'}</span>
     </div>
 );
 
 const AuthorityCell = ({ role }: Readonly<{ role: string }>) => (
     <span
         className={cn(
-            'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold',
-            ROLE_COLORS[role] ?? 'bg-slate-100 text-slate-600',
+            'inline-flex items-center rounded-xl px-3 py-1 text-xs font-bold tracking-wide select-none backdrop-blur-sm shadow-sm',
+            ROLE_COLORS[role] ?? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-500/20',
         )}
     >
         {role}
@@ -93,9 +92,11 @@ const AuthorityCell = ({ role }: Readonly<{ role: string }>) => (
 );
 
 const AccessCell = ({ isActive }: Readonly<{ isActive: boolean }>) => (
-    <div className="flex items-center gap-2">
-        <div className={cn('h-2 w-2 shrink-0 rounded-full', isActive ? 'bg-emerald-500' : 'bg-rose-400')} />
-        <span className={cn('text-xs font-semibold', isActive ? 'text-emerald-600' : 'text-rose-500')}>{isActive ? 'Aktif' : 'Nonaktif'}</span>
+    <div className="flex items-center gap-2 select-none">
+        <div className={cn('h-2 w-2 shrink-0 rounded-full', isActive ? 'bg-emerald-500 animate-pulse' : 'bg-rose-400')} />
+        <span className={cn('text-xs font-bold tracking-wide', isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400')}>
+            {isActive ? 'Aktif' : 'Nonaktif'}
+        </span>
     </div>
 );
 
@@ -241,7 +242,7 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                             type="button"
                             variant="ghost"
                             onClick={() => setIsConfirmOpen(true)}
-                            className="h-9 rounded-xl border border-rose-500/10 px-4 text-xs font-semibold text-rose-500 transition-all hover:bg-rose-500 hover:text-white active:scale-95"
+                            className="h-10 rounded-xl border border-rose-500/20 px-4 text-xs font-bold text-rose-500 transition-all hover:bg-rose-500 dark:hover:bg-rose-500/20 hover:text-white active:scale-95 select-none duration-200"
                         >
                             <Trash2 size={15} className="mr-2" /> Hapus
                         </Button>
@@ -264,7 +265,7 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                     description={`Apakah Anda yakin ingin menghapus user ${editingUser?.name}? Seluruh data akses dan riwayat aktivitas user ini akan dicabut.`}
                     confirmText="Hapus User"
                 />
-                <div className="grid grid-cols-1 gap-8 md:grid-cols-12">
+                <div className="grid grid-cols-1 gap-8 md:grid-cols-12 select-none animate-in fade-in duration-200">
                     {/* Main Column: 8 Columns */}
                     <div className="space-y-8 md:col-span-8">
                         {/* Section: Identitas & Otentikasi */}
@@ -359,33 +360,33 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                             />
                         </FormSection>
 
-                        <div className="border-border bg-muted/30 group relative overflow-hidden rounded-2xl border p-6">
-                            <div className="absolute top-0 right-0 p-4 opacity-10 transition-opacity group-hover:opacity-20">
+                        <div className="border-border/80 dark:border-slate-800/80 bg-muted/20 dark:bg-slate-900/40 backdrop-blur-sm group relative overflow-hidden rounded-2xl border p-6 select-none shadow-sm transition-all duration-200">
+                            <div className="absolute top-0 right-0 p-4 opacity-5 transition-opacity duration-200 group-hover:opacity-10">
                                 <UserCircle size={80} strokeWidth={1} />
                             </div>
 
                             <div className="relative z-10 mb-4 flex items-center gap-3">
-                                <span className="text-foreground text-xs font-bold tracking-wide">Preview Profil</span>
+                                <span className="text-slate-900 dark:text-slate-100 text-xs font-bold tracking-wider uppercase">Preview Profil</span>
                             </div>
 
-                            <div className="border-border relative z-10 flex flex-col items-center border-y border-dashed py-4">
+                            <div className="border-border/60 dark:border-slate-800/60 relative z-10 flex flex-col items-center border-y border-dashed py-4 select-none">
                                 <div className="bg-primary mb-4 flex h-16 w-16 items-center justify-center rounded-xl text-2xl font-bold text-white shadow-md">
                                     {form.data.name ? form.data.name.charAt(0).toUpperCase() : '?'}
                                 </div>
-                                <span className="text-foreground px-4 text-center text-sm leading-tight font-semibold">
+                                <span className="text-slate-900 dark:text-slate-100 px-4 text-center text-sm leading-tight font-bold tracking-wide">
                                     {form.data.name || 'Nama Belum Diisi'}
                                 </span>
-                                <span className="text-muted-foreground/60 mt-1 px-4 text-center text-xs font-medium tracking-wide uppercase">
+                                <span className="text-muted-foreground/80 dark:text-slate-400 mt-1 px-4 text-center text-xs font-bold tracking-wider uppercase">
                                     {form.data.position || 'Jabatan Belum Diatur'}
                                 </span>
 
-                                <div className="border-border mt-4 flex w-full flex-col items-center gap-2 border-t pt-4">
-                                    <div className="text-muted-foreground flex items-center gap-2 text-xs font-medium">
-                                        <Mail size={13} />
+                                <div className="border-border/40 dark:border-slate-800/40 mt-4 flex w-full flex-col items-center gap-2 border-t pt-4">
+                                    <div className="text-muted-foreground dark:text-slate-300 flex items-center gap-2 text-xs font-medium">
+                                        <Mail size={13} className="text-primary" />
                                         {form.data.email || 'Email Belum Set'}
                                     </div>
-                                    <div className="text-muted-foreground flex items-center gap-2 text-xs font-semibold">
-                                        <ShieldAlert size={13} />
+                                    <div className="text-muted-foreground dark:text-slate-300 flex items-center gap-2 text-xs font-bold">
+                                        <ShieldAlert size={13} className="text-primary" />
                                         {form.data.role}
                                     </div>
                                 </div>
@@ -398,7 +399,7 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
     }
 
     return (
-        <div className="border-border bg-card m-5 rounded-2xl border p-5 shadow-sm">
+        <div className="bg-card/40 dark:bg-slate-900/20 backdrop-blur-sm border border-border/60 dark:border-slate-800/60 m-5 rounded-2xl p-6 shadow-sm animate-in fade-in duration-200 select-none">
             <TableMasterData
                 title="Database Pengguna"
                 columns={columns}
@@ -417,9 +418,9 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                         <Button
                             variant="white"
                             onClick={openCreate}
-                            className="border-border/40 bg-card text-foreground hover:bg-muted/60 hover:border-border/60 h-10 gap-2 rounded-xl border px-6 text-xs font-bold shadow-sm transition-all duration-200 hover:shadow-md active:scale-95"
+                            className="h-10 px-5 gap-2 rounded-xl text-xs font-bold tracking-wide transition-all duration-200 border border-border bg-card dark:bg-slate-900/60 text-foreground shadow-sm hover:bg-muted/60 dark:hover:bg-slate-800/60 hover:border-border hover:shadow-md select-none"
                         >
-                            <Plus className="h-4 w-4" /> Tambah User
+                            <Plus className="h-4 w-4 text-primary" /> Tambah User
                         </Button>
                     )
                 }

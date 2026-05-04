@@ -216,16 +216,16 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
                         </button>
 
                         {showMoreActions && (
-                            <div className="animate-in fade-in zoom-in-95 dark:bg-sidebar absolute top-full right-0 z-[999] mt-2 w-48 origin-top-right rounded-xl border border-black/10 bg-white p-1 shadow-2xl duration-200 dark:border-white/10">
+                            <div className="animate-in fade-in zoom-in-95 absolute top-full right-0 z-[999] mt-2 w-64 origin-top-right rounded-2xl border border-black/10 bg-white p-1.5 shadow-2xl backdrop-blur-xl duration-200 dark:border-white/10 dark:bg-[#1e293b]">
                                 <button
                                     onClick={() => {
                                         loadVersions();
                                         setShowMoreActions(false);
                                     }}
-                                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-xs font-bold tracking-widest text-black uppercase transition-all hover:bg-black/5 dark:text-white dark:hover:bg-white/5"
+                                    className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-xs font-semibold text-[#0f172a] transition-all hover:bg-black/5 dark:text-white dark:hover:bg-white/5"
                                 >
-                                    <RefreshCw size={14} className="text-black dark:text-white" />
-                                    REFRESH LIST
+                                    <RefreshCw size={16} className="opacity-40" />
+                                    Refresh List
                                 </button>
 
                                 {versions.length > 1 && (
@@ -234,10 +234,10 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
                                             handleCompare();
                                             setShowMoreActions(false);
                                         }}
-                                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-xs font-bold tracking-widest text-black uppercase transition-all hover:bg-black/5 dark:text-white dark:hover:bg-white/5"
+                                        className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-xs font-semibold text-[#0f172a] transition-all hover:bg-black/5 dark:text-white dark:hover:bg-white/5"
                                     >
-                                        <Diff size={14} className="text-black dark:text-white" />
-                                        COMPARE VERSIONS
+                                        <Diff size={16} className="opacity-40" />
+                                        Bandingkan Versi
                                     </button>
                                 )}
                             </div>

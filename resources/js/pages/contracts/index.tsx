@@ -606,9 +606,9 @@ const ContractDetailView = ({
             <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[1fr_400px]">
                 <div className="flex flex-col gap-6">
                     <div className="dark:bg-sidebar overflow-hidden rounded-xl bg-white shadow-sm">
-                        <div className="bg-primary flex h-14 items-center justify-between px-4 dark:bg-white">
-                            <div className="flex items-center gap-2 text-[11px] font-bold tracking-widest text-white uppercase dark:text-black">
-                                <FileText size={14} className="text-white/40 dark:text-black/40" /> Detail Dokumen & Alur Kerja
+                        <div className="bg-primary flex h-12 items-center justify-between px-4 dark:bg-white border-b border-black/10 dark:border-white/10">
+                            <div className="flex items-center gap-2 font-semibold text-white text-sm dark:text-black">
+                                <FileText size={16} className="text-white/70 dark:text-black/70" /> Detail Dokumen & Alur Kerja
                             </div>
                             <div className="flex items-center gap-2">
                                 <DropdownMenu>
@@ -640,11 +640,11 @@ const ContractDetailView = ({
                                 </DropdownMenu>
                             </div>
                         </div>
-                        <div className="flex flex-wrap gap-2 border-b border-black/5 bg-black/[0.01] px-4 py-2 dark:border-white/5 dark:bg-white/[0.01]">
+                        <div className="flex flex-wrap gap-1.5 border-b border-border bg-muted/30 px-4 py-2 dark:bg-black/10">
                             {[
-                                { id: 'form_template', label: 'F1' },
-                                { id: 'f2', label: 'F2' },
-                                { id: 'agreement', label: 'Agreement' },
+                                { id: 'form_template', label: 'F1 (Permohonan)' },
+                                { id: 'f2', label: 'F2 (Ringkasan)' },
+                                { id: 'agreement', label: 'Draft Agreement' },
                                 { id: 'attachments', label: 'Lampiran' },
                                 { id: 'timeline', label: 'Alur Approval' },
                                 { id: 'chat', label: 'Chat' },
@@ -654,14 +654,13 @@ const ContractDetailView = ({
                                     key={tab.id}
                                     onClick={() => setDetailTab(tab.id as any)}
                                     className={cn(
-                                        'relative px-3 py-2 text-[10px] font-bold tracking-tight uppercase transition-all',
+                                        'px-3 py-1.5 text-xs font-bold rounded-lg transition-all',
                                         detailTab === tab.id
-                                            ? 'text-black dark:text-white'
-                                            : 'text-black/40 hover:text-black/60 dark:text-white/40 dark:hover:text-white/60',
+                                            ? 'bg-primary text-white shadow dark:bg-white dark:text-black'
+                                            : 'text-muted-foreground hover:bg-black/5 hover:text-foreground dark:hover:bg-white/5',
                                     )}
                                 >
                                     {tab.label}
-                                    {detailTab === tab.id && <div className="absolute right-0 bottom-0 left-0 h-0.5 bg-black dark:bg-white" />}
                                 </button>
                             ))}
                         </div>
@@ -697,7 +696,7 @@ const ContractDetailView = ({
                         </div>
                     </div>
                 </div>
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-4 sticky top-6 self-start">
                     {canApprove && (
                         <div className="flex flex-col gap-4 overflow-hidden rounded-2xl border border-black/10 bg-white p-6 shadow-xl dark:border-white/10 dark:bg-black">
                             <div className="flex items-center gap-3">
@@ -1035,203 +1034,204 @@ function ContractPage({
             <Head title={view} />
             <div className="bg-background dark:bg-background/50 flex min-h-0 flex-1 flex-col">
                 {selected ? (
-                    <ContractDetailView
-                        contract={selected}
-                        meId={meId}
-                        types={types}
-                        submissionTypes={submissionTypes}
-                        vendors={vendors}
-                        formTemplates={formTemplates}
-                        canUpdate={!!canUpdate}
-                        onClose={closeDetail}
-                        onUpdate={updateContract}
-                        showToast={showToast}
-                        setSendOpen={setSendOpen}
-                        setDeleteOpen={setDeleteOpen}
-                        setPreviewTitle={setPreviewTitle}
-                        setPreviewUrl={setPreviewUrl}
-                        setPreviewHasFile={setPreviewHasFile}
-                        setPreviewOpen={setPreviewOpen}
-                    />
+                    <div className="flex-1 w-full flex flex-col animate-in fade-in slide-in-from-bottom-3 duration-300 ease-in-out">
+                        <ContractDetailView
+                            contract={selected}
+                            meId={meId}
+                            types={types}
+                            submissionTypes={submissionTypes}
+                            vendors={vendors}
+                            formTemplates={formTemplates}
+                            canUpdate={!!canUpdate}
+                            onClose={closeDetail}
+                            onUpdate={updateContract}
+                            showToast={showToast}
+                            setSendOpen={setSendOpen}
+                            setDeleteOpen={setDeleteOpen}
+                            setPreviewTitle={setPreviewTitle}
+                            setPreviewUrl={setPreviewUrl}
+                            setPreviewHasFile={setPreviewHasFile}
+                            setPreviewOpen={setPreviewOpen}
+                        />
+                    </div>
                 ) : (
-                    <div className="flex flex-col gap-4">
-                        {view === 'dashboard' && (
-                            <div className="p-5">
-                                <DashboardMetrics metrics={metrics} />
-                            </div>
-                        )}
-                        {view === 'profile' && <ProfileView meUser={meUser} showToast={showToast} />}
-                        {view !== 'profile' && view !== 'dashboard' && (
-                            <div className="border-sidebar-border bg-sidebar flex min-h-0 flex-1 flex-col gap-0 overflow-hidden">
-                                {/* Unified Toolbar — Identical for both modes */}
-                                <div className="border-sidebar-border bg-background sticky top-0 z-20 flex items-center gap-6 border-b px-5 py-4">
-                                    <SearchInput
-                                        containerClassName="max-w-sm flex-1"
-                                        placeholder="Cari kontrak..."
-                                        value={search}
-                                        onChange={(e) => setSearch(e.target.value)}
-                                    />
+                    <div className="flex-1 w-full flex flex-col animate-in fade-in slide-in-from-top-3 duration-300 ease-in-out">
+                        <div className="flex flex-col gap-4">
+                            {view === 'dashboard' && (
+                                <div className="p-5">
+                                    <DashboardMetrics metrics={metrics} />
+                                </div>
+                            )}
+                            {view === 'profile' && <ProfileView meUser={meUser} showToast={showToast} />}
+                            {view !== 'profile' && view !== 'dashboard' && (
+                                <div className="border-sidebar-border bg-sidebar flex min-h-0 flex-1 flex-col gap-0 overflow-hidden">
+                                    {/* Unified Toolbar — Identical for both modes */}
+                                    <div className="border-sidebar-border bg-background sticky top-0 z-20 flex items-center gap-6 border-b px-5 py-4">
+                                        <SearchInput
+                                            containerClassName="max-w-sm flex-1"
+                                            placeholder="Cari kontrak..."
+                                            value={search}
+                                            onChange={(e) => setSearch(e.target.value)}
+                                        />
 
-                                    <div className="ml-auto flex items-center gap-2">
-                                        <LayoutToggle value={layout as LayoutType} onChange={(val) => setLayout(val)} />
+                                        <div className="ml-auto flex items-center gap-2">
+                                            <LayoutToggle value={layout as LayoutType} onChange={(val) => setLayout(val)} />
 
-                                        <Button
-                                            variant="outline"
-                                            onClick={() => setFilterOpen(true)}
-                                            className={cn(
-                                                'relative h-10 px-4 transition-all active:scale-95',
-                                                activeFiltersCount > 0 && 'border-[var(--primary)] bg-[var(--primary)] text-white',
-                                            )}
-                                        >
-                                            <Filter size={14} />
-                                            Filter
-                                            {activeFiltersCount > 0 && (
-                                                <span
-                                                    className={cn(
-                                                        'ml-1 flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[9px] font-bold',
-                                                        filters.status?.length || filters.contract_type_id?.length
-                                                            ? 'bg-white text-[var(--primary)]'
-                                                            : 'bg-[var(--primary)] text-white',
-                                                    )}
-                                                >
-                                                    {activeFiltersCount}
-                                                </span>
-                                            )}
-                                        </Button>
-                                        <Button variant="primary" onClick={() => setCreateOpen(true)} className="h-10 px-6 active:scale-95">
-                                            <PlusCircle size={16} /> Kontrak Baru
-                                        </Button>
+                                            <Button
+                                                variant="outline"
+                                                onClick={() => setFilterOpen(true)}
+                                                className={cn(
+                                                    'relative h-10 px-4 transition-all active:scale-95',
+                                                    activeFiltersCount > 0 && 'border-[var(--primary)] bg-[var(--primary)] text-white',
+                                                )}
+                                            >
+                                                <Filter size={14} />
+                                                Filter
+                                                {activeFiltersCount > 0 && (
+                                                    <span
+                                                        className={cn(
+                                                            'ml-1 flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[9px] font-bold',
+                                                            filters.status?.length || filters.contract_type_id?.length
+                                                                ? 'bg-white text-[var(--primary)]'
+                                                                : 'bg-[var(--primary)] text-white',
+                                                        )}
+                                                    >
+                                                        {activeFiltersCount}
+                                                    </span>
+                                                )}
+                                            </Button>
+                                            <Button variant="primary" onClick={() => setCreateOpen(true)} className="h-10 px-6 active:scale-95">
+                                                <PlusCircle size={16} /> Kontrak Baru
+                                            </Button>
+                                        </div>
+                                    </div>
+
+                                    <div className={cn("flex-1 overflow-auto", layout === 'grid' && "p-4")}>
+                                        {layout === 'table' ? (
+                                            <TableContract
+                                                columns={columns}
+                                                data={contractsPaged.data}
+                                                loading={processing}
+                                                onRowClick={openDetail}
+                                                onSelectionChange={setSelectedRows}
+                                                selectedRows={selectedRows}
+                                                bulkActions={renderBulkActions(selectedRows)}
+                                                pagination={{
+                                                    currentPage: contractsPaged.current_page,
+                                                    lastPage: contractsPaged.last_page,
+                                                    total: contractsPaged.total,
+                                                    onPageChange: (page: number) =>
+                                                        router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true }),
+                                                }}
+                                            />
+                                        ) : (
+                                            <div className="flex flex-col gap-8">
+                                                <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                                                    {contractsPaged.data.map((c) => (
+                                                        <button
+                                                            key={c.id}
+                                                            onClick={() => openDetail(c)}
+                                                            className="group border-sidebar-border bg-sidebar hover:border-sidebar-primary hover:shadow-sidebar-primary/10 dark:hover:bg-sidebar-accent/10 relative flex cursor-pointer flex-col gap-4 rounded-xl border p-5 text-left transition-all hover:shadow-xl focus:ring-2 focus:ring-[var(--primary)] focus:outline-none"
+                                                        >
+                                                            <div className="flex items-start justify-between gap-3">
+                                                                <div className="flex min-w-0 flex-col gap-1">
+                                                                    <span className="group-hover:text-sidebar-primary text-xs font-medium text-black/40 transition-all dark:text-white/40">
+                                                                        {c.contract_no || 'No Req'}
+                                                                    </span>
+                                                                    <h3 className="group-hover:text-sidebar-primary line-clamp-2 text-sm leading-tight font-semibold text-black transition-colors dark:text-white">
+                                                                        {c.title}
+                                                                    </h3>
+                                                                    <span className="mt-0.5 text-xs font-medium text-black/30 dark:text-white/30">
+                                                                        {c.contract_type}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="flex-shrink-0 origin-top-right scale-90">
+                                                                    <StatusBadge status={c.status} />
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="border-sidebar-border/50 bg-sidebar-accent/30 dark:bg-sidebar-accent/10 group-hover:border-sidebar-primary/20 flex flex-col gap-3 rounded-lg border p-3 transition-all">
+                                                                <div className="flex items-center justify-between">
+                                                                    <span className="text-xs font-medium text-black/40 dark:text-white/40">
+                                                                        Departemen
+                                                                    </span>
+                                                                    <span className="truncate text-xs font-semibold text-black dark:text-white">
+                                                                        {c.initiator?.department_name || 'Umum'}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="flex items-center justify-between pt-1 text-xs font-medium">
+                                                                    <span className="text-black/40 dark:text-white/40">Progress</span>
+                                                                    <span className="font-semibold text-black dark:text-white">
+                                                                        {c.progress.done}/{c.progress.total}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="border-sidebar-border/50 mt-auto flex items-center justify-end border-t pt-4">
+                                                                <div className="origin-right scale-75">
+                                                                    <SLACountdown deadline={c.sla_deadline ?? null} status={c.status} />
+                                                                </div>
+                                                            </div>
+                                                        </button>
+                                                    ))}
+                                                </div>
+
+                                                <div className="mt-8 mb-10 flex w-full items-center justify-between">
+                                                    <div className="flex items-center gap-4 rounded-xl border border-[#0f2a4a]/10 bg-[#0f2a4a]/[0.03] px-6 py-2 shadow-sm transition-all duration-500 dark:border-white/10 dark:bg-white/[0.03]">
+                                                        <div className="flex items-center gap-4 text-xs font-semibold whitespace-nowrap text-slate-700 dark:text-slate-300">
+                                                            <span className="hidden sm:inline">Menampilkan</span>
+                                                            <span>
+                                                                {contractsPaged.from} - {contractsPaged.to} / {contractsPaged.total}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-1 shadow-sm transition-all duration-500 dark:border-white/10 dark:bg-white/[0.03]">
+                                                        <button
+                                                            disabled={contractsPaged.current_page === 1}
+                                                            onClick={() =>
+                                                                router.get(
+                                                                    globalThis.location.pathname,
+                                                                    { ...filters, page: contractsPaged.current_page - 1 },
+                                                                    { preserveState: true },
+                                                                )
+                                                            }
+                                                            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 transition-all hover:bg-slate-100 disabled:opacity-20 dark:text-white/60 dark:hover:bg-white/10"
+                                                        >
+                                                            <ChevronLeft className="h-4 w-4" />
+                                                        </button>
+
+                                                        <div className="mx-1 flex items-center gap-1">
+                                                            <div className="flex h-8 min-w-[32px] items-center justify-center rounded-lg bg-[#0f2a4a] px-3 text-xs font-bold text-white shadow-sm">
+                                                                {contractsPaged.current_page}
+                                                            </div>
+                                                            <span className="mx-1 text-xs font-medium text-slate-400">/</span>
+                                                            <div className="text-xs font-bold text-slate-600 dark:text-slate-400">
+                                                                {contractsPaged.last_page}
+                                                            </div>
+                                                        </div>
+
+                                                        <button
+                                                            disabled={contractsPaged.current_page === contractsPaged.last_page}
+                                                            onClick={() =>
+                                                                router.get(
+                                                                    globalThis.location.pathname,
+                                                                    { ...filters, page: contractsPaged.current_page + 1 },
+                                                                    { preserveState: true },
+                                                                )
+                                                            }
+                                                            className="flex h-8 w-8 items-center justify-center rounded-lg text-[#0f2a4a]/60 transition-all hover:bg-[#0f2a4a]/5 disabled:opacity-20 dark:text-white/60 dark:hover:bg-white/10"
+                                                        >
+                                                            <ChevronRight className="h-4 w-4" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
-
-                                <div className={cn("flex-1 overflow-auto", layout === 'grid' && "p-4")}>
-                                    {layout === 'table' ? (
-                                        <TableContract
-                                            columns={columns}
-                                            data={contractsPaged.data}
-                                            loading={processing}
-                                            onRowClick={openDetail}
-                                            onSelectionChange={setSelectedRows}
-                                            selectedRows={selectedRows}
-                                            bulkActions={renderBulkActions(selectedRows)}
-                                            pagination={{
-                                                currentPage: contractsPaged.current_page,
-                                                lastPage: contractsPaged.last_page,
-                                                total: contractsPaged.total,
-                                                onPageChange: (page: number) =>
-                                                    router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true }),
-                                            }}
-                                        />
-                                    ) : (
-                                        <div className="flex flex-col gap-8">
-                                            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                                                {contractsPaged.data.map((c) => (
-                                                    <button
-                                                        key={c.id}
-                                                        onClick={() => openDetail(c)}
-                                                        className="group border-sidebar-border bg-sidebar hover:border-sidebar-primary hover:shadow-sidebar-primary/10 dark:hover:bg-sidebar-accent/10 relative flex cursor-pointer flex-col gap-4 rounded-xl border p-5 text-left transition-all hover:shadow-xl focus:ring-2 focus:ring-[var(--primary)] focus:outline-none"
-                                                    >
-                                                        <div className="flex items-start justify-between gap-3">
-                                                            <div className="flex min-w-0 flex-col gap-1">
-                                                                <span className="group-hover:text-sidebar-primary text-xs font-medium text-black/40 transition-all dark:text-white/40">
-                                                                    {c.contract_no || 'No Req'}
-                                                                </span>
-                                                                <h3 className="group-hover:text-sidebar-primary line-clamp-2 text-sm leading-tight font-semibold text-black transition-colors dark:text-white">
-                                                                    {c.title}
-                                                                </h3>
-                                                                <span className="mt-0.5 text-xs font-medium text-black/30 dark:text-white/30">
-                                                                    {c.contract_type}
-                                                                </span>
-                                                            </div>
-                                                            <div className="flex-shrink-0 origin-top-right scale-90">
-                                                                <StatusBadge status={c.status} />
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="border-sidebar-border/50 bg-sidebar-accent/30 dark:bg-sidebar-accent/10 group-hover:border-sidebar-primary/20 flex flex-col gap-3 rounded-lg border p-3 transition-all">
-                                                            <div className="flex items-center justify-between">
-                                                                <span className="text-xs font-medium text-black/40 dark:text-white/40">
-                                                                    Departemen
-                                                                </span>
-                                                                <span className="truncate text-xs font-semibold text-black dark:text-white">
-                                                                    {c.initiator?.department_name || 'Umum'}
-                                                                </span>
-                                                            </div>
-                                                            <div className="flex items-center justify-between pt-1 text-xs font-medium">
-                                                                <span className="text-black/40 dark:text-white/40">Progress</span>
-                                                                <span className="font-semibold text-black dark:text-white">
-                                                                    {c.progress.done}/{c.progress.total}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="border-sidebar-border/50 mt-auto flex items-center justify-end border-t pt-4">
-                                                            <div className="origin-right scale-75">
-                                                                <SLACountdown deadline={c.sla_deadline ?? null} status={c.status} />
-                                                            </div>
-                                                        </div>
-                                                    </button>
-                                                ))}
-                                            </div>
-
-                                            {/* Grid Pagination Footer — Standardizing with DataTable logic */}
-                                            <div className="mt-8 mb-10 flex w-full items-center justify-between">
-                                                {/* Left Pill: Info */}
-                                                <div className="flex items-center gap-4 rounded-xl border border-[#0f2a4a]/10 bg-[#0f2a4a]/[0.03] px-6 py-2 shadow-sm transition-all duration-500 dark:border-white/10 dark:bg-white/[0.03]">
-                                                    <div className="flex items-center gap-4 text-xs font-semibold whitespace-nowrap text-slate-700 dark:text-slate-300">
-                                                        <span className="hidden sm:inline">Menampilkan</span>
-                                                        <span>
-                                                            {contractsPaged.from} - {contractsPaged.to} / {contractsPaged.total}
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                {/* Right Pill: Navigation */}
-                                                <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-1 shadow-sm transition-all duration-500 dark:border-white/10 dark:bg-white/[0.03]">
-                                                    <button
-                                                        disabled={contractsPaged.current_page === 1}
-                                                        onClick={() =>
-                                                            router.get(
-                                                                globalThis.location.pathname,
-                                                                { ...filters, page: contractsPaged.current_page - 1 },
-                                                                { preserveState: true },
-                                                            )
-                                                        }
-                                                        className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 transition-all hover:bg-slate-100 disabled:opacity-20 dark:text-white/60 dark:hover:bg-white/10"
-                                                    >
-                                                        <ChevronLeft className="h-4 w-4" />
-                                                    </button>
-
-                                                    <div className="mx-1 flex items-center gap-1">
-                                                        <div className="flex h-8 min-w-[32px] items-center justify-center rounded-lg bg-[#0f2a4a] px-3 text-xs font-bold text-white shadow-sm">
-                                                            {contractsPaged.current_page}
-                                                        </div>
-                                                        <span className="mx-1 text-xs font-medium text-slate-400">/</span>
-                                                        <div className="text-xs font-bold text-slate-600 dark:text-slate-400">
-                                                            {contractsPaged.last_page}
-                                                        </div>
-                                                    </div>
-
-                                                    <button
-                                                        disabled={contractsPaged.current_page === contractsPaged.last_page}
-                                                        onClick={() =>
-                                                            router.get(
-                                                                globalThis.location.pathname,
-                                                                { ...filters, page: contractsPaged.current_page + 1 },
-                                                                { preserveState: true },
-                                                            )
-                                                        }
-                                                        className="flex h-8 w-8 items-center justify-center rounded-lg text-[#0f2a4a]/60 transition-all hover:bg-[#0f2a4a]/5 disabled:opacity-20 dark:text-white/60 dark:hover:bg-white/10"
-                                                    >
-                                                        <ChevronRight className="h-4 w-4" />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
                 )}
             </div>

@@ -121,6 +121,10 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/contracts/bulk-approve', [ContractController::class, 'bulkApprove']);
     });
 
+    // Version Comparison for any authorized user
+    Route::get('/admin/contracts/{id}/form-submissions/{type}/compare', [ContractController::class, 'compareFormVersions'])->name('contracts.form-submissions.compare');
+    Route::get('/admin/contracts/{id}/agreement/compare', [ContractController::class, 'compareAgreementVersions'])->name('contracts.agreement.compare');
+
     Route::middleware(['admin'])->prefix('admin')->group(function () {
         Route::get('/contracts', [ContractController::class, 'contractsView'])->defaults('view', 'contracts')->name('admin.contracts.index');
         Route::get('/audit', [ContractController::class, 'contractsView'])->defaults('view', 'audit')->name('admin.audit');
@@ -260,8 +264,6 @@ Route::middleware(['auth'])->group(function () {
 
         // Contract Form Submission Exports (using admin prefix for consistency/reliability)
         Route::post('/contracts/{id}/form-submissions/{type}/export-queue', [ContractController::class, 'exportFormSubmissionPdfQueue'])->name('admin.contracts.export-queue');
-        Route::get('/contracts/{id}/form-submissions/{type}/compare', [ContractController::class, 'compareFormVersions'])->name('admin.contracts.form-submissions.compare');
-        Route::get('/contracts/{id}/agreement/compare', [ContractController::class, 'compareAgreementVersions'])->name('admin.contracts.agreement.compare');
 
         Route::delete('/form-templates/{template}', [FormTemplateController::class, 'destroy'])->name('admin.form-templates.destroy');
         Route::post('/form-templates/bulk-delete', [FormTemplateController::class, 'bulkDestroy'])->name('admin.form-templates.bulk-destroy');

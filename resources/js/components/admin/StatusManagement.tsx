@@ -16,18 +16,18 @@ interface StatusManagementProps {
 }
 
 const StatusLabelCell = ({ row }: { readonly row: any }) => (
-    <div className="group flex flex-col">
-        <span className="text-foreground inline-block text-sm font-semibold transition-transform group-hover:translate-x-1">
+    <div className="group flex flex-col select-none">
+        <span className="text-slate-900 dark:text-slate-200 inline-block text-sm font-semibold transition-transform group-hover:translate-x-1 duration-200">
             {row.label}
         </span>
-        <span className="text-muted-foreground mt-0.5 font-mono text-xs font-medium">{row.code}</span>
+        <span className="text-muted-foreground dark:text-slate-400 mt-0.5 font-mono text-xs font-medium">{row.code}</span>
     </div>
 );
 
 const VisualPreviewCell = ({ row }: { readonly row: any }) => (
     <div className="flex items-center">
         <div
-            className="rounded-full border px-3 py-1 text-xs font-semibold shadow-sm"
+            className="rounded-full border px-3 py-1 text-xs font-semibold shadow-sm transition-all duration-200 hover:scale-105"
             style={{ color: row.color, backgroundColor: row.bg_color || 'transparent', borderColor: row.color }}
         >
             {row.label}
@@ -48,10 +48,10 @@ const ConfigBadge = ({
 }) => (
     <div
         className={cn(
-            'flex items-center gap-2 rounded-md border px-2 py-1 text-xs font-medium transition-all',
+            'flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-medium transition-all duration-200 select-none backdrop-blur-sm shadow-sm',
             active
-                ? 'bg-primary/10 border-primary/20 text-primary'
-                : 'text-muted-foreground border-transparent bg-transparent',
+                ? 'bg-primary/10 border-primary/30 text-primary dark:text-primary'
+                : 'text-muted-foreground border-border/40 dark:border-slate-800/40 bg-muted/20 dark:bg-slate-800/20 opacity-70',
         )}
     >
         {active ? <ActiveIcon size={12} /> : <InactiveIcon size={12} />}
@@ -95,7 +95,7 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                 accessorKey: 'display_mode',
                 className: 'hidden md:table-cell',
                 cell: (row) => (
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 select-none">
                         <ConfigBadge active={row.display_mode === 'pdf'} label="PDF" activeIcon={FileText} inactiveIcon={LayoutTemplate} />
                         <ConfigBadge active={row.allow_info_edit} label="Edit" activeIcon={Unlock} inactiveIcon={Lock} />
                         <ConfigBadge active={row.allow_reference} label="Ref" activeIcon={Link2} inactiveIcon={Link2} />
@@ -107,20 +107,20 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                 accessorKey: 'is_active',
                 className: 'text-right',
                 cell: (row) => (
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="flex items-center justify-end gap-2 select-none">
                         <div
                             className={cn(
-                                'h-1.5 w-1.5 rounded-full',
-                                row.is_active ? 'animate-pulse bg-emerald-500' : 'bg-muted',
+                                'h-2 w-2 rounded-full',
+                                row.is_active ? 'animate-pulse bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700',
                             )}
                         />
                         <span
                             className={cn(
-                                'text-xs font-semibold',
-                                row.is_active ? 'text-foreground' : 'text-muted-foreground',
+                                'text-xs font-bold tracking-wide select-none transition-colors duration-200',
+                                row.is_active ? 'text-slate-900 dark:text-slate-100' : 'text-slate-400 dark:text-slate-600',
                             )}
                         >
-                            {row.is_active ? 'Online' : 'Offline'}
+                            {row.is_active ? 'Aktif' : 'Non-aktif'}
                         </span>
                     </div>
                 ),
@@ -184,7 +184,7 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                 isDirty={form.isDirty}
                 isEdit={isEdit}
             >
-                <div className="grid grid-cols-1 gap-10 lg:grid-cols-12">
+                <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 animate-in fade-in duration-200 select-none">
                     <div className="space-y-12 lg:col-span-8">
                         {/* Section 1: Dasar */}
                         <FormSection title="Arsitektur Identitas" subtitle="Parameter dasar yang mendefinisikan status dalam database">
@@ -216,44 +216,44 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                         {/* Section 2: Visuals */}
                         <FormSection title="Skema Warna & Tipografi" subtitle="Pengaturan visual untuk badge dan audit trail">
                             <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-                                <div className="space-y-4">
-                                    <label className="text-muted-foreground ml-1 text-xs font-semibold">
+                                <div className="space-y-3">
+                                    <label className="text-muted-foreground ml-1 text-xs font-bold tracking-wide uppercase">
                                         Warna Teks
                                     </label>
-                                    <div className="border-border bg-muted/20 flex items-center gap-3 rounded-xl border p-3">
+                                    <div className="border-border/80 dark:border-slate-800/80 bg-muted/20 dark:bg-slate-900/40 backdrop-blur-sm flex items-center gap-3 rounded-2xl border p-3.5 transition-all duration-200">
                                         <input
                                             type="color"
                                             value={form.data.color}
                                             onChange={(e) => form.setData('color', e.target.value)}
                                             className="h-8 w-12 cursor-pointer rounded-lg border-none bg-transparent"
                                         />
-                                        <span className="text-foreground font-mono text-sm font-semibold uppercase">
+                                        <span className="text-slate-900 dark:text-slate-100 font-mono text-sm font-bold tracking-wider uppercase">
                                             {form.data.color}
                                         </span>
                                     </div>
                                 </div>
-                                <div className="space-y-4">
-                                    <label className="text-muted-foreground ml-1 text-xs font-semibold">
+                                <div className="space-y-3">
+                                    <label className="text-muted-foreground ml-1 text-xs font-bold tracking-wide uppercase">
                                         Warna Latar
                                     </label>
-                                    <div className="border-border bg-muted/20 flex items-center gap-3 rounded-xl border p-3">
+                                    <div className="border-border/80 dark:border-slate-800/80 bg-muted/20 dark:bg-slate-900/40 backdrop-blur-sm flex items-center gap-3 rounded-2xl border p-3.5 transition-all duration-200">
                                         <input
                                             type="color"
                                             value={form.data.bg_color}
                                             onChange={(e) => form.setData('bg_color', e.target.value)}
                                             className="h-8 w-12 cursor-pointer rounded-lg border-none bg-transparent"
                                         />
-                                        <span className="text-foreground font-mono text-sm font-semibold uppercase">
+                                        <span className="text-slate-900 dark:text-slate-100 font-mono text-sm font-bold tracking-wider uppercase">
                                             {form.data.bg_color}
                                         </span>
                                     </div>
                                 </div>
-                                <div className="border-border bg-muted/10 flex flex-col items-center justify-center rounded-2xl border border-dashed p-6">
-                                    <span className="text-muted-foreground mb-4 text-xs font-semibold uppercase">
+                                <div className="border-border/80 dark:border-slate-800/80 bg-muted/10 dark:bg-slate-900/20 backdrop-blur-sm flex flex-col items-center justify-center rounded-2xl border border-dashed p-6 transition-all duration-200">
+                                    <span className="text-muted-foreground mb-4 text-xs font-bold tracking-wider uppercase opacity-80 select-none">
                                         Live Badge Preview
                                     </span>
                                     <div
-                                        className="rounded-xl border border-border px-6 py-2 text-xs font-semibold shadow-sm"
+                                        className="rounded-xl border border-border px-6 py-2 text-xs font-semibold shadow-sm backdrop-blur-md transition-all duration-200 select-none hover:scale-105"
                                         style={{ color: form.data.color, backgroundColor: form.data.bg_color }}
                                     >
                                         {form.data.label || 'PREVIEW'}
@@ -266,9 +266,9 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                     <div className="space-y-10 lg:col-span-4">
                         <div className="sticky top-6 space-y-10">
                             {/* Mode Tampilan Widget */}
-                            <div className="border-border bg-muted/10 rounded-2xl border p-6">
-                                <h3 className="text-foreground mb-4 flex items-center gap-2 text-xs font-semibold uppercase">
-                                    <LayoutTemplate size={14} /> Render Strategy
+                            <div className="border-border/60 dark:border-slate-800/60 bg-muted/10 dark:bg-slate-900/20 backdrop-blur-sm rounded-2xl border p-6 select-none shadow-sm">
+                                <h3 className="text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+                                    <LayoutTemplate size={14} className="text-primary" /> Render Strategy
                                 </h3>
 
                                 <div className="space-y-3">
@@ -291,25 +291,25 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                                             type="button"
                                             onClick={() => form.setData('display_mode', mode.id as any)}
                                             className={cn(
-                                                'group flex w-full items-start gap-4 rounded-xl border p-3.5 text-left transition-all',
+                                                'group flex w-full items-start gap-4 rounded-xl border p-3.5 text-left transition-all duration-200 select-none',
                                                 form.data.display_mode === mode.id
-                                                    ? 'bg-primary border-primary text-white shadow-sm'
-                                                    : 'border-border text-foreground hover:border-primary bg-card',
+                                                    ? 'bg-primary border-primary text-white shadow-md'
+                                                    : 'border-border/60 dark:border-slate-800/60 text-slate-800 dark:text-slate-200 hover:border-primary/50 bg-card dark:bg-slate-900/40 hover:shadow-sm',
                                             )}
                                         >
                                             <div
                                                 className={cn(
-                                                    'rounded-lg p-2 transition-colors',
+                                                    'rounded-lg p-2 transition-colors duration-200',
                                                     form.data.display_mode === mode.id
                                                         ? 'bg-white/20'
-                                                        : 'bg-muted',
+                                                        : 'bg-muted dark:bg-slate-800/60 group-hover:bg-primary/10',
                                                 )}
                                             >
                                                 <mode.icon size={16} />
                                             </div>
                                             <div className="flex flex-col">
-                                                <span className="text-xs font-semibold tracking-wider">{mode.label}</span>
-                                                <span className={cn('mt-0.5 text-xs leading-tight font-medium opacity-70')}>{mode.desc}</span>
+                                                <span className="text-xs font-bold tracking-wide">{mode.label}</span>
+                                                <span className={cn('mt-0.5 text-[11px] leading-tight font-medium opacity-80')}>{mode.desc}</span>
                                             </div>
                                         </button>
                                     ))}
@@ -317,8 +317,8 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                             </div>
 
                             {/* Operational Controls */}
-                            <div className="space-y-4">
-                                <h3 className="text-foreground px-1 text-xs font-semibold uppercase">
+                            <div className="space-y-4 select-none">
+                                <h3 className="text-slate-900 dark:text-slate-100 px-1 text-xs font-bold uppercase tracking-wider">
                                     Behavior Control
                                 </h3>
                                 <div className="space-y-3">
@@ -345,19 +345,19 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                                         <div
                                             key={ctrl.id}
                                             onClick={() => form.setData(ctrl.id as any, !form.data[ctrl.id as keyof typeof form.data])}
-                                            className="bg-muted/10 border-border group hover:bg-muted/30 flex cursor-pointer items-center gap-4 rounded-xl border p-3 transition-colors"
+                                            className="bg-card dark:bg-slate-900/20 backdrop-blur-sm border-border/60 dark:border-slate-800/60 group hover:bg-muted/30 dark:hover:bg-slate-800/40 flex cursor-pointer items-center gap-4 rounded-xl border p-3.5 transition-all duration-200 select-none shadow-sm"
                                         >
                                             <Checkbox
                                                 id={ctrl.id}
                                                 checked={!!form.data[ctrl.id as keyof typeof form.data]}
                                                 onCheckedChange={() => {}} // Handled by div
-                                                className="h-5 w-5"
+                                                className="h-5 w-5 border-border dark:border-slate-700 data-[state=checked]:bg-primary"
                                             />
                                             <div className="flex flex-col">
-                                                <span className="text-foreground text-xs font-semibold">
+                                                <span className="text-slate-900 dark:text-slate-100 text-xs font-bold tracking-wide">
                                                     {ctrl.label}
                                                 </span>
-                                                <span className="text-muted-foreground mt-0.5 text-xs font-medium">
+                                                <span className="text-muted-foreground dark:text-slate-400 mt-0.5 text-xs font-medium">
                                                     {ctrl.desc}
                                                 </span>
                                             </div>
@@ -366,9 +366,9 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                                 </div>
                             </div>
 
-                            <div className="flex gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4">
+                            <div className="flex gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/5 dark:bg-amber-500/10 p-4 backdrop-blur-sm animate-in fade-in duration-300">
                                 <AlertCircle size={16} className="mt-0.5 shrink-0 text-amber-500" />
-                                <p className="text-xs leading-relaxed font-semibold text-amber-600">
+                                <p className="text-xs leading-relaxed font-semibold text-amber-600 dark:text-amber-400">
                                     Peringatan: Perubahan parameter visual akan berdampak langsung pada audit trail dan dashboard di seluruh sistem secara global.
                                 </p>
                             </div>
@@ -380,7 +380,7 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
     }
 
     return (
-        <div className="border-border bg-card m-5 rounded-2xl border p-5 shadow-sm">
+        <div className="bg-card/40 dark:bg-slate-900/20 backdrop-blur-sm border border-border/60 dark:border-slate-800/60 m-5 rounded-2xl p-6 shadow-sm animate-in fade-in duration-200 select-none">
             <TableMasterData
                 title="Manajemen Parameter Status"
                 borderless={true}
@@ -396,9 +396,9 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                     <Button
                         variant="white"
                         onClick={openCreate}
-                        className="border-border/40 bg-card text-foreground hover:bg-muted/60 hover:border-border/60 h-10 gap-2 rounded-xl border px-6 text-xs font-bold shadow-sm transition-all duration-200 hover:shadow-md active:scale-95"
+                        className="h-10 px-5 gap-2 rounded-xl text-xs font-bold tracking-wide transition-all duration-200 border border-border bg-card dark:bg-slate-900/60 text-foreground shadow-sm hover:bg-muted/60 dark:hover:bg-slate-800/60 hover:border-border hover:shadow-md select-none"
                     >
-                        <Plus size={14} /> Registrasi Status Baru
+                        <Plus size={14} className="text-primary" /> Registrasi Status Baru
                     </Button>
                 }
                 pagination={
@@ -407,6 +407,9 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                               currentPage: statuses.meta.current_page || 1,
                               lastPage: statuses.meta.last_page || 1,
                               total: statuses.meta.total || 0,
+                              from: statuses.meta.from,
+                              to: statuses.meta.to,
+                              perPage: statuses.meta.per_page,
                               onPageChange: (page: number) =>
                                   router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
                           }

@@ -268,137 +268,107 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
     }
 
     return (
-        <div className="animate-in fade-in flex flex-col gap-8 p-5 duration-500">
+        <div className="animate-in fade-in flex flex-col gap-5 p-5 duration-500">
             <input type="file" ref={fileRef} className="hidden" onChange={handleFileChange} />
 
-            {/* Sub-tabs for categories (Read-only indication of current vendor type) */}
-            <div className="flex items-center gap-1.5 border-b border-black/5 pb-4 dark:border-white/5">
-                {[
-                    { id: 'perusahaan', label: 'Lampiran Perusahaan' },
-                    { id: 'perorangan', label: 'Lampiran Perorangan' },
-                ].map((cat) => (
-                    <button
-                        key={cat.id}
-                        disabled={vendorType !== cat.id}
-                        className={cn(
-                            'rounded-lg px-4 py-2 text-[10px] font-black tracking-widest uppercase transition-all duration-300',
-                            vendorType === cat.id
-                                ? 'bg-primary text-white shadow-lg dark:bg-white dark:text-black'
-                                : 'cursor-not-allowed text-black/10 opacity-50 dark:text-white/10',
-                        )}
-                    >
-                        {cat.label}
-                    </button>
-                ))}
-            </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                {DYNAMIC_CATEGORIES[0].items.map((label: string) => {
+                    const at = getAttachment(label);
+                    const isUp = uploading === label;
 
-            {DYNAMIC_CATEGORIES.map((cat) => (
-                <div key={cat.id}>
-                    <div className="mb-6 flex items-center gap-3">
-                        <div className="bg-primary h-1.5 w-1.5 rounded-full dark:bg-white" />
-                        <h6 className="text-[10px] font-black tracking-[0.3em] text-black/40 uppercase dark:text-white/40">{cat.label}</h6>
-                        <div className="h-px flex-1 bg-black/5 dark:bg-white/5" />
-                    </div>
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-2">
-                        {cat.items.map((label: string) => {
-                            const at = getAttachment(label);
-                            const isUp = uploading === label;
-
-                            return (
+                    return (
+                        <div
+                            key={label}
+                            onClick={() => at && setPreviewAt(at)}
+                            className={cn(
+                                'group relative flex items-center justify-between rounded-xl border p-4 transition-all duration-300 outline-none',
+                                at
+                                    ? 'dark:bg-sidebar cursor-pointer border-black/10 bg-white hover:-translate-y-1 hover:border-black hover:shadow-xl hover:shadow-black/5 dark:border-white/10 dark:hover:border-white dark:hover:shadow-white/5'
+                                    : 'border-black/5 bg-black/[0.01] dark:border-white/5 dark:bg-white/[0.01]',
+                            )}
+                        >
+                            <div className="flex min-w-0 items-center gap-4">
                                 <div
-                                    key={label}
-                                    onClick={() => at && setPreviewAt(at)}
                                     className={cn(
-                                        'group relative flex items-center justify-between rounded-xl border p-4 transition-all duration-300 outline-none',
+                                        'flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl transition-all duration-300',
                                         at
-                                            ? 'dark:bg-sidebar cursor-pointer border-black/10 bg-white hover:-translate-y-1 hover:border-black hover:shadow-xl hover:shadow-black/5 dark:border-white/10 dark:hover:border-white dark:hover:shadow-white/5'
-                                            : 'border-black/5 bg-black/[0.01] dark:border-white/5 dark:bg-white/[0.01]',
+                                            ? 'bg-black/5 text-black/60 shadow-inner group-hover:bg-black group-hover:text-white dark:bg-white/5 dark:text-white/60 dark:group-hover:bg-white dark:group-hover:text-black'
+                                            : 'bg-black/[0.02] text-black/10 dark:bg-white/[0.02] dark:text-white/10',
                                     )}
                                 >
-                                    <div className="flex min-w-0 items-center gap-4">
-                                        <div
-                                            className={cn(
-                                                'flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl transition-all duration-300',
-                                                at
-                                                    ? 'bg-black/5 text-black/60 shadow-inner group-hover:bg-black group-hover:text-white dark:bg-white/5 dark:text-white/60 dark:group-hover:bg-white dark:group-hover:text-black'
-                                                    : 'bg-black/[0.02] text-black/10 dark:bg-white/[0.02] dark:text-white/10',
-                                            )}
-                                        >
-                                            {at ? <FileCheck size={20} strokeWidth={2.5} /> : <FileIcon size={20} strokeWidth={2.5} />}
-                                        </div>
-                                        <div className="min-w-0">
-                                            <div
-                                                className={cn(
-                                                    'truncate text-[12px] font-bold tracking-tight',
-                                                    at ? 'text-black uppercase dark:text-white' : 'text-black/40 uppercase dark:text-white/40',
-                                                )}
-                                                title={label}
-                                            >
-                                                {label}
-                                            </div>
-                                            {at ? (
-                                                <div className="mt-1 truncate text-[9px] font-bold tracking-[0.1em] text-black/30 uppercase dark:text-white/30">
-                                                    {at.file_name} · <span className="text-black dark:text-white">READY</span>
-                                                </div>
-                                            ) : (
-                                                <div className="mt-1 text-[9px] font-bold tracking-widest text-black/10 uppercase italic dark:text-white/10">
-                                                    Kosong
-                                                </div>
-                                            )}
-                                        </div>
+                                    {at ? <FileCheck size={20} strokeWidth={2.5} /> : <FileIcon size={20} strokeWidth={2.5} />}
+                                </div>
+                                <div className="min-w-0">
+                                    <div
+                                        className={cn(
+                                            'truncate text-[12px] font-bold tracking-tight',
+                                            at ? 'text-black uppercase dark:text-white' : 'text-black/40 uppercase dark:text-white/40',
+                                        )}
+                                        title={label}
+                                    >
+                                        {label}
                                     </div>
+                                    {at ? (
+                                        <div className="mt-1 truncate text-[9px] font-bold tracking-[0.1em] text-black/30 uppercase dark:text-white/30">
+                                            {at.file_name} · <span className="text-black dark:text-white">READY</span>
+                                        </div>
+                                    ) : (
+                                        <div className="mt-1 text-[9px] font-bold tracking-widest text-black/10 uppercase italic dark:text-white/10">
+                                            Kosong
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
 
-                                    <div className="ml-3 flex flex-shrink-0 items-center gap-1.5">
-                                        {at ? (
-                                            <>
-                                                <a
-                                                    href={
-                                                        (at as any).is_vendor_doc
-                                                            ? contractApi.vendorDocumentDownloadUrl(contract.id, at.id)
-                                                            : contractApi.attachmentDownloadUrl(contract.id, at.id)
-                                                    }
-                                                    download
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    className="dark:bg-sidebar flex h-8 w-8 items-center justify-center rounded-lg border border-black/10 bg-white shadow-sm transition-all hover:bg-black hover:text-white active:scale-95 dark:border-white/10 dark:text-white dark:hover:bg-white dark:hover:text-black"
-                                                    title="Download"
-                                                >
-                                                    <Download size={14} strokeWidth={2.5} />
-                                                </a>
-                                                {!(at as any).is_vendor_doc && (
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleDelete(at.id, label);
-                                                        }}
-                                                        className="dark:bg-sidebar flex h-8 w-8 items-center justify-center rounded-lg border border-black/10 bg-white text-black shadow-sm transition-all hover:bg-black hover:text-white active:scale-95 dark:border-white/10 dark:text-white dark:hover:bg-white dark:hover:text-black"
-                                                        title="Delete"
-                                                    >
-                                                        <Trash2 size={14} strokeWidth={2.5} />
-                                                    </button>
-                                                )}
-                                            </>
-                                        ) : (
+                            <div className="ml-3 flex flex-shrink-0 items-center gap-1.5">
+                                {at ? (
+                                    <>
+                                        <a
+                                            href={
+                                                (at as any).is_vendor_doc
+                                                    ? contractApi.vendorDocumentDownloadUrl(contract.id, at.id)
+                                                    : contractApi.attachmentDownloadUrl(contract.id, at.id)
+                                            }
+                                            download
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="dark:bg-sidebar flex h-8 w-8 items-center justify-center rounded-lg border border-black/10 bg-white shadow-sm transition-all hover:bg-black hover:text-white active:scale-95 dark:border-white/10 dark:text-white dark:hover:bg-white dark:hover:text-black"
+                                            title="Download"
+                                        >
+                                            <Download size={14} strokeWidth={2.5} />
+                                        </a>
+                                        {!(at as any).is_vendor_doc && (
                                             <button
-                                                disabled={!!uploading}
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    setActiveLabel(label);
-                                                    setActiveCat(cat.id);
-                                                    fileRef.current?.click();
+                                                    handleDelete(at.id, label);
                                                 }}
-                                                className="dark:bg-sidebar flex h-8 items-center gap-2 rounded-lg border border-black/10 bg-white px-4 text-[10px] font-bold tracking-widest text-black/40 uppercase transition-all hover:bg-black hover:text-white active:scale-95 disabled:opacity-20 dark:border-white/10 dark:text-white/40 dark:hover:bg-white dark:hover:text-black"
+                                                className="dark:bg-sidebar flex h-8 w-8 items-center justify-center rounded-lg border border-black/10 bg-white text-black shadow-sm transition-all hover:bg-black hover:text-white active:scale-95 dark:border-white/10 dark:text-white dark:hover:bg-white dark:hover:text-black"
+                                                title="Delete"
                                             >
-                                                {isUp ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
-                                                Upload
+                                                <Trash2 size={14} strokeWidth={2.5} />
                                             </button>
                                         )}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            ))}
+                                    </>
+                                ) : (
+                                    <button
+                                        disabled={!!uploading}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setActiveLabel(label);
+                                            setActiveCat(vendorType);
+                                            fileRef.current?.click();
+                                        }}
+                                        className="dark:bg-sidebar flex h-8 items-center gap-2 rounded-lg border border-black/10 bg-white px-4 text-[10px] font-bold tracking-widest text-black/40 uppercase transition-all hover:bg-black hover:text-white active:scale-95 disabled:opacity-20 dark:border-white/10 dark:text-white/40 dark:hover:bg-white dark:hover:text-black"
+                                    >
+                                        {isUp ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
+                                        Upload
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
 
             <ConfirmationModal
                 open={!!confirmDelete}

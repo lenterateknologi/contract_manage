@@ -17,7 +17,7 @@ export function Breadcrumbs({ breadcrumbs }: { breadcrumbs: BreadcrumbItemType[]
                                             <BreadcrumbPage className="text-sidebar-foreground font-bold tracking-wide">{item.title}</BreadcrumbPage>
                                         ) : (
                                             <BreadcrumbLink href={item.href} className="hover:text-sidebar-primary transition-colors">
-                                                <span className="sr-only">{item.title}</span>
+                                                {item.title}
                                             </BreadcrumbLink>
                                         )}
                                     </BreadcrumbItem>

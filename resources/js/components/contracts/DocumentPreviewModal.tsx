@@ -41,7 +41,8 @@ const DOCX_STYLES = `
 export default function DocumentPreviewModal({ isOpen, onClose, url, fileName }: Props) {
     const [loading, setLoading] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
-    const isDocx = fileName.toLowerCase().endsWith('.docx');
+    const isDocx = fileName?.toLowerCase().endsWith('.docx');
+    const isImage = fileName?.match(/\.(jpg|jpeg|png|gif|webp|svg)/i);
 
     useEffect(() => {
         if (!isOpen || !isDocx) return;
@@ -118,6 +119,14 @@ export default function DocumentPreviewModal({ isOpen, onClose, url, fileName }:
 
                         {isDocx ? (
                             <div ref={containerRef} className="docx-container w-full text-left" />
+                        ) : isImage ? (
+                            <div className="flex h-full min-h-[500px] w-full items-center justify-center p-4 bg-slate-50 dark:bg-slate-900 rounded-sm">
+                                <img
+                                    src={url}
+                                    alt={fileName}
+                                    className="max-w-full max-h-[75vh] object-contain shadow-md rounded border border-slate-200"
+                                />
+                            </div>
                         ) : (
                             <iframe
                                 src={`${url}#toolbar=0&navpanes=0&view=FitH`}

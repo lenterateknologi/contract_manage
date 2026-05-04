@@ -33,16 +33,16 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
         waiting: 'fa-minus',
     };
     const dotCls: Record<string, string> = {
-        approved: 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white shadow-lg',
-        pending: 'bg-white text-black border-black/20 dark:bg-sidebar dark:text-white dark:border-white/20',
-        rejected: 'bg-white text-black border-black dark:bg-sidebar dark:text-black dark:border-white shadow-sm',
-        waiting: 'bg-white text-black/20 border-black/10 dark:bg-sidebar dark:text-white/20 dark:border-white/10',
+        approved: 'bg-emerald-500 border-emerald-500 text-white dark:bg-emerald-600 dark:border-emerald-600 shadow-md',
+        pending: 'bg-amber-500 border-amber-500 text-white dark:bg-amber-600 dark:border-amber-600 shadow-md animate-pulse',
+        rejected: 'bg-red-500 border-red-500 text-white dark:bg-red-600 dark:border-red-600 shadow-md',
+        waiting: 'bg-muted text-muted-foreground border-border dark:bg-white/10 dark:text-white/40 shadow-sm',
     };
     const noteCls: Record<string, string> = {
-        approved: 'border-l-black dark:border-l-white bg-black/5 dark:bg-white/5 text-black dark:text-white',
-        rejected: 'border-l-black bg-black/5 dark:border-l-white/5 text-black dark:text-white font-bold',
-        pending: 'border-l-black/20 dark:border-l-white/20 bg-black/5 dark:bg-white/5 text-black dark:text-white',
-        waiting: 'border-l-black/10 dark:border-l-white/10 bg-black/5 dark:bg-white/5 text-black/40 dark:text-white/40',
+        approved: 'border-l-emerald-500 bg-emerald-50/10 dark:bg-emerald-500/5 text-foreground',
+        rejected: 'border-l-red-500 bg-red-50/10 dark:bg-red-500/5 text-foreground font-semibold',
+        pending: 'border-l-amber-500 bg-amber-50/10 dark:bg-amber-500/5 text-foreground',
+        waiting: 'border-l-border bg-muted/20 text-muted-foreground/80',
     };
 
     const roles = useMemo(
@@ -153,7 +153,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
     const activeCount = (statusFilter ? 1 : 0) + (roleFilter ? 1 : 0) + (deptFilter ? 1 : 0);
 
     const renderStep = (a: ContractApproval, i: number, isLast: boolean) => (
-        <div key={a.id} className={`flex gap-4 ${!isLast ? 'relative pb-6' : ''}`}>
+        <div key={a.id} className={`flex gap-4 ${!isLast ? 'relative pb-8' : ''}`}>
             {!isLast && <div className="absolute top-8 bottom-0 left-[13px] w-px bg-black/10 dark:bg-white/10" />}
             <div
                 className={`relative z-10 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border shadow-sm ${dotCls[a.status] ?? dotCls.waiting}`}
@@ -166,35 +166,52 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                     <Clock size={12} />
                 )}
             </div>
-            <div className="flex-1 pt-0.5">
-                <div className="flex flex-wrap items-center gap-2 text-[12px] leading-tight font-bold tracking-wider text-black uppercase dark:text-white">
-                    {a.role} <span className="opacity-20">/</span> {a.department_name ?? 'Matching Dept'}
-                    <span className="ml-auto text-[9px] font-bold text-black/30 dark:text-white/30">SEQ {a.sequence}</span>
+            <div className={cn(
+                "flex-1 rounded-xl border p-4 transition-all hover:shadow-md bg-white dark:bg-slate-900/40",
+                a.status === 'approved' && "border-emerald-100 bg-emerald-50/10 dark:border-emerald-500/20 dark:bg-emerald-500/5",
+                a.status === 'pending' && "border-amber-100 bg-amber-50/10 dark:border-amber-500/20 dark:bg-amber-500/5",
+                a.status === 'rejected' && "border-red-100 bg-red-50/10 dark:border-red-500/20 dark:bg-red-500/5",
+                a.status === 'waiting' && "border-border/60 bg-muted/5 opacity-75"
+            )}>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-sm font-bold text-foreground dark:text-white">
+                        {a.role}
+                    </span>
+                    <span className="text-[10px] bg-muted/60 dark:bg-white/10 text-muted-foreground font-semibold px-2 py-0.5 rounded-full">
+                        SEQ {a.sequence}
+                    </span>
                 </div>
-                <div className="mt-1 flex flex-wrap items-center gap-2">
-                    {a.status === 'approved' || a.status === 'rejected' ? (
-                        <div className="flex items-center gap-1.5 rounded border border-black/10 bg-black/5 px-2 py-1 text-[11px] font-bold text-black dark:border-white/10 dark:bg-white/5 dark:text-white">
-                            <Avatar user={a.approver} size="sm" />
-                            {a.approver?.name}
-                        </div>
-                    ) : (
-                        <div className="flex items-center gap-1.5 text-[11px] font-medium text-black/40 dark:text-white/40">
-                            <Clock size={12} className="opacity-50" />
-                            <span>{a.target_approvers ? `Penanggung Jawab: ${a.target_approvers}` : `Menunggu ${a.role}`}</span>
-                        </div>
-                    )}
+                <div className="text-xs text-muted-foreground mt-1 font-medium">
+                    {a.department_name ?? 'Matching Dept'}
                 </div>
+
                 {a.comment && (
-                    <div
-                        className={`mt-2 border-l-2 px-3 py-1.5 text-[11px] leading-relaxed font-medium ${noteCls[a.status] ?? 'border-l-black/20 bg-black/5'}`}
-                    >
+                    <div className={`mt-3 border-l-2 px-3 py-1.5 text-[11px] leading-relaxed font-medium ${noteCls[a.status] ?? 'border-l-black/20 bg-black/5'}`}>
                         {a.comment}
                     </div>
                 )}
-                <div className="mt-2 flex items-center gap-2">
+
+                <div className="mt-3 border-t border-border/40 pt-2.5 flex flex-wrap items-center justify-between gap-3">
+                    {a.status === 'approved' || a.status === 'rejected' ? (
+                        <div className="flex items-center gap-2">
+                            <Avatar user={a.approver} size="sm" />
+                            <div className="flex flex-col">
+                                <span className="text-xs font-semibold text-foreground">{a.approver?.name}</span>
+                                <span className="text-[10px] text-muted-foreground">Oleh {a.role}</span>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                            <Clock size={14} className="opacity-70" />
+                            <span>
+                                {a.target_approvers ? `Penanggung Jawab: ${a.target_approvers}` : `Menunggu persetujuan ${a.role}`}
+                            </span>
+                        </div>
+                    )}
+
                     {a.decided_at ? (
-                        <div className="flex items-center gap-1.5 rounded bg-black/5 px-2 py-1 text-[10px] font-bold tracking-widest text-black/50 uppercase dark:bg-white/5 dark:text-white/50">
-                            <Clock size={10} /> {a.decided_at}
+                        <div className="flex items-center gap-1.5 rounded-lg bg-muted px-2.5 py-1 text-[10px] font-bold text-muted-foreground dark:bg-white/5">
+                            <Clock size={12} /> {a.decided_at}
                         </div>
                     ) : (
                         <StatusBadge status={a.status} />
@@ -205,39 +222,49 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
     );
 
     const renderInitiator = (isOnly: boolean) => (
-        <div key="initiator" className={`flex gap-4 ${!isOnly ? 'relative pb-6' : ''}`}>
+        <div key="initiator" className={`flex gap-4 ${!isOnly ? 'relative pb-8' : ''}`}>
             {!isOnly && <div className="absolute top-8 bottom-0 left-[13px] w-px bg-black/10 dark:bg-white/10" />}
-            <div className="relative z-10 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-[#172554] bg-[#172554] text-white shadow-sm dark:border-white dark:bg-white dark:text-[#172554]">
+            <div className="relative z-10 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-emerald-500 bg-emerald-500 text-white shadow-md dark:border-white dark:bg-white dark:text-[#172554]">
                 <Send size={12} />
             </div>
-            <div className="flex-1 pt-0.5">
-                <div className="text-[12px] font-bold tracking-wider text-black uppercase dark:text-white">Pengajuan Awal</div>
-                <div className="mt-1 flex w-fit items-center gap-1.5 rounded border border-black/10 bg-black/5 px-2 py-1 text-[11px] font-bold text-black dark:border-white/10 dark:bg-white/5 dark:text-white">
-                    <Avatar user={creator} size="sm" /> {creator?.name}
+            <div className="flex-1 rounded-xl border border-border/60 p-4 bg-muted/10 dark:bg-white/5 transition-all hover:shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-sm font-bold text-foreground">Pengajuan Awal</span>
+                    <span className="text-[10px] bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 font-bold px-2 py-0.5 rounded-full">
+                        SELESAI
+                    </span>
                 </div>
-                <div className="mt-1.5 text-[9px] font-bold tracking-widest text-black/40 uppercase dark:text-white/40">
-                    {submittedAt ? `DIAJUKAN: ${submittedAt}` : 'BELUM DIAJUKAN'}
+                <div className="mt-3 border-t border-border/40 pt-2.5 flex items-center gap-2">
+                    <Avatar user={creator} size="sm" />
+                    <div className="flex flex-col">
+                        <span className="text-xs font-semibold text-foreground">{creator?.name}</span>
+                        <span className="text-[10px] text-muted-foreground">
+                            {submittedAt ? `Diajukan: ${submittedAt}` : 'Belum diajukan'}
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
     );
 
     const renderProjected = () => (
-        <div key="projected" className="relative flex gap-4 pb-6">
+        <div key="projected" className="relative flex gap-4 pb-8">
             <div className="absolute top-8 bottom-0 left-[13px] w-px bg-black/10 dark:bg-white/10" />
-            <div className="relative z-10 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-black/10 bg-black/5 text-black shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-white">
+            <div className="relative z-10 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-border/60 bg-muted text-muted-foreground shadow-sm dark:bg-white/5 dark:text-white/40">
                 <Info size={12} />
             </div>
-            <div className="flex-1 pt-0.5">
-                <div className="text-[12px] font-bold tracking-wider text-black uppercase dark:text-white">
-                    Atasan Langsung <span className="ml-1 text-[10px] tracking-normal opacity-20">· Fase 1</span>
+            <div className="flex-1 rounded-xl border border-dashed border-border/80 p-4 bg-muted/5 dark:bg-white/[0.02] transition-all">
+                <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-foreground/60">Atasan Langsung (Manager Dept)</span>
+                    <span className="text-[10px] bg-muted px-2 py-0.5 rounded-full font-bold text-muted-foreground dark:bg-white/10">Fase 1</span>
                 </div>
-                <div className="mt-1 inline-block rounded border border-dashed border-black/10 bg-black/5 px-2 py-1 text-[11px] font-medium text-black/50 dark:border-white/10 dark:bg-white/5 dark:text-white/50">
-                    Manager Dept: {creator.department_id ? 'Tersedia' : 'Belum Ditentukan'}
+                <div className="mt-2 text-xs font-medium text-muted-foreground">
+                    Status: {creator.department_id ? 'Tersedia' : 'Belum Ditentukan'}
                 </div>
             </div>
         </div>
     );
+
     return (
         <div className="animate-in fade-in relative flex flex-col gap-6 duration-500">
             <div className="mb-2 flex items-center gap-4">

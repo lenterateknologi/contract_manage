@@ -26,37 +26,40 @@ export const NavMain = memo(function NavMain({ title, items = [], search = '' }:
                 <CollapsibleContent>
                     <SidebarGroupContent>
                         <SidebarMenu className="gap-0.5 px-1.5">
-                            {items.map((item) => (
-                                <SidebarMenuItem key={item.title}>
-                                    <SidebarMenuButton 
-                                        asChild 
-                                        isActive={item.url === page.url}
-                                        tooltip={item.title}
-                                        className={cn(
-                                            "h-9 px-2 transition-all duration-200 overflow-hidden relative group/btn rounded-lg",
-                                            item.url === page.url 
-                                                ? "bg-sidebar-accent text-sidebar-primary font-semibold" 
-                                                : "hover:bg-sidebar-accent/50 text-sidebar-foreground/70 hover:text-sidebar-foreground font-medium"
-                                        )}
-                                    >
-                                        <Link href={item.url} className="flex items-center gap-3 w-full h-full">
-                                            {item.icon && (
-                                                <item.icon 
-                                                    className={cn(
-                                                        "h-[18px] w-[18px] shrink-0 transition-colors duration-200", 
-                                                        item.url === page.url 
-                                                            ? "text-sidebar-primary" 
-                                                            : "text-sidebar-foreground/40 group-hover/btn:text-sidebar-foreground/70"
-                                                    )} 
-                                                />
-                                            )}
-                                            <span className="text-[13.5px] truncate tracking-tight">
-                                                <HighlightingCell text={item.title} search={search} />
-                                            </span>
-                                        </Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                            ))}
+                             {items.map((item) => {
+                                 const isActive = page.url.split('?')[0] === item.url.split('?')[0];
+                                 return (
+                                     <SidebarMenuItem key={item.title}>
+                                         <SidebarMenuButton 
+                                             asChild 
+                                             isActive={isActive}
+                                             tooltip={item.title}
+                                             className={cn(
+                                                 "h-9 px-3 transition-all duration-300 overflow-hidden relative group/btn rounded-xl",
+                                                 isActive 
+                                                     ? "bg-sidebar-accent/80 border border-sidebar-border/60 shadow-sm dark:shadow-black/20 text-sidebar-primary font-semibold animate-in fade-in slide-in-from-left-1 duration-300" 
+                                                     : "hover:bg-sidebar-accent/40 text-sidebar-foreground/70 hover:text-sidebar-foreground font-medium"
+                                             )}
+                                         >
+                                             <Link href={item.url} className="flex items-center gap-3 w-full h-full">
+                                                 {item.icon && (
+                                                     <item.icon 
+                                                         className={cn(
+                                                             "h-[18px] w-[18px] shrink-0 transition-colors duration-200", 
+                                                             isActive 
+                                                                 ? "text-sidebar-primary" 
+                                                                 : "text-sidebar-foreground/40 group-hover/btn:text-sidebar-foreground/70"
+                                                         )} 
+                                                     />
+                                                 )}
+                                                 <span className="text-[13.5px] truncate tracking-tight">
+                                                     <HighlightingCell text={item.title} search={search} />
+                                                 </span>
+                                             </Link>
+                                         </SidebarMenuButton>
+                                     </SidebarMenuItem>
+                                 );
+                             })}
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </CollapsibleContent>

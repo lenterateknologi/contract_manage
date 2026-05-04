@@ -64,7 +64,7 @@ export function TableContract<T extends Record<string, any>>({
     const isAllSelected = data.length > 0 && selectedRows.length === data.length;
 
     return (
-        <div className="flex flex-col gap-3 antialiased text-foreground m-5">
+        <div className="flex flex-col gap-3 antialiased text-foreground ">
             {/* Bulk Actions Bar */}
             {selectedRows.length > 0 && bulkActions && (
                 <div className="flex items-center justify-between p-3 bg-primary rounded-xl shadow-md animate-in slide-in-from-top-2 duration-300 mx-1">

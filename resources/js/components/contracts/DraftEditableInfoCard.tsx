@@ -1,11 +1,10 @@
 import { Avatar } from '@/components/contracts/ui';
-import { Contract, ContractType } from '@/types/contracts';
-import { Info, Loader2, Check, ChevronUp, ChevronDown, FileText as FileIcon } from 'lucide-react';
-import { useEffect, useMemo, useState, useRef } from 'react';
-import { ContractReferenceCard } from './ContractReferenceCard';
-import { cn } from '@/lib/utils';
-import { contractApi } from '@/lib/contract-api';
 import { Modal } from '@/components/ui/overlays/Modal';
+import { contractApi } from '@/lib/contract-api';
+import { cn } from '@/lib/utils';
+import { Contract, ContractType } from '@/types/contracts';
+import { Check, ChevronDown, ChevronUp, Info, Loader2, Plus, Trash2 } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 export interface FormTemplateInfo {
     id: string;
@@ -63,6 +62,11 @@ export function DraftEditableInfoCard({
     const [searchQuery, setSearchQuery] = useState('');
     const [isAddApproverOpen, setIsAddApproverOpen] = useState(false);
     const [localSelectedUsers, setLocalSelectedUsers] = useState<string[]>([]);
+    const [taxRequired, setTaxRequired] = useState<boolean>(() => !!selected.metadata?.tax_required);
+
+    useEffect(() => {
+        setTaxRequired(!!selected.metadata?.tax_required);
+    }, [selected.metadata?.tax_required]);
 
     useEffect(() => {
         if (isAddApproverOpen) {
@@ -143,21 +147,10 @@ export function DraftEditableInfoCard({
         return () => {
             if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
         };
-    }, [
-        title,
-        description,
-        typeId,
-        vendorId,
-        submissionTypeId,
-        transactionType,
-        kopSubTopik,
-        crownNo,
-        isDraft,
-        onUpdate,
-    ]);
+    }, [title, description, typeId, vendorId, submissionTypeId, transactionType, kopSubTopik, crownNo, isDraft, onUpdate]);
 
     const inputCls =
-        'w-full bg-black/[0.03] dark:bg-white/[0.03] rounded-lg px-3 py-1.5 text-sm text-black dark:text-white outline-none focus:bg-white dark:focus:bg-sidebar transition-all shadow-sm';
+        'w-full bg-black/[0.03] dark:bg-white/[0.05] border border-border/50 rounded-lg px-3 py-1.5 text-sm text-foreground dark:text-white outline-none focus:bg-white dark:focus:bg-slate-900 transition-all shadow-sm';
 
     const f2Version = selected.versions?.filter((x) => x.document_type === 'f2').sort((a, b) => b.version_no - a.version_no)[0];
 
@@ -167,93 +160,81 @@ export function DraftEditableInfoCard({
     );
 
     return (
-        <div className="bg-card text-foreground overflow-hidden rounded-xl border border-border shadow-sm">
-            <div className="flex h-12 items-center justify-between bg-muted/40 px-4 border-b border-border">
-                <div className="flex items-center gap-2 font-semibold text-foreground text-sm">
-                    <Info size={16} className="text-primary" /> Informasi Kontrak
-                    {isDraft && (
-                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-                            Editable
-                        </span>
-                    )}
+        <div className="bg-card text-foreground border-border overflow-hidden rounded-xl border shadow-sm">
+            <div className="bg-primary flex h-12 items-center justify-between px-4 dark:bg-white border-b border-black/10 dark:border-white/10">
+                <div className="flex items-center gap-2 font-semibold text-white text-sm dark:text-black">
+                    <Info size={16} className="text-white/70 dark:text-black/70" /> Informasi Kontrak
+                    {isDraft && <span className="bg-white/20 text-white dark:bg-black/10 dark:text-black rounded-full px-2 py-0.5 text-xs font-semibold">Editable</span>}
                 </div>
                 <div className="flex items-center gap-2">
                     {isDraft && (
                         <div className="flex items-center gap-2 px-2">
                             {localSaving ? (
                                 <>
-                                    <Loader2 size={12} className="animate-spin text-muted-foreground" />
-                                    <span className="text-xs text-muted-foreground">Menyimpan...</span>
+                                    <Loader2 size={12} className="text-white/70 dark:text-black/60 animate-spin" />
+                                    <span className="text-white/70 dark:text-black/60 text-xs">Menyimpan...</span>
                                 </>
                             ) : hasChanges ? (
                                 <>
-                                    <div className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                                    <span className="text-xs text-muted-foreground">Berubah</span>
+                                    <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-400" />
+                                    <span className="text-white/70 dark:text-black/60 text-xs">Berubah</span>
                                 </>
                             ) : (
                                 <>
-                                    <Check size={12} className="text-emerald-500" />
-                                    <span className="text-xs text-muted-foreground">Tersimpan</span>
+                                    <Check size={12} className="text-emerald-300 dark:text-emerald-600" />
+                                    <span className="text-white/70 dark:text-black/60 text-xs">Tersimpan</span>
                                 </>
                             )}
                         </div>
                     )}
                     <button
                         onClick={() => setMinimized(!minimized)}
-                        className="text-muted-foreground hover:text-foreground transition-all active:scale-95"
+                        className="text-white/70 hover:text-white dark:text-black/60 dark:hover:text-black transition-all active:scale-95"
                     >
                         {minimized ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
                     </button>
                 </div>
             </div>
             {!minimized && (
-                <div className="p-4 grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 gap-4 p-4">
                     <div>
-                        <div className="text-muted-foreground font-semibold text-xs mb-1">
-                            No. Pengajuan
-                        </div>
-                        <span className="rounded bg-muted px-3 py-1.5 font-mono font-bold text-foreground inline-block shadow-sm text-sm">
+                        <div className="text-muted-foreground mb-1 text-xs font-semibold">No. Pengajuan</div>
+                        <span className="bg-muted text-foreground inline-block rounded px-3 py-1.5 font-mono text-sm font-bold shadow-sm">
                             {selected.contract_no}
                         </span>
                     </div>
 
                     {isDraft ? (
                         <div className="col-span-full">
-                            <div className="text-muted-foreground font-semibold text-xs mb-1">
-                                Judul Kontrak
-                            </div>
+                            <div className="text-muted-foreground mb-1 text-xs font-semibold">Judul Kontrak</div>
                             <input
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
                                 placeholder="Nama kontrak..."
-                                className={inputCls + ' font-medium text-sm'}
+                                className={inputCls + ' text-sm font-medium'}
                             />
                         </div>
                     ) : null}
 
                     <div className="flex flex-col gap-4">
                         <div>
-                            <div className="text-muted-foreground font-semibold text-xs mb-1">
-                                No. Kontrak
-                            </div>
+                            <div className="text-muted-foreground mb-1 text-xs font-semibold">No. Kontrak</div>
                             {isDraft ? (
                                 <input
                                     value={crownNo}
                                     onChange={(e) => setCrownNo(e.target.value)}
                                     placeholder="CROWN-XXX..."
-                                    className={inputCls + ' font-mono font-bold text-sm'}
+                                    className={inputCls + ' font-mono text-sm font-bold'}
                                 />
                             ) : (
-                                <span className="rounded bg-muted px-3 py-1.5 font-mono font-bold text-foreground inline-block shadow-sm text-sm">
+                                <span className="bg-muted text-foreground inline-block rounded px-3 py-1.5 font-mono text-sm font-bold shadow-sm">
                                     {selected.crown_no || '—'}
                                 </span>
                             )}
                         </div>
 
                         <div>
-                            <div className="text-muted-foreground font-semibold text-xs mb-1">
-                                Sifat Kontrak
-                            </div>
+                            <div className="text-muted-foreground mb-1 text-xs font-semibold">Sifat Kontrak</div>
                             {isDraft ? (
                                 <select value={transactionType} onChange={(e) => setTransactionType(e.target.value)} className={inputCls}>
                                     <option value="Perjanjian Baru">Perjanjian Baru</option>
@@ -263,102 +244,91 @@ export function DraftEditableInfoCard({
                                     <option value="Lainnya">Lainnya</option>
                                 </select>
                             ) : (
-                                <span className="text-sm font-semibold text-foreground">
-                                    {selected.transaction_type || '—'}
-                                </span>
+                                <span className="text-foreground text-sm font-semibold">{selected.transaction_type || '—'}</span>
                             )}
                         </div>
                     </div>
 
                     <div>
-                        <div className="text-muted-foreground font-semibold text-xs mb-1">
-                            Jenis Kontrak
-                        </div>
+                        <div className="text-muted-foreground mb-1 text-xs font-semibold">Jenis Kontrak</div>
                         {isDraft ? (
                             <select value={typeId} onChange={(e) => setTypeId(e.target.value)} className={inputCls}>
                                 <option value="">Pilih Tipe</option>
-                                {Array.isArray(types) && types.map((t) => (
-                                    <option key={t.id} value={t.id}>
-                                        {t.name}
-                                    </option>
-                                ))}
+                                {Array.isArray(types) &&
+                                    types.map((t) => (
+                                        <option key={t.id} value={t.id}>
+                                            {t.name}
+                                        </option>
+                                    ))}
                             </select>
                         ) : (
-                            <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary shadow-sm">
+                            <span className="bg-primary/10 text-primary rounded-full px-3 py-1 text-xs font-semibold shadow-sm">
                                 {selected.contract_type}
                             </span>
                         )}
                     </div>
 
                     <div>
-                        <div className="text-muted-foreground font-semibold text-xs mb-1">
-                            Perjanjian
-                        </div>
+                        <div className="text-muted-foreground mb-1 text-xs font-semibold">Perjanjian</div>
                         {isDraft ? (
                             <select value={submissionTypeId} onChange={(e) => setSubmissionTypeId(e.target.value)} className={inputCls}>
                                 <option value="">Pilih Tipe</option>
-                                {Array.isArray(submissionTypes) && submissionTypes.map((st) => (
-                                    <option key={st.id} value={st.id}>
-                                        {st.name}
-                                    </option>
-                                ))}
+                                {Array.isArray(submissionTypes) &&
+                                    submissionTypes.map((st) => (
+                                        <option key={st.id} value={st.id}>
+                                            {st.name}
+                                        </option>
+                                    ))}
                             </select>
                         ) : (
-                            <span className="text-foreground font-medium text-sm">{selected.submission_type || '—'}</span>
+                            <span className="text-foreground text-sm font-medium">{selected.submission_type || '—'}</span>
                         )}
                     </div>
 
                     <div>
-                        <div className="text-muted-foreground font-semibold text-xs mb-1">
-                            Pihak Kedua (Vendor)
-                        </div>
+                        <div className="text-muted-foreground mb-1 text-xs font-semibold">Pihak Kedua (Vendor)</div>
                         {isDraft ? (
                             <select value={vendorId} onChange={(e) => setVendorId(e.target.value)} className={inputCls}>
                                 <option value="">Pilih Vendor</option>
-                                {Array.isArray(vendors) && vendors.map((v) => (
-                                    <option key={v.id} value={v.id}>
-                                        {v.name}
-                                    </option>
-                                ))}
+                                {Array.isArray(vendors) &&
+                                    vendors.map((v) => (
+                                        <option key={v.id} value={v.id}>
+                                            {v.name}
+                                        </option>
+                                    ))}
                             </select>
                         ) : (
-                            <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-foreground shadow-sm">
+                            <span className="bg-muted text-foreground rounded-full px-3 py-1 text-xs font-semibold shadow-sm">
                                 {(selected as any).vendor?.name || '-'}
                             </span>
                         )}
                     </div>
 
                     <div>
-                        <div className="text-muted-foreground font-semibold text-xs mb-1">
-                            Dibuat Oleh
-                        </div>
+                        <div className="text-muted-foreground mb-1 text-xs font-semibold">Dibuat Oleh</div>
                         <div className="flex items-center gap-1.5">
                             <Avatar user={selected.creator} size="sm" />
-                            <span className="text-foreground font-medium text-sm">{selected.creator?.name}</span>
+                            <span className="text-foreground text-sm font-medium">{selected.creator?.name}</span>
                         </div>
                     </div>
 
                     <div>
-                        <div className="text-muted-foreground font-semibold text-xs mb-1">
-                            Tgl Dibuat
-                        </div>
-                        <span className="text-foreground font-medium text-sm">{selected.created_at}</span>
+                        <div className="text-muted-foreground mb-1 text-xs font-semibold">Tgl Dibuat</div>
+                        <span className="text-foreground text-sm font-medium">{selected.created_at}</span>
                     </div>
 
                     {selected.workflow_step && (
-                        <div className="col-span-full border-t border-border pt-4">
-                            <div className="mb-2 text-xs font-semibold text-muted-foreground">
-                                Posisi Kontrak Saat Ini (Workflow)
-                            </div>
-                            <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-800/30 rounded-xl shadow-sm animate-in fade-in">
-                                <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                        <div className="border-border col-span-full border-t pt-4">
+                            <div className="text-muted-foreground mb-2 text-xs font-semibold">Posisi Kontrak Saat Ini (Workflow)</div>
+                            <div className="animate-in fade-in flex items-center gap-2 rounded-xl border border-amber-200/50 bg-amber-50 p-3 shadow-sm dark:border-amber-800/30 dark:bg-amber-950/20">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400">
                                     <i className="fa-solid fa-clock animate-pulse text-sm" />
                                 </div>
                                 <div className="flex flex-col gap-0.5">
                                     <span className="text-xs font-bold text-amber-700 dark:text-amber-300">
                                         Sedang Di: {selected.workflow_step.description}
                                     </span>
-                                    <span className="text-xs text-amber-600/70 dark:text-amber-400/70 font-semibold">
+                                    <span className="text-xs font-semibold text-amber-600/70 dark:text-amber-400/70">
                                         Peran: {selected.workflow_step.role}
                                     </span>
                                 </div>
@@ -367,51 +337,59 @@ export function DraftEditableInfoCard({
                     )}
 
                     {isDraft ? (
-                        <div className="col-span-full border-t border-border pt-4 mt-2">
-                            <div className="mb-4 p-3.5 bg-muted/30 border border-border rounded-xl">
-                                <label className="flex items-center justify-between cursor-pointer">
+                        <div className="border-border col-span-full mt-2 border-t pt-4">
+                            <div className="bg-muted/40 border-border mb-4 rounded-lg border p-2.5">
+                                <label className="flex cursor-pointer items-center justify-between">
                                     <div className="flex flex-col">
-                                        <span className="text-sm font-semibold text-foreground">Review Kepatuhan Pajak</span>
-                                        <span className="text-xs text-muted-foreground mt-0.5">Sertakan departemen pajak dalam alur persetujuan</span>
+                                        <span className="text-foreground text-sm font-bold">Ada Pajak</span>
+                                        <span className="text-muted-foreground mt-0.5 text-xs font-medium">
+                                            Aktifkan jika kontrak dikenakan pajak
+                                        </span>
                                     </div>
-                                    <input 
+                                    <input
                                         type="checkbox"
-                                        checked={!!selected.metadata?.tax_required}
+                                        checked={taxRequired}
                                         onChange={(e) => {
                                             const isChecked = e.target.checked;
+                                            setTaxRequired(isChecked);
                                             onUpdate({ metadata: { ...selected.metadata, tax_required: isChecked } });
                                         }}
-                                        className="w-4 h-4 accent-primary cursor-pointer"
+                                        className="accent-primary h-4 w-4 cursor-pointer"
                                     />
                                 </label>
                             </div>
 
-                            <div className="flex items-center justify-between mb-3">
-                                <span className="text-xs font-semibold text-muted-foreground">
-                                    Disetujui
-                                </span>
-                                <button 
+                            <div className="mb-2.5 flex items-center justify-between border-b border-border/40 pb-2">
+                                <span className="text-foreground text-xs font-bold">Pilih Approver Manajemen</span>
+                                <button
                                     type="button"
                                     onClick={() => setIsAddApproverOpen(true)}
-                                    className="text-xs font-bold text-primary hover:text-primary-hover transition-colors flex items-center gap-1 bg-primary/10 px-2.5 py-1 rounded-lg"
+                                    className="bg-primary/10 text-primary dark:bg-white/10 dark:text-white flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold transition-all hover:bg-primary/20 dark:hover:bg-white/20 active:scale-95 shadow-sm"
                                 >
-                                    + tambah
+                                    <Plus size={14} /> Tambah
                                 </button>
                             </div>
 
                             <div className="space-y-2">
                                 {selected.metadata?.custom_management_users && selected.metadata.custom_management_users.length > 0 ? (
                                     selected.metadata.custom_management_users.map((userId: string, idx: number) => {
-                                        const approval = selected.approvals?.find(a => a.user_id === userId);
-                                        const userObj = allUsers.find(u => u.id === userId);
+                                        const approval = selected.approvals?.find((a) => a.user_id === userId);
+                                        const userObj = allUsers.find((u) => u.id === userId);
                                         return (
-                                            <div key={idx} className="flex items-center justify-between p-2.5 rounded-lg bg-muted/40 border border-border animate-in fade-in">
+                                            <div
+                                                key={idx}
+                                                className="bg-muted/40 border-border animate-in fade-in flex items-center justify-between rounded-lg border p-2.5 shadow-sm"
+                                            >
                                                 <div className="flex flex-col">
-                                                    <span className="text-sm font-bold text-foreground">
+                                                    <span className="text-foreground text-sm font-bold">
                                                         {userObj ? userObj.name : approval ? approval.approver_name : `User ID: ${userId}`}
                                                     </span>
-                                                    <span className="text-xs font-medium text-muted-foreground">
-                                                        {userObj ? `${userObj.department?.name || userObj.department_name || ''} • ${userObj.role}` : approval ? approval.role : 'COO/VP/Deputy'}
+                                                    <span className="text-muted-foreground text-xs font-medium">
+                                                        {userObj
+                                                            ? `${userObj.department?.name || userObj.department_name || ''} • ${userObj.role}`
+                                                            : approval
+                                                              ? approval.role
+                                                              : 'COO/VP/Deputy'}
                                                     </span>
                                                 </div>
                                                 <button
@@ -421,16 +399,19 @@ export function DraftEditableInfoCard({
                                                         const newUsers = currentUsers.filter((id: string) => id !== userId);
                                                         onUpdate({ metadata: { ...selected.metadata, custom_management_users: newUsers } });
                                                     }}
-                                                    className="text-red-500 hover:text-red-600 p-1 transition-colors"
+                                                    className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all active:scale-95"
+                                                    title="Hapus"
                                                 >
-                                                    <i className="fa-solid fa-trash-can text-xs" />
+                                                    <Trash2 size={16} />
                                                 </button>
                                             </div>
                                         );
                                     })
                                 ) : (
-                                    <div className="p-3 text-center text-xs text-muted-foreground italic">
-                                        Belum ada approver tambahan yang ditambahkan.
+                                    <div className="border border-dashed border-border/60 rounded-xl p-4 text-center bg-muted/20">
+                                        <p className="text-muted-foreground text-xs font-medium">
+                                            Belum ada approver tambahan yang ditambahkan.
+                                        </p>
                                     </div>
                                 )}
                             </div>
@@ -446,43 +427,52 @@ export function DraftEditableInfoCard({
                                 <div className="space-y-4">
                                     {/* Search Input */}
                                     <div className="relative">
-                                        <input 
+                                        <input
                                             type="text"
                                             placeholder="Cari nama, departemen, atau peran..."
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
-                                            className="w-full bg-card border border-border h-10 px-3 text-sm font-medium rounded-lg appearance-none focus:ring-1 focus:ring-primary transition-all outline-none text-foreground"
+                                            className="bg-card border-border focus:ring-primary text-foreground h-10 w-full appearance-none rounded-lg border px-3 text-sm font-medium transition-all outline-none focus:ring-1"
                                         />
                                     </div>
 
-                                    <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
+                                    <div className="max-h-60 space-y-1.5 overflow-y-auto pr-1">
                                         {allUsers
-                                            .filter(u => u.role !== 'Vendor' && u.role?.toLowerCase() !== 'staff')
-                                            .filter(u => !searchQuery || u.name?.toLowerCase().includes(searchQuery.toLowerCase()) || u.role?.toLowerCase().includes(searchQuery.toLowerCase()) || u.department?.name?.toLowerCase().includes(searchQuery.toLowerCase()))
+                                            .filter((u) => u.role !== 'Vendor' && u.role?.toLowerCase() !== 'staff')
+                                            .filter(
+                                                (u) =>
+                                                    !searchQuery ||
+                                                    u.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                                    u.role?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                                    u.department?.name?.toLowerCase().includes(searchQuery.toLowerCase()),
+                                            )
                                             .map((u: any) => {
                                                 const isSelected = localSelectedUsers.includes(u.id);
                                                 return (
-                                                    <label 
+                                                    <label
                                                         key={u.id}
                                                         className={cn(
-                                                            "flex items-center justify-between p-2.5 rounded-lg border cursor-pointer transition-all hover:bg-muted/30",
-                                                            isSelected 
-                                                                ? "bg-primary/5 border-primary" 
-                                                                : "border-border bg-card"
+                                                            'hover:bg-muted/30 flex cursor-pointer items-center justify-between rounded-lg border p-2.5 transition-all',
+                                                            isSelected ? 'bg-primary/5 border-primary' : 'border-border bg-card',
                                                         )}
                                                     >
                                                         <div className="flex flex-col">
-                                                            <span className="text-sm font-semibold text-foreground">{u.name}</span>
-                                                            <span className="text-xs text-muted-foreground">
-                                                                {u.department?.name ? `${u.department.name} • ` : u.department_name ? `${u.department_name} • ` : ''}{u.role}
+                                                            <span className="text-foreground text-sm font-semibold">{u.name}</span>
+                                                            <span className="text-muted-foreground text-xs">
+                                                                {u.department?.name
+                                                                    ? `${u.department.name} • `
+                                                                    : u.department_name
+                                                                      ? `${u.department_name} • `
+                                                                      : ''}
+                                                                {u.role}
                                                             </span>
                                                         </div>
-                                                        <input 
+                                                        <input
                                                             type="checkbox"
                                                             checked={isSelected}
                                                             onChange={() => {
                                                                 if (isSelected) {
-                                                                    setLocalSelectedUsers(localSelectedUsers.filter(id => id !== u.id));
+                                                                    setLocalSelectedUsers(localSelectedUsers.filter((id) => id !== u.id));
                                                                 } else {
                                                                     if (localSelectedUsers.length >= 3) {
                                                                         alert('Maksimal 3 orang approver tambahan.');
@@ -491,7 +481,7 @@ export function DraftEditableInfoCard({
                                                                     setLocalSelectedUsers([...localSelectedUsers, u.id]);
                                                                 }
                                                             }}
-                                                            className="w-4 h-4 accent-primary cursor-pointer"
+                                                            className="accent-primary h-4 w-4 cursor-pointer"
                                                         />
                                                     </label>
                                                 );
@@ -502,7 +492,7 @@ export function DraftEditableInfoCard({
                                         <button
                                             type="button"
                                             onClick={() => setIsAddApproverOpen(false)}
-                                            className="px-4 h-9 text-xs font-bold text-muted-foreground hover:text-foreground"
+                                            className="text-muted-foreground hover:text-foreground h-9 px-4 text-xs font-bold"
                                         >
                                             Batal
                                         </button>
@@ -512,7 +502,7 @@ export function DraftEditableInfoCard({
                                                 onUpdate({ metadata: { ...selected.metadata, custom_management_users: localSelectedUsers } });
                                                 setIsAddApproverOpen(false);
                                             }}
-                                            className="px-5 h-9 bg-primary text-white text-xs font-semibold rounded-lg hover:opacity-90 active:scale-95 transition-all shadow"
+                                            className="bg-primary h-9 rounded-lg px-5 text-xs font-semibold text-white shadow transition-all hover:opacity-90 active:scale-95"
                                         >
                                             Simpan
                                         </button>
@@ -521,31 +511,42 @@ export function DraftEditableInfoCard({
                             </Modal>
                         </div>
                     ) : (
-                        selected.metadata?.custom_management_users && Array.isArray(selected.metadata.custom_management_users) && selected.metadata.custom_management_users.length > 0 && (
-                            <div className="col-span-full border-t border-border pt-4 mt-2">
-                                <div className="mb-3 text-xs font-semibold text-muted-foreground">
-                                    Disetujui
-                                </div>
-                                <div className="p-3 bg-muted/40 border border-border rounded-xl space-y-2 animate-in fade-in">
+                        selected.metadata?.custom_management_users &&
+                        Array.isArray(selected.metadata.custom_management_users) &&
+                        selected.metadata.custom_management_users.length > 0 && (
+                            <div className="border-border col-span-full mt-2 border-t pt-4">
+                                <div className="text-muted-foreground mb-3 text-xs font-semibold">Disetujui</div>
+                                <div className="bg-muted/40 border-border animate-in fade-in space-y-2 rounded-xl border p-3">
                                     {selected.metadata.custom_management_users.map((userId: string, idx: number) => {
-                                        const approval = selected.approvals?.find(a => a.user_id === userId);
-                                        const userObj = allUsers.find(u => u.id === userId);
+                                        const approval = selected.approvals?.find((a) => a.user_id === userId);
+                                        const userObj = allUsers.find((u) => u.id === userId);
                                         return (
-                                            <div key={idx} className="flex items-center justify-between p-2.5 rounded-lg bg-card border border-border">
+                                            <div
+                                                key={idx}
+                                                className="bg-card border-border flex items-center justify-between rounded-lg border p-2.5"
+                                            >
                                                 <div className="flex flex-col">
-                                                    <span className="text-sm font-bold text-foreground">
+                                                    <span className="text-foreground text-sm font-bold">
                                                         {userObj ? userObj.name : approval ? approval.approver_name : `User ID: ${userId}`}
                                                     </span>
-                                                    <span className="text-xs font-medium text-muted-foreground">
-                                                        {userObj ? `${userObj.department?.name || userObj.department_name || ''} • ${userObj.role}` : approval ? approval.role : 'COO/VP/Deputy'}
+                                                    <span className="text-muted-foreground text-xs font-medium">
+                                                        {userObj
+                                                            ? `${userObj.department?.name || userObj.department_name || ''} • ${userObj.role}`
+                                                            : approval
+                                                              ? approval.role
+                                                              : 'COO/VP/Deputy'}
                                                     </span>
                                                 </div>
-                                                <span className={cn(
-                                                    "text-xs font-semibold px-2 py-0.5 rounded",
-                                                    approval?.status === 'approved' ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400" :
-                                                    approval?.status === 'rejected' ? "bg-red-50 text-red-600 dark:bg-red-950/20 dark:text-red-400" :
-                                                    "bg-amber-50 text-amber-600 dark:bg-amber-950/20 dark:text-amber-400"
-                                                )}>
+                                                <span
+                                                    className={cn(
+                                                        'rounded px-2 py-0.5 text-xs font-semibold',
+                                                        approval?.status === 'approved'
+                                                            ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400'
+                                                            : approval?.status === 'rejected'
+                                                              ? 'bg-red-50 text-red-600 dark:bg-red-950/20 dark:text-red-400'
+                                                              : 'bg-amber-50 text-amber-600 dark:bg-amber-950/20 dark:text-amber-400',
+                                                    )}
+                                                >
                                                     {approval ? approval.status : 'pending'}
                                                 </span>
                                             </div>

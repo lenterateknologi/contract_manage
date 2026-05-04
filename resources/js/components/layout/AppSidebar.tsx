@@ -77,13 +77,17 @@ export const AppSidebar = memo(function AppSidebar() {
     const [search, setSearch] = useState('');
 
     const groups = useMemo(() => {
-        return ((sidebarNavGroups as NavGroup[]) ?? []).map((group) => ({
-            ...group,
-            items: group.items.map((item) => ({
-                ...item,
-                icon: typeof item.icon === 'string' ? (iconMap[item.icon] ?? FileText) : item.icon,
-            })),
-        }));
+        return ((sidebarNavGroups as NavGroup[]) ?? []).map((group) => {
+            return {
+                ...group,
+                items: group.items.map((item) => {
+                    return {
+                        ...item,
+                        icon: typeof item.icon === 'string' ? (iconMap[item.icon] ?? FileText) : item.icon,
+                    };
+                }),
+            };
+        });
     }, [sidebarNavGroups]);
 
     const filteredGroups = useMemo(() => {
