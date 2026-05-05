@@ -25,6 +25,7 @@ class Approval extends Model
         'job_title',
         'status',
         'comment',
+        'attachment_path',
         'decided_at',
         'created_by',
         'updated_by',

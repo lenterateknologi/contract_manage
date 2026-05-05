@@ -281,7 +281,7 @@ export function TableMasterData<T extends Record<string, any>>({
                                     <td colSpan={columns.length + 1 + (rowActions ? 1 : 0)} className="p-16 text-center">
                                         <div className="flex flex-col items-center gap-3 opacity-40 dark:opacity-30 select-none">
                                             <Search size={40} strokeWidth={1} className="text-muted-foreground" />
-                                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-slate-500">Tidak ada data</p>
+                                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-slate-500">Tidak ada data ditemukan</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -325,7 +325,7 @@ export function TableMasterData<T extends Record<string, any>>({
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-1 py-2 select-none animate-in fade-in duration-200">
                     <div className="flex items-center gap-3 order-2 sm:order-1">
                         <span className="text-xs font-medium text-muted-foreground dark:text-slate-400">
-                            Menampilkan <span className="font-bold text-foreground dark:text-slate-200">{filteredData.length}</span> dari <span className="font-bold text-foreground dark:text-slate-200">{pagination.total}</span> data
+                            Menampilkan <span className="font-bold text-foreground dark:text-slate-200">{filteredData.length}</span> dari <span className="font-bold text-foreground dark:text-slate-200">{pagination.total}</span> baris
                         </span>
                     </div>
 

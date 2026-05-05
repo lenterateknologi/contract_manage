@@ -54,7 +54,6 @@ export function DraftEditableInfoCard({
     });
     const [vendorId, setVendorId] = useState(selected.vendor_id || '');
     const [submissionTypeId, setSubmissionTypeId] = useState(selected.submission_type_id || '');
-    const [transactionType, setTransactionType] = useState(selected.transaction_type || 'Perjanjian Baru');
     const [kopSubTopik, setKopSubTopik] = useState((selected as any).kop_sub_topik || '');
     const [crownNo, setCrownNo] = useState(selected.crown_no || '');
     const [minimized, setMinimized] = useState(false);
@@ -85,7 +84,6 @@ export function DraftEditableInfoCard({
         setTypeId(t ? String(t.id) : '');
         setVendorId(selected.vendor_id || '');
         setSubmissionTypeId(selected.submission_type_id || '');
-        setTransactionType(selected.transaction_type || 'Perjanjian Baru');
         setKopSubTopik((selected as any).kop_sub_topik || '');
         setCrownNo(selected.crown_no || '');
     }, [
@@ -113,11 +111,11 @@ export function DraftEditableInfoCard({
             typeId !== origTypeId ||
             vendorId !== (selected.vendor_id || '') ||
             submissionTypeId !== (selected.submission_type_id || '') ||
-            transactionType !== (selected.transaction_type || 'Perjanjian Baru') ||
             crownNo !== (selected.crown_no || '') ||
-            kopSubTopik !== ((selected as any).kop_sub_topik || '')
+            kopSubTopik !== ((selected as any).kop_sub_topik || '') ||
+            taxRequired !== !!selected.metadata?.tax_required
         );
-    }, [title, description, typeId, vendorId, submissionTypeId, transactionType, crownNo, kopSubTopik, selected, types]);
+    }, [title, description, typeId, vendorId, submissionTypeId, crownNo, kopSubTopik, taxRequired, selected, types]);
 
     // Debounced Auto-Save for Contract Metadata
     useEffect(() => {
@@ -134,20 +132,23 @@ export function DraftEditableInfoCard({
                         contract_type_id: typeId || undefined,
                         vendor_id: vendorId || undefined,
                         submission_type_id: submissionTypeId || undefined,
-                        transaction_type: transactionType,
                         kop_sub_topik: kopSubTopik,
                         crown_no: crownNo,
+                        metadata: {
+                            ...selected.metadata,
+                            tax_required: taxRequired,
+                        }
                     });
                 } finally {
                     setLocalSaving(false);
                 }
-            }, 3000); // 3 second debounce
+            }, 1000); // 1 second debounce for snappier real-time feel
         }
 
         return () => {
             if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
         };
-    }, [title, description, typeId, vendorId, submissionTypeId, transactionType, kopSubTopik, crownNo, isDraft, onUpdate]);
+    }, [title, description, typeId, vendorId, submissionTypeId, kopSubTopik, crownNo, taxRequired, isDraft, onUpdate]);
 
     const inputCls =
         'w-full bg-black/[0.03] dark:bg-white/[0.05] border border-border/50 rounded-lg px-3 py-1.5 text-sm text-foreground dark:text-white outline-none focus:bg-white dark:focus:bg-slate-900 transition-all shadow-sm';
@@ -230,21 +231,6 @@ export function DraftEditableInfoCard({
                                 <span className="bg-muted text-foreground inline-block rounded px-3 py-1.5 font-mono text-sm font-bold shadow-sm">
                                     {selected.crown_no || '—'}
                                 </span>
-                            )}
-                        </div>
-
-                        <div>
-                            <div className="text-muted-foreground mb-1 text-xs font-semibold">Sifat Kontrak</div>
-                            {isDraft ? (
-                                <select value={transactionType} onChange={(e) => setTransactionType(e.target.value)} className={inputCls}>
-                                    <option value="Perjanjian Baru">Perjanjian Baru</option>
-                                    <option value="Perpanjangan">Perpanjangan</option>
-                                    <option value="Addendum">Addendum</option>
-                                    <option value="Amandemen">Amandemen</option>
-                                    <option value="Lainnya">Lainnya</option>
-                                </select>
-                            ) : (
-                                <span className="text-foreground text-sm font-semibold">{selected.transaction_type || '—'}</span>
                             )}
                         </div>
                     </div>
@@ -352,7 +338,6 @@ export function DraftEditableInfoCard({
                                         onChange={(e) => {
                                             const isChecked = e.target.checked;
                                             setTaxRequired(isChecked);
-                                            onUpdate({ metadata: { ...selected.metadata, tax_required: isChecked } });
                                         }}
                                         className="accent-primary h-4 w-4 cursor-pointer"
                                     />
@@ -360,17 +345,17 @@ export function DraftEditableInfoCard({
                             </div>
 
                             <div className="mb-2.5 flex items-center justify-between border-b border-border/40 pb-2">
-                                <span className="text-foreground text-xs font-bold">Pilih Approver Manajemen</span>
+                                <span className="text-foreground text-[10px] font-black uppercase tracking-widest">Approver Manajemen</span>
                                 <button
                                     type="button"
                                     onClick={() => setIsAddApproverOpen(true)}
-                                    className="bg-primary/10 text-primary dark:bg-white/10 dark:text-white flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold transition-all hover:bg-primary/20 dark:hover:bg-white/20 active:scale-95 shadow-sm"
+                                    className="bg-black/5 text-black dark:bg-white/5 dark:text-white flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[10px] font-bold uppercase transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-95 shadow-sm border border-black/5 dark:border-white/5"
                                 >
-                                    <Plus size={14} /> Tambah
+                                    <Plus size={12} strokeWidth={3} /> Tambah
                                 </button>
                             </div>
 
-                            <div className="space-y-2">
+                            <div className="space-y-2.5">
                                 {selected.metadata?.custom_management_users && selected.metadata.custom_management_users.length > 0 ? (
                                     selected.metadata.custom_management_users.map((userId: string, idx: number) => {
                                         const approval = selected.approvals?.find((a) => a.user_id === userId);
@@ -378,19 +363,22 @@ export function DraftEditableInfoCard({
                                         return (
                                             <div
                                                 key={idx}
-                                                className="bg-muted/40 border-border animate-in fade-in flex items-center justify-between rounded-lg border p-2.5 shadow-sm"
+                                                className="bg-muted/30 border-border/40 animate-in fade-in flex items-center justify-between rounded-xl border p-2.5 shadow-xs transition-all hover:bg-muted/50"
                                             >
-                                                <div className="flex flex-col">
-                                                    <span className="text-foreground text-sm font-bold">
-                                                        {userObj ? userObj.name : approval ? approval.approver_name : `User ID: ${userId}`}
-                                                    </span>
-                                                    <span className="text-muted-foreground text-xs font-medium">
-                                                        {userObj
-                                                            ? `${userObj.department?.name || userObj.department_name || ''} • ${userObj.role}`
-                                                            : approval
-                                                              ? approval.role
-                                                              : 'COO/VP/Deputy'}
-                                                    </span>
+                                                <div className="flex items-center gap-3">
+                                                    <Avatar user={userObj || { name: approval?.approver_name || 'User', initials: (approval?.approver_name || 'U').substring(0, 1) } as any} size="sm" />
+                                                    <div className="flex flex-col">
+                                                        <span className="text-foreground text-xs font-bold leading-tight">
+                                                            {userObj ? userObj.name : approval ? approval.approver_name : `User ID: ${userId}`}
+                                                        </span>
+                                                        <span className="text-muted-foreground text-[9px] font-bold uppercase tracking-wide mt-0.5 opacity-60">
+                                                            {userObj
+                                                                ? `${userObj.department_name || ''} • ${userObj.role}`
+                                                                : approval
+                                                                  ? approval.role
+                                                                  : 'COO/VP/Deputy'}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                                 <button
                                                     type="button"
@@ -399,123 +387,29 @@ export function DraftEditableInfoCard({
                                                         const newUsers = currentUsers.filter((id: string) => id !== userId);
                                                         onUpdate({ metadata: { ...selected.metadata, custom_management_users: newUsers } });
                                                     }}
-                                                    className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all active:scale-95"
+                                                    className="p-1.5 text-black/20 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all active:scale-95"
                                                     title="Hapus"
                                                 >
-                                                    <Trash2 size={16} />
+                                                    <Trash2 size={14} />
                                                 </button>
                                             </div>
                                         );
                                     })
                                 ) : (
-                                    <div className="border border-dashed border-border/60 rounded-xl p-4 text-center bg-muted/20">
-                                        <p className="text-muted-foreground text-xs font-medium">
-                                            Belum ada approver tambahan yang ditambahkan.
+                                    <div className="border border-dashed border-border/60 rounded-xl p-5 text-center bg-muted/10">
+                                        <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest opacity-40">
+                                            Belum ada approver tambahan
                                         </p>
                                     </div>
                                 )}
                             </div>
-
-                            {/* Modal to add custom management approvers */}
-                            <Modal
-                                isOpen={isAddApproverOpen}
-                                onClose={() => setIsAddApproverOpen(false)}
-                                title="Tambah Approver Manajemen"
-                                description="Pilih hingga maksimal 3 orang sebagai approver tambahan untuk persetujuan manajemen."
-                                maxWidth="md"
-                            >
-                                <div className="space-y-4">
-                                    {/* Search Input */}
-                                    <div className="relative">
-                                        <input
-                                            type="text"
-                                            placeholder="Cari nama, departemen, atau peran..."
-                                            value={searchQuery}
-                                            onChange={(e) => setSearchQuery(e.target.value)}
-                                            className="bg-card border-border focus:ring-primary text-foreground h-10 w-full appearance-none rounded-lg border px-3 text-sm font-medium transition-all outline-none focus:ring-1"
-                                        />
-                                    </div>
-
-                                    <div className="max-h-60 space-y-1.5 overflow-y-auto pr-1">
-                                        {allUsers
-                                            .filter((u) => u.role !== 'Vendor' && u.role?.toLowerCase() !== 'staff')
-                                            .filter(
-                                                (u) =>
-                                                    !searchQuery ||
-                                                    u.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                                    u.role?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                                    u.department?.name?.toLowerCase().includes(searchQuery.toLowerCase()),
-                                            )
-                                            .map((u: any) => {
-                                                const isSelected = localSelectedUsers.includes(u.id);
-                                                return (
-                                                    <label
-                                                        key={u.id}
-                                                        className={cn(
-                                                            'hover:bg-muted/30 flex cursor-pointer items-center justify-between rounded-lg border p-2.5 transition-all',
-                                                            isSelected ? 'bg-primary/5 border-primary' : 'border-border bg-card',
-                                                        )}
-                                                    >
-                                                        <div className="flex flex-col">
-                                                            <span className="text-foreground text-sm font-semibold">{u.name}</span>
-                                                            <span className="text-muted-foreground text-xs">
-                                                                {u.department?.name
-                                                                    ? `${u.department.name} • `
-                                                                    : u.department_name
-                                                                      ? `${u.department_name} • `
-                                                                      : ''}
-                                                                {u.role}
-                                                            </span>
-                                                        </div>
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={isSelected}
-                                                            onChange={() => {
-                                                                if (isSelected) {
-                                                                    setLocalSelectedUsers(localSelectedUsers.filter((id) => id !== u.id));
-                                                                } else {
-                                                                    if (localSelectedUsers.length >= 3) {
-                                                                        alert('Maksimal 3 orang approver tambahan.');
-                                                                        return;
-                                                                    }
-                                                                    setLocalSelectedUsers([...localSelectedUsers, u.id]);
-                                                                }
-                                                            }}
-                                                            className="accent-primary h-4 w-4 cursor-pointer"
-                                                        />
-                                                    </label>
-                                                );
-                                            })}
-                                    </div>
-
-                                    <div className="flex justify-end gap-3 pt-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => setIsAddApproverOpen(false)}
-                                            className="text-muted-foreground hover:text-foreground h-9 px-4 text-xs font-bold"
-                                        >
-                                            Batal
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                onUpdate({ metadata: { ...selected.metadata, custom_management_users: localSelectedUsers } });
-                                                setIsAddApproverOpen(false);
-                                            }}
-                                            className="bg-primary h-9 rounded-lg px-5 text-xs font-semibold text-white shadow transition-all hover:opacity-90 active:scale-95"
-                                        >
-                                            Simpan
-                                        </button>
-                                    </div>
-                                </div>
-                            </Modal>
                         </div>
                     ) : (
                         selected.metadata?.custom_management_users &&
                         Array.isArray(selected.metadata.custom_management_users) &&
                         selected.metadata.custom_management_users.length > 0 && (
                             <div className="border-border col-span-full mt-2 border-t pt-4">
-                                <div className="text-muted-foreground mb-3 text-xs font-semibold">Disetujui</div>
+                                <div className="text-muted-foreground mb-3 text-[10px] font-black uppercase tracking-widest">Manajemen Approval</div>
                                 <div className="bg-muted/40 border-border animate-in fade-in space-y-2 rounded-xl border p-3">
                                     {selected.metadata.custom_management_users.map((userId: string, idx: number) => {
                                         const approval = selected.approvals?.find((a) => a.user_id === userId);
@@ -523,28 +417,31 @@ export function DraftEditableInfoCard({
                                         return (
                                             <div
                                                 key={idx}
-                                                className="bg-card border-border flex items-center justify-between rounded-lg border p-2.5"
+                                                className="bg-card border-border/40 flex items-center justify-between rounded-xl border p-2.5 shadow-xs"
                                             >
-                                                <div className="flex flex-col">
-                                                    <span className="text-foreground text-sm font-bold">
-                                                        {userObj ? userObj.name : approval ? approval.approver_name : `User ID: ${userId}`}
-                                                    </span>
-                                                    <span className="text-muted-foreground text-xs font-medium">
-                                                        {userObj
-                                                            ? `${userObj.department?.name || userObj.department_name || ''} • ${userObj.role}`
-                                                            : approval
-                                                              ? approval.role
-                                                              : 'COO/VP/Deputy'}
-                                                    </span>
+                                                <div className="flex items-center gap-3">
+                                                    <Avatar user={userObj || { name: approval?.approver_name || 'User', initials: (approval?.approver_name || 'U').substring(0, 1) } as any} size="sm" />
+                                                    <div className="flex flex-col">
+                                                        <span className="text-foreground text-xs font-bold leading-tight">
+                                                            {userObj ? userObj.name : approval ? approval.approver_name : `User ID: ${userId}`}
+                                                        </span>
+                                                        <span className="text-muted-foreground text-[9px] font-bold uppercase tracking-wide mt-0.5 opacity-60">
+                                                            {userObj
+                                                                ? `${userObj.department_name || ''} • ${userObj.role}`
+                                                                : approval
+                                                                  ? approval.role
+                                                                  : 'COO/VP/Deputy'}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                                 <span
                                                     className={cn(
-                                                        'rounded px-2 py-0.5 text-xs font-semibold',
+                                                        'rounded-lg px-2.5 py-1 text-[9px] font-black uppercase tracking-wider',
                                                         approval?.status === 'approved'
-                                                            ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400'
+                                                            ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30'
                                                             : approval?.status === 'rejected'
-                                                              ? 'bg-red-50 text-red-600 dark:bg-red-950/20 dark:text-red-400'
-                                                              : 'bg-amber-50 text-amber-600 dark:bg-amber-950/20 dark:text-amber-400',
+                                                              ? 'bg-red-50 text-red-600 dark:bg-red-950/20 dark:text-red-400 border border-red-100 dark:border-red-900/30'
+                                                              : 'bg-amber-50 text-amber-600 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30',
                                                     )}
                                                 >
                                                     {approval ? approval.status : 'pending'}
@@ -558,6 +455,107 @@ export function DraftEditableInfoCard({
                     )}
                 </div>
             )}
+
+            {/* Modal to add custom management approvers - Moved outside minimized for reliability */}
+            <Modal
+                isOpen={isAddApproverOpen}
+                onClose={() => setIsAddApproverOpen(false)}
+                title="Tambah Approver Manajemen"
+                description="Pilih hingga maksimal 3 orang sebagai approver tambahan untuk persetujuan manajemen."
+                maxWidth="md"
+            >
+                <div className="space-y-4">
+                    {/* Search Input */}
+                    <div className="relative">
+                        <input
+                            type="text"
+                            placeholder="Cari nama, departemen, atau peran..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="bg-black/5 dark:bg-white/5 border-border focus:ring-black dark:focus:ring-white text-foreground h-11 w-full appearance-none rounded-xl border px-4 text-sm font-bold transition-all outline-none focus:ring-1"
+                        />
+                    </div>
+
+                    <div className="max-h-60 space-y-1.5 overflow-y-auto pr-1 custom-scrollbar">
+                        {allUsers
+                            .filter((u) => u.role !== 'Vendor') // Loosened: Allow staff if explicitly needed, but usually filtered by search
+                            .filter(
+                                (u) =>
+                                    !searchQuery ||
+                                    u.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                    u.role?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                    u.department_name?.toLowerCase().includes(searchQuery.toLowerCase()),
+                            )
+                            .map((u: any) => {
+                                const isSelected = localSelectedUsers.includes(u.id);
+                                return (
+                                    <label
+                                        key={u.id}
+                                        className={cn(
+                                            'hover:bg-muted/40 flex cursor-pointer items-center justify-between rounded-xl border p-3 transition-all duration-200',
+                                            isSelected ? 'bg-black text-white dark:bg-white dark:text-black border-black dark:border-white shadow-md' : 'border-border/50 bg-card',
+                                        )}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <Avatar user={u} size="sm" className={isSelected ? "bg-white text-black dark:bg-black dark:text-white" : ""} />
+                                            <div className="flex flex-col">
+                                                <span className={cn("text-sm font-bold leading-tight", isSelected ? "text-white dark:text-black" : "text-foreground")}>{u.name}</span>
+                                                <span className={cn("text-[10px] font-bold uppercase tracking-wider mt-0.5 opacity-60", isSelected ? "text-white/70 dark:text-black/70" : "text-muted-foreground")}>
+                                                    {u.department_name ? `${u.department_name} • ` : ''}
+                                                    {u.role}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className={cn("w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all", isSelected ? "border-white/40 bg-white/20" : "border-black/10")}>
+                                            {isSelected && <Check size={12} strokeWidth={4} />}
+                                        </div>
+                                        <input
+                                            type="checkbox"
+                                            className="hidden"
+                                            checked={isSelected}
+                                            onChange={() => {
+                                                if (isSelected) {
+                                                    setLocalSelectedUsers(localSelectedUsers.filter((id) => id !== u.id));
+                                                } else {
+                                                    if (localSelectedUsers.length >= 3) {
+                                                        alert('Maksimal 3 orang approver tambahan.');
+                                                        return;
+                                                    }
+                                                    setLocalSelectedUsers([...localSelectedUsers, u.id]);
+                                                }
+                                            }}
+                                        />
+                                    </label>
+                                );
+                            })}
+                        {allUsers.length === 0 && (
+                            <div className="py-10 text-center text-muted-foreground text-xs italic opacity-40">
+                                Memuat daftar pengguna...
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex justify-end gap-3 pt-4 border-t border-black/5 dark:border-white/5">
+                        <button
+                            type="button"
+                            onClick={() => setIsAddApproverOpen(false)}
+                            className="text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white h-11 px-6 text-[11px] font-black uppercase tracking-[0.2em] transition-all"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                onUpdate({ metadata: { ...selected.metadata, custom_management_users: localSelectedUsers } });
+                                setIsAddApproverOpen(false);
+                            }}
+                            className="bg-black text-white dark:bg-white dark:text-black h-11 rounded-xl px-8 text-[11px] font-black uppercase tracking-[0.2em] shadow-lg transition-all active:scale-95 hover:opacity-90"
+                        >
+                            Simpan Perubahan
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 }

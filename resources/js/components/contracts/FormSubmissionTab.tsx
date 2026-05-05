@@ -54,14 +54,13 @@ const F2_IMPORTANT_FIELDS: { key: string; label: string; width: string; type?: s
     { key: 'meta_mekanisme_pembayaran', label: 'Mekanisme Bayar', width: '1/2' },
     // Signature boxes
     { key: 'meta_pic', label: 'PIC', width: '1/3', type: 'signature_box' },
-    { key: 'meta_manager_legal', label: 'Manager Legal', width: '1/3', type: 'signature_box' },
     { key: 'meta_vp_legal', label: 'VP Legal / Management', width: '1/3', type: 'signature_box' },
 ];
 
 /**
  * Fuzzy matching helper to autofill F1 form fields from general contract data.
  */
-const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' | 'f2') => {
+const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' | 'f2', users: any[] = []) => {
     const name = field.name.toLowerCase();
 
     // Special Case: F2 Ruang Lingkup composite
@@ -75,13 +74,13 @@ const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' | 'f2')
 
     // 1. Identification / Metadata
     if (name === 'meta_nomor') return contract.contract_no || '';
-    if (name === 'meta_nomor_kontrak') return (contract as any).crown_no || '';
-    if (name === 'meta_judul') return contract.title || '';
-    if (name === 'meta_topik') {
+    if (name === 'meta_nomor_kontrak' || name === 'meta_no_kontrak' || name === 'meta_no_pengajuan') return (contract as any).crown_no || contract.contract_no || '';
+    if (name === 'meta_judul' || name === 'meta_judul_kontrak' || name === 'meta_nama_kontrak') return contract.title || '';
+    if (name === 'meta_topik' || name === 'meta_jenis_kontrak') {
         const type = (contract as any).contract_type;
         return type?.name || (typeof type === 'string' ? type : '');
     }
-    if (name === 'meta_sub_topik') return (contract as any).kop_sub_topik || '';
+    if (name === 'meta_sub_topik' || name === 'meta_kop_sub_topik') return (contract as any).kop_sub_topik || '';
     if (name === 'meta_lampiran') {
         const vendor = (contract as any).vendor;
         const docs = vendor?.documents || [];
@@ -98,7 +97,7 @@ const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' | 'f2')
     }
 
     // 2. Dates
-    if (name === 'meta_tgl_dibuat' || name === 'tanggal') {
+    if (name === 'meta_tgl_dibuat' || name === 'tanggal' || name === 'meta_tanggal') {
         const now = new Date();
         const dateStr = now.toLocaleDateString('en-CA'); // YYYY-MM-DD
         const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
@@ -114,26 +113,56 @@ const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' | 'f2')
 
     // 3. Parties & Metadata
     if (name === 'meta_p1_entity') return 'PT. LENTERA TEKNOLOGI';
-    if (name === 'meta_type' || name === 'meta_tipe_perjanjian') return (contract as any).submission_type || (contract as any).transaction_type || '';
-    if (name === 'meta_transaction_type') return (contract as any).transaction_type || '';
+    if (name === 'meta_type' || name === 'meta_tipe_perjanjian') return (contract as any).submission_type || '';
+    if (name === 'meta_perjanjian') return (contract as any).submission_type || '';
     if (name === 'meta_p1_signer') return contract.p1_signer || (contract as any).initiator?.name || '';
     if (name === 'meta_p1_signer_position') return contract.p1_signer_position || (contract as any).initiator?.role || '';
     if (name === 'meta_p1_alamat') return 'The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan';
 
     const vendor = (contract as any).vendor;
-    if (name === 'meta_p2_entity') return vendor?.name || '';
+    if (name === 'meta_p2_entity' || name === 'meta_vendor_name') return vendor?.name || '';
     if (name === 'meta_p2_signer') return vendor?.pic_name || '';
     if (name === 'meta_p2_signer_position') return vendor?.pic_position || '';
     if (name === 'meta_p2_alamat') return vendor?.address || '';
 
     if (name === 'meta_lokasi') return (contract as any).location || '';
-    if (name === 'meta_nilai_transaksi') return (contract as any).amount || '';
+    if (name === 'meta_nilai_transaksi' || name === 'meta_amount') return (contract as any).amount || '';
     if (name === 'meta_mekanisme_pembayaran') return (contract as any).payment_terms || '';
     if (name === 'meta_deskripsi' || name === 'keterangan') return contract.description || '';
 
-    // Fallback
-    if (contract.metadata && (contract.metadata as any)[field.name]) {
-        return (contract.metadata as any)[field.name];
+    // 4. Management Approvers for Signature Boxes
+    if (name === 'meta_manager_legal' || name === 'meta_vp_legal') {
+        const customUserIds = contract.metadata?.custom_management_users || [];
+        if (customUserIds.length > 0) {
+            // Priority 1: Use provided users list (Fastest & Real-time)
+            const resolvedNames = customUserIds.map((id: string) => {
+                const user = users.find(u => String(u.id) === String(id));
+                return user?.name;
+            }).filter(Boolean);
+
+            if (resolvedNames.length > 0) return resolvedNames.join(', ');
+
+            // Priority 2: Fallback to contract approvals if users list is not exhaustive
+            const approvals = contract.approvals || [];
+            const names = customUserIds.map((id: string) => {
+                const app = approvals.find((a) => a.user_id === id);
+                return app ? app.approver_name : null;
+            }).filter(Boolean);
+            
+            if (names.length > 0) return names.join(', ');
+        }
+        return ''; // Return empty string to allow clearing
+    }
+
+    // 5. Tax Requirement
+    if (name === 'meta_tax_required' || name === 'meta_pajak') {
+        return contract.metadata?.tax_required ? 'Ya' : 'Tidak';
+    }
+
+    // Fallback to direct metadata match
+    if (contract.metadata && (contract.metadata as any)[field.name] !== undefined) {
+        const val = (contract.metadata as any)[field.name];
+        return val === null ? '' : String(val);
     }
 
     return null;
@@ -148,13 +177,17 @@ export function FormSubmissionTab({
     selected,
     formTemplates,
     onContractUpdated,
+    users = [],
+    meUser,
 }: {
     docType: 'f1' | 'f2';
     selected: Contract;
     formTemplates: FormTemplateInfo[];
     onContractUpdated: (c: Contract) => void;
+    users?: any[];
+    meUser?: any;
 }) {
-    return <GenericFormTab docType={docType} selected={selected} formTemplates={formTemplates} onContractUpdated={onContractUpdated} />;
+    return <GenericFormTab docType={docType} selected={selected} formTemplates={formTemplates} onContractUpdated={onContractUpdated} users={users} meUser={meUser} />;
 }
 
 /**
@@ -166,11 +199,15 @@ function GenericFormTab({
     selected,
     formTemplates,
     onContractUpdated,
+    users = [],
+    meUser,
 }: {
     docType: 'f1' | 'f2';
     selected: Contract;
     formTemplates: FormTemplateInfo[];
     onContractUpdated: (c: Contract) => void;
+    users?: any[];
+    meUser?: any;
 }) {
     const { showToast, showProgress, hideProgress } = useToast();
     const [fields, setFields] = useState<FormField[]>([]);
@@ -223,7 +260,7 @@ function GenericFormTab({
                 let hasChanged = false;
                 fields.forEach((f) => {
                     if (f.type !== 'kop_surat' && f.type !== 'form_title') {
-                        const val = getAutofillValue(f, selected, docType);
+                        const val = getAutofillValue(f, selected, docType, users);
                         if (val !== null) {
                             // Date fields marked as meta_tgl_dibuat/tanggal are always updated to current time
                             // Other fields use the "Smart Sync" logic to preserve manual edits.
@@ -264,7 +301,7 @@ function GenericFormTab({
                 showToast('Data sinkron dengan informasi kontrak & vendor.', 'success');
             }
         },
-        [fields, selected, originalData, showToast, manualFields, docType],
+        [fields, selected, originalData, showToast, manualFields, docType, users],
     );
 
     // Auto-sync whenever contract metadata changes
@@ -298,7 +335,7 @@ function GenericFormTab({
                 const autofilled: Record<string, any> = {};
                 tplFields.forEach((f) => {
                     if (f.type !== 'kop_surat' && f.type !== 'form_title') {
-                        const val = getAutofillValue(f, selected, docType);
+                        const val = getAutofillValue(f, selected, docType, users);
                         if (val !== null) autofilled[f.name] = val;
                     }
                 });
@@ -320,7 +357,7 @@ function GenericFormTab({
                 const initial: Record<string, any> = {};
                 tplFields.forEach((f) => {
                     if (f.type !== 'kop_surat' && f.type !== 'form_title') {
-                        const autofillValue = getAutofillValue(f, selected, docType);
+                        const autofillValue = getAutofillValue(f, selected, docType, users);
                         initial[f.name] = autofillValue !== null ? autofillValue : '';
                     }
                 });
@@ -593,6 +630,63 @@ function GenericFormTab({
                         <div className="animate-in slide-in-from-bottom-5 fill-mode-both h-full w-full max-w-[210mm] overflow-hidden rounded-sm bg-white shadow-2xl ring-1 ring-black/10 delay-150 duration-500 dark:ring-white/10">
                             <iframe src={`${pdfPreviewUrl}#toolbar=0&navpanes=0`} className="h-full w-full border-none" title="PDF Preview" />
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {isF2 && (meUser?.department === 'Legal' || meUser?.role === 'PIC Legal' || meUser?.role === 'Admin') && (
+                <div className="bg-primary/5 dark:bg-white/5 border-b border-black/10 dark:border-white/10 px-6 py-4">
+                    <div className="flex flex-wrap items-end gap-6">
+                        {(meUser?.role === 'Legal Staff' || meUser?.role === 'Admin') && (
+                            <div className="flex-1 min-w-[200px] space-y-1.5">
+                                <label className="text-[10px] font-black text-primary/60 dark:text-white/60 uppercase tracking-widest flex items-center gap-1.5">
+                                    <i className="fa-solid fa-hashtag" /> Crown Number
+                                </label>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        placeholder="Input Crown Number..."
+                                        value={(selected as any).crown_no || ''}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            onContractUpdated({ ...selected, crown_no: val } as any);
+                                            // Trigger debounced update to server
+                                            contractApi.update(selected.id, { crown_no: val });
+                                        }}
+                                        className="h-10 flex-1 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-black/20 px-4 text-xs font-bold outline-none focus:border-primary transition-all shadow-sm"
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {(meUser?.role === 'PIC Legal' || meUser?.role === 'Admin') && (
+                            <div className="flex items-center gap-4 h-10 px-4 bg-white dark:bg-black/20 rounded-lg border border-black/10 dark:border-white/10 shadow-sm">
+                                <label className="text-[10px] font-black text-black/60 dark:text-white/60 uppercase tracking-widest flex items-center gap-1.5">
+                                    <i className="fa-solid fa-signature" /> Digital Signature
+                                </label>
+                                <button
+                                    onClick={() => {
+                                        const next = !selected.is_digital_signature;
+                                        onContractUpdated({ ...selected, is_digital_signature: next } as any);
+                                        contractApi.update(selected.id, { is_digital_signature: next });
+                                    }}
+                                    className={cn(
+                                        "relative inline-flex h-5 w-10 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                                        selected.is_digital_signature ? "bg-primary" : "bg-black/20 dark:bg-white/20"
+                                    )}
+                                >
+                                    <span
+                                        className={cn(
+                                            "pointer-events-none block h-4 w-4 rounded-full bg-white shadow-lg ring-0 transition-transform",
+                                            selected.is_digital_signature ? "translate-x-5" : "translate-x-1"
+                                        )}
+                                    />
+                                </button>
+                                <span className="text-[10px] font-black text-black dark:text-white uppercase">
+                                    {selected.is_digital_signature ? 'Aktif' : 'Non-Aktif'}
+                                </span>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

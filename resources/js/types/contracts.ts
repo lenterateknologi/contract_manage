@@ -102,6 +102,7 @@ export interface Contract {
     id: string;
     contract_no: string;
     crown_no?: string | null;
+    is_digital_signature?: boolean;
     title: string;
     description: string;
     contract_date: string | null;

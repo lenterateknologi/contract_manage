@@ -394,12 +394,14 @@ const ContractDetailView = ({
     setPreviewUrl,
     setPreviewHasFile,
     setPreviewOpen,
+    meUser,
 }: {
     contract: Contract;
     meId: string;
     types: ContractType[];
     submissionTypes: any[];
     vendors: any[];
+    meUser: any;
     formTemplates: any[];
     canUpdate: boolean;
     onClose: () => void;
@@ -513,9 +515,9 @@ const ContractDetailView = ({
         }
     };
 
-    const handleApprove = async (note: string) => {
+    const handleApprove = async (note: string, attachment?: File) => {
         try {
-            const c = await contractApi.approve(contract.id, note);
+            const c = await contractApi.approve(contract.id, note, attachment);
             onUpdate(c);
             showToast('Kontrak disetujui.', 'success');
         } catch {
@@ -523,9 +525,9 @@ const ContractDetailView = ({
         }
     };
 
-    const handleReject = async (note: string) => {
+    const handleReject = async (reason: string, attachment?: File) => {
         try {
-            const c = await contractApi.reject(contract.id, note);
+            const c = await contractApi.reject(contract.id, reason, attachment);
             onUpdate(c);
             showToast('Kontrak ditolak.', 'info');
         } catch {
@@ -561,13 +563,13 @@ const ContractDetailView = ({
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    {contract.status === 'draft' && (
+                    {(contract.status === 'draft' || contract.status === 'revision') && (
                         <Button
                             variant="primary"
                             onClick={() => setSendOpen(true)}
                             className="h-10 px-6 active:scale-95 dark:bg-white dark:text-black dark:hover:bg-white/90"
                         >
-                            <Send size={14} /> Kirim Approval
+                            <Send size={14} /> {contract.status === 'revision' ? 'Ajukan Ulang' : 'Kirim Approval'}
                         </Button>
                     )}
                     <DropdownMenu>
@@ -666,10 +668,10 @@ const ContractDetailView = ({
                         </div>
                         <div className={cn('flex min-h-[600px] flex-1 flex-col')}>
                             {detailTab === 'form_template' && (
-                                <FormSubmissionTab docType="f1" selected={contract} formTemplates={formTemplates} onContractUpdated={onUpdate} />
+                                <FormSubmissionTab docType="f1" selected={contract} formTemplates={formTemplates} onContractUpdated={onUpdate} users={vendors} meUser={meUser} />
                             )}
                             {detailTab === 'f2' && (
-                                <FormSubmissionTab docType="f2" selected={contract} formTemplates={formTemplates} onContractUpdated={onUpdate} />
+                                <FormSubmissionTab docType="f2" selected={contract} formTemplates={formTemplates} onContractUpdated={onUpdate} users={vendors} meUser={meUser} />
                             )}
                             {detailTab === 'agreement' && <AgreementView contract={contract} onUpdate={onUpdate} />}
                             {detailTab === 'attachments' && <ContractAttachments contract={contract} onUpdated={onUpdate} showToast={showToast} />}
@@ -1052,6 +1054,7 @@ function ContractPage({
                             setPreviewUrl={setPreviewUrl}
                             setPreviewHasFile={setPreviewHasFile}
                             setPreviewOpen={setPreviewOpen}
+                            meUser={meUser}
                         />
                     </div>
                 ) : (

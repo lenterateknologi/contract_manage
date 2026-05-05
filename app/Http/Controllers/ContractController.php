@@ -523,7 +523,7 @@ class ContractController extends Controller
             $contract = Contract::findOrFail($id);
 
             if ($contract->status !== 'draft') {
-                return response()->json(['message' => 'Only draft contracts can be sent.'], 422);
+                return response()->json(['message' => 'Hanya kontrak berstatus draft yang dapat dikirim.'], 422);
             }
 
             $workflowId = $request->input('workflow_id');
@@ -561,6 +561,9 @@ class ContractController extends Controller
             'p2_signer' => 'nullable|string',
             'p2_signer_position' => 'nullable|string',
             'p2_address' => 'nullable|string',
+            'category' => 'nullable|string',
+            'project_name' => 'nullable|string',
+            'topic' => 'nullable|string',
         ]);
 
         return DB::transaction(function () use ($validated) {
@@ -598,6 +601,9 @@ class ContractController extends Controller
                 'p2_address' => $validated['p2_address'] ?? null,
                 'metadata' => [
                     'tax_required' => $validated['tax_required'] ?? false,
+                    'category' => $validated['category'] ?? 'contract',
+                    'topic' => $validated['topic'] ?? 'perjanjian',
+                    'project_name' => $validated['project_name'] ?? null,
                 ]
             ]);
 
@@ -681,7 +687,10 @@ class ContractController extends Controller
 
     public function approve(Request $request, string $id): JsonResponse
     {
-        $request->validate(['note' => 'nullable|string']);
+        $request->validate([
+            'note' => 'nullable|string',
+            'attachment' => 'nullable|file|max:10240', // 10MB limit
+        ]);
 
         $contract = Contract::findOrFail($id);
 
@@ -691,8 +700,14 @@ class ContractController extends Controller
             ->where('status', 'pending')
             ->first();
 
-        if (! $approval) {
-            return response()->json(['message' => 'No pending approval found for you.'], 422);
+        if (!$approval) {
+            return response()->json(['message' => 'Tidak ada persetujuan tertunda yang ditemukan untuk Anda.'], 422);
+        }
+
+        $attachmentPath = null;
+        if ($request->hasFile('attachment')) {
+            $attachmentPath = $request->file('attachment')->store("contracts/{$contract->id}/approvals", 'local');
+            $approval->attachment_path = $attachmentPath;
         }
 
         $contract = $this->workflowService->approveContract($contract, $approval, $request->note);
@@ -702,7 +717,10 @@ class ContractController extends Controller
 
     public function reject(Request $request, string $id): JsonResponse
     {
-        $request->validate(['reason' => 'required|string']);
+        $request->validate([
+            'reason' => 'required|string',
+            'attachment' => 'nullable|file|max:10240', // 10MB limit
+        ]);
 
         $contract = Contract::findOrFail($id);
 
@@ -712,8 +730,14 @@ class ContractController extends Controller
             ->where('status', 'pending')
             ->first();
 
-        if (! $approval) {
-            return response()->json(['message' => 'No pending approval found for you.'], 422);
+        if (!$approval) {
+            return response()->json(['message' => 'Tidak ada persetujuan tertunda yang ditemukan untuk Anda.'], 422);
+        }
+
+        $attachmentPath = null;
+        if ($request->hasFile('attachment')) {
+            $attachmentPath = $request->file('attachment')->store("contracts/{$contract->id}/approvals", 'local');
+            $approval->attachment_path = $attachmentPath;
         }
 
         $contract = $this->workflowService->rejectContract($contract, $approval, $request->reason);
@@ -1188,6 +1212,7 @@ class ContractController extends Controller
                 ]),
             ] : null,
             'status' => $c->status,
+            'metadata' => $c->metadata ?? [],
             'display_mode' => $c->statusDetail?->display_mode ?? 'interactive',
             'allow_info_edit' => $c->statusDetail?->allow_info_edit ?? ($c->status === 'draft'),
             'allow_reference' => $c->statusDetail?->allow_reference ?? ($c->status === 'draft'),
@@ -1299,21 +1324,44 @@ class ContractController extends Controller
             }
 
             if ($approvals->isNotEmpty()) {
-                // If we have actual approval records for this step
-                foreach ($approvals as $a) {
+                // Determine if we should group these approvals (e.g., they are all pending for the same role/step)
+                $isAllPending = $approvals->every(fn($a) => $a->status === 'pending');
+                
+                if ($isAllPending && $approvals->count() > 1) {
+                    // Group multiple candidates into one placeholder entry
+                    $first = $approvals->first();
+                    $candidateNames = $approvals->map(fn($a) => $a->approver?->name ?? $a->approver_name)->implode(', ');
+                    
                     $timeline[] = [
-                        'id' => $a->id,
-                        'user_id' => $a->user_id,
-                        'approver_name' => $a->approver_name,
-                        'role' => $a->role,
+                        'id' => 'step-group-'.$step->id,
+                        'user_id' => null,
+                        'approver_name' => $first->role,
+                        'role' => $first->role,
                         'department_name' => $deptName,
-                        'target_approvers' => $targetApprovers,
+                        'target_approvers' => $candidateNames,
                         'sequence' => $step->step,
-                        'status' => $a->status,
-                        'note' => $a->comment,
-                        'approved_at' => $a->decided_at?->toDateTimeString(),
-                        'approver' => $this->formatUser($a->approver),
+                        'status' => 'pending',
+                        'note' => null,
+                        'approved_at' => null,
+                        'approver' => ['name' => $first->role],
                     ];
+                } else {
+                    // Standard display for individual approvals (especially if decided)
+                    foreach ($approvals as $a) {
+                        $timeline[] = [
+                            'id' => $a->id,
+                            'user_id' => $a->user_id,
+                            'approver_name' => $a->approver_name,
+                            'role' => $a->role,
+                            'department_name' => $deptName,
+                            'target_approvers' => $targetApprovers,
+                            'sequence' => $step->step,
+                            'status' => $a->status,
+                            'note' => $a->comment,
+                            'approved_at' => $a->decided_at?->toDateTimeString(),
+                            'approver' => $this->formatUser($a->approver),
+                        ];
+                    }
                 }
             } else {
                 // Future step placeholder

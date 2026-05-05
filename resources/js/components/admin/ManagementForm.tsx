@@ -57,7 +57,7 @@ export function ManagementForm({
                         ) : (
                             <div className="flex items-center gap-1.5">
                                 <Save size={14} />
-                                <span>{isEdit ? 'Update' : 'Simpan'}</span>
+                                <span>{isEdit ? 'Perbarui' : 'Simpan'}</span>
                             </div>
                         )}
                     </Button>

@@ -40,7 +40,25 @@ class ContractWorkflowService
         }
 
         if (!$workflow) {
-            throw new \Exception('No workflow found and no default available for this contract type.');
+            throw new \Exception('Alur kerja tidak ditemukan dan tidak ada alur default untuk tipe kontrak ini.');
+        }
+
+        // Special logic for NDA - recording only, directly to archived
+        if (strtolower($topic) === 'nda') {
+            $contract->update([
+                'status' => 'archived',
+                'workflow_id' => $workflow->id,
+                'workflow_step_id' => null,
+                'submitted_at' => now(),
+            ]);
+
+            $contract->histories()->create([
+                'action' => 'CONTRACT_ARCHIVED',
+                'description' => 'NDA Langsung diarsipkan (Recording Only)',
+                'actor_id' => Auth::id(),
+            ]);
+
+            return $contract->fresh();
         }
 
         // Calculate Deadlines using Workflow-specific SLA settings
@@ -78,7 +96,7 @@ class ContractWorkflowService
         }
 
         if (!$firstStep) {
-            throw new \Exception('No valid workflow steps available for this request.');
+            throw new \Exception('Tidak ada tahapan alur kerja yang valid untuk permintaan ini.');
         }
 
         // Update contract with workflow info and submission timestamp
@@ -100,9 +118,12 @@ class ContractWorkflowService
         // Log the action
         $contract->histories()->create([
             'action' => 'CONTRACT_SENT',
-            'description' => 'Contract sent for approval' . ($customSteps ? ' (Custom Flow)' : ''),
+            'description' => 'Kontrak dikirim untuk persetujuan',
             'actor_id' => Auth::id(),
         ]);
+
+        // Handle auto-approval if the initiator is also the first approver
+        $this->handleAutoApproval($contract, Auth::user());
 
         return $contract->fresh();
     }
@@ -115,6 +136,7 @@ class ContractWorkflowService
         // Get roles list (handle both array and string cases)
         $roles = (array)$step->role;
         $lowerRoles = array_map('strtolower', $roles);
+        $approvers = collect();
 
         // Determine approvers
         if ($step->approver_type === 'user') {
@@ -122,32 +144,51 @@ class ContractWorkflowService
         } elseif (in_array('initiator', $lowerRoles)) {
             // Special handling for the original initiator (proxy owner)
             $approvers = collect([$contract->initiator]);
-        } elseif (in_array('manager', $lowerRoles) && $step->department_id === null) {
-            // Resolution for "Manager Staff" or "Manager Initiator" (Department dynamic based on Initiator)
-            $query = User::where('role', 'Manager')
-                ->where('department_id', $contract->initiator->department_id);
-            $approvers = $query->get();
         } else {
-            // Find all users with any of the required roles and in the same department
-            $query = User::whereIn('role', $roles);
-            
-            // Prioritize step-level departments via pivot, then fallback to single column, then fallback to initiator department if not specified
-            $targetDeptIds = !empty($step->department_ids) ? $step->department_ids : ($step->department_id ? [$step->department_id] : []);
-            
-            if (!empty($targetDeptIds)) {
-                $query->whereIn('department_id', $targetDeptIds);
-            } elseif ($contract->initiator && $contract->initiator->department_id) {
-                // If it's step 1 (Atasan), only then match the initiator's department
-                if (in_array('atasan', (array)$step->step_type)) {
-                    $query->where('department_id', $contract->initiator->department_id);
+            // Check for special reviewers based on description (Meeting 05-05-2026)
+            $desc = strtolower($step->description ?? '');
+            if (str_contains($desc, 'pak rendi')) {
+                $special = $this->resolveSpecialReviewer($contract, 'pak rendi');
+                if ($special) {
+                    $approvers = collect([$special]);
+                }
+            } elseif (str_contains($desc, 'ibu nisa')) {
+                $special = $this->resolveSpecialReviewer($contract, 'ibu nisa');
+                if ($special) {
+                    $approvers = collect([$special]);
                 }
             }
-            
-            $approvers = $query->get();
 
-            // If still empty, fallback to users with those roles regardless of department
+            // Fallback to role-based resolution if not yet resolved
             if ($approvers->isEmpty()) {
-                $approvers = User::whereIn('role', $roles)->get();
+                if (in_array('manager', $lowerRoles) && $step->department_id === null) {
+                    // Resolution for "Manager Staff" or "Manager Initiator" (Department dynamic based on Initiator)
+                    $approvers = User::where('role', 'Manager')
+                        ->where('department_id', $contract->initiator->department_id)
+                        ->get();
+                } else {
+                    // Find all users with any of the required roles and in the same department
+                    $query = User::whereIn('role', $roles);
+                    
+                    // Prioritize step-level departments via pivot, then fallback to single column, then fallback to initiator department if not specified
+                    $targetDeptIds = !empty($step->department_ids) ? $step->department_ids : ($step->department_id ? [$step->department_id] : []);
+                    
+                    if (!empty($targetDeptIds)) {
+                        $query->whereIn('department_id', $targetDeptIds);
+                    } elseif ($contract->initiator && $contract->initiator->department_id) {
+                        // If it's step 1 (Atasan), only then match the initiator's department
+                        if (in_array('atasan', (array)$step->step_type)) {
+                            $query->where('department_id', $contract->initiator->department_id);
+                        }
+                    }
+                    
+                    $approvers = $query->get();
+
+                    // Final fallback: if no specific department match found, only get role-based if NOT step 1
+                    if ($approvers->isEmpty() && !in_array('atasan', array_map('strtolower', (array)$step->step_type))) {
+                        $approvers = User::whereIn('role', $roles)->get();
+                    }
+                }
             }
         }
 
@@ -191,18 +232,32 @@ class ContractWorkflowService
         // Log the action
         $contract->histories()->create([
             'action' => 'APPROVAL_APPROVED',
-            'description' => "Approved by {$approval->approver_name} ({$approval->role})",
+            'description' => "Disetujui oleh {$approval->approver_name} ({$approval->role})",
             'actor_id' => Auth::id(),
         ]);
 
         // Check if all approvals for current step are complete
+        // LOGIC CHANGE: For 'role' type approvals, any ONE person can approve to move the workflow.
+        // For 'user' type approvals, ALL specified users must approve.
         $currentStepApprovals = $contract->approvals()
             ->where('workflow_step_id', $approval->workflow_step_id)
             ->get();
 
-        $allApproved = $currentStepApprovals->every(fn($a) => $a->status === 'approved');
+        $isRoleBased = $approval->workflowStep->approver_type === 'role';
+        
+        $allApproved = $isRoleBased 
+            ? $currentStepApprovals->contains(fn($a) => $a->status === 'approved')
+            : $currentStepApprovals->every(fn($a) => $a->status === 'approved');
 
         if ($allApproved) {
+            // If role-based and finished by one, mark others as 'skipped' or 'completed_by_other'
+            if ($isRoleBased) {
+                $contract->approvals()
+                    ->where('workflow_step_id', $approval->workflow_step_id)
+                    ->where('status', 'pending')
+                    ->get()
+                    ->each(fn($a) => $a->update(['status' => 'approved', 'comment' => 'Disetujui oleh ' . $approval->role . ' lain']));
+            }
             // Move to next valid step (supporting branched logic)
             $nextStep = $this->findNextValidStep($contract, $approval->workflowStep);
 
@@ -227,19 +282,24 @@ class ContractWorkflowService
                 // Log the transition
                 $contract->histories()->create([
                     'action' => 'WORKFLOW_ADVANCED',
-                    'description' => "Workflow advanced to step {$nextStep->step}: {$nextStep->description}",
+                    'description' => "Alur kerja berlanjut ke tahap {$nextStep->step}: {$nextStep->description}",
                     'actor_id' => Auth::id(),
                 ]);
+
+                // Recursive Auto-Approval: If the current user is also an approver for the next step,
+                // and it's a pure review step, approve it automatically.
+                $this->handleAutoApproval($contract, Auth::user());
             } else {
                 // No more steps - contract is approved
                 $contract->update([
                     'status' => 'approved',
+                    'workflow_step_id' => null,
                 ]);
 
                 // Log completion
                 $contract->histories()->create([
                     'action' => 'CONTRACT_APPROVED',
-                    'description' => 'All approvals completed. Contract approved.',
+                    'description' => 'Seluruh persetujuan selesai. Kontrak disetujui.',
                     'actor_id' => Auth::id(),
                 ]);
             }
@@ -269,7 +329,7 @@ class ContractWorkflowService
             ->where('workflow_step_id', $approval->workflow_step_id)
             ->where('status', 'pending')
             ->get()
-            ->each(fn($a) => $a->reject('Rejected by ' . $approval->approver_name));
+            ->each(fn($a) => $a->reject('Ditolak oleh ' . $approval->approver_name));
 
         // Log the action
         $contract->histories()->create([
@@ -345,6 +405,23 @@ class ContractWorkflowService
     }
 
     /**
+     * Resolve specific reviewer names based on meeting requirements (e.g. Pak Rendi, Ibu Nisa)
+     */
+    public function resolveSpecialReviewer(Contract $contract, string $reviewerName): ?User
+    {
+        // This can be expanded to a mapping table or configuration later
+        $nameToSearch = '';
+        if (strtolower($reviewerName) === 'pak rendi') $nameToSearch = 'Rendi';
+        if (strtolower($reviewerName) === 'ibu nisa') $nameToSearch = 'Nisa';
+
+        if ($nameToSearch) {
+            return User::where('name', 'like', "%{$nameToSearch}%")->first();
+        }
+
+        return null;
+    }
+
+    /**
      * Get pending approvals for a user
      */
     public function getPendingApprovalsForUser(User $user): Collection
@@ -401,5 +478,31 @@ class ContractWorkflowService
             })
             ->with(['steps', 'initiatorRolesData', 'initiatorDepartmentsData', 'initiatorUsersData'])
             ->get();
+    }
+
+    /**
+     * Handles automatic approval if the current user is also an approver for the next step(s).
+     * This prevents redundant work for the same person in consecutive review steps.
+     */
+    private function handleAutoApproval(Contract $contract, ?User $user)
+    {
+        if (!$user) return;
+
+        // Find pending approvals for this user in the CURRENT step
+        $pendingApprovals = $contract->approvals()
+            ->where('workflow_step_id', $contract->workflow_step_id)
+            ->where('status', 'pending')
+            ->where('user_id', $user->id)
+            ->get();
+
+        foreach ($pendingApprovals as $approval) {
+            // Only auto-approve if it's a review-only step (no drafting/upload actions needed)
+            $step = $approval->workflowStep;
+            $pureReviewTypes = ['review', 'atasan', 'role'];
+            
+            if (in_array($step->step_type, $pureReviewTypes)) {
+                $this->approveContract($contract, $approval, 'Sistem: Persetujuan Otomatis (Sama dengan penyetujui/inisiator sebelumnya)');
+            }
+        }
     }
 }

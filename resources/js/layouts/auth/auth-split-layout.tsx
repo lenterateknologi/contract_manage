@@ -25,8 +25,9 @@ export default function AuthSplitLayout({ children, title, description, isSucces
     };
 
     const handleNavigation = (event: any) => {
-        // If it's an external link or already exiting, don't intercept
-        if (isExiting || event.detail.visit.url.origin !== globalThis.location.origin) return;
+        const visit = event.detail.visit;
+        // Only intercept GET requests from this origin to avoid blocking form submissions or external links
+        if (isExiting || visit.method !== 'get' || visit.url.origin !== globalThis.location.origin) return;
 
         // Prevent immediate navigation
         event.preventDefault();

@@ -49,7 +49,7 @@ const VendorCell = ({ name, companyType, code, isActive }: Readonly<{ name: stri
                 {code}
                 <div className={cn('h-1.5 w-1.5 rounded-full', isActive ? 'bg-emerald-500 animate-pulse' : 'bg-rose-400')} />
                 <span className={cn('text-xs font-bold tracking-wide select-none transition-colors duration-200', isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400')}>
-                    {isActive ? 'Verified' : 'Unverified'}
+                    {isActive ? 'Terverifikasi' : 'Belum Verifikasi'}
                 </span>
             </div>
         </div>
@@ -90,7 +90,7 @@ const PicCell = ({ picName, directorName, picPosition }: Readonly<{ picName?: st
 
 const ComplianceCell = ({ docCount }: Readonly<{ docCount?: number }>) => {
     const score = Math.round(((docCount || 0) / 10) * 100);
-    const status = score >= 80 ? 'EXCELLENT' : score >= 50 ? 'AVERAGE' : 'CRITICAL';
+    const status = score >= 80 ? 'SANGAT BAIK' : score >= 50 ? 'CUKUP' : 'KRITIS';
     const colorClass =
         score >= 80 ? 'text-emerald-500 bg-emerald-500/10 dark:bg-emerald-500/20' : score >= 50 ? 'text-amber-500 bg-amber-500/10 dark:bg-amber-500/20' : 'text-rose-500 bg-rose-500/10 dark:bg-rose-500/20';
 

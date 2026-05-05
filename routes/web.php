@@ -13,14 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-    if (Auth::check()) {
-        return redirect()->route('dashboard');
-    }
-    return Inertia::render('auth/login', [
-        'canResetPassword' => Route::has('password.request'),
-        'status' => session('status'),
-        'canTestEmail' => !app()->environment('production'),
-    ]);
+    return redirect()->route('dashboard');
 })->name('home');
 
 // Email testing (only in non-production environments)

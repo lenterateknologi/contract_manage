@@ -43,6 +43,19 @@ export default function Login({ status, canResetPassword }: Readonly<LoginProps>
             <Head title="Masuk" />
 
             <form className="flex flex-col gap-6" onSubmit={submit}>
+                {(Object.keys(errors).length > 0) && (
+                    <div className="rounded-xl bg-red-50 p-4 border border-red-200 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <div className="flex gap-3">
+                            <div className="size-5 rounded-full bg-red-500 flex items-center justify-center text-white text-[10px] font-bold shrink-0">!</div>
+                            <div>
+                                <h3 className="text-xs font-bold text-red-900 leading-none mb-1">Gagal Masuk</h3>
+                                <div className="text-[11px] text-red-700/80 font-medium">
+                                    {errors.email || errors.password || Object.values(errors)[0]}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 <div className="grid gap-5">
                     <div className="grid gap-2">
                         <Label htmlFor="email" className="text-sm font-semibold text-slate-700">

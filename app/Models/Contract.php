@@ -27,6 +27,7 @@ class Contract extends Model
         'submission_type_id',
         'transaction_type',
         'status',
+        'is_digital_signature',
         'created_by',
         'current_version',
         'workflow_id',

@@ -87,7 +87,7 @@ class AdminController extends Controller
 
         Role::create($data);
 
-        return back()->with('success', 'Role created successfully.');
+        return back()->with('success', 'Role berhasil dibuat.');
     }
 
     public function updateRole(Request $request, Role $role)
@@ -99,7 +99,7 @@ class AdminController extends Controller
 
         $role->update($data);
 
-        return back()->with('success', 'Role updated successfully.');
+        return back()->with('success', 'Role berhasil diperbarui.');
     }
 
     public function destroyRole(Role $role)
@@ -107,7 +107,7 @@ class AdminController extends Controller
         // Prevent deleting core roles if needed, but for now just delete
         $role->delete();
 
-        return back()->with('success', 'Role deleted successfully.');
+        return back()->with('success', 'Role berhasil dihapus.');
     }
 
     public function bulkDestroyRole(Request $request)
@@ -116,7 +116,7 @@ class AdminController extends Controller
         if (empty($ids)) return back();
 
         Role::whereIn('id', $ids)->delete();
-        return back()->with('success', count($ids) . ' roles deleted successfully.');
+        return back()->with('success', count($ids) . ' role berhasil dihapus.');
     }
 
     public function roleConfig(Role $role, Request $request)
@@ -212,7 +212,7 @@ class AdminController extends Controller
             );
         }
 
-        return back()->with('success', 'Role access updated successfully.');
+        return back()->with('success', 'Role access berhasil diperbarui.');
     }
 
     public function reorderRoleNavigation(Request $request, Role $role)
@@ -282,7 +282,7 @@ class AdminController extends Controller
 
         User::create($data);
 
-        return back()->with('success', 'User created successfully.');
+        return back()->with('success', 'User berhasil dibuat.');
     }
 
     /**
@@ -313,17 +313,17 @@ class AdminController extends Controller
 
         $user->update($data);
 
-        return back()->with('success', 'User updated successfully.');
+        return back()->with('success', 'User berhasil diperbarui.');
     }
 
     public function destroyUser(User $user)
     {
         if ($user->id === Auth::id()) {
-            abort(403, 'Cannot delete yourself.');
+            abort(403, 'Tidak dapat menghapus diri sendiri.');
         }
         $user->delete();
 
-        return back()->with('success', 'User deleted successfully.');
+        return back()->with('success', 'User berhasil dihapus.');
     }
 
     public function bulkDestroyUser(Request $request)
@@ -333,11 +333,11 @@ class AdminController extends Controller
 
         // Prevent deleting yourself
         if (in_array(Auth::id(), $ids)) {
-            return back()->with('error', 'Cannot delete yourself in bulk operation.');
+            return back()->with('error', 'Tidak dapat menghapus diri sendiri.in bulk operation.');
         }
 
         User::whereIn('id', $ids)->delete();
-        return back()->with('success', count($ids) . ' users deleted successfully.');
+        return back()->with('success', count($ids) . ' pengguna berhasil dihapus.');
     }
 
     public function contractTypes(Request $request)
@@ -393,7 +393,7 @@ class AdminController extends Controller
 
         ContractType::create($data);
 
-        return redirect()->route('admin.contract-types')->with('success', 'Contract type created successfully.');
+        return redirect()->route('admin.contract-types')->with('success', 'Tipe kontrak berhasil dibuat.');
     }
 
     public function updateContractType(Request $request, ContractType $type)
@@ -411,14 +411,14 @@ class AdminController extends Controller
 
         $type->update($data);
 
-        return redirect()->route('admin.contract-types')->with('success', 'Contract type updated successfully.');
+        return redirect()->route('admin.contract-types')->with('success', 'Tipe kontrak berhasil diperbarui.');
     }
 
     public function destroyContractType(ContractType $type)
     {
         $type->delete();
 
-        return redirect()->route('admin.contract-types')->with('success', 'Contract type deleted successfully.');
+        return redirect()->route('admin.contract-types')->with('success', 'Tipe kontrak berhasil dihapus.');
     }
 
     public function contractStatuses(Request $request)
@@ -458,7 +458,7 @@ class AdminController extends Controller
 
         ContractStatus::create($data);
 
-        return back()->with('success', 'Status created successfully.');
+        return back()->with('success', 'Status berhasil dibuat.');
     }
 
     public function updateContractStatus(Request $request, ContractStatus $status)
@@ -478,14 +478,14 @@ class AdminController extends Controller
 
         $status->update($data);
 
-        return back()->with('success', 'Status updated successfully.');
+        return back()->with('success', 'Status berhasil diperbarui.');
     }
 
     public function destroyContractStatus(ContractStatus $status)
     {
         $status->delete();
 
-        return back()->with('success', 'Status deleted successfully.');
+        return back()->with('success', 'Status berhasil dihapus.');
     }
 
     public function departments(Request $request)
@@ -528,7 +528,7 @@ class AdminController extends Controller
 
         Department::create($data);
 
-        return back()->with('success', 'Department created successfully.');
+        return back()->with('success', 'Departemen berhasil dibuat.');
     }
 
     public function updateDepartment(Request $request, Department $department)
@@ -544,14 +544,14 @@ class AdminController extends Controller
 
         $department->update($data);
 
-        return back()->with('success', 'Department updated successfully.');
+        return back()->with('success', 'Departemen berhasil diperbarui.');
     }
 
     public function destroyDepartment(Department $department)
     {
         $department->delete();
 
-        return back()->with('success', 'Department deleted successfully.');
+        return back()->with('success', 'Departemen berhasil dihapus.');
     }
 
     public function bulkDestroyDepartment(Request $request)
@@ -560,7 +560,7 @@ class AdminController extends Controller
         if (empty($ids)) return back();
 
         Department::whereIn('id', $ids)->delete();
-        return back()->with('success', count($ids) . ' departments deleted successfully.');
+        return back()->with('success', count($ids) . ' departemen berhasil dihapus.');
     }
 
     public function vendors(Request $request)
@@ -647,7 +647,7 @@ class AdminController extends Controller
 
         $vendor = Vendor::create($data);
 
-        return redirect()->route('admin.vendors.edit', $vendor->id)->with('success', 'Vendor created successfully. You can now attach documents.');
+        return redirect()->route('admin.vendors.edit', $vendor->id)->with('success', 'Vendor berhasil dibuat. Anda sekarang dapat melampirkan dokumen.');
     }
 
     public function updateVendor(Request $request, Vendor $vendor)
@@ -678,7 +678,7 @@ class AdminController extends Controller
 
         $vendor->update($data);
 
-        return back()->with('success', 'Vendor updated successfully.');
+        return back()->with('success', 'Vendor berhasil diperbarui.');
     }
 
     public function uploadVendorDocument(Request $request, Vendor $vendor)
@@ -701,7 +701,7 @@ class AdminController extends Controller
             'is_verified' => true,
         ]);
 
-        return back()->with('success', 'Document uploaded successfully.');
+        return back()->with('success', 'Dokumen berhasil diunggah.');
     }
 
     public function destroyVendorDocument(Vendor $vendor, \App\Models\VendorDocument $document)
@@ -711,14 +711,14 @@ class AdminController extends Controller
         }
 
         $document->delete();
-        return back()->with('success', 'Document deleted successfully.');
+        return back()->with('success', 'Dokumen berhasil dihapus.');
     }
 
     public function destroyVendor(Vendor $vendor)
     {
         $vendor->delete();
 
-        return back()->with('success', 'Vendor deleted successfully.');
+        return back()->with('success', 'Vendor berhasil dihapus.');
     }
 
     public function bulkDestroyStatuses(Request $request)
@@ -727,7 +727,7 @@ class AdminController extends Controller
         if (empty($ids)) return back();
 
         ContractStatus::whereIn('id', $ids)->delete();
-        return back()->with('success', count($ids) . ' statuses deleted successfully.');
+        return back()->with('success', count($ids) . ' status berhasil dihapus.');
     }
 
     public function bulkDestroyContractTypes(Request $request)
@@ -736,7 +736,7 @@ class AdminController extends Controller
         if (empty($ids)) return back();
 
         ContractType::whereIn('id', $ids)->delete();
-        return back()->with('success', count($ids) . ' contract types deleted successfully.');
+        return back()->with('success', count($ids) . ' tipe kontrak berhasil dihapus.');
     }
 
     public function bulkDestroyModules(Request $request)
@@ -745,7 +745,7 @@ class AdminController extends Controller
         if (empty($ids)) return back();
 
         Module::whereIn('id', $ids)->delete();
-        return back()->with('success', count($ids) . ' modules deleted successfully.');
+        return back()->with('success', count($ids) . ' modul berhasil dihapus.');
     }
 
     public function bulkDestroyModuleGroups(Request $request)
@@ -754,7 +754,7 @@ class AdminController extends Controller
         if (empty($ids)) return back();
 
         ModuleGroup::whereIn('id', $ids)->delete();
-        return back()->with('success', count($ids) . ' module groups deleted successfully.');
+        return back()->with('success', count($ids) . ' grup modul berhasil dihapus.');
     }
 
     public function bulkDestroyWorkflows(Request $request)
@@ -763,7 +763,7 @@ class AdminController extends Controller
         if (empty($ids)) return back();
 
         Workflow::whereIn('id', $ids)->delete();
-        return back()->with('success', count($ids) . ' workflows deleted successfully.');
+        return back()->with('success', count($ids) . ' alur kerja berhasil dihapus.');
     }
 
     public function bulkDestroyVendor(Request $request)
@@ -772,7 +772,7 @@ class AdminController extends Controller
         if (empty($ids)) return back();
 
         Vendor::whereIn('id', $ids)->delete();
-        return back()->with('success', count($ids) . ' vendors deleted successfully.');
+        return back()->with('success', count($ids) . ' vendor berhasil dihapus.');
     }
 
     public function workflows(Request $request)
@@ -941,7 +941,7 @@ class AdminController extends Controller
                     }
                 }
 
-                return redirect()->route('admin.workflows')->with('success', 'Workflow created successfully.');
+                return redirect()->route('admin.workflows')->with('success', 'Workflow berhasil dibuat.');
             });
         } catch (\Exception $e) {
             Log::error('Workflow Store Error: ' . $e->getMessage(), [
@@ -1057,7 +1057,7 @@ class AdminController extends Controller
                     }
                 }
 
-                return redirect()->route('admin.workflows')->with('success', 'Workflow updated successfully.');
+                return redirect()->route('admin.workflows')->with('success', 'Workflow berhasil diperbarui.');
             });
         } catch (\Exception $e) {
             Log::error('Workflow Update Error: ' . $e->getMessage());
@@ -1139,7 +1139,7 @@ class AdminController extends Controller
                 }
             }
 
-            return redirect()->route('admin.workflows')->with('success', 'Steps updated successfully.');
+            return redirect()->route('admin.workflows')->with('success', 'Steps berhasil diperbarui.');
         });
     }
 
@@ -1230,7 +1230,7 @@ class AdminController extends Controller
             }
         }
 
-        return back()->with('success', 'Navigation and permissions updated successfully.');
+        return back()->with('success', 'Navigation and permissions berhasil diperbarui.');
     }
 
     // Module Groups
@@ -1247,7 +1247,7 @@ class AdminController extends Controller
 
         ModuleGroup::create($data);
 
-        return back()->with('success', 'Module group created successfully.');
+        return back()->with('success', 'Module group berhasil dibuat.');
     }
 
     public function updateModuleGroup(Request $request, ModuleGroup $group)
@@ -1261,14 +1261,14 @@ class AdminController extends Controller
 
         $group->update($data);
 
-        return back()->with('success', 'Module group updated successfully.');
+        return back()->with('success', 'Module group berhasil diperbarui.');
     }
 
     public function destroyModuleGroup(ModuleGroup $group)
     {
         $group->delete();
 
-        return back()->with('success', 'Module group deleted successfully.');
+        return back()->with('success', 'Module group berhasil dihapus.');
     }
 
     public function storeModule(Request $request)
@@ -1287,7 +1287,7 @@ class AdminController extends Controller
 
         Module::create($data);
 
-        return back()->with('success', 'Module created successfully.');
+        return back()->with('success', 'Module berhasil dibuat.');
     }
 
     public function updateModule(Request $request, Module $module)
@@ -1305,14 +1305,14 @@ class AdminController extends Controller
 
         $module->update($data);
 
-        return back()->with('success', 'Module updated successfully.');
+        return back()->with('success', 'Module berhasil diperbarui.');
     }
 
     public function destroyModule(Module $module)
     {
         $module->delete();
 
-        return back()->with('success', 'Module deleted successfully.');
+        return back()->with('success', 'Module berhasil dihapus.');
     }
 
     public function numberingFormats(Request $request)
@@ -1338,6 +1338,6 @@ class AdminController extends Controller
 
         $format->update($data);
 
-        return back()->with('success', 'Numbering format updated successfully.');
+        return back()->with('success', 'Numbering format berhasil diperbarui.');
     }
 }

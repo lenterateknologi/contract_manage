@@ -268,7 +268,7 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                             {/* Mode Tampilan Widget */}
                             <div className="border-border/60 dark:border-slate-800/60 bg-muted/10 dark:bg-slate-900/20 backdrop-blur-sm rounded-2xl border p-6 select-none shadow-sm">
                                 <h3 className="text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
-                                    <LayoutTemplate size={14} className="text-primary" /> Render Strategy
+                                    <LayoutTemplate size={14} className="text-primary" /> Strategi Render
                                 </h3>
 
                                 <div className="space-y-3">
@@ -276,13 +276,13 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                                         {
                                             id: 'interactive',
                                             label: 'Interactive Form',
-                                            desc: 'React component rendering for fast editing.',
+                                            desc: 'Render komponen React untuk pengeditan cepat.',
                                             icon: LayoutTemplate,
                                         },
                                         {
                                             id: 'pdf',
                                             label: 'PDF Preview',
-                                            desc: 'Direct server-side PDF render for print accuracy.',
+                                            desc: 'Render PDF sisi server untuk akurasi cetak.',
                                             icon: FileText,
                                         },
                                     ].map((mode) => (
@@ -319,26 +319,26 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                             {/* Operational Controls */}
                             <div className="space-y-4 select-none">
                                 <h3 className="text-slate-900 dark:text-slate-100 px-1 text-xs font-bold uppercase tracking-wider">
-                                    Behavior Control
+                                    Kontrol Perilaku
                                 </h3>
                                 <div className="space-y-3">
                                     {[
                                         {
                                             id: 'allow_info_edit',
-                                            label: 'Allow Info Edit',
-                                            desc: 'User can modify metadata in this status.',
+                                            label: 'Izinkan Edit Info',
+                                            desc: 'User dapat mengubah metadata dalam status ini.',
                                             icon: Unlock,
                                         },
                                         {
                                             id: 'allow_reference',
-                                            label: 'Allow Reference',
-                                            desc: 'Contracts can link to this status as parent.',
+                                            label: 'Izinkan Referensi',
+                                            desc: 'Kontrak dapat menautkan status ini sebagai induk.',
                                             icon: Link2,
                                         },
                                         {
                                             id: 'is_active',
-                                            label: 'Status Is Online',
-                                            desc: 'Make this status available for selection.',
+                                            label: 'Status Aktif',
+                                            desc: 'Tersedia untuk dipilih dalam sistem.',
                                             icon: ShieldCheck,
                                         },
                                     ].map((ctrl) => (
