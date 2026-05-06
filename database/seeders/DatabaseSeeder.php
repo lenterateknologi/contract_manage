@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             VendorSeeder::class,           // 7. Vendors
             UserSeeder::class,             // 8. Extended Users
             SampleSeeder::class,           // 9. Transactions & Redesigns
+            JsonDataSeeder::class,         // 10. Data from JSON files
         ]);
     }
 }
