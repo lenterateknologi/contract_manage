@@ -8,6 +8,7 @@ use App\Models\Workflow;
 use App\Models\WorkflowStep;
 use App\Models\WorkflowStepRole;
 use App\Models\WorkflowStepDepartment;
+use App\Models\WorkflowStepUser;
 use Illuminate\Database\Seeder;
 
 class MeetingUpdateWorkflowSeeder extends Seeder
@@ -34,7 +35,7 @@ class MeetingUpdateWorkflowSeeder extends Seeder
 
         $this->seedSteps($wfF1Contract, [
             ['step' => 1, 'role' => 'Manager', 'description' => 'Review Atasan Langsung', 'step_type' => 'atasan', 'phase' => 'f1_request'],
-            ['step' => 2, 'role' => 'Manager', 'description' => 'Review Pak Rendi', 'step_type' => 'review', 'phase' => 'f1_request'],
+            ['step' => 2, 'role' => 'Manager', 'description' => 'Review Pak Rendi', 'step_type' => 'review', 'phase' => 'f1_request', 'approver_type' => 'user', 'user_email' => 'rendi@example.com'],
             ['step' => 3, 'role' => 'Manager', 'description' => 'Review Manajemen', 'step_type' => 'role', 'phase' => 'f1_request', 'department_id' => $mgtDeptId],
             ['step' => 4, 'role' => 'Manager', 'description' => 'Kelengkapan Dokumen (Legal Manager)', 'step_type' => 'review', 'phase' => 'f1_request', 'department_id' => $legalDeptId],
         ], $adminId);
@@ -52,7 +53,7 @@ class MeetingUpdateWorkflowSeeder extends Seeder
 
         $this->seedSteps($wfF1NonContract, [
             ['step' => 1, 'role' => 'Manager', 'description' => 'Review Atasan Langsung', 'step_type' => 'atasan', 'phase' => 'f1_request'],
-            ['step' => 2, 'role' => 'Manager', 'description' => 'Review Ibu Nisa', 'step_type' => 'review', 'phase' => 'f1_request'],
+            ['step' => 2, 'role' => 'Manager', 'description' => 'Review Ibu Nisa', 'step_type' => 'review', 'phase' => 'f1_request', 'approver_type' => 'user', 'user_email' => 'nisa@example.com'],
             ['step' => 3, 'role' => 'Manager', 'description' => 'Review Manajemen', 'step_type' => 'role', 'phase' => 'f1_request', 'department_id' => $mgtDeptId],
             ['step' => 4, 'role' => 'Manager', 'description' => 'Kelengkapan Dokumen (Legal Manager)', 'step_type' => 'review', 'phase' => 'f1_request', 'department_id' => $legalDeptId],
         ], $adminId);
@@ -84,7 +85,7 @@ class MeetingUpdateWorkflowSeeder extends Seeder
 
         $this->seedSteps($wfF2, [
             ['step' => 1, 'role' => 'Staff', 'description' => 'Input Crown Number (Staff Legal)', 'step_type' => 'drafting', 'phase' => 'contract_creation', 'department_id' => $legalDeptId],
-            ['step' => 2, 'role' => 'Manager', 'description' => 'Penentuan TTD Digital (PIC Legal)', 'step_type' => 'review', 'phase' => 'contract_creation', 'department_id' => $legalDeptId],
+            ['step' => 2, 'role' => 'Staff', 'description' => 'Penentuan TTD Digital (PIC Legal)', 'step_type' => 'review', 'phase' => 'contract_creation', 'department_id' => $legalDeptId, 'approver_type' => 'assigned_pic'],
             ['step' => 3, 'role' => 'Manager', 'description' => 'Review Manager Legal', 'step_type' => 'review', 'phase' => 'contract_creation', 'department_id' => $legalDeptId],
         ], $adminId);
     }
@@ -98,7 +99,7 @@ class MeetingUpdateWorkflowSeeder extends Seeder
                 'description' => $data['description'],
                 'step_type' => $data['step_type'],
                 'phase' => $data['phase'],
-                'approver_type' => 'role',
+                'approver_type' => $data['approver_type'] ?? 'role',
                 'is_active' => true,
                 'created_by' => $adminId,
                 'updated_by' => $adminId,
@@ -114,6 +115,17 @@ class MeetingUpdateWorkflowSeeder extends Seeder
                     'workflow_step_id' => $ws->id,
                     'department_id' => $data['department_id']
                 ]);
+            }
+
+            if (isset($data['approver_type']) && $data['approver_type'] === 'user' && isset($data['user_email'])) {
+                $user = User::where('email', $data['user_email'])->first();
+                if ($user) {
+                    WorkflowStepUser::create([
+                        'workflow_step_id' => $ws->id,
+                        'user_id' => $user->id
+                    ]);
+                    $ws->update(['approver_type' => 'user']);
+                }
             }
         }
     }

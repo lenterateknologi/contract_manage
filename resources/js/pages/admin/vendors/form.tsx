@@ -5,7 +5,13 @@ import { Checkbox } from '@/components/ui/base/Checkbox';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { Dialog, DialogContent, DialogFooter, DialogTitle } from '@/components/ui/overlays/Dialog';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
-import { CompactSelect } from '@/components/ui/forms/CompactSelect';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/forms/Select";
 import { cn } from '@/lib/utils';
 import { Head, router, useForm } from '@inertiajs/react';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -205,18 +211,26 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
                             <div className="md:col-span-2">
                                 <div className="flex flex-col md:flex-row gap-4 items-start">
                                     <div className="w-full md:w-32">
-                                        <CompactSelect 
-                                            label="Bentuk"
-                                            value={data.company_type}
-                                            onChange={v => setData('company_type', v as string)}
-                                            options={[
-                                                { label: 'PT', value: 'PT' },
-                                                { label: 'CV', value: 'CV' },
-                                                { label: 'Firma', value: 'FIRMA' },
-                                                { label: 'Persero', value: 'PERSERO' },
-                                                { label: 'Individu', value: 'INDIVIDU' },
-                                            ]}
-                                        />
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-primary/60 dark:text-white/60 flex items-center gap-2">
+                                                Bentuk
+                                            </label>
+                                            <Select
+                                                value={data.company_type}
+                                                onValueChange={(v: string) => setData('company_type', String(v))}
+                                            >
+                                                <SelectTrigger className="h-10 rounded-xl border-primary/10 bg-primary/5 text-xs font-bold transition-all focus:border-primary">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-xl border-primary/10 bg-white shadow-2xl dark:bg-black">
+                                                    <SelectItem value="PT" className="py-2.5 text-xs font-bold uppercase">PT</SelectItem>
+                                                    <SelectItem value="CV" className="py-2.5 text-xs font-bold uppercase">CV</SelectItem>
+                                                    <SelectItem value="FIRMA" className="py-2.5 text-xs font-bold uppercase">FIRMA</SelectItem>
+                                                    <SelectItem value="PERSERO" className="py-2.5 text-xs font-bold uppercase">PERSERO</SelectItem>
+                                                    <SelectItem value="INDIVIDU" className="py-2.5 text-xs font-bold uppercase">INDIVIDU</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     </div>
                                     <div className="flex-1 w-full">
                                         <CompactInput 
@@ -236,19 +250,27 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
                                 placeholder="DIBUAT OTOMATIS"
                                 error={errors.code}
                             />
-                            <CompactSelect 
-                                label="Kategori Bisnis"
-                                value={data.category}
-                                onChange={v => setData('category', v as string)}
-                                options={[
-                                    { label: 'Supplier / Pemasok', value: 'SUPPLIER' },
-                                    { label: 'Konsultan / Jasa Professional', value: 'CONSULTANT' },
-                                    { label: 'Kontraktor / Konstruksi', value: 'CONTRACTOR' },
-                                    { label: 'Maintenance / Pemeliharaan', value: 'MAINTENANCE' },
-                                    { label: 'IT Services', value: 'IT SERVICES' },
-                                    { label: 'Logistik & Transportasi', value: 'LOGISTICS' },
-                                ]}
-                            />
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold uppercase tracking-widest text-primary/60 dark:text-white/60 flex items-center gap-2">
+                                    Kategori Bisnis
+                                </label>
+                                <Select
+                                    value={data.category}
+                                    onValueChange={(v: string) => setData('category', String(v))}
+                                >
+                                    <SelectTrigger className="h-10 rounded-xl border-primary/10 bg-primary/5 text-xs font-bold transition-all focus:border-primary">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-xl border-primary/10 bg-white shadow-2xl dark:bg-black">
+                                        <SelectItem value="SUPPLIER" className="py-2.5 text-xs font-bold uppercase">Supplier / Pemasok</SelectItem>
+                                        <SelectItem value="CONSULTANT" className="py-2.5 text-xs font-bold uppercase">Konsultan / Jasa Professional</SelectItem>
+                                        <SelectItem value="CONTRACTOR" className="py-2.5 text-xs font-bold uppercase">Kontraktor / Konstruksi</SelectItem>
+                                        <SelectItem value="MAINTENANCE" className="py-2.5 text-xs font-bold uppercase">Maintenance / Pemeliharaan</SelectItem>
+                                        <SelectItem value="IT SERVICES" className="py-2.5 text-xs font-bold uppercase">IT Services</SelectItem>
+                                        <SelectItem value="LOGISTICS" className="py-2.5 text-xs font-bold uppercase">Logistik & Transportasi</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
                     </FormSection>
 

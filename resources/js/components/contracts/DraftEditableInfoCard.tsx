@@ -3,7 +3,7 @@ import { Modal } from '@/components/ui/overlays/Modal';
 import { contractApi } from '@/lib/contract-api';
 import { cn } from '@/lib/utils';
 import { Contract, ContractType } from '@/types/contracts';
-import { Check, ChevronDown, ChevronUp, Info, Loader2, Plus, Trash2 } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, Info, Loader2, Plus, PlusCircle, Search, Trash2, UserPlus, Users, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 export interface FormTemplateInfo {
@@ -55,13 +55,13 @@ export function DraftEditableInfoCard({
     const [vendorId, setVendorId] = useState(selected.vendor_id || '');
     const [submissionTypeId, setSubmissionTypeId] = useState(selected.submission_type_id || '');
     const [kopSubTopik, setKopSubTopik] = useState((selected as any).kop_sub_topik || '');
-    const [crownNo, setCrownNo] = useState(selected.crown_no || '');
     const [minimized, setMinimized] = useState(false);
     const [allUsers, setAllUsers] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [isAddApproverOpen, setIsAddApproverOpen] = useState(false);
     const [localSelectedUsers, setLocalSelectedUsers] = useState<string[]>([]);
     const [taxRequired, setTaxRequired] = useState<boolean>(() => !!selected.metadata?.tax_required);
+    const [managementUsers, setManagementUsers] = useState<string[]>(selected.metadata?.custom_management_users || []);
 
     useEffect(() => {
         setTaxRequired(!!selected.metadata?.tax_required);
@@ -69,7 +69,7 @@ export function DraftEditableInfoCard({
 
     useEffect(() => {
         if (isAddApproverOpen) {
-            setLocalSelectedUsers(selected.metadata?.custom_management_users || []);
+            setLocalSelectedUsers([...managementUsers]);
         }
     }, [isAddApproverOpen, selected.metadata?.custom_management_users]);
 
@@ -82,10 +82,10 @@ export function DraftEditableInfoCard({
         setDescription(selected.description || '');
         const t = types.find((x) => x.name === selected.contract_type);
         setTypeId(t ? String(t.id) : '');
-        setVendorId(selected.vendor_id || '');
         setSubmissionTypeId(selected.submission_type_id || '');
         setKopSubTopik((selected as any).kop_sub_topik || '');
-        setCrownNo(selected.crown_no || '');
+        setTaxRequired(!!selected.metadata?.tax_required);
+        setManagementUsers(selected.metadata?.custom_management_users || []);
     }, [
         selected.id,
         selected.title,
@@ -94,7 +94,6 @@ export function DraftEditableInfoCard({
         selected.vendor_id,
         selected.submission_type_id,
         selected.transaction_type,
-        selected.crown_no,
         (selected as any).kop_sub_topik,
         types,
     ]);
@@ -111,11 +110,11 @@ export function DraftEditableInfoCard({
             typeId !== origTypeId ||
             vendorId !== (selected.vendor_id || '') ||
             submissionTypeId !== (selected.submission_type_id || '') ||
-            crownNo !== (selected.crown_no || '') ||
             kopSubTopik !== ((selected as any).kop_sub_topik || '') ||
-            taxRequired !== !!selected.metadata?.tax_required
+            taxRequired !== !!selected.metadata?.tax_required ||
+            JSON.stringify(managementUsers) !== JSON.stringify(selected.metadata?.custom_management_users || [])
         );
-    }, [title, description, typeId, vendorId, submissionTypeId, crownNo, kopSubTopik, taxRequired, selected, types]);
+    }, [title, description, typeId, vendorId, submissionTypeId, kopSubTopik, taxRequired, managementUsers, selected, types]);
 
     // Debounced Auto-Save for Contract Metadata
     useEffect(() => {
@@ -133,10 +132,10 @@ export function DraftEditableInfoCard({
                         vendor_id: vendorId || undefined,
                         submission_type_id: submissionTypeId || undefined,
                         kop_sub_topik: kopSubTopik,
-                        crown_no: crownNo,
                         metadata: {
                             ...selected.metadata,
                             tax_required: taxRequired,
+                            custom_management_users: managementUsers,
                         }
                     });
                 } finally {
@@ -148,7 +147,7 @@ export function DraftEditableInfoCard({
         return () => {
             if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
         };
-    }, [title, description, typeId, vendorId, submissionTypeId, kopSubTopik, crownNo, taxRequired, isDraft, onUpdate]);
+    }, [title, description, typeId, vendorId, submissionTypeId, kopSubTopik, taxRequired, managementUsers, isDraft, onUpdate]);
 
     const inputCls =
         'w-full bg-black/[0.03] dark:bg-white/[0.05] border border-border/50 rounded-lg px-3 py-1.5 text-sm text-foreground dark:text-white outline-none focus:bg-white dark:focus:bg-slate-900 transition-all shadow-sm';
@@ -165,7 +164,7 @@ export function DraftEditableInfoCard({
             <div className="bg-primary flex h-12 items-center justify-between px-4 dark:bg-white border-b border-black/10 dark:border-white/10">
                 <div className="flex items-center gap-2 font-semibold text-white text-sm dark:text-black">
                     <Info size={16} className="text-white/70 dark:text-black/70" /> Informasi Kontrak
-                    {isDraft && <span className="bg-white/20 text-white dark:bg-black/10 dark:text-black rounded-full px-2 py-0.5 text-xs font-semibold">Editable</span>}
+                    {isDraft && <span className="bg-white/20 text-white dark:bg-black/10 dark:text-black rounded-full px-2 py-0.5 text-xs font-semibold">Dapat Diedit</span>}
                 </div>
                 <div className="flex items-center gap-2">
                     {isDraft && (
@@ -177,7 +176,7 @@ export function DraftEditableInfoCard({
                                 </>
                             ) : hasChanges ? (
                                 <>
-                                    <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-400" />
+                                    <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
                                     <span className="text-white/70 dark:text-black/60 text-xs">Berubah</span>
                                 </>
                             ) : (
@@ -205,9 +204,17 @@ export function DraftEditableInfoCard({
                         </span>
                     </div>
 
+                    <div>
+                        <div className="text-muted-foreground mb-1 text-xs font-semibold">No. Kontrak (F2)</div>
+                        <div className="bg-primary/5 dark:bg-white/5 flex h-9 items-center rounded-lg border border-primary/10 px-3 text-sm font-black text-primary dark:text-white">
+                            {(selected as any).crown_no || 'Belum diisi di F2'}
+                        </div>
+                    </div>
+
                     {isDraft ? (
-                        <div className="col-span-full">
-                            <div className="text-muted-foreground mb-1 text-xs font-semibold">Judul Kontrak</div>
+                        <>
+                            <div className="col-span-full">
+                                <div className="text-muted-foreground mb-1 text-xs font-semibold">Judul Kontrak</div>
                             <input
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
@@ -215,25 +222,10 @@ export function DraftEditableInfoCard({
                                 className={inputCls + ' text-sm font-medium'}
                             />
                         </div>
+                    </>
                     ) : null}
 
-                    <div className="flex flex-col gap-4">
-                        <div>
-                            <div className="text-muted-foreground mb-1 text-xs font-semibold">No. Kontrak</div>
-                            {isDraft ? (
-                                <input
-                                    value={crownNo}
-                                    onChange={(e) => setCrownNo(e.target.value)}
-                                    placeholder="CROWN-XXX..."
-                                    className={inputCls + ' font-mono text-sm font-bold'}
-                                />
-                            ) : (
-                                <span className="bg-muted text-foreground inline-block rounded px-3 py-1.5 font-mono text-sm font-bold shadow-sm">
-                                    {selected.crown_no || '—'}
-                                </span>
-                            )}
-                        </div>
-                    </div>
+
 
                     <div>
                         <div className="text-muted-foreground mb-1 text-xs font-semibold">Jenis Kontrak</div>
@@ -303,20 +295,53 @@ export function DraftEditableInfoCard({
                         <span className="text-foreground text-sm font-medium">{selected.created_at}</span>
                     </div>
 
+                    <div className="border-border col-span-full mt-2 border-t pt-4">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div>
+                                <div className="text-muted-foreground mb-1.5 text-xs font-semibold">Disetujui Oleh</div>
+                                {selected.assigned_by ? (
+                                    <div className="flex items-center gap-2">
+                                        <Avatar user={selected.assigned_by} size="sm" className="ring-1 ring-slate-200" />
+                                        <span className="text-foreground text-sm font-semibold">{selected.assigned_by.name}</span>
+                                    </div>
+                                ) : (
+                                    <span className="text-muted-foreground text-xs italic">Belum disetujui manager</span>
+                                )}
+                            </div>
+
+                            <div>
+                                <div className="text-muted-foreground mb-1.5 text-xs font-semibold">Ditugaskan</div>
+                                {selected.assigned_pic ? (
+                                    <div className="flex items-center gap-2">
+                                        <Avatar user={selected.assigned_pic} size="sm" className="ring-1 ring-slate-200" />
+                                        <span className="text-foreground text-sm font-semibold">{selected.assigned_pic.name}</span>
+                                    </div>
+                                ) : (
+                                    <span className="text-muted-foreground text-xs italic">Belum ditugaskan</span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
                     {selected.workflow_step && (
                         <div className="border-border col-span-full border-t pt-4">
                             <div className="text-muted-foreground mb-2 text-xs font-semibold">Posisi Kontrak Saat Ini (Workflow)</div>
-                            <div className="animate-in fade-in flex items-center gap-2 rounded-xl border border-amber-200/50 bg-amber-50 p-3 shadow-sm dark:border-amber-800/30 dark:bg-amber-950/20">
-                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400">
-                                    <i className="fa-solid fa-clock animate-pulse text-sm" />
+                            <div className="animate-in fade-in flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3 shadow-sm dark:border-white/10 dark:bg-white/5">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary dark:bg-white/10 dark:text-white">
+                                    <Info size={16} strokeWidth={2.5} />
                                 </div>
                                 <div className="flex flex-col gap-0.5">
-                                    <span className="text-xs font-bold text-amber-700 dark:text-amber-300">
+                                    <span className="text-xs font-bold text-primary dark:text-white">
                                         Sedang Di: {selected.workflow_step.description}
                                     </span>
-                                    <span className="text-xs font-semibold text-amber-600/70 dark:text-amber-400/70">
+                                    <span className="text-xs font-semibold text-primary/70 dark:text-white/70">
                                         Peran: {selected.workflow_step.role}
                                     </span>
+                                    {selected.workflow_step.target_approvers && (
+                                        <span className="mt-1 text-[10px] font-bold text-primary/60 dark:text-white/60 uppercase tracking-tight">
+                                            Target Penyetuju: {selected.workflow_step.target_approvers}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -324,105 +349,132 @@ export function DraftEditableInfoCard({
 
                     {isDraft ? (
                         <div className="border-border col-span-full mt-2 border-t pt-4">
-                            <div className="bg-muted/40 border-border mb-4 rounded-lg border p-2.5">
+                            <div className={cn(
+                                "border transition-all duration-300 rounded-xl p-3 mb-4",
+                                taxRequired 
+                                    ? "bg-primary/5 border-primary/20 dark:bg-white/5 dark:border-white/20" 
+                                    : "bg-black/[0.02] border-black/5 dark:bg-white/[0.02] dark:border-white/5"
+                            )}>
                                 <label className="flex cursor-pointer items-center justify-between">
-                                    <div className="flex flex-col">
-                                        <span className="text-foreground text-sm font-bold">Ada Pajak</span>
-                                        <span className="text-muted-foreground mt-0.5 text-xs font-medium">
-                                            Aktifkan jika kontrak dikenakan pajak
-                                        </span>
+                                    <div className="flex items-center gap-3">
+                                        <div className={cn(
+                                            "flex h-8 w-8 items-center justify-center rounded-lg transition-all",
+                                            taxRequired ? "bg-primary text-white shadow-lg shadow-primary/20" : "bg-black/5 text-black/20 dark:bg-white/5 dark:text-white/20"
+                                        )}>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 10h12"/><path d="M4 14h9"/><path d="M19 6a7.7 7.7 0 0 0-5.2-2A7.9 7.9 0 0 0 6 12c0 4.4 3.5 8 7.8 8 2 0 3.8-.8 5.2-2"/><path d="M16 16l4-4-4-4"/></svg>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className={cn("text-[11px] font-black uppercase tracking-wider", taxRequired ? "text-primary dark:text-white" : "text-black/40 dark:text-white/40")}>Ada Pajak</span>
+                                            <span className="text-[9px] font-medium text-black/30 dark:text-white/30">Aktifkan jika kontrak dikenakan pajak (PPN/PPh)</span>
+                                        </div>
+                                    </div>
+                                    <div 
+                                        onClick={() => setTaxRequired(!taxRequired)}
+                                        className={cn(
+                                            "relative h-5 w-9 rounded-full transition-all duration-300",
+                                            taxRequired ? "bg-primary shadow-inner shadow-black/10" : "bg-black/10 dark:bg-white/10"
+                                        )}
+                                    >
+                                        <div className={cn(
+                                            "absolute top-1 h-3 w-3 rounded-full bg-white shadow-sm transition-all duration-300",
+                                            taxRequired ? "left-5" : "left-1"
+                                        )} />
                                     </div>
                                     <input
                                         type="checkbox"
                                         checked={taxRequired}
-                                        onChange={(e) => {
-                                            const isChecked = e.target.checked;
-                                            setTaxRequired(isChecked);
-                                        }}
-                                        className="accent-primary h-4 w-4 cursor-pointer"
+                                        onChange={() => {}} // Controlled by div click for better feel
+                                        className="hidden"
                                     />
                                 </label>
                             </div>
 
-                            <div className="mb-2.5 flex items-center justify-between border-b border-border/40 pb-2">
-                                <span className="text-foreground text-[10px] font-black uppercase tracking-widest">Approver Manajemen</span>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsAddApproverOpen(true)}
-                                    className="bg-black/5 text-black dark:bg-white/5 dark:text-white flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[10px] font-bold uppercase transition-all hover:bg-black/10 dark:hover:bg-white/10 active:scale-95 shadow-sm border border-black/5 dark:border-white/5"
-                                >
-                                    <Plus size={12} strokeWidth={3} /> Tambah
-                                </button>
-                            </div>
+                            {/* Management Approvers Section */}
+                            <div className="col-span-full mt-4 space-y-4 border-t border-black/5 pt-5 dark:border-white/5">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/5 text-primary shadow-sm dark:bg-white/5 dark:text-white">
+                                            <Users size={16} strokeWidth={2.5} />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[11px] font-black uppercase tracking-widest text-black dark:text-white">Approver Manajemen</span>
+                                            <span className="text-[9px] font-medium text-black/30 dark:text-white/30">Penyetuju khusus dari level direksi</span>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => setIsAddApproverOpen(true)}
+                                        className="group flex items-center gap-2 rounded-xl bg-primary px-3.5 py-2 text-[10px] font-black uppercase tracking-widest text-white transition-all hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 active:scale-95 dark:bg-white dark:text-black"
+                                    >
+                                        <Plus size={12} strokeWidth={4} /> Tambah
+                                    </button>
+                                </div>
 
-                            <div className="space-y-2.5">
-                                {selected.metadata?.custom_management_users && selected.metadata.custom_management_users.length > 0 ? (
-                                    selected.metadata.custom_management_users.map((userId: string, idx: number) => {
-                                        const approval = selected.approvals?.find((a) => a.user_id === userId);
-                                        const userObj = allUsers.find((u) => u.id === userId);
-                                        return (
-                                            <div
-                                                key={idx}
-                                                className="bg-muted/30 border-border/40 animate-in fade-in flex items-center justify-between rounded-xl border p-2.5 shadow-xs transition-all hover:bg-muted/50"
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <Avatar user={userObj || { name: approval?.approver_name || 'User', initials: (approval?.approver_name || 'U').substring(0, 1) } as any} size="sm" />
-                                                    <div className="flex flex-col">
-                                                        <span className="text-foreground text-xs font-bold leading-tight">
-                                                            {userObj ? userObj.name : approval ? approval.approver_name : `User ID: ${userId}`}
+                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                    {managementUsers && managementUsers.length > 0 ? (
+                                        managementUsers.map((userId: string, idx: number) => {
+                                            const userObj = allUsers.find((u) => u.id === userId);
+                                            return (
+                                                <div
+                                                    key={idx}
+                                                    className="group relative flex items-center gap-3 overflow-hidden rounded-2xl border border-black/5 bg-black/[0.01] p-3 transition-all hover:border-primary/20 hover:bg-white hover:shadow-xl hover:shadow-black/5 dark:border-white/5 dark:bg-white/[0.01] dark:hover:border-white/20 dark:hover:bg-white/5"
+                                                >
+                                                    <Avatar user={userObj} size="md" className="ring-2 ring-transparent transition-all group-hover:ring-primary/20" />
+                                                    <div className="flex min-w-0 flex-col">
+                                                        <span className="truncate text-[10px] font-black uppercase tracking-tight text-black dark:text-white">
+                                                            {userObj?.name || `ID: ${userId}`}
                                                         </span>
-                                                        <span className="text-muted-foreground text-[9px] font-bold uppercase tracking-wide mt-0.5 opacity-60">
-                                                            {userObj
-                                                                ? `${userObj.department_name || ''} • ${userObj.role}`
-                                                                : approval
-                                                                  ? approval.role
-                                                                  : 'COO/VP/Deputy'}
+                                                        <span className="truncate text-[9px] font-bold text-primary/60 dark:text-white/60">
+                                                            {userObj?.role || 'Approver'}
                                                         </span>
                                                     </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const newUsers = managementUsers.filter((id: string) => id !== userId);
+                                                            setManagementUsers(newUsers);
+                                                        }}
+                                                        className="absolute right-2 top-2 rounded-lg bg-red-500/0 p-1.5 text-black/10 opacity-0 transition-all hover:bg-red-500 hover:text-white group-hover:opacity-100 dark:text-white/10 dark:hover:bg-red-500"
+                                                    >
+                                                        <X size={12} strokeWidth={3} />
+                                                    </button>
                                                 </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        const currentUsers = selected.metadata?.custom_management_users || [];
-                                                        const newUsers = currentUsers.filter((id: string) => id !== userId);
-                                                        onUpdate({ metadata: { ...selected.metadata, custom_management_users: newUsers } });
-                                                    }}
-                                                    className="p-1.5 text-black/20 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all active:scale-95"
-                                                    title="Hapus"
-                                                >
-                                                    <Trash2 size={14} />
-                                                </button>
+                                            );
+                                        })
+                                    ) : (
+                                        <div 
+                                            onClick={() => setIsAddApproverOpen(true)}
+                                            className="col-span-full flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-black/5 bg-black/[0.01] py-8 transition-all hover:border-primary/30 hover:bg-primary/[0.02] dark:border-white/5 dark:bg-white/[0.01] dark:hover:border-white/30"
+                                        >
+                                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black/5 text-black/20 dark:bg-white/5 dark:text-white/20">
+                                                <Users size={18} strokeWidth={2} />
                                             </div>
-                                        );
-                                    })
-                                ) : (
-                                    <div className="border border-dashed border-border/60 rounded-xl p-5 text-center bg-muted/10">
-                                        <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest opacity-40">
-                                            Belum ada approver tambahan
-                                        </p>
-                                    </div>
-                                )}
+                                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-black/20 dark:text-white/20">
+                                                Belum ada approver manajemen
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     ) : (
-                        selected.metadata?.custom_management_users &&
-                        Array.isArray(selected.metadata.custom_management_users) &&
-                        selected.metadata.custom_management_users.length > 0 && (
-                            <div className="border-border col-span-full mt-2 border-t pt-4">
-                                <div className="text-muted-foreground mb-3 text-[10px] font-black uppercase tracking-widest">Manajemen Approval</div>
-                                <div className="bg-muted/40 border-border animate-in fade-in space-y-2 rounded-xl border p-3">
-                                    {selected.metadata.custom_management_users.map((userId: string, idx: number) => {
+                        managementUsers &&
+                        Array.isArray(managementUsers) &&
+                        managementUsers.length > 0 && (
+                            <div className="col-span-full mt-4 space-y-3 border-t border-black/5 pt-4 dark:border-white/5">
+                                <div className="text-[10px] font-black uppercase tracking-widest text-black/30 dark:text-white/30">Manajemen Approval</div>
+                                <div className="animate-in fade-in grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                                    {managementUsers.map((userId: string, idx: number) => {
                                         const approval = selected.approvals?.find((a) => a.user_id === userId);
                                         const userObj = allUsers.find((u) => u.id === userId);
                                         return (
                                             <div
                                                 key={idx}
-                                                className="bg-card border-border/40 flex items-center justify-between rounded-xl border p-2.5 shadow-xs"
+                                                className="flex items-center justify-between rounded-xl bg-white p-2.5 shadow-sm ring-1 ring-black/5 dark:bg-black/40 dark:ring-white/5"
                                             >
                                                 <div className="flex items-center gap-3">
-                                                    <Avatar user={userObj || { name: approval?.approver_name || 'User', initials: (approval?.approver_name || 'U').substring(0, 1) } as any} size="sm" />
+                                                    <Avatar user={userObj} size="sm" />
                                                     <div className="flex flex-col">
-                                                        <span className="text-foreground text-xs font-bold leading-tight">
+                                                        <span className="text-xs font-black leading-tight text-black dark:text-white">
                                                             {userObj ? userObj.name : approval ? approval.approver_name : `User ID: ${userId}`}
                                                         </span>
                                                         <span className="text-muted-foreground text-[9px] font-bold uppercase tracking-wide mt-0.5 opacity-60">
@@ -441,7 +493,7 @@ export function DraftEditableInfoCard({
                                                             ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30'
                                                             : approval?.status === 'rejected'
                                                               ? 'bg-red-50 text-red-600 dark:bg-red-950/20 dark:text-red-400 border border-red-100 dark:border-red-900/30'
-                                                              : 'bg-amber-50 text-amber-600 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30',
+                                                              : 'bg-slate-50 text-slate-600 dark:bg-white/5 dark:text-white/40 border border-slate-100 dark:border-white/10',
                                                     )}
                                                 >
                                                     {approval ? approval.status : 'pending'}
@@ -456,103 +508,142 @@ export function DraftEditableInfoCard({
                 </div>
             )}
 
-            {/* Modal to add custom management approvers - Moved outside minimized for reliability */}
             <Modal
                 isOpen={isAddApproverOpen}
                 onClose={() => setIsAddApproverOpen(false)}
-                title="Tambah Approver Manajemen"
-                description="Pilih hingga maksimal 3 orang sebagai approver tambahan untuk persetujuan manajemen."
+                title={
+                    <div className="flex items-center gap-3">
+                         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-white/10 dark:text-white">
+                             <UserPlus size={20} strokeWidth={2.5} />
+                         </div>
+                         <div className="flex flex-col">
+                             <span className="text-sm font-black uppercase tracking-wider text-black dark:text-white">Pilih Approver</span>
+                             <span className="text-[10px] font-medium text-black/40 dark:text-white/40">Maksimal 3 orang manajemen tambahan</span>
+                         </div>
+                     </div>
+                }
                 maxWidth="md"
             >
-                <div className="space-y-4">
-                    {/* Search Input */}
-                    <div className="relative">
-                        <input
-                            type="text"
-                            placeholder="Cari nama, departemen, atau peran..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="bg-black/5 dark:bg-white/5 border-border focus:ring-black dark:focus:ring-white text-foreground h-11 w-full appearance-none rounded-xl border px-4 text-sm font-bold transition-all outline-none focus:ring-1"
-                        />
-                    </div>
-
-                    <div className="max-h-60 space-y-1.5 overflow-y-auto pr-1 custom-scrollbar">
-                        {allUsers
-                            .filter((u) => u.role !== 'Vendor') // Loosened: Allow staff if explicitly needed, but usually filtered by search
-                            .filter(
-                                (u) =>
-                                    !searchQuery ||
-                                    u.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                    u.role?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                    u.department_name?.toLowerCase().includes(searchQuery.toLowerCase()),
-                            )
-                            .map((u: any) => {
-                                const isSelected = localSelectedUsers.includes(u.id);
-                                return (
-                                    <label
-                                        key={u.id}
-                                        className={cn(
-                                            'hover:bg-muted/40 flex cursor-pointer items-center justify-between rounded-xl border p-3 transition-all duration-200',
-                                            isSelected ? 'bg-black text-white dark:bg-white dark:text-black border-black dark:border-white shadow-md' : 'border-border/50 bg-card',
-                                        )}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <Avatar user={u} size="sm" className={isSelected ? "bg-white text-black dark:bg-black dark:text-white" : ""} />
-                                            <div className="flex flex-col">
-                                                <span className={cn("text-sm font-bold leading-tight", isSelected ? "text-white dark:text-black" : "text-foreground")}>{u.name}</span>
-                                                <span className={cn("text-[10px] font-bold uppercase tracking-wider mt-0.5 opacity-60", isSelected ? "text-white/70 dark:text-black/70" : "text-muted-foreground")}>
-                                                    {u.department_name ? `${u.department_name} • ` : ''}
-                                                    {u.role}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div className={cn("w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all", isSelected ? "border-white/40 bg-white/20" : "border-black/10")}>
-                                            {isSelected && <Check size={12} strokeWidth={4} />}
-                                        </div>
-                                        <input
-                                            type="checkbox"
-                                            className="hidden"
-                                            checked={isSelected}
-                                            onChange={() => {
-                                                if (isSelected) {
-                                                    setLocalSelectedUsers(localSelectedUsers.filter((id) => id !== u.id));
-                                                } else {
-                                                    if (localSelectedUsers.length >= 3) {
-                                                        alert('Maksimal 3 orang approver tambahan.');
-                                                        return;
-                                                    }
-                                                    setLocalSelectedUsers([...localSelectedUsers, u.id]);
-                                                }
-                                            }}
-                                        />
-                                    </label>
-                                );
-                            })}
-                        {allUsers.length === 0 && (
-                            <div className="py-10 text-center text-muted-foreground text-xs italic opacity-40">
-                                Memuat daftar pengguna...
+                <div className="mt-4 space-y-4">
+                    {/* Selected Summary */}
+                    <div className="flex items-center justify-between rounded-xl bg-primary/5 p-3 dark:bg-white/5">
+                        <div className="flex items-center gap-3">
+                            <div className="flex -space-x-2 overflow-hidden">
+                                {localSelectedUsers.map((uid) => {
+                                    const u = allUsers.find(x => x.id === uid);
+                                    return <Avatar key={uid} user={u} size="sm" className="ring-2 ring-white dark:ring-black" />;
+                                })}
+                                {localSelectedUsers.length === 0 && (
+                                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-black/5 text-black/20 dark:bg-white/5 dark:text-white/20">
+                                        <Users size={12} />
+                                    </div>
+                                )}
                             </div>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-primary dark:text-white">
+                                {localSelectedUsers.length}/3 Terpilih
+                            </span>
+                        </div>
+                        {localSelectedUsers.length > 0 && (
+                            <button 
+                                onClick={() => setLocalSelectedUsers([])}
+                                className="text-[9px] font-black uppercase tracking-widest text-primary/60 hover:text-primary dark:text-white/60 dark:hover:text-white"
+                            >
+                                Reset
+                            </button>
                         )}
                     </div>
 
-                    <div className="flex justify-end gap-3 pt-4 border-t border-black/5 dark:border-white/5">
+                    {/* Search bar */}
+                    <div className="relative">
+                        <Search size={14} className="absolute top-1/2 left-3 -translate-y-1/2 text-black/20 dark:text-white/20" strokeWidth={3} />
+                        <input
+                            type="text"
+                            placeholder="Cari nama, jabatan atau departemen..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="h-10 w-full rounded-xl border border-black/5 bg-black/[0.02] pl-10 pr-4 text-xs font-bold outline-none focus:border-primary/30 focus:bg-white dark:border-white/5 dark:bg-white/[0.02] dark:focus:bg-black transition-all"
+                        />
+                    </div>
+
+                    {/* User List */}
+                    <div className="custom-scrollbar max-h-[300px] overflow-y-auto pr-1">
+                        <div className="flex flex-col gap-1">
+                            {allUsers
+                                .filter((u) => u.role !== 'Vendor')
+                                .filter(
+                                    (u) =>
+                                        !searchQuery ||
+                                        u.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                        u.role?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                        u.department_name?.toLowerCase().includes(searchQuery.toLowerCase()),
+                                )
+                                .map((u: any) => {
+                                    const isSelected = localSelectedUsers.includes(u.id);
+                                    return (
+                                        <div
+                                            key={u.id}
+                                            onClick={() => {
+                                                 if (isSelected) {
+                                                     setLocalSelectedUsers(localSelectedUsers.filter((id) => id !== u.id));
+                                                 } else {
+                                                     if (localSelectedUsers.length >= 3) return;
+                                                     setLocalSelectedUsers([...localSelectedUsers, u.id]);
+                                                 }
+                                             }}
+                                             className={cn(
+                                                 'group flex cursor-pointer items-center justify-between rounded-xl px-3 py-2 transition-all',
+                                                 isSelected 
+                                                     ? 'bg-primary/5 dark:bg-white/10' 
+                                                     : 'hover:bg-black/[0.02] dark:hover:bg-white/5'
+                                             )}
+                                         >
+                                             <div className="flex items-center gap-3">
+                                                 <Avatar user={u} size="sm" />
+                                                 <div className="flex flex-col">
+                                                     <span className={cn("text-xs font-bold leading-tight", isSelected ? "text-primary dark:text-white" : "text-foreground")}>
+                                                         {u.name}
+                                                     </span>
+                                                     <span className="text-[9px] font-medium text-muted-foreground">
+                                                         {u.role} • {u.department_name || 'N/A'}
+                                                     </span>
+                                                 </div>
+                                             </div>
+                                             <div className={cn(
+                                                 "flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all",
+                                                 isSelected ? "bg-primary border-primary text-white" : "border-black/5 bg-transparent text-transparent dark:border-white/5"
+                                             )}>
+                                                 <Check size={10} strokeWidth={4} />
+                                             </div>
+                                         </div>
+                                    );
+                                })}
+                        </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="flex items-center justify-between border-t border-black/5 pt-4 dark:border-white/5">
                         <button
                             type="button"
                             onClick={() => setIsAddApproverOpen(false)}
-                            className="text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white h-11 px-6 text-[11px] font-black uppercase tracking-[0.2em] transition-all"
+                            className="text-[10px] font-black uppercase tracking-widest text-black/40 hover:text-black dark:text-white/40 dark:hover:text-white transition-all"
                         >
                             Batal
                         </button>
                         <button
-                            type="button"
-                            onClick={() => {
-                                onUpdate({ metadata: { ...selected.metadata, custom_management_users: localSelectedUsers } });
-                                setIsAddApproverOpen(false);
-                            }}
-                            className="bg-black text-white dark:bg-white dark:text-black h-11 rounded-xl px-8 text-[11px] font-black uppercase tracking-[0.2em] shadow-lg transition-all active:scale-95 hover:opacity-90"
-                        >
-                            Simpan Perubahan
-                        </button>
+                             type="button"
+                             disabled={processing}
+                             onClick={() => {
+                                 setManagementUsers(localSelectedUsers);
+                                 setIsAddApproverOpen(false);
+                             }}
+                             className="bg-primary flex h-10 items-center justify-center rounded-xl px-8 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-primary/20 transition-all hover:opacity-90 active:scale-95 disabled:opacity-50 dark:bg-white dark:text-black"
+                         >
+                             {processing ? (
+                                 <Loader2 size={14} className="animate-spin" />
+                             ) : (
+                                 "Selesai"
+                             )}
+                         </button>
                     </div>
                 </div>
             </Modal>

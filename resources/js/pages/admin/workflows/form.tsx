@@ -3,8 +3,7 @@ import { useToast } from '@/components/contracts/Toast';
 import { Button } from '@/components/ui/base/Button';
 import { Checkbox } from '@/components/ui/base/Checkbox';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
-import { CompactSelect } from '@/components/ui/forms/CompactSelect';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/overlays/Dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
 import { cn } from '@/lib/utils';
 import { closestCenter, DndContext, DragEndEvent, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
@@ -12,47 +11,68 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, v
 import { CSS } from '@dnd-kit/utilities';
 import { Head, router, useForm } from '@inertiajs/react';
 import {
+    Key,
+    Database,
     Briefcase,
     CheckCircle2,
-    Edit3,
     GitBranch,
     GripVertical,
     Info,
     LayoutTemplate,
+    Plus,
     PlusCircle,
     Search,
+    ChevronUp,
+    Settings2,
     Shield,
     Trash2,
     UserCheck,
     Users as UsersIcon,
+    CornerDownLeft,
+    Copy,
+    ArrowUp,
+    ArrowDown,
+    XCircle,
+    X,
+    Upload,
+    RotateCcw,
 } from 'lucide-react';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 // --- Sortable Step Item (Compact) ---
 function SortableStepItem({
     step,
     idx,
+    totalSteps,
     users,
     roles,
     departments,
     contractStatuses,
     updateLocalStep,
     removeLocalStep,
+    duplicateLocalStep,
+    moveLocalStep,
+    isExpanded,
+    setIsExpanded,
 }: {
     step: any;
     idx: number;
+    totalSteps: number;
     users: any[];
     roles: any[];
     departments: any[];
     contractStatuses: any[];
     updateLocalStep: (idx: number, data: any) => void;
     removeLocalStep: (idx: number) => void;
+    duplicateLocalStep: (idx: number) => void;
+    moveLocalStep: (idx: number, direction: 'up' | 'down') => void;
+    isExpanded: boolean;
+    setIsExpanded: (expanded: boolean) => void;
 }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: step.id });
     const [userSearchText, setUserSearchText] = useState('');
     const [roleSearchText, setRoleSearchText] = useState('');
     const [deptSearchText, setDeptSearchText] = useState('');
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -93,343 +113,618 @@ function SortableStepItem({
             ref={setNodeRef}
             style={style}
             className={cn(
-                'group/step border-primary/10 dark:bg-card hover:bg-primary/[0.02] relative flex gap-3 rounded-xl border bg-white p-3 transition-all dark:hover:bg-white/[0.02]',
-                isDragging && 'border-primary ring-primary/5 z-50 scale-[1.01] shadow-xl ring-2 dark:border-white',
-                !isAnySelected && 'border-primary/20 border-dashed',
+                'group/step flex flex-col gap-0 overflow-hidden transition-all duration-300',
+                isDragging && 'z-50 scale-[1.01]',
             )}
         >
-            <div className="flex shrink-0 flex-col items-center gap-1.5">
-                <div
-                    {...attributes}
-                    {...listeners}
-                    className="border-primary/10 bg-primary/[0.03] hover:bg-primary flex h-7 w-7 cursor-grab items-center justify-center rounded-lg border transition-all group-hover/step:shadow-md hover:text-white dark:bg-white/[0.03]"
-                >
-                    <GripVertical size={12} className="opacity-30" />
-                </div>
-                <div className="flex flex-col items-center leading-none">
-                    <span className="text-primary/20 text-[10px] font-semibold uppercase dark:text-white/20">STP</span>
-                    <span className="text-[13px] font-bold">{idx + 1}</span>
-                </div>
-            </div>
-
-            <div className="flex min-w-0 flex-1 items-center justify-between">
-                <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                    {!isAnySelected ? (
-                        <div className="flex items-center gap-2">
-                            <span className="bg-primary/5 text-primary/40 rounded px-1.5 py-0.5 text-xs font-bold tracking-widest uppercase dark:bg-white/5 dark:text-white/40">
-                                Akses Terbuka
-                            </span>
-                            <span className="text-primary/20 text-xs font-bold tracking-tighter uppercase italic dark:text-white/20">
-                                Personel Terkait
-                            </span>
+            {/* --- Premium Header Card --- */}
+            <div className={cn(
+                'group/header relative flex gap-4 rounded-2xl border p-4 transition-all duration-500 dark:bg-card',
+                isExpanded ? 'rounded-b-none border-b-0 shadow-2xl bg-white dark:bg-white/[0.02]' : 'shadow-sm bg-white/50 dark:bg-black/20 hover:bg-white dark:hover:bg-white/[0.05]',
+                !isAnySelected && !step.step_type && 'border-primary/20 border-dashed',
+                isAnySelected || step.step_type ? 'border-primary/10' : 'border-primary/20',
+            )}>
+                <div className="flex shrink-0 flex-col items-center">
+                    <div
+                        {...attributes}
+                        {...listeners}
+                        className="flex h-10 w-10 cursor-grab items-center justify-center rounded-xl border border-primary/5 bg-primary/[0.03] transition-all hover:bg-primary/10 hover:border-primary/20"
+                    >
+                        <div className="flex flex-col items-center -space-y-1">
+                            <span className="text-[10px] font-black text-primary/40 leading-none">#{idx + 1}</span>
+                            <GripVertical size={12} className="opacity-20" />
                         </div>
-                    ) : (
-                        <div className="flex flex-wrap items-center gap-1.5">
-                            {activeRoles.length > 0 && (
-                                <div className="bg-primary flex items-center gap-1.5 rounded-md px-2 py-0.5 text-white shadow-sm dark:bg-white dark:text-black">
-                                    <Shield size={10} />
-                                    <span className="text-xs font-bold tracking-tight uppercase">
-                                        {activeRoles.length === 1 ? activeRoles[0] : `${activeRoles.length} ROLE`}
-                                    </span>
-                                </div>
-                            )}
-                            {activeDepts.length > 0 && (
-                                <div className="border-primary/20 text-primary flex items-center gap-1.5 rounded-md border px-2 py-0.5 dark:border-white/20 dark:text-white">
-                                    <GitBranch size={10} />
-                                    <span className="text-xs font-bold tracking-tight uppercase">
-                                        {activeDepts.length === 1
-                                            ? departments.find((d) => d.id === activeDepts[0])?.name
-                                            : `${activeDepts.length} DEPT`}
-                                    </span>
-                                </div>
-                            )}
-                            {activeUsers.length > 0 && (
-                                <div className="bg-primary/[0.05] border-primary/10 text-primary flex items-center gap-1.5 rounded-md border px-2 py-0.5 dark:bg-white/[0.05] dark:text-white">
-                                    <UserCheck size={10} />
-                                    <span className="text-xs font-bold tracking-tight uppercase">
-                                        {activeUsers.length === 1
-                                            ? users.find((u) => u.id === activeUsers[0])?.name
-                                            : `${activeUsers.length} PERSONEL`}
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                    <div className="flex items-center gap-2">
-                        {step.status_id && (
-                            <div className="flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.5 text-xs font-bold tracking-widest text-emerald-600 uppercase dark:text-emerald-400">
-                                <LayoutTemplate size={10} /> {contractStatuses.find((s) => s.id === step.status_id)?.label || 'STATUS'}
-                            </div>
-                        )}
-                        {step.description && (
-                            <span className="text-primary/30 max-w-[200px] truncate text-xs font-bold tracking-tight uppercase italic dark:text-white/40">
-                                {step.description}
-                            </span>
-                        )}
                     </div>
                 </div>
 
-                <div className="ml-4 flex shrink-0 items-center gap-2">
-                    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                        <DialogTrigger asChild>
-                            <Button
-                                variant="outline"
-                                className="border-primary/10 hover:bg-primary h-7 gap-1.5 rounded-lg px-3 text-xs font-bold tracking-widest uppercase transition-all hover:text-white active:scale-95"
-                            >
-                                <Edit3 size={12} /> Atur
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="border-primary/10 max-w-5xl overflow-hidden rounded-[2rem] border bg-white p-0 shadow-2xl dark:bg-black">
-                            <DialogHeader className="bg-primary p-6 text-white dark:bg-white dark:text-black">
-                                <div className="flex items-center gap-3">
-                                    <GitBranch size={20} />
-                                    <div>
-                                        <DialogTitle className="mb-0.5 text-lg font-bold tracking-tight uppercase">
-                                            Konfigurasi Tahap {idx + 1}
-                                        </DialogTitle>
-                                        <p className="text-[10px] font-bold tracking-widest text-white/50 uppercase dark:text-black/50">
-                                            Tentukan personel penyetuju melalui hirarki
-                                        </p>
-                                    </div>
+                <div className="flex min-w-0 flex-1 items-center justify-between">
+                    <div className="flex min-w-0 flex-1 flex-col gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                            {/* Primary Action Badge */}
+                            {step.step_type && (
+                                <div className={cn(
+                                    "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[9px] font-bold tracking-tight uppercase border shadow-[0_1px_2px_rgba(0,0,0,0.05)]",
+                                    step.step_type === 'condition'
+                                        ? "bg-amber-500/10 text-amber-700 border-amber-200 dark:bg-amber-500/20 dark:text-amber-400 dark:border-amber-500/30"
+                                        : "bg-slate-900 text-white border-slate-950 dark:bg-white dark:text-black dark:border-white"
+                                )}>
+                                    {(step.step_type === 'approval' || step.step_type === 'APPROVAL') && <Shield size={10} />}
+                                    {(step.step_type === 'condition' || step.step_type === 'CONDITION') && <GitBranch size={10} />}
+                                    {(step.step_type === 'selection' || step.step_type === 'SELECTION') && <UsersIcon size={10} />}
+                                    {(step.step_type === 'upload' || step.step_type === 'UPLOAD') && <Upload size={10} />}
+                                    <span className="leading-none">
+                                        {step.step_type === 'SELECTION' ? 'PENUGASAN' :
+                                         step.step_type === 'APPROVAL' ? 'Persetujuan' :
+                                         step.step_type === 'REVIEW' ? 'Peninjauan' :
+                                         step.step_type === 'UPLOAD' ? 'Unggah' :
+                                         step.step_type === 'CLOSING' ? 'Selesai' :
+                                         step.step_type.replace('_', ' ')}
+                                    </span>
                                 </div>
-                            </DialogHeader>
+                            )}
 
-                            <div className="border-primary/5 bg-primary/[0.01] grid grid-cols-2 gap-4 border-b p-6">
-                                <CompactInput
-                                    label="Judul Tahapan"
-                                    value={step.description || ''}
-                                    onChange={(e) => updateLocalStep(idx, { description: e.target.value })}
-                                    icon={Info}
-                                />
-                                <CompactSelect
-                                    label="Target Status"
-                                    value={step.status_id || 'none'}
-                                    onChange={(v) => updateLocalStep(idx, { status_id: v === 'none' ? null : v })}
-                                    options={[
-                                        { label: '-- TETAP --', value: 'none' },
-                                        ...contractStatuses.map((s: any) => ({ label: s.label, value: s.id })),
-                                    ]}
-                                    icon={LayoutTemplate}
-                                />
-                                <CompactSelect
-                                    label="Fase Alur"
-                                    value={step.phase || 'f1_request'}
-                                    onChange={(v) => updateLocalStep(idx, { phase: String(v) })}
-                                    options={[
-                                        { label: 'PERMOHONAN F1', value: 'f1_request' },
-                                        { label: 'PEMBUATAN KONTRAK', value: 'contract_creation' },
-                                    ]}
-                                    icon={GitBranch}
-                                />
-                                <CompactSelect
-                                    label="Tipe Langkah"
-                                    value={step.step_type || 'approval'}
-                                    onChange={(v) => updateLocalStep(idx, { step_type: String(v) })}
-                                    options={[
-                                        { label: 'APPROVAL', value: 'approval' },
-                                        { label: 'DRAFTING', value: 'drafting' },
-                                        { label: 'REVIEW', value: 'review' },
-                                        { label: 'UPLOAD DOKUMEN TTD', value: 'upload_signed_doc' },
-                                        { label: 'CLOSING CHECK', value: 'closing_check' },
-                                    ]}
-                                    icon={CheckCircle2}
-                                />
-                                <CompactSelect
-                                    label="Jenis Pemeran"
-                                    value={step.approver_type || 'role'}
-                                    onChange={(v) => updateLocalStep(idx, { approver_type: String(v) })}
-                                    options={[
-                                        { label: 'ROLE SPESIFIK', value: 'role' },
-                                        { label: 'ATASAN LANGSUNG', value: 'atasan' },
-                                        { label: 'USER SPESIFIK', value: 'user' },
-                                    ]}
-                                    icon={UsersIcon}
-                                />
-                                {step.approver_type === 'atasan' && (
-                                    <CompactSelect
-                                        label="Tingkat Atasan"
-                                        value={String(step.hierarchy_level || '1')}
-                                        onChange={(v) => updateLocalStep(idx, { hierarchy_level: Number(v) })}
-                                        options={[
-                                            { label: 'LEVEL 1 (SPV/MANAGER)', value: '1' },
-                                            { label: 'LEVEL 2 (n+1)', value: '2' },
-                                        ]}
-                                        icon={Shield}
-                                    />
+                            {/* Conditional Flag */}
+                            {step.condition_expression && (
+                                <div className="flex items-center gap-1 rounded-lg px-2 py-1 text-[9px] font-bold uppercase bg-amber-50 text-amber-600 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/50">
+                                    <GitBranch size={10} /> {step.condition_expression.includes('tax') ? 'PAJAK' : 'META'}
+                                </div>
+                            )}
+
+                            {/* Access Summary Badges */}
+                            <div className="flex items-center gap-2">
+                                {isAnySelected ? (
+                                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                                        <UsersIcon size={10} className="text-slate-400" />
+                                        <div className="flex items-center divide-x divide-slate-300 dark:divide-slate-600">
+                                            {activeRoles.length > 0 && (
+                                                <span className="px-2 text-[9px] font-bold text-slate-600 dark:text-slate-300">
+                                                    {activeRoles.length === 1 ? activeRoles[0] : `${activeRoles.length} ROLE`}
+                                                </span>
+                                            )}
+                                            {activeDepts.length > 0 && (
+                                                <span className="px-2 text-[9px] font-bold text-slate-600 dark:text-slate-300">
+                                                    {activeDepts.length === 1 ? '1 DEPT' : `${activeDepts.length} DEPT`}
+                                                </span>
+                                            )}
+                                            {activeUsers.length > 0 && (
+                                                <span className="px-2 text-[9px] font-bold text-slate-600 dark:text-slate-300">
+                                                    {activeUsers.length === 1 ? '1 PERS' : `${activeUsers.length} PERS`}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <span className="text-[9px] font-bold text-rose-400 uppercase tracking-tight opacity-60">Tanpa Akses</span>
                                 )}
-                                {step.approver_type === 'role' && (
-                                    <CompactSelect
-                                        label="Target Role"
-                                        value={step.role_id || 'none'}
-                                        onChange={(v) => updateLocalStep(idx, { role_id: v === 'none' ? null : String(v) })}
-                                        options={[
-                                            { label: '-- PILIH --', value: 'none' },
-                                            ...roles.map((r: any) => ({ label: r.name, value: r.id })),
-                                        ]}
-                                        icon={Shield}
-                                    />
-                                )}
-                                {step.step_type === 'upload_signed_doc' && (
-                                    <CompactSelect
-                                        label="Dokumen Diupload Oleh"
-                                        value={step.uploader_type || 'legal'}
-                                        onChange={(v) => updateLocalStep(idx, { uploader_type: String(v) })}
-                                        options={[
-                                            { label: 'LEGAL STAFF', value: 'legal' },
-                                            { label: 'INITIATOR', value: 'initiator' },
-                                        ]}
-                                        icon={Briefcase}
-                                    />
-                                )}
-                                <CompactSelect
-                                    label="Jika Ditolak"
-                                    value={step.reject_target || 'initiator'}
-                                    onChange={(v) => updateLocalStep(idx, { reject_target: String(v) })}
-                                    options={[
-                                        { label: 'KEMBALI KE INITIATOR', value: 'initiator' },
-                                        { label: 'KEMBALI KE STEP SEBELUMNYA', value: 'previous' },
-                                    ]}
-                                    icon={GitBranch}
-                                />
-                                <CompactInput
-                                    label="Kondisi Dinamis (Expression)"
-                                    value={step.condition_expression || ''}
-                                    onChange={(e) => updateLocalStep(idx, { condition_expression: e.target.value })}
-                                    placeholder="Contoh: contract.has_tax == true"
-                                    icon={Info}
-                                />
+                            </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                            {step.description && (
+                                <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">{step.description}</span>
+                            )}
+
+                            {step.status_id && (
+                                <div className="flex items-center gap-1">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                    <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                                        {contractStatuses.find((s) => s.id === step.status_id)?.label}
+                                    </span>
+                                </div>
+                            )}
+
+                            <div className="flex items-center gap-1">
+                                <Shield size={10} className="text-slate-400" />
+                                <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                    {step.approver_type === 'initiator' ? 'INISIATOR' :
+                                     step.approver_type === 'atasan' ? 'ATASAN' :
+                                     step.approver_type === 'user' ? 'PERSONEL' : 'ROLE'}
+                                    {step.approver_type === 'atasan' && step.hierarchy_level && ` (LVL ${step.hierarchy_level})`}
+                                </span>
                             </div>
 
-                            <div className="grid min-h-[400px] grid-cols-3 gap-6 p-6">
-                                {[
-                                    {
-                                        label: 'Filter Role',
-                                        icon: Shield,
-                                        active: activeRoles,
-                                        search: roleSearchText,
-                                        setSearch: setRoleSearchText,
-                                        data: filteredRolesBySearch,
-                                        onSelect: (r: any) =>
-                                            updateLocalStep(idx, {
-                                                role: activeRoles.includes(r.name)
-                                                    ? activeRoles.filter((n: string) => n !== r.name)
-                                                    : [...activeRoles, r.name],
-                                            }),
-                                        display: (r: any) => r.name,
-                                    },
-                                    {
-                                        label: 'Filter Dept',
-                                        icon: GitBranch,
-                                        active: activeDepts,
-                                        search: deptSearchText,
-                                        setSearch: setDeptSearchText,
-                                        data: filteredDepartments,
-                                        onSelect: (d: any) =>
-                                            updateLocalStep(idx, {
-                                                department_ids: activeDepts.includes(d.id)
-                                                    ? activeDepts.filter((id: string) => id !== d.id)
-                                                    : [...activeDepts, d.id],
-                                            }),
-                                        display: (d: any) => d.name,
-                                    },
-                                    {
-                                        label: 'Target Personel',
-                                        icon: UsersIcon,
-                                        active: activeUsers,
-                                        search: userSearchText,
-                                        setSearch: setUserSearchText,
-                                        data: filteredUsersByHierarchy,
-                                        onSelect: (u: any) =>
-                                            updateLocalStep(idx, {
-                                                user_ids: activeUsers.includes(u.id)
-                                                    ? activeUsers.filter((id: string) => id !== u.id)
-                                                    : [...activeUsers, u.id],
-                                            }),
-                                        display: (u: any) => u.name,
-                                        sub: (u: any) => u.role,
-                                    },
-                                ].map((col, cIdx) => (
-                                    <div key={col.label} className={cn('space-y-3', cIdx === 1 && 'border-primary/5 border-x px-6')}>
-                                        <div className="border-primary/5 flex items-center justify-between border-b pb-2">
-                                            <div className="flex items-center gap-2">
-                                                <col.icon size={12} className="text-primary/40" />
-                                                <span className="text-primary/60 text-xs font-bold tracking-widest uppercase">{col.label}</span>
+                            {step.reject_target && (
+                                <div className="flex items-center gap-1">
+                                    <RotateCcw size={10} className="text-rose-400" />
+                                    <span className="text-[9px] font-bold uppercase tracking-wider text-rose-500">
+                                        TOLAK: {String(step.reject_target).toUpperCase()}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="ml-6 flex shrink-0 items-center gap-2">
+                        {/* Improved Quick Action Toolbar */}
+                        <div className="flex items-center gap-1 rounded-lg bg-slate-100 p-0.5 dark:bg-slate-800">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => duplicateLocalStep(idx)}
+                                className="h-7 w-7 text-slate-400 hover:bg-white hover:text-primary dark:hover:bg-slate-700 rounded-md transition-all"
+                                title="Duplikat Tahap"
+                            >
+                                <Copy size={12} />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => moveLocalStep(idx, 'up')}
+                                disabled={idx === 0}
+                                className="h-7 w-7 text-slate-400 hover:bg-white hover:text-primary dark:hover:bg-slate-700 rounded-md transition-all disabled:opacity-10"
+                                title="Pindah ke Atas"
+                            >
+                                <ArrowUp size={12} />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => moveLocalStep(idx, 'down')}
+                                disabled={idx === totalSteps - 1}
+                                className="h-7 w-7 text-slate-400 hover:bg-white hover:text-primary dark:hover:bg-slate-700 rounded-md transition-all disabled:opacity-10"
+                                title="Pindah ke Bawah"
+                            >
+                                <ArrowDown size={12} />
+                            </Button>
+                        </div>
+
+                        <Button
+                            variant={isExpanded ? "default" : "outline"}
+                            onClick={() => setIsExpanded(!isExpanded)}
+                            className={cn(
+                                "h-8 gap-2 rounded-lg px-3 text-[10px] font-bold tracking-tight uppercase transition-all",
+                                isExpanded
+                                    ? "bg-slate-900 text-white shadow-lg shadow-slate-900/20"
+                                    : "border-slate-200 hover:bg-slate-50 text-slate-600 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
+                            )}
+                        >
+                            {isExpanded ? <ChevronUp size={12} /> : <Settings2 size={12} />}
+                            {isExpanded ? 'SIMPAN' : 'EDIT'}
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeLocalStep(idx)}
+                            className="text-slate-300 hover:bg-rose-50 hover:text-rose-500 h-8 w-8 rounded-lg transition-all dark:text-slate-700 dark:hover:bg-rose-500/10"
+                        >
+                            <Trash2 size={14} />
+                        </Button>
+                    </div>
+                </div>
+            </div>
+
+            {/* --- Premium Expansion Block --- */}
+            {isExpanded && (
+                <div className="relative border-x border-b border-primary/10 rounded-b-3xl bg-white shadow-2xl animate-in fade-in slide-in-from-top-6 duration-500 dark:bg-black/40 overflow-hidden">
+                    {/* Background Subtle Gradient */}
+                    <div className="relative z-10 p-6">
+                        <div className="grid grid-cols-12 gap-6">
+                            {/* --- Section 1: Basic Config --- */}
+                            <div className="col-span-12 lg:col-span-4 space-y-6">
+                                <div className="space-y-4">
+                                    <h4 className="text-[11px] font-black tracking-widest text-primary/30 uppercase flex items-center gap-2">
+                                        <Settings2 size={12} /> Identitas Tahap
+                                    </h4>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Tipe Langkah</label>
+                                        <Select
+                                            value={step.step_type || 'none'}
+                                            onValueChange={(v) => updateLocalStep(idx, { step_type: v === 'none' ? null : String(v) })}
+                                        >
+                                            <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-white text-xs font-bold transition-all focus:border-slate-900 dark:border-slate-800 dark:bg-black/50">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl">
+                                                <SelectItem value="none" className="py-2.5 text-[10px] font-bold uppercase opacity-40 italic">-- PILIH TIPE --</SelectItem>
+                                                <SelectItem value="SELECTION" className="py-2.5 text-[10px] font-bold uppercase">PENUGASAN</SelectItem>
+                                                <SelectItem value="APPROVAL" className="py-2.5 text-[10px] font-bold uppercase">PERSETUJUAN</SelectItem>
+                                                <SelectItem value="REVIEW" className="py-2.5 text-[10px] font-bold uppercase">PENINJAUAN</SelectItem>
+                                                <SelectItem value="UPLOAD" className="py-2.5 text-[10px] font-bold uppercase">UNGGAH DOKUMEN</SelectItem>
+                                                <SelectItem value="CLOSING" className="py-2.5 text-[10px] font-bold uppercase text-emerald-500">PENUTUPAN (FINISH)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    <CompactInput
+                                        label="Label Langkah"
+                                        value={step.description || ''}
+                                        onChange={(e) => updateLocalStep(idx, { description: e.target.value })}
+                                        placeholder="Misal: Review Legal & Compliance"
+                                        icon={Info}
+                                        className="h-10"
+                                    />
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Tolak Ke</label>
+                                            <Select
+                                                value={String(step.reject_target || 'none')}
+                                                onValueChange={(v) => updateLocalStep(idx, { reject_target: v === 'none' ? null : Number(v) })}
+                                            >
+                                                <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-white text-xs font-bold dark:border-slate-800 dark:bg-black/50">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-xl">
+                                                    <SelectItem value="none" className="py-2.5 text-[10px] font-bold uppercase opacity-40">INISIATOR</SelectItem>
+                                                    {Array.from({ length: idx }, (_, i) => i + 1).map((num) => (
+                                                        <SelectItem key={num} value={String(num)} className="py-2.5 text-[10px] font-bold uppercase">
+                                                            Tahap {num}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Status Target</label>
+                                            <Select
+                                                value={String(step.status_id || 'none')}
+                                                onValueChange={(v) => updateLocalStep(idx, { status_id: v === 'none' ? null : v })}
+                                            >
+                                                <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-white text-xs font-bold dark:border-slate-800 dark:bg-black/50">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-xl">
+                                                    <SelectItem value="none" className="py-2.5 text-[10px] font-bold uppercase opacity-40 italic">TETAP</SelectItem>
+                                                    {contractStatuses.map((s: any) => (
+                                                        <SelectItem key={s.id} value={String(s.id)} className="py-2.5 text-[10px] font-bold uppercase">{s.label}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* --- Section 2: Konfigurasi Lanjutan --- */}
+                            <div className="col-span-12 lg:col-span-8 space-y-6">
+                                <div className="rounded-2xl border border-slate-200 bg-slate-50/30 p-5 dark:border-slate-800 dark:bg-slate-900/30">
+                                    <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4 dark:border-slate-800">
+                                        <div className="flex items-center gap-2">
+                                            <GitBranch size={16} className="text-slate-400" />
+                                            <h4 className="text-[10px] font-black tracking-widest text-slate-500 uppercase">Eksekusi Bersyarat</h4>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[9px] font-bold text-slate-400 uppercase">Bersyarat:</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => updateLocalStep(idx, { condition_expression: step.condition_expression ? null : 'IS_TAX' })}
+                                                className={cn(
+                                                    "flex h-6 items-center gap-2 rounded-full px-3 text-[9px] font-black uppercase tracking-widest transition-all",
+                                                    step.condition_expression
+                                                        ? "bg-slate-900 text-white shadow-sm"
+                                                        : "bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-500"
+                                                )}
+                                            >
+                                                {step.condition_expression ? 'AKTIF' : 'NON-AKTIF'}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {step.condition_expression !== null && (
+                                        <div className="mb-6">
+                                            <div className="relative">
+                                                <Key className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                                                <input
+                                                    value={step.condition_expression || ''}
+                                                    onChange={(e) => updateLocalStep(idx, { condition_expression: e.target.value.toUpperCase() })}
+                                                    placeholder="NAMA_META_KEY (CONTOH: IS_TAX)"
+                                                    className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-[11px] font-bold tracking-wider outline-none focus:border-slate-900 dark:border-slate-800 dark:bg-black/50"
+                                                />
+                                                <div className="mt-2 flex items-center gap-1.5 text-[9px] font-medium text-slate-400 italic">
+                                                    <Info size={10} />
+                                                    <span>Langkah hanya dieksekusi jika data metadata kontrak '{step.condition_expression || '...'}' bernilai TRUE</span>
+                                                </div>
                                             </div>
-                                            {col.active.length > 0 && (
-                                                <div className="bg-primary flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold text-white">
-                                                    {col.active.length}
+                                        </div>
+                                    )}
+
+                                    <div className="flex items-center justify-between border-t border-slate-100 pt-4 dark:border-slate-800">
+                                        <div className="flex items-center gap-2">
+                                            <Database size={16} className="text-slate-400" />
+                                            <h4 className="text-[10px] font-black tracking-widest text-slate-500 uppercase">Metadata</h4>
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            className="h-7 rounded-lg px-2 text-[9px] font-bold uppercase hover:bg-slate-100 dark:hover:bg-slate-800"
+                                            onClick={() => {
+                                                const currentMeta = step.meta || {};
+                                                updateLocalStep(idx, { meta: { ...currentMeta, [`NEW_KEY_${Object.keys(currentMeta).length + 1}`]: '' } });
+                                            }}
+                                        >
+                                            <Plus size={12} className="mr-1" /> Meta
+                                        </Button>
+                                    </div>
+
+                                    <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                        {step.meta && Object.entries(step.meta).map(([key, value], mIdx) => (
+                                            <div key={mIdx} className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 transition-all hover:border-indigo-500/30 dark:border-slate-800 dark:bg-black/20">
+                                                <input
+                                                    value={key}
+                                                    onChange={(e) => {
+                                                        const newMeta = { ...step.meta };
+                                                        const oldKey = key;
+                                                        const newKey = e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, '_');
+                                                        if (newKey !== oldKey) {
+                                                            newMeta[newKey] = newMeta[oldKey];
+                                                            delete newMeta[oldKey];
+                                                            updateLocalStep(idx, { meta: newMeta });
+                                                        }
+                                                    }}
+                                                    placeholder="KEY"
+                                                    className="h-8 w-[35%] bg-transparent px-2 text-[10px] font-black uppercase tracking-tighter outline-none"
+                                                />
+                                                <div className="h-4 w-px bg-slate-100 dark:bg-slate-800" />
+                                                <input
+                                                    value={String(value)}
+                                                    onChange={(e) => {
+                                                        const newMeta = { ...step.meta };
+                                                        newMeta[key] = e.target.value;
+                                                        updateLocalStep(idx, { meta: newMeta });
+                                                    }}
+                                                    placeholder="VALUE"
+                                                    className="h-8 flex-1 bg-transparent px-2 text-[10px] font-bold outline-none"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className="flex h-8 w-8 items-center justify-center text-slate-300 hover:text-rose-500"
+                                                    onClick={() => {
+                                                        const newMeta = { ...step.meta };
+                                                        delete newMeta[key];
+                                                        updateLocalStep(idx, { meta: newMeta });
+                                                    }}
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                        {(!step.meta || Object.keys(step.meta).length === 0) && (
+                                            <div className="col-span-full py-4 text-center">
+                                                <p className="text-[10px] font-medium text-slate-400 italic">Belum ada metadata kustom.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            {/* --- Section 3: Approver & Access --- */}
+                            {step.step_type && step.step_type !== 'none' && (
+                                <div className="col-span-12 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                                    <div className="relative h-px bg-gradient-to-r from-transparent via-primary/10 to-transparent my-4" />
+
+                                    <div className="grid grid-cols-12 gap-8">
+                                        <div className="col-span-12 lg:col-span-4 space-y-1.5">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-primary/60 dark:text-white/60 flex items-center gap-2 mb-2">
+                                                <UserCheck size={14} /> Jenis Penyetuju / Otoritas
+                                            </label>
+                                            <Select
+                                                value={step.approver_type || 'role'}
+                                                onValueChange={(v) => updateLocalStep(idx, { approver_type: String(v) })}
+                                            >
+                                                <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-white text-[11px] font-bold tracking-tight transition-all focus:border-slate-900 dark:border-slate-800 dark:bg-black/50">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-xl">
+                                                    <SelectItem value="role" className="py-2.5 text-[10px] font-bold uppercase">JABATAN (ROLE)</SelectItem>
+                                                    <SelectItem value="initiator" className="py-2.5 text-[10px] font-bold uppercase">INISIATOR</SelectItem>
+                                                    <SelectItem value="atasan" className="py-2.5 text-[10px] font-bold uppercase">ATASAN (HIRARKI)</SelectItem>
+                                                    <SelectItem value="user" className="py-2.5 text-[10px] font-bold uppercase">PERSONEL (USER)</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+
+                                            {step.approver_type === 'atasan' && (
+                                                <div className="mt-4 animate-in slide-in-from-left-2 duration-300">
+                                                    <label className="text-[10px] font-bold uppercase tracking-widest text-primary/40 dark:text-white/40 mb-2 block">Level Atasan</label>
+                                                    <div className="grid grid-cols-4 gap-2">
+                                                        {[1, 2, 3, 4].map(lvl => (
+                                                            <button
+                                                                key={lvl}
+                                                                type="button"
+                                                                onClick={() => updateLocalStep(idx, { hierarchy_level: lvl })}
+                                                                className={cn(
+                                                                    "h-10 rounded-xl text-[10px] font-black transition-all active:scale-95",
+                                                                    (step.hierarchy_level || 1) === lvl
+                                                                        ? "bg-primary text-white shadow-lg shadow-primary/20"
+                                                                        : "bg-primary/5 text-primary/40 hover:bg-primary/10"
+                                                                )}
+                                                            >
+                                                                LVL {lvl}
+                                                            </button>
+                                                        ))}
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>
-                                        <div className="relative">
-                                            <Search className="text-primary/20 absolute top-1/2 left-2.5 -translate-y-1/2" size={12} />
-                                            <input
-                                                placeholder="CARI..."
-                                                value={col.search}
-                                                onChange={(e) => col.setSearch(e.target.value)}
-                                                className="border-primary/10 bg-primary/[0.01] focus:ring-primary/20 h-8 w-full rounded-lg border pr-3 pl-8 text-xs font-bold uppercase transition-all outline-none focus:ring-1"
-                                            />
-                                        </div>
-                                        <div className="custom-scrollbar max-h-[250px] space-y-0.5 overflow-y-auto pr-1">
-                                            {col.data.map((item: any) => {
-                                                const id = item.id || item.name;
-                                                const isActive = col.active.includes(id);
-                                                return (
-                                                    <button
-                                                        key={id}
-                                                        type="button"
-                                                        onClick={() => col.onSelect(item)}
-                                                        className={cn(
-                                                            'flex w-full items-center justify-between rounded-lg border p-2 text-left transition-all',
-                                                            isActive
-                                                                ? 'bg-primary border-primary text-white shadow-md'
-                                                                : 'hover:bg-primary/[0.03] border-transparent',
-                                                        )}
-                                                    >
-                                                        <div className="flex min-w-0 flex-col">
-                                                            <span className="truncate text-xs font-bold uppercase">{col.display(item)}</span>
-                                                            {col.sub && (
-                                                                <span
-                                                                    className={cn(
-                                                                        'text-[10px] font-bold uppercase opacity-50',
-                                                                        isActive ? 'text-white/60' : 'text-primary/40',
-                                                                    )}
-                                                                >
-                                                                    {col.sub(item)}
-                                                                </span>
+
+                                        {/* Selection Columns */}
+                                        {!['CLOSING'].includes(step.step_type) && (
+                                            <div className="col-span-12 lg:col-span-8 grid grid-cols-3 gap-6">
+                                                {[
+                                                    {
+                                                        label: 'PILIH ROLE',
+                                                        icon: Shield,
+                                                        active: activeRoles,
+                                                        search: roleSearchText,
+                                                        setSearch: setRoleSearchText,
+                                                        data: filteredRolesBySearch,
+                                                        onSelect: (r: any) => updateLocalStep(idx, {
+                                                            role: activeRoles.includes(r.name) ? activeRoles.filter((n: string) => n !== r.name) : [...activeRoles, r.name],
+                                                        }),
+                                                        display: (r: any) => r.name,
+                                                        hidden: step.approver_type === 'atasan' || (step.approver_type === 'user'),
+                                                    },
+                                                    {
+                                                        label: 'DEPARTEMEN',
+                                                        icon: GitBranch,
+                                                        active: activeDepts,
+                                                        search: deptSearchText,
+                                                        setSearch: setDeptSearchText,
+                                                        data: filteredDepartments,
+                                                        onSelect: (d: any) => updateLocalStep(idx, {
+                                                            department_ids: activeDepts.includes(d.id) ? activeDepts.filter((id: string) => id !== d.id) : [...activeDepts, d.id],
+                                                        }),
+                                                        display: (d: any) => d.name,
+                                                        hidden: step.approver_type === 'atasan' || (step.approver_type === 'user'),
+                                                    },
+                                                    {
+                                                        label: 'PILIH USER',
+                                                        icon: UsersIcon,
+                                                        active: activeUsers,
+                                                        search: userSearchText,
+                                                        setSearch: setUserSearchText,
+                                                        data: filteredUsersByHierarchy,
+                                                        onSelect: (u: any) => updateLocalStep(idx, {
+                                                            user_ids: activeUsers.includes(u.id) ? activeUsers.filter((id: string) => id !== u.id) : [...activeUsers, u.id],
+                                                        }),
+                                                        display: (u: any) => u.name,
+                                                        sub: (u: any) => u.role,
+                                                        hidden: step.approver_type === 'atasan',
+                                                    },
+                                                ].filter(col => !col.hidden).map((col, cIdx) => (
+                                                    <div key={col.label} className={cn('space-y-4 transition-all duration-500', cIdx > 0 && 'border-l border-primary/5 pl-6')}>
+                                                        <div className="flex items-center justify-between px-1">
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/5 text-primary">
+                                                                    <col.icon size={12} />
+                                                                </div>
+                                                                <span className="text-[10px] font-black tracking-widest uppercase text-primary/60">{col.label}</span>
+                                                            </div>
+                                                            {col.active.length > 0 && (
+                                                                <div className="bg-primary flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-black text-white shadow-sm ring-4 ring-primary/5">
+                                                                    {col.active.length}
+                                                                </div>
                                                             )}
                                                         </div>
-                                                        {isActive && <CheckCircle2 size={10} />}
-                                                    </button>
-                                                );
-                                            })}
+                                                        <div className="relative group/search">
+                                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-primary/20 transition-all group-focus-within/search:text-primary" size={13} />
+                                                            <input
+                                                                placeholder="CARI..."
+                                                                value={col.search}
+                                                                onChange={(e) => col.setSearch(e.target.value)}
+                                                                className="h-10 w-full rounded-xl border border-primary/10 bg-primary/[0.01] pl-10 pr-3 text-[10px] font-bold uppercase transition-all outline-none focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/5 dark:focus:bg-black/50"
+                                                            />
+                                                        </div>
+                                                        <div className="custom-scrollbar max-h-[300px] space-y-1 overflow-y-auto pr-2">
+                                                            {col.data.map((item: any) => {
+                                                                const itemId = col.label.toLowerCase().includes('role') ? item.name : item.id;
+                                                                const isActive = col.active.some((a: any) => String(a) === String(itemId));
+                                                                return (
+                                                                    <button
+                                                                        key={item.id || item.name}
+                                                                        type="button"
+                                                                        onClick={() => col.onSelect(item)}
+                                                                        className={cn(
+                                                                            'flex w-full items-center justify-between rounded-xl border p-2.5 text-left transition-all active:scale-95 group/item',
+                                                                            isActive
+                                                                                ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20'
+                                                                                : 'hover:bg-primary/[0.03] hover:border-primary/20 border-transparent',
+                                                                        )}
+                                                                    >
+                                                                        <div className="flex min-w-0 flex-col">
+                                                                            <span className="truncate text-[11px] font-bold uppercase tracking-tight">{col.display(item)}</span>
+                                                                            {col.sub && (
+                                                                                <span className={cn(
+                                                                                    'text-[9px] font-bold uppercase tracking-tighter opacity-60',
+                                                                                    isActive ? 'text-white/70' : 'text-primary/40',
+                                                                                )}>
+                                                                                    {col.sub(item)}
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                        {isActive && <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center"><CheckCircle2 size={10} className="text-white" /></div>}
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* --- Action Buttons Preview --- */}
+                                    <div className="mt-12 space-y-6 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+                                        <div className="flex items-center justify-between border-b border-primary/5 pb-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 shadow-sm shadow-emerald-500/5">
+                                                    <LayoutTemplate size={20} />
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <h4 className="text-[11px] font-black tracking-[0.1em] text-primary/60 uppercase">Pratinjau Tombol Aksi</h4>
+                                                    <p className="text-[10px] text-primary/40 font-medium italic">Simulasi antarmuka pengguna pada tahapan ini.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="relative flex flex-wrap items-center gap-4 rounded-[2rem] border border-primary/10 bg-gradient-to-br from-primary/[0.03] to-white/5 p-10 shadow-2xl dark:from-white/5 dark:to-black/20 overflow-hidden">
+                                            <div className="absolute top-0 right-0 p-4 opacity-[0.03] pointer-events-none"><LayoutTemplate size={120} /></div>
+
+                                            {(() => {
+                                                const type = step.step_type;
+                                                const buttons = [];
+
+                                                if (type === 'SELECTION') {
+                                                    buttons.push({ label: 'Tugaskan PIC', color: 'bg-primary', icon: UserCheck, shadow: 'shadow-primary/30' });
+                                                    buttons.push({ label: 'Tolak', color: 'bg-rose-500', icon: XCircle, shadow: 'shadow-rose-500/30' });
+                                                } else if (type === 'APPROVAL') {
+                                                    buttons.push({ label: 'Setujui Kontrak', color: 'bg-emerald-500', icon: CheckCircle2, shadow: 'shadow-emerald-500/30' });
+                                                    buttons.push({ label: 'Tolak', color: 'bg-rose-500', icon: XCircle, shadow: 'shadow-rose-500/30' });
+                                                } else if (type === 'REVIEW') {
+                                                    buttons.push({ label: 'Verifikasi / OK', color: 'bg-blue-600', icon: Search, shadow: 'shadow-blue-600/30' });
+                                                    buttons.push({ label: 'Tolak / Revisi', color: 'bg-rose-500', icon: XCircle, shadow: 'shadow-rose-500/30' });
+                                                } else if (type === 'UPLOAD') {
+                                                    buttons.push({ label: 'Upload TTD', color: 'bg-indigo-600', icon: Upload, shadow: 'shadow-indigo-600/30' });
+                                                    buttons.push({ label: 'Tolak', color: 'bg-rose-500', icon: XCircle, shadow: 'shadow-rose-500/30' });
+                                                } else if (type === 'CLOSING') {
+                                                    buttons.push({ label: 'Selesaikan', color: 'bg-emerald-600', icon: CheckCircle2, shadow: 'shadow-emerald-600/30' });
+                                                    buttons.push({ label: 'Kembalikan', color: 'bg-amber-600', icon: RotateCcw, shadow: 'shadow-amber-600/30' });
+                                                }
+
+                                                if (step.approver_type === 'user' || (type === 'REVIEW' && idx === 1)) {
+                                                    buttons.unshift({ label: 'Tugaskan PIC', color: 'bg-primary', icon: UserCheck, shadow: 'shadow-primary/30' });
+                                                }
+
+                                                return buttons.map((btn, bIdx) => (
+                                                    <div key={bIdx} className={cn(
+                                                        "group/btn relative flex cursor-default items-center gap-3 rounded-2xl px-6 py-3.5 text-white shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:scale-105 active:scale-95",
+                                                        btn.color, btn.shadow
+                                                    )}>
+                                                        <div className="absolute inset-0 bg-white/10 opacity-0 group-hover/btn:opacity-100 transition-opacity rounded-2xl" />
+                                                        <btn.icon size={18} className="opacity-80" />
+                                                        <span className="text-xs font-black uppercase tracking-[0.1em]">{btn.label}</span>
+                                                    </div>
+                                                ));
+                                            })()}
+
+                                            {(!step.step_type || step.step_type === 'none') && (
+                                                <div className="flex w-full items-center justify-center py-10 text-primary/10 italic text-xs uppercase font-black tracking-[0.2em] border-2 border-dashed border-primary/10 rounded-[1.5rem]">
+                                                    Konfigurasi Tipe Langkah Untuk Melihat Pratinjau
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
-                                ))}
-                            </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
 
-                            <DialogFooter className="bg-primary/[0.02] border-primary/5 border-t p-4">
-                                <Button
-                                    type="button"
-                                    onClick={() => setIsDialogOpen(false)}
-                                    className="h-9 rounded-xl px-8 text-xs font-bold tracking-widest uppercase shadow-lg"
-                                >
-                                    Simpan
-                                </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
-
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeLocalStep(idx)}
-                        className="h-7 w-7 rounded-lg text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-600 dark:hover:bg-rose-500 hover:text-white dark:hover:text-white transition-all active:scale-95"
-                    >
-                        <Trash2 size={12} />
-                    </Button>
+                    {/* Compact Footer for Step Card */}
+                    <div className="bg-primary/[0.02] flex items-center justify-between border-t border-primary/5 px-8 py-4">
+                        <div className="flex items-center gap-2 text-[9px] font-black text-primary/30 uppercase tracking-[0.2em]">
+                            <Settings2 size={10} /> Konfigurasi Langkah {idx + 1}
+                        </div>
+                        <Button
+                            type="button"
+                            onClick={() => setIsExpanded(false)}
+                            className="h-9 rounded-xl px-10 text-[10px] font-black tracking-[0.2em] uppercase shadow-lg shadow-primary/20 transition-all active:scale-95 hover:shadow-primary/40"
+                        >
+                            SELESAI
+                        </Button>
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 }
@@ -437,10 +732,11 @@ function SortableStepItem({
 // --- Main Workflow Editor Page ---
 export default function WorkflowEditor({ auth, workflow, contractTypes, departments, roles, users, contractStatuses }: any) {
     const { showToast } = useToast();
-    const [isInitiatorDialogOpen, setIsInitiatorDialogOpen] = useState(false);
+    const [isInitiatorExpanded, setIsInitiatorExpanded] = useState(false);
     const [initiatorUserSearch, setInitiatorUserSearch] = useState('');
     const [initiatorRoleSearch, setInitiatorRoleSearch] = useState('');
     const [initiatorDeptSearch, setInitiatorDeptSearch] = useState('');
+    const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
 
     const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
 
@@ -451,12 +747,25 @@ export default function WorkflowEditor({ auth, workflow, contractTypes, departme
         is_default: !!workflow?.is_default,
         initiator_type: workflow?.initiator_type || 'all',
         scope: workflow?.scope || 'HO',
-        workflow_category: workflow?.workflow_category || 'unified',
         initiator_roles: workflow?.initiator_roles || [],
         initiator_users: workflow?.initiator_users || [],
         initiator_departments: workflow?.initiator_departments || [],
         steps: workflow?.steps || [],
+        department_id: workflow?.department_id || null,
     });
+
+    useEffect(() => {
+        const hasRoles = form.data.initiator_roles.length > 0 || form.data.initiator_departments.length > 0;
+        const hasUsers = form.data.initiator_users.length > 0;
+
+        let type = 'all';
+        if (hasUsers) type = 'user';
+        else if (hasRoles) type = 'role';
+
+        if (form.data.initiator_type !== type) {
+            form.setData('initiator_type', type);
+        }
+    }, [form.data.initiator_roles, form.data.initiator_departments, form.data.initiator_users]);
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
@@ -506,113 +815,116 @@ export default function WorkflowEditor({ auth, workflow, contractTypes, departme
                     isDirty={form.isDirty}
                     isEdit={!!workflow}
                 >
-                    <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-                        {/* LEFT COLUMN: Metadata & Initiator */}
-                        <div className="space-y-6 lg:col-span-4">
-                            <FormSection title="Arsitektur Alur" subtitle="Identitas & Target">
-                                <div className="space-y-4">
-                                    <CompactInput
-                                        label="Nama Alur"
-                                        value={form.data.name}
-                                        onChange={(e) => form.setData('name', e.target.value)}
-                                        placeholder="CONTOH: PENGADAAN JASA"
-                                        icon={Briefcase}
-                                    />
-                                    <CompactSelect
-                                        label="Klasifikasi"
-                                        value={form.data.contract_type || 'all'}
-                                        onChange={(v) => form.setData('contract_type', v === 'all' ? '' : String(v))}
-                                        options={[
-                                            { label: 'GLOBAL', value: 'all' },
-                                            ...contractTypes.map((t: any) => ({ label: t.name, value: t.name })),
-                                        ]}
-                                        icon={LayoutTemplate}
-                                    />
-                                    <CompactSelect
-                                        label="Scope Wilayah"
-                                        value={form.data.scope || 'HO'}
-                                        onChange={(v) => form.setData('scope', String(v))}
-                                        options={[
-                                            { label: 'HO', value: 'HO' },
-                                            { label: 'REGION', value: 'REGION' },
-                                            { label: 'ALL', value: 'ALL' },
-                                        ]}
-                                        icon={Briefcase}
-                                    />
-                                    <CompactSelect
-                                        label="Kategori Alur"
-                                        value={form.data.workflow_category || 'unified'}
-                                        onChange={(v) => form.setData('workflow_category', String(v))}
-                                        options={[
-                                            { label: 'UNIFIED', value: 'unified' },
-                                            { label: 'F1 ONLY', value: 'f1' },
-                                            { label: 'CONTRACT ONLY', value: 'contract' },
-                                        ]}
-                                        icon={GitBranch}
-                                    />
-                                    <div
-                                        onClick={() => form.setData('is_default', !form.data.is_default)}
-                                        className="bg-primary/[0.02] border-primary/5 group hover:bg-primary/[0.04] flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition-all"
-                                    >
-                                        <Checkbox checked={form.data.is_default} onCheckedChange={() => {}} className="h-4 w-4" />
-                                        <div className="flex flex-col">
-                                            <span className="text-primary text-xs font-bold uppercase dark:text-white">Default</span>
-                                            <span className="text-primary/30 text-[10px] font-bold uppercase dark:text-white/30">
-                                                Prioritas Sistem
-                                            </span>
+                    <div className="space-y-8">
+                        <FormSection>
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+                                    <div className="lg:col-span-6">
+                                        <CompactInput
+                                            label="Nama Alur Kerja"
+                                            value={form.data.name}
+                                            onChange={(e) => form.setData('name', e.target.value)}
+                                            placeholder="Contoh: Approval Kontrak Regional"
+                                            icon={Briefcase}
+                                        />
+                                    </div>
+                                    <div className="lg:col-span-3">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-primary/60 dark:text-white/60 flex items-center gap-2">
+                                                <LayoutTemplate size={10} /> Jenis Kontrak
+                                            </label>
+                                            <Select
+                                                value={form.data.contract_type || 'all'}
+                                                onValueChange={(v) => form.setData('contract_type', v === 'all' ? '' : String(v))}
+                                            >
+                                                <SelectTrigger className="h-9 rounded-xl border-primary/10 bg-primary/5 text-xs font-bold transition-all focus:border-primary">
+                                                    <SelectValue placeholder="SEMUA JENIS" />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-xl border-primary/10 bg-white shadow-2xl dark:bg-black">
+                                                    <SelectItem value="all" className="py-2.5 text-[10px] font-bold uppercase">SEMUA JENIS</SelectItem>
+                                                    {contractTypes.map((t: any) => (
+                                                        <SelectItem key={t.id} value={t.name} className="py-2.5 text-[10px] font-bold uppercase">
+                                                            {t.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                    <div className="lg:col-span-3">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-primary/60 dark:text-white/60 flex items-center gap-2">
+                                                <Shield size={10} /> Scope / Unit
+                                            </label>
+                                            <Select
+                                                value={form.data.scope || 'HO'}
+                                                onValueChange={(v) => form.setData('scope', String(v))}
+                                            >
+                                                <SelectTrigger className="h-9 rounded-xl border-primary/10 bg-primary/5 text-xs font-bold transition-all focus:border-primary">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-xl border-primary/10 bg-white shadow-2xl dark:bg-black">
+                                                    <SelectItem value="HO" className="py-2.5 text-[10px] font-bold uppercase">HEAD OFFICE (HO)</SelectItem>
+                                                    <SelectItem value="RO" className="py-2.5 text-[10px] font-bold uppercase">REGIONAL OFFICE (RO)</SelectItem>
+                                                    <SelectItem value="Site" className="py-2.5 text-[10px] font-bold uppercase">SITE / PROJECT</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                         </div>
                                     </div>
                                 </div>
-                            </FormSection>
 
-                            <FormSection title="Inisiator" subtitle="Otoritas Akses">
-                                {(() => {
-                                    const activeRoles = form.data.initiator_roles || [];
-                                    const activeDepts = form.data.initiator_departments || [];
-                                    const activeUsers = form.data.initiator_users || [];
-                                    const isAnySelected = activeRoles.length > 0 || activeDepts.length > 0 || activeUsers.length > 0;
-                                    const filteredDepts =
-                                        activeRoles.length === 0
-                                            ? departments
-                                            : departments.filter((d: any) =>
-                                                  users.some((u: any) => activeRoles.includes(u.role) && u.department_id === d.id),
-                                              );
-                                    const filteredUsers = users.filter(
-                                        (u: any) =>
-                                            (activeRoles.length === 0 || activeRoles.includes(u.role)) &&
-                                            (activeDepts.length === 0 || activeDepts.includes(u.department_id)) &&
-                                            (!initiatorUserSearch || u.name.toLowerCase().includes(initiatorUserSearch.toLowerCase())),
-                                    );
+                                {/* Bottom Row: Default Toggle & Otoritas Akses */}
+                                <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+                                    <div className="lg:col-span-12">
+                                    {(() => {
+                                        const activeRoles = form.data.initiator_roles || [];
+                                        const activeDepts = form.data.initiator_departments || [];
+                                        const activeUsers = form.data.initiator_users || [];
+                                        const isAnySelected = activeRoles.length > 0 || activeDepts.length > 0 || activeUsers.length > 0;
+                                        const filteredDepts =
+                                            activeRoles.length === 0
+                                                ? departments
+                                                : departments.filter((d: any) =>
+                                                    users.some((u: any) => activeRoles.includes(u.role) && u.department_id === d.id),
+                                                    );
+                                        const filteredUsers = users.filter(
+                                            (u: any) =>
+                                                (activeRoles.length === 0 || activeRoles.includes(u.role)) &&
+                                                (activeDepts.length === 0 || activeDepts.includes(u.department_id)) &&
+                                                (!initiatorUserSearch || u.name.toLowerCase().includes(initiatorUserSearch.toLowerCase())),
+                                        );
 
-                                    return (
-                                        <div
-                                            className={cn(
-                                                'bg-primary/[0.01] rounded-xl border border-dashed p-4 transition-all',
-                                                isAnySelected ? 'border-primary/20' : 'border-primary/10',
-                                            )}
-                                        >
-                                            <div className="mb-4 flex items-center justify-between">
-                                                <span className="text-primary/60 text-xs font-bold uppercase dark:text-white/60">Akses Inisiasi</span>
-                                                <Dialog open={isInitiatorDialogOpen} onOpenChange={setIsInitiatorDialogOpen}>
-                                                    <DialogTrigger asChild>
-                                                        <Button
-                                                            variant="outline"
-                                                            className="h-7 rounded-lg px-3 text-[11px] font-bold uppercase transition-all"
-                                                        >
-                                                            <Edit3 size={10} className="mr-1.5" /> Atur
-                                                        </Button>
-                                                    </DialogTrigger>
-                                                    <DialogContent className="max-w-5xl overflow-hidden rounded-[2rem] bg-white p-0 shadow-2xl dark:bg-black">
-                                                        <DialogHeader className="bg-primary p-6 text-white">
-                                                            <div className="flex items-center gap-3">
-                                                                <UsersIcon size={20} />
-                                                                <DialogTitle className="text-lg font-bold uppercase">Otoritas Inisiator</DialogTitle>
-                                                            </div>
-                                                        </DialogHeader>
-                                                        <div className="grid min-h-[400px] grid-cols-3 gap-6 p-6">
+                                        return (
+                                            <div
+                                                className={cn(
+                                                    'bg-slate-50 dark:bg-slate-900/50 rounded-xl border p-4 transition-all h-full flex flex-col',
+                                                    isAnySelected ? 'border-slate-200 dark:border-slate-800' : 'border-slate-200 dark:border-slate-800 border-dashed',
+                                                )}
+                                            >
+                                                <div className="mb-4 flex items-center justify-between">
+                                                    <span className="text-slate-500 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2">
+                                                        <Key size={12} /> Otoritas Akses (Pengaju)
+                                                    </span>
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        onClick={() => setIsInitiatorExpanded(!isInitiatorExpanded)}
+                                                        className={cn(
+                                                            "h-7 gap-1.5 rounded-lg px-3 text-[10px] font-bold tracking-tight uppercase transition-all",
+                                                            isInitiatorExpanded ? "bg-slate-900 text-white border-slate-900" : "border-slate-200 text-slate-600 dark:border-slate-800 dark:text-slate-400"
+                                                        )}
+                                                    >
+                                                        {isInitiatorExpanded ? <ChevronUp size={12} /> : <Settings2 size={12} />}
+                                                        {isInitiatorExpanded ? 'TUTUP' : 'ATUR'}
+                                                    </Button>
+                                                </div>
+
+                                                {isInitiatorExpanded && (
+                                                    <div className="border-slate-200 bg-white mb-6 overflow-hidden rounded-xl border animate-in fade-in slide-in-from-top-4 duration-300 dark:bg-slate-950 dark:border-slate-800 z-50 absolute left-6 right-6 shadow-xl p-1">
+                                                        <div className="grid min-h-[300px] grid-cols-3 gap-4 p-4">
                                                             {[
                                                                 {
-                                                                    label: 'Role',
+                                                                    label: 'ROLE INISIATOR',
                                                                     active: activeRoles,
                                                                     search: initiatorRoleSearch,
                                                                     setSearch: setInitiatorRoleSearch,
@@ -627,7 +939,7 @@ export default function WorkflowEditor({ auth, workflow, contractTypes, departme
                                                                     display: (r: any) => r.name,
                                                                 },
                                                                 {
-                                                                    label: 'Dept',
+                                                                    label: 'DEPARTEMEN',
                                                                     active: activeDepts,
                                                                     search: initiatorDeptSearch,
                                                                     setSearch: setInitiatorDeptSearch,
@@ -642,7 +954,7 @@ export default function WorkflowEditor({ auth, workflow, contractTypes, departme
                                                                     display: (d: any) => d.name,
                                                                 },
                                                                 {
-                                                                    label: 'User',
+                                                                    label: 'USER INISIATOR',
                                                                     active: activeUsers,
                                                                     search: initiatorUserSearch,
                                                                     setSearch: setInitiatorUserSearch,
@@ -661,22 +973,26 @@ export default function WorkflowEditor({ auth, workflow, contractTypes, departme
                                                                     key={col.label}
                                                                     className={cn('space-y-3', idx === 1 && 'border-primary/5 border-x px-6')}
                                                                 >
-                                                                    <span className="text-primary/40 border-primary/5 flex justify-between border-b pb-2 text-[10px] font-bold uppercase">
-                                                                        {col.label}{' '}
+                                                                    <div className="border-primary/5 flex items-center justify-between border-b pb-2">
+                                                                        <span className="text-primary/40 text-[10px] font-bold uppercase tracking-widest">
+                                                                            {col.label}
+                                                                        </span>
                                                                         {col.active.length > 0 && (
-                                                                            <span className="text-primary">{col.active.length}</span>
+                                                                            <div className="bg-primary flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold text-white">
+                                                                                {col.active.length}
+                                                                            </div>
                                                                         )}
-                                                                    </span>
+                                                                    </div>
                                                                     <div className="relative">
                                                                         <Search
-                                                                            className="text-primary/20 absolute top-1/2 left-2 -translate-y-1/2"
+                                                                            className="text-primary/20 absolute top-1/2 left-2.5 -translate-y-1/2 pointer-events-none"
                                                                             size={12}
                                                                         />
                                                                         <input
                                                                             placeholder="CARI..."
                                                                             value={col.search}
                                                                             onChange={(e) => col.setSearch(e.target.value)}
-                                                                            className="border-primary/10 bg-primary/[0.01] h-8 w-full rounded-lg border pr-3 pl-8 text-[9px] font-bold uppercase outline-none"
+                                                                            className="border-primary/10 bg-primary/[0.01] focus:ring-primary/20 h-8 w-full rounded-lg border pr-3 pl-8 text-[10px] font-bold uppercase outline-none focus:ring-1"
                                                                         />
                                                                     </div>
                                                                     <div className="custom-scrollbar max-h-[250px] space-y-0.5 overflow-y-auto pr-1">
@@ -686,85 +1002,84 @@ export default function WorkflowEditor({ auth, workflow, contractTypes, departme
                                                                                     !col.search ||
                                                                                     col.display(d).toLowerCase().includes(col.search.toLowerCase()),
                                                                             )
-                                                                            .map((item: any) => (
-                                                                                <button
-                                                                                    key={item.id || item.name}
-                                                                                    type="button"
-                                                                                    onClick={() => col.onSelect(item)}
-                                                                                    className={cn(
-                                                                                        'flex w-full items-center justify-between rounded-lg p-2 text-[9px] font-bold uppercase transition-all',
-                                                                                        col.active.includes(item.id || item.name)
-                                                                                            ? 'bg-primary text-white'
-                                                                                            : 'hover:bg-primary/5',
-                                                                                    )}
-                                                                                >
-                                                                                    <span>{col.display(item)}</span>
-                                                                                    {col.active.includes(item.id || item.name) && (
-                                                                                        <CheckCircle2 size={10} />
-                                                                                    )}
-                                                                                </button>
-                                                                            ))}
+                                                                            .map((item: any) => {
+                                                                                const itemId = col.label.toLowerCase().includes('role') ? item.name : item.id;
+                                                                                const isActive = col.active.some((a: any) => String(a) === String(itemId));
+                                                                                return (
+                                                                                    <button
+                                                                                        key={item.id || item.name}
+                                                                                        type="button"
+                                                                                        onClick={() => col.onSelect(item)}
+                                                                                        className={cn(
+                                                                                            'flex w-full items-center justify-between rounded-lg p-2 text-left transition-all',
+                                                                                            isActive
+                                                                                                ? 'bg-slate-900 border-slate-900 text-white'
+                                                                                                : 'hover:bg-slate-50 dark:hover:bg-slate-900 border-transparent',
+                                                                                        )}
+                                                                                    >
+                                                                                        <span className="truncate text-[10px] font-bold uppercase">{col.display(item)}</span>
+                                                                                        {isActive && <CheckCircle2 size={10} />}
+                                                                                    </button>
+                                                                                );
+                                                                            })}
                                                                     </div>
                                                                 </div>
                                                             ))}
                                                         </div>
-                                                        <DialogFooter className="bg-primary/[0.02] border-primary/5 border-t p-4">
+                                                        <div className="bg-slate-50 dark:bg-slate-900 flex justify-end border-t border-slate-100 dark:border-slate-800 p-3">
                                                             <Button
                                                                 type="button"
-                                                                onClick={() => setIsInitiatorDialogOpen(false)}
-                                                                className="h-9 rounded-xl px-8 text-[10px] font-bold"
+                                                                onClick={() => setIsInitiatorExpanded(false)}
+                                                                className="h-8 rounded-lg px-6 text-[10px] font-bold tracking-widest uppercase transition-all"
                                                             >
                                                                 Selesai
                                                             </Button>
-                                                        </DialogFooter>
-                                                    </DialogContent>
-                                                </Dialog>
-                                            </div>
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {!isAnySelected ? (
-                                                    <span className="text-primary/30 text-xs font-bold uppercase italic dark:text-white/30">
-                                                        Akses Publik (Semua Personel)
-                                                    </span>
-                                                ) : (
-                                                    <>
-                                                        {activeRoles.map((r: any) => (
-                                                            <div
-                                                                key={r}
-                                                                className="bg-primary rounded-md px-2 py-0.5 text-[10px] font-bold text-white uppercase"
-                                                            >
-                                                                {r}
-                                                            </div>
-                                                        ))}
-                                                        {activeDepts.map((id: any) => (
-                                                            <div
-                                                                key={id}
-                                                                className="border-primary text-primary rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase"
-                                                            >
-                                                                {departments.find((d: any) => d.id === id)?.name}
-                                                            </div>
-                                                        ))}
-                                                        {activeUsers.map((id: any) => (
-                                                            <div
-                                                                key={id}
-                                                                className="bg-primary/10 text-primary rounded-md px-2 py-0.5 text-[10px] font-bold uppercase"
-                                                            >
-                                                                {users.find((u: any) => u.id === id)?.name}
-                                                            </div>
-                                                        ))}
-                                                    </>
+                                                        </div>
+                                                    </div>
                                                 )}
+                                                <div className="flex flex-wrap gap-1.5 flex-1 items-start content-start">
+                                                    {!isAnySelected ? (
+                                                        <span className="text-slate-400 text-[10px] font-medium italic">
+                                                            Akses Terbuka (Default)
+                                                        </span>
+                                                    ) : (
+                                                        <>
+                                                            {activeRoles.map((r: any) => (
+                                                                <div
+                                                                    key={r}
+                                                                    className="bg-slate-900 rounded-md px-2 py-0.5 text-[9px] font-bold text-white uppercase"
+                                                                >
+                                                                    {r}
+                                                                </div>
+                                                            ))}
+                                                            {activeDepts.map((id: any) => (
+                                                                <div
+                                                                    key={id}
+                                                                    className="border-slate-200 text-slate-600 rounded-md border px-2 py-0.5 text-[9px] font-bold uppercase bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300"
+                                                                >
+                                                                    {departments.find((d: any) => d.id === id)?.name}
+                                                                </div>
+                                                            ))}
+                                                            {activeUsers.map((id: any) => (
+                                                                <div
+                                                                    key={id}
+                                                                    className="bg-slate-100 text-slate-600 rounded-md px-2 py-0.5 text-[9px] font-bold uppercase border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300"
+                                                                >
+                                                                    {users.find((u: any) => u.id === id)?.name}
+                                                                </div>
+                                                            ))}
+                                                        </>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                    );
-                                })()}
-                            </FormSection>
-                        </div>
+                                        );
+                                    })()}
+                                    </div>
+                                </div>
+                            </div>
+                        </FormSection>
 
-                        {/* RIGHT COLUMN: Approval Steps */}
-                        <div className="space-y-6 lg:col-span-8">
-                            <FormSection 
-                                title="Struktur Tahapan" 
-                                subtitle="Hirarki Approval Berjenjang"
+                        <FormSection
                                 headerAction={
                                     <Button type="button" onClick={addLocalStep} className="group h-8 rounded-lg px-4 text-xs font-bold shadow-md">
                                         <PlusCircle size={12} className="mr-1.5 transition-transform group-hover:rotate-90" /> Tambah Tahap
@@ -801,10 +1116,24 @@ export default function WorkflowEditor({ auth, workflow, contractTypes, departme
                                                         key={step.id}
                                                         step={step}
                                                         idx={idx}
+                                                        totalSteps={form.data.steps.length}
                                                         users={users}
                                                         roles={roles}
                                                         departments={departments}
                                                         contractStatuses={contractStatuses}
+                                                        duplicateLocalStep={(i: number) => {
+                                                            const newStep = { ...form.data.steps[i], id: `new-${Date.now()}` };
+                                                            const s = [...form.data.steps];
+                                                            s.splice(i + 1, 0, newStep);
+                                                            form.setData('steps', s);
+                                                        }}
+                                                        moveLocalStep={(i: number, direction: 'up' | 'down') => {
+                                                            if (direction === 'up' && i > 0) {
+                                                                form.setData('steps', arrayMove(form.data.steps, i, i - 1));
+                                                            } else if (direction === 'down' && i < form.data.steps.length - 1) {
+                                                                form.setData('steps', arrayMove(form.data.steps, i, i + 1));
+                                                            }
+                                                        }}
                                                         updateLocalStep={(i, data) => {
                                                             const s = [...form.data.steps];
                                                             s[i] = { ...s[i], ...data };
@@ -816,6 +1145,8 @@ export default function WorkflowEditor({ auth, workflow, contractTypes, departme
                                                                 form.data.steps.filter((_: any, index: number) => index !== i),
                                                             )
                                                         }
+                                                        isExpanded={expandedStepId === step.id}
+                                                        setIsExpanded={(expanded) => setExpandedStepId(expanded ? step.id : null)}
                                                     />
                                                 ))}
                                             </div>
@@ -833,7 +1164,6 @@ export default function WorkflowEditor({ auth, workflow, contractTypes, departme
                                     </div>
                                 )}
                             </FormSection>
-                        </div>
                     </div>
                 </ManagementForm>
             </div>

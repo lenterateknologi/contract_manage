@@ -197,15 +197,32 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                             <Avatar user={a.approver} size="sm" />
                             <div className="flex flex-col">
                                 <span className="text-xs font-semibold text-foreground">{a.approver?.name}</span>
-                                <span className="text-[10px] text-muted-foreground">Oleh {a.role}</span>
+                                <span className="text-[10px] text-muted-foreground flex items-center gap-1.5">
+                                    {a.approver?.email} • {a.role}
+                                </span>
                             </div>
                         </div>
                     ) : (
-                        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                            <Clock size={14} className="opacity-70" />
-                            <span>
-                                {a.target_approvers ? `Penanggung Jawab: ${a.target_approvers}` : `Menunggu persetujuan ${a.role}`}
-                            </span>
+                        <div className="flex flex-col gap-0.5 text-xs font-medium text-muted-foreground">
+                            <div className="flex items-center gap-2">
+                                <Clock size={14} className="opacity-70" />
+                                <span>
+                                    {a.target_approvers ? (
+                                        `${(a.role?.toLowerCase().includes('manager') || a.role?.toLowerCase().includes('director')) ? 'Disetujui Oleh' : 'Ditugaskan'}: ${a.target_approvers}`
+                                    ) : (
+                                        `Menunggu persetujuan ${a.role}`
+                                    )}
+                                </span>
+                            </div>
+                            {a.target_emails && (
+                                <div className="mt-1 flex flex-wrap gap-1.5 ml-5">
+                                    {a.target_emails.split(', ').map((email, idx) => (
+                                        <span key={idx} className="px-1.5 py-0.5 rounded-md bg-secondary/50 text-[10px] font-normal leading-none">
+                                            {email}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -239,7 +256,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                     <div className="flex flex-col">
                         <span className="text-xs font-semibold text-foreground">{creator?.name}</span>
                         <span className="text-[10px] text-muted-foreground">
-                            {submittedAt ? `Diajukan: ${submittedAt}` : 'Belum diajukan'}
+                            {creator?.email} • {submittedAt ? `Diajukan: ${submittedAt}` : 'Belum diajukan'}
                         </span>
                     </div>
                 </div>

@@ -36,6 +36,7 @@ import {
     Save,
     Send,
     Trash2,
+    UserPlus,
     Zap,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -51,6 +52,7 @@ import ApproveModal from '@/components/contracts/ApproveModal';
 import RejectModal from '@/components/contracts/RejectModal';
 import { ProfileView } from '@/components/contracts/ProfileView';
 import SendApprovalModal from '@/components/contracts/SendApprovalModal';
+import { ContractMembersTab } from '@/components/contracts/ContractMembersTab';
 import { Column, TableContract } from '@/components/ui/data/TableContract';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
@@ -286,6 +288,25 @@ const renderInitiator = (c: Contract) => <InitiatorCell c={c} />;
 const renderStatusAndStep = (c: Contract) => <StatusAndStepCell c={c} />;
 const renderCreatedAt = (c: Contract) => <CreatedAtCell c={c} />;
 
+const AssignedByCell = ({ c }: Readonly<{ c: Contract }>) => (
+    <div className="flex flex-col py-0.5">
+        <span className="text-sidebar-foreground text-sm font-semibold truncate">
+            {c.assigned_by?.name || '—'}
+        </span>
+    </div>
+);
+
+const AssignedPicCell = ({ c }: Readonly<{ c: Contract }>) => (
+    <div className="flex flex-col py-0.5">
+        <span className="text-sidebar-foreground text-sm font-semibold truncate">
+            {c.assigned_pic?.name || '—'}
+        </span>
+    </div>
+);
+
+const renderAssignedBy = (c: Contract) => <AssignedByCell c={c} />;
+const renderAssignedPic = (c: Contract) => <AssignedPicCell c={c} />;
+
 const BulkActions = ({
     selectedRows,
     canBulkApprove,
@@ -395,6 +416,7 @@ const ContractDetailView = ({
     setPreviewHasFile,
     setPreviewOpen,
     meUser,
+    users,
 }: {
     contract: Contract;
     meId: string;
@@ -413,8 +435,9 @@ const ContractDetailView = ({
     setPreviewUrl: (url: string) => void;
     setPreviewHasFile: (has: boolean) => void;
     setPreviewOpen: (open: boolean) => void;
+    users: any[];
 }) => {
-    const [detailTab, setDetailTab] = useState<'form_template' | 'f2' | 'agreement' | 'attachments' | 'audit' | 'chat' | 'timeline' | 'references'>(
+    const [detailTab, setDetailTab] = useState<'form_template' | 'f2' | 'agreement' | 'attachments' | 'audit' | 'chat' | 'timeline' | 'references' | 'members'>(
         'form_template',
     );
     const [processing, setProcessing] = useState(false);
@@ -515,11 +538,11 @@ const ContractDetailView = ({
         }
     };
 
-    const handleApprove = async (note: string, attachment?: File) => {
+    const handleApprove = async (note: string, attachment?: File, assignedPicId?: string, executionOrder?: string) => {
         try {
-            const c = await contractApi.approve(contract.id, note, attachment);
+            const c = await contractApi.approve(contract.id, note, attachment, assignedPicId, executionOrder);
             onUpdate(c);
-            showToast('Kontrak disetujui.', 'success');
+            showToast(assignedPicId ? 'PIC ditugaskan dan kontrak disetujui.' : 'Kontrak disetujui.', 'success');
         } catch {
             showToast('Gagal approve.', 'danger');
         }
@@ -535,8 +558,8 @@ const ContractDetailView = ({
         }
     };
 
-    const pendingApprovalForMe = contract.approvals.find((a) => a.status === 'pending' && a.user_id === meId);
-    const canApprove = (contract.status === 'in_review' || contract.status === 'revision') && !!pendingApprovalForMe;
+    const canApprove = !!contract.can_approve;
+    const pendingApprovalForMe = contract.pending_approval_id;
 
     return (
         <div className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-6 p-4">
@@ -638,6 +661,21 @@ const ContractDetailView = ({
                                             />{' '}
                                             Audit Trail
                                         </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            onClick={() => setDetailTab('members')}
+                                            className={cn(
+                                                'flex cursor-pointer items-center gap-2 rounded-lg text-xs font-semibold tracking-tight uppercase transition-all',
+                                                detailTab === 'members'
+                                                    ? 'bg-sidebar-primary text-white'
+                                                    : 'text-slate-600 hover:bg-slate-50 dark:text-white/70 dark:hover:bg-white/5',
+                                            )}
+                                        >
+                                            <UserPlus
+                                                size={14}
+                                                className={cn(detailTab === 'members' ? 'text-white' : 'text-slate-400')}
+                                            />{' '}
+                                            Daftar Member
+                                        </DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </div>
@@ -646,9 +684,10 @@ const ContractDetailView = ({
                             {[
                                 { id: 'form_template', label: 'F1 (Permohonan)' },
                                 { id: 'f2', label: 'F2 (Ringkasan)' },
-                                { id: 'agreement', label: 'Draft Agreement' },
+                                { id: 'agreement', label: 'Draft Perjanjian' },
                                 { id: 'attachments', label: 'Lampiran' },
-                                { id: 'timeline', label: 'Alur Approval' },
+                                { id: 'timeline', label: 'Alur Persetujuan' },
+                                { id: 'members', label: 'Daftar Member' },
                                 { id: 'chat', label: 'Chat' },
                                 { id: 'references', label: 'Kontrak Referensi' },
                             ].map((tab) => (
@@ -695,6 +734,7 @@ const ContractDetailView = ({
                                 />
                             )}
                             {detailTab === 'chat' && <ContractChat contract={contract} meId={meId} users={vendors} onNewMessage={onUpdate} />}
+                            {detailTab === 'members' && <ContractMembersTab contract={contract} users={users} />}
                         </div>
                     </div>
                 </div>
@@ -716,7 +756,7 @@ const ContractDetailView = ({
                             </div>
                             <div className="flex flex-col gap-2 pt-2">
                                 <Button variant="primary" onClick={() => setApproveOpen(true)} className="h-11 w-full font-bold shadow-lg shadow-blue-500/20">
-                                    <CheckCircle2 size={16} /> Setujui Kontrak
+                                    <CheckCircle2 size={16} /> {contract.requires_pic_assignment ? 'Tugaskan PIC' : 'Setujui Kontrak'}
                                 </Button>
                                 <Button
                                     variant="outline"
@@ -749,6 +789,8 @@ const ContractDetailView = ({
                 open={approveOpen}
                 onClose={() => setApproveOpen(false)}
                 onSubmit={handleApprove}
+                isAssign={!!contract.requires_pic_assignment}
+                contract={contract}
             />
             <RejectModal
                 open={rejectOpen}
@@ -1023,6 +1065,16 @@ function ContractPage({
                 cell: renderStatusAndStep,
             },
             {
+                accessorKey: 'assigned_by',
+                header: 'Disetujui Oleh',
+                cell: renderAssignedBy,
+            },
+            {
+                accessorKey: 'assigned_pic',
+                header: 'Ditugaskan',
+                cell: renderAssignedPic,
+            },
+            {
                 accessorKey: 'created_at',
                 header: 'Dibuat',
                 cell: renderCreatedAt,
@@ -1044,7 +1096,8 @@ function ContractPage({
                             submissionTypes={submissionTypes}
                             vendors={vendors}
                             formTemplates={formTemplates}
-                            canUpdate={!!canUpdate}
+                            users={users}
+                            canUpdate={!!canUpdate || selected?.created_by === meId}
                             onClose={closeDetail}
                             onUpdate={updateContract}
                             showToast={showToast}
@@ -1162,6 +1215,16 @@ function ContractPage({
                                                                         {c.initiator?.department_name || 'Umum'}
                                                                     </span>
                                                                 </div>
+                                                                {c.assigned_pic && (
+                                                                    <div className="flex items-center justify-between">
+                                                                        <span className="text-xs font-medium text-black/40 dark:text-white/40">
+                                                                            PJ Legal
+                                                                        </span>
+                                                                        <span className="truncate text-xs font-semibold text-black dark:text-white">
+                                                                            {c.assigned_pic.name}
+                                                                        </span>
+                                                                    </div>
+                                                                )}
                                                                 <div className="flex items-center justify-between pt-1 text-xs font-medium">
                                                                     <span className="text-black/40 dark:text-white/40">Progress</span>
                                                                     <span className="font-semibold text-black dark:text-white">
@@ -1254,6 +1317,7 @@ function ContractPage({
                 onClose={() => setSendOpen(false)}
                 onSubmit={handleSendSubmit}
                 contractType={selected?.contract_type ?? undefined}
+                users={users}
             />
             <EditContractModal
                 open={editOpen}

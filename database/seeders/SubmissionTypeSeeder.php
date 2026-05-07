@@ -10,8 +10,8 @@ class SubmissionTypeSeeder extends Seeder
     public function run(): void
     {
         $types = [
-            ['code' => 'N', 'name' => 'Perjanjan Baru'],
-            ['code' => 'A', 'name' => 'Addendum/Amandment'],
+            ['code' => 'N', 'name' => 'Perjanjian Baru'],
+            ['code' => 'A', 'name' => 'Addendum/Amendment'],
             ['code' => 'R', 'name' => 'Review'],
             ['code' => 'P', 'name' => 'Surat Kuasa'],
         ];

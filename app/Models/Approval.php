@@ -51,21 +51,23 @@ class Approval extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function approve(string $comment = null): void
+    public function approve(?string $comment = null, ?string $attachmentPath = null): void
     {
         $this->update([
             'status' => 'approved',
             'comment' => $comment,
+            'attachment_path' => $attachmentPath ?? $this->attachment_path,
             'decided_at' => now(),
             'updated_by' => Auth::id(),
         ]);
     }
 
-    public function reject(string $comment = null): void
+    public function reject(?string $comment = null, ?string $attachmentPath = null): void
     {
         $this->update([
             'status' => 'rejected',
             'comment' => $comment,
+            'attachment_path' => $attachmentPath ?? $this->attachment_path,
             'decided_at' => now(),
             'updated_by' => Auth::id(),
         ]);

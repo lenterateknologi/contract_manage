@@ -1,7 +1,13 @@
 import { useToast } from '@/components/contracts/Toast';
 import { Button } from '@/components/ui/base/Button';
 import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
-import { CompactSelect } from '@/components/ui/forms/CompactSelect';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/forms/Select";
 import { usePermissions } from '@/hooks/use-permissions';
 import { router } from '@inertiajs/react';
 import { FileText, LayoutGrid, Plus, ShieldCheck, Trash2 } from 'lucide-react';
@@ -51,38 +57,58 @@ const MechanismOptions = ({
     if (mechanism === 'digital') {
         return (
             <div className="animate-in fade-in slide-in-from-top-2">
-                <CompactSelect
-                    label={`Tautan Templat Digital ${type}`}
-                    value={formTemplateId}
-                    onChange={setFormTemplateId}
-                    options={[
-                        { label: '-- TANPA TEMPLAT TERPAUT --', value: 'none' },
-                        ...templates.map((t: any) => ({
-                            label: `${t.name} (${t.document_type || 'ADHOC'})`,
-                            value: t.id,
-                        })),
-                    ]}
-                    icon={LayoutGrid}
-                />
+            <div className="animate-in fade-in slide-in-from-top-2">
+                <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-primary/60 dark:text-white/60 flex items-center gap-2">
+                        Tautan Templat Digital {type}
+                    </label>
+                    <Select
+                        value={String(formTemplateId)}
+                        onValueChange={(v: string) => setFormTemplateId(String(v))}
+                    >
+                        <SelectTrigger className="h-10 rounded-xl border-primary/10 bg-primary/5 text-xs font-bold transition-all focus:border-primary">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border-primary/10 bg-white shadow-2xl dark:bg-black">
+                            <SelectItem value="none" className="py-2.5 text-xs font-bold uppercase">-- TANPA TEMPLAT TERPAUT --</SelectItem>
+                            {templates.map((t: any) => (
+                                <SelectItem key={t.id} value={String(t.id)} className="py-2.5 text-xs font-bold uppercase">
+                                    {t.name} ({t.document_type || 'ADHOC'})
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
             </div>
         );
     }
     if (mechanism === 'folder') {
         return (
             <div className="animate-in fade-in slide-in-from-top-2">
-                <CompactSelect
-                    label={`Tautan Templat Folder (${type})`}
-                    value={contractTemplateId}
-                    onChange={setContractTemplateId}
-                    options={[
-                        { label: '-- TIDAK ADA TEMPLAT TERPILIH --', value: 'none' },
-                        ...physTemplates.map((t: any) => ({
-                            label: `${t.name} (${t.file_type || 'PDF'})`,
-                            value: t.id,
-                        })),
-                    ]}
-                    icon={FileText}
-                />
+            <div className="animate-in fade-in slide-in-from-top-2">
+                <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-primary/60 dark:text-white/60 flex items-center gap-2">
+                        Tautan Templat Folder ({type})
+                    </label>
+                    <Select
+                        value={String(contractTemplateId)}
+                        onValueChange={(v: string) => setContractTemplateId(String(v))}
+                    >
+                        <SelectTrigger className="h-10 rounded-xl border-primary/10 bg-primary/5 text-xs font-bold transition-all focus:border-primary">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border-primary/10 bg-white shadow-2xl dark:bg-black">
+                            <SelectItem value="none" className="py-2.5 text-xs font-bold uppercase">-- TIDAK ADA TEMPLAT TERPILIH --</SelectItem>
+                            {physTemplates.map((t: any) => (
+                                <SelectItem key={t.id} value={String(t.id)} className="py-2.5 text-xs font-bold uppercase">
+                                    {t.name} ({t.file_type || 'PDF'})
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
             </div>
         );
     }

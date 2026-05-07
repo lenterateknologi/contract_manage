@@ -224,7 +224,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                                             submissionTypes
                                                 .filter(st => {
                                                     if (category === 'non-contract') return ['Surat Kuasa', 'Review'].includes(st.name);
-                                                    return ['Perjanjan Baru', 'Addendum/Amandement'].includes(st.name);
+                                                    return ['Perjanjian Baru', 'Addendum/Amendment'].includes(st.name);
                                                 })
                                                 .map((st) => (
                                                     <option key={st.id} value={st.id}>

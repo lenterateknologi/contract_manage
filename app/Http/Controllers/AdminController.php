@@ -13,6 +13,7 @@ use App\Models\RoleModuleGroup;
 use App\Models\User;
 use App\Models\Vendor;
 use App\Models\Workflow;
+use App\Models\WorkflowStep;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -871,6 +872,9 @@ class AdminController extends Controller
             'steps.*.description' => 'nullable|string',
             'steps.*.approver_type' => 'nullable|string',
             'steps.*.step_type' => 'nullable|string',
+            'steps.*.step_category' => 'nullable|string',
+            'steps.*.is_optional' => 'boolean',
+            'steps.*.optional_label' => 'nullable|string',
             'steps.*.condition_expression' => 'nullable|string',
             'steps.*.phase' => 'nullable|string',
             'steps.*.uploader_type' => 'nullable|string',
@@ -880,6 +884,11 @@ class AdminController extends Controller
             'steps.*.user_ids' => 'nullable|array',
             'steps.*.department_ids' => 'nullable|array',
             'steps.*.status_id' => 'nullable|string',
+            'steps.*.selection_rules' => 'nullable|array',
+            'steps.*.selection_rules.*.role_id' => 'nullable|string|exists:m_roles,id',
+            'steps.*.selection_rules.*.department_id' => 'nullable|string|exists:m_departments,id',
+            'steps.*.selection_rules.*.role_name' => 'nullable|string',
+            'steps.*.meta' => 'nullable|array',
         ]);
 
         try {
@@ -915,13 +924,27 @@ class AdminController extends Controller
                             'updated_by' => Auth::id(),
                             'is_active' => true,
                             'step_type' => $stepData['step_type'] ?? 'approval',
+                            'step_category' => $stepData['step_category'] ?? null,
+                            'is_optional' => $stepData['is_optional'] ?? false,
+                            'optional_label' => $stepData['optional_label'] ?? null,
                             'condition_expression' => $stepData['condition_expression'] ?? null,
                             'phase' => $stepData['phase'] ?? 'f1_request',
                             'uploader_type' => $stepData['uploader_type'] ?? null,
                             'reject_target' => $stepData['reject_target'] ?? 'initiator',
                             'hierarchy_level' => isset($stepData['hierarchy_level']) ? (int)$stepData['hierarchy_level'] : null,
                             'role_id' => $stepData['role_id'] ?? null,
+                            'meta' => $stepData['meta'] ?? null,
                         ]);
+
+                        if (!empty($stepData['selection_rules'])) {
+                            foreach ($stepData['selection_rules'] as $rule) {
+                                $step->selectionRules()->create([
+                                    'role_id' => $rule['role_id'] ?? null,
+                                    'department_id' => $rule['department_id'] ?? null,
+                                    'role_name' => $rule['role_name'] ?? null,
+                                ]);
+                            }
+                        }
 
                         if (!empty($stepData['role'])) {
                             foreach ((array)$stepData['role'] as $role) {
@@ -971,6 +994,9 @@ class AdminController extends Controller
             'steps.*.description' => 'nullable|string',
             'steps.*.approver_type' => 'nullable|string',
             'steps.*.step_type' => 'nullable|string',
+            'steps.*.step_category' => 'nullable|string',
+            'steps.*.is_optional' => 'boolean',
+            'steps.*.optional_label' => 'nullable|string',
             'steps.*.condition_expression' => 'nullable|string',
             'steps.*.phase' => 'nullable|string',
             'steps.*.uploader_type' => 'nullable|string',
@@ -980,6 +1006,11 @@ class AdminController extends Controller
             'steps.*.user_ids' => 'nullable|array',
             'steps.*.department_ids' => 'nullable|array',
             'steps.*.status_id' => 'nullable|string',
+            'steps.*.selection_rules' => 'nullable|array',
+            'steps.*.selection_rules.*.role_id' => 'nullable|string|exists:m_roles,id',
+            'steps.*.selection_rules.*.department_id' => 'nullable|string|exists:m_departments,id',
+            'steps.*.selection_rules.*.role_name' => 'nullable|string',
+            'steps.*.meta' => 'nullable|array',
         ]);
 
         try {
@@ -1010,45 +1041,77 @@ class AdminController extends Controller
                     }
                 }
 
-                // Sync Workflow Steps
-                foreach ($workflow->steps as $oldStep) {
-                    $oldStep->approverRoles()->delete();
-                    $oldStep->approverDepartments()->delete();
-                    $oldStep->approverUsers()->delete();
+                // Sync Workflow Steps (Upsert Logic)
+                $existingStepIds = $workflow->steps->pluck('id')->toArray();
+                $inputStepIds = collect($data['steps'] ?? [])->pluck('id')->filter(fn($id) => $id && !str_starts_with($id, 'new-'))->toArray();
+
+                // Delete steps that are not in the input
+                $stepsToDelete = array_diff($existingStepIds, $inputStepIds);
+                if (!empty($stepsToDelete)) {
+                    WorkflowStep::whereIn('id', $stepsToDelete)->forceDelete();
                 }
-                $workflow->steps()->forceDelete();
 
                 if (! empty($data['steps'])) {
                     foreach ($data['steps'] as $index => $stepData) {
-                        $step = $workflow->steps()->create([
+                        $stepId = $stepData['id'] ?? null;
+                        $isNew = !$stepId || str_starts_with($stepId, 'new-');
+
+                        $stepFields = [
                             'approver_type' => $stepData['approver_type'] ?? 'role',
                             'description' => $stepData['description'] ?? '',
                             'status_id' => $stepData['status_id'] ?? null,
                             'step' => $index + 1,
-                            'created_by' => Auth::id(),
                             'updated_by' => Auth::id(),
                             'is_active' => true,
                             'step_type' => $stepData['step_type'] ?? 'approval',
+                            'step_category' => $stepData['step_category'] ?? null,
+                            'is_optional' => $stepData['is_optional'] ?? false,
+                            'optional_label' => $stepData['optional_label'] ?? null,
                             'condition_expression' => $stepData['condition_expression'] ?? null,
                             'phase' => $stepData['phase'] ?? 'f1_request',
                             'uploader_type' => $stepData['uploader_type'] ?? null,
                             'reject_target' => $stepData['reject_target'] ?? 'initiator',
                             'hierarchy_level' => isset($stepData['hierarchy_level']) ? (int)$stepData['hierarchy_level'] : null,
                             'role_id' => $stepData['role_id'] ?? null,
-                        ]);
+                            'meta' => $stepData['meta'] ?? null,
+                        ];
 
+                        if ($isNew) {
+                            $stepFields['created_by'] = Auth::id();
+                            $step = $workflow->steps()->create($stepFields);
+                        } else {
+                            $step = WorkflowStep::where('workflow_id', $workflow->id)->findOrFail($stepId);
+                            $step->update($stepFields);
+                        }
+
+                        // Sync Selection Rules
+                        $step->selectionRules()->delete();
+                        if (!empty($stepData['selection_rules'])) {
+                            foreach ($stepData['selection_rules'] as $rule) {
+                                $step->selectionRules()->create([
+                                    'role_id' => $rule['role_id'] ?? null,
+                                    'department_id' => $rule['department_id'] ?? null,
+                                    'role_name' => $rule['role_name'] ?? null,
+                                ]);
+                            }
+                        }
+
+                        // Sync Approvers
+                        $step->approverRoles()->delete();
                         if (!empty($stepData['role'])) {
                             foreach ((array)$stepData['role'] as $role) {
                                 $step->approverRoles()->create(['role_name' => $role]);
                             }
                         }
 
+                        $step->approverDepartments()->delete();
                         if (!empty($stepData['department_ids'])) {
                             foreach ((array)$stepData['department_ids'] as $deptId) {
                                 $step->approverDepartments()->create(['department_id' => $deptId]);
                             }
                         }
 
+                        $step->approverUsers()->delete();
                         if (!empty($stepData['user_ids'])) {
                             foreach ((array)$stepData['user_ids'] as $userId) {
                                 $step->approverUsers()->create(['user_id' => $userId]);
@@ -1092,10 +1155,25 @@ class AdminController extends Controller
             'steps' => 'nullable|array',
             'steps.*.role' => 'nullable',
             'steps.*.description' => 'nullable|string',
-            'steps.*.approver_type' => 'nullable|string|in:role,user',
+            'steps.*.approver_type' => 'nullable|string',
+            'steps.*.step_type' => 'nullable|string',
+            'steps.*.step_category' => 'nullable|string',
+            'steps.*.is_optional' => 'boolean',
+            'steps.*.optional_label' => 'nullable|string',
+            'steps.*.condition_expression' => 'nullable|string',
+            'steps.*.phase' => 'nullable|string',
+            'steps.*.uploader_type' => 'nullable|string',
+            'steps.*.reject_target' => 'nullable|string',
+            'steps.*.hierarchy_level' => 'nullable|integer',
+            'steps.*.role_id' => 'nullable|string',
             'steps.*.user_ids' => 'nullable|array',
             'steps.*.department_ids' => 'nullable|array',
             'steps.*.status_id' => 'nullable|string',
+            'steps.*.selection_rules' => 'nullable|array',
+            'steps.*.selection_rules.*.role_id' => 'nullable|string|exists:m_roles,id',
+            'steps.*.selection_rules.*.department_id' => 'nullable|string|exists:m_departments,id',
+            'steps.*.selection_rules.*.role_name' => 'nullable|string',
+            'steps.*.meta' => 'nullable|array',
         ]);
 
         return DB::transaction(function() use ($data, $workflow) {
@@ -1117,7 +1195,28 @@ class AdminController extends Controller
                         'created_by' => Auth::id(),
                         'updated_by' => Auth::id(),
                         'is_active' => true,
+                        'step_type' => $stepData['step_type'] ?? 'approval',
+                        'step_category' => $stepData['step_category'] ?? null,
+                        'is_optional' => $stepData['is_optional'] ?? false,
+                        'optional_label' => $stepData['optional_label'] ?? null,
+                        'condition_expression' => $stepData['condition_expression'] ?? null,
+                        'phase' => $stepData['phase'] ?? 'f1_request',
+                        'uploader_type' => $stepData['uploader_type'] ?? null,
+                        'reject_target' => $stepData['reject_target'] ?? 'initiator',
+                        'hierarchy_level' => isset($stepData['hierarchy_level']) ? (int)$stepData['hierarchy_level'] : null,
+                        'role_id' => $stepData['role_id'] ?? null,
+                        'meta' => $stepData['meta'] ?? null,
                     ]);
+
+                    if (!empty($stepData['selection_rules'])) {
+                        foreach ($stepData['selection_rules'] as $rule) {
+                            $step->selectionRules()->create([
+                                'role_id' => $rule['role_id'] ?? null,
+                                'department_id' => $rule['department_id'] ?? null,
+                                'role_name' => $rule['role_name'] ?? null,
+                            ]);
+                        }
+                    }
 
                     if (!empty($stepData['role'])) {
                         foreach ((array)$stepData['role'] as $role) {

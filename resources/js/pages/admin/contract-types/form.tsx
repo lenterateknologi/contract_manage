@@ -2,7 +2,13 @@ import React from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import { ManagementForm, FormSection } from '@/components/admin/ManagementForm';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
-import { CompactSelect } from '@/components/ui/forms/CompactSelect';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/forms/Select";
 import { Button } from '@/components/ui/base/Button';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { useToast } from '@/components/contracts/Toast';
@@ -43,38 +49,54 @@ const MechanismOptions = ({
     if (mechanism === 'digital') {
         return (
             <div className="animate-in fade-in slide-in-from-top-2">
-                <CompactSelect 
-                    label={`Tautan Templat Digital ${type}`}
-                    value={formTemplateId || 'none'}
-                    onChange={setFormTemplateId}
-                    options={[
-                        { label: '-- TANPA TEMPLAT TERPAUT --', value: 'none' },
-                        ...templates.map((t: any) => ({
-                            label: `${t.name} (${t.document_type || 'ADHOC'})`,
-                            value: t.id
-                        }))
-                    ]}
-                    icon={LayoutGrid}
-                />
+                <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-primary/60 dark:text-white/60 flex items-center gap-2">
+                        <LayoutGrid size={10} /> Tautan Templat Digital {type}
+                    </label>
+                    <Select
+                        value={String(formTemplateId || 'none')}
+                        onValueChange={(v: string) => setFormTemplateId(v === 'none' ? 'none' : v)}
+                    >
+                        <SelectTrigger className="h-10 rounded-xl border-primary/10 bg-primary/5 text-xs font-bold transition-all focus:border-primary">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border-primary/10 bg-white shadow-2xl dark:bg-black">
+                            <SelectItem value="none" className="py-2.5 text-xs font-bold uppercase opacity-40">-- TANPA TEMPLAT TERPAUT --</SelectItem>
+                            {templates.map((t: any) => (
+                                <SelectItem key={t.id} value={String(t.id)} className="py-2.5 text-xs font-bold uppercase">
+                                    {t.name} ({t.document_type || 'ADHOC'})
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
         );
     }
     if (mechanism === 'folder') {
         return (
             <div className="animate-in fade-in slide-in-from-top-2">
-                <CompactSelect 
-                    label={`Tautan Templat Folder (${type})`}
-                    value={contractTemplateId || 'none'}
-                    onChange={setContractTemplateId}
-                    options={[
-                        { label: '-- TIDAK ADA TEMPLAT TERPILIH --', value: 'none' },
-                        ...physTemplates.map((t: any) => ({
-                            label: `${t.name} (${t.file_type || 'PDF'})`,
-                            value: t.id
-                        }))
-                    ]}
-                    icon={FileText}
-                />
+                <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-primary/60 dark:text-white/60 flex items-center gap-2">
+                        <FileText size={10} /> Tautan Templat Folder ({type})
+                    </label>
+                    <Select
+                        value={String(contractTemplateId || 'none')}
+                        onValueChange={(v: string) => setContractTemplateId(v === 'none' ? 'none' : v)}
+                    >
+                        <SelectTrigger className="h-10 rounded-xl border-primary/10 bg-primary/5 text-xs font-bold transition-all focus:border-primary">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border-primary/10 bg-white shadow-2xl dark:bg-black">
+                            <SelectItem value="none" className="py-2.5 text-xs font-bold uppercase opacity-40">-- TIDAK ADA TEMPLAT TERPILIH --</SelectItem>
+                            {physTemplates.map((t: any) => (
+                                <SelectItem key={t.id} value={String(t.id)} className="py-2.5 text-xs font-bold uppercase">
+                                    {t.name} ({t.file_type || 'PDF'})
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
         );
     }
@@ -201,17 +223,24 @@ export default function ContractTypeForm({ contractType, formTemplates, contract
                                 className="bg-primary/[0.01] dark:bg-white/[0.01] rounded-[2rem] p-8 border border-primary/5"
                             >
                                 <div className="space-y-8">
-                                    <CompactSelect 
-                                        label="Mekanisme Pengajuan F1"
-                                        value={form.data.f1_input_mechanism}
-                                        onChange={(v) => form.setData('f1_input_mechanism', v as string)}
-                                        options={[
-                                            { label: 'PENGISIAN FORMULIR DIGITAL', value: 'digital' },
-                                            { label: 'TEMPLAT FOLDER KONTRAK', value: 'folder' },
-                                            { label: 'UNGGAH DOKUMEN MANUAL (PDF)', value: 'manual' },
-                                        ]}
-                                        icon={Settings2}
-                                    />
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-bold uppercase tracking-widest text-primary/60 dark:text-white/60 flex items-center gap-2">
+                                            <Settings2 size={10} /> Mekanisme Pengajuan F1
+                                        </label>
+                                        <Select
+                                            value={form.data.f1_input_mechanism}
+                                            onValueChange={(v: string) => form.setData('f1_input_mechanism', String(v))}
+                                        >
+                                            <SelectTrigger className="h-10 rounded-xl border-primary/10 bg-primary/5 text-xs font-bold transition-all focus:border-primary">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl border-primary/10 bg-white shadow-2xl dark:bg-black">
+                                                <SelectItem value="digital" className="py-2.5 text-xs font-bold uppercase">PENGISIAN FORMULIR DIGITAL</SelectItem>
+                                                <SelectItem value="folder" className="py-2.5 text-xs font-bold uppercase">TEMPLAT FOLDER KONTRAK</SelectItem>
+                                                <SelectItem value="manual" className="py-2.5 text-xs font-bold uppercase">UNGGAH DOKUMEN MANUAL (PDF)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
 
                                     <div className="pt-4">
                                         <div className="flex items-center gap-3 mb-4">
@@ -239,17 +268,24 @@ export default function ContractTypeForm({ contractType, formTemplates, contract
                                 className="bg-primary/[0.01] dark:bg-white/[0.01] rounded-[2rem] p-8 border border-primary/5"
                             >
                                 <div className="space-y-8">
-                                    <CompactSelect 
-                                        label="Mekanisme Pengajuan F2"
-                                        value={form.data.f2_input_mechanism}
-                                        onChange={(v) => form.setData('f2_input_mechanism', v as string)}
-                                        options={[
-                                            { label: 'PENGISIAN FORMULIR DIGITAL', value: 'digital' },
-                                            { label: 'TEMPLAT FOLDER KONTRAK', value: 'folder' },
-                                            { label: 'UNGGAH DOKUMEN MANUAL (PDF)', value: 'manual' },
-                                        ]}
-                                        icon={Settings2}
-                                    />
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-bold uppercase tracking-widest text-primary/60 dark:text-white/60 flex items-center gap-2">
+                                            <Settings2 size={10} /> Mekanisme Pengajuan F2
+                                        </label>
+                                        <Select
+                                            value={form.data.f2_input_mechanism}
+                                            onValueChange={(v: string) => form.setData('f2_input_mechanism', String(v))}
+                                        >
+                                            <SelectTrigger className="h-10 rounded-xl border-primary/10 bg-primary/5 text-xs font-bold transition-all focus:border-primary">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl border-primary/10 bg-white shadow-2xl dark:bg-black">
+                                                <SelectItem value="digital" className="py-2.5 text-xs font-bold uppercase">PENGISIAN FORMULIR DIGITAL</SelectItem>
+                                                <SelectItem value="folder" className="py-2.5 text-xs font-bold uppercase">TEMPLAT FOLDER KONTRAK</SelectItem>
+                                                <SelectItem value="manual" className="py-2.5 text-xs font-bold uppercase">UNGGAH DOKUMEN MANUAL (PDF)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
 
                                     <div className="pt-4">
                                         <div className="flex items-center gap-3 mb-4">

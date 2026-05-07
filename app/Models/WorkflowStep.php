@@ -24,6 +24,9 @@ class WorkflowStep extends Model
         'approver_type',
         'step',
         'step_type',
+        'step_category',
+        'is_optional',
+        'optional_label',
         'condition_expression',
         'description',
         'phase',
@@ -35,15 +38,22 @@ class WorkflowStep extends Model
         'updated_by',
         'is_active',
         'status_id',
+        'meta',
     ];
 
     protected $casts = [
         'step' => 'integer',
         'is_active' => 'boolean',
+        'meta' => 'array',
     ];
 
     protected $with = ['approverRoles', 'approverDepartments', 'approverUsers'];
-    protected $appends = ['role', 'department_ids', 'department_names', 'user_ids'];
+    protected $appends = ['role', 'department_ids', 'department_names', 'user_ids', 'name'];
+
+    public function getNameAttribute()
+    {
+        return $this->description;
+    }
 
     public function approverRoles(): HasMany
     {
@@ -58,6 +68,11 @@ class WorkflowStep extends Model
     public function approverUsers(): HasMany
     {
         return $this->hasMany(WorkflowStepUser::class, 'workflow_step_id');
+    }
+
+    public function selectionRules(): HasMany
+    {
+        return $this->hasMany(WorkflowStepSelectionRule::class, 'workflow_step_id');
     }
 
     public function getRoleAttribute()
@@ -103,8 +118,8 @@ class WorkflowStep extends Model
         return $this->belongsTo(ContractStatus::class, 'status_id');
     }
 
-    public function users(): HasMany
+    public function users(): BelongsToMany
     {
-        return $this->approverUsers();
+        return $this->belongsToMany(User::class, 'm_workflow_step_users', 'workflow_step_id', 'user_id');
     }
 }

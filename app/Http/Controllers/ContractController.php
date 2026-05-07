@@ -205,7 +205,8 @@ class ContractController extends Controller
         $query = Contract::with([
             'creator.department', 'contractType', 'submissionType', 'approvals.approver.department', 'approvals.workflowStep',
             'workflow.steps', 'versions.uploader', 'histories.actor', 'messages.user',
-            'attachments.uploader', 'formSubmissions', 'vendor.documents', 'initiator.department', 'parent'
+            'attachments.uploader', 'formSubmissions', 'vendor.documents', 'initiator.department', 'parent',
+            'assignedPic', 'assignedBy'
         ])->latest();
 
 
@@ -489,7 +490,9 @@ class ContractController extends Controller
             'contractType',
             'submissionType',
             'formSubmissions',
-            'vendor.documents'
+            'vendor.documents',
+            'assignedPic',
+            'assignedBy'
         ])->findOrFail($id);
 
         // Authorization: Only Admin or Creator can view drafts
@@ -690,6 +693,8 @@ class ContractController extends Controller
         $request->validate([
             'note' => 'nullable|string',
             'attachment' => 'nullable|file|max:10240', // 10MB limit
+            'assigned_pic_id' => 'nullable|uuid|exists:m_users,id',
+            'execution_order' => 'nullable|string',
         ]);
 
         $contract = Contract::findOrFail($id);
@@ -710,7 +715,14 @@ class ContractController extends Controller
             $approval->attachment_path = $attachmentPath;
         }
 
-        $contract = $this->workflowService->approveContract($contract, $approval, $request->note);
+        $contract = $this->workflowService->approveContract(
+            $contract,
+            $approval,
+            $request->note,
+            $attachmentPath,
+            $request->assigned_pic_id,
+            $request->execution_order
+        );
 
         return response()->json($this->formatContract($contract));
     }
@@ -740,7 +752,7 @@ class ContractController extends Controller
             $approval->attachment_path = $attachmentPath;
         }
 
-        $contract = $this->workflowService->rejectContract($contract, $approval, $request->reason);
+        $contract = $this->workflowService->rejectContract($contract, $approval, $request->reason, $attachmentPath);
 
         return response()->json($this->formatContract($contract));
     }
@@ -1171,9 +1183,30 @@ class ContractController extends Controller
     }
 
     // ── Format helpers (Exposed for use in routes) ──────────────────────
+    /**
+     * Get the next valid step in the workflow.
+     */
+    public function getNextStep(Contract $contract): ?\App\Models\WorkflowStep
+    {
+        if (!$contract->workflowStep || !$contract->workflow) {
+            return null;
+        }
+
+        // Use the workflow service to find the next valid step (honoring branch logic if any)
+        return app(ContractWorkflowService::class)->findNextValidStep($contract, $contract->workflowStep);
+    }
+
+    public function requiresPicAssignment(Contract $contract): bool
+    {
+        $nextStep = $this->getNextStep($contract);
+        return $nextStep && $nextStep->approver_type === 'assigned_pic';
+    }
+
     public function formatContract(Contract $c): array
     {
         $progress = $c->progressData();
+        $nextStep = $this->getNextStep($c);
+        $requiresPicAssignment = $nextStep && $nextStep->approver_type === 'assigned_pic';
 
         return [
             'id' => $c->id,
@@ -1181,7 +1214,6 @@ class ContractController extends Controller
             'crown_no' => $c->crown_no,
             'title' => $c->title,
             'description' => $c->description,
-            'contract_type' => $c->contract_type,
             'contract_date' => $c->contract_date,
             'end_date' => $c->end_date,
             'contract_type' => $c->contractType?->name ?? '—',
@@ -1198,18 +1230,12 @@ class ContractController extends Controller
             'p2_signer' => $c->p2_signer,
             'p2_signer_position' => $c->p2_signer_position,
             'p2_address' => $c->p2_address,
-            'vendor_id' => $c->vendor_id,
             'vendor' => $c->vendor ? [
                 'id' => $c->vendor->id,
                 'name' => $c->vendor->name,
                 'pic_name' => $c->vendor->pic_name,
                 'pic_position' => $c->vendor->pic_position,
                 'address' => $c->vendor->address,
-                'documents' => $c->vendor->documents->map(fn($d) => [
-                    'id' => $d->id,
-                    'name' => $d->document_name,
-                    'type' => $d->document_type,
-                ]),
             ] : null,
             'status' => $c->status,
             'metadata' => $c->metadata ?? [],
@@ -1221,6 +1247,11 @@ class ContractController extends Controller
             'submitted_at' => $c->submitted_at ? $c->submitted_at->format('d/m/Y H:i') : null,
             'creator' => $this->formatUser($c->creator),
             'initiator' => $this->formatUser($c->initiator),
+            'assigned_pic' => $this->formatUser($c->assignedPic),
+            'assigned_by' => $this->formatUser($c->assignedBy)
+                ?: ($c->approvals->where('sequence', 3)->where('status', 'approved')->first()
+                    ? $this->formatUser($c->approvals->where('sequence', 3)->where('status', 'approved')->first()->approver)
+                    : null),
             'initiated_by_id' => $c->initiated_by_id,
             'kop_sub_topik' => $c->kop_sub_topik,
             'parent_id' => $c->parent_id,
@@ -1242,7 +1273,18 @@ class ContractController extends Controller
                 'step' => $c->workflowStep->step,
                 'role' => $c->workflowStep->role,
                 'description' => $c->workflowStep->description,
+                'step_category' => $c->workflowStep->step_category,
+                'target_approvers' => $c->approvals->where('sequence', $c->workflowStep->step)->whereIn('status', ['pending', 'waiting'])->first()?->target_approvers,
             ] : null,
+            'next_step' => $nextStep ? [
+                'id' => $nextStep->id,
+                'name' => $nextStep->name,
+                'approver_type' => $nextStep->approver_type,
+                'department_ids' => $nextStep->department_ids,
+                'department_names' => $nextStep->department_names,
+                'roles' => $nextStep->role,
+            ] : null,
+            'requires_pic_assignment' => $requiresPicAssignment,
             'versions' => $c->versions->map(fn ($v) => [
                 'id' => $v->id,
                 'document_type' => $v->document_type,
@@ -1293,6 +1335,8 @@ class ContractController extends Controller
                 'submitted_by' => $fs->submitted_by,
                 'updated_at' => $fs->updated_at->format('Y-m-d H:i'),
             ]),
+            'can_approve' => $c->approvals->where('status', 'pending')->where('user_id', Auth::id())->isNotEmpty() && ($c->status === 'in_review' || $c->status === 'revision'),
+            'pending_approval_id' => $c->approvals->where('status', 'pending')->where('user_id', Auth::id())->first()?->id,
         ];
     }
 
@@ -1307,31 +1351,54 @@ class ContractController extends Controller
         $workflowSteps = $c->workflow->steps->sortBy('step');
 
         foreach ($workflowSteps as $step) {
+            // Check if this step should even exist for this contract
+            if (!$this->workflowService->shouldExecuteStep($c, $step)) {
+                continue;
+            }
             $approvals = $c->approvals->where('workflow_step_id', $step->id);
 
             // Resolve Department Name(s)
             $deptNames = (array)$step->department_names;
             $deptName = count($deptNames) > 0 ? implode(', ', $deptNames) : null;
 
-            if (!$deptName && $step->step === 1 && $c->initiator?->department) {
+            if (!$deptName && $step->approver_type === 'initiator' && $c->initiator?->department) {
                 $deptName = $c->initiator->department->name;
             }
 
             // Resolve Specific Names (if any)
             $targetApprovers = null;
+            $targetEmails = null;
             if ($step->approver_type === 'user') {
                 $targetApprovers = $step->users->pluck('name')->implode(', ');
+                $targetEmails = $step->users->pluck('email')->implode(', ');
             }
 
             if ($approvals->isNotEmpty()) {
+                $isRoleBased = $step->approver_type === 'role';
+                $hasDecision = $approvals->contains(fn($a) => in_array($a->status, ['approved', 'rejected']));
+
                 // Determine if we should group these approvals (e.g., they are all pending for the same role/step)
                 $isAllPending = $approvals->every(fn($a) => $a->status === 'pending');
-                
+
                 if ($isAllPending && $approvals->count() > 1) {
                     // Group multiple candidates into one placeholder entry
                     $first = $approvals->first();
                     $candidateNames = $approvals->map(fn($a) => $a->approver?->name ?? $a->approver_name)->implode(', ');
-                    
+                    $candidateEmails = $approvals->map(fn($a) => $a->approver?->email)->filter()->implode(', ');
+
+                    // Check for custom management approvers using the robust helper
+                    if ($this->workflowService->isManagementStep($step)) {
+                        $metadata = $c->metadata ?? [];
+                        $customUserIds = $metadata['custom_management_users'] ?? [];
+                        if (!empty($customUserIds)) {
+                            $customUsers = \App\Models\User::whereIn('id', $customUserIds)->get();
+                            if ($customUsers->isNotEmpty()) {
+                                $candidateNames = $customUsers->pluck('name')->implode(', ');
+                                $candidateEmails = $customUsers->pluck('email')->filter()->implode(', ');
+                            }
+                        }
+                    }
+
                     $timeline[] = [
                         'id' => 'step-group-'.$step->id,
                         'user_id' => null,
@@ -1339,6 +1406,7 @@ class ContractController extends Controller
                         'role' => $first->role,
                         'department_name' => $deptName,
                         'target_approvers' => $candidateNames,
+                        'target_emails' => $candidateEmails,
                         'sequence' => $step->step,
                         'status' => 'pending',
                         'note' => null,
@@ -1347,14 +1415,37 @@ class ContractController extends Controller
                     ];
                 } else {
                     // Standard display for individual approvals (especially if decided)
-                    foreach ($approvals as $a) {
+                    $approvalsToDisplay = $approvals;
+
+                    // If role-based and decided, only show the records with actual decisions (clean up the list)
+                    // If multiple people approved/rejected, we show them, but we hide those still 'pending'
+                    if ($isRoleBased && $hasDecision) {
+                        $approvalsToDisplay = $approvals->filter(fn($a) => in_array($a->status, ['approved', 'rejected']));
+                    }
+
+                    foreach ($approvalsToDisplay as $a) {
+                        $rowTargetApprovers = $targetApprovers;
+                        
+                        // Inject custom management names into target_approvers for decided/current steps too
+                        if ($this->workflowService->isManagementStep($step)) {
+                            $metadata = $c->metadata ?? [];
+                            $customUserIds = $metadata['custom_management_users'] ?? [];
+                            if (!empty($customUserIds)) {
+                                $customUsers = \App\Models\User::whereIn('id', $customUserIds)->get();
+                                if ($customUsers->isNotEmpty()) {
+                                    $rowTargetApprovers = $customUsers->pluck('name')->implode(', ');
+                                }
+                            }
+                        }
+
                         $timeline[] = [
                             'id' => $a->id,
                             'user_id' => $a->user_id,
                             'approver_name' => $a->approver_name,
                             'role' => $a->role,
                             'department_name' => $deptName,
-                            'target_approvers' => $targetApprovers,
+                            'target_approvers' => $rowTargetApprovers,
+                            'target_emails' => $a->approver?->email,
                             'sequence' => $step->step,
                             'status' => $a->status,
                             'note' => $a->comment,
@@ -1366,19 +1457,42 @@ class ContractController extends Controller
             } else {
                 // Future step placeholder
                 $roleLabel = is_array($step->role) ? implode(', ', $step->role) : $step->role;
+                $stepTargetApprovers = $targetApprovers;
+                $approverName = 'Menunggu ' . $roleLabel;
+
+                if ($step->approver_type === 'assigned_pic') {
+                    $stepTargetApprovers = 'PIC (Belum Ditugaskan)';
+                    $approverName = 'PIC (Belum Ditugaskan)';
+                }
+
                 $timeline[] = [
                     'id' => 'step-'.$step->id,
                     'user_id' => null,
-                    'approver_name' => 'Pendataan '.$roleLabel,
+                    'approver_name' => $approverName,
                     'role' => $roleLabel,
                     'department_name' => $deptName,
-                    'target_approvers' => $targetApprovers,
+                    'target_approvers' => $stepTargetApprovers,
+                    'target_emails' => $targetEmails,
                     'sequence' => $step->step,
-                    'status' => 'waiting',
+                    'status' => 'future',
                     'note' => null,
                     'approved_at' => null,
-                    'approver' => ['name' => 'Approver '.$roleLabel],
+                    'approver' => ['name' => $approverName],
                 ];
+
+                // INJECT: If this is the management step and we have custom users, show them
+                if ($this->workflowService->isManagementStep($step)) {
+                    $metadata = $c->metadata ?? [];
+                    $customUserIds = $metadata['custom_management_users'] ?? [];
+                    if (!empty($customUserIds)) {
+                        $customUsers = \App\Models\User::whereIn('id', $customUserIds)->get();
+                        if ($customUsers->isNotEmpty()) {
+                            $lastIdx = count($timeline) - 1;
+                            $timeline[$lastIdx]['target_approvers'] = $customUsers->pluck('name')->implode(', ');
+                            $timeline[$lastIdx]['target_emails'] = $customUsers->pluck('email')->implode(', ');
+                        }
+                    }
+                }
             }
         }
 
@@ -1396,8 +1510,10 @@ class ContractController extends Controller
             'name' => $user->name,
             'initials' => $user->initials,
             'role' => $user->role,
+            'role_id' => $user->role_id,
             'department_id' => $user->department_id,
             'department_name' => $user->department?->name,
+            'email' => $user->email,
             'bg_color' => $user->bg_color,
             'text_color' => $user->text_color,
         ];
@@ -1481,7 +1597,7 @@ class ContractController extends Controller
             $existingVersion = ContractFormSubmissionVersion::where('submission_id', $submission->id)
                 ->where('version_no', $versionNo)
                 ->first();
-            
+
             if ($existingVersion) {
                 $existingVersion->update([
                     'form_data' => $formData,
@@ -1574,7 +1690,7 @@ class ContractController extends Controller
         ]);
 
         // Return updated contract
-        $contract->load(['versions.uploader', 'approvals.user', 'approvals.workflowStep', 'creator', 'histories.actor', 'messages.user', 'attachments.uploader', 'contractType', 'workflow.steps', 'workflowStep', 'formSubmissions']);
+        $contract->load(['versions.uploader', 'approvals.approver', 'approvals.workflowStep', 'creator', 'histories.actor', 'messages.user', 'attachments.uploader', 'contractType', 'workflow.steps', 'workflowStep', 'formSubmissions']);
 
         return response()->json($this->formatContract($contract));
     }
@@ -1679,7 +1795,7 @@ class ContractController extends Controller
     public function renderApprovalTimeline(string $id, Request $request)
     {
         $contract = Contract::with(['creator', 'approvals.approver'])->findOrFail($id);
-        
+
         $query = $contract->approvals()->orderBy('sequence');
 
         if ($request->filled('status')) {
@@ -2270,37 +2386,6 @@ class ContractController extends Controller
         if (empty($formData['meta_tgl_dibuat']))  $formData['meta_tgl_dibuat']  = $contract->contract_date ? $contract->contract_date->toDateString() : now()->toDateString();
 
         return $formData;
-    }
-    /**
-     * Convert an image path/URL to Base64 to prevent network deadlocks in PDF generation.
-     */
-    private function getLogoBase64(?string $logoUrl): ?string
-    {
-        if (!$logoUrl) return null;
-
-        try {
-            $path = null;
-            if (str_starts_with($logoUrl, '/storage/')) {
-                $trimmedPath = str_replace('/storage/', '', $logoUrl);
-                $path = storage_path('app/public/' . $trimmedPath);
-            } elseif (file_exists(public_path($logoUrl))) {
-                $path = public_path($logoUrl);
-            } elseif (str_starts_with($logoUrl, 'http')) {
-                $content = file_get_contents($logoUrl);
-                $type = pathinfo(parse_url($logoUrl, PHP_URL_PATH), PATHINFO_EXTENSION) ?: 'png';
-                return 'data:image/' . $type . ';base64,' . base64_encode($content);
-            }
-
-            if ($path && file_exists($path)) {
-                $type = pathinfo($path, PATHINFO_EXTENSION);
-                $data = file_get_contents($path);
-                return 'data:image/' . $type . ';base64,' . base64_encode($data);
-            }
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::warning('PDF Logo Base64 failed: ' . $e->getMessage());
-        }
-
-        return null;
     }
 
     public function compareFormVersions(string $id, string $type)

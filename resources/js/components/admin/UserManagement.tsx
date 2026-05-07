@@ -2,7 +2,13 @@ import { useToast } from '@/components/contracts/Toast';
 import { Button } from '@/components/ui/base/Button';
 import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
-import { CompactSelect } from '@/components/ui/forms/CompactSelect';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/forms/Select";
 import { CompactSwitch } from '@/components/ui/forms/CompactSwitch';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -323,20 +329,48 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                         {/* Section: Jabatan & Otoritas */}
                         <FormSection title="Penempatan & Otoritas" subtitle="Struktur organisasi dan peran sistem">
                             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                                <CompactSelect
-                                    label="Role Akses"
-                                    value={form.data.role}
-                                    onChange={(v) => form.setData('role', String(v))}
-                                    options={roles.map((r) => ({ label: r.name, value: r.name }))}
-                                    error={form.errors.role}
-                                />
-                                <CompactSelect
-                                    label="Unit / Departemen"
-                                    value={form.data.department_id}
-                                    onChange={(v) => form.setData('department_id', String(v))}
-                                    options={departments.map((d) => ({ label: d.name, value: d.id }))}
-                                    error={form.errors.department_id}
-                                />
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-primary/60 dark:text-white/60 flex items-center gap-2">
+                                        Role Akses
+                                    </label>
+                                    <Select
+                                        value={form.data.role}
+                                        onValueChange={(v: string) => form.setData('role', String(v))}
+                                    >
+                                        <SelectTrigger className="h-10 rounded-xl border-primary/10 bg-primary/5 text-xs font-bold transition-all focus:border-primary">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-xl border-primary/10 bg-white shadow-2xl dark:bg-black">
+                                            {roles.map((r) => (
+                                                <SelectItem key={r.id} value={r.name} className="py-2.5 text-xs font-bold uppercase">
+                                                    {r.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    {form.errors.role && <p className="text-[10px] font-bold text-rose-500 mt-1 uppercase tracking-tight">{form.errors.role}</p>}
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-primary/60 dark:text-white/60 flex items-center gap-2">
+                                        Unit / Departemen
+                                    </label>
+                                    <Select
+                                        value={String(form.data.department_id)}
+                                        onValueChange={(v: string) => form.setData('department_id', String(v))}
+                                    >
+                                        <SelectTrigger className="h-10 rounded-xl border-primary/10 bg-primary/5 text-xs font-bold transition-all focus:border-primary">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-xl border-primary/10 bg-white shadow-2xl dark:bg-black">
+                                            {departments.map((d) => (
+                                                <SelectItem key={d.id} value={String(d.id)} className="py-2.5 text-xs font-bold uppercase">
+                                                    {d.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    {form.errors.department_id && <p className="text-[10px] font-bold text-rose-500 mt-1 uppercase tracking-tight">{form.errors.department_id}</p>}
+                                </div>
                                 <CompactInput
                                     label="Jabatan Struktural"
                                     value={form.data.position}

@@ -18,7 +18,9 @@ class DatabaseSeeder extends Seeder
             VendorSeeder::class,             // 7. Vendors Base
             VendorRealisticSeeder::class,    // 8. Premium Vendors
             UserSeeder::class,               // 9. Extended Users
-            SampleSeeder::class,             // 10. Transactions & Redesigns
+            UnifiedWorkflowSeeder::class,    // 10. Unified Workflows (F1 Master)
+            MeetingUpdateWorkflowSeeder::class, // 11. Meeting Updates (F1 Pak Rendi/Ibu Nisa)
+            SampleSeeder::class,             // 12. Transactions & Redesigns
         ]);
     }
 }

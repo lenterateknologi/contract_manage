@@ -79,24 +79,30 @@ export function FormSection({
     className,
     headerAction,
 }: {
-    title: string;
+    title?: string;
     subtitle?: string;
     children: React.ReactNode;
     className?: string;
     headerAction?: React.ReactNode;
 }) {
+    const hasHeader = title || headerAction;
+
     return (
         <div className={cn('border-border/60 bg-card overflow-hidden rounded-xl border shadow-sm', className)}>
-            <div className="bg-muted/30 border-border/40 flex items-center justify-between border-b px-5 py-3.5">
-                <div className="space-y-0.5">
-                    <div className="flex items-center gap-2">
-                        <Sparkles size={13} className="text-primary/50" />
-                        <span className="text-foreground text-sm font-bold tracking-wide">{title}</span>
+            {hasHeader && (
+                <div className="bg-muted/30 border-border/40 flex items-center justify-between border-b px-5 py-3.5">
+                    <div className="space-y-0.5">
+                        {title && (
+                            <div className="flex items-center gap-2">
+                                <Sparkles size={13} className="text-primary/50" />
+                                <span className="text-foreground text-sm font-bold tracking-wide">{title}</span>
+                            </div>
+                        )}
+                        {subtitle && <p className="text-muted-foreground text-xs font-medium">{subtitle}</p>}
                     </div>
-                    {subtitle && <p className="text-muted-foreground text-xs font-medium">{subtitle}</p>}
+                    {headerAction}
                 </div>
-                {headerAction}
-            </div>
+            )}
             <div className="text-foreground p-6">{children}</div>
         </div>
     );

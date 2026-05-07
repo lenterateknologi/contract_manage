@@ -287,3 +287,8 @@ php artisan seed master
 php artisan seed transaction
 
 php artisan db:seed --class=NewContractWorkflowSeeder
+
+# Seeding ulang User dan Workflow agar data bersih dan konsisten
+
+php artisan db:seed --class=UserSeeder
+php artisan db:seed --class=NewContractWorkflowSeeder

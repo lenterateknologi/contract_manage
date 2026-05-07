@@ -2,7 +2,13 @@ import React, { useMemo } from 'react';
 import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
 import { Button } from '@/components/ui/base/Button';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
-import { CompactSelect } from '@/components/ui/forms/CompactSelect';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/forms/Select";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/overlays/Dialog';
 import { useForm, router } from '@inertiajs/react';
 import { Pencil, Plus, Trash2, LayoutGrid, Folder, Hash, Link as LinkIcon, Shield } from 'lucide-react';
@@ -265,16 +271,26 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
                                             required
                                             icon={Shield}
                                         />
-                                        <CompactSelect 
-                                            label="Grup Menu Utama"
-                                            value={String(moduleForm.data.module_group_id)}
-                                            onChange={v => moduleForm.setData('module_group_id', v)}
-                                            options={(groups.data || groups || []).map((g:any) => ({
-                                                label: g.name,
-                                                value: String(g.id)
-                                            }))}
-                                            icon={Folder}
-                                        />
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-primary/60 dark:text-white/60 flex items-center gap-2">
+                                                Grup Menu Utama
+                                            </label>
+                                            <Select
+                                                value={String(moduleForm.data.module_group_id)}
+                                                onValueChange={(v: string) => moduleForm.setData('module_group_id', String(v))}
+                                            >
+                                                <SelectTrigger className="h-10 rounded-xl border-primary/10 bg-primary/5 text-xs font-bold transition-all focus:border-primary">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-xl border-primary/10 bg-white shadow-2xl dark:bg-black">
+                                                    {(groups.data || groups || []).map((g: any) => (
+                                                        <SelectItem key={g.id} value={String(g.id)} className="py-2.5 text-xs font-bold uppercase">
+                                                            {g.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     </div>
                                     <CompactInput 
                                         label="URL Endpoint / Route"

@@ -56,6 +56,8 @@ class Contract extends Model
         'f2_location',
         'vendor_id',
         'parent_id',
+        'assigned_pic_id',
+        'assigned_by_id',
     ];
 
     protected $casts = [
@@ -140,6 +142,16 @@ class Contract extends Model
     public function parent(): BelongsTo
     {
         return $this->belongsTo(Contract::class, 'parent_id');
+    }
+
+    public function assignedPic(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_pic_id');
+    }
+
+    public function assignedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_by_id');
     }
 
     public function currentVersionModel(): ?ContractVersion

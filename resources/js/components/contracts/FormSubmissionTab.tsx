@@ -40,6 +40,8 @@ const api = axios.create({
 // ── F2 important field keys (from F1 data) ──────────────────────────
 // These are the F1 field names (snake_case) that should appear in the F2 summary.
 const F2_IMPORTANT_FIELDS: { key: string; label: string; width: string; type?: string }[] = [
+    { key: 'crown_no', label: 'No. Kontrak (F2)', width: '1/2' },
+    { key: 'meta_no_kontrak', label: 'No. Kontrak (Draft)', width: '1/2' },
     { key: 'meta_judul_kontrak', label: 'Judul Perjanjian', width: '1/1' },
     { key: 'meta_tipe_perjanjian', label: 'Tipe Perjanjian', width: '1/2' },
     { key: 'meta_tgl_dibuat', label: 'Tanggal', width: '1/2' },
@@ -129,6 +131,8 @@ const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' | 'f2',
     if (name === 'meta_nilai_transaksi' || name === 'meta_amount') return (contract as any).amount || '';
     if (name === 'meta_mekanisme_pembayaran') return (contract as any).payment_terms || '';
     if (name === 'meta_deskripsi' || name === 'keterangan') return contract.description || '';
+
+    if (name === 'crown_no' || name === 'meta_no_kontrak') return (contract as any).crown_no || (contract as any).contract_no || '';
 
     // 4. Management Approvers for Signature Boxes
     if (name === 'meta_manager_legal' || name === 'meta_vp_legal') {
@@ -637,25 +641,28 @@ function GenericFormTab({
             {isF2 && (meUser?.department === 'Legal' || meUser?.role === 'PIC Legal' || meUser?.role === 'Admin') && (
                 <div className="bg-primary/5 dark:bg-white/5 border-b border-black/10 dark:border-white/10 px-6 py-4">
                     <div className="flex flex-wrap items-end gap-6">
-                        {(meUser?.role === 'Legal Staff' || meUser?.role === 'Admin') && (
+                        {(meUser?.role === 'Legal Staff' || meUser?.role === 'Admin' || meUser?.role === 'PIC Legal') && (
                             <div className="flex-1 min-w-[200px] space-y-1.5">
                                 <label className="text-[10px] font-black text-primary/60 dark:text-white/60 uppercase tracking-widest flex items-center gap-1.5">
-                                    <i className="fa-solid fa-hashtag" /> Crown Number
+                                    <i className="fa-solid fa-hashtag" /> No. Kontrak (F2)
                                 </label>
-                                <div className="flex gap-2">
-                                    <input
-                                        type="text"
-                                        placeholder="Input Crown Number..."
-                                        value={(selected as any).crown_no || ''}
-                                        onChange={(e) => {
-                                            const val = e.target.value;
-                                            onContractUpdated({ ...selected, crown_no: val } as any);
-                                            // Trigger debounced update to server
-                                            contractApi.update(selected.id, { crown_no: val });
-                                        }}
-                                        className="h-10 flex-1 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-black/20 px-4 text-xs font-bold outline-none focus:border-primary transition-all shadow-sm"
-                                    />
-                                </div>
+                                <div className="group relative flex gap-2">
+                                     <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-primary/40 transition-colors group-focus-within:text-primary dark:text-white/40 dark:group-focus-within:text-white">
+                                         <i className="fa-solid fa-hashtag text-[10px]" />
+                                     </div>
+                                     <input
+                                         type="text"
+                                         placeholder="Input No. Kontrak..."
+                                         value={(selected as any).crown_no || ''}
+                                         onChange={(e) => {
+                                             const val = e.target.value;
+                                             onContractUpdated({ ...selected, crown_no: val } as any);
+                                             // Trigger debounced update to server
+                                             contractApi.update(selected.id, { crown_no: val });
+                                         }}
+                                         className="h-10 flex-1 rounded-xl border-2 border-primary/10 bg-white pl-9 pr-4 text-[11px] font-black uppercase tracking-wider outline-none transition-all focus:border-primary/30 focus:ring-4 focus:ring-primary/5 dark:bg-black/20 dark:border-white/10 dark:focus:border-white/30 dark:focus:ring-white/5 shadow-sm"
+                                     />
+                                 </div>
                             </div>
                         )}
 
@@ -703,6 +710,7 @@ function GenericFormTab({
                             </span>
                         </div>
                     </div>
+
                 </div>
 
                 <div className="flex items-center gap-3" ref={dropdownRef}>
