@@ -69,7 +69,11 @@ class ContractController extends Controller
             'contracts' => $contracts,
             'types' => ContractType::all(),
             'submissionTypes' => SubmissionType::where('is_active', true)->get(),
-            'users' => User::with('department')->orderBy('name')->get()->map(fn($u) => $this->formatUser($u)),
+            'users' => User::with('department')
+                ->when(Auth::user()->role === 'Manager', function($q) {
+                    return $q->where('department_id', Auth::user()->department_id);
+                })
+                ->orderBy('name')->get()->map(fn($u) => $this->formatUser($u)),
             'vendors' => Vendor::with('documents')->where('is_active', true)->orderBy('name')->get()->map(fn($v) => [
                 'id' => $v->id,
                 'name' => $v->name,
@@ -171,7 +175,11 @@ class ContractController extends Controller
             'initialSelected' => $this->formatContract($contract),
             'types' => ContractType::all(),
             'submissionTypes' => SubmissionType::where('is_active', true)->get(),
-            'users' => User::with('department')->orderBy('name')->get()->map(fn($u) => $this->formatUser($u)),
+            'users' => User::with('department')
+                ->when(Auth::user()->role === 'Manager', function($q) {
+                    return $q->where('department_id', Auth::user()->department_id);
+                })
+                ->orderBy('name')->get()->map(fn($u) => $this->formatUser($u)),
             'vendors' => Vendor::where('is_active', true)->orderBy('name')->get()->map(fn($v) => [
                 'id' => $v->id,
                 'name' => $v->name,
@@ -480,6 +488,7 @@ class ContractController extends Controller
     {
         $contract = Contract::with([
             'creator',
+            'initiator.department',
             'versions.uploader',
             'approvals.approver',
             'approvals.workflowStep',
@@ -512,7 +521,15 @@ class ContractController extends Controller
 
     public function getUsers(): JsonResponse
     {
-        return response()->json(User::with('department')->orderBy('name')->get()->map(fn($u) => $this->formatUser($u)));
+        $users = User::with('department')
+            ->when(Auth::user()->role === 'Manager', function($q) {
+                return $q->where('department_id', Auth::user()->department_id);
+            })
+            ->orderBy('name')
+            ->get()
+            ->map(fn($u) => $this->formatUser($u));
+
+        return response()->json($users);
     }
 
     public function getRoles(): JsonResponse
@@ -612,7 +629,10 @@ class ContractController extends Controller
 
             ContractHistory::create(['contract_id' => $contract->id, 'action' => 'CONTRACT_CREATED', 'description' => 'Kontrak dibuat', 'actor_id' => $userId]);
 
-            $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'histories.actor', 'messages.user', 'contractType']);
+            // AUTOMATION: Automatically assign workflow and set to Step 1 (Drafting)
+            $contract = $this->workflowService->sendForApproval($contract);
+
+            $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'histories.actor', 'messages.user', 'contractType', 'workflowStep']);
 
             return response()->json($this->formatContract($contract), 201);
         });
@@ -623,6 +643,10 @@ class ContractController extends Controller
         $contract = Contract::findOrFail($id);
 
         if ($contract->status !== 'draft') {
+            if ($request->has('metadata') && count($request->except(['_method'])) === 1) {
+                $contract->update(['metadata' => $request->input('metadata')]);
+                return response()->json($this->formatContract($contract));
+            }
             return response()->json(['message' => 'Hanya kontrak berstatus draft yang dapat diedit.'], 422);
         }
 
@@ -695,6 +719,8 @@ class ContractController extends Controller
             'attachment' => 'nullable|file|max:10240', // 10MB limit
             'assigned_pic_id' => 'nullable|uuid|exists:m_users,id',
             'execution_order' => 'nullable|string',
+            'p1_user_id' => 'nullable|uuid|exists:m_users,id',
+            'p2_user_id' => 'nullable|uuid|exists:m_users,id',
         ]);
 
         $contract = Contract::findOrFail($id);
@@ -707,6 +733,14 @@ class ContractController extends Controller
 
         if (!$approval) {
             return response()->json(['message' => 'Tidak ada persetujuan tertunda yang ditemukan untuk Anda.'], 422);
+        }
+
+        // VALIDATION: Manager can only assign to their own department staff
+        if ($request->assigned_pic_id && Auth::user()->role === 'Manager') {
+            $assignedUser = User::find($request->assigned_pic_id);
+            if ($assignedUser && $assignedUser->department_id !== Auth::user()->department_id) {
+                return response()->json(['message' => 'Anda hanya dapat menugaskan kontrak kepada staf di departemen Anda sendiri.'], 422);
+            }
         }
 
         $attachmentPath = null;
@@ -1240,8 +1274,8 @@ class ContractController extends Controller
             'status' => $c->status,
             'metadata' => $c->metadata ?? [],
             'display_mode' => $c->statusDetail?->display_mode ?? 'interactive',
-            'allow_info_edit' => $c->statusDetail?->allow_info_edit ?? ($c->status === 'draft'),
-            'allow_reference' => $c->statusDetail?->allow_reference ?? ($c->status === 'draft'),
+            'allow_info_edit' => $c->workflowStep?->step === 1 || $c->status === 'draft',
+            'allow_reference' => $c->workflowStep?->step === 1 || $c->status === 'draft',
             'current_version' => $c->current_version,
             'created_at' => $c->created_at->format('d/m/Y'),
             'submitted_at' => $c->submitted_at ? $c->submitted_at->format('d/m/Y H:i') : null,
@@ -1273,6 +1307,7 @@ class ContractController extends Controller
                 'step' => $c->workflowStep->step,
                 'role' => $c->workflowStep->role,
                 'description' => $c->workflowStep->description,
+                'step_type' => $c->workflowStep->step_type,
                 'step_category' => $c->workflowStep->step_category,
                 'target_approvers' => $c->approvals->where('sequence', $c->workflowStep->step)->whereIn('status', ['pending', 'waiting'])->first()?->target_approvers,
             ] : null,
@@ -1280,9 +1315,11 @@ class ContractController extends Controller
                 'id' => $nextStep->id,
                 'name' => $nextStep->name,
                 'approver_type' => $nextStep->approver_type,
-                'department_ids' => $nextStep->department_ids,
-                'department_names' => $nextStep->department_names,
-                'roles' => $nextStep->role,
+                'department_id' => $nextStep->department_id,
+                'roles' => $nextStep->role ? (is_array($nextStep->role) ? $nextStep->role : [$nextStep->role]) : [],
+                'step_type' => $nextStep->step_type,
+                'step_category' => $nextStep->step_category,
+                'meta' => $nextStep->meta ?? [],
             ] : null,
             'requires_pic_assignment' => $requiresPicAssignment,
             'versions' => $c->versions->map(fn ($v) => [
@@ -1335,7 +1372,7 @@ class ContractController extends Controller
                 'submitted_by' => $fs->submitted_by,
                 'updated_at' => $fs->updated_at->format('Y-m-d H:i'),
             ]),
-            'can_approve' => $c->approvals->where('status', 'pending')->where('user_id', Auth::id())->isNotEmpty() && ($c->status === 'in_review' || $c->status === 'revision'),
+            'can_approve' => $c->approvals->where('status', 'pending')->where('user_id', Auth::id())->isNotEmpty() && ($c->status === 'in_review' || $c->status === 'revision' || $c->status === 'draft'),
             'pending_approval_id' => $c->approvals->where('status', 'pending')->where('user_id', Auth::id())->first()?->id,
         ];
     }
@@ -1365,12 +1402,39 @@ class ContractController extends Controller
                 $deptName = $c->initiator->department->name;
             }
 
-            // Resolve Specific Names (if any)
+            // Resolve Target Approvers (Names and Emails) for future/placeholder steps
             $targetApprovers = null;
             $targetEmails = null;
             if ($step->approver_type === 'user') {
                 $targetApprovers = $step->users->pluck('name')->implode(', ');
                 $targetEmails = $step->users->pluck('email')->implode(', ');
+            } elseif ($step->approver_type === 'atasan') {
+                $approvers = $this->workflowService->resolveHierarchyApprover($c, $step->hierarchy_level ?: 1);
+                $targetApprovers = $approvers->pluck('name')->implode(', ');
+                $targetEmails = $approvers->pluck('email')->implode(', ');
+            } elseif ($step->approver_type === 'initiator') {
+                 $targetApprovers = $c->initiator?->name;
+                 $targetEmails = $c->initiator?->email;
+            } elseif ($step->approver_type === 'assigned_pic') {
+                if ($c->assigned_pic_id) {
+                    $targetApprovers = $c->assignedPic?->name;
+                    $targetEmails = $c->assignedPic?->email;
+                } else {
+                    $targetApprovers = 'PIC (Belum Ditugaskan)';
+                }
+            } elseif ($step->approver_type === 'role') {
+                $roles = (array)$step->role;
+                $targetDeptIds = !empty($step->department_ids) ? $step->department_ids : ($step->department_id ? [$step->department_id] : []);
+                $query = \App\Models\User::whereIn('role', $roles);
+                if (!empty($targetDeptIds)) {
+                    $query->whereIn('department_id', $targetDeptIds);
+                }
+                $approvers = $query->get();
+                if ($approvers->isEmpty()) {
+                    $approvers = \App\Models\User::whereIn('role', $roles)->get();
+                }
+                $targetApprovers = $approvers->pluck('name')->implode(', ');
+                $targetEmails = $approvers->pluck('email')->implode(', ');
             }
 
             if ($approvals->isNotEmpty()) {
@@ -1405,13 +1469,16 @@ class ContractController extends Controller
                         'approver_name' => $first->role,
                         'role' => $first->role,
                         'department_name' => $deptName,
-                        'target_approvers' => $candidateNames,
-                        'target_emails' => $candidateEmails,
+                        'target_approvers' => $candidateNames ?: $targetApprovers,
+                        'target_emails' => $candidateEmails ?: $targetEmails,
                         'sequence' => $step->step,
                         'status' => 'pending',
-                        'note' => null,
-                        'approved_at' => null,
-                        'approver' => ['name' => $first->role],
+                        'comment' => null,
+                        'decided_at' => null,
+                        'step_type' => $step->step_type,
+                        'step_name' => $step->name,
+                        'step_description' => $step->description,
+                        'approver' => null, // Let UI use target_approvers/emails
                     ];
                 } else {
                     // Standard display for individual approvals (especially if decided)
@@ -1445,11 +1512,14 @@ class ContractController extends Controller
                             'role' => $a->role,
                             'department_name' => $deptName,
                             'target_approvers' => $rowTargetApprovers,
-                            'target_emails' => $a->approver?->email,
+                            'target_emails' => $a->approver?->email ?: $targetEmails,
                             'sequence' => $step->step,
                             'status' => $a->status,
-                            'note' => $a->comment,
-                            'approved_at' => $a->decided_at?->toDateTimeString(),
+                            'comment' => $a->comment,
+                            'decided_at' => $a->decided_at?->format('d/m/Y H:i'),
+                            'step_type' => $step->step_type,
+                            'step_name' => $step->name,
+                            'step_description' => $step->description,
                             'approver' => $this->formatUser($a->approver),
                         ];
                     }
@@ -1477,7 +1547,7 @@ class ContractController extends Controller
                     'status' => 'future',
                     'note' => null,
                     'approved_at' => null,
-                    'approver' => ['name' => $approverName],
+                    'approver' => null, // Let UI use target_approvers/emails
                 ];
 
                 // INJECT: If this is the management step and we have custom users, show them

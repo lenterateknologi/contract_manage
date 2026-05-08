@@ -19,12 +19,14 @@ export const contractApi = {
         api.patch(`/api/contracts/${id}`, data).then((r) => r.data),
     delete: (id: string): Promise<any> =>
         api.delete(`/api/contracts/${id}`).then((r) => r.data),
-    approve: (id: string, note: string, attachment?: File, assignedPicId?: string, executionOrder?: string): Promise<Contract> => {
+    approve: (id: string, note: string, attachment?: File, assignedPicId?: string, executionOrder?: string, p1UserId?: string, p2UserId?: string): Promise<Contract> => {
         const fd = new FormData();
         fd.append('note', note);
         if (attachment) fd.append('attachment', attachment);
         if (assignedPicId) fd.append('assigned_pic_id', assignedPicId);
         if (executionOrder) fd.append('execution_order', executionOrder);
+        if (p1UserId) fd.append('p1_user_id', p1UserId);
+        if (p2UserId) fd.append('p2_user_id', p2UserId);
         return api.post(`/api/contracts/${id}/approve`, fd).then((r) => r.data);
     },
     reject: (id: string, reason: string, attachment?: File): Promise<Contract> => {

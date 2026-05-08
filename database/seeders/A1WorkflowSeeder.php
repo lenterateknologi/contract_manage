@@ -12,11 +12,17 @@ use App\Models\Department;
 use App\Models\ContractType;
 use Illuminate\Support\Facades\DB;
 
-class UnifiedWorkflowSeeder extends Seeder
+class A1WorkflowSeeder extends Seeder
 {
     public function run(): void
     {
         DB::transaction(function () {
+            // 0. CLEANUP ALL EXISTING WORKFLOW DATA
+            WorkflowStepRole::query()->delete();
+            WorkflowStepDepartment::query()->delete();
+            WorkflowStep::withTrashed()->forceDelete();
+            Workflow::withTrashed()->forceDelete();
+
             // 1. Get Status IDs
             $statuses = ContractStatus::pluck('id', 'code')->toArray();
             
@@ -26,22 +32,17 @@ class UnifiedWorkflowSeeder extends Seeder
             $mgmtDeptId = $depts['Management / Direksi'] ?? null;
             $taxDeptId = $depts['Tax'] ?? null;
 
-            // --- A. F1 KONTRAK (Master Workflow) ---
-            $f1Workflow = Workflow::updateOrCreate(
-                ['name' => 'F1 Contract Master'],
-                [
-                    'description' => 'Master Workflow for F1 Contract (13 Steps)',
-                    'contract_type' => 'F1-CON',
-                    'initiator_type' => 'all',
-                    'is_active' => true,
-                    'is_default' => true,
-                ]
-            );
+            // --- A. A1 KONTRAK (Standard Workflow) ---
+            $workflow = Workflow::create([
+                'name' => 'A1 - Standard Contract Workflow',
+                'description' => 'Master Workflow for Contracts (14 Steps) - Latest Version',
+                'contract_type' => 'A1-CON',
+                'initiator_type' => 'all',
+                'is_active' => true,
+                'is_default' => true,
+            ]);
 
-            // Clear old steps for clean seed (use forceDelete to avoid unique constraint conflicts with soft deletes)
-            $f1Workflow->steps()->forceDelete();
-
-            $f1Steps = [
+            $steps = [
                 [
                     'step' => 1,
                     'name' => 'Pengisian & Kelengkapan',
@@ -114,7 +115,7 @@ class UnifiedWorkflowSeeder extends Seeder
                     'step' => 8,
                     'name' => 'Input No & Generate F2',
                     'type' => 'DRAFTING',
-                    'actor' => 'role',
+                    'actor' => 'assigned_pic',
                     'roles' => ['Staff'],
                     'dept_id' => $legalDeptId,
                     'reject_target' => 5,
@@ -161,20 +162,23 @@ class UnifiedWorkflowSeeder extends Seeder
                 ],
                 [
                     'step' => 13,
-                    'name' => 'Upload TTD & Penyelesaian',
-                    'type' => 'UPLOAD',
-                    'category' => 'joint_upload',
-                    'actor' => 'role',
+                    'name' => 'Penandatanganan (2 Pihak)',
+                    'type' => 'SIGNING',
+                    'actor' => 'assigned_pic',
                     'roles' => ['Staff'],
                     'dept_id' => $legalDeptId,
                     'reject_target' => 8,
-                    'status' => 'locked'
+                    'status' => 'locked',
+                    'meta' => [
+                        'signing_p1_type' => 'initiator',
+                        'signing_p2_type' => 'director'
+                    ]
                 ],
                 [
                     'step' => 14,
                     'name' => 'Closing & Arsip',
                     'type' => 'CLOSING',
-                    'actor' => 'role',
+                    'actor' => 'assigned_pic',
                     'roles' => ['Staff'],
                     'dept_id' => $legalDeptId,
                     'reject_target' => null,
@@ -182,9 +186,9 @@ class UnifiedWorkflowSeeder extends Seeder
                 ],
             ];
 
-            foreach ($f1Steps as $s) {
+            foreach ($steps as $s) {
                 $step = WorkflowStep::create([
-                    'workflow_id' => $f1Workflow->id,
+                    'workflow_id' => $workflow->id,
                     'step' => $s['step'],
                     'step_type' => $s['type'],
                     'step_category' => $s['category'] ?? null,
@@ -193,6 +197,7 @@ class UnifiedWorkflowSeeder extends Seeder
                     'reject_target' => $s['reject_target'],
                     'status_id' => $statuses[$s['status']] ?? null,
                     'condition_expression' => $s['condition'] ?? null,
+                    'meta' => $s['meta'] ?? null,
                     'is_active' => true,
                 ]);
 
@@ -211,127 +216,64 @@ class UnifiedWorkflowSeeder extends Seeder
                 }
             }
 
-            // --- B. F1 NON-CONTRACT (Corporate Workflow) ---
-            $f1NonWorkflow = Workflow::updateOrCreate(
-                ['name' => 'F1 Non-Contract Corporate'],
-                [
-                    'description' => 'Workflow for F1 Non-Contract (Corporate Action)',
-                    'contract_type' => 'F1-NON',
-                    'initiator_type' => 'restricted', // Logic handled in Service
-                    'is_active' => true,
-                    'is_default' => false,
-                ]
-            );
-            $f1NonWorkflow->steps()->forceDelete();
-
-            $f1NonSteps = [
-                [1, 'Pengisian & Kelengkapan', 'DRAFTING', 'initiator', ['initiator'], null, 'draft'],
-                [2, 'Review Atasan Langsung', 'APPROVAL', 'atasan', ['Manager'], 1, 'in_review'],
-                [3, 'Review Direksi (Optional)', 'APPROVAL', 'role', ['Director'], 1, 'in_review'],
-                [4, 'Verifikasi & Penugasan PIC', 'DRAFTING', 'role', ['Manager'], 1, 'in_review', $legalDeptId],
-                [5, 'Upload TTD Manual', 'UPLOAD', 'assigned_pic', ['Staff'], 4, 'locked', $legalDeptId],
-                [6, 'Closing & Arsip', 'CLOSING', 'role', ['Staff'], null, 'archived', $legalDeptId],
+            // --- B. Contract Types Mapping ---
+            $contractTypes = [
+                'A1-CON' => 'Standard A1 Contract',
+                'PKS' => 'Perjanjian Kerja Sama (PKS)',
+                'JASA' => 'Perjanjian Jasa',
+                'PGB' => 'Perjanjian Pengadaan Barang',
+                'SEWA' => 'Perjanjian Sewa',
+                'LISENSI' => 'Perjanjian Lisensi',
+                'DIST' => 'Perjanjian Distribusi',
+                'OUTS' => 'Perjanjian Outsourcing',
+                'JV' => 'Perjanjian Joint Venture',
+                'NDA' => 'Perjanjian Kerahasiaan (NDA)',
+                'ADD' => 'Addendum / Perpanjangan Kontrak',
+                'INTERNAL' => 'Perjanjian Internal (Intercompany)',
+                'CUSTOM' => 'Perjanjian Khusus (Custom)',
             ];
 
-            foreach ($f1NonSteps as $sData) {
-                $step = WorkflowStep::create([
-                    'workflow_id' => $f1NonWorkflow->id,
-                    'step' => $sData[0],
-                    'step_type' => $sData[2],
-                    'step_category' => $sData[8] ?? null,
-                    'approver_type' => $sData[3],
-                    'description' => $sData[1],
-                    'reject_target' => $sData[5],
-                    'status_id' => $statuses[$sData[6]] ?? null,
-                    'is_active' => true,
-                ]);
-
-                foreach ($sData[4] as $roleName) {
-                    WorkflowStepRole::create(['workflow_step_id' => $step->id, 'role_name' => $roleName]);
-                }
-                if (isset($sData[7])) {
-                    WorkflowStepDepartment::create(['workflow_step_id' => $step->id, 'department_id' => $sData[7]]);
-                }
+            foreach ($contractTypes as $code => $name) {
+                ContractType::updateOrCreate(
+                    ['code' => $code],
+                    [
+                        'name' => $name,
+                        'workflow_id' => $workflow->id,
+                        'is_active' => true,
+                    ]
+                );
             }
 
-            // --- C. NDA TEMPLATE (Fast Track) ---
-            $ndaWorkflow = Workflow::updateOrCreate(
-                ['name' => 'NDA Fast Track'],
-                [
-                    'description' => 'Fast track workflow for NDA templates',
-                    'contract_type' => 'NDA-TMP',
-                    'initiator_type' => 'all',
-                    'is_active' => true,
-                    'is_default' => false,
-                ]
-            );
-            $ndaWorkflow->steps()->forceDelete();
+            echo "A1 Workflow (14 Steps) seeded and mapped to all contract types.\n";
 
-            $ndaSteps = [
-                [1, 'Input & Upload NDA', 'DRAFTING', 'initiator', ['initiator'], null, 'draft'],
-                [2, 'Closing & Arsip', 'CLOSING', 'role', ['Staff'], 1, 'archived', $legalDeptId],
-            ];
-
-            foreach ($ndaSteps as $sData) {
-                $step = WorkflowStep::create([
-                    'workflow_id' => $ndaWorkflow->id,
-                    'step' => $sData[0],
-                    'step_type' => $sData[2],
-                    'approver_type' => $sData[3],
-                    'description' => $sData[1],
-                    'reject_target' => $sData[5],
-                    'status_id' => $statuses[$sData[6]] ?? null,
-                    'is_active' => true,
-                ]);
-
-                foreach ($sData[4] as $roleName) {
-                    WorkflowStepRole::create(['workflow_step_id' => $step->id, 'role_name' => $roleName]);
+            // 4. Map Allowed Actions for all steps
+            $allSteps = WorkflowStep::where('workflow_id', $workflow->id)->get();
+            foreach ($allSteps as $step) {
+                $actions = [];
+                switch (strtoupper($step->step_type)) {
+                    case 'APPROVAL':
+                        $actions = ['approve', 'reject', 'return'];
+                        break;
+                    case 'REVIEW':
+                        $actions = ['review', 'return'];
+                        break;
+                    case 'UPLOAD':
+                    case 'SIGNING':
+                        $actions = ['upload', 'return'];
+                        break;
+                    case 'DRAFTING':
+                        $actions = ($step->step === 1) ? ['approve'] : ['approve', 'assign'];
+                        break;
+                    case 'CLOSING':
+                        $actions = ['approve'];
+                        break;
+                    default:
+                        $actions = ['approve', 'reject'];
+                        break;
                 }
-                if (isset($sData[7])) {
-                    WorkflowStepDepartment::create(['workflow_step_id' => $step->id, 'department_id' => $sData[7]]);
-                }
+                $step->update(['allowed_actions' => $actions]);
             }
-
-            // --- D. Contract Types Mapping ---
-            ContractType::updateOrCreate(
-                ['code' => 'F1-CON'],
-                [
-                    'name' => 'F1 Contract',
-                    'workflow_id' => $f1Workflow->id,
-                    'features' => ['tax_optional' => true, 'is_master' => true]
-                ]
-            );
-            ContractType::updateOrCreate(
-                ['code' => 'F1-NON'],
-                [
-                    'name' => 'F1 Non-Contract',
-                    'workflow_id' => $f1NonWorkflow->id,
-                    'features' => ['restricted_initiator' => true, 'optional_review' => true]
-                ]
-            );
-            ContractType::updateOrCreate(
-                ['code' => 'NDA-TMP'],
-                [
-                    'name' => 'NDA Template',
-                    'workflow_id' => $ndaWorkflow->id,
-                    'features' => ['direct_archive' => true, 'vendor_required' => true]
-                ]
-            );
-
-            // 4. Map legacy and existing types to the new unified workflows
-            // F1 Contract (Standard)
-            ContractType::whereIn('code', ['PKS', 'JASA', 'PGB', 'SEWA', 'LISENSI', 'DIST', 'OUTS', 'JV', 'KERJASAMA'])
-                ->update(['workflow_id' => $f1Workflow->id]);
-
-            // F1 Non-Contract (Corporate Action, etc.)
-            ContractType::whereIn('code', ['ADD', 'INTERNAL', 'CUSTOM', 'CORP-ACT'])
-                ->update(['workflow_id' => $f1NonWorkflow->id]);
-
-            // NDA Fast Track
-            ContractType::whereIn('code', ['NDA'])
-                ->update(['workflow_id' => $ndaWorkflow->id]);
-
-            echo "Workflow mapping completed for legacy types.\n";
+            echo "Workflow step actions seeded successfully.\n";
         });
     }
 }

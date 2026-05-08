@@ -140,12 +140,15 @@ class HandleInertiaRequests extends Middleware
             'Formulir Digital' => 7,
             'Alur Persetujuan' => 8,
             'Master Status' => 9,
-            'Manajemen Pengguna' => 10,
-            'Hak Akses & Peran' => 11,
-            'Data Departemen' => 12,
-            'Daftar Vendor' => 13,
-            'Analitik Kontrak' => 14,
-            'Jejak Audit' => 15,
+            'Data Group' => 10,
+            'Data Region' => 11,
+            'Data Company' => 12,
+            'Manajemen Pengguna' => 13,
+            'Hak Akses & Peran' => 14,
+            'Data Departemen' => 15,
+            'Daftar Vendor' => 16,
+            'Analitik Kontrak' => 17,
+            'Jejak Audit' => 18,
         ];
 
         $groups = $modules->groupBy(fn ($item) => trim($item->group_title))

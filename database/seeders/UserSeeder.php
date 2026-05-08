@@ -17,6 +17,10 @@ class UserSeeder extends Seeder
         // Ensure roles and departments are available
         $roles = Role::pluck('id', 'name')->all();
         $depts = Department::pluck('id', 'code')->all();
+        
+        // Get a default company to link users to
+        $defaultCompany = \App\Models\Company::where('code', 'LTI')->first();
+        $companyId = $defaultCompany ? $defaultCompany->id : null;
 
         $users = [
             [
@@ -152,9 +156,17 @@ class UserSeeder extends Seeder
         ];
 
         foreach ($users as $userData) {
+            $roleName = $userData['role'] ?? 'Staff';
+            $roleId = $roles[$roleName] ?? null;
+
             User::withTrashed()->updateOrCreate(
                 ['email' => $userData['email']],
-                array_merge($userData, ['is_active' => true, 'deleted_at' => null])
+                array_merge($userData, [
+                    'company_id' => $companyId,
+                    'role_id' => $roleId,
+                    'is_active' => true, 
+                    'deleted_at' => null
+                ])
             );
         }
 
@@ -176,9 +188,11 @@ class UserSeeder extends Seeder
                         'username' => '2000'.str_pad(mt_rand(1, 999999), 12, '0', STR_PAD_LEFT),
                         'password' => Hash::make('password'),
                         'role' => 'Manager',
+                        'role_id' => $roles['Manager'] ?? null,
                         'position' => 'Manager of ' . $dept->name,
                         'phone' => fake()->phoneNumber(),
                         'department_id' => $dept->id,
+                        'company_id' => $companyId,
                         'initials' => 'M' . substr($dept->code, 0, 1),
                         'bg_color' => '#f1f5f9',
                         'text_color' => '#0f172a',
@@ -201,9 +215,11 @@ class UserSeeder extends Seeder
                         'username' => '3000' . str_pad(mt_rand(1, 99999999), 12, '0', STR_PAD_LEFT),
                         'password' => Hash::make('password'),
                         'role' => 'Staff',
+                        'role_id' => $roles['Staff'] ?? null,
                         'position' => 'Staff of ' . $dept->name,
                         'phone' => fake()->phoneNumber(),
                         'department_id' => $dept->id,
+                        'company_id' => $companyId,
                         'initials' => $initials,
                         'bg_color' => fake()->hexColor(),
                         'text_color' => '#ffffff',

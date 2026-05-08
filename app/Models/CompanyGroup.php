@@ -3,19 +3,19 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Department extends Model
+class CompanyGroup extends Model
 {
-    protected $table = 'm_departments';
+    use HasFactory, HasUuids, SoftDeletes;
 
-    use HasUuids, SoftDeletes;
+    protected $table = 'm_company_groups';
 
     protected $fillable = [
-        'company_id',
-        'code',
         'name',
+        'code',
         'description',
         'is_active',
         'created_by',
@@ -26,13 +26,9 @@ class Department extends Model
         'is_active' => 'boolean',
     ];
 
-    public function company()
-    {
-        return $this->belongsTo(Company::class, 'company_id');
-    }
 
-    public function users()
+    public function companies()
     {
-        return $this->hasMany(User::class);
+        return $this->hasMany(Company::class, 'company_group_id');
     }
 }

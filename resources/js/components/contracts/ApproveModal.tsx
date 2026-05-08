@@ -8,13 +8,13 @@ import {
     DialogFooter,
 } from '@/components/ui/overlays/Dialog';
 import { Button } from '@/components/ui/base/Button';
-import { Paperclip, X, UserCheck } from 'lucide-react';
+import { Paperclip, X, UserCheck, Send } from 'lucide-react';
 import { contractApi } from '@/lib/contract-api';
 
 interface Props {
     open: boolean;
     onClose: () => void;
-    onSubmit: (note: string, attachment?: File, assignedPicId?: string, executionOrder?: string) => Promise<void>;
+    onSubmit: (note: string, attachment?: File, assignedPicId?: string, executionOrder?: string, p1UserId?: string, p2UserId?: string) => Promise<void>;
     isAssign?: boolean;
     contract: any;
 }
@@ -27,13 +27,28 @@ export default function ApproveModal({ open, onClose, onSubmit, isAssign, contra
     const [loading, setLoading] = useState(false);
     const [users, setUsers] = useState<any[]>([]);
     const [fetchingUsers, setFetchingUsers] = useState(false);
+    const [p1UserId, setP1UserId] = useState<string>('');
+    const [p2UserId, setP2UserId] = useState<string>('');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        if (open && isAssign) {
+        const isSigningSetup = contract?.next_step?.step_type === 'SIGNING' && (contract?.metadata?.signing_state?.phase === 'SETUP' || !contract?.metadata?.signing_state);
+        
+        if (open && (isAssign || isSigningSetup)) {
             fetchUsers();
         }
-    }, [open, isAssign]);
+
+        if (open && isSigningSetup) {
+            const meta = contract?.next_step?.meta || {};
+            // Auto-resolve P1
+            if (meta.signing_p1_type === 'initiator') setP1UserId(contract.initiator?.id || '');
+            else if (meta.signing_p1_type === 'pic') setP1UserId(contract.assigned_pic?.id || '');
+            
+            // Auto-resolve P2
+            if (meta.signing_p2_type === 'initiator') setP2UserId(contract.initiator?.id || '');
+            else if (meta.signing_p2_type === 'pic') setP2UserId(contract.assigned_pic?.id || '');
+        }
+    }, [open, isAssign, contract]);
 
     const fetchUsers = async () => {
         setFetchingUsers(true);
@@ -74,6 +89,18 @@ export default function ApproveModal({ open, onClose, onSubmit, isAssign, contra
             return;
         }
 
+        const isSigningSetup = contract?.next_step?.step_type === 'SIGNING' && (contract?.metadata?.signing_state?.phase === 'SETUP' || !contract?.metadata?.signing_state);
+        if (isSigningSetup) {
+            if (!p1UserId || !p2UserId) {
+                alert('Harap tentukan Pihak 1 dan Pihak 2 untuk penandatanganan.');
+                return;
+            }
+            if (p1UserId === p2UserId) {
+                alert('Pihak 1 dan Pihak 2 tidak boleh orang yang sama.');
+                return;
+            }
+        }
+
         const isJointUpload = contract?.next_step?.step_category === 'joint_upload';
         const hasOrderSet = !!contract?.metadata?.step_12_order;
         const showOrderSelection = isJointUpload && !hasOrderSet;
@@ -85,12 +112,14 @@ export default function ApproveModal({ open, onClose, onSubmit, isAssign, contra
 
         setLoading(true);
         try {
-            await onSubmit(note, attachment || undefined, assignedPicId || undefined, executionOrder || undefined);
+            await onSubmit(note, attachment || undefined, assignedPicId || undefined, executionOrder || undefined, p1UserId || undefined, p2UserId || undefined);
             onClose();
             setNote('');
             setAttachment(null);
             setAssignedPicId('');
             setExecutionOrder('');
+            setP1UserId('');
+            setP2UserId('');
         } finally {
             setLoading(false);
         }
@@ -103,6 +132,10 @@ export default function ApproveModal({ open, onClose, onSubmit, isAssign, contra
                     <DialogTitle className="flex items-center gap-2">
                         {isAssign ? (
                             <><UserCheck className="text-blue-500" /> Tugaskan & Setujui</>
+                        ) : contract?.workflow_step?.step === 1 ? (
+                            <><Send className="text-blue-500" /> Kirim Persetujuan</>
+                        ) : contract?.next_step?.step_type === 'SIGNING' && (contract?.metadata?.signing_state?.phase === 'SETUP' || !contract?.metadata?.signing_state) ? (
+                            <><i className="fa-solid fa-pen-nib text-blue-500" /> Setup Penandatanganan</>
                         ) : (
                             <><i className="fa-solid fa-circle-check text-emerald-500" /> Setujui Kontrak</>
                         )}
@@ -112,6 +145,10 @@ export default function ApproveModal({ open, onClose, onSubmit, isAssign, contra
                     <p className="text-sm text-muted-foreground">
                         {isAssign 
                             ? 'Harap pilih PIC Staff Legal yang akan mengerjakan drafting agreement ini.'
+                            : contract?.workflow_step?.step === 1
+                            ? 'Konfirmasi untuk mengirim draft kontrak ini ke tahap persetujuan berikutnya. Pastikan dokumen sudah lengkap.'
+                            : contract?.next_step?.step_type === 'SIGNING' && (contract?.metadata?.signing_state?.phase === 'SETUP' || !contract?.metadata?.signing_state)
+                            ? 'Tentukan siapa yang akan menandatangani dokumen ini (Pihak 1 & Pihak 2).'
                             : 'Apakah Anda yakin ingin menyetujui kontrak ini? Anda dapat memberikan catatan approval dan lampiran (opsional).'}
                     </p>
 
@@ -136,6 +173,42 @@ export default function ApproveModal({ open, onClose, onSubmit, isAssign, contra
                                 />
                             )}
 
+                        </div>
+                    )}
+
+                    {contract?.next_step?.step_type === 'SIGNING' && (contract?.metadata?.signing_state?.phase === 'SETUP' || !contract?.metadata?.signing_state) && (
+                        <div className="space-y-4 rounded-xl border border-blue-100 bg-blue-50/30 p-4">
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">
+                                    Pihak 1 (Download & Upload Awal) <span className="text-rose-500">*</span>
+                                </label>
+                                <SearchableSelect
+                                    value={p1UserId}
+                                    onValueChange={setP1UserId}
+                                    options={users.map(u => ({
+                                        value: u.id,
+                                        label: `${u.name} (${u.email})`
+                                    }))}
+                                    placeholder="-- Pilih Pihak 1 --"
+                                />
+                                <p className="text-[9px] text-muted-foreground italic">Biasanya Inisiator atau Vendor (PIC Request).</p>
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">
+                                    Pihak 2 (Download TTD P1 & Finalisasi) <span className="text-rose-500">*</span>
+                                </label>
+                                <SearchableSelect
+                                    value={p2UserId}
+                                    onValueChange={setP2UserId}
+                                    options={users.map(u => ({
+                                        value: u.id,
+                                        label: `${u.name} (${u.email})`
+                                    }))}
+                                    placeholder="-- Pilih Pihak 2 --"
+                                />
+                                <p className="text-[9px] text-muted-foreground italic">Biasanya Direksi atau Management.</p>
+                            </div>
                         </div>
                     )}
 
@@ -233,8 +306,8 @@ export default function ApproveModal({ open, onClose, onSubmit, isAssign, contra
                         Batal
                     </Button>
                     <Button variant={isAssign ? "primary" : "primary"} onClick={handleSubmit} disabled={loading || (isAssign && !assignedPicId)} className="flex-1">
-                        {loading ? <i className="fa-solid fa-spinner fa-spin mr-2" /> : <i className={`fa-solid ${isAssign ? 'fa-user-check' : 'fa-check'} mr-2`} />}
-                        {isAssign ? 'Tugaskan & Setujui' : 'Konfirmasi Setuju'}
+                        {loading ? <i className="fa-solid fa-spinner fa-spin mr-2" /> : <i className={`fa-solid ${isAssign ? 'fa-user-check' : (contract?.workflow_step?.step === 1 ? 'fa-paper-plane' : 'fa-check')} mr-2`} />}
+                        {isAssign ? 'Tugaskan & Setujui' : (contract?.workflow_step?.step === 1 ? 'Kirim Sekarang' : 'Konfirmasi Setuju')}
                     </Button>
                 </DialogFooter>
             </DialogContent>

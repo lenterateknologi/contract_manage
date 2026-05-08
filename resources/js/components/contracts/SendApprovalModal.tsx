@@ -206,7 +206,7 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
                                 </div>
                             )}
 
-                            {selectedWorkflow.steps?.some((s: any) => s.step_type === 'selection') && (
+                             {selectedWorkflow.steps?.some((s: any) => s.step_type === 'selection') && (
                                 <div className="space-y-4">
                                     <label className="text-[10px] font-black tracking-[0.15em] text-slate-400 dark:text-slate-500 uppercase flex items-center gap-2">
                                         <div className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Pilih Personel Manual
@@ -252,6 +252,52 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
                                                     </div>
                                                 </div>
                                             ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Management Selection Section */}
+                            {selectedWorkflow.steps?.some((s: any) => {
+                                const mRoles = ['director', 'vp', 'coo', 'direksi', 'direktur', 'ceo', 'cfo', 'gm', 'general manager', 'management', 'manajemen'];
+                                const name = (s.name || s.description || '').toLowerCase();
+                                return mRoles.some(r => name.includes(r));
+                            }) && (
+                                <div className="space-y-4 pt-2">
+                                    <label className="text-[10px] font-black tracking-[0.15em] text-slate-400 dark:text-slate-500 uppercase flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-rose-500" /> Penyetuju Manajemen (Direksi)
+                                    </label>
+                                    <div className="space-y-3">
+                                        <div className="flex flex-wrap gap-2">
+                                            {users
+                                                .filter((u: any) => {
+                                                    const mRoles = ['director', 'vp', 'coo', 'direksi', 'direktur', 'ceo', 'cfo', 'gm', 'general manager', 'management', 'manajemen'];
+                                                    const userRole = (u.role || '').toLowerCase();
+                                                    return mRoles.some(r => userRole.includes(r));
+                                                })
+                                                .map((u: any) => (
+                                                    <button
+                                                        key={u.id}
+                                                        onClick={() => {
+                                                            const current = (metadata as any).custom_management_users || [];
+                                                            const exists = current.includes(u.id);
+                                                            const next = exists ? current.filter((id: string) => id !== u.id) : [...current, u.id];
+                                                            setMetadata(prev => ({ ...prev, custom_management_users: next }));
+                                                        }}
+                                                        className={cn(
+                                                            "px-3 py-1.5 rounded-lg border text-[10px] font-bold transition-all",
+                                                            ((metadata as any).custom_management_users || []).includes(u.id)
+                                                                ? "bg-rose-500 border-rose-500 text-white shadow-md"
+                                                                : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500"
+                                                        )}
+                                                    >
+                                                        {u.name}
+                                                    </button>
+                                                ))
+                                            }
+                                        </div>
+                                        <p className="text-[9px] font-medium text-slate-400 italic">
+                                            *Penyetuju yang dipilih di atas akan ditambahkan ke tahapan manajemen di alur kerja ini.
+                                        </p>
                                     </div>
                                 </div>
                             )}

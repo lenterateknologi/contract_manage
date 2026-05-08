@@ -14,6 +14,9 @@ use App\Models\User;
 use App\Models\Vendor;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
+use App\Models\CompanyGroup;
+use App\Models\Region;
+use App\Models\Company;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -785,6 +788,15 @@ class AdminController extends Controller
             })
             ->when($request->contract_type, function ($q, $type) {
                 $q->whereIn('contract_type', (array)$type);
+            })
+            ->when($request->company_group_id, function ($q, $id) {
+                $q->whereJsonContains('company_group_ids', $id);
+            })
+            ->when($request->region_id, function ($q, $id) {
+                $q->whereJsonContains('region_ids', $id);
+            })
+            ->when($request->company_id, function ($q, $id) {
+                $q->whereJsonContains('company_ids', $id);
             });
 
         return Inertia::render('admin/index', [
@@ -794,11 +806,25 @@ class AdminController extends Controller
             'departments' => Department::all(),
             'roles' => Role::all(),
             'users' => User::all(),
+            'companyGroups' => CompanyGroup::all(),
+            'regions' => Region::all(),
+            'companies' => Company::all(),
             'contractStatuses' => ContractStatus::orderBy('label')->get(),
-            'filters' => $request->only(['search', 'contract_type']),
+            'filters' => $request->only(['search', 'contract_type', 'company_group_id', 'region_id', 'company_id']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Alur Kerja (Workflows)', 'href' => route('admin.workflows'), 'description' => 'Konfigurasi tahapan persetujuan.', 'icon' => 'GitBranch'],
+            ],
+        ]);
+    }
+
+    public function visualizeWorkflow()
+    {
+        return Inertia::render('admin/workflows/visualize', [
+            'breadcrumbs' => [
+                ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
+                ['title' => 'Workflow', 'href' => route('admin.workflows'), 'icon' => 'GitBranch'],
+                ['title' => 'Visualisasi Fullscreen', 'href' => '#', 'description' => 'Visualisasi alur workflow dalam layar penuh.', 'icon' => 'Layout'],
             ],
         ]);
     }
@@ -811,6 +837,9 @@ class AdminController extends Controller
             'departments' => Department::all(),
             'roles' => Role::all(),
             'users' => User::all(),
+            'companyGroups' => CompanyGroup::all(),
+            'regions' => Region::all(),
+            'companies' => Company::all(),
             'contractStatuses' => ContractStatus::orderBy('label')->get(),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
@@ -843,6 +872,9 @@ class AdminController extends Controller
             'departments' => Department::all(),
             'roles' => Role::all(),
             'users' => User::all(),
+            'companyGroups' => CompanyGroup::all(),
+            'regions' => Region::all(),
+            'companies' => Company::all(),
             'contractStatuses' => ContractStatus::orderBy('label')->get(),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
@@ -864,6 +896,9 @@ class AdminController extends Controller
             'initiator_type' => 'nullable|string|in:all,role,user',
             'scope' => 'nullable|string',
             'workflow_category' => 'nullable|string',
+            'company_group_ids' => 'nullable|array',
+            'region_ids' => 'nullable|array',
+            'company_ids' => 'nullable|array',
             'initiator_roles' => 'nullable|array',
             'initiator_users' => 'nullable|array',
             'initiator_departments' => 'nullable|array',
@@ -889,6 +924,9 @@ class AdminController extends Controller
             'steps.*.selection_rules.*.department_id' => 'nullable|string|exists:m_departments,id',
             'steps.*.selection_rules.*.role_name' => 'nullable|string',
             'steps.*.meta' => 'nullable|array',
+            'steps.*.company_group_ids' => 'nullable|array',
+            'steps.*.region_ids' => 'nullable|array',
+            'steps.*.company_ids' => 'nullable|array',
         ]);
 
         try {
@@ -933,6 +971,9 @@ class AdminController extends Controller
                             'reject_target' => $stepData['reject_target'] ?? 'initiator',
                             'hierarchy_level' => isset($stepData['hierarchy_level']) ? (int)$stepData['hierarchy_level'] : null,
                             'role_id' => $stepData['role_id'] ?? null,
+                            'company_group_ids' => $stepData['company_group_ids'] ?? null,
+                            'region_ids' => $stepData['region_ids'] ?? null,
+                            'company_ids' => $stepData['company_ids'] ?? null,
                             'meta' => $stepData['meta'] ?? null,
                         ]);
 
@@ -986,6 +1027,9 @@ class AdminController extends Controller
             'initiator_type' => 'nullable|string|in:all,role,user',
             'scope' => 'nullable|string',
             'workflow_category' => 'nullable|string',
+            'company_group_ids' => 'nullable|array',
+            'region_ids' => 'nullable|array',
+            'company_ids' => 'nullable|array',
             'initiator_roles' => 'nullable|array',
             'initiator_users' => 'nullable|array',
             'initiator_departments' => 'nullable|array',
@@ -1005,12 +1049,19 @@ class AdminController extends Controller
             'steps.*.role_id' => 'nullable|string',
             'steps.*.user_ids' => 'nullable|array',
             'steps.*.department_ids' => 'nullable|array',
+            'steps.*.label' => 'nullable|string',
+            'steps.*.actor_type' => 'nullable|string',
+            'steps.*.allowed_actions' => 'nullable|array',
+            'steps.*.is_mandatory' => 'nullable|boolean',
             'steps.*.status_id' => 'nullable|string',
             'steps.*.selection_rules' => 'nullable|array',
             'steps.*.selection_rules.*.role_id' => 'nullable|string|exists:m_roles,id',
             'steps.*.selection_rules.*.department_id' => 'nullable|string|exists:m_departments,id',
             'steps.*.selection_rules.*.role_name' => 'nullable|string',
             'steps.*.meta' => 'nullable|array',
+            'steps.*.company_group_ids' => 'nullable|array',
+            'steps.*.region_ids' => 'nullable|array',
+            'steps.*.company_ids' => 'nullable|array',
         ]);
 
         try {
@@ -1057,8 +1108,10 @@ class AdminController extends Controller
                         $isNew = !$stepId || str_starts_with($stepId, 'new-');
 
                         $stepFields = [
-                            'approver_type' => $stepData['approver_type'] ?? 'role',
-                            'description' => $stepData['description'] ?? '',
+                            'label' => $stepData['label'] ?? null,
+                            'actor_type' => $stepData['actor_type'] ?? 'approver',
+                            'allowed_actions' => $stepData['allowed_actions'] ?? [],
+                            'is_mandatory' => $stepData['is_mandatory'] ?? true,
                             'status_id' => $stepData['status_id'] ?? null,
                             'step' => $index + 1,
                             'updated_by' => Auth::id(),
@@ -1073,6 +1126,9 @@ class AdminController extends Controller
                             'reject_target' => $stepData['reject_target'] ?? 'initiator',
                             'hierarchy_level' => isset($stepData['hierarchy_level']) ? (int)$stepData['hierarchy_level'] : null,
                             'role_id' => $stepData['role_id'] ?? null,
+                            'company_group_ids' => $stepData['company_group_ids'] ?? null,
+                            'region_ids' => $stepData['region_ids'] ?? null,
+                            'company_ids' => $stepData['company_ids'] ?? null,
                             'meta' => $stepData['meta'] ?? null,
                         ];
 
@@ -1438,5 +1494,177 @@ class AdminController extends Controller
         $format->update($data);
 
         return back()->with('success', 'Numbering format berhasil diperbarui.');
+    }
+
+    // --- Company Group Management ---
+    public function companyGroups(Request $request)
+    {
+        return Inertia::render('admin/index', [
+            'currentView' => 'company-groups',
+            'companyGroups' => CompanyGroup::with(['companies.region'])->get(),
+            'regions' => Region::all(),
+            'filters' => $request->only(['search', 'action', 'id']),
+            'breadcrumbs' => [
+                ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
+                ['title' => 'Data Group', 'href' => route('admin.company-groups'), 'description' => 'Kelola grup perusahaan.', 'icon' => 'Users'],
+            ],
+        ]);
+    }
+
+    public function storeCompanyGroup(Request $request)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'code' => 'required|string|max:50|unique:m_company_groups,code',
+            'description' => 'nullable|string',
+        ]);
+        $data['created_by'] = Auth::id();
+        $data['updated_by'] = Auth::id();
+        CompanyGroup::create($data);
+        return back()->with('success', 'Group berhasil dibuat.');
+    }
+
+    public function updateCompanyGroup(Request $request, CompanyGroup $group)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'code' => 'required|string|max:50|unique:m_company_groups,code,' . $group->id,
+            'description' => 'nullable|string',
+        ]);
+        $data['updated_by'] = Auth::id();
+        $group->update($data);
+        return back()->with('success', 'Group berhasil diperbarui.');
+    }
+
+    public function destroyCompanyGroup(CompanyGroup $group)
+    {
+        $group->delete();
+        return back()->with('success', 'Group berhasil dihapus.');
+    }
+
+    public function bulkDestroyCompanyGroup(Request $request)
+    {
+        $ids = $request->validate(['ids' => 'required|array'])['ids'];
+        CompanyGroup::whereIn('id', $ids)->delete();
+        return back()->with('success', 'Grup terpilih berhasil dihapus.');
+    }
+
+
+    // --- Region Management ---
+    public function regions(Request $request)
+    {
+        return Inertia::render('admin/index', [
+            'currentView' => 'regions',
+            'regions' => Region::with(['companies.group'])->get(),
+            'companyGroups' => CompanyGroup::all(),
+            'filters' => $request->only(['search', 'action', 'id', 'company_group_id']),
+            'breadcrumbs' => [
+                ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
+                ['title' => 'Data Region', 'href' => route('admin.regions'), 'description' => 'Kelola wilayah operasional.', 'icon' => 'GitBranch'],
+            ],
+        ]);
+    }
+
+
+    public function storeRegion(Request $request)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'code' => 'required|string|max:50|unique:m_regions,code',
+            'alias' => 'nullable|string|max:50',
+            'id_portal_master' => 'nullable|string|max:50',
+            'description' => 'nullable|string',
+        ]);
+        $data['created_by'] = Auth::id();
+        $data['updated_by'] = Auth::id();
+        Region::create($data);
+        return back()->with('success', 'Region berhasil dibuat.');
+    }
+
+    public function updateRegion(Request $request, Region $region)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'code' => 'required|string|max:50|unique:m_regions,code,' . $region->id,
+            'alias' => 'nullable|string|max:50',
+            'id_portal_master' => 'nullable|string|max:50',
+            'description' => 'nullable|string',
+        ]);
+        $data['updated_by'] = Auth::id();
+        $region->update($data);
+        return back()->with('success', 'Region berhasil diperbarui.');
+    }
+
+    public function destroyRegion(Region $region)
+    {
+        $region->delete();
+        return back()->with('success', 'Region berhasil dihapus.');
+    }
+
+    public function bulkDestroyRegion(Request $request)
+    {
+        $ids = $request->validate(['ids' => 'required|array'])['ids'];
+        Region::whereIn('id', $ids)->delete();
+        return back()->with('success', 'Wilayah terpilih berhasil dihapus.');
+    }
+
+    // --- Company Management ---
+    public function companies(Request $request)
+    {
+        return Inertia::render('admin/index', [
+            'currentView' => 'companies',
+            'companies' => Company::with(['region', 'group'])->get(),
+            'regions' => Region::all(),
+            'companyGroups' => CompanyGroup::all(),
+            'filters' => $request->only(['search', 'action', 'id', 'region_id']),
+            'breadcrumbs' => [
+                ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
+                ['title' => 'Data Company', 'href' => route('admin.companies'), 'description' => 'Kelola entitas perusahaan.', 'icon' => 'Building2'],
+            ],
+        ]);
+    }
+
+    public function storeCompany(Request $request)
+    {
+        $data = $request->validate([
+            'company_group_id' => 'required|uuid|exists:m_company_groups,id',
+            'region_id' => 'required|uuid|exists:m_regions,id',
+            'name' => 'required|string|max:255',
+            'code' => 'required|string|max:50|unique:m_companies,code',
+            'address' => 'nullable|string',
+        ]);
+        
+        $data['created_by'] = Auth::id();
+        $data['updated_by'] = Auth::id();
+        Company::create($data);
+        return back()->with('success', 'Company berhasil dibuat.');
+    }
+
+    public function updateCompany(Request $request, Company $company)
+    {
+        $data = $request->validate([
+            'company_group_id' => 'required|uuid|exists:m_company_groups,id',
+            'region_id' => 'required|uuid|exists:m_regions,id',
+            'name' => 'required|string|max:255',
+            'code' => 'required|string|max:50|unique:m_companies,code,' . $company->id,
+            'address' => 'nullable|string',
+        ]);
+        
+        $data['updated_by'] = Auth::id();
+        $company->update($data);
+        return back()->with('success', 'Company berhasil diperbarui.');
+    }
+
+    public function destroyCompany(Company $company)
+    {
+        $company->delete();
+        return back()->with('success', 'Company berhasil dihapus.');
+    }
+
+    public function bulkDestroyCompany(Request $request)
+    {
+        $ids = $request->validate(['ids' => 'required|array'])['ids'];
+        Company::whereIn('id', $ids)->delete();
+        return back()->with('success', 'Perusahaan terpilih berhasil dihapus.');
     }
 }

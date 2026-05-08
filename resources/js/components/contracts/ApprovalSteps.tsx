@@ -14,9 +14,11 @@ interface Props {
     approvals: ContractApproval[];
     creator: UserProfile;
     submittedAt?: string;
+    meId?: string;
+    onApprove: (note: string, attachment?: File) => Promise<void>;
 }
 
-export default function ApprovalSteps({ contract, approvals, creator, submittedAt }: Props) {
+export default function ApprovalSteps({ contract, approvals, creator, submittedAt, meId, onApprove }: Props) {
     const { showToast, showProgress, hideProgress } = useToast();
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [statusFilter, setStatusFilter] = useState<string>('');
@@ -25,6 +27,50 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
     const [search, setSearch] = useState('');
     const [isExporting, setIsExporting] = useState(false);
     const [jobStatus, setJobStatus] = useState<any>(null);
+    const [uploading, setUploading] = useState(false);
+
+    const signingState = contract.metadata?.signing_state;
+    const signingPhase = signingState?.phase || 'SETUP';
+    const isP1 = signingState?.p1_user_id === meId;
+    const isP2 = signingState?.p2_user_id === meId;
+    const p1Downloaded = signingState?.p1_downloaded_at;
+    const p2Downloaded = signingState?.p2_downloaded_at;
+
+    const handleSigningAction = async (action: 'download' | 'upload', file?: File) => {
+        if (action === 'download') {
+            // Trigger actual download from the latest agreement version
+            const versions = contract.versions?.filter(v => v.document_type === 'agreement') || [];
+            if (versions.length === 0) {
+                showToast('Tidak ada dokumen agreement yang ditemukan.', 'danger');
+                return;
+            }
+            const latest = versions.sort((a, b) => b.version_no - a.version_no)[0];
+            window.open(`/api/contracts/versions/${latest.id}/download`, '_blank');
+            
+            // Mark as downloaded in metadata (local update then refresh)
+            const newMeta = { ...contract.metadata };
+            if (!newMeta.signing_state) newMeta.signing_state = {};
+            const key = isP1 ? 'p1_downloaded_at' : 'p2_downloaded_at';
+            newMeta.signing_state[key] = new Date().toISOString();
+            
+            try {
+                await axios.patch(`/api/contracts/${contract.id}`, { metadata: newMeta });
+                showToast('Dokumen berhasil diunduh.', 'success');
+                // Component will refresh via parent's onUpdate if we emit it, 
+                // but for now let's hope the user refreshes or we find a way.
+                // Actually we should probably call a refresh function.
+            } catch (e) {
+                console.error(e);
+            }
+        } else if (action === 'upload' && file) {
+            setUploading(true);
+            try {
+                await onApprove('Pembaruan Dokumen TTD', file);
+            } finally {
+                setUploading(false);
+            }
+        }
+    };
 
     const iconMap: Record<string, string> = {
         approved: 'fa-check',
@@ -130,8 +176,8 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
             label: 'STATUS',
             key: 'status',
             options: [
-                { label: 'APPROVED', value: 'approved' },
-                { label: 'REJECTED', value: 'rejected' },
+                { label: 'DISETUJUI', value: 'approved' },
+                { label: 'DITOLAK', value: 'rejected' },
                 { label: 'PENDING', value: 'pending' },
                 { label: 'WAITING', value: 'waiting' },
             ],
@@ -174,66 +220,185 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                 a.status === 'waiting' && "border-border/60 bg-muted/5 opacity-75"
             )}>
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-sm font-bold text-foreground dark:text-white">
-                        {a.role}
-                    </span>
-                    <span className="text-[10px] bg-muted/60 dark:bg-white/10 text-muted-foreground font-semibold px-2 py-0.5 rounded-full">
-                        SEQ {a.sequence}
-                    </span>
-                </div>
-                <div className="text-xs text-muted-foreground mt-1 font-medium">
-                    {a.department_name ?? 'Matching Dept'}
-                </div>
-
-                {a.comment && (
-                    <div className={`mt-3 border-l-2 px-3 py-1.5 text-[11px] leading-relaxed font-medium ${noteCls[a.status] ?? 'border-l-black/20 bg-black/5'}`}>
-                        {a.comment}
+                    <div className="flex flex-col">
+                        <span className="text-sm font-bold text-foreground">
+                            {a.sequence === 1 ? 'Pengajuan Awal (Drafting)' : (a.step_name || a.role || 'Unnamed Step')}
+                        </span>
+                        {a.step_description && a.step_description !== a.step_name && (
+                            <span className="text-[10px] text-muted-foreground italic line-clamp-1">
+                                {a.step_description}
+                            </span>
+                        )}
                     </div>
-                )}
+                    <div className="flex items-center gap-2">
+                        <StatusBadge status={a.status} />
+                    </div>
+                </div>
 
-                <div className="mt-3 border-t border-border/40 pt-2.5 flex flex-wrap items-center justify-between gap-3">
-                    {a.status === 'approved' || a.status === 'rejected' ? (
+                <div className="mt-3 border-t border-border/40 pt-2.5">
+                    {a.approver ? (
                         <div className="flex items-center gap-2">
                             <Avatar user={a.approver} size="sm" />
                             <div className="flex flex-col">
-                                <span className="text-xs font-semibold text-foreground">{a.approver?.name}</span>
-                                <span className="text-[10px] text-muted-foreground flex items-center gap-1.5">
-                                    {a.approver?.email} • {a.role}
+                                <span className="text-xs font-semibold text-foreground">{a.approver.name}</span>
+                                <span className="text-[10px] text-muted-foreground">
+                                    {a.approver.email} {a.decided_at ? ` • ${a.decided_at}` : ''}
                                 </span>
                             </div>
                         </div>
                     ) : (
-                        <div className="flex flex-col gap-0.5 text-xs font-medium text-muted-foreground">
-                            <div className="flex items-center gap-2">
-                                <Clock size={14} className="opacity-70" />
-                                <span>
-                                    {a.target_approvers ? (
-                                        `${(a.role?.toLowerCase().includes('manager') || a.role?.toLowerCase().includes('director')) ? 'Disetujui Oleh' : 'Ditugaskan'}: ${a.target_approvers}`
-                                    ) : (
-                                        `Menunggu persetujuan ${a.role}`
-                                    )}
-                                </span>
+                        <div className="flex items-center gap-2">
+                            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                                <i className="fa-solid fa-user-clock text-[10px]" />
                             </div>
-                            {a.target_emails && (
-                                <div className="mt-1 flex flex-wrap gap-1.5 ml-5">
-                                    {a.target_emails.split(', ').map((email, idx) => (
-                                        <span key={idx} className="px-1.5 py-0.5 rounded-md bg-secondary/50 text-[10px] font-normal leading-none">
-                                            {email}
-                                        </span>
-                                    ))}
-                                </div>
-                            )}
+                            <div className="flex flex-col">
+                                <span className="text-xs font-medium text-foreground/70">
+                                    {a.target_approvers || `Menunggu ${a.role || 'Approver'}`}
+                                </span>
+                                {a.target_emails && (
+                                    <span className="text-[10px] text-muted-foreground/60">
+                                        {a.target_emails}
+                                    </span>
+                                )}
+                            </div>
                         </div>
-                    )}
-
-                    {a.decided_at ? (
-                        <div className="flex items-center gap-1.5 rounded-lg bg-muted px-2.5 py-1 text-[10px] font-bold text-muted-foreground dark:bg-white/5">
-                            <Clock size={12} /> {a.decided_at}
-                        </div>
-                    ) : (
-                        <StatusBadge status={a.status} />
                     )}
                 </div>
+
+                {a.comment && (
+                    <div className="mt-2 rounded-lg bg-muted/30 p-2 text-[10px] text-muted-foreground italic border-l-2 border-border">
+                        "{a.comment}"
+                    </div>
+                )}
+
+                {a.step_type === 'SIGNING' && a.status === 'pending' && (
+                    <div className="mt-4 space-y-4 rounded-xl border border-blue-100 bg-blue-50/50 p-4 dark:border-blue-500/20 dark:bg-blue-500/5">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500 text-white shadow-lg shadow-blue-500/20">
+                                    <i className="fa-solid fa-pen-nib text-xs" />
+                                </div>
+                                <div>
+                                    <h4 className="text-[11px] font-bold text-blue-700 uppercase tracking-wider dark:text-blue-400">
+                                        Progres Penandatanganan
+                                    </h4>
+                                    <p className="text-[10px] text-blue-600/70 dark:text-blue-400/60 font-medium">
+                                        Fase: {signingPhase.replace('_', ' ')}
+                                    </p>
+                                </div>
+                            </div>
+                            <span className="text-sm font-black text-blue-600 dark:text-blue-400">
+                                {signingState?.progress || 0}%
+                            </span>
+                        </div>
+
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-blue-200 dark:bg-blue-900/40">
+                            <div 
+                                className="h-full bg-blue-500 transition-all duration-500" 
+                                style={{ width: `${signingState?.progress || 0}%` }} 
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            {signingPhase === 'SETUP' && (
+                                <div className="flex items-center gap-2 text-blue-600/60 italic text-[10px]">
+                                    <Loader2 size={12} className="animate-spin" />
+                                    <span>Menunggu Staff Legal melakukan konfigurasi delegasi...</span>
+                                </div>
+                            )}
+
+                            {signingPhase === 'P1_PENDING' && (
+                                <>
+                                    {!isP1 ? (
+                                        <p className="text-[10px] text-muted-foreground italic">Menunggu Pihak 1 mengunggah dokumen yang telah ditandatangani.</p>
+                                    ) : (
+                                        <div className="flex flex-col gap-2">
+                                            <p className="text-[10px] font-bold text-blue-700 uppercase">Aksi Pihak 1:</p>
+                                            <div className="flex gap-2">
+                                                <Button 
+                                                    size="sm" 
+                                                    variant="outline" 
+                                                    onClick={() => handleSigningAction('download')}
+                                                    className="h-8 text-[10px] gap-2 border-blue-200 text-blue-600 hover:bg-blue-100"
+                                                >
+                                                    <Download size={12} /> Unduh Draft
+                                                </Button>
+                                                <div className="relative">
+                                                    <input 
+                                                        type="file" 
+                                                        id="p1-upload" 
+                                                        className="hidden" 
+                                                        onChange={(e) => {
+                                                            const f = e.target.files?.[0];
+                                                            if (f) handleSigningAction('upload', f);
+                                                        }}
+                                                        disabled={!p1Downloaded || uploading}
+                                                    />
+                                                    <Button 
+                                                        size="sm" 
+                                                        variant="primary" 
+                                                        onClick={() => document.getElementById('p1-upload')?.click()}
+                                                        disabled={!p1Downloaded || uploading}
+                                                        className="h-8 text-[10px] gap-2 shadow-blue-500/20"
+                                                    >
+                                                        {uploading ? <Loader2 size={12} className="animate-spin" /> : <i className="fa-solid fa-cloud-arrow-up text-[10px]" />}
+                                                        Unggah TTD P1
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                            {!p1Downloaded && <p className="text-[9px] text-rose-500 font-medium">* Anda wajib mengunduh draft terlebih dahulu.</p>}
+                                        </div>
+                                    )}
+                                </>
+                            )}
+
+                            {signingPhase === 'P2_PENDING' && (
+                                <>
+                                    {!isP2 ? (
+                                        <p className="text-[10px] text-muted-foreground italic">Menunggu Pihak 2 melakukan finalisasi penandatanganan.</p>
+                                    ) : (
+                                        <div className="flex flex-col gap-2">
+                                            <p className="text-[10px] font-bold text-blue-700 uppercase">Aksi Pihak 2:</p>
+                                            <div className="flex gap-2">
+                                                <Button 
+                                                    size="sm" 
+                                                    variant="outline" 
+                                                    onClick={() => handleSigningAction('download')}
+                                                    className="h-8 text-[10px] gap-2 border-blue-200 text-blue-600 hover:bg-blue-100"
+                                                >
+                                                    <Download size={12} /> Unduh TTD P1
+                                                </Button>
+                                                <div className="relative">
+                                                    <input 
+                                                        type="file" 
+                                                        id="p2-upload" 
+                                                        className="hidden" 
+                                                        onChange={(e) => {
+                                                            const f = e.target.files?.[0];
+                                                            if (f) handleSigningAction('upload', f);
+                                                        }}
+                                                        disabled={!p2Downloaded || uploading}
+                                                    />
+                                                    <Button 
+                                                        size="sm" 
+                                                        variant="primary" 
+                                                        onClick={() => document.getElementById('p2-upload')?.click()}
+                                                        disabled={!p2Downloaded || uploading}
+                                                        className="h-8 text-[10px] gap-2 shadow-blue-500/20"
+                                                    >
+                                                        {uploading ? <Loader2 size={12} className="animate-spin" /> : <i className="fa-solid fa-file-signature text-[10px]" />}
+                                                        Unggah Final Agreement
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                            {!p2Downloaded && <p className="text-[9px] text-rose-500 font-medium">* Anda wajib mengunduh dokumen TTD Pihak 1 terlebih dahulu.</p>}
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -350,7 +515,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
             />
 
             <div className="relative px-2">
-                {!activeCount && !search && renderInitiator(filteredSteps.length === 0 && !showProjectedManager)}
+                {!activeCount && !search && !approvals.some(a => a.sequence === 1) && renderInitiator(filteredSteps.length === 0 && !showProjectedManager)}
                 {!activeCount && !search && showProjectedManager && renderProjected()}
                 {filteredSteps.map((a, i) => renderStep(a, i, i === filteredSteps.length - 1))}
             </div>

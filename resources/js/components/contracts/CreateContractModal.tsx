@@ -283,6 +283,30 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                         </>
                     )}
 
+                    <div className="border-border bg-muted/20 space-y-3 rounded-xl border p-4 transition-all hover:bg-muted/30">
+                        <label className="flex cursor-pointer items-start gap-3">
+                            <div className="relative mt-0.5 flex h-5 w-5 items-center justify-center">
+                                <input
+                                    type="checkbox"
+                                    checked={taxRequired}
+                                    onChange={(e) => setTaxRequired(e.target.checked)}
+                                    className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border-2 border-slate-300 bg-white transition-all checked:border-primary checked:bg-primary focus:outline-none dark:border-slate-700 dark:bg-slate-900"
+                                />
+                                <Check
+                                    size={14}
+                                    strokeWidth={4}
+                                    className="pointer-events-none absolute text-white opacity-0 transition-opacity peer-checked:opacity-100"
+                                />
+                            </div>
+                            <div className="flex flex-col gap-0.5">
+                                <span className="text-sm font-bold text-foreground">Butuh Persetujuan Pajak?</span>
+                                <span className="text-[10px] leading-tight text-muted-foreground">
+                                    Centang jika kontrak ini memiliki implikasi perpajakan yang perlu divalidasi tim Tax.
+                                </span>
+                            </div>
+                        </label>
+                    </div>
+
                     {errors.general && (
                         <div className="flex items-center gap-2 rounded-lg border border-rose-500/20 bg-rose-500/5 p-3 text-xs text-rose-500">
                             <AlertCircle size={14} />

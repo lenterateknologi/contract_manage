@@ -34,6 +34,13 @@ class WorkflowStep extends Model
         'reject_target',
         'hierarchy_level',
         'role_id',
+        'company_group_ids',
+        'region_ids',
+        'company_ids',
+        'label',
+        'actor_type',
+        'allowed_actions',
+        'is_mandatory',
         'created_by',
         'updated_by',
         'is_active',
@@ -45,6 +52,11 @@ class WorkflowStep extends Model
         'step' => 'integer',
         'is_active' => 'boolean',
         'meta' => 'array',
+        'company_group_ids' => 'array',
+        'region_ids' => 'array',
+        'company_ids' => 'array',
+        'allowed_actions' => 'array',
+        'is_mandatory' => 'boolean',
     ];
 
     protected $with = ['approverRoles', 'approverDepartments', 'approverUsers'];

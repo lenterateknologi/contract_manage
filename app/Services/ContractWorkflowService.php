@@ -11,6 +11,7 @@ use App\Models\ContractStatus;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class ContractWorkflowService
 {
@@ -99,16 +100,6 @@ class ContractWorkflowService
                 continue;
             }
 
-            // If first step is specifically for the initiator (Drafting/Self-Review), 
-            // and the person sending is the initiator, skip to next step
-            if ($firstStep->approver_type === 'initiator') {
-                $nextStep = $this->findNextValidStep($contract, $firstStep);
-                if ($nextStep) {
-                    $firstStep = $nextStep;
-                    continue;
-                }
-            }
-            
             break;
         }
 
@@ -120,8 +111,8 @@ class ContractWorkflowService
         $contract->update([
             'workflow_id' => $workflow->id,
             'workflow_step_id' => $firstStep->id,
-            'status' => 'in_review',
-            'submitted_at' => now(),
+            'status' => $firstStep->step === 1 ? 'draft' : 'in_review',
+            'submitted_at' => $firstStep->step === 1 ? $contract->submitted_at : now(),
         ]);
 
         // Create approval record for the first step
@@ -177,6 +168,36 @@ class ContractWorkflowService
             }
         }
 
+        // Special handling for SIGNING (Dual-Party Signing)
+        if ($step->step_type === 'SIGNING') {
+            $metadata = $contract->metadata ?? [];
+            $signing = $metadata['signing_state'] ?? ['phase' => 'SETUP', 'progress' => 0];
+            $phase = $signing['phase'] ?? 'SETUP';
+
+            if ($phase === 'SETUP') {
+                if ($step->approver_type === 'assigned_pic' && $contract->assigned_pic_id) {
+                    $pic = User::find($contract->assigned_pic_id);
+                    $approvers = $pic ? collect([$pic]) : collect();
+                } else {
+                    // Anyone in Legal can perform SETUP
+                    $query = User::whereIn('role', ['Staff Legal', 'Admin']);
+                    if ($step->department_id) {
+                        $query->where('department_id', $step->department_id);
+                    }
+                    $approvers = $query->get();
+                }
+                $roles = ['Staff Legal (Setup)'];
+            } elseif ($phase === 'P1_PENDING') {
+                $p1UserId = $signing['p1_user_id'] ?? null;
+                $approvers = $p1UserId ? collect([User::find($p1UserId)]) : collect();
+                $roles = ['Pihak 1'];
+            } elseif ($phase === 'P2_PENDING') {
+                $p2UserId = $signing['p2_user_id'] ?? null;
+                $approvers = $p2UserId ? collect([User::find($p2UserId)]) : collect();
+                $roles = ['Pihak 2'];
+            }
+        }
+
         // Determine approvers based on approver_type (Strategy)
         if ($approvers->isEmpty()) {
             if ($step->approver_type === 'atasan') {
@@ -188,10 +209,12 @@ class ContractWorkflowService
                 // Special handling for the original initiator (proxy owner)
                 $approvers = collect([$contract->initiator]);
             } else {
-                // Check for assigned PIC from metadata (Assignment flow)
+                // Check for assigned PIC from metadata or contract column (Assignment flow)
                 $metadata = $contract->metadata ?? [];
-                if ($step->approver_type === 'assigned_pic' && isset($metadata['assigned_pic_id'])) {
-                    $pic = User::find($metadata['assigned_pic_id']);
+                $picId = $contract->assigned_pic_id ?? ($metadata['assigned_pic_id'] ?? null);
+                
+                if ($step->approver_type === 'assigned_pic' && $picId) {
+                    $pic = User::find($picId);
                     if ($pic) {
                         $approvers = collect([$pic]);
                     }
@@ -352,6 +375,62 @@ class ContractWorkflowService
             $allApproved = true;
         }
 
+        // SPECIAL LOGIC: Physical Signing (SIGNING)
+        if ($approval->workflowStep->step_type === 'SIGNING') {
+            $metadata = $contract->metadata ?? [];
+            $signing = $metadata['signing_state'] ?? ['phase' => 'SETUP', 'progress' => 0];
+            $phase = $signing['phase'] ?? 'SETUP';
+
+            if ($phase === 'SETUP') {
+                // Transition to P1_PENDING
+                // p1_user_id and p2_user_id should have been passed from request
+                $p1UserId = request()->input('p1_user_id');
+                $p2UserId = request()->input('p2_user_id');
+                
+                $signing['phase'] = 'P1_PENDING';
+                $signing['p1_user_id'] = $p1UserId;
+                $signing['p2_user_id'] = $p2UserId;
+                $signing['progress'] = 0;
+                $signing['setup_at'] = now()->toIso8601String();
+                $signing['setup_by'] = Auth::id();
+
+                $metadata['signing_state'] = $signing;
+                $contract->update(['metadata' => $metadata]);
+                
+                $p1 = User::find($p1UserId);
+                $p2 = User::find($p2UserId);
+                $this->logHistory($contract, 'SIGNING_SETUP', "Delegasi Penandatanganan: P1 ({$p1?->name}) & P2 ({$p2?->name})", Auth::id());
+
+                $this->createApprovalForStep($contract, $approval->workflowStep);
+                return $contract->fresh();
+            } elseif ($phase === 'P1_PENDING') {
+                // P1 uploaded their version
+                $signing['phase'] = 'P2_PENDING';
+                $signing['progress'] = 50;
+                $signing['p1_finished_at'] = now()->toIso8601String();
+                
+                $metadata['signing_state'] = $signing;
+                $contract->update(['metadata' => $metadata]);
+                
+                $this->logHistory($contract, 'SIGNING_P1_COMPLETE', "Pihak 1 telah mengunggah dokumen ttd (Progres 50%)", Auth::id());
+
+                $this->createApprovalForStep($contract, $approval->workflowStep);
+                return $contract->fresh();
+            } elseif ($phase === 'P2_PENDING') {
+                // P2 uploaded final version
+                $signing['phase'] = 'COMPLETED';
+                $signing['progress'] = 100;
+                $signing['p2_finished_at'] = now()->toIso8601String();
+                
+                $metadata['signing_state'] = $signing;
+                $contract->update(['metadata' => $metadata]);
+                
+                $this->logHistory($contract, 'SIGNING_COMPLETED', "Penandatanganan selesai (Progres 100%)", Auth::id());
+                
+                $allApproved = true;
+            }
+        }
+
         if ($allApproved) {
             // If role-based and finished by one, delete others
             if ($isRoleBased) {
@@ -475,14 +554,18 @@ class ContractWorkflowService
                 $description .= " Sent back to Initiator (Target Step {$targetSequence} not found).";
             }
         } else {
-            // Standard return to initiator (No target defined)
+            // Standard return to initiator (No target defined) - Point to Step 1
+            $targetStep = WorkflowStep::where('workflow_id', $contract->workflow_id)
+                ->where('step', 1)
+                ->first();
+
             $revisionStatus = ContractStatus::where('code', 'revision')->first();
             $contract->update([
                 'status' => 'revision',
                 'status_id' => $revisionStatus?->id,
-                'workflow_step_id' => null,
+                'workflow_step_id' => $targetStep ? $targetStep->id : null,
             ]);
-            $description .= " Sent back to Initiator for revision.";
+            $description .= " Sent back to Initiator for revision at Step 1.";
         }
 
         // Reject all other pending approvals for this step
@@ -665,7 +748,8 @@ class ContractWorkflowService
         foreach ($pendingApprovals as $approval) {
             // Only auto-approve if it's a review-only step (no drafting/upload actions needed)
             $step = $approval->workflowStep;
-            // Standardized types: APPROVAL, REVIEW, UPLOAD, CLOSING, SELECTION
+            // Standardized types: APPROVAL, REVIEW, UPLOAD, CLOSING, SELECTION, SIGNING
+            // We EXCLUDE UPLOAD and SIGNING from auto-approval as they require physical actions/files
             $autoApproveTypes = ['REVIEW', 'APPROVAL', 'SELECTION'];
             
             if (in_array(strtoupper($step->step_type), $autoApproveTypes)) {
@@ -698,8 +782,9 @@ class ContractWorkflowService
         if ($targetIndex >= count($hierarchy)) $targetIndex = count($hierarchy) - 1;
 
         $targetRole = ucfirst($hierarchy[$targetIndex]);
+        $targetRoleLower = strtolower($targetRole);
 
-        $approvers = User::where('role', $targetRole)
+        $approvers = User::where(DB::raw('LOWER(role)'), $targetRoleLower)
             ->where('department_id', $currentDeptId)
             ->where('is_active', true)
             ->get();

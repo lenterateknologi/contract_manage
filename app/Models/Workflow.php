@@ -33,6 +33,15 @@ class Workflow extends Model
         'sla_cutoff_hour',
         'scope',
         'workflow_category',
+        'company_group_ids',
+        'region_ids',
+        'company_ids',
+        'approver_roles',
+        'approver_departments',
+        'approver_users',
+        'legal_roles',
+        'legal_departments',
+        'legal_users',
         'created_by',
         'updated_by',
     ];
@@ -40,6 +49,15 @@ class Workflow extends Model
     protected $casts = [
         'is_default' => 'boolean',
         'is_tax_involved' => 'boolean',
+        'company_group_ids' => 'array',
+        'region_ids' => 'array',
+        'company_ids' => 'array',
+        'approver_roles' => 'array',
+        'approver_departments' => 'array',
+        'approver_users' => 'array',
+        'legal_roles' => 'array',
+        'legal_departments' => 'array',
+        'legal_users' => 'array',
     ];
 
     protected $with = ['initiatorRolesData', 'initiatorDepartmentsData', 'initiatorUsersData'];

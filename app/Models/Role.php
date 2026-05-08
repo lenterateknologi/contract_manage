@@ -17,9 +17,20 @@ class Role extends Model
 
     protected $fillable = [
         'id',
+        'company_id',
         'name',
         'description',
     ];
+
+    public function company()
+    {
+        return $this->belongsTo(Company::class, 'company_id');
+    }
+
+    public function users()
+    {
+        return $this->hasMany(User::class, 'role_id');
+    }
 
     protected static function booted(): void
     {

@@ -4,14 +4,14 @@ import { cn } from '@/lib/utils';
 // ─── Status config ─────────────────────────────────────────────────
 const STATUS_LABEL: Record<string, string> = {
     draft: 'Draft',
-    in_review: 'In Review',
-    revision: 'Revision',
-    approved: 'Approved',
-    locked: 'Locked',
-    archived: 'Archived',
-    pending: 'Pending',
-    rejected: 'Rejected',
-    waiting: 'Waiting',
+    in_review: 'Review',
+    revision: 'Revisi',
+    approved: 'Disetujui',
+    locked: 'Terkunci',
+    archived: 'Arsip',
+    pending: 'Menunggu',
+    rejected: 'Ditolak',
+    waiting: 'Menunggu',
 };
 
 const STATUS_CLS: Record<string, string> = {

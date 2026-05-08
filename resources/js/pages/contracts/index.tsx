@@ -538,11 +538,16 @@ const ContractDetailView = ({
         }
     };
 
-    const handleApprove = async (note: string, attachment?: File, assignedPicId?: string, executionOrder?: string) => {
+    const handleApprove = async (note: string, attachment?: File, assignedPicId?: string, executionOrder?: string, p1UserId?: string, p2UserId?: string) => {
         try {
-            const c = await contractApi.approve(contract.id, note, attachment, assignedPicId, executionOrder);
+            const c = await contractApi.approve(contract.id, note, attachment, assignedPicId, executionOrder, p1UserId, p2UserId);
             onUpdate(c);
-            showToast(assignedPicId ? 'PIC ditugaskan dan kontrak disetujui.' : 'Kontrak disetujui.', 'success');
+            
+            let msg = 'Kontrak disetujui.';
+            if (assignedPicId) msg = 'PIC ditugaskan dan kontrak disetujui.';
+            if (p1UserId || p2UserId) msg = 'Delegasi penandatanganan berhasil dikonfigurasi.';
+            
+            showToast(msg, 'success');
         } catch {
             showToast('Gagal approve.', 'danger');
         }
@@ -589,10 +594,16 @@ const ContractDetailView = ({
                     {(contract.status === 'draft' || contract.status === 'revision') && (
                         <Button
                             variant="primary"
-                            onClick={() => setSendOpen(true)}
+                            onClick={() => {
+                                if (contract.workflow_step?.step === 1) {
+                                    setApproveOpen(true);
+                                } else {
+                                    setSendOpen(true);
+                                }
+                            }}
                             className="h-10 px-6 active:scale-95 dark:bg-white dark:text-black dark:hover:bg-white/90"
                         >
-                            <Send size={14} /> {contract.status === 'revision' ? 'Ajukan Ulang' : 'Kirim Approval'}
+                            <Send size={14} /> {contract.workflow_step?.step === 1 ? 'Kirim Persetujuan' : (contract.status === 'revision' ? 'Ajukan Ulang' : 'Kirim Approval')}
                         </Button>
                     )}
                     <DropdownMenu>
@@ -722,6 +733,8 @@ const ContractDetailView = ({
                                         approvals={contract.approvals}
                                         creator={contract.creator}
                                         submittedAt={contract.submitted_at ?? undefined}
+                                        meId={meId}
+                                        onApprove={(note, file) => handleApprove(note, file)}
                                     />
                                 </div>
                             )}
@@ -756,14 +769,20 @@ const ContractDetailView = ({
                             </div>
                             <div className="flex flex-col gap-2 pt-2">
                                 <Button variant="primary" onClick={() => setApproveOpen(true)} className="h-11 w-full font-bold shadow-lg shadow-blue-500/20">
-                                    <CheckCircle2 size={16} /> {contract.requires_pic_assignment ? 'Tugaskan PIC' : 'Setujui Kontrak'}
+                                    <CheckCircle2 size={16} /> {
+                                        contract.workflow_step?.step === 1
+                                            ? 'Kirim Persetujuan'
+                                            : (contract.requires_pic_assignment 
+                                                ? 'Tugaskan PIC' 
+                                                : (contract.workflow_step?.step_type === 'UPLOAD' ? 'Upload Dokumen TTD' : 'Setujui Kontrak'))
+                                    }
                                 </Button>
                                 <Button
                                     variant="outline"
                                     onClick={() => setRejectOpen(true)}
                                     className="h-11 w-full border-black/10 font-bold hover:bg-rose-500 hover:text-white dark:border-white/10"
                                 >
-                                    <AlertCircle size={16} /> Kembalikan / Tolak
+                                    <AlertCircle size={16} /> Tolak Kontrak
                                 </Button>
                             </div>
                         </div>

@@ -37,7 +37,9 @@ class User extends Authenticatable
         'bg_color',
         'text_color',
         'username',
+        'role_id',
         'department_id',
+        'company_id',
         'is_active',
     ];
 
@@ -65,9 +67,19 @@ class User extends Authenticatable
         ];
     }
 
+    public function role(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Role::class, 'role_id');
+    }
+
     public function department(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Department::class);
+    }
+
+    public function company(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Company::class, 'company_id');
     }
 
     public function workflowSteps(): \Illuminate\Database\Eloquent\Relations\BelongsToMany

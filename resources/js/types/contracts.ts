@@ -43,6 +43,9 @@ export interface ContractApproval {
     status: 'pending' | 'waiting' | 'approved' | 'rejected';
     comment: string | null;
     decided_at: string | null;
+    step_type?: string;
+    step_name?: string;
+    step_description?: string;
     approver: UserProfile;
 }
 
@@ -180,6 +183,7 @@ export interface Contract {
         step: number;
         role: string;
         description: string;
+        step_type: string;
         step_category: string | null;
         target_approvers?: string | null;
     } | null;
