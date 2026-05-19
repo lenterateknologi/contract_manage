@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use OpenApi\Attributes as OA;
+
 use App\Models\Approval;
 use App\Models\Contract;
 use App\Models\ContractAttachment;
@@ -44,6 +46,20 @@ class ContractController extends Controller
         $this->workflowService = $workflowService;
     }
 
+    #[OA\Get(
+        path: "/api/contracts",
+        summary: "Get list of contracts",
+        tags: ["Contracts"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(name: "view", in: "query", description: "Filter by view (dashboard, contracts, mine, pending, etc.)", schema: new OA\Schema(type: "string")),
+            new OA\Parameter(name: "search", in: "query", description: "Search query", schema: new OA\Schema(type: "string")),
+            new OA\Parameter(name: "per_page", in: "query", description: "Items per page", schema: new OA\Schema(type: "integer", default: 10))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: "List of contracts")
+        ]
+    )]
     public function index(Request $request): JsonResponse
     {
         $view = $request->query('view', 'contracts');
@@ -484,6 +500,19 @@ class ContractController extends Controller
         return response()->json(SubmissionType::where('is_active', true)->get());
     }
 
+    #[OA\Get(
+        path: "/api/contracts/{id}",
+        summary: "Get contract details",
+        tags: ["Contracts"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", description: "Contract ID", required: true, schema: new OA\Schema(type: "string"))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: "Contract details"),
+            new OA\Response(response: 404, description: "Contract not found")
+        ]
+    )]
     public function show(string $id): JsonResponse
     {
         $contract = Contract::with([
@@ -560,6 +589,27 @@ class ContractController extends Controller
         }
     }
 
+    #[OA\Post(
+        path: "/api/contracts",
+        summary: "Create a new contract",
+        tags: ["Contracts"],
+        security: [["bearerAuth" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: "title", type: "string"),
+                    new OA\Property(property: "contract_type_id", type: "string"),
+                    new OA\Property(property: "submission_type_id", type: "string"),
+                    new OA\Property(property: "vendor_id", type: "string")
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: "Contract created"),
+            new OA\Response(response: 422, description: "Validation error")
+        ]
+    )]
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -712,6 +762,26 @@ class ContractController extends Controller
         });
     }
 
+    #[OA\Post(
+        path: "/api/contracts/{id}/approve",
+        summary: "Approve a contract",
+        tags: ["Contracts"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", description: "Contract ID", required: true, schema: new OA\Schema(type: "string"))
+        ],
+        requestBody: new OA\RequestBody(
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: "notes", type: "string")
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: "Contract approved"),
+            new OA\Response(response: 403, description: "Unauthorized action")
+        ]
+    )]
     public function approve(Request $request, string $id): JsonResponse
     {
         $request->validate([
@@ -761,6 +831,27 @@ class ContractController extends Controller
         return response()->json($this->formatContract($contract));
     }
 
+    #[OA\Post(
+        path: "/api/contracts/{id}/reject",
+        summary: "Reject a contract",
+        tags: ["Contracts"],
+        security: [["bearerAuth" => []]],
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", description: "Contract ID", required: true, schema: new OA\Schema(type: "string"))
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: "notes", type: "string"),
+                    new OA\Property(property: "target_step_id", type: "string")
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: "Contract rejected")
+        ]
+    )]
     public function reject(Request $request, string $id): JsonResponse
     {
         $request->validate([
@@ -1450,18 +1541,7 @@ class ContractController extends Controller
                     $candidateNames = $approvals->map(fn($a) => $a->approver?->name ?? $a->approver_name)->implode(', ');
                     $candidateEmails = $approvals->map(fn($a) => $a->approver?->email)->filter()->implode(', ');
 
-                    // Check for custom management approvers using the robust helper
-                    if ($this->workflowService->isManagementStep($step)) {
-                        $metadata = $c->metadata ?? [];
-                        $customUserIds = $metadata['custom_management_users'] ?? [];
-                        if (!empty($customUserIds)) {
-                            $customUsers = \App\Models\User::whereIn('id', $customUserIds)->get();
-                            if ($customUsers->isNotEmpty()) {
-                                $candidateNames = $customUsers->pluck('name')->implode(', ');
-                                $candidateEmails = $customUsers->pluck('email')->filter()->implode(', ');
-                            }
-                        }
-                    }
+
 
                     $timeline[] = [
                         'id' => 'step-group-'.$step->id,
@@ -1492,18 +1572,8 @@ class ContractController extends Controller
 
                     foreach ($approvalsToDisplay as $a) {
                         $rowTargetApprovers = $targetApprovers;
-                        
-                        // Inject custom management names into target_approvers for decided/current steps too
-                        if ($this->workflowService->isManagementStep($step)) {
-                            $metadata = $c->metadata ?? [];
-                            $customUserIds = $metadata['custom_management_users'] ?? [];
-                            if (!empty($customUserIds)) {
-                                $customUsers = \App\Models\User::whereIn('id', $customUserIds)->get();
-                                if ($customUsers->isNotEmpty()) {
-                                    $rowTargetApprovers = $customUsers->pluck('name')->implode(', ');
-                                }
-                            }
-                        }
+
+
 
                         $timeline[] = [
                             'id' => $a->id,
@@ -1544,25 +1614,13 @@ class ContractController extends Controller
                     'target_approvers' => $stepTargetApprovers,
                     'target_emails' => $targetEmails,
                     'sequence' => $step->step,
-                    'status' => 'future',
+                    'status' => 'SELANJUTNYA',
                     'note' => null,
                     'approved_at' => null,
                     'approver' => null, // Let UI use target_approvers/emails
                 ];
 
-                // INJECT: If this is the management step and we have custom users, show them
-                if ($this->workflowService->isManagementStep($step)) {
-                    $metadata = $c->metadata ?? [];
-                    $customUserIds = $metadata['custom_management_users'] ?? [];
-                    if (!empty($customUserIds)) {
-                        $customUsers = \App\Models\User::whereIn('id', $customUserIds)->get();
-                        if ($customUsers->isNotEmpty()) {
-                            $lastIdx = count($timeline) - 1;
-                            $timeline[$lastIdx]['target_approvers'] = $customUsers->pluck('name')->implode(', ');
-                            $timeline[$lastIdx]['target_emails'] = $customUsers->pluck('email')->implode(', ');
-                        }
-                    }
-                }
+
             }
         }
 

@@ -153,6 +153,32 @@ class UserSeeder extends Seeder
                 'text_color' => '#0369a1',
                 'username' => '1000000000000010',
             ],
+            [
+                'name' => 'Vice President (VP)',
+                'email' => 'vp@example.com',
+                'password' => Hash::make('password'),
+                'initials' => 'VP',
+                'role' => 'VP',
+                'position' => 'Vice President',
+                'phone' => '081234567899',
+                'department_id' => $depts['MGT'] ?? null,
+                'bg_color' => '#faf5ff',
+                'text_color' => '#6b21a8',
+                'username' => '1000000000000011',
+            ],
+            [
+                'name' => 'Chief Executive Officer (CEO)',
+                'email' => 'ceo@example.com',
+                'password' => Hash::make('password'),
+                'initials' => 'CEO',
+                'role' => 'CEO',
+                'position' => 'Chief Executive Officer',
+                'phone' => '081234567900',
+                'department_id' => $depts['MGT'] ?? null,
+                'bg_color' => '#fff7ed',
+                'text_color' => '#c2410c',
+                'username' => '1000000000000012',
+            ],
         ];
 
         foreach ($users as $userData) {

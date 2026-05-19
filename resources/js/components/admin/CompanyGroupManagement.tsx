@@ -6,10 +6,9 @@ import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { usePermissions } from '@/hooks/use-permissions';
 import { cn } from '@/lib/utils';
 import { router, useForm } from '@inertiajs/react';
-import { Users, Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Users } from 'lucide-react';
 import React, { useMemo } from 'react';
 import { FormSection, ManagementForm } from './ManagementForm';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
 
 interface CompanyGroupManagementProps {
     groups: any;
@@ -32,11 +31,16 @@ function groupColor(name: string) {
 
 const GroupCell = ({ name }: Readonly<{ name: string }>) => (
     <div className="flex items-center gap-3 select-none">
-        <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all duration-200 shadow-sm backdrop-blur-sm select-none', groupColor(name))}>
+        <div
+            className={cn(
+                'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-sm backdrop-blur-sm transition-all duration-200 select-none',
+                groupColor(name),
+            )}
+        >
             <Users size={18} />
         </div>
         <div className="flex min-w-0 flex-col">
-            <span className="text-slate-900 dark:text-slate-100 mb-0.5 truncate text-sm leading-tight font-bold tracking-wide">{name}</span>
+            <span className="mb-0.5 truncate text-sm leading-tight font-bold tracking-wide text-slate-900 dark:text-slate-100">{name}</span>
         </div>
     </div>
 );
@@ -74,17 +78,13 @@ export function CompanyGroupManagement({ groups, filters }: Readonly<CompanyGrou
             {
                 header: 'Kode',
                 accessorKey: 'code',
-                cell: (row) => (
-                    <span className="text-muted-foreground dark:text-slate-300/80 text-sm font-medium tracking-wide">
-                        {row.code}
-                    </span>
-                ),
+                cell: (row) => <span className="text-muted-foreground text-sm font-medium tracking-wide dark:text-slate-300/80">{row.code}</span>,
             },
             {
                 header: 'Deskripsi',
                 accessorKey: 'description',
                 cell: (row) => (
-                    <span className="text-muted-foreground dark:text-slate-300/80 line-clamp-1 max-w-[300px] text-sm font-medium tracking-wide">
+                    <span className="text-muted-foreground line-clamp-1 max-w-[300px] text-sm font-medium tracking-wide dark:text-slate-300/80">
                         {row.description || '—'}
                     </span>
                 ),
@@ -93,7 +93,7 @@ export function CompanyGroupManagement({ groups, filters }: Readonly<CompanyGrou
                 header: 'Jumlah Company',
                 accessorKey: 'companies_count',
                 cell: (row) => (
-                    <span className="text-muted-foreground dark:text-slate-300/80 text-sm font-medium tracking-wide">
+                    <span className="text-muted-foreground text-sm font-medium tracking-wide dark:text-slate-300/80">
                         {row.companies?.length || 0} Company
                     </span>
                 ),
@@ -157,7 +157,7 @@ export function CompanyGroupManagement({ groups, filters }: Readonly<CompanyGrou
                             type="button"
                             variant="ghost"
                             onClick={() => setIsConfirmOpen(true)}
-                            className="h-10 rounded-xl border border-rose-500/20 px-4 text-xs font-bold text-rose-500 transition-all hover:bg-rose-500 dark:hover:bg-rose-500/20 hover:text-white active:scale-95 select-none duration-200"
+                            className="h-10 rounded-xl border border-rose-500/20 px-4 text-xs font-bold text-rose-500 transition-all duration-200 select-none hover:bg-rose-500 hover:text-white active:scale-95 dark:hover:bg-rose-500/20"
                         >
                             <Trash2 size={15} className="mr-2" /> Hapus
                         </Button>
@@ -180,7 +180,7 @@ export function CompanyGroupManagement({ groups, filters }: Readonly<CompanyGrou
                     description={`Apakah Anda yakin ingin menghapus group ${editingGroup?.name}? Tindakan ini tidak dapat dibatalkan.`}
                     confirmText="Hapus Group"
                 />
-                <div className="grid grid-cols-1 gap-8 md:grid-cols-12 select-none animate-in fade-in duration-200">
+                <div className="animate-in fade-in grid grid-cols-1 gap-8 duration-200 select-none md:grid-cols-12">
                     <div className="space-y-8 md:col-span-8">
                         <FormSection title="Informasi Group" subtitle="Nama dan deskripsi entitas grup">
                             <div className="grid grid-cols-1 gap-6">
@@ -210,8 +210,8 @@ export function CompanyGroupManagement({ groups, filters }: Readonly<CompanyGrou
 
                         {editingGroup && (
                             <>
-                                <FormSection 
-                                    title="Daftar Perusahaan" 
+                                <FormSection
+                                    title="Daftar Perusahaan"
                                     subtitle="Daftar unit bisnis yang terdaftar dalam grup ini"
                                     headerAction={
                                         <Button
@@ -219,52 +219,62 @@ export function CompanyGroupManagement({ groups, filters }: Readonly<CompanyGrou
                                             variant="white"
                                             size="sm"
                                             onClick={() => router.get('/admin/companies', { action: 'create', company_group_id: editingGroup.id })}
-                                            className="h-8 gap-2 rounded-lg border border-primary/10 bg-primary/5 text-[10px] font-bold text-primary transition-all hover:bg-primary hover:text-white"
+                                            className="border-primary/10 bg-primary/5 text-primary hover:bg-primary h-8 gap-2 rounded-lg border text-[10px] font-bold transition-all hover:text-white"
                                         >
                                             <Plus size={12} /> Tambah Company
                                         </Button>
                                     }
                                 >
-                                <div className="divide-y divide-primary/5 rounded-xl border border-primary/10 bg-primary/[0.02] dark:bg-white/[0.02]">
-                                    {editingGroup.companies?.length > 0 ? (
-                                        editingGroup.companies.map((company: any) => (
-                                            <div key={company.id} className="flex items-center justify-between p-4 transition-colors hover:bg-primary/[0.04]">
-                                                <div className="flex flex-col">
-                                                    <span className="text-xs font-bold uppercase tracking-wide text-primary dark:text-white">{company.name}</span>
-                                                    <span className="text-[10px] font-medium text-primary/40 dark:text-white/40 uppercase tracking-widest">{company.code} • {company.region?.name || 'GLOBAL'}</span>
-                                                </div>
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => router.get('/admin/companies', { action: 'edit', id: company.id })}
-                                                    className="h-8 rounded-lg text-[10px] font-bold uppercase text-primary/60 hover:text-primary"
+                                    <div className="divide-primary/5 border-primary/10 bg-primary/[0.02] divide-y rounded-xl border dark:bg-white/[0.02]">
+                                        {editingGroup.companies?.length > 0 ? (
+                                            editingGroup.companies.map((company: any) => (
+                                                <div
+                                                    key={company.id}
+                                                    className="hover:bg-primary/[0.04] flex items-center justify-between p-4 transition-colors"
                                                 >
-                                                    Kelola
-                                                </Button>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-primary text-xs font-bold tracking-wide uppercase dark:text-white">
+                                                            {company.name}
+                                                        </span>
+                                                        <span className="text-primary/40 text-[10px] font-medium uppercase dark:text-white/40">
+                                                            {company.code} • {company.region?.name || 'GLOBAL'}
+                                                        </span>
+                                                    </div>
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => router.get('/admin/companies', { action: 'edit', id: company.id })}
+                                                        className="text-primary/60 hover:text-primary h-8 rounded-lg text-[10px] font-bold uppercase"
+                                                    >
+                                                        Kelola
+                                                    </Button>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="flex flex-col items-center justify-center py-10 opacity-40">
+                                                <p className="text-[10px] font-bold uppercase">Belum ada company terdaftar</p>
                                             </div>
-                                        ))
-                                    ) : (
-                                        <div className="flex flex-col items-center justify-center py-10 opacity-40">
-                                            <p className="text-[10px] font-bold uppercase tracking-widest">Belum ada company terdaftar</p>
-                                        </div>
-                                    )}
-                                </div>
+                                        )}
+                                    </div>
                                 </FormSection>
                             </>
                         )}
                     </div>
 
                     <div className="flex flex-col gap-8 md:col-span-4">
-                        <div className="border-border/80 dark:border-slate-800/80 bg-muted/20 dark:bg-slate-900/40 backdrop-blur-sm group relative overflow-hidden rounded-2xl border p-6 select-none shadow-sm transition-all duration-200">
-                            <div className="absolute top-0 right-0 p-4 opacity-5 transition-opacity group-hover:opacity-10 duration-200">
+                        <div className="border-border/80 bg-muted/20 group relative overflow-hidden rounded-2xl border p-6 shadow-sm backdrop-blur-sm transition-all duration-200 select-none dark:border-slate-800/80 dark:bg-slate-900/40">
+                            <div className="absolute top-0 right-0 p-4 opacity-5 transition-opacity duration-200 group-hover:opacity-10">
                                 <Users size={80} strokeWidth={1} />
                             </div>
                             <div className="relative z-10 mb-4 flex items-center gap-3">
-                                <span className="text-slate-900 dark:text-slate-100 text-xs font-bold tracking-wider uppercase">Master Hierarchy</span>
+                                <span className="text-xs font-bold tracking-wider text-slate-900 uppercase dark:text-slate-100">
+                                    Master Hierarchy
+                                </span>
                             </div>
-                            <p className="text-muted-foreground dark:text-slate-400 relative z-10 text-xs leading-relaxed font-medium">
-                                Company Group adalah level tertinggi dalam hirarki organisasi. Satu Group dapat membawahi beberapa Perusahaan (PT) di berbagai wilayah.
+                            <p className="text-muted-foreground relative z-10 text-xs leading-relaxed font-medium dark:text-slate-400">
+                                Company Group adalah level tertinggi dalam hirarki organisasi. Satu Group dapat membawahi beberapa Perusahaan (PT) di
+                                berbagai wilayah.
                             </p>
                         </div>
                     </div>
@@ -274,7 +284,7 @@ export function CompanyGroupManagement({ groups, filters }: Readonly<CompanyGrou
     }
 
     return (
-        <div className="bg-card/40 dark:bg-slate-900/20 backdrop-blur-sm border border-border/60 dark:border-slate-800/60 m-5 rounded-2xl p-6 shadow-sm animate-in fade-in duration-200 select-none">
+        <div className="bg-card/40 border-border/60 animate-in fade-in m-5 rounded-2xl border p-6 shadow-sm backdrop-blur-sm duration-200 select-none dark:border-slate-800/60 dark:bg-slate-900/20">
             <TableMasterData
                 title="Database Group Perusahaan"
                 columns={columns}
@@ -290,7 +300,7 @@ export function CompanyGroupManagement({ groups, filters }: Readonly<CompanyGrou
                         <Button
                             variant="white"
                             onClick={openCreate}
-                            className="h-10 px-5 gap-2 rounded-xl text-xs font-bold tracking-wide transition-all duration-200 border border-border bg-card dark:bg-slate-900/60 text-foreground shadow-sm hover:bg-muted/60 dark:hover:bg-slate-800/60 hover:border-border hover:shadow-md select-none"
+                            className="border-border bg-card text-foreground hover:bg-muted/60 hover:border-border h-10 gap-2 rounded-xl border px-5 text-xs font-bold tracking-wide shadow-sm transition-all duration-200 select-none hover:shadow-md dark:bg-slate-900/60 dark:hover:bg-slate-800/60"
                         >
                             <Plus size={15} className="text-primary" /> Tambah Group
                         </Button>

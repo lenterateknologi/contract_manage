@@ -1,8 +1,7 @@
-import React from 'react';
-import { useDraggable } from '@dnd-kit/core';
 import { cn } from '@/lib/utils';
+import { useDraggable } from '@dnd-kit/core';
+import React from 'react';
 import { FIELD_TYPES } from './constants';
-import { ScrollArea } from '@/components/ui/base/ScrollArea';
 
 interface LibraryPanelProps {
     onAddField: (type: string) => void;
@@ -21,7 +20,7 @@ const LibDraggable = ({ type, color, onClick }: { type: any; color: string; onCl
             {...attributes}
             onClick={onClick}
             className={cn(
-                'group flex cursor-grab items-center gap-2 rounded-xl border border-transparent bg-white p-2 shadow-sm transition-all active:cursor-grabbing hover:border-primary/20 hover:shadow-md',
+                'group hover:border-primary/20 flex cursor-grab items-center gap-2 rounded-xl border border-transparent bg-white p-2 shadow-sm transition-all hover:shadow-md active:cursor-grabbing',
                 isDragging && 'opacity-50 grayscale',
             )}
         >
@@ -29,8 +28,8 @@ const LibDraggable = ({ type, color, onClick }: { type: any; color: string; onCl
                 <type.icon size={16} strokeWidth={2.5} />
             </div>
             <div className="flex flex-col">
-                <span className="text-[10px] font-semibold font-sans tracking-tight text-sidebar-foreground uppercase">{type.label}</span>
-                <span className="text-[8px] font-medium font-sans text-sidebar-foreground/40 uppercase tracking-widest">Element</span>
+                <span className="text-sidebar-foreground font-sans text-[10px] font-semibold tracking-tight uppercase">{type.label}</span>
+                <span className="text-sidebar-foreground/40 font-sans text-[8px] font-medium uppercase">Element</span>
             </div>
         </div>
     );
@@ -41,18 +40,13 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({ onAddField }) => {
         <div className="animate-in fade-in slide-in-from-left-4 space-y-8 pb-12 duration-300">
             {FIELD_TYPES.map((cat: any) => (
                 <div key={cat.category} className="space-y-4">
-                    <h3 className="text-muted-foreground/30 flex items-center gap-2 text-[9px] font-semibold font-sans tracking-[0.3em] uppercase">
+                    <h3 className="text-muted-foreground/30 flex items-center gap-2 font-sans text-[9px] font-semibold tracking-[0.3em] uppercase">
                         <div className={cn('h-1 w-3 rounded-full', cat.color)} />
                         {cat.category}
                     </h3>
                     <div className="grid grid-cols-1 gap-2">
                         {cat.items.map((type: any) => (
-                            <LibDraggable
-                                key={type.value}
-                                type={type}
-                                color={cat.color}
-                                onClick={() => onAddField(type.value)}
-                            />
+                            <LibDraggable key={type.value} type={type} color={cat.color} onClick={() => onAddField(type.value)} />
                         ))}
                     </div>
                 </div>

@@ -77,7 +77,7 @@ export default function DocumentPreviewModal({ isOpen, onClose, url, fileName }:
                             <div className="flex items-center gap-2">
                                 <div className="h-4 w-1 rounded-full bg-black dark:bg-white" />
                                 <h3 className="text-[11px] font-black tracking-tighter text-black uppercase dark:text-white">{fileName}</h3>
-                                <span className="bg-background rounded px-1.5 py-0.5 text-[8px] font-black tracking-widest text-white uppercase dark:bg-white dark:text-black">
+                                <span className="bg-background rounded px-1.5 py-0.5 text-[8px] font-black text-white uppercase dark:bg-white dark:text-black">
                                     Preview
                                 </span>
                             </div>
@@ -91,7 +91,7 @@ export default function DocumentPreviewModal({ isOpen, onClose, url, fileName }:
                         <a
                             href={url}
                             download={fileName}
-                            className="flex h-9 items-center gap-2 rounded-xl border border-black/10 bg-white px-5 text-[10px] font-black tracking-widest text-black uppercase shadow-sm transition-all hover:bg-black/5 active:scale-95 dark:border-white/10 dark:bg-black dark:text-white dark:hover:bg-white/5"
+                            className="flex h-9 items-center gap-2 rounded-xl border border-black/10 bg-white px-5 text-[10px] font-black text-black uppercase shadow-sm transition-all hover:bg-black/5 active:scale-95 dark:border-white/10 dark:bg-black dark:text-white dark:hover:bg-white/5"
                         >
                             <Download size={14} className="text-black dark:text-white" /> Download
                         </a>
@@ -120,11 +120,11 @@ export default function DocumentPreviewModal({ isOpen, onClose, url, fileName }:
                         {isDocx ? (
                             <div ref={containerRef} className="docx-container w-full text-left" />
                         ) : isImage ? (
-                            <div className="flex h-full min-h-[500px] w-full items-center justify-center p-4 bg-slate-50 dark:bg-slate-900 rounded-sm">
+                            <div className="flex h-full min-h-[500px] w-full items-center justify-center rounded-sm bg-slate-50 p-4 dark:bg-slate-900">
                                 <img
                                     src={url}
                                     alt={fileName}
-                                    className="max-w-full max-h-[75vh] object-contain shadow-md rounded border border-slate-200"
+                                    className="max-h-[75vh] max-w-full rounded border border-slate-200 object-contain shadow-md"
                                 />
                             </div>
                         ) : (

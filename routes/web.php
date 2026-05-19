@@ -55,64 +55,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('contracts/{id}', [ContractController::class, 'showView'])->name('contracts.show');
 
-    // ── Contract API (under web middleware so session auth works) ──
-    Route::prefix('api')->group(function () {
-        Route::get('/contracts', [ContractController::class, 'index']);
-        Route::get('/contract-types', [ContractController::class, 'getTypes']);
-        Route::get('/contracts/submission-types', [ContractController::class, 'getSubmissionTypes']);
-        Route::post('/contracts', [ContractController::class, 'store']);
-        Route::get('/contracts/workflows', [ContractController::class, 'getWorkflows']);
-        Route::get('/contracts/users', [ContractController::class, 'getUsers']);
-        Route::get('/contracts/roles', [ContractController::class, 'getRoles']);
-        Route::get('/contracts/{id}', [ContractController::class, 'show']);
-        Route::patch('/contracts/{id}', [ContractController::class, 'update']);
-        Route::delete('/contracts/{id}', [ContractController::class, 'destroy']);
-        Route::post('/contracts/{id}/send', [ContractController::class, 'send']);
-        Route::post('/contracts/{id}/approve', [ContractController::class, 'approve']);
-        Route::post('/contracts/{id}/reject', [ContractController::class, 'reject']);
-        Route::post('/contracts/{id}/revision', [ContractController::class, 'uploadRevision']);
-        Route::post('/contracts/{id}/version', [ContractController::class, 'changeVersion']);
-        Route::post('/contracts/{id}/attachments', [ContractController::class, 'uploadAttachment']);
-        Route::delete('/contracts/{id}/attachments/{atId}', [ContractController::class, 'deleteAttachment']);
-        Route::get('/contracts/{id}/download', [ContractController::class, 'download'])->name('contracts.download');
-        Route::get('/contracts/{id}/file/{versionNo}', [ContractController::class, 'fileContent'])->name('contracts.file-url');
-        Route::get('/contracts/{id}/attachment/{atId}', [ContractController::class, 'attachmentFile'])->name('contracts.attachment-file');
-        Route::get('/contracts/{id}/pdf/{versionNo}', [ContractController::class, 'pdfPreview'])->name('contracts.pdf-preview');
-        Route::get('/contracts/{id}/attachment-pdf/{atId}', [ContractController::class, 'attachmentPdfPreview'])->name('contracts.attachment-pdf-preview');
-        Route::get('/contracts/{id}/vendor-document/{docId}', [ContractController::class, 'vendorDocumentFile'])->name('contracts.vendor-document-file');
-        Route::get('/contracts/{id}/vendor-document-pdf/{docId}', [ContractController::class, 'vendorDocumentPdfPreview'])->name('contracts.vendor-document-pdf-preview');
 
-        // Form Submissions (F1/F2)
-        Route::post('/contracts/{id}/form-submissions', [ContractController::class, 'saveFormSubmission']);
-        Route::get('/contracts/{id}/form-submissions/{type}', [ContractController::class, 'getFormSubmission']);
-        Route::get('/contracts/{id}/form-submissions/{type}/pdf', [ContractController::class, 'exportFormSubmissionPdf']);
-
-
-        Route::get('/form-templates/{id}/fields', function ($id) {
-            $tpl = \App\Models\FormTemplate::with(['fields' => fn($q) => $q->orderBy('order')])->findOrFail($id);
-            return response()->json($tpl);
-        });
-
-        Route::get('/contracts/{contractId}/messages', [ContractMessageController::class, 'index']);
-        Route::post('/contracts/{contractId}/messages', [ContractMessageController::class, 'store']);
-        Route::post('/contracts/{contractId}/messages/read', [ContractMessageController::class, 'markRead']);
-
-        // Agreement Data Management
-        Route::post('/contracts/{id}/agreement', [ContractController::class, 'uploadAgreement']);
-        Route::get('/contracts/{id}/agreement/versions', [ContractController::class, 'getAgreementVersions']);
-
-        // Audit Trail
-        Route::get('/contracts/{id}/audit-trail', [ContractController::class, 'getAuditTrail']);
-        Route::get('/contracts/{id}/audit-trail/document', [ContractController::class, 'renderAuditDocument'])->name('contracts.audit.document');
-        Route::get('/contracts/{id}/audit-trail/pdf', [ContractController::class, 'exportAuditPdf'])->name('contracts.audit.pdf');
-        Route::get('/contracts/{id}/audit-trail/pdf/queue', [ContractController::class, 'exportAuditPdfQueue'])->name('contracts.audit.pdf.queue');
-        Route::get('/contracts/{id}/approval/pdf/queue', [ContractController::class, 'exportApprovalTimelinePdfQueue'])->name('contracts.approval.pdf.queue');
-        Route::get('/contracts/{id}/audit-trail/excel', [ContractController::class, 'exportAuditExcel'])->name('contracts.audit.excel');
-
-        // Bulk Actions
-        Route::post('/contracts/bulk-delete', [ContractController::class, 'bulkDestroy']);
-        Route::post('/contracts/bulk-approve', [ContractController::class, 'bulkApprove']);
-    });
 
     // Version Comparison for any authorized user
     Route::get('/admin/contracts/{id}/form-submissions/{type}/compare', [ContractController::class, 'compareFormVersions'])->name('contracts.form-submissions.compare');
@@ -224,6 +167,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/api/reports/export', [ReportController::class, 'exportCsv']);
         Route::get('/api/reports/audit/export', [ReportController::class, 'exportAuditCsv']);
 
+
         // Roles & Access
         Route::get('/roles', [AdminController::class, 'roles'])->name('admin.roles');
         Route::post('/roles', [AdminController::class, 'storeRole'])->name('admin.roles.store');
@@ -288,14 +232,11 @@ Route::middleware(['auth'])->group(function () {
 
 
 
-        Route::get('/api/contracts/message-attachment/{messageId}', [ContractMessageController::class, 'downloadAttachment'])->name('contracts.message-attachment');
+        // API aliases have been moved to api.php
 
-        Route::get('/api/templates/data', [TemplateController::class, 'getApiData'])->name('admin.templates.api.data');
-
-        // API aliases under admin prefix (called by frontend with /admin/api/... prefix)
-        Route::get('/api/contracts/submission-types', [ContractController::class, 'getSubmissionTypes'])->name('admin.api.contracts.submission-types');
     });
 });
+
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

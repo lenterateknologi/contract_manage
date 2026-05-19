@@ -1,25 +1,12 @@
-import React from 'react';
-import { Head, useForm, router } from '@inertiajs/react';
-import { ManagementForm, FormSection } from '@/components/admin/ManagementForm';
-import { CompactInput } from '@/components/ui/forms/CompactInput';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/forms/Select";
-import { Button } from '@/components/ui/base/Button';
-import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
+import { FormSection, ManagementForm } from '@/components/admin/ManagementForm';
 import { useToast } from '@/components/contracts/Toast';
-import { 
-    FileText, 
-    Info, 
-    LayoutGrid, 
-    Settings2, 
-    ChevronRight,
-    Trash2
-} from 'lucide-react';
+import { Button } from '@/components/ui/base/Button';
+import { CompactInput } from '@/components/ui/forms/CompactInput';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
+import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
+import { Head, router, useForm } from '@inertiajs/react';
+import { ChevronRight, FileText, Info, LayoutGrid, Settings2, Trash2 } from 'lucide-react';
+import React from 'react';
 
 interface Props {
     contractType?: any;
@@ -50,18 +37,17 @@ const MechanismOptions = ({
         return (
             <div className="animate-in fade-in slide-in-from-top-2">
                 <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-primary/60 dark:text-white/60 flex items-center gap-2">
+                    <label className="text-primary/60 flex items-center gap-2 text-[10px] font-bold uppercase dark:text-white/60">
                         <LayoutGrid size={10} /> Tautan Templat Digital {type}
                     </label>
-                    <Select
-                        value={String(formTemplateId || 'none')}
-                        onValueChange={(v: string) => setFormTemplateId(v === 'none' ? 'none' : v)}
-                    >
-                        <SelectTrigger className="h-10 rounded-xl border-primary/10 bg-primary/5 text-xs font-bold transition-all focus:border-primary">
+                    <Select value={String(formTemplateId || 'none')} onValueChange={(v: string) => setFormTemplateId(v === 'none' ? 'none' : v)}>
+                        <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-10 rounded-xl text-xs font-bold transition-all">
                             <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="rounded-xl border-primary/10 bg-white shadow-2xl dark:bg-black">
-                            <SelectItem value="none" className="py-2.5 text-xs font-bold uppercase opacity-40">-- TANPA TEMPLAT TERPAUT --</SelectItem>
+                        <SelectContent className="border-primary/10 rounded-xl bg-white shadow-2xl dark:bg-black">
+                            <SelectItem value="none" className="py-2.5 text-xs font-bold uppercase opacity-40">
+                                -- TANPA TEMPLAT TERPAUT --
+                            </SelectItem>
                             {templates.map((t: any) => (
                                 <SelectItem key={t.id} value={String(t.id)} className="py-2.5 text-xs font-bold uppercase">
                                     {t.name} ({t.document_type || 'ADHOC'})
@@ -77,18 +63,20 @@ const MechanismOptions = ({
         return (
             <div className="animate-in fade-in slide-in-from-top-2">
                 <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-primary/60 dark:text-white/60 flex items-center gap-2">
+                    <label className="text-primary/60 flex items-center gap-2 text-[10px] font-bold uppercase dark:text-white/60">
                         <FileText size={10} /> Tautan Templat Folder ({type})
                     </label>
                     <Select
                         value={String(contractTemplateId || 'none')}
                         onValueChange={(v: string) => setContractTemplateId(v === 'none' ? 'none' : v)}
                     >
-                        <SelectTrigger className="h-10 rounded-xl border-primary/10 bg-primary/5 text-xs font-bold transition-all focus:border-primary">
+                        <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-10 rounded-xl text-xs font-bold transition-all">
                             <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="rounded-xl border-primary/10 bg-white shadow-2xl dark:bg-black">
-                            <SelectItem value="none" className="py-2.5 text-xs font-bold uppercase opacity-40">-- TIDAK ADA TEMPLAT TERPILIH --</SelectItem>
+                        <SelectContent className="border-primary/10 rounded-xl bg-white shadow-2xl dark:bg-black">
+                            <SelectItem value="none" className="py-2.5 text-xs font-bold uppercase opacity-40">
+                                -- TIDAK ADA TEMPLAT TERPILIH --
+                            </SelectItem>
                             {physTemplates.map((t: any) => (
                                 <SelectItem key={t.id} value={String(t.id)} className="py-2.5 text-xs font-bold uppercase">
                                     {t.name} ({t.file_type || 'PDF'})
@@ -101,8 +89,8 @@ const MechanismOptions = ({
         );
     }
     return (
-        <div className="animate-in fade-in rounded-2xl border border-dashed border-primary/10 bg-primary/[0.01] p-6 text-center dark:border-white/10 dark:bg-white/[0.01]">
-            <p className="text-[10px] font-bold tracking-[0.2em] text-primary/30 uppercase dark:text-white/30 italic">
+        <div className="animate-in fade-in border-primary/10 bg-primary/[0.01] rounded-2xl border border-dashed p-6 text-center dark:border-white/10 dark:bg-white/[0.01]">
+            <p className="text-primary/30 text-[10px] font-bold tracking-[0.2em] uppercase italic dark:text-white/30">
                 {type === 'F1' ? 'PENGGUNA INTERNAL' : 'VENDOR'} AKAN MENGUNGGAH PDF MANUAL UNTUK {type}
             </p>
         </div>
@@ -141,7 +129,7 @@ export default function ContractTypeForm({ contractType, formTemplates, contract
             },
             onError: (errors: any) => {
                 showToast(errors.error || 'Gagal menyimpan klasifikasi', 'danger');
-            }
+            },
         };
 
         if (isEdit) router.put(route('admin.contract-types.update', contractType.id), payload, options);
@@ -151,11 +139,13 @@ export default function ContractTypeForm({ contractType, formTemplates, contract
     return (
         <>
             <Head title={isEdit ? `Edit Klasifikasi: ${contractType.name}` : 'Registrasi Klasifikasi'} />
-            
-            <div className="flex h-full flex-col bg-white dark:bg-black antialiased">
+
+            <div className="flex h-full flex-col bg-white antialiased dark:bg-black">
                 <ManagementForm
                     title={isEdit ? 'Parameter Klasifikasi' : 'Registrasi Klasifikasi'}
-                    subtitle={isEdit ? `Konfigurasi aset untuk tipe ${form.data.name}` : 'Mendefinisikan mekanisme pengajuan dokumen dua tahap (F1 & F2)'}
+                    subtitle={
+                        isEdit ? `Konfigurasi aset untuk tipe ${form.data.name}` : 'Mendefinisikan mekanisme pengajuan dokumen dua tahap (F1 & F2)'
+                    }
                     onClose={() => router.visit(route('admin.contract-types'))}
                     onSave={handleSubmit}
                     processing={form.processing}
@@ -167,7 +157,7 @@ export default function ContractTypeForm({ contractType, formTemplates, contract
                                 type="button"
                                 variant="outline"
                                 onClick={() => setIsConfirmOpen(true)}
-                                className="h-10 rounded-xl border-rose-500/20 px-6 text-[10px] font-bold uppercase tracking-widest text-rose-500 hover:bg-rose-500 hover:text-white transition-all active:scale-95"
+                                className="h-10 rounded-xl border-rose-500/20 px-6 text-[10px] font-bold text-rose-500 uppercase transition-all hover:bg-rose-500 hover:text-white active:scale-95"
                             >
                                 <Trash2 size={14} className="mr-2" /> Hapus Klasifikasi
                             </Button>
@@ -189,7 +179,7 @@ export default function ContractTypeForm({ contractType, formTemplates, contract
                         description={`Apakah Anda yakin ingin menghapus "${contractType?.name}" secara permanen? Data historis yang bergantung pada tipe ini mungkin tidak dapat diakses.`}
                         confirmText="Ya, Hapus Klasifikasi"
                     />
-                    
+
                     <div className="space-y-12">
                         <FormSection title="Arsitektur Identitas" subtitle="Metadata dasar untuk pengenalan klasifikasi kontrak">
                             <div className="grid grid-cols-1 gap-8 md:grid-cols-12">
@@ -220,32 +210,38 @@ export default function ContractTypeForm({ contractType, formTemplates, contract
                             <FormSection
                                 title="Konfigurasi Fase F1"
                                 subtitle="Parameter alur kerja permohonan internal"
-                                className="bg-primary/[0.01] dark:bg-white/[0.01] rounded-[2rem] p-8 border border-primary/5"
+                                className="bg-primary/[0.01] border-primary/5 rounded-[2rem] border p-8 dark:bg-white/[0.01]"
                             >
                                 <div className="space-y-8">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-bold uppercase tracking-widest text-primary/60 dark:text-white/60 flex items-center gap-2">
+                                        <label className="text-primary/60 flex items-center gap-2 text-[10px] font-bold uppercase dark:text-white/60">
                                             <Settings2 size={10} /> Mekanisme Pengajuan F1
                                         </label>
                                         <Select
                                             value={form.data.f1_input_mechanism}
                                             onValueChange={(v: string) => form.setData('f1_input_mechanism', String(v))}
                                         >
-                                            <SelectTrigger className="h-10 rounded-xl border-primary/10 bg-primary/5 text-xs font-bold transition-all focus:border-primary">
+                                            <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-10 rounded-xl text-xs font-bold transition-all">
                                                 <SelectValue />
                                             </SelectTrigger>
-                                            <SelectContent className="rounded-xl border-primary/10 bg-white shadow-2xl dark:bg-black">
-                                                <SelectItem value="digital" className="py-2.5 text-xs font-bold uppercase">PENGISIAN FORMULIR DIGITAL</SelectItem>
-                                                <SelectItem value="folder" className="py-2.5 text-xs font-bold uppercase">TEMPLAT FOLDER KONTRAK</SelectItem>
-                                                <SelectItem value="manual" className="py-2.5 text-xs font-bold uppercase">UNGGAH DOKUMEN MANUAL (PDF)</SelectItem>
+                                            <SelectContent className="border-primary/10 rounded-xl bg-white shadow-2xl dark:bg-black">
+                                                <SelectItem value="digital" className="py-2.5 text-xs font-bold uppercase">
+                                                    PENGISIAN FORMULIR DIGITAL
+                                                </SelectItem>
+                                                <SelectItem value="folder" className="py-2.5 text-xs font-bold uppercase">
+                                                    TEMPLAT FOLDER KONTRAK
+                                                </SelectItem>
+                                                <SelectItem value="manual" className="py-2.5 text-xs font-bold uppercase">
+                                                    UNGGAH DOKUMEN MANUAL (PDF)
+                                                </SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
 
                                     <div className="pt-4">
-                                        <div className="flex items-center gap-3 mb-4">
+                                        <div className="mb-4 flex items-center gap-3">
                                             <ChevronRight size={14} className="text-primary/20" />
-                                            <span className="text-[10px] font-semibold uppercase tracking-widest text-primary/40">Opsi Keterkaitan Aset</span>
+                                            <span className="text-primary/40 text-[10px] font-semibold uppercase">Opsi Keterkaitan Aset</span>
                                         </div>
                                         <MechanismOptions
                                             mechanism={form.data.f1_input_mechanism}
@@ -265,32 +261,38 @@ export default function ContractTypeForm({ contractType, formTemplates, contract
                             <FormSection
                                 title="Konfigurasi Fase F2"
                                 subtitle="Parameter alur kerja resume eksternal/vendor"
-                                className="bg-primary/[0.01] dark:bg-white/[0.01] rounded-[2rem] p-8 border border-primary/5"
+                                className="bg-primary/[0.01] border-primary/5 rounded-[2rem] border p-8 dark:bg-white/[0.01]"
                             >
                                 <div className="space-y-8">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-bold uppercase tracking-widest text-primary/60 dark:text-white/60 flex items-center gap-2">
+                                        <label className="text-primary/60 flex items-center gap-2 text-[10px] font-bold uppercase dark:text-white/60">
                                             <Settings2 size={10} /> Mekanisme Pengajuan F2
                                         </label>
                                         <Select
                                             value={form.data.f2_input_mechanism}
                                             onValueChange={(v: string) => form.setData('f2_input_mechanism', String(v))}
                                         >
-                                            <SelectTrigger className="h-10 rounded-xl border-primary/10 bg-primary/5 text-xs font-bold transition-all focus:border-primary">
+                                            <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-10 rounded-xl text-xs font-bold transition-all">
                                                 <SelectValue />
                                             </SelectTrigger>
-                                            <SelectContent className="rounded-xl border-primary/10 bg-white shadow-2xl dark:bg-black">
-                                                <SelectItem value="digital" className="py-2.5 text-xs font-bold uppercase">PENGISIAN FORMULIR DIGITAL</SelectItem>
-                                                <SelectItem value="folder" className="py-2.5 text-xs font-bold uppercase">TEMPLAT FOLDER KONTRAK</SelectItem>
-                                                <SelectItem value="manual" className="py-2.5 text-xs font-bold uppercase">UNGGAH DOKUMEN MANUAL (PDF)</SelectItem>
+                                            <SelectContent className="border-primary/10 rounded-xl bg-white shadow-2xl dark:bg-black">
+                                                <SelectItem value="digital" className="py-2.5 text-xs font-bold uppercase">
+                                                    PENGISIAN FORMULIR DIGITAL
+                                                </SelectItem>
+                                                <SelectItem value="folder" className="py-2.5 text-xs font-bold uppercase">
+                                                    TEMPLAT FOLDER KONTRAK
+                                                </SelectItem>
+                                                <SelectItem value="manual" className="py-2.5 text-xs font-bold uppercase">
+                                                    UNGGAH DOKUMEN MANUAL (PDF)
+                                                </SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
 
                                     <div className="pt-4">
-                                        <div className="flex items-center gap-3 mb-4">
+                                        <div className="mb-4 flex items-center gap-3">
                                             <ChevronRight size={14} className="text-primary/20" />
-                                            <span className="text-[10px] font-semibold uppercase tracking-widest text-primary/40">Opsi Keterkaitan Aset</span>
+                                            <span className="text-primary/40 text-[10px] font-semibold uppercase">Opsi Keterkaitan Aset</span>
                                         </div>
                                         <MechanismOptions
                                             mechanism={form.data.f2_input_mechanism}

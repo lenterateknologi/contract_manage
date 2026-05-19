@@ -34,7 +34,6 @@ import {
     MoreVertical,
     PlusCircle,
     Save,
-    Send,
     Trash2,
     UserPlus,
     Zap,
@@ -42,17 +41,17 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import ApprovalSteps from '@/components/contracts/ApprovalSteps';
+import ApproveModal from '@/components/contracts/ApproveModal';
 import ContractAttachments from '@/components/contracts/ContractAttachments';
 import ContractChat from '@/components/contracts/ContractChat';
+import { ContractMembersTab } from '@/components/contracts/ContractMembersTab';
 import { ContractReferenceCard } from '@/components/contracts/ContractReferenceCard';
 import { DashboardMetrics } from '@/components/contracts/DashboardMetrics';
 import { DraftEditableInfoCard } from '@/components/contracts/DraftEditableInfoCard';
 import { EditContractModal } from '@/components/contracts/EditContractModal';
-import ApproveModal from '@/components/contracts/ApproveModal';
-import RejectModal from '@/components/contracts/RejectModal';
 import { ProfileView } from '@/components/contracts/ProfileView';
+import RejectModal from '@/components/contracts/RejectModal';
 import SendApprovalModal from '@/components/contracts/SendApprovalModal';
-import { ContractMembersTab } from '@/components/contracts/ContractMembersTab';
 import { Column, TableContract } from '@/components/ui/data/TableContract';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
@@ -206,9 +205,7 @@ const ProgressCell = ({ c }: Readonly<{ c: Contract }>) => (
     </span>
 );
 
-const CreatedAtCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <span className="text-sidebar-foreground/40 text-xs font-medium">{c.created_at}</span>
-);
+const CreatedAtCell = ({ c }: Readonly<{ c: Contract }>) => <span className="text-sidebar-foreground/40 text-xs font-medium">{c.created_at}</span>;
 
 const ContractNoCell = ({ c }: Readonly<{ c: Contract }>) => (
     <span className="text-sidebar-primary/70 font-mono text-xs font-bold">{c.contract_no || 'N/A'}</span>
@@ -231,18 +228,23 @@ const TypeAndVendorCell = ({ c, types }: Readonly<{ c: Contract; types: Contract
 
     return (
         <div className="flex flex-col gap-1 py-0.5">
-            <span className={cn('inline-block w-fit rounded-full px-2.5 py-0.5 text-xs font-bold tracking-wide uppercase leading-none', TYPE_COLORS[colorIdx])}>
+            <span
+                className={cn(
+                    'inline-block w-fit rounded-full px-2.5 py-0.5 text-xs leading-none font-bold tracking-wide uppercase',
+                    TYPE_COLORS[colorIdx],
+                )}
+            >
                 {(type?.name || 'N/A').replace('Perjanjian ', '').replace('Addendum / ', '')}
             </span>
-            <span className="text-xs font-medium text-sidebar-foreground/70 truncate">{vendorName}</span>
+            <span className="text-sidebar-foreground/70 truncate text-xs font-medium">{vendorName}</span>
         </div>
     );
 };
 
 const ContractNoAndTitleCell = ({ c }: Readonly<{ c: Contract }>) => (
     <div className="flex flex-col gap-0.5 py-0.5">
-        <span className="text-sidebar-primary/70 font-mono text-xs font-bold leading-none">{c.contract_no || 'N/A'}</span>
-        <span className="text-sidebar-foreground line-clamp-1 text-sm font-semibold leading-tight mt-1">{c.title}</span>
+        <span className="text-sidebar-primary/70 font-mono text-xs leading-none font-bold">{c.contract_no || 'N/A'}</span>
+        <span className="text-sidebar-foreground mt-1 line-clamp-1 text-sm leading-tight font-semibold">{c.title}</span>
     </div>
 );
 
@@ -253,12 +255,8 @@ const InitiatorCell = ({ c }: Readonly<{ c: Contract }>) => {
 
     return (
         <div className="flex flex-col gap-0.5 py-0.5">
-            <span className="text-sidebar-foreground/60 text-xs font-semibold leading-none">
-                {roleDept || 'Staff UMUM'}
-            </span>
-            <span className="text-sidebar-foreground text-sm font-semibold leading-tight mt-1 truncate">
-                {c.initiator?.name || '—'}
-            </span>
+            <span className="text-sidebar-foreground/60 text-xs leading-none font-semibold">{roleDept || 'Staff UMUM'}</span>
+            <span className="text-sidebar-foreground mt-1 truncate text-sm leading-tight font-semibold">{c.initiator?.name || '—'}</span>
         </div>
     );
 };
@@ -273,11 +271,7 @@ const StatusAndStepCell = ({ c }: Readonly<{ c: Contract }>) => {
             <div className="flex items-center">
                 <StatusBadge status={c.status} />
             </div>
-            {!!stepDesc && (
-                <span className="text-xs font-semibold text-sidebar-foreground/60 truncate leading-tight capitalize">
-                    {stepDesc}
-                </span>
-            )}
+            {!!stepDesc && <span className="text-sidebar-foreground/60 truncate text-xs leading-tight font-semibold capitalize">{stepDesc}</span>}
         </div>
     );
 };
@@ -290,17 +284,13 @@ const renderCreatedAt = (c: Contract) => <CreatedAtCell c={c} />;
 
 const AssignedByCell = ({ c }: Readonly<{ c: Contract }>) => (
     <div className="flex flex-col py-0.5">
-        <span className="text-sidebar-foreground text-sm font-semibold truncate">
-            {c.assigned_by?.name || '—'}
-        </span>
+        <span className="text-sidebar-foreground truncate text-sm font-semibold">{c.assigned_by?.name || '—'}</span>
     </div>
 );
 
 const AssignedPicCell = ({ c }: Readonly<{ c: Contract }>) => (
     <div className="flex flex-col py-0.5">
-        <span className="text-sidebar-foreground text-sm font-semibold truncate">
-            {c.assigned_pic?.name || '—'}
-        </span>
+        <span className="text-sidebar-foreground truncate text-sm font-semibold">{c.assigned_pic?.name || '—'}</span>
     </div>
 );
 
@@ -437,9 +427,9 @@ const ContractDetailView = ({
     setPreviewOpen: (open: boolean) => void;
     users: any[];
 }) => {
-    const [detailTab, setDetailTab] = useState<'form_template' | 'f2' | 'agreement' | 'attachments' | 'audit' | 'chat' | 'timeline' | 'references' | 'members'>(
-        'form_template',
-    );
+    const [detailTab, setDetailTab] = useState<
+        'form_template' | 'f2' | 'agreement' | 'attachments' | 'audit' | 'chat' | 'timeline' | 'references' | 'members'
+    >('form_template');
     const [processing, setProcessing] = useState(false);
     const { showProgress, hideProgress } = useToast();
     const [approveOpen, setApproveOpen] = useState(false);
@@ -538,15 +528,22 @@ const ContractDetailView = ({
         }
     };
 
-    const handleApprove = async (note: string, attachment?: File, assignedPicId?: string, executionOrder?: string, p1UserId?: string, p2UserId?: string) => {
+    const handleApprove = async (
+        note: string,
+        attachment?: File,
+        assignedPicId?: string,
+        executionOrder?: string,
+        p1UserId?: string,
+        p2UserId?: string,
+    ) => {
         try {
             const c = await contractApi.approve(contract.id, note, attachment, assignedPicId, executionOrder, p1UserId, p2UserId);
             onUpdate(c);
-            
+
             let msg = 'Kontrak disetujui.';
             if (assignedPicId) msg = 'PIC ditugaskan dan kontrak disetujui.';
             if (p1UserId || p2UserId) msg = 'Delegasi penandatanganan berhasil dikonfigurasi.';
-            
+
             showToast(msg, 'success');
         } catch {
             showToast('Gagal approve.', 'danger');
@@ -575,7 +572,7 @@ const ContractDetailView = ({
                         className="flex items-center gap-2 text-black transition-all hover:opacity-70 active:scale-95 dark:text-white"
                     >
                         <ChevronLeft size={20} strokeWidth={2.5} />
-                        <span className="text-[10px] font-bold tracking-widest uppercase">Kembali</span>
+                        <span className="text-[10px] font-bold uppercase">Kembali</span>
                     </button>
                     <div className="h-10 w-px bg-black/10 dark:bg-white/10" />
                     <div className="flex flex-col">
@@ -591,21 +588,6 @@ const ContractDetailView = ({
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    {(contract.status === 'draft' || contract.status === 'revision') && (
-                        <Button
-                            variant="primary"
-                            onClick={() => {
-                                if (contract.workflow_step?.step === 1) {
-                                    setApproveOpen(true);
-                                } else {
-                                    setSendOpen(true);
-                                }
-                            }}
-                            className="h-10 px-6 active:scale-95 dark:bg-white dark:text-black dark:hover:bg-white/90"
-                        >
-                            <Send size={14} /> {contract.workflow_step?.step === 1 ? 'Kirim Persetujuan' : (contract.status === 'revision' ? 'Ajukan Ulang' : 'Kirim Approval')}
-                        </Button>
-                    )}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline" size="icon" className="h-10 w-10 active:scale-95">
@@ -617,7 +599,7 @@ const ContractDetailView = ({
                             className="dark:bg-sidebar w-56 rounded-xl border-black/10 bg-white p-1.5 shadow-2xl dark:border-white/10"
                         >
                             <div className="mb-1 px-2 py-1.5">
-                                <p className="text-[10px] font-bold tracking-widest text-black/40 uppercase dark:text-white/40">Opsi Kontrak</p>
+                                <p className="text-[10px] font-bold text-black/40 uppercase dark:text-white/40">Opsi Kontrak</p>
                             </div>
                             <DropdownMenuItem
                                 onClick={() => handleUpdate({}, true)}
@@ -642,8 +624,8 @@ const ContractDetailView = ({
             <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[1fr_400px]">
                 <div className="flex flex-col gap-6">
                     <div className="dark:bg-sidebar overflow-hidden rounded-xl bg-white shadow-sm">
-                        <div className="bg-primary flex h-12 items-center justify-between px-4 dark:bg-white border-b border-black/10 dark:border-white/10">
-                            <div className="flex items-center gap-2 font-semibold text-white text-sm dark:text-black">
+                        <div className="bg-primary flex h-12 items-center justify-between border-b border-black/10 px-4 dark:border-white/10 dark:bg-white">
+                            <div className="flex items-center gap-2 text-sm font-semibold text-white dark:text-black">
                                 <FileText size={16} className="text-white/70 dark:text-black/70" /> Detail Dokumen & Alur Kerja
                             </div>
                             <div className="flex items-center gap-2">
@@ -681,17 +663,14 @@ const ContractDetailView = ({
                                                     : 'text-slate-600 hover:bg-slate-50 dark:text-white/70 dark:hover:bg-white/5',
                                             )}
                                         >
-                                            <UserPlus
-                                                size={14}
-                                                className={cn(detailTab === 'members' ? 'text-white' : 'text-slate-400')}
-                                            />{' '}
-                                            Daftar Member
+                                            <UserPlus size={14} className={cn(detailTab === 'members' ? 'text-white' : 'text-slate-400')} /> Daftar
+                                            Member
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </div>
                         </div>
-                        <div className="flex flex-wrap gap-1.5 border-b border-border bg-muted/30 px-4 py-2 dark:bg-black/10">
+                        <div className="border-border bg-muted/30 flex flex-wrap gap-1.5 border-b px-4 py-2 dark:bg-black/10">
                             {[
                                 { id: 'form_template', label: 'F1 (Permohonan)' },
                                 { id: 'f2', label: 'F2 (Ringkasan)' },
@@ -706,10 +685,10 @@ const ContractDetailView = ({
                                     key={tab.id}
                                     onClick={() => setDetailTab(tab.id as any)}
                                     className={cn(
-                                        'px-3 py-1.5 text-xs font-bold rounded-lg transition-all',
+                                        'rounded-lg px-3 py-1.5 text-xs font-bold transition-all',
                                         detailTab === tab.id
                                             ? 'bg-primary text-white shadow dark:bg-white dark:text-black'
-                                            : 'text-muted-foreground hover:bg-black/5 hover:text-foreground dark:hover:bg-white/5',
+                                            : 'text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5',
                                     )}
                                 >
                                     {tab.label}
@@ -718,10 +697,24 @@ const ContractDetailView = ({
                         </div>
                         <div className={cn('flex min-h-[600px] flex-1 flex-col')}>
                             {detailTab === 'form_template' && (
-                                <FormSubmissionTab docType="f1" selected={contract} formTemplates={formTemplates} onContractUpdated={onUpdate} users={vendors} meUser={meUser} />
+                                <FormSubmissionTab
+                                    docType="f1"
+                                    selected={contract}
+                                    formTemplates={formTemplates}
+                                    onContractUpdated={onUpdate}
+                                    users={vendors}
+                                    meUser={meUser}
+                                />
                             )}
                             {detailTab === 'f2' && (
-                                <FormSubmissionTab docType="f2" selected={contract} formTemplates={formTemplates} onContractUpdated={onUpdate} users={vendors} meUser={meUser} />
+                                <FormSubmissionTab
+                                    docType="f2"
+                                    selected={contract}
+                                    formTemplates={formTemplates}
+                                    onContractUpdated={onUpdate}
+                                    users={vendors}
+                                    meUser={meUser}
+                                />
                             )}
                             {detailTab === 'agreement' && <AgreementView contract={contract} onUpdate={onUpdate} />}
                             {detailTab === 'attachments' && <ContractAttachments contract={contract} onUpdated={onUpdate} showToast={showToast} />}
@@ -751,7 +744,7 @@ const ContractDetailView = ({
                         </div>
                     </div>
                 </div>
-                <div className="flex flex-col gap-4 sticky top-6 self-start">
+                <div className="sticky top-6 flex flex-col gap-4 self-start">
                     {canApprove && (
                         <div className="flex flex-col gap-4 overflow-hidden rounded-2xl border border-black/10 bg-white p-6 shadow-xl dark:border-white/10 dark:bg-black">
                             <div className="flex items-center gap-3">
@@ -759,23 +752,26 @@ const ContractDetailView = ({
                                     <Zap size={20} />
                                 </div>
                                 <div className="flex flex-col gap-0.5">
-                                    <h3 className="text-sm font-bold text-black uppercase dark:text-white">
-                                        Approval Dibutuhkan
-                                    </h3>
+                                    <h3 className="text-sm font-bold text-black uppercase dark:text-white">Approval Dibutuhkan</h3>
                                     <p className="text-[10px] font-medium text-black/40 dark:text-white/40">
                                         Anda terdaftar sebagai salah satu reviewer
                                     </p>
                                 </div>
                             </div>
                             <div className="flex flex-col gap-2 pt-2">
-                                <Button variant="primary" onClick={() => setApproveOpen(true)} className="h-11 w-full font-bold shadow-lg shadow-blue-500/20">
-                                    <CheckCircle2 size={16} /> {
-                                        contract.workflow_step?.step === 1
-                                            ? 'Kirim Persetujuan'
-                                            : (contract.requires_pic_assignment 
-                                                ? 'Tugaskan PIC' 
-                                                : (contract.workflow_step?.step_type === 'UPLOAD' ? 'Upload Dokumen TTD' : 'Setujui Kontrak'))
-                                    }
+                                <Button
+                                    variant="primary"
+                                    onClick={() => setApproveOpen(true)}
+                                    className="h-11 w-full font-bold shadow-lg shadow-blue-500/20"
+                                >
+                                    <CheckCircle2 size={16} />{' '}
+                                    {contract.workflow_step?.step === 1
+                                        ? 'Kirim Persetujuan'
+                                        : contract.requires_pic_assignment
+                                          ? 'Tugaskan PIC'
+                                          : contract.workflow_step?.step_type === 'UPLOAD'
+                                            ? 'Upload Dokumen TTD'
+                                            : 'Setujui Kontrak'}
                                 </Button>
                                 <Button
                                     variant="outline"
@@ -811,11 +807,7 @@ const ContractDetailView = ({
                 isAssign={!!contract.requires_pic_assignment}
                 contract={contract}
             />
-            <RejectModal
-                open={rejectOpen}
-                onClose={() => setRejectOpen(false)}
-                onSubmit={handleReject}
-            />
+            <RejectModal open={rejectOpen} onClose={() => setRejectOpen(false)} onSubmit={handleReject} />
         </div>
     );
 };
@@ -1107,7 +1099,7 @@ function ContractPage({
             <Head title={view} />
             <div className="bg-background dark:bg-background/50 flex min-h-0 flex-1 flex-col">
                 {selected ? (
-                    <div className="flex-1 w-full flex flex-col animate-in fade-in slide-in-from-bottom-3 duration-300 ease-in-out">
+                    <div className="animate-in fade-in slide-in-from-bottom-3 flex w-full flex-1 flex-col duration-300 ease-in-out">
                         <ContractDetailView
                             contract={selected}
                             meId={meId}
@@ -1130,7 +1122,7 @@ function ContractPage({
                         />
                     </div>
                 ) : (
-                    <div className="flex-1 w-full flex flex-col animate-in fade-in slide-in-from-top-3 duration-300 ease-in-out">
+                    <div className="animate-in fade-in slide-in-from-top-3 flex w-full flex-1 flex-col duration-300 ease-in-out">
                         <div className="flex flex-col gap-4">
                             {view === 'dashboard' && (
                                 <div className="p-5">
@@ -1181,7 +1173,7 @@ function ContractPage({
                                         </div>
                                     </div>
 
-                                    <div className={cn("flex-1 overflow-auto", layout === 'grid' && "p-4")}>
+                                    <div className={cn('flex-1 overflow-auto', layout === 'grid' && 'p-4')}>
                                         {layout === 'table' ? (
                                             <TableContract
                                                 columns={columns}
@@ -1416,7 +1408,7 @@ function ContractPage({
                 <div className="bg-background/90 animate-in fade-in zoom-in-95 fixed inset-0 z-[100] flex flex-col backdrop-blur-xl duration-300">
                     <div className="border-border flex h-16 items-center justify-between border-b bg-slate-50 px-6">
                         <div className="flex flex-col">
-                            <h3 className="text-foreground flex items-center gap-2 text-sm font-bold tracking-widest uppercase">
+                            <h3 className="text-foreground flex items-center gap-2 text-sm font-bold uppercase">
                                 <i className="fa-solid fa-file-pdf text-black dark:text-white" /> Export Alur Approval
                             </h3>
                             <span className="text-muted-foreground text-[10px] font-bold">{selected?.contract_no} — Generation Complete</span>
@@ -1425,13 +1417,13 @@ function ContractPage({
                             <a
                                 href={timelinePdfPreviewUrl}
                                 download={`Alur_Approval_${selected?.id}.pdf`}
-                                className="flex items-center gap-2 rounded-md bg-indigo-600 px-6 py-2 text-xs font-bold tracking-widest text-white uppercase shadow-xl shadow-indigo-500/20 transition-all hover:bg-indigo-700"
+                                className="flex items-center gap-2 rounded-md bg-indigo-600 px-6 py-2 text-xs font-bold text-white uppercase shadow-xl shadow-indigo-500/20 transition-all hover:bg-indigo-700"
                             >
                                 <Download size={14} /> Download PDF
                             </a>
                             <button
                                 onClick={() => setTimelinePdfPreviewUrl(null)}
-                                className="text-foreground rounded-md border border-slate-200 bg-white px-4 py-2 text-xs font-bold tracking-widest uppercase transition-all hover:bg-slate-50"
+                                className="text-foreground rounded-md border border-slate-200 bg-white px-4 py-2 text-xs font-bold uppercase transition-all hover:bg-slate-50"
                             >
                                 Tutup
                             </button>
@@ -1561,7 +1553,7 @@ export default function ContractsIndex({
                             </div>
                         </div>
                         <div className="flex flex-col items-center gap-2">
-                            <span className="animate-pulse text-xs font-semibold tracking-wider text-slate-700 dark:text-slate-300 uppercase">
+                            <span className="animate-pulse text-xs font-semibold tracking-wider text-slate-700 uppercase dark:text-slate-300">
                                 Memuat Sistem Kontrak
                             </span>
                             <div className="h-0.5 w-48 overflow-hidden rounded-full bg-slate-100 dark:bg-white/10">

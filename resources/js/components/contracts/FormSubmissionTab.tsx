@@ -8,7 +8,7 @@ import { contractApi } from '@/lib/contract-api';
 import { cn } from '@/lib/utils';
 import { Contract } from '@/types/contracts';
 import axios from 'axios';
-import { ArrowRight, Check, ChevronDown, Columns, Download, FileText, FolderOpen, History, Loader2, MoreVertical, PlusCircle } from 'lucide-react';
+import { ArrowRight, Check, Columns, Download, FileText, FolderOpen, History, Loader2, MoreVertical, PlusCircle } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface FormTemplateInfo {
@@ -76,7 +76,8 @@ const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' | 'f2',
 
     // 1. Identification / Metadata
     if (name === 'meta_nomor') return contract.contract_no || '';
-    if (name === 'meta_nomor_kontrak' || name === 'meta_no_kontrak' || name === 'meta_no_pengajuan') return (contract as any).crown_no || contract.contract_no || '';
+    if (name === 'meta_nomor_kontrak' || name === 'meta_no_kontrak' || name === 'meta_no_pengajuan')
+        return (contract as any).crown_no || contract.contract_no || '';
     if (name === 'meta_judul' || name === 'meta_judul_kontrak' || name === 'meta_nama_kontrak') return contract.title || '';
     if (name === 'meta_topik' || name === 'meta_jenis_kontrak') {
         const type = (contract as any).contract_type;
@@ -135,27 +136,22 @@ const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' | 'f2',
     if (name === 'crown_no' || name === 'meta_no_kontrak') return (contract as any).crown_no || (contract as any).contract_no || '';
 
     // 4. Management Approvers for Signature Boxes
-    if (name === 'meta_manager_legal' || name === 'meta_vp_legal') {
-        const customUserIds = contract.metadata?.custom_management_users || [];
-        if (customUserIds.length > 0) {
-            // Priority 1: Use provided users list (Fastest & Real-time)
-            const resolvedNames = customUserIds.map((id: string) => {
-                const user = users.find(u => String(u.id) === String(id));
-                return user?.name;
-            }).filter(Boolean);
-
-            if (resolvedNames.length > 0) return resolvedNames.join(', ');
-
-            // Priority 2: Fallback to contract approvals if users list is not exhaustive
-            const approvals = contract.approvals || [];
-            const names = customUserIds.map((id: string) => {
-                const app = approvals.find((a) => a.user_id === id);
-                return app ? app.approver_name : null;
-            }).filter(Boolean);
-            
-            if (names.length > 0) return names.join(', ');
+    if (name === 'meta_manager_legal') {
+        const approvals = contract.approvals || [];
+        const ceoApproval = approvals.find((a) => a.role === 'CEO');
+        if (ceoApproval) {
+            return ceoApproval.approver?.name || ceoApproval.approver_name || ceoApproval.target_approvers || '';
         }
-        return ''; // Return empty string to allow clearing
+        return '';
+    }
+
+    if (name === 'meta_vp_legal') {
+        const approvals = contract.approvals || [];
+        const vpApproval = approvals.find((a) => a.role === 'VP');
+        if (vpApproval) {
+            return vpApproval.approver?.name || vpApproval.approver_name || vpApproval.target_approvers || '';
+        }
+        return '';
     }
 
     // 5. Tax Requirement
@@ -191,7 +187,16 @@ export function FormSubmissionTab({
     users?: any[];
     meUser?: any;
 }) {
-    return <GenericFormTab docType={docType} selected={selected} formTemplates={formTemplates} onContractUpdated={onContractUpdated} users={users} meUser={meUser} />;
+    return (
+        <GenericFormTab
+            docType={docType}
+            selected={selected}
+            formTemplates={formTemplates}
+            onContractUpdated={onContractUpdated}
+            users={users}
+            meUser={meUser}
+        />
+    );
 }
 
 /**
@@ -577,7 +582,7 @@ function GenericFormTab({
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-black/10 dark:bg-white/10">
                     <FileText className="text-black/40 dark:text-white/40" size={24} />
                 </div>
-                <h5 className="mb-1 font-bold tracking-widest text-black uppercase dark:text-white" style={{ fontSize: 12 }}>
+                <h5 className="mb-1 font-bold text-black uppercase dark:text-white" style={{ fontSize: 12 }}>
                     Belum Ada Template {docType.toUpperCase()}
                 </h5>
             </div>
@@ -586,7 +591,7 @@ function GenericFormTab({
 
     if (loading)
         return (
-            <div className="flex flex-col items-center justify-center py-20 text-[10px] font-bold tracking-widest text-black/40 uppercase dark:text-white/40">
+            <div className="flex flex-col items-center justify-center py-20 text-[10px] font-bold text-black/40 uppercase dark:text-white/40">
                 <LoadingLottie width={80} height={80} className="mb-4" />
                 Memuat form {docType.toUpperCase()}...
             </div>
@@ -607,7 +612,7 @@ function GenericFormTab({
                 <div className="dark:bg-sidebar/90 animate-in fade-in zoom-in-95 fixed inset-0 z-[100] flex flex-col bg-white/90 backdrop-blur-md duration-300">
                     <div className="flex h-16 items-center justify-between border-b border-black/10 px-6 dark:border-white/10">
                         <div className="flex flex-col">
-                            <h3 className="flex items-center gap-2 text-[11px] font-bold tracking-widest text-black uppercase dark:text-white">
+                            <h3 className="flex items-center gap-2 text-[11px] font-bold text-black uppercase dark:text-white">
                                 <FileText size={16} className="text-black dark:text-white" /> Preview Dokumen {docType.toUpperCase()}
                             </h3>
                             <span className="text-[9px] font-bold tracking-wider text-black/40 uppercase dark:text-white/40">
@@ -618,13 +623,13 @@ function GenericFormTab({
                             <a
                                 href={pdfPreviewUrl}
                                 download={`${selected.contract_no}_${docType.toUpperCase()}.pdf`}
-                                className="flex items-center gap-2 rounded-lg bg-black px-6 py-2.5 text-[10px] font-bold tracking-widest text-white uppercase shadow-lg transition-all hover:opacity-90 active:scale-95 dark:bg-white dark:text-black"
+                                className="flex items-center gap-2 rounded-lg bg-black px-6 py-2.5 text-[10px] font-bold text-white uppercase shadow-lg transition-all hover:opacity-90 active:scale-95 dark:bg-white dark:text-black"
                             >
                                 <Download size={14} /> Download PDF
                             </a>
                             <button
                                 onClick={() => setPdfPreviewUrl(null)}
-                                className="rounded-lg bg-black/5 px-4 py-2.5 text-[10px] font-bold tracking-widest text-black uppercase transition-all hover:bg-black/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+                                className="rounded-lg bg-black/5 px-4 py-2.5 text-[10px] font-bold text-black uppercase transition-all hover:bg-black/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
                             >
                                 Tutup
                             </button>
@@ -639,36 +644,36 @@ function GenericFormTab({
             )}
 
             {isF2 && (meUser?.department === 'Legal' || meUser?.role === 'PIC Legal' || meUser?.role === 'Admin') && (
-                <div className="bg-primary/5 dark:bg-white/5 border-b border-black/10 dark:border-white/10 px-6 py-4">
+                <div className="bg-primary/5 border-b border-black/10 px-6 py-4 dark:border-white/10 dark:bg-white/5">
                     <div className="flex flex-wrap items-end gap-6">
                         {(meUser?.role === 'Legal Staff' || meUser?.role === 'Admin' || meUser?.role === 'PIC Legal') && (
-                            <div className="flex-1 min-w-[200px] space-y-1.5">
-                                <label className="text-[10px] font-black text-primary/60 dark:text-white/60 uppercase tracking-widest flex items-center gap-1.5">
+                            <div className="min-w-[200px] flex-1 space-y-1.5">
+                                <label className="text-primary/60 flex items-center gap-1.5 text-[10px] font-black uppercase dark:text-white/60">
                                     <i className="fa-solid fa-hashtag" /> No. Kontrak (F2)
                                 </label>
                                 <div className="group relative flex gap-2">
-                                     <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-primary/40 transition-colors group-focus-within:text-primary dark:text-white/40 dark:group-focus-within:text-white">
-                                         <i className="fa-solid fa-hashtag text-[10px]" />
-                                     </div>
-                                     <input
-                                         type="text"
-                                         placeholder="Input No. Kontrak..."
-                                         value={(selected as any).crown_no || ''}
-                                         onChange={(e) => {
-                                             const val = e.target.value;
-                                             onContractUpdated({ ...selected, crown_no: val } as any);
-                                             // Trigger debounced update to server
-                                             contractApi.update(selected.id, { crown_no: val });
-                                         }}
-                                         className="h-10 flex-1 rounded-xl border-2 border-primary/10 bg-white pl-9 pr-4 text-[11px] font-black uppercase tracking-wider outline-none transition-all focus:border-primary/30 focus:ring-4 focus:ring-primary/5 dark:bg-black/20 dark:border-white/10 dark:focus:border-white/30 dark:focus:ring-white/5 shadow-sm"
-                                     />
-                                 </div>
+                                    <div className="text-primary/40 group-focus-within:text-primary absolute inset-y-0 left-0 flex items-center pl-3 transition-colors dark:text-white/40 dark:group-focus-within:text-white">
+                                        <i className="fa-solid fa-hashtag text-[10px]" />
+                                    </div>
+                                    <input
+                                        type="text"
+                                        placeholder="Input No. Kontrak..."
+                                        value={(selected as any).crown_no || ''}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            onContractUpdated({ ...selected, crown_no: val } as any);
+                                            // Trigger debounced update to server
+                                            contractApi.update(selected.id, { crown_no: val });
+                                        }}
+                                        className="focus:border-primary/50 h-10 flex-1 rounded-xl border border-black/10 bg-white pr-4 pl-9 text-xs font-medium shadow-sm transition-all outline-none dark:border-white/10 dark:bg-black/20 dark:focus:border-white/50"
+                                    />
+                                </div>
                             </div>
                         )}
 
                         {(meUser?.role === 'PIC Legal' || meUser?.role === 'Admin') && (
-                            <div className="flex items-center gap-4 h-10 px-4 bg-white dark:bg-black/20 rounded-lg border border-black/10 dark:border-white/10 shadow-sm">
-                                <label className="text-[10px] font-black text-black/60 dark:text-white/60 uppercase tracking-widest flex items-center gap-1.5">
+                            <div className="flex h-10 items-center gap-4 rounded-lg border border-black/10 bg-white px-4 shadow-sm dark:border-white/10 dark:bg-black/20">
+                                <label className="flex items-center gap-1.5 text-[10px] font-black text-black/60 uppercase dark:text-white/60">
                                     <i className="fa-solid fa-signature" /> Digital Signature
                                 </label>
                                 <button
@@ -678,18 +683,18 @@ function GenericFormTab({
                                         contractApi.update(selected.id, { is_digital_signature: next });
                                     }}
                                     className={cn(
-                                        "relative inline-flex h-5 w-10 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                                        selected.is_digital_signature ? "bg-primary" : "bg-black/20 dark:bg-white/20"
+                                        'focus-visible:ring-ring focus-visible:ring-offset-background relative inline-flex h-5 w-10 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+                                        selected.is_digital_signature ? 'bg-primary' : 'bg-black/20 dark:bg-white/20',
                                     )}
                                 >
                                     <span
                                         className={cn(
-                                            "pointer-events-none block h-4 w-4 rounded-full bg-white shadow-lg ring-0 transition-transform",
-                                            selected.is_digital_signature ? "translate-x-5" : "translate-x-1"
+                                            'pointer-events-none block h-4 w-4 rounded-full bg-white shadow-lg ring-0 transition-transform',
+                                            selected.is_digital_signature ? 'translate-x-5' : 'translate-x-1',
                                         )}
                                     />
                                 </button>
-                                <span className="text-[10px] font-black text-black dark:text-white uppercase">
+                                <span className="text-[10px] font-black text-black uppercase dark:text-white">
                                     {selected.is_digital_signature ? 'Aktif' : 'Non-Aktif'}
                                 </span>
                             </div>
@@ -702,7 +707,7 @@ function GenericFormTab({
                 <div className="flex items-center gap-4">
                     <div className="flex flex-col">
                         <div className="flex items-center gap-2">
-                            <h4 className="text-xs font-bold tracking-tight text-black dark:text-white uppercase">
+                            <h4 className="text-xs font-bold tracking-tight text-black uppercase dark:text-white">
                                 {docType === 'f1' ? 'F1 Internal' : 'F2 Summary'}
                             </h4>
                             <span className="rounded bg-black/5 px-1.5 py-0.5 text-[9px] font-bold text-black/60 dark:bg-white/10 dark:text-white/60">
@@ -710,7 +715,6 @@ function GenericFormTab({
                             </span>
                         </div>
                     </div>
-
                 </div>
 
                 <div className="flex items-center gap-3" ref={dropdownRef}>

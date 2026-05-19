@@ -40,18 +40,18 @@ export function ConfirmationModal({
                 <div className="p-8 text-center">
                     <div className={cn(
                         "mx-auto mb-6 flex h-20 w-20 items-center justify-center transition-all duration-300 border-2",
-                        variant === 'danger' ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white' : 
+                        variant === 'danger' ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white' :
                         variant === 'warning' ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white' : 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white'
                     )}>
                         {icon || (
-                            variant === 'danger' ? 
-                            <i className="fa-solid fa-trash-can text-2xl" /> : 
-                            variant === 'warning' ? 
-                            <i className="fa-solid fa-circle-exclamation text-2xl" /> : 
+                            variant === 'danger' ?
+                            <i className="fa-solid fa-trash-can text-2xl" /> :
+                            variant === 'warning' ?
+                            <i className="fa-solid fa-circle-exclamation text-2xl" /> :
                             <i className="fa-solid fa-circle-info text-2xl" />
                         )}
                     </div>
-                    
+
                     <h3 className="text-black dark:text-white mb-3 text-xl font-black uppercase tracking-tight">
                         {title}
                     </h3>
@@ -65,7 +65,7 @@ export function ConfirmationModal({
                     <button
                         onClick={onClose}
                         disabled={processing}
-                        className="text-black/40 dark:text-white/40 hover:bg-black/5 dark:hover:bg-white/5 flex-1 border-r border-black dark:border-white py-5 text-[11px] font-black uppercase tracking-widest transition-all active:bg-black/10 dark:active:bg-white/10"
+                        className="text-black/40 dark:text-white/40 hover:bg-black/5 dark:hover:bg-white/5 flex-1 border-r border-black dark:border-white py-5 text-[11px] font-black uppercase  transition-all active:bg-black/10 dark:active:bg-white/10"
                     >
                         {cancelText}
                     </button>
@@ -73,7 +73,7 @@ export function ConfirmationModal({
                         onClick={onConfirm}
                         disabled={processing}
                         className={cn(
-                            "flex-1 py-5 text-[11px] font-black uppercase tracking-widest transition-all active:opacity-80 disabled:opacity-50",
+                            "flex-1 py-5 text-[11px] font-black uppercase  transition-all active:opacity-80 disabled:opacity-50",
                             "text-black dark:text-white hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black"
                         )}
                     >

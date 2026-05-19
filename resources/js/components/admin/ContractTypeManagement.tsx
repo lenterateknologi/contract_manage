@@ -1,16 +1,10 @@
 import { useToast } from '@/components/contracts/Toast';
 import { Button } from '@/components/ui/base/Button';
 import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/forms/Select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
 import { usePermissions } from '@/hooks/use-permissions';
 import { router } from '@inertiajs/react';
-import { FileText, LayoutGrid, Plus, ShieldCheck, Trash2 } from 'lucide-react';
+import { Plus, ShieldCheck, Trash2 } from 'lucide-react';
 import { useMemo } from 'react';
 
 interface ContractTypeManagementProps {
@@ -23,7 +17,7 @@ interface ContractTypeManagementProps {
 const MechanismCell = ({ mechanism }: Readonly<{ mechanism: string }>) => (
     <div className="flex items-center gap-2">
         <div className="bg-primary/20 h-1.5 w-1.5 rounded-full dark:bg-white/20" />
-        <span className="text-primary/60 text-[10px] font-semibold tracking-widest uppercase dark:text-white/60">
+        <span className="text-primary/60 text-[10px] font-semibold uppercase dark:text-white/60">
             {mechanism === 'digital' ? 'Formulir Digital' : mechanism === 'folder' ? 'Folder Kontrak' : 'Unggah Manual'}
         </span>
     </div>
@@ -57,58 +51,56 @@ const MechanismOptions = ({
     if (mechanism === 'digital') {
         return (
             <div className="animate-in fade-in slide-in-from-top-2">
-            <div className="animate-in fade-in slide-in-from-top-2">
-                <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-primary/60 dark:text-white/60 flex items-center gap-2">
-                        Tautan Templat Digital {type}
-                    </label>
-                    <Select
-                        value={String(formTemplateId)}
-                        onValueChange={(v: string) => setFormTemplateId(String(v))}
-                    >
-                        <SelectTrigger className="h-10 rounded-xl border-primary/10 bg-primary/5 text-xs font-bold transition-all focus:border-primary">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl border-primary/10 bg-white shadow-2xl dark:bg-black">
-                            <SelectItem value="none" className="py-2.5 text-xs font-bold uppercase">-- TANPA TEMPLAT TERPAUT --</SelectItem>
-                            {templates.map((t: any) => (
-                                <SelectItem key={t.id} value={String(t.id)} className="py-2.5 text-xs font-bold uppercase">
-                                    {t.name} ({t.document_type || 'ADHOC'})
+                <div className="animate-in fade-in slide-in-from-top-2">
+                    <div className="space-y-2">
+                        <label className="text-primary/60 flex items-center gap-2 text-[10px] font-bold uppercase dark:text-white/60">
+                            Tautan Templat Digital {type}
+                        </label>
+                        <Select value={String(formTemplateId)} onValueChange={(v: string) => setFormTemplateId(String(v))}>
+                            <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-10 rounded-xl text-xs font-bold transition-all">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="border-primary/10 rounded-xl bg-white shadow-2xl dark:bg-black">
+                                <SelectItem value="none" className="py-2.5 text-xs font-bold uppercase">
+                                    -- TANPA TEMPLAT TERPAUT --
                                 </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                                {templates.map((t: any) => (
+                                    <SelectItem key={t.id} value={String(t.id)} className="py-2.5 text-xs font-bold uppercase">
+                                        {t.name} ({t.document_type || 'ADHOC'})
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
-            </div>
             </div>
         );
     }
     if (mechanism === 'folder') {
         return (
             <div className="animate-in fade-in slide-in-from-top-2">
-            <div className="animate-in fade-in slide-in-from-top-2">
-                <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-primary/60 dark:text-white/60 flex items-center gap-2">
-                        Tautan Templat Folder ({type})
-                    </label>
-                    <Select
-                        value={String(contractTemplateId)}
-                        onValueChange={(v: string) => setContractTemplateId(String(v))}
-                    >
-                        <SelectTrigger className="h-10 rounded-xl border-primary/10 bg-primary/5 text-xs font-bold transition-all focus:border-primary">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl border-primary/10 bg-white shadow-2xl dark:bg-black">
-                            <SelectItem value="none" className="py-2.5 text-xs font-bold uppercase">-- TIDAK ADA TEMPLAT TERPILIH --</SelectItem>
-                            {physTemplates.map((t: any) => (
-                                <SelectItem key={t.id} value={String(t.id)} className="py-2.5 text-xs font-bold uppercase">
-                                    {t.name} ({t.file_type || 'PDF'})
+                <div className="animate-in fade-in slide-in-from-top-2">
+                    <div className="space-y-2">
+                        <label className="text-primary/60 flex items-center gap-2 text-[10px] font-bold uppercase dark:text-white/60">
+                            Tautan Templat Folder ({type})
+                        </label>
+                        <Select value={String(contractTemplateId)} onValueChange={(v: string) => setContractTemplateId(String(v))}>
+                            <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-10 rounded-xl text-xs font-bold transition-all">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="border-primary/10 rounded-xl bg-white shadow-2xl dark:bg-black">
+                                <SelectItem value="none" className="py-2.5 text-xs font-bold uppercase">
+                                    -- TIDAK ADA TEMPLAT TERPILIH --
                                 </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                                {physTemplates.map((t: any) => (
+                                    <SelectItem key={t.id} value={String(t.id)} className="py-2.5 text-xs font-bold uppercase">
+                                        {t.name} ({t.file_type || 'PDF'})
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
-            </div>
             </div>
         );
     }
@@ -138,7 +130,7 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
                         </span>
                         <div className="mt-1 flex items-center gap-2">
                             <ShieldCheck size={10} className="text-primary/20 dark:text-white/20" />
-                            <span className="text-primary/30 text-[9px] font-bold tracking-widest uppercase italic dark:text-white/30">
+                            <span className="text-primary/30 text-[9px] font-bold uppercase italic dark:text-white/30">
                                 Aset Administratif Terpantau
                             </span>
                         </div>

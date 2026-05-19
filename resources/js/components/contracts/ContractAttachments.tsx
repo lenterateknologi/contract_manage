@@ -174,7 +174,7 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                     <FileIcon size={40} />
                 </div>
                 <h4 className="text-[11px] font-black tracking-[0.3em] text-black uppercase dark:text-white">Vendor Belum Dipilih</h4>
-                <p className="mt-2 max-w-[280px] text-[10px] leading-relaxed font-bold tracking-widest text-black/40 uppercase dark:text-white/40">
+                <p className="mt-2 max-w-[280px] text-[10px] leading-relaxed font-bold text-black/40 uppercase dark:text-white/40">
                     Silakan pilih vendor terlebih dahulu pada panel informasi kontrak untuk mengelola lampiran.
                 </p>
             </div>
@@ -201,10 +201,8 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                         <div className="flex flex-col">
                             <div className="flex items-center gap-2">
                                 <div className="bg-primary h-4 w-1 rounded-full dark:bg-white" />
-                                <h4 className="text-[11px] leading-none font-bold tracking-widest text-black uppercase dark:text-white">
-                                    {previewAt.label}
-                                </h4>
-                                <span className="bg-primary dark:text-primary rounded px-2 py-0.5 text-[8px] font-bold tracking-widest text-white uppercase dark:bg-white">
+                                <h4 className="text-[11px] leading-none font-bold text-black uppercase dark:text-white">{previewAt.label}</h4>
+                                <span className="bg-primary dark:text-primary rounded px-2 py-0.5 text-[8px] font-bold text-white uppercase dark:bg-white">
                                     {previewAt.category || 'Attachment'}
                                 </span>
                             </div>
@@ -217,7 +215,7 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                     <div className="flex items-center gap-2.5">
                         <button
                             onClick={() => setPreviewAt(null)}
-                            className="dark:bg-sidebar flex h-8 items-center gap-2 rounded-lg border border-black/20 bg-white px-4 text-[10px] font-bold tracking-widest text-black/60 uppercase transition-all hover:bg-black/5 active:scale-95 dark:border-white/20 dark:text-white/60 dark:hover:bg-white/5"
+                            className="dark:bg-sidebar flex h-8 items-center gap-2 rounded-lg border border-black/20 bg-white px-4 text-[10px] font-bold text-black/60 uppercase transition-all hover:bg-black/5 active:scale-95 dark:border-white/20 dark:text-white/60 dark:hover:bg-white/5"
                         >
                             <ArrowLeft size={14} /> BACK TO LIST
                         </button>
@@ -229,7 +227,7 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                                     : contractApi.attachmentDownloadUrl(contract.id, previewAt.id)
                             }
                             download
-                            className="dark:bg-sidebar flex h-8 items-center gap-2 rounded-lg border border-black/20 bg-white px-4 text-[10px] font-bold tracking-widest text-black uppercase transition-all hover:bg-black/5 active:scale-95 dark:border-white/20 dark:text-white dark:hover:bg-white/5"
+                            className="dark:bg-sidebar flex h-8 items-center gap-2 rounded-lg border border-black/20 bg-white px-4 text-[10px] font-bold text-black uppercase transition-all hover:bg-black/5 active:scale-95 dark:border-white/20 dark:text-white dark:hover:bg-white/5"
                         >
                             <Download size={14} className="opacity-40" /> DOWNLOAD
                         </a>
@@ -241,9 +239,7 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                         {previewLoading && (
                             <div className="dark:bg-sidebar/80 absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
                                 <LoadingLottie width={100} height={100} />
-                                <span className="text-[10px] font-black tracking-widest text-black/40 uppercase dark:text-white/40">
-                                    Menyiapkan Preview...
-                                </span>
+                                <span className="text-[10px] font-black text-black/40 uppercase dark:text-white/40">Menyiapkan Preview...</span>
                             </div>
                         )}
 
@@ -313,9 +309,7 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                                             {at.file_name} · <span className="text-black dark:text-white">READY</span>
                                         </div>
                                     ) : (
-                                        <div className="mt-1 text-[9px] font-bold tracking-widest text-black/10 uppercase italic dark:text-white/10">
-                                            Kosong
-                                        </div>
+                                        <div className="mt-1 text-[9px] font-bold text-black/10 uppercase italic dark:text-white/10">Kosong</div>
                                     )}
                                 </div>
                             </div>
@@ -358,7 +352,7 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                                             setActiveCat(vendorType);
                                             fileRef.current?.click();
                                         }}
-                                        className="dark:bg-sidebar flex h-8 items-center gap-2 rounded-lg border border-black/10 bg-white px-4 text-[10px] font-bold tracking-widest text-black/40 uppercase transition-all hover:bg-black hover:text-white active:scale-95 disabled:opacity-20 dark:border-white/10 dark:text-white/40 dark:hover:bg-white dark:hover:text-black"
+                                        className="dark:bg-sidebar flex h-8 items-center gap-2 rounded-lg border border-black/10 bg-white px-4 text-[10px] font-bold text-black/40 uppercase transition-all hover:bg-black hover:text-white active:scale-95 disabled:opacity-20 dark:border-white/10 dark:text-white/40 dark:hover:bg-white dark:hover:text-black"
                                     >
                                         {isUp ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
                                         Upload

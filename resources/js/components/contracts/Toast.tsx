@@ -1,5 +1,5 @@
-import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { usePage } from '@inertiajs/react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 // ─── Toast Types ──────────────────────────────────────────────────────
 interface ToastMsg {
@@ -20,10 +20,10 @@ interface ToastCtx {
     hideProgress: (id: string) => void;
 }
 
-const ToastContext = createContext<ToastCtx>({ 
+const ToastContext = createContext<ToastCtx>({
     showToast: () => {},
     showProgress: () => {},
-    hideProgress: () => {}
+    hideProgress: () => {},
 });
 
 export const useToast = () => useContext(ToastContext);
@@ -50,34 +50,37 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     }, [props.flash, showToast]);
 
     const showProgress = useCallback((id: string, msg: string, progress: number) => {
-        setProgressToasts(prev => {
-            const existing = prev.find(p => p.id === id);
+        setProgressToasts((prev) => {
+            const existing = prev.find((p) => p.id === id);
             if (existing) {
-                return prev.map(p => p.id === id ? { ...p, msg, progress } : p);
+                return prev.map((p) => (p.id === id ? { ...p, msg, progress } : p));
             }
             return [...prev, { id, msg, progress }];
         });
     }, []);
 
     const hideProgress = useCallback((id: string) => {
-        setProgressToasts(prev => prev.filter(p => p.id !== id));
+        setProgressToasts((prev) => prev.filter((p) => p.id !== id));
     }, []);
 
-    useEffect(() => () => {
-        if (timerRef.current) window.clearTimeout(timerRef.current);
-    }, []);
+    useEffect(
+        () => () => {
+            if (timerRef.current) window.clearTimeout(timerRef.current);
+        },
+        [],
+    );
 
     const iconMap = { success: 'fa-circle-check', danger: 'fa-circle-xmark', info: 'fa-circle-info' };
 
     return (
         <ToastContext.Provider value={{ showToast, showProgress, hideProgress }}>
             {children}
-            
+
             {/* Standard Center Toast */}
             {toast && (
                 <div
                     key={toast.id}
-                    className="animate-in slide-in-from-bottom-5 fixed bottom-10 left-1/2 z-[1000] flex -translate-x-1/2 items-center gap-3 rounded-2xl border border-black/10 dark:border-white/20 bg-black/90 dark:bg-white/95 px-6 py-3.5 text-[10px] font-black tracking-widest text-white dark:text-black shadow-2xl backdrop-blur-xl duration-300"
+                    className="animate-in slide-in-from-bottom-5 fixed bottom-10 left-1/2 z-[1000] flex -translate-x-1/2 items-center gap-3 rounded-2xl border border-black/10 bg-black/90 px-6 py-3.5 text-[10px] font-black text-white shadow-2xl backdrop-blur-xl duration-300 dark:border-white/20 dark:bg-white/95 dark:text-black"
                 >
                     <i className={`fa-solid ${iconMap[toast.type]} text-[12px] text-white dark:text-black`} />
                     <span className="uppercase">{toast.msg}</span>
@@ -85,24 +88,21 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             )}
 
             {/* Bottom Right Progress Toasts */}
-            <div className="fixed bottom-6 right-6 z-[1001] flex flex-col gap-3 pointer-events-none">
-                {progressToasts.map(p => (
+            <div className="pointer-events-none fixed right-6 bottom-6 z-[1001] flex flex-col gap-3">
+                {progressToasts.map((p) => (
                     <div
                         key={p.id}
-                        className="animate-in slide-in-from-right-10 w-72 rounded-xl border border-border bg-white p-4 shadow-2xl pointer-events-auto shadow-slate-200/50"
+                        className="animate-in slide-in-from-right-10 border-border pointer-events-auto w-72 rounded-xl border bg-white p-4 shadow-2xl shadow-slate-200/50"
                     >
-                        <div className="flex items-center justify-between mb-2.5">
+                        <div className="mb-2.5 flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <div className="animate-spin h-3 w-3 border-2 border-black dark:border-white border-t-transparent rounded-full" />
-                                <span className="text-[9px] font-black tracking-widest text-black dark:text-white uppercase">{p.msg}</span>
+                                <div className="h-3 w-3 animate-spin rounded-full border-2 border-black border-t-transparent dark:border-white" />
+                                <span className="text-[9px] font-black text-black uppercase dark:text-white">{p.msg}</span>
                             </div>
-                            <span className="text-[10px] font-mono font-bold text-black dark:text-white">{Math.round(p.progress)}%</span>
+                            <span className="font-mono text-[10px] font-bold text-black dark:text-white">{Math.round(p.progress)}%</span>
                         </div>
-                        <div className="h-1.5 w-full bg-black/5 dark:bg-white/10 rounded-full overflow-hidden border border-black/5 dark:border-white/5">
-                            <div 
-                                className="h-full bg-black dark:bg-white transition-all duration-500 ease-out"
-                                style={{ width: `${p.progress}%` }}
-                            />
+                        <div className="h-1.5 w-full overflow-hidden rounded-full border border-black/5 bg-black/5 dark:border-white/5 dark:bg-white/10">
+                            <div className="h-full bg-black transition-all duration-500 ease-out dark:bg-white" style={{ width: `${p.progress}%` }} />
                         </div>
                     </div>
                 ))}

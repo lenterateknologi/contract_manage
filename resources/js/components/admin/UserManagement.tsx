@@ -2,14 +2,8 @@ import { useToast } from '@/components/contracts/Toast';
 import { Button } from '@/components/ui/base/Button';
 import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/forms/Select";
 import { CompactSwitch } from '@/components/ui/forms/CompactSwitch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { usePermissions } from '@/hooks/use-permissions';
 import { cn } from '@/lib/utils';
@@ -52,24 +46,29 @@ function avatarColor(name: string): string {
 
 const UserCell = ({ name, email }: Readonly<{ name: string; email: string }>) => (
     <div className="flex items-center gap-3 select-none">
-        <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold shadow-sm backdrop-blur-sm transition-all duration-200', avatarColor(name))}>
+        <div
+            className={cn(
+                'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold shadow-sm backdrop-blur-sm transition-all duration-200',
+                avatarColor(name),
+            )}
+        >
             {name.charAt(0).toUpperCase()}
         </div>
         <div className="flex min-w-0 flex-col">
-            <span className="text-slate-900 dark:text-slate-100 truncate text-sm leading-tight font-bold tracking-wide">{name}</span>
-            <span className="text-muted-foreground/80 dark:text-slate-400 mt-0.5 truncate text-xs leading-none font-medium">{email}</span>
+            <span className="truncate text-sm leading-tight font-bold tracking-wide text-slate-900 dark:text-slate-100">{name}</span>
+            <span className="text-muted-foreground/80 mt-0.5 truncate text-xs leading-none font-medium dark:text-slate-400">{email}</span>
         </div>
     </div>
 );
 
 const IdentityCell = ({ username, phone }: Readonly<{ username: string; phone?: string }>) => (
     <div className="flex flex-col gap-1 select-none">
-        <div className="text-muted-foreground dark:text-slate-300 flex items-center gap-1.5 text-xs font-bold tracking-wide">
-            <Fingerprint size={12} className="opacity-60 text-primary" />
+        <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-bold tracking-wide dark:text-slate-300">
+            <Fingerprint size={12} className="text-primary opacity-60" />
             {username}
         </div>
         {phone && (
-            <div className="text-muted-foreground/60 dark:text-slate-400 flex items-center gap-1.5 text-xs font-medium tracking-tight">
+            <div className="text-muted-foreground/60 flex items-center gap-1.5 text-xs font-medium tracking-tight dark:text-slate-400">
                 <Phone size={12} className="opacity-40" />
                 {phone}
             </div>
@@ -79,18 +78,18 @@ const IdentityCell = ({ username, phone }: Readonly<{ username: string; phone?: 
 
 const PlacementCell = ({ departmentName, position }: Readonly<{ departmentName?: string; position?: string }>) => (
     <div className="flex flex-col gap-1 select-none">
-        <span className="inline-block w-fit rounded-xl bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1 text-xs font-bold text-indigo-700 dark:text-indigo-400 backdrop-blur-md border border-indigo-500/20 shadow-sm">
+        <span className="inline-block w-fit rounded-xl border border-indigo-500/20 bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700 shadow-sm backdrop-blur-md dark:bg-indigo-900/30 dark:text-indigo-400">
             {departmentName || 'Global'}
         </span>
-        <span className="text-muted-foreground dark:text-slate-400/80 mt-0.5 text-xs font-medium pl-1">{position || 'Staf'}</span>
+        <span className="text-muted-foreground mt-0.5 pl-1 text-xs font-medium dark:text-slate-400/80">{position || 'Staf'}</span>
     </div>
 );
 
 const AuthorityCell = ({ role }: Readonly<{ role: string }>) => (
     <span
         className={cn(
-            'inline-flex items-center rounded-xl px-3 py-1 text-xs font-bold tracking-wide select-none backdrop-blur-sm shadow-sm',
-            ROLE_COLORS[role] ?? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-500/20',
+            'inline-flex items-center rounded-xl px-3 py-1 text-xs font-bold tracking-wide shadow-sm backdrop-blur-sm select-none',
+            ROLE_COLORS[role] ?? 'border border-slate-500/20 bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
         )}
     >
         {role}
@@ -99,8 +98,13 @@ const AuthorityCell = ({ role }: Readonly<{ role: string }>) => (
 
 const AccessCell = ({ isActive }: Readonly<{ isActive: boolean }>) => (
     <div className="flex items-center gap-2 select-none">
-        <div className={cn('h-2 w-2 shrink-0 rounded-full', isActive ? 'bg-emerald-500 animate-pulse' : 'bg-rose-400')} />
-        <span className={cn('text-xs font-bold tracking-wide', isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400')}>
+        <div className={cn('h-2 w-2 shrink-0 rounded-full', isActive ? 'animate-pulse bg-emerald-500' : 'bg-rose-400')} />
+        <span
+            className={cn(
+                'text-xs font-bold tracking-wide',
+                isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400',
+            )}
+        >
             {isActive ? 'Aktif' : 'Nonaktif'}
         </span>
     </div>
@@ -248,7 +252,7 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                             type="button"
                             variant="ghost"
                             onClick={() => setIsConfirmOpen(true)}
-                            className="h-10 rounded-xl border border-rose-500/20 px-4 text-xs font-bold text-rose-500 transition-all hover:bg-rose-500 dark:hover:bg-rose-500/20 hover:text-white active:scale-95 select-none duration-200"
+                            className="h-10 rounded-xl border border-rose-500/20 px-4 text-xs font-bold text-rose-500 transition-all duration-200 select-none hover:bg-rose-500 hover:text-white active:scale-95 dark:hover:bg-rose-500/20"
                         >
                             <Trash2 size={15} className="mr-2" /> Hapus
                         </Button>
@@ -271,7 +275,7 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                     description={`Apakah Anda yakin ingin menghapus user ${editingUser?.name}? Seluruh data akses dan riwayat aktivitas user ini akan dicabut.`}
                     confirmText="Hapus User"
                 />
-                <div className="grid grid-cols-1 gap-8 md:grid-cols-12 select-none animate-in fade-in duration-200">
+                <div className="animate-in fade-in grid grid-cols-1 gap-8 duration-200 select-none md:grid-cols-12">
                     {/* Main Column: 8 Columns */}
                     <div className="space-y-8 md:col-span-8">
                         {/* Section: Identitas & Otentikasi */}
@@ -330,17 +334,14 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                         <FormSection title="Penempatan & Otoritas" subtitle="Struktur organisasi dan peran sistem">
                             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-bold uppercase tracking-widest text-primary/60 dark:text-white/60 flex items-center gap-2">
+                                    <label className="text-primary/60 flex items-center gap-2 text-[10px] font-bold uppercase dark:text-white/60">
                                         Role Akses
                                     </label>
-                                    <Select
-                                        value={form.data.role}
-                                        onValueChange={(v: string) => form.setData('role', String(v))}
-                                    >
-                                        <SelectTrigger className="h-10 rounded-xl border-primary/10 bg-primary/5 text-xs font-bold transition-all focus:border-primary">
+                                    <Select value={form.data.role} onValueChange={(v: string) => form.setData('role', String(v))}>
+                                        <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-10 rounded-xl text-xs font-bold transition-all">
                                             <SelectValue />
                                         </SelectTrigger>
-                                        <SelectContent className="rounded-xl border-primary/10 bg-white shadow-2xl dark:bg-black">
+                                        <SelectContent className="border-primary/10 rounded-xl bg-white shadow-2xl dark:bg-black">
                                             {roles.map((r) => (
                                                 <SelectItem key={r.id} value={r.name} className="py-2.5 text-xs font-bold uppercase">
                                                     {r.name}
@@ -348,20 +349,22 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    {form.errors.role && <p className="text-[10px] font-bold text-rose-500 mt-1 uppercase tracking-tight">{form.errors.role}</p>}
+                                    {form.errors.role && (
+                                        <p className="mt-1 text-[10px] font-bold tracking-tight text-rose-500 uppercase">{form.errors.role}</p>
+                                    )}
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-bold uppercase tracking-widest text-primary/60 dark:text-white/60 flex items-center gap-2">
+                                    <label className="text-primary/60 flex items-center gap-2 text-[10px] font-bold uppercase dark:text-white/60">
                                         Unit / Departemen
                                     </label>
                                     <Select
                                         value={String(form.data.department_id)}
                                         onValueChange={(v: string) => form.setData('department_id', String(v))}
                                     >
-                                        <SelectTrigger className="h-10 rounded-xl border-primary/10 bg-primary/5 text-xs font-bold transition-all focus:border-primary">
+                                        <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-10 rounded-xl text-xs font-bold transition-all">
                                             <SelectValue />
                                         </SelectTrigger>
-                                        <SelectContent className="rounded-xl border-primary/10 bg-white shadow-2xl dark:bg-black">
+                                        <SelectContent className="border-primary/10 rounded-xl bg-white shadow-2xl dark:bg-black">
                                             {departments.map((d) => (
                                                 <SelectItem key={d.id} value={String(d.id)} className="py-2.5 text-xs font-bold uppercase">
                                                     {d.name}
@@ -369,7 +372,11 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    {form.errors.department_id && <p className="text-[10px] font-bold text-rose-500 mt-1 uppercase tracking-tight">{form.errors.department_id}</p>}
+                                    {form.errors.department_id && (
+                                        <p className="mt-1 text-[10px] font-bold tracking-tight text-rose-500 uppercase">
+                                            {form.errors.department_id}
+                                        </p>
+                                    )}
                                 </div>
                                 <CompactInput
                                     label="Jabatan Struktural"
@@ -394,32 +401,32 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                             />
                         </FormSection>
 
-                        <div className="border-border/80 dark:border-slate-800/80 bg-muted/20 dark:bg-slate-900/40 backdrop-blur-sm group relative overflow-hidden rounded-2xl border p-6 select-none shadow-sm transition-all duration-200">
+                        <div className="border-border/80 bg-muted/20 group relative overflow-hidden rounded-2xl border p-6 shadow-sm backdrop-blur-sm transition-all duration-200 select-none dark:border-slate-800/80 dark:bg-slate-900/40">
                             <div className="absolute top-0 right-0 p-4 opacity-5 transition-opacity duration-200 group-hover:opacity-10">
                                 <UserCircle size={80} strokeWidth={1} />
                             </div>
 
                             <div className="relative z-10 mb-4 flex items-center gap-3">
-                                <span className="text-slate-900 dark:text-slate-100 text-xs font-bold tracking-wider uppercase">Preview Profil</span>
+                                <span className="text-xs font-bold tracking-wider text-slate-900 uppercase dark:text-slate-100">Preview Profil</span>
                             </div>
 
-                            <div className="border-border/60 dark:border-slate-800/60 relative z-10 flex flex-col items-center border-y border-dashed py-4 select-none">
+                            <div className="border-border/60 relative z-10 flex flex-col items-center border-y border-dashed py-4 select-none dark:border-slate-800/60">
                                 <div className="bg-primary mb-4 flex h-16 w-16 items-center justify-center rounded-xl text-2xl font-bold text-white shadow-md">
                                     {form.data.name ? form.data.name.charAt(0).toUpperCase() : '?'}
                                 </div>
-                                <span className="text-slate-900 dark:text-slate-100 px-4 text-center text-sm leading-tight font-bold tracking-wide">
+                                <span className="px-4 text-center text-sm leading-tight font-bold tracking-wide text-slate-900 dark:text-slate-100">
                                     {form.data.name || 'Nama Belum Diisi'}
                                 </span>
-                                <span className="text-muted-foreground/80 dark:text-slate-400 mt-1 px-4 text-center text-xs font-bold tracking-wider uppercase">
+                                <span className="text-muted-foreground/80 mt-1 px-4 text-center text-xs font-bold tracking-wider uppercase dark:text-slate-400">
                                     {form.data.position || 'Jabatan Belum Diatur'}
                                 </span>
 
-                                <div className="border-border/40 dark:border-slate-800/40 mt-4 flex w-full flex-col items-center gap-2 border-t pt-4">
-                                    <div className="text-muted-foreground dark:text-slate-300 flex items-center gap-2 text-xs font-medium">
+                                <div className="border-border/40 mt-4 flex w-full flex-col items-center gap-2 border-t pt-4 dark:border-slate-800/40">
+                                    <div className="text-muted-foreground flex items-center gap-2 text-xs font-medium dark:text-slate-300">
                                         <Mail size={13} className="text-primary" />
                                         {form.data.email || 'Email Belum Set'}
                                     </div>
-                                    <div className="text-muted-foreground dark:text-slate-300 flex items-center gap-2 text-xs font-bold">
+                                    <div className="text-muted-foreground flex items-center gap-2 text-xs font-bold dark:text-slate-300">
                                         <ShieldAlert size={13} className="text-primary" />
                                         {form.data.role}
                                     </div>
@@ -433,7 +440,7 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
     }
 
     return (
-        <div className="bg-card/40 dark:bg-slate-900/20 backdrop-blur-sm border border-border/60 dark:border-slate-800/60 m-5 rounded-2xl p-6 shadow-sm animate-in fade-in duration-200 select-none">
+        <div className="bg-card/40 border-border/60 animate-in fade-in m-5 rounded-2xl border p-6 shadow-sm backdrop-blur-sm duration-200 select-none dark:border-slate-800/60 dark:bg-slate-900/20">
             <TableMasterData
                 title="Database Pengguna"
                 columns={columns}
@@ -452,9 +459,9 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                         <Button
                             variant="white"
                             onClick={openCreate}
-                            className="h-10 px-5 gap-2 rounded-xl text-xs font-bold tracking-wide transition-all duration-200 border border-border bg-card dark:bg-slate-900/60 text-foreground shadow-sm hover:bg-muted/60 dark:hover:bg-slate-800/60 hover:border-border hover:shadow-md select-none"
+                            className="border-border bg-card text-foreground hover:bg-muted/60 hover:border-border h-10 gap-2 rounded-xl border px-5 text-xs font-bold tracking-wide shadow-sm transition-all duration-200 select-none hover:shadow-md dark:bg-slate-900/60 dark:hover:bg-slate-800/60"
                         >
-                            <Plus className="h-4 w-4 text-primary" /> Tambah User
+                            <Plus className="text-primary h-4 w-4" /> Tambah User
                         </Button>
                     )
                 }

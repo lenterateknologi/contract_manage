@@ -1,27 +1,26 @@
-import React, { useMemo, useCallback, useEffect } from 'react';
+import { Button } from '@/components/ui/base/Button';
+import { cn } from '@/lib/utils';
 import {
-    ReactFlow,
     Background,
-    Controls,
-    Handle,
-    Position,
-    NodeProps,
-    Edge,
-    Node,
-    MarkerType,
     BackgroundVariant,
-    getBezierPath,
     BaseEdge,
-    EdgeLabelRenderer,
-    addEdge,
-    useNodesState,
-    useEdgesState,
     Connection,
+    Controls,
+    Edge,
+    EdgeLabelRenderer,
+    Handle,
+    MarkerType,
+    Node,
+    NodeProps,
+    Position,
+    ReactFlow,
+    addEdge,
+    useEdgesState,
+    useNodesState,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { cn } from '@/lib/utils';
-import { Shield, GitBranch, Users, Upload, CheckCircle2, RotateCcw, Plus, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/base/Button';
+import { CheckCircle2, Plus, Shield, Trash2, Upload, Users } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 
 type WorkflowNodeData = {
     label: string;
@@ -42,58 +41,79 @@ const WorkflowNode = ({ data }: NodeProps<Node<WorkflowNodeData>>) => {
     const Icon = useMemo(() => {
         const type = data.type?.toUpperCase() || '';
         switch (type) {
-            case 'APPROVAL': return Shield;
-            case 'REVIEW': return CheckCircle2; // Muted check for review
-            case 'SELECTION': return Users;
-            case 'UPLOAD': return Upload;
-            case 'CLOSING': return CheckCircle2;
-            default: return Shield;
+            case 'APPROVAL':
+                return Shield;
+            case 'REVIEW':
+                return CheckCircle2; // Muted check for review
+            case 'SELECTION':
+                return Users;
+            case 'UPLOAD':
+                return Upload;
+            case 'CLOSING':
+                return CheckCircle2;
+            default:
+                return Shield;
         }
     }, [data.type]);
 
     return (
-        <div className={cn(
-            "relative px-4 py-3 rounded-xl border transition-all duration-200 min-w-[220px] select-none group",
-            data.isFinal 
-                ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-500/10 dark:border-emerald-500/20" 
-                : "bg-white border-slate-200 shadow-sm dark:bg-slate-900 dark:border-slate-800"
-        )}>
+        <div
+            className={cn(
+                'group relative min-w-[220px] rounded-xl border px-4 py-3 transition-all duration-200 select-none',
+                data.isFinal
+                    ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-500/20 dark:bg-emerald-500/10'
+                    : 'border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900',
+            )}
+        >
             {/* Main Flow Handles (Vertical) */}
-            {!data.isInitial && <Handle type="target" position={Position.Top} className="w-2 h-2 !bg-slate-300 border-none hover:!bg-primary transition-colors" />}
-            
+            {!data.isInitial && (
+                <Handle type="target" position={Position.Top} className="hover:!bg-primary h-2 w-2 border-none !bg-slate-300 transition-colors" />
+            )}
+
             {/* Rejection Handles: Single Source (Bottom) and Single Target (Right) */}
-            {!data.isInitial && <Handle type="target" position={Position.Right} id="reject-in" className="w-1.5 h-1.5 !bg-rose-300 border-none hover:!bg-rose-500 transition-colors" />}
-            
-            <Handle type="source" position={Position.Bottom} id="reject-out" style={{ left: '40%' }} className="w-1.5 h-1.5 !bg-rose-300 border-none hover:!bg-rose-500 transition-colors" />
-            
+            {!data.isInitial && (
+                <Handle
+                    type="target"
+                    position={Position.Right}
+                    id="reject-in"
+                    className="h-1.5 w-1.5 border-none !bg-rose-300 transition-colors hover:!bg-rose-500"
+                />
+            )}
+
+            <Handle
+                type="source"
+                position={Position.Bottom}
+                id="reject-out"
+                style={{ left: '40%' }}
+                className="h-1.5 w-1.5 border-none !bg-rose-300 transition-colors hover:!bg-rose-500"
+            />
+
             <div className="flex items-center gap-3">
-                <div className={cn(
-                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors",
-                    data.isFinal ? "bg-emerald-500 text-white" : "bg-slate-50 text-slate-400 dark:bg-white/5"
-                )}>
+                <div
+                    className={cn(
+                        'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors',
+                        data.isFinal ? 'bg-emerald-500 text-white' : 'bg-slate-50 text-slate-400 dark:bg-white/5',
+                    )}
+                >
                     <Icon size={14} />
                 </div>
-                <div className="flex flex-col text-left min-w-0 flex-1">
-                    <span className="text-[9px] font-bold tracking-wider text-slate-400 uppercase leading-none mb-0.5">
-                        {data.type || 'STEP'}
-                    </span>
-                    <span className="text-xs font-medium text-slate-700 dark:text-slate-200 truncate">
-                        {data.label}
-                    </span>
+                <div className="flex min-w-0 flex-1 flex-col text-left">
+                    <span className="mb-0.5 text-[9px] leading-none font-bold tracking-wider text-slate-400 uppercase">{data.type || 'STEP'}</span>
+                    <span className="truncate text-xs font-medium text-slate-700 dark:text-slate-200">{data.label}</span>
                     {data.organization && (data.organization.group || data.organization.region || data.organization.company) && (
                         <div className="mt-1.5 flex flex-wrap gap-1">
                             {data.organization.group && (
-                                <span className="bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter">
+                                <span className="rounded bg-blue-50 px-1.5 py-0.5 text-[8px] font-black tracking-tighter text-blue-600 uppercase dark:bg-blue-500/10 dark:text-blue-400">
                                     {data.organization.group}
                                 </span>
                             )}
                             {data.organization.region && (
-                                <span className="bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter">
+                                <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-[8px] font-black tracking-tighter text-indigo-600 uppercase dark:bg-indigo-500/10 dark:text-indigo-400">
                                     {data.organization.region}
                                 </span>
                             )}
                             {data.organization.company && (
-                                <span className="bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter">
+                                <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[8px] font-black tracking-tighter text-slate-600 uppercase dark:bg-slate-800 dark:text-slate-400">
                                     {data.organization.company}
                                 </span>
                             )}
@@ -103,19 +123,21 @@ const WorkflowNode = ({ data }: NodeProps<Node<WorkflowNodeData>>) => {
 
                 {/* Delete Button */}
                 {!data.isInitial && data.onDelete && (
-                    <button 
+                    <button
                         onClick={(e) => {
                             e.stopPropagation();
                             data.onDelete?.();
                         }}
-                        className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-rose-50 hover:text-rose-500 rounded-lg transition-all text-slate-300"
+                        className="rounded-lg p-1.5 text-slate-300 opacity-0 transition-all group-hover:opacity-100 hover:bg-rose-50 hover:text-rose-500"
                     >
                         <Trash2 size={14} />
                     </button>
                 )}
             </div>
 
-            {!data.isFinal && <Handle type="source" position={Position.Bottom} className="w-2 h-2 !bg-slate-300 border-none hover:!bg-primary transition-colors" />}
+            {!data.isFinal && (
+                <Handle type="source" position={Position.Bottom} className="hover:!bg-primary h-2 w-2 border-none !bg-slate-300 transition-colors" />
+            )}
         </div>
     );
 };
@@ -138,18 +160,18 @@ const RejectionEdge = ({
     // 'idx' is the source step index. Higher index = further right
     const idx = data?.idx || 0;
     const distance = Math.abs(sourceY - targetY);
-    
+
     // Create a path that exits down from bottom, arcs to the right, and enters the right side
-    const horizontalOffset = 150 + (idx * 40);
+    const horizontalOffset = 150 + idx * 40;
     const verticalBuffer = 30;
 
     const edgePath = `
-        M ${sourceX},${sourceY} 
-        C ${sourceX},${sourceY + verticalBuffer} 
-          ${sourceX + horizontalOffset},${sourceY + verticalBuffer} 
+        M ${sourceX},${sourceY}
+        C ${sourceX},${sourceY + verticalBuffer}
+          ${sourceX + horizontalOffset},${sourceY + verticalBuffer}
           ${sourceX + horizontalOffset},${(sourceY + targetY) / 2}
-        C ${sourceX + horizontalOffset},${targetY} 
-          ${targetX + 50},${targetY} 
+        C ${sourceX + horizontalOffset},${targetY}
+          ${targetX + 50},${targetY}
           ${targetX},${targetY}
     `;
 
@@ -175,7 +197,7 @@ const RejectionEdge = ({
                             border: '1px solid #fee2e2',
                             pointerEvents: 'all',
                         }}
-                        className="shadow-sm uppercase tracking-widest whitespace-nowrap"
+                        className="whitespace-nowrap uppercase shadow-sm"
                     >
                         {label}
                     </div>
@@ -203,14 +225,14 @@ interface WorkflowVisualizerProps {
     companies?: any[];
 }
 
-export function WorkflowVisualizer({ 
-    steps, 
-    onChange, 
-    className, 
+export function WorkflowVisualizer({
+    steps,
+    onChange,
+    className,
     readOnly = false,
     companyGroups = [],
     regions = [],
-    companies = []
+    companies = [],
 }: WorkflowVisualizerProps) {
     const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -233,15 +255,15 @@ export function WorkflowVisualizer({
             // Stacked vertically with 220px spacing for more room
             const yPos = (idx + 1) * 220;
 
-            const group = step.company_group_id ? companyGroups.find(g => g.id === step.company_group_id)?.name : null;
-            const region = step.region_id ? regions.find(r => r.id === step.region_id)?.name : null;
-            const company = step.company_id ? companies.find(c => c.id === step.company_id)?.name : null;
+            const group = step.company_group_id ? companyGroups.find((g) => g.id === step.company_group_id)?.name : null;
+            const region = step.region_id ? regions.find((r) => r.id === step.region_id)?.name : null;
+            const company = step.company_id ? companies.find((c) => c.id === step.company_id)?.name : null;
 
             initialNodes.push({
                 id: nodeId,
                 type: 'workflow',
-                data: { 
-                    label: step.description || `Tahap ${idx + 1}`, 
+                data: {
+                    label: step.description || `Tahap ${idx + 1}`,
                     type: step.step_type,
                     isFinal: step.step_type === 'CLOSING',
                     onDelete: () => {
@@ -252,8 +274,8 @@ export function WorkflowVisualizer({
                     organization: {
                         group,
                         region,
-                        company
-                    }
+                        company,
+                    },
                 },
                 position: { x: 300, y: yPos },
             });
@@ -273,7 +295,7 @@ export function WorkflowVisualizer({
             // Rejection edges with single handle points (lane logic still separates them)
             if (step.reject_target !== undefined && step.reject_target !== null) {
                 const targetId = step.reject_target === 0 ? 'start' : `step-${step.reject_target}`;
-                
+
                 initialEdges.push({
                     id: `reject-${nodeId}-${targetId}`,
                     source: nodeId,
@@ -289,83 +311,99 @@ export function WorkflowVisualizer({
             }
         });
 
-
         setNodes(initialNodes);
         setEdges(initialEdges);
     }, [steps]);
 
     const addStep = useCallback(() => {
         if (readOnly || !onChange) return;
-        const newSteps = [...steps, {
-            description: "New Approval Step",
-            step_type: "APPROVAL",
-            reject_target: 0
-        }];
+        const newSteps = [
+            ...steps,
+            {
+                description: 'New Approval Step',
+                step_type: 'APPROVAL',
+                reject_target: 0,
+            },
+        ];
         onChange(newSteps);
     }, [steps, onChange, readOnly]);
 
-    const onConnect = useCallback((params: Connection) => {
-        if (readOnly) return;
-        
-        // Custom connection logic for rejections
-        if (params.sourceHandle === 'reject-out' && params.targetHandle === 'reject-in') {
-            const newEdge: Edge = {
-                ...params,
-                id: `reject-${params.source}-${params.target}`,
-                type: 'rejection',
-                label: 'TOLAK',
-                style: { stroke: '#fca5a5', strokeWidth: 1, strokeDasharray: '4,4' },
-                markerEnd: { type: MarkerType.ArrowClosed, color: '#fca5a5' },
-                data: { idx: parseInt(params.source?.split('-')[1] || '0') - 1 }
-            };
-            setEdges((eds) => addEdge(newEdge, eds));
-            
-            // Sync back to steps array if needed
-            if (onChange) {
-                const sourceIdx = parseInt(params.source?.split('-')[1] || '0') - 1;
-                const targetIdx = params.target === 'start' ? 0 : parseInt(params.target?.split('-')[1] || '0');
-                const newSteps = [...steps];
-                if (newSteps[sourceIdx]) {
-                    newSteps[sourceIdx].reject_target = targetIdx;
+    const onConnect = useCallback(
+        (params: Connection) => {
+            if (readOnly) return;
+
+            // Custom connection logic for rejections
+            if (params.sourceHandle === 'reject-out' && params.targetHandle === 'reject-in') {
+                const newEdge: Edge = {
+                    ...params,
+                    id: `reject-${params.source}-${params.target}`,
+                    type: 'rejection',
+                    label: 'TOLAK',
+                    style: { stroke: '#fca5a5', strokeWidth: 1, strokeDasharray: '4,4' },
+                    markerEnd: { type: MarkerType.ArrowClosed, color: '#fca5a5' },
+                    data: { idx: parseInt(params.source?.split('-')[1] || '0') - 1 },
+                };
+                setEdges((eds) => addEdge(newEdge, eds));
+
+                // Sync back to steps array if needed
+                if (onChange) {
+                    const sourceIdx = parseInt(params.source?.split('-')[1] || '0') - 1;
+                    const targetIdx = params.target === 'start' ? 0 : parseInt(params.target?.split('-')[1] || '0');
+                    const newSteps = [...steps];
+                    if (newSteps[sourceIdx]) {
+                        newSteps[sourceIdx].reject_target = targetIdx;
+                        onChange(newSteps);
+                    }
+                }
+            }
+        },
+        [setEdges, steps, onChange, readOnly],
+    );
+
+    const onEdgeDelete = useCallback(
+        (edgesToDelete: Edge[]) => {
+            if (readOnly) return;
+
+            edgesToDelete.forEach((edge) => {
+                if (edge.type === 'rejection' && onChange) {
+                    const sourceIdx = parseInt(edge.source?.split('-')[1] || '0') - 1;
+                    const newSteps = [...steps];
+                    if (newSteps[sourceIdx]) {
+                        newSteps[sourceIdx].reject_target = null;
+                        onChange(newSteps);
+                    }
+                }
+            });
+        },
+        [steps, onChange, readOnly],
+    );
+
+    const onNodeClick = useCallback(
+        (event: React.MouseEvent, node: Node) => {
+            if (readOnly || node.id === 'start' || !onChange) return;
+
+            const idx = parseInt(node.id.split('-')[1]) - 1;
+            const currentStep = steps[idx];
+
+            if (currentStep) {
+                const newDescription = prompt('Enter step description:', currentStep.description);
+                if (newDescription !== null) {
+                    const newSteps = [...steps];
+                    newSteps[idx] = { ...currentStep, description: newDescription };
                     onChange(newSteps);
                 }
             }
-        }
-    }, [setEdges, steps, onChange, readOnly]);
-
-    const onEdgeDelete = useCallback((edgesToDelete: Edge[]) => {
-        if (readOnly) return;
-        
-        edgesToDelete.forEach(edge => {
-            if (edge.type === 'rejection' && onChange) {
-                const sourceIdx = parseInt(edge.source?.split('-')[1] || '0') - 1;
-                const newSteps = [...steps];
-                if (newSteps[sourceIdx]) {
-                    newSteps[sourceIdx].reject_target = null;
-                    onChange(newSteps);
-                }
-            }
-        });
-    }, [steps, onChange, readOnly]);
-
-    const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
-        if (readOnly || node.id === 'start' || !onChange) return;
-        
-        const idx = parseInt(node.id.split('-')[1]) - 1;
-        const currentStep = steps[idx];
-        
-        if (currentStep) {
-            const newDescription = prompt("Enter step description:", currentStep.description);
-            if (newDescription !== null) {
-                const newSteps = [...steps];
-                newSteps[idx] = { ...currentStep, description: newDescription };
-                onChange(newSteps);
-            }
-        }
-    }, [steps, onChange, readOnly]);
+        },
+        [steps, onChange, readOnly],
+    );
 
     return (
-        <div className={cn("w-full h-full border border-slate-100 bg-slate-50/30 overflow-hidden dark:bg-slate-950/20 dark:border-slate-800", className)}>
+        <div
+            className={cn(
+                'h-full w-full overflow-hidden border border-slate-100 bg-slate-50/30 dark:border-slate-800 dark:bg-slate-950/20',
+                className,
+            )}
+        >
             <ReactFlow
                 nodes={nodes}
                 edges={edges}
@@ -384,15 +422,15 @@ export function WorkflowVisualizer({
                 colorMode="system"
             >
                 <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#cbd5e1" />
-                <Controls showInteractive={false} className="bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-800" />
+                <Controls showInteractive={false} className="border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900" />
             </ReactFlow>
 
             {/* Add Step Overlay */}
             {!readOnly && (
-                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50">
-                    <Button 
+                <div className="absolute bottom-6 left-1/2 z-50 -translate-x-1/2">
+                    <Button
                         onClick={addStep}
-                        className="bg-primary text-white rounded-2xl px-6 py-4 shadow-2xl hover:scale-105 transition-transform flex items-center gap-2 font-black uppercase tracking-widest text-[10px]"
+                        className="bg-primary flex items-center gap-2 rounded-2xl px-6 py-4 text-[10px] font-black text-white uppercase shadow-2xl transition-transform hover:scale-105"
                     >
                         <Plus size={16} />
                         Add New Step

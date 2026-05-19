@@ -1,17 +1,17 @@
 import { Head } from '@inertiajs/react';
 
+import { CompanyGroupManagement } from '@/components/admin/CompanyGroupManagement';
+import { CompanyManagement } from '@/components/admin/CompanyManagement';
 import { ContractTypeManagement } from '@/components/admin/ContractTypeManagement';
 import { DepartmentManagement } from '@/components/admin/DepartmentManagement';
 import { NavigationManagement } from '@/components/admin/NavigationManagement';
 import { NumberingFormatManagement } from '@/components/admin/NumberingFormatManagement';
+import { RegionManagement } from '@/components/admin/RegionManagement';
 import { RoleManagement } from '@/components/admin/RoleManagement';
 import { StatusManagement } from '@/components/admin/StatusManagement';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { VendorManagement } from '@/components/admin/VendorManagement';
 import { WorkflowManagement } from '@/components/admin/WorkflowManagement';
-import { CompanyGroupManagement } from '@/components/admin/CompanyGroupManagement';
-import { RegionManagement } from '@/components/admin/RegionManagement';
-import { CompanyManagement } from '@/components/admin/CompanyManagement';
 import { ToastProvider } from '@/components/contracts/Toast';
 
 interface PaginatedData<T> {
@@ -132,7 +132,7 @@ export default function AdminIndex({
                 return <CompanyManagement companies={companies} regions={regions} groups={companyGroups} filters={filters} />;
             default:
                 return (
-                    <div className="flex h-full items-center justify-center text-xs font-black tracking-widest text-slate-400 uppercase">
+                    <div className="flex h-full items-center justify-center text-xs font-black text-slate-400 uppercase">
                         Pilih menu administrasi untuk mengelola sistem
                     </div>
                 );

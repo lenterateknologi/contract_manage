@@ -1,15 +1,21 @@
 import { Badge } from '@/components/ui/base/Badge';
 import { Button } from '@/components/ui/base/Button';
-import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/overlays/Dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/overlays/DropdownMenu';
-import { FilterCategory, FilterSheet } from '@/components/ui/data/FilterSheet';
 import { Input } from '@/components/ui/base/Input';
 import { Label } from '@/components/ui/base/Label';
-import { LayoutToggle } from '@/components/ui/navigation/LayoutToggle';
+import { Textarea } from '@/components/ui/base/Textarea';
+import { FilterCategory, FilterSheet } from '@/components/ui/data/FilterSheet';
+import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
 import { SearchInput } from '@/components/ui/forms/SearchInput';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
-import { Textarea } from '@/components/ui/base/Textarea';
+import { LayoutToggle } from '@/components/ui/navigation/LayoutToggle';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/overlays/Dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/overlays/DropdownMenu';
 import { cn } from '@/lib/utils';
 import { Head, router, useForm } from '@inertiajs/react';
 import { Copy, Edit2, FileCheck, FileJson, FileText, Filter, Layout, MoreHorizontal, Plus, Settings, Trash2 } from 'lucide-react';
@@ -89,8 +95,10 @@ export default function FormTemplates({ templates, contract_types }: Props) {
             accessorKey: 'name',
             cell: (t) => (
                 <div className="flex flex-col">
-                    <span className="text-[12px] font-semibold tracking-tight text-foreground uppercase">{t.name}</span>
-                    <span className="max-w-[200px] truncate text-[10px] font-medium text-muted-foreground uppercase">{t.description || 'No description'}</span>
+                    <span className="text-foreground text-[12px] font-semibold tracking-tight uppercase">{t.name}</span>
+                    <span className="text-muted-foreground max-w-[200px] truncate text-[10px] font-medium uppercase">
+                        {t.description || 'No description'}
+                    </span>
                 </div>
             ),
         },
@@ -98,7 +106,7 @@ export default function FormTemplates({ templates, contract_types }: Props) {
             header: 'Classification',
             accessorKey: 'document_type',
             cell: (t) => (
-                <span className="border border-border bg-muted px-2 py-0.5 text-[10px] font-semibold tracking-widest text-foreground uppercase">
+                <span className="border-border bg-muted text-foreground border px-2 py-0.5 text-[10px] font-semibold uppercase">
                     {t.document_type || 'Custom'}
                 </span>
             ),
@@ -108,16 +116,18 @@ export default function FormTemplates({ templates, contract_types }: Props) {
             accessorKey: 'is_active',
             cell: (t) =>
                 t.is_active ? (
-                    <span className="text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">Published</span>
+                    <span className="text-muted-foreground text-[10px] font-semibold uppercase">Published</span>
                 ) : (
-                    <span className="bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300 px-2 py-0.5 text-[10px] font-semibold tracking-widest uppercase">Draft</span>
+                    <span className="bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-800 uppercase dark:bg-red-950/40 dark:text-red-300">
+                        Draft
+                    </span>
                 ),
         },
         {
             header: 'Fields',
             accessorKey: 'fields_count',
             cell: (t) => (
-                <span className="text-[11px] font-semibold text-foreground">
+                <span className="text-foreground text-[11px] font-semibold">
                     {t.fields_count} <span className="text-muted-foreground/60">ITEMS</span>
                 </span>
             ),
@@ -125,7 +135,7 @@ export default function FormTemplates({ templates, contract_types }: Props) {
         {
             header: 'Modified',
             accessorKey: 'updated_at',
-            cell: (t) => <span className="text-[11px] font-semibold text-muted-foreground">{new Date(t.updated_at).toLocaleDateString()}</span>,
+            cell: (t) => <span className="text-muted-foreground text-[11px] font-semibold">{new Date(t.updated_at).toLocaleDateString()}</span>,
         },
     ];
 
@@ -216,9 +226,9 @@ export default function FormTemplates({ templates, contract_types }: Props) {
         <>
             <Head title="Form Template" />
 
-            <div className="font-sans flex h-[calc(100vh-64px)] flex-col overflow-hidden bg-background antialiased text-foreground">
+            <div className="bg-background text-foreground flex h-[calc(100vh-64px)] flex-col overflow-hidden font-sans antialiased">
                 {/* Unified Toolbar — Identical to Contracts workspace */}
-                <div className="sticky top-0 z-20 flex items-center gap-6 border-b border-border/40 bg-card px-5 py-4 text-card-foreground">
+                <div className="border-border/40 bg-card text-card-foreground sticky top-0 z-20 flex items-center gap-6 border-b px-5 py-4">
                     <div className="relative w-full max-w-sm flex-1">
                         <SearchInput placeholder="Cari template form..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                     </div>
@@ -230,7 +240,7 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                             variant="outline"
                             onClick={() => setIsFilterOpen(true)}
                             className={cn(
-                                'relative h-10 px-4 transition-all active:scale-95 text-foreground hover:bg-muted border-border',
+                                'text-foreground hover:bg-muted border-border relative h-10 px-4 transition-all active:scale-95',
                                 hasActiveFilters && 'bg-primary text-primary-foreground border-primary',
                             )}
                         >
@@ -240,7 +250,7 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                                 <span
                                     className={cn(
                                         'ml-1 flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[9px] font-bold',
-                                        hasActiveFilters ? 'bg-white text-primary' : 'bg-primary text-white',
+                                        hasActiveFilters ? 'text-primary bg-white' : 'bg-primary text-white',
                                     )}
                                 >
                                     {Object.values(activeFilters).flat().length}
@@ -254,13 +264,13 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                     </div>
                 </div>
 
-                <div className="custom-scrollbar flex-1 overflow-y-auto bg-background text-foreground">
+                <div className="custom-scrollbar bg-background text-foreground flex-1 overflow-y-auto">
                     {layout === 'grid' ? (
                         <div className="grid grid-cols-1 gap-6 p-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-3">
                             {filteredTemplates.map((template) => (
                                 <div
                                     key={template.id}
-                                    className="group relative flex cursor-pointer flex-col gap-4 overflow-hidden rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:border-primary/40 hover:shadow-xl text-card-foreground"
+                                    className="group border-border bg-card hover:border-primary/40 text-card-foreground relative flex cursor-pointer flex-col gap-4 overflow-hidden rounded-xl border p-6 shadow-sm transition-all hover:shadow-xl"
                                 >
                                     <div className="absolute top-4 right-4 z-10">
                                         <DropdownMenu>
@@ -268,49 +278,40 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                                                 <Button
                                                     variant="outline"
                                                     size="icon"
-                                                    className="h-8 w-8 text-muted-foreground border-border/40 bg-card hover:bg-muted hover:text-foreground shadow-sm transition-all"
+                                                    className="text-muted-foreground border-border/40 bg-card hover:bg-muted hover:text-foreground h-8 w-8 shadow-sm transition-all"
                                                 >
                                                     <MoreHorizontal size={14} />
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent
                                                 align="end"
-                                                className="w-56 rounded-xl border border-border bg-card p-2 shadow-2xl text-card-foreground"
+                                                className="border-border bg-card text-card-foreground w-56 rounded-xl border p-2 shadow-2xl"
                                             >
-                                                <DropdownMenuItem
-                                                    asChild
-                                                    className="cursor-pointer rounded-lg py-2.5 focus:bg-muted"
-                                                >
+                                                <DropdownMenuItem asChild className="focus:bg-muted cursor-pointer rounded-lg py-2.5">
                                                     <a
                                                         href={route('admin.form-templates.builder', template.id)}
                                                         target="_blank"
                                                         className="flex items-center"
                                                     >
-                                                        <Edit2 className="mr-3 h-4 w-4 text-muted-foreground" />
-                                                        <span className="text-[10px] font-semibold tracking-widest text-foreground uppercase">
-                                                            Open Builder
-                                                        </span>
+                                                        <Edit2 className="text-muted-foreground mr-3 h-4 w-4" />
+                                                        <span className="text-foreground text-[10px] font-semibold uppercase">Open Builder</span>
                                                     </a>
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem
                                                     onClick={() => openEditModal(template)}
-                                                    className="cursor-pointer rounded-lg py-2.5 focus:bg-muted"
+                                                    className="focus:bg-muted cursor-pointer rounded-lg py-2.5"
                                                 >
-                                                    <Settings className="mr-3 h-4 w-4 text-muted-foreground" />
-                                                    <span className="text-[10px] font-semibold tracking-widest text-foreground uppercase">
-                                                        Metadata
-                                                    </span>
+                                                    <Settings className="text-muted-foreground mr-3 h-4 w-4" />
+                                                    <span className="text-foreground text-[10px] font-semibold uppercase">Metadata</span>
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem
                                                     onClick={() => handleDuplicate(template.id)}
-                                                    className="cursor-pointer rounded-lg py-2.5 focus:bg-muted"
+                                                    className="focus:bg-muted cursor-pointer rounded-lg py-2.5"
                                                 >
-                                                    <Copy className="mr-3 h-4 w-4 text-muted-foreground" />
-                                                    <span className="text-[10px] font-semibold tracking-widest text-foreground uppercase">
-                                                        Clone Asset
-                                                    </span>
+                                                    <Copy className="text-muted-foreground mr-3 h-4 w-4" />
+                                                    <span className="text-foreground text-[10px] font-semibold uppercase">Clone Asset</span>
                                                 </DropdownMenuItem>
-                                                <DropdownMenuSeparator className="my-1 bg-border" />
+                                                <DropdownMenuSeparator className="bg-border my-1" />
                                                 <DropdownMenuItem
                                                     className="cursor-pointer rounded-lg py-2.5 text-red-600 focus:bg-red-50 dark:focus:bg-red-950/30"
                                                     onClick={() => {
@@ -319,14 +320,14 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                                                     }}
                                                 >
                                                     <Trash2 className="mr-3 h-4 w-4" />
-                                                    <span className="text-[10px] font-semibold tracking-widest uppercase">Purge Asset</span>
+                                                    <span className="text-[10px] font-semibold uppercase">Purge Asset</span>
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </div>
 
                                     <div className="flex items-start gap-4">
-                                        <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-muted text-muted-foreground shadow-sm transition-all group-hover:text-foreground">
+                                        <div className="border-border bg-muted text-muted-foreground group-hover:text-foreground flex h-12 w-12 items-center justify-center rounded-xl border shadow-sm transition-all">
                                             {template.document_type === 'f1' ? (
                                                 <FileText size={24} />
                                             ) : template.document_type === 'f2' ? (
@@ -339,40 +340,36 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                                             <div className="mb-1.5 flex items-center gap-2">
                                                 <Badge
                                                     variant="outline"
-                                                    className="rounded-lg border-border bg-muted px-2 py-0.5 text-[8px] font-semibold tracking-widest text-muted-foreground uppercase"
+                                                    className="border-border bg-muted text-muted-foreground rounded-lg px-2 py-0.5 text-[8px] font-semibold uppercase"
                                                 >
                                                     {template.document_type || 'Custom'}
                                                 </Badge>
                                                 {!template.is_active && (
-                                                    <span className="rounded-lg bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300 px-2 py-0.5 text-[8px] font-semibold tracking-widest uppercase">
+                                                    <span className="rounded-lg bg-red-100 px-2 py-0.5 text-[8px] font-semibold text-red-800 uppercase dark:bg-red-950/40 dark:text-red-300">
                                                         DRAFT
                                                     </span>
                                                 )}
                                             </div>
-                                            <h3 className="line-clamp-1 text-[14px] font-bold tracking-tight text-foreground uppercase antialiased">
+                                            <h3 className="text-foreground line-clamp-1 text-[14px] font-bold tracking-tight uppercase antialiased">
                                                 {template.name}
                                             </h3>
                                         </div>
                                     </div>
 
-                                    <p className="mt-1 line-clamp-2 h-8 text-[11px] leading-relaxed font-bold tracking-tight text-muted-foreground uppercase antialiased">
+                                    <p className="text-muted-foreground mt-1 line-clamp-2 h-8 text-[11px] leading-relaxed font-bold tracking-tight uppercase antialiased">
                                         {template.description || 'No asset description provided.'}
                                     </p>
 
-                                    <div className="mt-auto grid grid-cols-2 gap-4 border-y border-border/60 py-4">
+                                    <div className="border-border/60 mt-auto grid grid-cols-2 gap-4 border-y py-4">
                                         <div className="flex flex-col">
-                                            <span className="mb-1 text-[8px] font-semibold tracking-widest text-muted-foreground uppercase">
-                                                Elements
-                                            </span>
-                                            <span className="text-[11px] font-bold text-foreground">
+                                            <span className="text-muted-foreground mb-1 text-[8px] font-semibold uppercase">Elements</span>
+                                            <span className="text-foreground text-[11px] font-bold">
                                                 {template.fields_count} <span className="text-[8px] opacity-40">FIELDS</span>
                                             </span>
                                         </div>
                                         <div className="flex flex-col items-end">
-                                            <span className="mb-1 text-[8px] font-semibold tracking-widest text-muted-foreground uppercase">
-                                                Modified
-                                            </span>
-                                            <span className="text-[11px] font-bold text-foreground tabular-nums">
+                                            <span className="text-muted-foreground mb-1 text-[8px] font-semibold uppercase">Modified</span>
+                                            <span className="text-foreground text-[11px] font-bold tabular-nums">
                                                 {new Date(template.updated_at).toLocaleDateString('id-ID')}
                                             </span>
                                         </div>
@@ -419,9 +416,7 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                             <div className="mb-6 rounded-3xl border border-dashed border-black/[0.1] bg-black/[0.02] p-6 dark:border-white/[0.1] dark:bg-white/[0.02]">
                                 <FileJson size={64} className="text-black/20 dark:text-white/20" strokeWidth={1} />
                             </div>
-                            <span className="text-[11px] font-bold tracking-[0.4em] text-muted-foreground uppercase">
-                                No Assets Matching Filter
-                            </span>
+                            <span className="text-muted-foreground text-[11px] font-bold tracking-[0.4em] uppercase">No Assets Matching Filter</span>
                         </div>
                     )}
                 </div>
@@ -443,21 +438,19 @@ export default function FormTemplates({ templates, contract_types }: Props) {
             {/* Modals - High Density */}
             {/* Create Template Modal */}
             <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-                <DialogContent className="overflow-hidden rounded-xl border border-border bg-card p-0 shadow-2xl sm:max-w-[420px] text-card-foreground">
+                <DialogContent className="border-border bg-card text-card-foreground overflow-hidden rounded-xl border p-0 shadow-2xl sm:max-w-[420px]">
                     <form onSubmit={handleCreateTemplate}>
-                        <div className="relative bg-muted px-8 py-6 text-foreground border-b border-border">
+                        <div className="bg-muted text-foreground border-border relative border-b px-8 py-6">
                             <DialogTitle className="mb-1 text-[14px] font-semibold tracking-[0.2em] uppercase">Asset Initialization</DialogTitle>
-                            <DialogDescription className="text-[10px] font-medium tracking-widest text-muted-foreground uppercase antialiased">
+                            <DialogDescription className="text-muted-foreground text-[10px] font-medium uppercase antialiased">
                                 Form Builder Repository
                             </DialogDescription>
                         </div>
                         <div className="space-y-6 p-8">
                             <div className="grid gap-2">
-                                <Label className="ml-1 text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
-                                    Template Name
-                                </Label>
+                                <Label className="text-muted-foreground ml-1 text-[10px] font-semibold uppercase">Template Name</Label>
                                 <Input
-                                    className="h-11 rounded-xl border-border bg-muted text-xs font-bold transition-all focus:border-primary"
+                                    className="border-border bg-muted focus:border-primary h-11 rounded-xl text-xs font-bold transition-all"
                                     placeholder="e.g., F1 General Inquiry"
                                     required
                                     value={createForm.data.name}
@@ -465,14 +458,12 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                                 />
                             </div>
                             <div className="grid gap-2">
-                                <Label className="ml-1 text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
-                                    Document Category
-                                </Label>
+                                <Label className="text-muted-foreground ml-1 text-[10px] font-semibold uppercase">Document Category</Label>
                                 <Select value={createForm.data.document_type} onValueChange={(v) => createForm.setData('document_type', v)}>
-                                    <SelectTrigger className="h-11 rounded-xl border-border bg-muted text-xs font-bold transition-all focus:border-primary">
+                                    <SelectTrigger className="border-border bg-muted focus:border-primary h-11 rounded-xl text-xs font-bold transition-all">
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent className="rounded-xl border-border bg-card shadow-2xl text-card-foreground">
+                                    <SelectContent className="border-border bg-card text-card-foreground rounded-xl shadow-2xl">
                                         <SelectItem value="f1" className="py-2.5 text-xs font-bold uppercase">
                                             Form F1 (Request)
                                         </SelectItem>
@@ -489,11 +480,9 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                                 </Select>
                             </div>
                             <div className="grid gap-2">
-                                <Label className="ml-1 text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
-                                    Description
-                                </Label>
+                                <Label className="text-muted-foreground ml-1 text-[10px] font-semibold uppercase">Description</Label>
                                 <Textarea
-                                    className="h-24 resize-none rounded-xl border-border bg-muted text-xs leading-relaxed font-medium transition-all focus:border-primary"
+                                    className="border-border bg-muted focus:border-primary h-24 resize-none rounded-xl text-xs leading-relaxed font-medium transition-all"
                                     value={createForm.data.description}
                                     onChange={(e) => createForm.setData('description', e.target.value)}
                                 />
@@ -504,7 +493,7 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                className="h-10 rounded-xl px-6 text-[10px] font-semibold text-muted-foreground uppercase hover:bg-muted"
+                                className="text-muted-foreground hover:bg-muted h-10 rounded-xl px-6 text-[10px] font-semibold uppercase"
                                 onClick={() => setIsCreateModalOpen(false)}
                             >
                                 Cancel
@@ -512,7 +501,7 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                             <Button
                                 type="submit"
                                 size="sm"
-                                className="h-10 rounded-xl bg-primary px-8 text-[10px] font-semibold text-primary-foreground uppercase shadow-xl transition-all active:scale-95 hover:bg-primary/90"
+                                className="bg-primary text-primary-foreground hover:bg-primary/90 h-10 rounded-xl px-8 text-[10px] font-semibold uppercase shadow-xl transition-all active:scale-95"
                                 disabled={createForm.processing}
                             >
                                 Initialize
@@ -524,41 +513,37 @@ export default function FormTemplates({ templates, contract_types }: Props) {
 
             {/* Edit Metadata Modal */}
             <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-                <DialogContent className="overflow-hidden rounded-xl border border-border bg-card p-0 shadow-2xl sm:max-w-[480px] text-card-foreground">
+                <DialogContent className="border-border bg-card text-card-foreground overflow-hidden rounded-xl border p-0 shadow-2xl sm:max-w-[480px]">
                     <form onSubmit={handleUpdateMetadata}>
-                        <div className="flex shrink-0 items-center gap-5 bg-muted p-8 text-foreground border-b border-border">
-                            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-card text-foreground shadow-inner backdrop-blur-sm">
+                        <div className="bg-muted text-foreground border-border flex shrink-0 items-center gap-5 border-b p-8">
+                            <div className="border-border bg-card text-foreground flex h-11 w-11 items-center justify-center rounded-xl border shadow-inner backdrop-blur-sm">
                                 <Settings size={20} />
                             </div>
                             <div>
                                 <DialogTitle className="mb-1 text-[14px] font-semibold tracking-[0.2em] uppercase">Sync Configuration</DialogTitle>
-                                <DialogDescription className="text-[10px] font-medium tracking-widest text-muted-foreground uppercase antialiased">
+                                <DialogDescription className="text-muted-foreground text-[10px] font-medium uppercase antialiased">
                                     Asset Profile Control
                                 </DialogDescription>
                             </div>
                         </div>
                         <div className="space-y-6 p-8">
                             <div className="grid gap-2">
-                                <Label className="ml-1 text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
-                                    Metadata Name
-                                </Label>
+                                <Label className="text-muted-foreground ml-1 text-[10px] font-semibold uppercase">Metadata Name</Label>
                                 <Input
                                     required
-                                    className="h-11 rounded-xl border-border bg-muted text-xs font-bold transition-all focus:border-primary"
+                                    className="border-border bg-muted focus:border-primary h-11 rounded-xl text-xs font-bold transition-all"
                                     value={editForm.data.name}
                                     onChange={(e) => editForm.setData('name', e.target.value)}
                                 />
                             </div>
                             <div className="grid grid-cols-2 gap-5">
                                 <div className="grid gap-2">
-                                    <Label className="ml-1 text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
-                                        Classification
-                                    </Label>
+                                    <Label className="text-muted-foreground ml-1 text-[10px] font-semibold uppercase">Classification</Label>
                                     <Select value={editForm.data.document_type} onValueChange={(v) => editForm.setData('document_type', v)}>
-                                        <SelectTrigger className="h-11 rounded-xl border-border bg-muted text-xs font-bold transition-all focus:border-primary">
+                                        <SelectTrigger className="border-border bg-muted focus:border-primary h-11 rounded-xl text-xs font-bold transition-all">
                                             <SelectValue />
                                         </SelectTrigger>
-                                        <SelectContent className="rounded-xl border-border bg-card shadow-2xl text-card-foreground">
+                                        <SelectContent className="border-border bg-card text-card-foreground rounded-xl shadow-2xl">
                                             <SelectItem value="f1" className="py-2.5 text-xs font-bold uppercase">
                                                 Form F1 (Request)
                                             </SelectItem>
@@ -575,14 +560,12 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                                     </Select>
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label className="ml-1 text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
-                                        Workflow Related
-                                    </Label>
+                                    <Label className="text-muted-foreground ml-1 text-[10px] font-semibold uppercase">Workflow Related</Label>
                                     <Select value={editForm.data.contract_type_id} onValueChange={(v) => editForm.setData('contract_type_id', v)}>
-                                        <SelectTrigger className="h-11 rounded-xl border-border bg-muted text-xs font-bold transition-all focus:border-primary">
+                                        <SelectTrigger className="border-border bg-muted focus:border-primary h-11 rounded-xl text-xs font-bold transition-all">
                                             <SelectValue />
                                         </SelectTrigger>
-                                        <SelectContent className="max-h-48 rounded-xl border-border bg-card shadow-2xl text-card-foreground">
+                                        <SelectContent className="border-border bg-card text-card-foreground max-h-48 rounded-xl shadow-2xl">
                                             <SelectItem value="none" className="py-2.5 text-[10px] font-bold italic opacity-40">
                                                 Global / Unlinked
                                             </SelectItem>
@@ -596,11 +579,9 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                                 </div>
                             </div>
                             <div className="grid gap-2">
-                                <Label className="ml-1 text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
-                                    Narrative
-                                </Label>
+                                <Label className="text-muted-foreground ml-1 text-[10px] font-semibold uppercase">Narrative</Label>
                                 <Textarea
-                                    className="h-20 resize-none rounded-xl border-border bg-muted text-xs leading-relaxed font-medium transition-all focus:border-primary"
+                                    className="border-border bg-muted focus:border-primary h-20 resize-none rounded-xl text-xs leading-relaxed font-medium transition-all"
                                     value={editForm.data.description}
                                     onChange={(e) => editForm.setData('description', e.target.value)}
                                 />
@@ -611,7 +592,7 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                className="h-10 px-6 text-[10px] font-semibold text-muted-foreground uppercase hover:bg-muted"
+                                className="text-muted-foreground hover:bg-muted h-10 px-6 text-[10px] font-semibold uppercase"
                                 onClick={() => setIsEditModalOpen(false)}
                             >
                                 Discard
@@ -631,16 +612,16 @@ export default function FormTemplates({ templates, contract_types }: Props) {
 
             {/* Delete Dialog - High Density */}
             <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-                <DialogContent className="overflow-hidden rounded-xl border border-border bg-card p-8 shadow-2xl sm:max-w-[400px] text-card-foreground">
+                <DialogContent className="border-border bg-card text-card-foreground overflow-hidden rounded-xl border p-8 shadow-2xl sm:max-w-[400px]">
                     <div className="flex flex-col items-center text-center">
                         <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 text-red-500 shadow-inner dark:bg-red-950/20">
                             <Trash2 size={28} />
                         </div>
                         <DialogHeader className="p-0">
-                            <DialogTitle className="mb-2 text-[16px] font-semibold tracking-tight text-foreground uppercase">
+                            <DialogTitle className="text-foreground mb-2 text-[16px] font-semibold tracking-tight uppercase">
                                 Delete Asset?
                             </DialogTitle>
-                            <DialogDescription className="max-w-[280px] text-[11px] leading-relaxed font-medium tracking-widest text-muted-foreground uppercase antialiased">
+                            <DialogDescription className="text-muted-foreground max-w-[280px] text-[11px] leading-relaxed font-medium uppercase antialiased">
                                 Hapus permanen <span className="font-semibold text-red-500">"{selectedTemplate?.name}"</span>. <br />
                                 Proses ini irreversibel.
                             </DialogDescription>
@@ -649,7 +630,7 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-11 border-border text-[10px] font-semibold text-muted-foreground uppercase hover:bg-muted"
+                                className="border-border text-muted-foreground hover:bg-muted h-11 text-[10px] font-semibold uppercase"
                                 onClick={() => setIsDeleteModalOpen(false)}
                             >
                                 Cancel

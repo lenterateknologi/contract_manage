@@ -4,7 +4,7 @@
     $resolvedLabel = str_replace(['{{Mode Transaksi}}', '{{Transaction Mode}}'], $contract->transaction_type ?? '', $field->label);
 
     $isContainer = in_array($type, ['group', 'grid_x', 'grid_y', 'grid_view']);
-    
+
     // Spacing logic matching FormElement.tsx
     $style = [
         'display: inline-block',
@@ -40,10 +40,10 @@
 
 <div class="relative transition-all duration-200" style="{{ implode('; ', $style) }}">
     <div style="{{ $paddingStyle }}; position: relative;">
-        
+
         @if($type === 'group')
             <div class="{{ ($options['group_style'] ?? '') !== 'frameless' ? 'p-0.5' : '' }} {{ ($options['border_style'] ?? '') === 'solid' ? 'border border-[#000]' : '' }}"
-                 style="border-style: {{ $options['border_style'] ?? 'none' }}; 
+                 style="border-style: {{ $options['border_style'] ?? 'none' }};
                         border-width: {{ isset($options['border_width']) ? $options['border_width'].'px' : (($options['border_style'] ?? '') === 'solid' ? '1px' : '0') }};
                         border-color: {{ $options['border_color'] ?? 'transparent' }};
                         background-color: {{ $options['background_color'] ?? 'transparent' }};">
@@ -177,7 +177,7 @@
                 $labelWidth = $options['label_width'] ?? '150px';
                 $valueType = $options['value_type'] ?? 'textfield';
                 $showColon = ($options['show_colon'] ?? true) !== false;
-                
+
                 $displayValue = $value;
                 if (in_array($valueType, ['select', 'searchable_select'])) {
                     $selected = collect($options['items'] ?? [])->firstWhere('value', $value);
@@ -200,7 +200,7 @@
             <div class="flex flex-col gap-1 w-full max-w-[180px] py-2">
                 <div class="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm ring-1 ring-slate-100">
                     <div class="bg-slate-50 border-b border-slate-200 px-3 py-1.5 text-center">
-                        <span class="text-[9px] font-black text-slate-600 uppercase tracking-widest leading-none">
+                        <span class="text-[9px] font-black text-slate-600 uppercase  leading-none">
                             {{ $field->label ?: 'Tanda Tangan' }}
                         </span>
                     </div>
@@ -213,7 +213,7 @@
                             <div class="w-full border-b-2 border-slate-100 mb-2 h-4"></div>
                         @endif
                     </div>
-                    <div class="border-t border-slate-100 bg-slate-50 px-3 py-2 text-[8px] font-bold text-slate-400 uppercase tracking-widest text-start flex justify-between">
+                    <div class="border-t border-slate-100 bg-slate-50 px-3 py-2 text-[8px] font-bold text-slate-400 uppercase  text-start flex justify-between">
                         <span>TGL:</span>
                         <span>................</span>
                     </div>

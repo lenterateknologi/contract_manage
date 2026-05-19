@@ -54,18 +54,6 @@ export const ContractMembersTab: React.FC<ContractMembersTabProps> = ({ contract
         addMember(contract.assigned_by, 'Manager (Pemberi Tugas)');
     }
 
-    // 6. Custom Management Approvers (from metadata)
-    const customManagementIds = contract.metadata?.custom_management_users || [];
-    if (Array.isArray(customManagementIds)) {
-        customManagementIds.forEach((id: string) => {
-            const foundUser = users.find((u) => u.id === id);
-            if (foundUser) {
-                addMember(foundUser, 'Approver Manajemen (Dipilih)');
-            }
-        });
-    }
-
-
     const membersList = Array.from(members.values());
 
     return (
@@ -91,9 +79,7 @@ export const ContractMembersTab: React.FC<ContractMembersTabProps> = ({ contract
                                 </div>
                                 <div className="flex flex-col">
                                     <span className="mb-1 text-sm leading-none font-bold text-black dark:text-white">{user.name}</span>
-                                    <span className="text-[10px] font-bold tracking-widest text-black/30 uppercase dark:text-white/30">
-                                        {user.role}
-                                    </span>
+                                    <span className="text-[10px] font-bold text-black/30 uppercase dark:text-white/30">{user.role}</span>
                                 </div>
                             </div>
                         </div>

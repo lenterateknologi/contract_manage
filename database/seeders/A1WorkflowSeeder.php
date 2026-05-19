@@ -74,6 +74,26 @@ class A1WorkflowSeeder extends Seeder
                 ],
                 [
                     'step' => 4,
+                    'name' => 'Approval VP / Vice President',
+                    'type' => 'APPROVAL',
+                    'actor' => 'role',
+                    'roles' => ['VP'],
+                    'dept_id' => $mgmtDeptId,
+                    'reject_target' => 1,
+                    'status' => 'in_review'
+                ],
+                [
+                    'step' => 5,
+                    'name' => 'Approval CEO / Manajemen',
+                    'type' => 'APPROVAL',
+                    'actor' => 'role',
+                    'roles' => ['CEO'],
+                    'dept_id' => $mgmtDeptId,
+                    'reject_target' => 1,
+                    'status' => 'in_review'
+                ],
+                [
+                    'step' => 6,
                     'name' => 'Verifikasi & Penugasan PIC',
                     'type' => 'DRAFTING',
                     'actor' => 'role',
@@ -83,91 +103,91 @@ class A1WorkflowSeeder extends Seeder
                     'status' => 'in_review'
                 ],
                 [
-                    'step' => 5,
+                    'step' => 7,
                     'name' => 'Drafting Agreement',
                     'type' => 'DRAFTING',
                     'actor' => 'assigned_pic',
                     'roles' => ['Staff'],
                     'dept_id' => $legalDeptId,
-                    'reject_target' => 4,
+                    'reject_target' => 6,
                     'status' => 'in_review'
                 ],
                 [
-                    'step' => 6,
+                    'step' => 8,
                     'name' => 'Review Draft (Internal)',
                     'type' => 'REVIEW',
                     'actor' => 'role',
                     'roles' => ['Manager'],
                     'dept_id' => $legalDeptId,
-                    'reject_target' => 5,
+                    'reject_target' => 7,
                     'status' => 'in_review'
                 ],
                 [
-                    'step' => 7,
+                    'step' => 9,
                     'name' => 'Sirkulasi Draft (Inisiator)',
                     'type' => 'REVIEW',
                     'actor' => 'initiator',
                     'roles' => ['initiator'],
-                    'reject_target' => 5,
+                    'reject_target' => 7,
                     'status' => 'in_review'
                 ],
                 [
-                    'step' => 8,
+                    'step' => 10,
                     'name' => 'Input No & Generate F2',
                     'type' => 'DRAFTING',
                     'actor' => 'assigned_pic',
                     'roles' => ['Staff'],
                     'dept_id' => $legalDeptId,
-                    'reject_target' => 5,
+                    'reject_target' => 7,
                     'status' => 'in_review'
                 ],
                 [
-                    'step' => 9,
+                    'step' => 11,
                     'name' => 'Approval F2 (Legal Manager)',
                     'type' => 'APPROVAL',
                     'actor' => 'role',
                     'roles' => ['Manager'],
                     'dept_id' => $legalDeptId,
-                    'reject_target' => 8,
+                    'reject_target' => 10,
                     'status' => 'in_review'
                 ],
                 [
-                    'step' => 10,
+                    'step' => 12,
                     'name' => 'Approval F2 (VP Legal)',
                     'type' => 'APPROVAL',
                     'actor' => 'role',
                     'roles' => ['Director'], // Fallback for VP
                     'dept_id' => $legalDeptId,
-                    'reject_target' => 9,
-                    'status' => 'in_review'
-                ],
-                [
-                    'step' => 11,
-                    'name' => 'Approval F2 (SPV Inisiator)',
-                    'type' => 'APPROVAL',
-                    'actor' => 'atasan',
-                    'roles' => ['Manager'],
-                    'reject_target' => 8,
-                    'status' => 'in_review'
-                ],
-                [
-                    'step' => 12,
-                    'name' => 'Approval F2 (Manajemen)',
-                    'type' => 'APPROVAL',
-                    'actor' => 'role',
-                    'roles' => ['Director'],
-                    'dept_id' => $mgmtDeptId,
-                    'reject_target' => 8,
+                    'reject_target' => 11,
                     'status' => 'in_review'
                 ],
                 [
                     'step' => 13,
+                    'name' => 'Approval F2 (SPV Inisiator)',
+                    'type' => 'APPROVAL',
+                    'actor' => 'atasan',
+                    'roles' => ['Manager'],
+                    'reject_target' => 10,
+                    'status' => 'in_review'
+                ],
+                [
+                    'step' => 14,
+                    'name' => 'Approval F2 (Manajemen)',
+                    'type' => 'APPROVAL',
+                    'actor' => 'role',
+                    'roles' => ['CEO'],
+                    'dept_id' => $mgmtDeptId,
+                    'reject_target' => 10,
+                    'status' => 'in_review'
+                ],
+                [
+                    'step' => 15,
                     'name' => 'Penandatanganan (2 Pihak)',
                     'type' => 'SIGNING',
                     'actor' => 'assigned_pic',
                     'roles' => ['Staff'],
                     'dept_id' => $legalDeptId,
-                    'reject_target' => 8,
+                    'reject_target' => 10,
                     'status' => 'locked',
                     'meta' => [
                         'signing_p1_type' => 'initiator',
@@ -175,7 +195,7 @@ class A1WorkflowSeeder extends Seeder
                     ]
                 ],
                 [
-                    'step' => 14,
+                    'step' => 16,
                     'name' => 'Closing & Arsip',
                     'type' => 'CLOSING',
                     'actor' => 'assigned_pic',
@@ -244,7 +264,7 @@ class A1WorkflowSeeder extends Seeder
                 );
             }
 
-            echo "A1 Workflow (14 Steps) seeded and mapped to all contract types.\n";
+            echo "A1 Workflow (16 Steps) seeded and mapped to all contract types.\n";
 
             // 4. Map Allowed Actions for all steps
             $allSteps = WorkflowStep::where('workflow_id', $workflow->id)->get();

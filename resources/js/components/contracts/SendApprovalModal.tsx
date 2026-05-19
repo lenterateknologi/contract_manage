@@ -1,7 +1,7 @@
 import { contractApi } from '@/lib/contract-api';
-import { useEffect, useState } from 'react';
-import { AlertCircle, CheckCircle2, GitBranch, ChevronDown, Send, Activity, User, MessageSquare, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Activity, CheckCircle2, ChevronDown, GitBranch, MessageSquare, Send, User } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface SendApprovalModalProps {
     open: boolean;
@@ -36,7 +36,7 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
         try {
             const data = await contractApi.getWorkflows(contractType);
             setWorkflows(data);
-            
+
             if (data.length > 0) {
                 const defaultWf = data.find((w: any) => w.is_default) || data[0];
                 setSelectedWorkflowId(defaultWf.id.toString());
@@ -112,41 +112,47 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
 
     return (
         <div
-            className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/60 backdrop-blur-md p-4"
+            className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-md"
             onClick={(e) => e.target === e.currentTarget && onClose()}
         >
-            <div className="bg-white dark:bg-slate-900 my-auto w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-300 border border-black/5 dark:border-white/5">
+            <div className="animate-in fade-in zoom-in-95 my-auto w-full max-w-lg overflow-hidden rounded-2xl border border-black/5 bg-white shadow-2xl duration-300 dark:border-white/5 dark:bg-slate-900">
                 <div className="relative h-36 w-full overflow-hidden bg-slate-950 p-7">
                     <div className="absolute inset-0 opacity-30">
-                        <div className="absolute top-[-50%] left-[-10%] h-[200%] w-[40%] skew-x-[-25deg] bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
+                        <div className="animate-shimmer absolute top-[-50%] left-[-10%] h-[200%] w-[40%] skew-x-[-25deg] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
                         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(120,119,198,0.3),rgba(255,255,255,0))]" />
                     </div>
                     <div className="relative z-10 flex flex-col gap-2">
                         <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 backdrop-blur-xl border border-white/10 shadow-inner">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/10 shadow-inner backdrop-blur-xl">
                                 <Send className="h-5 w-5 text-white" />
                             </div>
                             <div className="flex flex-col">
-                                <h2 className="text-xl font-black tracking-tight text-white uppercase leading-none">Kirim Approval</h2>
-                                <span className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] mt-1">Initialize Workflow Engine</span>
+                                <h2 className="text-xl leading-none font-black tracking-tight text-white uppercase">Kirim Approval</h2>
+                                <span className="mt-1 text-[10px] font-bold tracking-[0.2em] text-white/40 uppercase">
+                                    Initialize Workflow Engine
+                                </span>
                             </div>
                         </div>
-                        <p className="text-xs font-medium text-white/50 max-w-[80%] leading-relaxed">Pilih alur kerja otomatis atau sesuaikan step sesuai kebutuhan kontrak.</p>
+                        <p className="max-w-[80%] text-xs leading-relaxed font-medium text-white/50">
+                            Pilih alur kerja otomatis atau sesuaikan step sesuai kebutuhan kontrak.
+                        </p>
                     </div>
                 </div>
 
-                <div className="p-7 space-y-7">
+                <div className="space-y-7 p-7">
                     <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                            <label className="text-[10px] font-black tracking-[0.15em] text-slate-400 dark:text-slate-500 uppercase">Pilih Workflow Alur</label>
+                            <label className="text-[10px] font-black tracking-[0.15em] text-slate-400 uppercase dark:text-slate-500">
+                                Pilih Workflow Alur
+                            </label>
                             {initLoading && <Activity className="h-3 w-3 animate-pulse text-indigo-500" />}
                         </div>
-                        <div className="relative group">
+                        <div className="group relative">
                             <select
                                 value={selectedWorkflowId}
                                 onChange={(e) => handleWorkflowChange(e.target.value)}
                                 disabled={initLoading || workflows.length === 0}
-                                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 h-12 px-4 text-xs font-bold rounded-xl appearance-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-white transition-all outline-none text-slate-900 dark:text-white disabled:opacity-50"
+                                className="h-12 w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 px-4 text-xs font-bold text-slate-900 transition-all outline-none focus:ring-2 focus:ring-slate-900 disabled:opacity-50 dark:border-slate-800 dark:bg-slate-950 dark:text-white dark:focus:ring-white"
                             >
                                 {workflows.length === 0 && <option>Memuat alur...</option>}
                                 {workflows.map((w) => (
@@ -155,16 +161,16 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
                                     </option>
                                 ))}
                             </select>
-                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" size={16} />
+                            <ChevronDown className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-slate-400" size={16} />
                         </div>
                     </div>
 
                     {selectedWorkflow && (
-                        <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
+                        <div className="animate-in fade-in slide-in-from-top-4 space-y-6 duration-500">
                             {selectedWorkflow.steps?.some((s: any) => s.is_optional) && (
                                 <div className="space-y-4">
-                                    <label className="text-[10px] font-black tracking-[0.15em] text-slate-400 dark:text-slate-500 uppercase flex items-center gap-2">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" /> Step Opsional
+                                    <label className="flex items-center gap-2 text-[10px] font-black tracking-[0.15em] text-slate-400 uppercase dark:text-slate-500">
+                                        <div className="h-1.5 w-1.5 rounded-full bg-indigo-500" /> Step Opsional
                                     </label>
                                     <div className="grid grid-cols-1 gap-2.5">
                                         {selectedWorkflow.steps
@@ -174,31 +180,55 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
                                                     key={step.id}
                                                     onClick={() => toggleOptionalStep(step.id)}
                                                     className={cn(
-                                                        "group flex items-center justify-between p-3.5 rounded-xl border transition-all duration-300 cursor-pointer",
+                                                        'group flex cursor-pointer items-center justify-between rounded-xl border p-3.5 transition-all duration-300',
                                                         metadata.optional_steps.includes(step.id.toString())
-                                                            ? "bg-slate-900 border-slate-900 text-white shadow-xl translate-x-1"
-                                                            : "bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-400 hover:border-slate-900 dark:hover:border-white/20"
+                                                            ? 'translate-x-1 border-slate-900 bg-slate-900 text-white shadow-xl'
+                                                            : 'border-slate-200 bg-slate-50 text-slate-900 hover:border-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400 dark:hover:border-white/20',
                                                     )}
                                                 >
                                                     <div className="flex items-center gap-3">
-                                                        <div className={cn(
-                                                            "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
-                                                            metadata.optional_steps.includes(step.id.toString()) ? "bg-white/10" : "bg-white dark:bg-slate-900 shadow-sm"
-                                                        )}>
-                                                            <CheckCircle2 size={14} className={metadata.optional_steps.includes(step.id.toString()) ? "text-white" : "text-slate-300"} />
+                                                        <div
+                                                            className={cn(
+                                                                'flex h-8 w-8 items-center justify-center rounded-lg transition-colors',
+                                                                metadata.optional_steps.includes(step.id.toString())
+                                                                    ? 'bg-white/10'
+                                                                    : 'bg-white shadow-sm dark:bg-slate-900',
+                                                            )}
+                                                        >
+                                                            <CheckCircle2
+                                                                size={14}
+                                                                className={
+                                                                    metadata.optional_steps.includes(step.id.toString())
+                                                                        ? 'text-white'
+                                                                        : 'text-slate-300'
+                                                                }
+                                                            />
                                                         </div>
                                                         <div className="flex flex-col">
-                                                            <span className="text-[11px] font-bold uppercase tracking-tight">{step.name}</span>
-                                                            <span className={cn("text-[9px] font-medium opacity-60", metadata.optional_steps.includes(step.id.toString()) ? "text-white" : "text-slate-500")}>
+                                                            <span className="text-[11px] font-bold tracking-tight uppercase">{step.name}</span>
+                                                            <span
+                                                                className={cn(
+                                                                    'text-[9px] font-medium opacity-60',
+                                                                    metadata.optional_steps.includes(step.id.toString())
+                                                                        ? 'text-white'
+                                                                        : 'text-slate-500',
+                                                                )}
+                                                            >
                                                                 {step.role_name || 'System Role'}
                                                             </span>
                                                         </div>
                                                     </div>
-                                                    <div className={cn(
-                                                        "w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all",
-                                                        metadata.optional_steps.includes(step.id.toString()) ? "border-white bg-white" : "border-slate-300 dark:border-slate-700"
-                                                    )}>
-                                                        {metadata.optional_steps.includes(step.id.toString()) && <div className="w-1.5 h-1.5 rounded-full bg-slate-900" />}
+                                                    <div
+                                                        className={cn(
+                                                            'flex h-4 w-4 items-center justify-center rounded-full border-2 transition-all',
+                                                            metadata.optional_steps.includes(step.id.toString())
+                                                                ? 'border-white bg-white'
+                                                                : 'border-slate-300 dark:border-slate-700',
+                                                        )}
+                                                    >
+                                                        {metadata.optional_steps.includes(step.id.toString()) && (
+                                                            <div className="h-1.5 w-1.5 rounded-full bg-slate-900" />
+                                                        )}
                                                     </div>
                                                 </div>
                                             ))}
@@ -206,10 +236,10 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
                                 </div>
                             )}
 
-                             {selectedWorkflow.steps?.some((s: any) => s.step_type === 'selection') && (
+                            {selectedWorkflow.steps?.some((s: any) => s.step_type === 'selection') && (
                                 <div className="space-y-4">
-                                    <label className="text-[10px] font-black tracking-[0.15em] text-slate-400 dark:text-slate-500 uppercase flex items-center gap-2">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Pilih Personel Manual
+                                    <label className="flex items-center gap-2 text-[10px] font-black tracking-[0.15em] text-slate-400 uppercase dark:text-slate-500">
+                                        <div className="h-1.5 w-1.5 rounded-full bg-amber-500" /> Pilih Personel Manual
                                     </label>
                                     <div className="space-y-4">
                                         {selectedWorkflow.steps
@@ -218,13 +248,15 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
                                                 <div key={step.id} className="space-y-2.5">
                                                     <div className="flex items-center gap-2">
                                                         <User size={12} className="text-slate-400" />
-                                                        <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-tight">{step.name}</span>
+                                                        <span className="text-[10px] font-bold tracking-tight text-slate-600 uppercase dark:text-slate-300">
+                                                            {step.name}
+                                                        </span>
                                                     </div>
                                                     <div className="relative">
                                                         <select
                                                             value={metadata.selections[step.id.toString()] || ''}
                                                             onChange={(e) => handleSelectionChange(step.id, e.target.value)}
-                                                            className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 h-11 px-4 text-xs font-bold rounded-xl appearance-none focus:ring-2 focus:ring-indigo-500 transition-all outline-none text-slate-900 dark:text-white"
+                                                            className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 text-xs font-bold text-slate-900 transition-all outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-800 dark:bg-slate-950 dark:text-white"
                                                         >
                                                             <option value="">Pilih approver untuk {step.name}...</option>
                                                             {users
@@ -234,11 +266,12 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
                                                                         // Fallback to legacy role_id filter if no specific rules
                                                                         return !step.role_id || u.role_id === step.role_id;
                                                                     }
-                                                                    
+
                                                                     // Check if user matches ANY of the rules (OR logic)
                                                                     return rules.some((rule: any) => {
                                                                         const matchesRole = !rule.role_id || u.role_id === rule.role_id;
-                                                                        const matchesDept = !rule.department_id || u.department_id === rule.department_id;
+                                                                        const matchesDept =
+                                                                            !rule.department_id || u.department_id === rule.department_id;
                                                                         return matchesRole && matchesDept;
                                                                     });
                                                                 })
@@ -248,7 +281,10 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
                                                                     </option>
                                                                 ))}
                                                         </select>
-                                                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" size={14} />
+                                                        <ChevronDown
+                                                            className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-slate-400"
+                                                            size={14}
+                                                        />
                                                     </div>
                                                 </div>
                                             ))}
@@ -256,90 +292,45 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
                                 </div>
                             )}
 
-                            {/* Management Selection Section */}
-                            {selectedWorkflow.steps?.some((s: any) => {
-                                const mRoles = ['director', 'vp', 'coo', 'direksi', 'direktur', 'ceo', 'cfo', 'gm', 'general manager', 'management', 'manajemen'];
-                                const name = (s.name || s.description || '').toLowerCase();
-                                return mRoles.some(r => name.includes(r));
-                            }) && (
-                                <div className="space-y-4 pt-2">
-                                    <label className="text-[10px] font-black tracking-[0.15em] text-slate-400 dark:text-slate-500 uppercase flex items-center gap-2">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-rose-500" /> Penyetuju Manajemen (Direksi)
-                                    </label>
-                                    <div className="space-y-3">
-                                        <div className="flex flex-wrap gap-2">
-                                            {users
-                                                .filter((u: any) => {
-                                                    const mRoles = ['director', 'vp', 'coo', 'direksi', 'direktur', 'ceo', 'cfo', 'gm', 'general manager', 'management', 'manajemen'];
-                                                    const userRole = (u.role || '').toLowerCase();
-                                                    return mRoles.some(r => userRole.includes(r));
-                                                })
-                                                .map((u: any) => (
-                                                    <button
-                                                        key={u.id}
-                                                        onClick={() => {
-                                                            const current = (metadata as any).custom_management_users || [];
-                                                            const exists = current.includes(u.id);
-                                                            const next = exists ? current.filter((id: string) => id !== u.id) : [...current, u.id];
-                                                            setMetadata(prev => ({ ...prev, custom_management_users: next }));
-                                                        }}
-                                                        className={cn(
-                                                            "px-3 py-1.5 rounded-lg border text-[10px] font-bold transition-all",
-                                                            ((metadata as any).custom_management_users || []).includes(u.id)
-                                                                ? "bg-rose-500 border-rose-500 text-white shadow-md"
-                                                                : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500"
-                                                        )}
-                                                    >
-                                                        {u.name}
-                                                    </button>
-                                                ))
-                                            }
-                                        </div>
-                                        <p className="text-[9px] font-medium text-slate-400 italic">
-                                            *Penyetuju yang dipilih di atas akan ditambahkan ke tahapan manajemen di alur kerja ini.
-                                        </p>
-                                    </div>
-                                </div>
-                            )}
 
-                            {(!selectedWorkflow.steps?.some((s: any) => s.is_optional || s.step_type === 'selection')) && (
-                                <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 border-dashed flex flex-col items-center justify-center text-center space-y-2">
-                                    <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-900 flex items-center justify-center shadow-sm">
+                            {!selectedWorkflow.steps?.some((s: any) => s.is_optional || s.step_type === 'selection') && (
+                                <div className="flex flex-col items-center justify-center space-y-2 rounded-2xl border border-dashed border-slate-100 bg-slate-50 p-6 text-center dark:border-slate-800 dark:bg-slate-950">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm dark:bg-slate-900">
                                         <Activity size={18} className="text-slate-300" />
                                     </div>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Alur kerja standar diaktifkan</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase">Alur kerja standar diaktifkan</p>
                                 </div>
                             )}
                         </div>
                     )}
 
                     <div className="space-y-3 pt-2">
-                        <label className="text-[10px] font-black tracking-[0.15em] text-slate-400 dark:text-slate-500 uppercase flex items-center gap-2">
+                        <label className="flex items-center gap-2 text-[10px] font-black tracking-[0.15em] text-slate-400 uppercase dark:text-slate-500">
                             <MessageSquare size={12} /> Catatan untuk Approver
                         </label>
                         <textarea
                             placeholder="Berikan instruksi atau konteks tambahan..."
-                            className="w-full min-h-[100px] bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-4 text-xs font-medium rounded-xl focus:ring-2 focus:ring-slate-900 dark:focus:ring-white transition-all outline-none text-slate-900 dark:text-white resize-none"
+                            className="min-h-[100px] w-full resize-none rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs font-medium text-slate-900 transition-all outline-none focus:ring-2 focus:ring-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-white dark:focus:ring-white"
                             value={note}
                             onChange={(e) => setNote(e.target.value)}
                         />
                     </div>
                 </div>
 
-                <div className="p-7 bg-slate-50 dark:bg-slate-950/50 border-t border-slate-100 dark:border-slate-800 flex gap-4">
+                <div className="flex gap-4 border-t border-slate-100 bg-slate-50 p-7 dark:border-slate-800 dark:bg-slate-950/50">
                     <button
                         onClick={onClose}
-                        className="flex-1 h-12 text-[10px] font-black text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors uppercase tracking-[0.2em]"
+                        className="h-12 flex-1 text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase transition-colors hover:text-slate-900 dark:hover:text-white"
                     >
                         Batalkan
                     </button>
                     <button
                         onClick={handleSubmit}
                         disabled={loading || initLoading || workflows.length === 0 || !selectedWorkflowId}
-                        className="flex-[2] bg-slate-950 dark:bg-white text-white dark:text-slate-950 h-12 text-[11px] font-black uppercase tracking-[0.2em] rounded-xl transition-all active:scale-95 disabled:opacity-20 disabled:grayscale hover:shadow-2xl hover:shadow-slate-500/20 flex items-center justify-center gap-2"
+                        className="flex h-12 flex-[2] items-center justify-center gap-2 rounded-xl bg-slate-950 text-[11px] font-black tracking-[0.2em] text-white uppercase transition-all hover:shadow-2xl hover:shadow-slate-500/20 active:scale-95 disabled:opacity-20 disabled:grayscale dark:bg-white dark:text-slate-950"
                     >
                         {loading ? (
-                            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                         ) : (
                             <GitBranch size={16} strokeWidth={3} />
                         )}

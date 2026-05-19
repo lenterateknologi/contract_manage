@@ -1,8 +1,8 @@
 import { InteractiveForm } from '@/components/form-renderer/InteractiveForm';
+import { cn } from '@/lib/utils';
 import { Head } from '@inertiajs/react';
 import { ArrowLeftRight, CalendarDays, User } from 'lucide-react';
 import React, { useState } from 'react';
-import { cn } from '@/lib/utils';
 
 interface VersionItem {
     id: string;
@@ -23,9 +23,11 @@ interface CompareFormsProps {
 
 export default function CompareForms({ contract, docType, template, versions, initialV1, initialV2 }: CompareFormsProps) {
     const sortedVersions = [...versions].sort((a, b) => b.version_no - a.version_no);
-    
+
     // Default: Side A is oldest (v1), Side B is latest (vN) or from URL
-    const [v1, setV1] = useState<number>(initialV1 || (versions.length > 1 ? versions[versions.length - 1].version_no : (versions[0]?.version_no || 0)));
+    const [v1, setV1] = useState<number>(
+        initialV1 || (versions.length > 1 ? versions[versions.length - 1].version_no : versions[0]?.version_no || 0),
+    );
     const [v2, setV2] = useState<number>(initialV2 || (versions.length > 0 ? versions[0].version_no : 0));
 
     const ref1 = React.useRef<HTMLDivElement>(null);
@@ -44,26 +46,26 @@ export default function CompareForms({ contract, docType, template, versions, in
         if (source === 'left') {
             if (isSyncingRight.current) return;
             isSyncingLeft.current = true;
-            
+
             const rangeL = left.scrollHeight - left.clientHeight;
             const rangeR = right.scrollHeight - right.clientHeight;
             if (rangeL > 0 && rangeR > 0) {
                 right.scrollTop = (left.scrollTop / rangeL) * rangeR;
             }
-            
+
             window.requestAnimationFrame(() => {
                 isSyncingLeft.current = false;
             });
         } else {
             if (isSyncingLeft.current) return;
             isSyncingRight.current = true;
-            
+
             const rangeL = left.scrollHeight - left.clientHeight;
             const rangeR = right.scrollHeight - right.clientHeight;
             if (rangeL > 0 && rangeR > 0) {
                 left.scrollTop = (right.scrollTop / rangeR) * rangeL;
             }
-            
+
             window.requestAnimationFrame(() => {
                 isSyncingRight.current = false;
             });
@@ -114,7 +116,7 @@ export default function CompareForms({ contract, docType, template, versions, in
             <div className="flex h-screen items-center justify-center bg-slate-900 text-white">
                 <div className="text-center">
                     <h1 className="text-2xl font-black italic">ERROR: TEMPLATE NOT FOUND</h1>
-                    <p className="mt-2 text-[10px] font-bold tracking-widest text-slate-400 uppercase">No form template matches this context.</p>
+                    <p className="mt-2 text-[10px] font-bold text-slate-400 uppercase">No form template matches this context.</p>
                 </div>
             </div>
         );
@@ -133,9 +135,7 @@ export default function CompareForms({ contract, docType, template, versions, in
                     <div className="flex flex-col">
                         <h2 className="flex items-center gap-2 text-sm font-bold text-black">
                             Perbandingan Versi Dokumen
-                            <span className="rounded-md border border-black bg-black px-2 py-0.5 text-[9px] font-bold text-white">
-                                Mode Audit
-                            </span>
+                            <span className="rounded-md border border-black bg-black px-2 py-0.5 text-[9px] font-bold text-white">Mode Audit</span>
                         </h2>
                         <p className="mt-0.5 text-xs font-medium text-black">
                             {contract.contract_no} &bull; {contract.title}
@@ -144,21 +144,19 @@ export default function CompareForms({ contract, docType, template, versions, in
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-3 mr-2">
-                        <span className="text-[10px] font-bold text-black">
-                            Sinkronisasi Scroll
-                        </span>
+                    <div className="mr-2 flex items-center gap-3">
+                        <span className="text-[10px] font-bold text-black">Sinkronisasi Scroll</span>
                         <button
                             onClick={() => setSyncScroll(!syncScroll)}
                             className={cn(
-                                "relative inline-flex h-5 w-10 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black",
-                                syncScroll ? "bg-black" : "bg-black/10"
+                                'relative inline-flex h-5 w-10 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-black focus-visible:outline-none',
+                                syncScroll ? 'bg-black' : 'bg-black/10',
                             )}
                         >
                             <span
                                 className={cn(
-                                    "pointer-events-none block h-4 w-4 rounded-full bg-white shadow-lg transition-transform",
-                                    syncScroll ? "translate-x-5" : "translate-x-1"
+                                    'pointer-events-none block h-4 w-4 rounded-full bg-white shadow-lg transition-transform',
+                                    syncScroll ? 'translate-x-5' : 'translate-x-1',
                                 )}
                             />
                         </button>
@@ -198,9 +196,13 @@ export default function CompareForms({ contract, docType, template, versions, in
                         <select
                             value={v1}
                             onChange={(e) => setV1(Number(e.target.value))}
-                            className="cursor-pointer rounded-lg border-2 border-black bg-white px-4 py-2 text-xs font-bold text-black outline-none transition-all hover:bg-black hover:text-white"
+                            className="cursor-pointer rounded-lg border-2 border-black bg-white px-4 py-2 text-xs font-bold text-black transition-all outline-none hover:bg-black hover:text-white"
                         >
-                            {sortedVersions.map((v) => <option key={v.id} value={v.version_no}>Versi {v.version_no}</option>)}
+                            {sortedVersions.map((v) => (
+                                <option key={v.id} value={v.version_no}>
+                                    Versi {v.version_no}
+                                </option>
+                            ))}
                         </select>
                     </div>
 
@@ -244,9 +246,13 @@ export default function CompareForms({ contract, docType, template, versions, in
                         <select
                             value={v2}
                             onChange={(e) => setV2(Number(e.target.value))}
-                            className="cursor-pointer rounded-lg border-2 border-black bg-white px-4 py-2 text-xs font-bold text-black outline-none transition-all hover:bg-black hover:text-white"
+                            className="cursor-pointer rounded-lg border-2 border-black bg-white px-4 py-2 text-xs font-bold text-black transition-all outline-none hover:bg-black hover:text-white"
                         >
-                            {sortedVersions.map((v) => <option key={v.id} value={v.version_no} className="text-black">Versi {v.version_no}</option>)}
+                            {sortedVersions.map((v) => (
+                                <option key={v.id} value={v.version_no} className="text-black">
+                                    Versi {v.version_no}
+                                </option>
+                            ))}
                         </select>
                     </div>
 
@@ -271,14 +277,12 @@ export default function CompareForms({ contract, docType, template, versions, in
             <div className="z-50 flex shrink-0 items-center justify-center gap-10 border-t border-black/5 bg-white px-10 py-4">
                 <div className="flex items-center gap-2">
                     <div className="h-2 w-2 rounded-full bg-black" />
-                    <span className="text-[10px] font-bold text-black">
-                        Total Field: {templateForRenderer?.fields?.length || 0}
-                    </span>
+                    <span className="text-[10px] font-bold text-black">Total Field: {templateForRenderer?.fields?.length || 0}</span>
                 </div>
                 <div className="h-4 w-px bg-black/10" />
                 <div className="flex items-center gap-2">
-                    <div className={cn("h-2 w-2 rounded-full", syncScroll ? "bg-black animate-pulse" : "bg-black/20")} />
-                    <span className={cn("text-[10px] font-bold", syncScroll ? "text-black" : "text-black/40")}>
+                    <div className={cn('h-2 w-2 rounded-full', syncScroll ? 'animate-pulse bg-black' : 'bg-black/20')} />
+                    <span className={cn('text-[10px] font-bold', syncScroll ? 'text-black' : 'text-black/40')}>
                         Sinkronisasi Scroll {syncScroll ? 'Aktif' : 'Nonaktif'}
                     </span>
                 </div>

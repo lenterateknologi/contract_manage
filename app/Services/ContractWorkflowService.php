@@ -241,18 +241,6 @@ class ContractWorkflowService
             }
         }
 
-        // INJECT: Additional Management Approvers (from contract metadata)
-        // Only apply to steps involving high-level management roles
-        if ($this->isManagementStep($step)) {
-            $metadata = $contract->metadata ?? [];
-            $customUserIds = $metadata['custom_management_users'] ?? [];
-            
-            if (!empty($customUserIds) && is_array($customUserIds)) {
-                $customUsers = User::whereIn('id', $customUserIds)->where('is_active', true)->get();
-                // Merge while ensuring unique user IDs
-                $approvers = $approvers->concat($customUsers)->unique('id');
-            }
-        }
 
         foreach ($approvers as $approver) {
             Approval::create([

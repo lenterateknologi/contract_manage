@@ -20,16 +20,16 @@ export function CompactSwitch({
     return (
         <div className={cn("flex items-center justify-between gap-4 rounded-2xl border border-primary/5 dark:border-white/5 bg-primary/[0.02] dark:bg-white/[0.02] p-4 transition-all hover:bg-primary/[0.04] dark:hover:bg-white/[0.04]", containerClassName)}>
             <div className="space-y-0.5">
-                <Label className="text-[11px] font-black uppercase tracking-widest text-primary dark:text-white leading-none block">
+                <Label className="text-[11px] font-black uppercase  text-primary dark:text-white leading-none block">
                     {label}
                 </Label>
                 {description && (
-                    <p className="text-[9px] font-bold text-primary/30 dark:text-white/30 uppercase tracking-widest leading-none">
+                    <p className="text-[9px] font-bold text-primary/30 dark:text-white/30 uppercase  leading-none">
                         {description}
                     </p>
                 )}
             </div>
-            
+
             <button
                 type="button"
                 role="switch"
@@ -43,8 +43,8 @@ export function CompactSwitch({
                 <span
                     className={cn(
                         "pointer-events-none block h-4 w-4 rounded-full shadow-lg transition-transform duration-300 ring-0",
-                        checked 
-                            ? "translate-x-6 bg-white dark:bg-primary" 
+                        checked
+                            ? "translate-x-6 bg-white dark:bg-primary"
                             : "translate-x-1 bg-white dark:bg-white/50"
                     )}
                 />

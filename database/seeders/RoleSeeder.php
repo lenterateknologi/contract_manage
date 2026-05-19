@@ -18,6 +18,8 @@ class RoleSeeder extends Seeder
             ['name' => 'Staff', 'description' => 'Regular employee with initiation and review authority'],
             ['name' => 'Director', 'description' => 'Executive level with final approval authority'],
             ['name' => 'Vendor', 'description' => 'External party with restricted access'],
+            ['name' => 'VP', 'description' => 'Vice President with high-level approval authority'],
+            ['name' => 'CEO', 'description' => 'Chief Executive Officer with ultimate approval authority'],
         ];
 
         foreach ($roles as $role) {

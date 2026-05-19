@@ -2,9 +2,9 @@ import { useForm } from '@inertiajs/react';
 import { FormEventHandler, useRef } from 'react';
 
 // Components...
-import InputError from '@/components/ui/base/InputError';
 import { Button } from '@/components/ui/base/Button';
 import { Input } from '@/components/ui/base/Input';
+import InputError from '@/components/ui/base/InputError';
 import { Label } from '@/components/ui/base/Label';
 
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogTitle, DialogTrigger } from '@/components/ui/overlays/Dialog';
@@ -30,28 +30,30 @@ export default function DeleteUser() {
     };
 
     return (
-        <div className="space-y-4 max-w-xl">
+        <div className="max-w-xl space-y-4">
             <div className="space-y-1">
-                <h3 className="text-sm font-black text-slate-900 uppercase tracking-tighter">Delete account</h3>
-                <p className="text-[10px] text-slate-400 font-medium italic">Delete your account and all of its resources permanently.</p>
+                <h3 className="text-sm font-black tracking-tighter text-slate-900 uppercase">Delete account</h3>
+                <p className="text-[10px] font-medium text-slate-400 italic">Delete your account and all of its resources permanently.</p>
             </div>
-            
+
             <div className="rounded-xl border border-red-200 bg-red-50/50 p-4 transition-all hover:bg-red-50">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                     <div className="space-y-0.5">
-                        <p className="text-[11px] font-black text-red-600 uppercase tracking-widest">Warning Zone</p>
+                        <p className="text-[11px] font-black text-red-600 uppercase">Warning Zone</p>
                         <p className="text-[10px] font-medium text-red-500">Please proceed with caution, this cannot be undone.</p>
                     </div>
 
                     <Dialog>
                         <DialogTrigger asChild>
-                            <Button variant="destructive" className="h-9 px-4 rounded-lg text-xs font-black uppercase tracking-widest">Delete account</Button>
+                            <Button variant="destructive" className="h-9 rounded-lg px-4 text-xs font-black uppercase">
+                                Delete account
+                            </Button>
                         </DialogTrigger>
                         <DialogContent>
                             <DialogTitle>Are you sure you want to delete your account?</DialogTitle>
                             <DialogDescription>
-                                Once your account is deleted, all of its resources and data will also be permanently deleted. Please enter your password
-                                to confirm you would like to permanently delete your account.
+                                Once your account is deleted, all of its resources and data will also be permanently deleted. Please enter your
+                                password to confirm you would like to permanently delete your account.
                             </DialogDescription>
                             <form className="space-y-6" onSubmit={deleteUser}>
                                 <div className="grid gap-2">

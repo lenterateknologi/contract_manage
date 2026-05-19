@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use OpenApi\Attributes as OA;
+
 use App\Models\AccessModule;
 use App\Models\ContractStatus;
 use App\Models\Department;
@@ -25,6 +27,15 @@ use Inertia\Inertia;
 
 class AdminController extends Controller
 {
+    #[OA\Get(
+        path: "/api/admin/users",
+        summary: "Get list of users",
+        tags: ["Admin"],
+        security: [["bearerAuth" => []]],
+        responses: [
+            new OA\Response(response: 200, description: "List of users")
+        ]
+    )]
     public function users(Request $request)
     {
         $query = User::with('department')
@@ -42,6 +53,14 @@ class AdminController extends Controller
                 $q->whereIn('department_id', (array)$deptId);
             });
 
+        if ($request->wantsJson()) {
+            return response()->json([
+                'users' => $query->orderBy('name')->paginate($request->input('per_page', 10)),
+                'roles' => Role::orderBy('name')->get(),
+                'departments' => Department::orderBy('name')->get(),
+            ]);
+        }
+
         return Inertia::render('admin/index', [
             'currentView' => 'users',
             'users' => $query->orderBy('name')->paginate($request->input('per_page', 10))->withQueryString(),
@@ -55,6 +74,15 @@ class AdminController extends Controller
         ]);
     }
 
+    #[OA\Get(
+        path: "/api/admin/roles",
+        summary: "Get list of roles",
+        tags: ["Admin"],
+        security: [["bearerAuth" => []]],
+        responses: [
+            new OA\Response(response: 200, description: "List of roles")
+        ]
+    )]
     public function roles(Request $request)
     {
         $query = Role::query()
@@ -70,6 +98,10 @@ class AdminController extends Controller
             ->when($request->created_to, function ($q, $to) {
                 $q->whereDate('created_at', '<=', $to);
             });
+
+        if ($request->wantsJson()) {
+            return response()->json($query->orderBy('name')->paginate($request->input('per_page', 10)));
+        }
 
         return Inertia::render('admin/index', [
             'currentView' => 'roles',
@@ -89,7 +121,11 @@ class AdminController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        Role::create($data);
+        $role = Role::create($data);
+
+        if ($request->wantsJson()) {
+            return response()->json($role, 201);
+        }
 
         return back()->with('success', 'Role berhasil dibuat.');
     }
@@ -103,13 +139,21 @@ class AdminController extends Controller
 
         $role->update($data);
 
+        if ($request->wantsJson()) {
+            return response()->json($role);
+        }
+
         return back()->with('success', 'Role berhasil diperbarui.');
     }
 
-    public function destroyRole(Role $role)
+    public function destroyRole(Request $request, Role $role)
     {
         // Prevent deleting core roles if needed, but for now just delete
         $role->delete();
+
+        if ($request->wantsJson()) {
+            return response()->json(['message' => 'Role berhasil dihapus.']);
+        }
 
         return back()->with('success', 'Role berhasil dihapus.');
     }
@@ -284,7 +328,11 @@ class AdminController extends Controller
         $data['password'] = bcrypt($data['password']);
         $data['initials'] = collect(explode(' ', $data['name']))->map(fn ($n) => strtoupper(substr($n, 0, 1)))->take(2)->join('');
 
-        User::create($data);
+        $user = User::create($data);
+
+        if ($request->wantsJson()) {
+            return response()->json($user, 201);
+        }
 
         return back()->with('success', 'User berhasil dibuat.');
     }
@@ -317,15 +365,23 @@ class AdminController extends Controller
 
         $user->update($data);
 
+        if ($request->wantsJson()) {
+            return response()->json($user);
+        }
+
         return back()->with('success', 'User berhasil diperbarui.');
     }
 
-    public function destroyUser(User $user)
+    public function destroyUser(Request $request, User $user)
     {
         if ($user->id === Auth::id()) {
             abort(403, 'Tidak dapat menghapus diri sendiri.');
         }
         $user->delete();
+
+        if ($request->wantsJson()) {
+            return response()->json(['message' => 'User berhasil dihapus.']);
+        }
 
         return back()->with('success', 'User berhasil dihapus.');
     }
@@ -506,6 +562,10 @@ class AdminController extends Controller
                 $bools = collect((array)$active)->map(fn($v) => filter_var($v, FILTER_VALIDATE_BOOLEAN))->toArray();
                 $q->whereIn('is_active', $bools);
             });
+
+        if ($request->wantsJson()) {
+            return response()->json($query->orderBy('name')->paginate($request->input('per_page', 10)));
+        }
 
         return Inertia::render('admin/index', [
             'currentView' => 'departments',

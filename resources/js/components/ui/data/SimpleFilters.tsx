@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { 
-    Filter, 
-    X, 
+import {
+    Filter,
+    X,
     Calendar as CalendarIcon,
     ChevronDown,
     Search,
@@ -46,16 +46,16 @@ const statusOptions = [
     { label: 'Rejected', value: 'rejected' }
 ];
 
-export function SimpleFilters({ 
-    types, 
-    onApply, 
+export function SimpleFilters({
+    types,
+    onApply,
     onAdvancedApply,
     currentFilters,
     placeholder = "Cari...",
     primaryAction
 }: SimpleFiltersProps) {
     const [open, setOpen] = useState(false);
-    
+
     // Local state for the filter form
     const [status, setStatus] = useState<any[]>(currentFilters.status || []);
     const [typeIds, setTypeIds] = useState<any[]>(currentFilters.type || []);
@@ -73,7 +73,7 @@ export function SimpleFilters({
         // Map to AdvancedFilters format for backend query engine
         if (onAdvancedApply) {
             const rules: any[] = [];
-            
+
             if (status.length > 0) {
                 rules.push({
                     id: 'f-status',
@@ -116,7 +116,7 @@ export function SimpleFilters({
                 rules
             });
         }
-        
+
         setOpen(false);
     };
 
@@ -146,8 +146,8 @@ export function SimpleFilters({
         <div className="flex items-center gap-2">
             <DropdownMenu open={open} onOpenChange={setOpen}>
             <DropdownMenuTrigger asChild>
-                <Button 
-                    variant="outline" 
+                <Button
+                    variant="outline"
                     className={cn(
                         "h-10 px-3 gap-2 border-border font-bold text-[11px] uppercase tracking-wider shadow-sm bg-background transition-all",
                         activeCount > 0 && "border-primary/50 bg-primary/5 text-primary"
@@ -173,11 +173,11 @@ export function SimpleFilters({
                 <div className="p-4 flex flex-col gap-5 max-h-[450px] overflow-y-auto">
                     {/* Status Section */}
                     <div className="space-y-3">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Status Kontrak</Label>
+                        <Label className="text-[10px] font-black uppercase  text-muted-foreground">Status Kontrak</Label>
                         <div className="grid grid-cols-2 gap-2">
                             {statusOptions.map((opt) => (
-                                <div 
-                                    key={opt.value} 
+                                <div
+                                    key={opt.value}
                                     className={cn(
                                         "flex items-center gap-2 p-2 rounded-lg border border-border/50 bg-background cursor-pointer hover:border-primary/30 transition-all",
                                         status.includes(opt.value) && "border-primary/50 bg-primary/5"
@@ -200,11 +200,11 @@ export function SimpleFilters({
 
                     {/* Tipe Section */}
                     <div className="space-y-3">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Tipe Kontrak</Label>
+                        <Label className="text-[10px] font-black uppercase  text-muted-foreground">Tipe Kontrak</Label>
                         <div className="flex flex-wrap gap-2">
                             {types.map((type) => (
-                                <Badge 
-                                    key={type.id} 
+                                <Badge
+                                    key={type.id}
                                     variant={typeIds.includes(type.id) ? "default" : "outline"}
                                     className={cn(
                                         "cursor-pointer px-2.5 py-1 text-[10px] font-bold uppercase transition-all",
@@ -222,22 +222,22 @@ export function SimpleFilters({
 
                     {/* Tanggal Section */}
                     <div className="space-y-3">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Rentang Tanggal</Label>
+                        <Label className="text-[10px] font-black uppercase  text-muted-foreground">Rentang Tanggal</Label>
                         <div className="grid grid-cols-2 gap-2">
                             <div className="space-y-1">
                                 <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-tight">Dari</span>
-                                <Input 
-                                    type="date" 
-                                    value={dateFrom} 
+                                <Input
+                                    type="date"
+                                    value={dateFrom}
                                     onChange={(e) => setDateFrom(e.target.value)}
                                     className="h-8 text-[11px] border-border bg-background/50 focus:ring-primary/20"
                                 />
                             </div>
                             <div className="space-y-1">
                                 <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-tight">Sampai</span>
-                                <Input 
-                                    type="date" 
-                                    value={dateTo} 
+                                <Input
+                                    type="date"
+                                    value={dateTo}
                                     onChange={(e) => setDateTo(e.target.value)}
                                     className="h-8 text-[11px] border-border bg-background/50 focus:ring-primary/20"
                                 />
@@ -247,16 +247,16 @@ export function SimpleFilters({
                 </div>
 
                 <div className="p-3 bg-muted/50 border-t border-border flex items-center justify-between gap-3">
-                    <Button 
-                        variant="ghost" 
-                        size="sm" 
+                    <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={handleReset}
                         className="text-[10px] font-bold uppercase text-muted-foreground hover:text-destructive"
                     >
                         Reset All
                     </Button>
-                    <Button 
-                        size="sm" 
+                    <Button
+                        size="sm"
                         onClick={handleApply}
                         className="h-9 px-6 text-[10px] font-bold uppercase shadow-lg shadow-primary/20"
                     >

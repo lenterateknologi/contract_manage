@@ -1,7 +1,7 @@
-import React from 'react';
 import { cn } from '@/lib/utils';
-import { FIELD_TYPES } from './constants';
 import { ChevronDown, FileText, Layout } from 'lucide-react';
+import React from 'react';
+import { FIELD_TYPES } from './constants';
 
 interface StructurePanelProps {
     fieldTree: any[];
@@ -10,12 +10,7 @@ interface StructurePanelProps {
     fieldsCount: number;
 }
 
-export const StructurePanel: React.FC<StructurePanelProps> = ({ 
-    fieldTree, 
-    selectedFieldIds, 
-    onSelectField,
-    fieldsCount
-}) => {
+export const StructurePanel: React.FC<StructurePanelProps> = ({ fieldTree, selectedFieldIds, onSelectField, fieldsCount }) => {
     const renderFieldTree = (item: any) => {
         const isSelected = selectedFieldIds.includes(item.id);
         const Icon = FIELD_TYPES.flatMap((c) => c.items).find((t) => t.value === item.type)?.icon || FileText;
@@ -39,7 +34,7 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
                         )}
                     </div>
                     <Icon size={12} className={cn('shrink-0', isSelected ? 'text-primary' : 'text-muted-foreground/40')} />
-                    <span className={cn('flex-1 truncate font-semibold font-sans tracking-tight uppercase', isSelected && 'text-primary')}>
+                    <span className={cn('flex-1 truncate font-sans font-semibold tracking-tight uppercase', isSelected && 'text-primary')}>
                         {item.label || item.type.replace('_', ' ')}
                     </span>
                     {isSelected && <div className="bg-primary h-1 w-1 rounded-full" />}
@@ -56,12 +51,8 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
     return (
         <div className="animate-in fade-in slide-in-from-left-4 space-y-6 duration-300">
             <div className="flex items-center justify-between">
-                <h3 className="text-muted-foreground/30 text-[9px] font-semibold font-sans tracking-[0.3em] uppercase">
-                    Hierarchical View
-                </h3>
-                <span className="text-muted-foreground/20 text-[8px] font-medium font-sans uppercase">
-                    {fieldsCount} Elements
-                </span>
+                <h3 className="text-muted-foreground/30 font-sans text-[9px] font-semibold tracking-[0.3em] uppercase">Hierarchical View</h3>
+                <span className="text-muted-foreground/20 font-sans text-[8px] font-medium uppercase">{fieldsCount} Elements</span>
             </div>
             <div className="space-y-1">
                 {fieldTree.length === 0 ? (
@@ -69,9 +60,7 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
                         <div className="bg-muted text-muted-foreground/20 mb-3 rounded-xl p-3">
                             <Layout size={20} />
                         </div>
-                        <p className="text-muted-foreground/30 text-[10px] font-medium font-sans tracking-widest uppercase">
-                            Canvas Kosong
-                        </p>
+                        <p className="text-muted-foreground/30 font-sans text-[10px] font-medium uppercase">Canvas Kosong</p>
                     </div>
                 ) : (
                     fieldTree.map((f: any) => renderFieldTree(f))

@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/base/Button';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, Save, Sparkles } from 'lucide-react';
+import { ArrowLeft, Save } from 'lucide-react';
 import React from 'react';
 
 interface ManagementFormProps {
@@ -94,7 +94,6 @@ export function FormSection({
                     <div className="space-y-0.5">
                         {title && (
                             <div className="flex items-center gap-2">
-                                <Sparkles size={13} className="text-primary/50" />
                                 <span className="text-foreground text-sm font-bold tracking-wide">{title}</span>
                             </div>
                         )}

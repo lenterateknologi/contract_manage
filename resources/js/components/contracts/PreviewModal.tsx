@@ -74,7 +74,7 @@ export default function PreviewModal({ open, onClose, title, url, hasFile }: Pro
                 {loading && (
                     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-black text-white">
                         <i className="fa-solid fa-spinner fa-spin text-3xl text-white" />
-                        <span className="text-[10px] font-black tracking-widest uppercase">Generating PDF Preview...</span>
+                        <span className="text-[10px] font-black uppercase">Generating PDF Preview...</span>
                     </div>
                 )}
 
@@ -101,7 +101,7 @@ export default function PreviewModal({ open, onClose, title, url, hasFile }: Pro
                 ) : (
                     <div className="flex h-full flex-col items-center justify-center gap-3 text-white/40">
                         <i className="fa-solid fa-triangle-exclamation text-3xl text-white/20" />
-                        <span className="text-[11px] font-black tracking-widest uppercase">Gagal memuat preview PDF</span>
+                        <span className="text-[11px] font-black uppercase">Gagal memuat preview PDF</span>
                     </div>
                 )}
             </div>

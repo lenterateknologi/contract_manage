@@ -23,11 +23,11 @@ import {
 import { FormEventHandler, useRef, useState } from 'react';
 
 import AppearanceToggleTab from '@/components/layout/AppearanceTabs';
-import DeleteUser from '@/components/user/DeleteUser';
-import InputError from '@/components/ui/base/InputError';
 import { Button } from '@/components/ui/base/Button';
 import { Input } from '@/components/ui/base/Input';
+import InputError from '@/components/ui/base/InputError';
 import { Label } from '@/components/ui/base/Label';
+import DeleteUser from '@/components/user/DeleteUser';
 import SettingsLayout from '@/layouts/settings/layout';
 import { cn } from '@/lib/utils';
 
@@ -150,23 +150,23 @@ export default function Profile({ status, department, recentContracts = [], user
 
                         {/* Integrated Profile Card (Simplified & Centered) */}
                         <div className="mx-auto max-w-7xl px-6 sm:px-10">
-                            <div className="relative z-10 -mt-16 flex flex-col items-center justify-between gap-8 border-b border-border pb-10 sm:-mt-20 md:flex-row md:items-end">
+                            <div className="border-border relative z-10 -mt-16 flex flex-col items-center justify-between gap-8 border-b pb-10 sm:-mt-20 md:flex-row md:items-end">
                                 <div className="flex flex-col items-center gap-6 text-center md:flex-row md:items-end md:text-left">
                                     <div
-                                        className="flex h-32 w-32 rotate-2 items-center justify-center rounded-3xl border-4 border-background text-4xl font-black shadow-2xl ring-4 ring-foreground/5 transition-transform duration-500 hover:rotate-0 sm:h-40 sm:w-40 sm:text-5xl"
+                                        className="border-background ring-foreground/5 flex h-32 w-32 rotate-2 items-center justify-center rounded-3xl border-4 text-4xl font-black shadow-2xl ring-4 transition-transform duration-500 hover:rotate-0 sm:h-40 sm:w-40 sm:text-5xl"
                                         style={{ backgroundColor: user.bg_color || '#3b82f6', color: user.text_color || '#ffffff' }}
                                     >
                                         {user.initials || user.name.substring(0, 2).toUpperCase()}
                                     </div>
 
-                                    <div className="mb-2 space-y-2 text-foreground">
+                                    <div className="text-foreground mb-2 space-y-2">
                                         <div className="flex flex-wrap items-center justify-center gap-2 md:justify-start">
-                                            <h2 className="text-3xl font-black tracking-tight text-foreground sm:text-4xl">{user.name}</h2>
-                                            <div className="rounded-lg bg-primary px-2.5 py-0.5 text-[10px] font-black tracking-[0.2em] text-primary-foreground shadow-lg shadow-primary/20">
+                                            <h2 className="text-foreground text-3xl font-black tracking-tight sm:text-4xl">{user.name}</h2>
+                                            <div className="bg-primary text-primary-foreground shadow-primary/20 rounded-lg px-2.5 py-0.5 text-[10px] font-black tracking-[0.2em] shadow-lg">
                                                 {user.role || 'Member'}
                                             </div>
                                         </div>
-                                        <p className="line-clamp-2 max-w-lg text-sm leading-relaxed font-medium text-muted-foreground italic">
+                                        <p className="text-muted-foreground line-clamp-2 max-w-lg text-sm leading-relaxed font-medium italic">
                                             {user.bio || 'No biography provided yet. Set a custom bio through the profile settings.'}
                                         </p>
                                     </div>
@@ -178,7 +178,7 @@ export default function Profile({ status, department, recentContracts = [], user
                                             setActiveTab('profile');
                                             setIsEditing(true);
                                         }}
-                                        className="group h-10 rounded-xl border-none bg-primary text-xs font-black tracking-widest text-primary-foreground shadow-xl transition-all hover:bg-primary/90 active:scale-95"
+                                        className="group bg-primary text-primary-foreground hover:bg-primary/90 h-10 rounded-xl border-none text-xs font-black shadow-xl transition-all active:scale-95"
                                     >
                                         <Settings2 size={16} className="mr-2 transition-transform duration-300 group-hover:rotate-45" />
                                     </Button>
@@ -192,10 +192,10 @@ export default function Profile({ status, department, recentContracts = [], user
                         <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
                             {/* Information Summary (Simplified Information Stream) */}
                             <div className="space-y-10 lg:col-span-4">
-                                <div className="space-y-8 rounded-[2.5rem] border border-border bg-muted/30 p-8 shadow-sm">
+                                <div className="border-border bg-muted/30 space-y-8 rounded-[2.5rem] border p-8 shadow-sm">
                                     <div className="flex items-center gap-3">
                                         <Info size={18} className="text-primary" />
-                                        <span className="text-[10px] font-black tracking-[0.3em] text-muted-foreground uppercase">Identity Core</span>
+                                        <span className="text-muted-foreground text-[10px] font-black tracking-[0.3em] uppercase">Identity Core</span>
                                     </div>
 
                                     <div className="grid gap-6">
@@ -207,21 +207,21 @@ export default function Profile({ status, department, recentContracts = [], user
                                         <HubInfoItem icon={Hash} label={user.region || 'Assigned Region'} sublabel="Operating Region" />
                                     </div>
 
-                                    <div className="grid gap-4 border-t border-border pt-6">
+                                    <div className="border-border grid gap-4 border-t pt-6">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-3">
-                                                <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground shadow-sm">
+                                                <div className="border-border bg-card text-muted-foreground flex h-8 w-8 items-center justify-center rounded-lg border shadow-sm">
                                                     <Mail size={14} />
                                                 </div>
-                                                <span className="text-xs font-bold tracking-tight text-foreground/80">{user.email}</span>
+                                                <span className="text-foreground/80 text-xs font-bold tracking-tight">{user.email}</span>
                                             </div>
                                         </div>
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-3">
-                                                <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground shadow-sm">
+                                                <div className="border-border bg-card text-muted-foreground flex h-8 w-8 items-center justify-center rounded-lg border shadow-sm">
                                                     <Phone size={14} />
                                                 </div>
-                                                <span className="text-xs font-bold tracking-tight text-foreground/80">
+                                                <span className="text-foreground/80 text-xs font-bold tracking-tight">
                                                     {user.phone || 'No Phone Connected'}
                                                 </span>
                                             </div>
@@ -236,15 +236,15 @@ export default function Profile({ status, department, recentContracts = [], user
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-4">
                                             <div>
-                                                <h3 className="text-base font-black tracking-tight text-foreground">Recent Activity Stream</h3>
-                                                <p className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase italic">
+                                                <h3 className="text-foreground text-base font-black tracking-tight">Recent Activity Stream</h3>
+                                                <p className="text-muted-foreground text-[10px] font-bold uppercase italic">
                                                     Live Contract Lifecycle Updates
                                                 </p>
                                             </div>
                                         </div>
                                         <Link
                                             href="/contracts"
-                                            className="group flex items-center gap-2 text-[10px] font-black tracking-widest text-primary uppercase transition-all hover:tracking-[0.2em]"
+                                            className="group text-primary flex items-center gap-2 text-[10px] font-black uppercase transition-all hover:tracking-[0.2em]"
                                         >
                                             VIEW ALL <ExternalLink size={12} className="transition-transform group-hover:translate-x-1" />
                                         </Link>
@@ -256,27 +256,27 @@ export default function Profile({ status, department, recentContracts = [], user
                                                 <Link
                                                     key={contract.id}
                                                     href={`/contracts/${contract.id}`}
-                                                    className="group flex items-center justify-between rounded-3xl border border-border bg-card p-5 transition-all duration-300 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5"
+                                                    className="group border-border bg-card hover:border-primary/30 hover:shadow-primary/5 flex items-center justify-between rounded-3xl border p-5 transition-all duration-300 hover:shadow-xl"
                                                 >
                                                     <div className="flex items-center gap-5">
                                                         <div className="space-y-1">
                                                             <div className="flex items-center gap-2">
-                                                                <p className="text-[10px] font-black tracking-widest text-primary uppercase">
+                                                                <p className="text-primary text-[10px] font-black uppercase">
                                                                     {contract.contract_no || 'NO-REF'}
                                                                 </p>
-                                                                <span className="text-[9px] font-black tracking-widest text-muted-foreground/40 uppercase">
+                                                                <span className="text-muted-foreground/40 text-[9px] font-black uppercase">
                                                                     • {contract.type}
                                                                 </span>
                                                             </div>
-                                                            <p className="text-sm font-black tracking-tight text-foreground uppercase transition-colors group-hover:text-primary">
+                                                            <p className="text-foreground group-hover:text-primary text-sm font-black tracking-tight uppercase transition-colors">
                                                                 {contract.title}
                                                             </p>
                                                             <div className="flex items-center gap-2">
-                                                                <span className="text-[9px] font-bold tracking-tight text-muted-foreground uppercase">
+                                                                <span className="text-muted-foreground text-[9px] font-bold tracking-tight uppercase">
                                                                     Updated {contract.time_ago}
                                                                 </span>
-                                                                <span className="h-1 w-1 rounded-full bg-border" />
-                                                                <span className="text-[9px] font-black tracking-tight text-muted-foreground/80 uppercase">
+                                                                <span className="bg-border h-1 w-1 rounded-full" />
+                                                                <span className="text-muted-foreground/80 text-[9px] font-black tracking-tight uppercase">
                                                                     {contract.progress.pct}% Complete
                                                                 </span>
                                                             </div>
@@ -285,12 +285,12 @@ export default function Profile({ status, department, recentContracts = [], user
                                                     <div className="flex items-center gap-3">
                                                         <div
                                                             className={cn(
-                                                                'rounded-xl border px-3 py-1 text-[9px] font-black tracking-widest uppercase',
+                                                                'rounded-xl border px-3 py-1 text-[9px] font-black uppercase',
                                                                 contract.status === 'approved'
-                                                                    ? 'border-emerald-100 dark:border-emerald-900/30 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600'
+                                                                    ? 'border-emerald-100 bg-emerald-50 text-emerald-600 dark:border-emerald-900/30 dark:bg-emerald-950/20'
                                                                     : contract.status === 'draft'
                                                                       ? 'border-border bg-muted text-muted-foreground'
-                                                                      : 'border-amber-100 dark:border-amber-900/30 bg-amber-50 dark:bg-amber-950/20 text-amber-600',
+                                                                      : 'border-amber-100 bg-amber-50 text-amber-600 dark:border-amber-900/30 dark:bg-amber-950/20',
                                                             )}
                                                         >
                                                             {contract.status}
@@ -299,13 +299,15 @@ export default function Profile({ status, department, recentContracts = [], user
                                                 </Link>
                                             ))
                                         ) : (
-                                            <div className="space-y-4 rounded-3xl border-2 border-dashed border-border bg-muted/10 p-20 text-center">
-                                                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-muted shadow-sm">
-                                                    <FileText className="h-8 w-8 text-muted-foreground/30" />
+                                            <div className="border-border bg-muted/10 space-y-4 rounded-3xl border-2 border-dashed p-20 text-center">
+                                                <div className="bg-muted mx-auto flex h-16 w-16 items-center justify-center rounded-full shadow-sm">
+                                                    <FileText className="text-muted-foreground/30 h-8 w-8" />
                                                 </div>
                                                 <div className="space-y-1">
-                                                    <p className="text-xs font-black tracking-widest text-muted-foreground/60 uppercase">No Recent Activity</p>
-                                                    <p className="text-[10px] text-muted-foreground/40">Contracts you interact with will appear here.</p>
+                                                    <p className="text-muted-foreground/60 text-xs font-black uppercase">No Recent Activity</p>
+                                                    <p className="text-muted-foreground/40 text-[10px]">
+                                                        Contracts you interact with will appear here.
+                                                    </p>
                                                 </div>
                                             </div>
                                         )}
@@ -338,16 +340,16 @@ export default function Profile({ status, department, recentContracts = [], user
                             leaveFrom="opacity-100 scale-100 translate-y-0"
                             leaveTo="opacity-0 scale-95 translate-y-8"
                         >
-                            <div className="relative flex min-h-[600px] w-full max-w-4xl flex-col overflow-hidden rounded-[2.5rem] border border-border bg-card shadow-2xl md:flex-row">
+                            <div className="border-border bg-card relative flex min-h-[600px] w-full max-w-4xl flex-col overflow-hidden rounded-[2.5rem] border shadow-2xl md:flex-row">
                                 {/* Modal Sidebar */}
-                                <div className="flex w-full flex-col gap-8 border-r border-border bg-muted/30 p-8 md:w-72">
+                                <div className="border-border bg-muted/30 flex w-full flex-col gap-8 border-r p-8 md:w-72">
                                     <div className="mb-4 flex items-center gap-4">
-                                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-xl shadow-primary/20">
+                                        <div className="bg-primary text-primary-foreground shadow-primary/20 flex h-12 w-12 items-center justify-center rounded-2xl shadow-xl">
                                             <Settings2 size={24} />
                                         </div>
                                         <div>
-                                            <h3 className="text-[10px] font-black tracking-[0.3em] text-muted-foreground uppercase">Workspace</h3>
-                                            <p className="text-sm font-black tracking-tight text-foreground">System Settings</p>
+                                            <h3 className="text-muted-foreground text-[10px] font-black tracking-[0.3em] uppercase">Workspace</h3>
+                                            <p className="text-foreground text-sm font-black tracking-tight">System Settings</p>
                                         </div>
                                     </div>
 
@@ -372,11 +374,11 @@ export default function Profile({ status, department, recentContracts = [], user
                                         />
                                     </nav>
 
-                                    <div className="mt-auto border-t border-border pt-8">
+                                    <div className="border-border mt-auto border-t pt-8">
                                         <Button
                                             variant="ghost"
                                             onClick={() => setIsEditing(false)}
-                                            className="h-12 w-full justify-start rounded-xl text-xs font-black tracking-widest text-muted-foreground uppercase hover:bg-muted/50 hover:text-foreground"
+                                            className="text-muted-foreground hover:bg-muted/50 hover:text-foreground h-12 w-full justify-start rounded-xl text-xs font-black uppercase"
                                         >
                                             <X size={16} className="mr-3" />
                                             Dismiss Portal
@@ -389,8 +391,8 @@ export default function Profile({ status, department, recentContracts = [], user
                                     {activeTab === 'profile' && (
                                         <div className="animate-in fade-in slide-in-from-right-4 space-y-10 duration-500">
                                             <div className="space-y-2">
-                                                <h4 className="text-2xl font-black tracking-tight text-foreground">Identity Management</h4>
-                                                <p className="text-xs font-medium text-muted-foreground italic">
+                                                <h4 className="text-foreground text-2xl font-black tracking-tight">Identity Management</h4>
+                                                <p className="text-muted-foreground text-xs font-medium italic">
                                                     Synchronize your professional persona across the enterprise.
                                                 </p>
                                             </div>
@@ -467,7 +469,7 @@ export default function Profile({ status, department, recentContracts = [], user
                                                         <div className="space-y-2">
                                                             <Label
                                                                 htmlFor="bio"
-                                                                className="text-[10px] font-black tracking-[0.1em] text-muted-foreground uppercase"
+                                                                className="text-muted-foreground text-[10px] font-black tracking-[0.1em] uppercase"
                                                             >
                                                                 Biography
                                                             </Label>
@@ -475,7 +477,7 @@ export default function Profile({ status, department, recentContracts = [], user
                                                                 id="bio"
                                                                 value={profileForm.data.bio}
                                                                 onChange={(e) => profileForm.setData('bio', e.target.value)}
-                                                                className="min-h-[120px] w-full rounded-2xl border border-border bg-muted/20 p-4 text-sm font-medium transition-all outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                                                                className="border-border bg-muted/20 focus:border-primary focus:ring-primary/20 min-h-[120px] w-full rounded-2xl border p-4 text-sm font-medium transition-all outline-none focus:ring-2"
                                                                 placeholder="Tell us about yourself..."
                                                             />
                                                             {profileForm.errors.bio && <InputError message={profileForm.errors.bio} />}
@@ -485,7 +487,7 @@ export default function Profile({ status, department, recentContracts = [], user
                                                 <div className="flex justify-end pt-4">
                                                     <Button
                                                         disabled={profileForm.processing}
-                                                        className="h-14 rounded-2xl bg-primary px-10 text-xs font-black tracking-widest text-primary-foreground shadow-xl shadow-primary/20 transition-all hover:bg-primary/90 active:scale-95"
+                                                        className="bg-primary text-primary-foreground shadow-primary/20 hover:bg-primary/90 h-14 rounded-2xl px-10 text-xs font-black shadow-xl transition-all active:scale-95"
                                                     >
                                                         {profileForm.processing ? 'SYNCHRONIZING...' : 'UPDATE IDENTITY'}
                                                     </Button>
@@ -497,8 +499,8 @@ export default function Profile({ status, department, recentContracts = [], user
                                     {activeTab === 'security' && (
                                         <div className="animate-in fade-in slide-in-from-right-4 space-y-10 duration-500">
                                             <div className="space-y-2">
-                                                <h4 className="text-2xl font-black tracking-tight text-foreground">Global Security Access</h4>
-                                                <p className="text-xs font-medium text-muted-foreground italic">
+                                                <h4 className="text-foreground text-2xl font-black tracking-tight">Global Security Access</h4>
+                                                <p className="text-muted-foreground text-xs font-medium italic">
                                                     Enforce strong authentication via secure key rotation.
                                                 </p>
                                             </div>
@@ -538,7 +540,7 @@ export default function Profile({ status, department, recentContracts = [], user
                                                 <div className="flex justify-end pt-4">
                                                     <Button
                                                         disabled={passwordForm.processing}
-                                                        className="h-14 rounded-2xl bg-foreground px-10 text-xs font-black tracking-widest text-background uppercase shadow-xl shadow-foreground/10 transition-all hover:bg-foreground/90 active:scale-95"
+                                                        className="bg-foreground text-background shadow-foreground/10 hover:bg-foreground/90 h-14 rounded-2xl px-10 text-xs font-black uppercase shadow-xl transition-all active:scale-95"
                                                     >
                                                         {passwordForm.processing ? 'ENFORCING...' : 'ROTATE KEYS'}
                                                     </Button>
@@ -550,15 +552,15 @@ export default function Profile({ status, department, recentContracts = [], user
                                     {activeTab === 'appearance' && (
                                         <div className="animate-in fade-in slide-in-from-right-4 space-y-10 duration-500">
                                             <div className="space-y-2">
-                                                <h4 className="text-2xl font-black tracking-tight text-foreground">Visual Interface Palette</h4>
-                                                <p className="text-xs font-medium text-muted-foreground italic">
+                                                <h4 className="text-foreground text-2xl font-black tracking-tight">Visual Interface Palette</h4>
+                                                <p className="text-muted-foreground text-xs font-medium italic">
                                                     Personalize the immersive experience and workspace aesthetics.
                                                 </p>
                                             </div>
 
                                             <div className="space-y-8">
-                                                <div className="rounded-[2rem] border border-border bg-muted/20 p-8">
-                                                    <Label className="mb-4 block text-[10px] font-black tracking-widest text-muted-foreground uppercase">
+                                                <div className="border-border bg-muted/20 rounded-[2rem] border p-8">
+                                                    <Label className="text-muted-foreground mb-4 block text-[10px] font-black uppercase">
                                                         Luminance Spectrum
                                                     </Label>
                                                     <AppearanceToggleTab />
@@ -575,7 +577,7 @@ export default function Profile({ status, department, recentContracts = [], user
                 {/* Account Deletion */}
                 {!isEditing && (
                     <div className="mx-auto max-w-7xl px-6 pb-20 sm:px-10">
-                        <div className="border-t border-border pt-12">
+                        <div className="border-border border-t pt-12">
                             <DeleteUser />
                         </div>
                     </div>
@@ -591,11 +593,11 @@ function ModalTabButton({ active, onClick, icon: Icon, label }: { active: boolea
             onClick={onClick}
             className={cn(
                 'group flex items-center gap-4 rounded-2xl px-5 py-4 text-[11px] font-black transition-all outline-none',
-                active ? 'border border-border bg-card text-primary shadow-md' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+                active ? 'border-border bg-card text-primary border shadow-md' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
             )}
         >
-             <Icon size={18} className={cn(active ? 'text-primary' : 'text-muted-foreground/40 transition-colors group-hover:text-primary')} />
-            <span className="tracking-widest uppercase">{label}</span>
+            <Icon size={18} className={cn(active ? 'text-primary' : 'text-muted-foreground/40 group-hover:text-primary transition-colors')} />
+            <span className="uppercase">{label}</span>
         </button>
     );
 }
@@ -603,13 +605,13 @@ function ModalTabButton({ active, onClick, icon: Icon, label }: { active: boolea
 function HubInfoItem({ icon: Icon, label, sublabel }: { icon: any; label: string; sublabel: string }) {
     return (
         <div className="group flex items-center gap-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition-all group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-lg group-hover:shadow-primary/20">
+            <div className="border-border bg-card text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-primary/20 flex h-10 w-10 items-center justify-center rounded-xl border transition-all group-hover:shadow-lg">
                 <Icon size={18} />
             </div>
-             <div className="space-y-0.5">
-                 <p className="text-[9px] font-black tracking-widest text-muted-foreground/60 uppercase">{sublabel}</p>
-                 <p className="text-sm font-black tracking-tight text-foreground/80">{label}</p>
-             </div>
+            <div className="space-y-0.5">
+                <p className="text-muted-foreground/60 text-[9px] font-black uppercase">{sublabel}</p>
+                <p className="text-foreground/80 text-sm font-black tracking-tight">{label}</p>
+            </div>
         </div>
     );
 }
@@ -630,25 +632,25 @@ function FormField({ label, id, type = 'text', value, onChange, error, icon: Ico
         <div className="group w-full space-y-2">
             <Label
                 htmlFor={id}
-                className="text-[10px] font-black tracking-[0.1em] text-muted-foreground uppercase transition-colors group-focus-within:text-primary"
+                className="text-muted-foreground group-focus-within:text-primary text-[10px] font-black tracking-[0.1em] uppercase transition-colors"
             >
                 {label}
             </Label>
             <div className="relative">
-                 {Icon && (
-                     <Icon className="absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-muted-foreground/40 transition-colors group-focus-within:text-primary" />
-                 )}
-                 <Input
-                     id={id}
-                     ref={ref}
-                     type={type}
-                     value={value}
-                     onChange={(e) => onChange(e.target.value)}
-                     className={cn(
-                         'h-12 rounded-2xl border-border bg-muted/20 text-sm font-medium transition-all focus:bg-background',
-                         Icon && 'pl-12',
-                     )}
-                 />
+                {Icon && (
+                    <Icon className="text-muted-foreground/40 group-focus-within:text-primary absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 transition-colors" />
+                )}
+                <Input
+                    id={id}
+                    ref={ref}
+                    type={type}
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    className={cn(
+                        'border-border bg-muted/20 focus:bg-background h-12 rounded-2xl text-sm font-medium transition-all',
+                        Icon && 'pl-12',
+                    )}
+                />
             </div>
             {error && <InputError message={error} />}
         </div>

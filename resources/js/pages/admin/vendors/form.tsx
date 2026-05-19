@@ -1,38 +1,30 @@
-import { ManagementForm, FormSection } from '@/components/admin/ManagementForm';
+import { FormSection, ManagementForm } from '@/components/admin/ManagementForm';
 import { useToast } from '@/components/contracts/Toast';
 import { Button } from '@/components/ui/base/Button';
 import { Checkbox } from '@/components/ui/base/Checkbox';
+import { CompactInput } from '@/components/ui/forms/CompactInput';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { Dialog, DialogContent, DialogFooter, DialogTitle } from '@/components/ui/overlays/Dialog';
-import { CompactInput } from '@/components/ui/forms/CompactInput';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/forms/Select";
+import { usePermissions } from '@/hooks/use-permissions';
 import { cn } from '@/lib/utils';
 import { Head, router, useForm } from '@inertiajs/react';
-import { usePermissions } from '@/hooks/use-permissions';
-import { 
-    FileText, 
-    ShieldCheck, 
-    Trash2, 
-    UploadCloud, 
-    Building2, 
-    UserCheck, 
-    CreditCard, 
+import {
+    CheckCircle2,
+    Clock,
+    CreditCard,
+    ExternalLink,
     Gavel,
     Globe,
-    Phone,
     Mail,
     MapPin,
-    ExternalLink,
-    CheckCircle2,
-    Clock
+    Phone,
+    ShieldCheck,
+    Trash2,
+    UploadCloud,
+    UserCheck,
 } from 'lucide-react';
-import React, { FormEvent, useRef, useState, useMemo } from 'react';
+import { FormEvent, useMemo, useRef, useState } from 'react';
 
 interface Props {
     vendor: any;
@@ -120,7 +112,7 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
 
     const docCats = useMemo(() => {
         const type = data.company_type;
-        
+
         if (type === 'INDIVIDU') {
             return [
                 { label: 'Identitas Pribadi', types: ['KTP_DIREKTUR', 'NPWP'] },
@@ -145,7 +137,7 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
 
     const auditScore = useMemo(() => {
         if (!vendor?.documents) return 0;
-        const requiredTypes = docCats.flatMap(cat => cat.types);
+        const requiredTypes = docCats.flatMap((cat) => cat.types);
         const uploadedRequired = vendor.documents.filter((d: any) => requiredTypes.includes(d.document_type)).length;
         return Math.min(100, Math.round((uploadedRequired / requiredTypes.length) * 100));
     }, [vendor, docCats]);
@@ -153,7 +145,11 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
     return (
         <ManagementForm
             title={isEdit ? 'Profil Strategis Vendor' : 'Registrasi Vendor Baru'}
-            subtitle={isEdit ? `Mengelola parameter operasional dan audit kepatuhan untuk ${vendor.name}` : 'Mendaftarkan mitra bisnis baru ke dalam ekosistem perusahaan'}
+            subtitle={
+                isEdit
+                    ? `Mengelola parameter operasional dan audit kepatuhan untuk ${vendor.name}`
+                    : 'Mendaftarkan mitra bisnis baru ke dalam ekosistem perusahaan'
+            }
             onClose={() => router.get(route('admin.vendors'))}
             onSave={handleSave}
             processing={processing}
@@ -167,30 +163,27 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
                                 type="button"
                                 variant="ghost"
                                 onClick={() => setIsDeleteVendorOpen(true)}
-                                className="h-9 hover:bg-rose-500 hover:text-white text-rose-500 rounded-xl px-4 text-xs font-semibold transition-all border border-rose-500/10 active:scale-95"
+                                className="h-9 rounded-xl border border-rose-500/10 px-4 text-xs font-semibold text-rose-500 transition-all hover:bg-rose-500 hover:text-white active:scale-95"
                             >
                                 <Trash2 size={14} className="mr-2" /> Hapus Vendor
                             </Button>
                         )}
-                        <div className="flex items-center gap-4 bg-primary/5 dark:bg-white/5 px-4 py-2 rounded-2xl border border-primary/10 dark:border-white/10">
+                        <div className="bg-primary/5 border-primary/10 flex items-center gap-4 rounded-2xl border px-4 py-2 dark:border-white/10 dark:bg-white/5">
                             <div className="flex flex-col items-end">
-                                <span className="text-xs font-semibold text-primary/40 dark:text-white/40 uppercase">Kepatuhan Audit</span>
-                                <span className={cn(
-                                    "text-sm font-bold tracking-tight",
-                                    auditScore >= 80 ? "text-emerald-500" : auditScore >= 50 ? "text-amber-500" : "text-rose-500"
-                                )}>
+                                <span className="text-primary/40 text-xs font-semibold uppercase dark:text-white/40">Kepatuhan Audit</span>
+                                <span
+                                    className={cn(
+                                        'text-sm font-bold tracking-tight',
+                                        auditScore >= 80 ? 'text-emerald-500' : auditScore >= 50 ? 'text-amber-500' : 'text-rose-500',
+                                    )}
+                                >
                                     {auditScore}% AMAN
                                 </span>
                             </div>
-                            <div className="h-8 w-[1px] bg-primary/10 dark:bg-white/10" />
+                            <div className="bg-primary/10 h-8 w-[1px] dark:bg-white/10" />
                             <div className="flex items-center gap-2">
-                                <div className={cn(
-                                    "h-2 w-2 rounded-full animate-pulse",
-                                    data.is_active ? "bg-emerald-500" : "bg-rose-500"
-                                )} />
-                                <span className="text-xs font-bold text-primary dark:text-white">
-                                    {data.is_active ? 'Aktif' : 'Nonaktif'}
-                                </span>
+                                <div className={cn('h-2 w-2 animate-pulse rounded-full', data.is_active ? 'bg-emerald-500' : 'bg-rose-500')} />
+                                <span className="text-primary text-xs font-bold dark:text-white">{data.is_active ? 'Aktif' : 'Nonaktif'}</span>
                             </div>
                         </div>
                     </div>
@@ -199,75 +192,88 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
         >
             <Head title={isEdit ? `Vendor: ${vendor.name}` : 'Registrasi Vendor'} />
 
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
+            <div className="grid grid-cols-1 gap-10 md:grid-cols-12">
                 {/* Main Content Column */}
-                <div className="md:col-span-8 space-y-12">
+                <div className="space-y-12 md:col-span-8">
                     {/* Section 1: Profil Perusahaan */}
-                    <FormSection 
-                        title="Identitas Resmi Entitas" 
-                        subtitle="Data legal formal yang terdaftar pada sistem pemerintahan"
-                    >
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormSection title="Identitas Resmi Entitas" subtitle="Data legal formal yang terdaftar pada sistem pemerintahan">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                             <div className="md:col-span-2">
-                                <div className="flex flex-col md:flex-row gap-4 items-start">
+                                <div className="flex flex-col items-start gap-4 md:flex-row">
                                     <div className="w-full md:w-32">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-bold uppercase tracking-widest text-primary/60 dark:text-white/60 flex items-center gap-2">
+                                            <label className="text-primary/60 flex items-center gap-2 text-[10px] font-bold uppercase dark:text-white/60">
                                                 Bentuk
                                             </label>
-                                            <Select
-                                                value={data.company_type}
-                                                onValueChange={(v: string) => setData('company_type', String(v))}
-                                            >
-                                                <SelectTrigger className="h-10 rounded-xl border-primary/10 bg-primary/5 text-xs font-bold transition-all focus:border-primary">
+                                            <Select value={data.company_type} onValueChange={(v: string) => setData('company_type', String(v))}>
+                                                <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-10 rounded-xl text-xs font-bold transition-all">
                                                     <SelectValue />
                                                 </SelectTrigger>
-                                                <SelectContent className="rounded-xl border-primary/10 bg-white shadow-2xl dark:bg-black">
-                                                    <SelectItem value="PT" className="py-2.5 text-xs font-bold uppercase">PT</SelectItem>
-                                                    <SelectItem value="CV" className="py-2.5 text-xs font-bold uppercase">CV</SelectItem>
-                                                    <SelectItem value="FIRMA" className="py-2.5 text-xs font-bold uppercase">FIRMA</SelectItem>
-                                                    <SelectItem value="PERSERO" className="py-2.5 text-xs font-bold uppercase">PERSERO</SelectItem>
-                                                    <SelectItem value="INDIVIDU" className="py-2.5 text-xs font-bold uppercase">INDIVIDU</SelectItem>
+                                                <SelectContent className="border-primary/10 rounded-xl bg-white shadow-2xl dark:bg-black">
+                                                    <SelectItem value="PT" className="py-2.5 text-xs font-bold uppercase">
+                                                        PT
+                                                    </SelectItem>
+                                                    <SelectItem value="CV" className="py-2.5 text-xs font-bold uppercase">
+                                                        CV
+                                                    </SelectItem>
+                                                    <SelectItem value="FIRMA" className="py-2.5 text-xs font-bold uppercase">
+                                                        FIRMA
+                                                    </SelectItem>
+                                                    <SelectItem value="PERSERO" className="py-2.5 text-xs font-bold uppercase">
+                                                        PERSERO
+                                                    </SelectItem>
+                                                    <SelectItem value="INDIVIDU" className="py-2.5 text-xs font-bold uppercase">
+                                                        INDIVIDU
+                                                    </SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>
                                     </div>
-                                    <div className="flex-1 w-full">
-                                        <CompactInput 
+                                    <div className="w-full flex-1">
+                                        <CompactInput
                                             label="Nama Resmi Perusahaan"
                                             value={data.name}
-                                            onChange={e => setData('name', e.target.value)}
+                                            onChange={(e) => setData('name', e.target.value)}
                                             placeholder="CONTOH: ADHI KARYA (PERSERO) TBK"
                                             error={errors.name}
                                         />
                                     </div>
                                 </div>
                             </div>
-                            <CompactInput 
+                            <CompactInput
                                 label="Internal Vendor Code"
                                 value={data.code}
-                                onChange={e => setData('code', e.target.value)}
+                                onChange={(e) => setData('code', e.target.value)}
                                 placeholder="DIBUAT OTOMATIS"
                                 error={errors.code}
                             />
                             <div className="space-y-2">
-                                <label className="text-[10px] font-bold uppercase tracking-widest text-primary/60 dark:text-white/60 flex items-center gap-2">
+                                <label className="text-primary/60 flex items-center gap-2 text-[10px] font-bold uppercase dark:text-white/60">
                                     Kategori Bisnis
                                 </label>
-                                <Select
-                                    value={data.category}
-                                    onValueChange={(v: string) => setData('category', String(v))}
-                                >
-                                    <SelectTrigger className="h-10 rounded-xl border-primary/10 bg-primary/5 text-xs font-bold transition-all focus:border-primary">
+                                <Select value={data.category} onValueChange={(v: string) => setData('category', String(v))}>
+                                    <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-10 rounded-xl text-xs font-bold transition-all">
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent className="rounded-xl border-primary/10 bg-white shadow-2xl dark:bg-black">
-                                        <SelectItem value="SUPPLIER" className="py-2.5 text-xs font-bold uppercase">Supplier / Pemasok</SelectItem>
-                                        <SelectItem value="CONSULTANT" className="py-2.5 text-xs font-bold uppercase">Konsultan / Jasa Professional</SelectItem>
-                                        <SelectItem value="CONTRACTOR" className="py-2.5 text-xs font-bold uppercase">Kontraktor / Konstruksi</SelectItem>
-                                        <SelectItem value="MAINTENANCE" className="py-2.5 text-xs font-bold uppercase">Maintenance / Pemeliharaan</SelectItem>
-                                        <SelectItem value="IT SERVICES" className="py-2.5 text-xs font-bold uppercase">IT Services</SelectItem>
-                                        <SelectItem value="LOGISTICS" className="py-2.5 text-xs font-bold uppercase">Logistik & Transportasi</SelectItem>
+                                    <SelectContent className="border-primary/10 rounded-xl bg-white shadow-2xl dark:bg-black">
+                                        <SelectItem value="SUPPLIER" className="py-2.5 text-xs font-bold uppercase">
+                                            Supplier / Pemasok
+                                        </SelectItem>
+                                        <SelectItem value="CONSULTANT" className="py-2.5 text-xs font-bold uppercase">
+                                            Konsultan / Jasa Professional
+                                        </SelectItem>
+                                        <SelectItem value="CONTRACTOR" className="py-2.5 text-xs font-bold uppercase">
+                                            Kontraktor / Konstruksi
+                                        </SelectItem>
+                                        <SelectItem value="MAINTENANCE" className="py-2.5 text-xs font-bold uppercase">
+                                            Maintenance / Pemeliharaan
+                                        </SelectItem>
+                                        <SelectItem value="IT SERVICES" className="py-2.5 text-xs font-bold uppercase">
+                                            IT Services
+                                        </SelectItem>
+                                        <SelectItem value="LOGISTICS" className="py-2.5 text-xs font-bold uppercase">
+                                            Logistik & Transportasi
+                                        </SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -275,52 +281,45 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
                     </FormSection>
 
                     {/* Section 2: Kontak & Alamat */}
-                    <FormSection 
-                        title="Titik Kontak & Domisili" 
-                        subtitle="Informasi korespondensi dan alamat operasional"
-                    >
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <CompactInput 
+                    <FormSection title="Titik Kontak & Domisili" subtitle="Informasi korespondensi dan alamat operasional">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                            <CompactInput
                                 label="Email Korespondensi"
                                 value={data.email}
-                                onChange={e => setData('email', e.target.value)}
+                                onChange={(e) => setData('email', e.target.value)}
                                 icon={Mail}
                                 placeholder="vendor@perusahaan.com"
                                 error={errors.email}
                             />
-                            <CompactInput 
+                            <CompactInput
                                 label="Telepon Kantor"
                                 value={data.phone}
-                                onChange={e => setData('phone', e.target.value)}
+                                onChange={(e) => setData('phone', e.target.value)}
                                 icon={Phone}
                                 placeholder="+62 ..."
                                 error={errors.phone}
                             />
                             <div className="md:col-span-2">
-                                <CompactInput 
+                                <CompactInput
                                     label="Alamat Domisili Sesuai NPWP"
                                     value={data.address}
-                                    onChange={e => setData('address', e.target.value)}
+                                    onChange={(e) => setData('address', e.target.value)}
                                     icon={MapPin}
                                     placeholder="Jl. Sudirman No. 123, Jakarta Selatan..."
                                     error={errors.address}
                                 />
                             </div>
-                            <CompactInput 
+                            <CompactInput
                                 label="Situs Web Perusahaan"
                                 value={data.website}
-                                onChange={e => setData('website', e.target.value)}
+                                onChange={(e) => setData('website', e.target.value)}
                                 icon={Globe}
                                 placeholder="https://..."
                                 error={errors.website}
                             />
-                            <div className="flex items-center gap-3 p-4 rounded-xl bg-primary/[0.03] dark:bg-white/[0.03] border border-primary/10 dark:border-white/10">
-                                <Checkbox 
-                                    id="is_individual"
-                                    checked={data.is_individual}
-                                    onCheckedChange={c => setData('is_individual', !!c)}
-                                />
-                                <label htmlFor="is_individual" className="text-xs font-semibold text-primary/60 dark:text-white/60 cursor-pointer">
+                            <div className="bg-primary/[0.03] border-primary/10 flex items-center gap-3 rounded-xl border p-4 dark:border-white/10 dark:bg-white/[0.03]">
+                                <Checkbox id="is_individual" checked={data.is_individual} onCheckedChange={(c) => setData('is_individual', !!c)} />
+                                <label htmlFor="is_individual" className="text-primary/60 cursor-pointer text-xs font-semibold dark:text-white/60">
                                     Registrasi Sebagai Perorangan / Individu
                                 </label>
                             </div>
@@ -328,64 +327,58 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
                     </FormSection>
 
                     {/* Section 3: PIC */}
-                    <FormSection 
-                        title="Representatif (PIC)" 
-                        subtitle="Penanggung jawab komunikasi operasional"
-                    >
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <CompactInput 
+                    <FormSection title="Representatif (PIC)" subtitle="Penanggung jawab komunikasi operasional">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                            <CompactInput
                                 label="Nama Lengkap PIC"
                                 value={data.pic_name}
-                                onChange={e => setData('pic_name', e.target.value)}
+                                onChange={(e) => setData('pic_name', e.target.value)}
                                 icon={UserCheck}
                                 placeholder="NAMA LENGKAP REPRESENTATIF"
                             />
-                            <CompactInput 
+                            <CompactInput
                                 label="Jabatan PIC"
                                 value={data.pic_position}
-                                onChange={e => setData('pic_position', e.target.value)}
+                                onChange={(e) => setData('pic_position', e.target.value)}
                                 placeholder="CONTOH: SALES MANAGER / DIREKTUR"
                             />
                         </div>
                     </FormSection>
 
                     {/* Section 4: Perpajakan & Bank */}
-                    <FormSection 
-                        title="Legalitas Keuangan" 
-                        subtitle="Nomor identitas pajak dan data perbankan untuk transaksi"
-                    >
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <CompactInput 
+                    <FormSection title="Legalitas Keuangan" subtitle="Nomor identitas pajak dan data perbankan untuk transaksi">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                            <CompactInput
                                 label="NPWP (Pajak)"
                                 value={data.npwp}
-                                onChange={e => setData('npwp', e.target.value)}
+                                onChange={(e) => setData('npwp', e.target.value)}
                                 icon={Gavel}
                                 placeholder="00.000.000.0-000.000"
                             />
-                            <CompactInput 
+                            <CompactInput
                                 label="NIB (Nomer Induk Berusaha)"
                                 value={data.nib}
-                                onChange={e => setData('nib', e.target.value)}
+                                onChange={(e) => setData('nib', e.target.value)}
                                 placeholder="NOMOR NIB RESMI"
                             />
-                            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-dashed border-primary/10 dark:border-white/10">
-                                <CompactInput 
+                            <div className="border-primary/10 grid grid-cols-1 gap-6 border-t border-dashed pt-4 md:col-span-2 md:grid-cols-3 dark:border-white/10">
+                                <CompactInput
                                     label="Institusi Bank"
                                     value={data.bank_name}
-                                    onChange={e => setData('bank_name', e.target.value)}
+                                    onChange={(e) => setData('bank_name', e.target.value)}
                                     icon={CreditCard}
                                     placeholder="CONTOH: MANDIRI / BCA"
                                 />
-                                <CompactInput 
+                                <CompactInput
                                     label="Nomor Rekening"
                                     value={data.bank_account_no}
-                                    onChange={e => setData('bank_account_no', e.target.value)}
+                                    onChange={(e) => setData('bank_account_no', e.target.value)}
                                     placeholder="NOMOR REKENING..."
                                 />
-                                <CompactInput 
+                                <CompactInput
                                     label="Atas Nama Rekening"
                                     value={data.bank_account_name}
-                                    onChange={e => setData('bank_account_name', e.target.value)}
+                                    onChange={(e) => setData('bank_account_name', e.target.value)}
                                     placeholder="NAMA PEMEGANG REKENING..."
                                 />
                             </div>
@@ -394,44 +387,44 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
                 </div>
 
                 {/* Sidebar / Document Audit Column */}
-                <div className="md:col-span-4 space-y-10">
+                <div className="space-y-10 md:col-span-4">
                     <div className="sticky top-6 space-y-10">
-                         {/* Status Widget */}
-                        <div className="rounded-2xl border border-primary/10 dark:border-white/10 bg-primary/[0.02] dark:bg-white/[0.02] p-6 shadow-sm relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        {/* Status Widget */}
+                        <div className="border-primary/10 bg-primary/[0.02] group relative overflow-hidden rounded-2xl border p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.02]">
+                            <div className="absolute top-0 right-0 p-4 opacity-10 transition-opacity group-hover:opacity-20">
                                 <ShieldCheck size={80} strokeWidth={1} />
                             </div>
 
-                            <h3 className="text-xs font-bold text-primary dark:text-white uppercase mb-4 flex items-center gap-2">
+                            <h3 className="text-primary mb-4 flex items-center gap-2 text-xs font-bold uppercase dark:text-white">
                                 <ShieldCheck size={16} /> Kendali Status
                             </h3>
 
-                            <div className="flex items-center gap-4 p-4 rounded-xl bg-white dark:bg-black/40 border border-primary/10 dark:border-white/10 shadow-sm mb-6">
-                                <Checkbox 
+                            <div className="border-primary/10 mb-6 flex items-center gap-4 rounded-xl border bg-white p-4 shadow-sm dark:border-white/10 dark:bg-black/40">
+                                <Checkbox
                                     id="is_active"
                                     checked={data.is_active}
-                                    onCheckedChange={c => setData('is_active', !!c)}
+                                    onCheckedChange={(c) => setData('is_active', !!c)}
                                     className="h-5 w-5"
                                 />
                                 <div className="flex flex-col">
-                                    <label htmlFor="is_active" className="text-xs font-bold text-primary dark:text-white uppercase cursor-pointer">
+                                    <label htmlFor="is_active" className="text-primary cursor-pointer text-xs font-bold uppercase dark:text-white">
                                         Vendor Aktif
                                     </label>
-                                    <span className="text-xs font-medium text-primary/40 dark:text-white/40">Siap untuk penugasan kontrak</span>
+                                    <span className="text-primary/40 text-xs font-medium dark:text-white/40">Siap untuk penugasan kontrak</span>
                                 </div>
                             </div>
 
-                            <div className="space-y-4 pt-4 border-t border-dashed border-primary/10 dark:border-white/10">
+                            <div className="border-primary/10 space-y-4 border-t border-dashed pt-4 dark:border-white/10">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-xs font-semibold text-primary/50 dark:text-white/50 uppercase">Skor Audit</span>
-                                    <span className="text-xs font-bold text-primary dark:text-white">{auditScore}%</span>
+                                    <span className="text-primary/50 text-xs font-semibold uppercase dark:text-white/50">Skor Audit</span>
+                                    <span className="text-primary text-xs font-bold dark:text-white">{auditScore}%</span>
                                 </div>
-                                <div className="h-2 w-full bg-primary/10 dark:bg-white/10 rounded-full overflow-hidden">
-                                    <div 
+                                <div className="bg-primary/10 h-2 w-full overflow-hidden rounded-full dark:bg-white/10">
+                                    <div
                                         className={cn(
-                                            "h-full transition-all duration-1000",
-                                            auditScore >= 80 ? "bg-emerald-500" : auditScore >= 50 ? "bg-amber-500" : "bg-rose-500"
-                                        )} 
+                                            'h-full transition-all duration-1000',
+                                            auditScore >= 80 ? 'bg-emerald-500' : auditScore >= 50 ? 'bg-amber-500' : 'bg-rose-500',
+                                        )}
                                         style={{ width: `${auditScore}%` }}
                                     />
                                 </div>
@@ -441,66 +434,87 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
                         {/* Audit Documents Section */}
                         <div className="space-y-6">
                             <div className="flex items-center justify-between px-1">
-                                <h3 className="text-xs font-bold text-primary dark:text-white uppercase">Dokumen Kepatuhan</h3>
-                                <span className="bg-primary/10 dark:bg-white/10 px-2.5 py-1 rounded text-xs font-bold text-primary dark:text-white">
-                                    {vendor?.documents?.length || 0} / {docCats.flatMap(c => c.types).length}
+                                <h3 className="text-primary text-xs font-bold uppercase dark:text-white">Dokumen Kepatuhan</h3>
+                                <span className="bg-primary/10 text-primary rounded px-2.5 py-1 text-xs font-bold dark:bg-white/10 dark:text-white">
+                                    {vendor?.documents?.length || 0} / {docCats.flatMap((c) => c.types).length}
                                 </span>
                             </div>
 
                             {!isEdit ? (
-                                <div className="p-8 text-center rounded-2xl border-2 border-dashed border-primary/10 dark:border-white/10 bg-primary/[0.01] dark:bg-white/[0.01]">
-                                    <Clock className="mx-auto mb-4 text-primary/20 dark:text-white/20" size={32} strokeWidth={1} />
-                                    <p className="text-xs font-semibold text-primary/40 dark:text-white/40 uppercase tracking-wide leading-relaxed">
-                                        SIMPAN PROFIL UNTUK<br/>MENGAKTIFKAN MODUL AUDIT
+                                <div className="border-primary/10 bg-primary/[0.01] rounded-2xl border-2 border-dashed p-8 text-center dark:border-white/10 dark:bg-white/[0.01]">
+                                    <Clock className="text-primary/20 mx-auto mb-4 dark:text-white/20" size={32} strokeWidth={1} />
+                                    <p className="text-primary/40 text-xs leading-relaxed font-semibold tracking-wide uppercase dark:text-white/40">
+                                        SIMPAN PROFIL UNTUK
+                                        <br />
+                                        MENGAKTIFKAN MODUL AUDIT
                                     </p>
                                 </div>
                             ) : (
                                 <div className="space-y-6">
-                                    {docCats.map(cat => (
+                                    {docCats.map((cat) => (
                                         <div key={cat.label} className="space-y-3">
-                                            <div className="px-2 text-xs font-bold text-primary/40 dark:text-white/40 uppercase">
-                                                {cat.label}
-                                            </div>
+                                            <div className="text-primary/40 px-2 text-xs font-bold uppercase dark:text-white/40">{cat.label}</div>
                                             <div className="space-y-2">
-                                                {cat.types.map(type => {
+                                                {cat.types.map((type) => {
                                                     const doc = vendor.documents?.find((d: any) => d.document_type === type);
                                                     return (
-                                                        <div 
+                                                        <div
                                                             key={type}
                                                             className={cn(
-                                                                "group flex items-center justify-between p-3.5 rounded-xl border transition-all",
-                                                                doc 
-                                                                    ? "bg-white dark:bg-white/[0.02] border-primary/10 dark:border-white/10" 
-                                                                    : "bg-primary/[0.01] dark:bg-white/[0.01] border-dashed border-primary/10 dark:border-white/10"
+                                                                'group flex items-center justify-between rounded-xl border p-3.5 transition-all',
+                                                                doc
+                                                                    ? 'border-primary/10 bg-white dark:border-white/10 dark:bg-white/[0.02]'
+                                                                    : 'bg-primary/[0.01] border-primary/10 border-dashed dark:border-white/10 dark:bg-white/[0.01]',
                                                             )}
                                                         >
                                                             <div className="min-w-0">
-                                                                <div className="text-xs font-bold uppercase tracking-tight text-primary dark:text-white truncate">
+                                                                <div className="text-primary truncate text-xs font-bold tracking-tight uppercase dark:text-white">
                                                                     {type.replace(/_/g, ' ')}
                                                                 </div>
-                                                                <div className="flex items-center gap-1.5 mt-1">
+                                                                <div className="mt-1 flex items-center gap-1.5">
                                                                     {doc ? (
                                                                         <CheckCircle2 size={12} className="text-emerald-500" />
                                                                     ) : (
                                                                         <Clock size={12} className="text-primary/20 dark:text-white/20" />
                                                                     )}
-                                                                    <span className="text-xs font-medium text-primary/50 dark:text-white/50">
+                                                                    <span className="text-primary/50 text-xs font-medium dark:text-white/50">
                                                                         {doc ? 'Terverifikasi' : 'Belum Diunggah'}
                                                                     </span>
                                                                 </div>
                                                             </div>
-                                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                                                                 {doc ? (
                                                                     <>
-                                                                        <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg" onClick={() => window.open(doc.file_url, '_blank')}>
+                                                                        <Button
+                                                                            size="icon"
+                                                                            variant="ghost"
+                                                                            className="h-8 w-8 rounded-lg"
+                                                                            onClick={() => window.open(doc.file_url, '_blank')}
+                                                                        >
                                                                             <ExternalLink size={14} />
                                                                         </Button>
-                                                                        <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg text-rose-500 hover:bg-rose-500/10" onClick={() => { setDocToDelete(doc.id); setIsDeleteDocOpen(true); }}>
+                                                                        <Button
+                                                                            size="icon"
+                                                                            variant="ghost"
+                                                                            className="h-8 w-8 rounded-lg text-rose-500 hover:bg-rose-500/10"
+                                                                            onClick={() => {
+                                                                                setDocToDelete(doc.id);
+                                                                                setIsDeleteDocOpen(true);
+                                                                            }}
+                                                                        >
                                                                             <Trash2 size={14} />
                                                                         </Button>
                                                                     </>
                                                                 ) : (
-                                                                    <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg text-primary dark:text-white hover:bg-primary/10 dark:hover:bg-white/10" onClick={() => { docForm.setData('document_type', type); setIsUploadModalOpen(true); }}>
+                                                                    <Button
+                                                                        size="icon"
+                                                                        variant="ghost"
+                                                                        className="text-primary hover:bg-primary/10 h-8 w-8 rounded-lg dark:text-white dark:hover:bg-white/10"
+                                                                        onClick={() => {
+                                                                            docForm.setData('document_type', type);
+                                                                            setIsUploadModalOpen(true);
+                                                                        }}
+                                                                    >
                                                                         <UploadCloud size={16} />
                                                                     </Button>
                                                                 )}
@@ -520,29 +534,33 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
 
             {/* Modals */}
             <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
-                <DialogContent className="rounded-2xl border border-primary/10 dark:border-white/10 bg-white dark:bg-black p-8 shadow-2xl sm:max-w-[450px]">
-                    <DialogTitle className="mb-8 border-b border-primary/5 dark:border-white/5 pb-4 text-sm font-bold text-primary dark:text-white uppercase flex items-center gap-3">
+                <DialogContent className="border-primary/10 rounded-2xl border bg-white p-8 shadow-2xl sm:max-w-[450px] dark:border-white/10 dark:bg-black">
+                    <DialogTitle className="border-primary/5 text-primary mb-8 flex items-center gap-3 border-b pb-4 text-sm font-bold uppercase dark:border-white/5 dark:text-white">
                         <UploadCloud size={18} /> Unggah Berkas Kepatuhan
                     </DialogTitle>
                     <form onSubmit={handleUploadDoc} className="space-y-8">
                         <div className="space-y-4">
-                            <div className="p-4 rounded-xl bg-primary/[0.03] dark:bg-white/[0.03] border border-primary/10 dark:border-white/10">
-                                <span className="text-xs font-semibold text-primary/40 dark:text-white/40 uppercase block mb-1">Tipe Dokumen</span>
-                                <span className="text-xs font-bold text-primary dark:text-white uppercase">{docForm.data.document_type.replace(/_/g, ' ')}</span>
+                            <div className="bg-primary/[0.03] border-primary/10 rounded-xl border p-4 dark:border-white/10 dark:bg-white/[0.03]">
+                                <span className="text-primary/40 mb-1 block text-xs font-semibold uppercase dark:text-white/40">Tipe Dokumen</span>
+                                <span className="text-primary text-xs font-bold uppercase dark:text-white">
+                                    {docForm.data.document_type.replace(/_/g, ' ')}
+                                </span>
                             </div>
-                            
+
                             <div className="space-y-3">
-                                <label className="ml-1 text-xs font-semibold text-primary/40 dark:text-white/40 uppercase">Pilih Berkas (PDF/JPG/PNG)</label>
+                                <label className="text-primary/40 ml-1 text-xs font-semibold uppercase dark:text-white/40">
+                                    Pilih Berkas (PDF/JPG/PNG)
+                                </label>
                                 <input
                                     type="file"
                                     ref={fileInputRef}
                                     onChange={(e) => docForm.setData('document_file', e.target.files?.[0] || null)}
                                     required
-                                    className="w-full text-xs text-primary/60 dark:text-white/60 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:uppercase file:bg-primary file:text-white dark:file:bg-white dark:file:text-black cursor-pointer"
+                                    className="text-primary/60 file:bg-primary w-full cursor-pointer text-xs file:mr-4 file:rounded-xl file:border-0 file:px-4 file:py-2 file:text-xs file:font-semibold file:text-white file:uppercase dark:text-white/60 dark:file:bg-white dark:file:text-black"
                                 />
                             </div>
-                            
-                            <CompactInput 
+
+                            <CompactInput
                                 label="Masa Berlaku (Jika Ada)"
                                 type="date"
                                 value={docForm.data.expires_at}
@@ -550,7 +568,12 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
                             />
                         </div>
                         <DialogFooter className="pt-6">
-                            <Button variant="primary" type="submit" disabled={docForm.processing} className="h-12 w-full shadow-xl active:scale-95 group">
+                            <Button
+                                variant="primary"
+                                type="submit"
+                                disabled={docForm.processing}
+                                className="group h-12 w-full shadow-xl active:scale-95"
+                            >
                                 <UploadCloud className="mr-2 h-4 w-4 group-hover:animate-bounce" /> Unggah Sekarang
                             </Button>
                         </DialogFooter>
@@ -576,7 +599,7 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
                         onSuccess: () => {
                             showToast('Vendor berhasil dihapus', 'success');
                             router.get(route('admin.vendors'));
-                        }
+                        },
                     });
                 }}
                 title="Hapus Profil Vendor?"

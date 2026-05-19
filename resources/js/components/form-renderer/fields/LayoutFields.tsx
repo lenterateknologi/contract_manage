@@ -1,6 +1,6 @@
-import React from 'react';
 import { cn } from '@/lib/utils';
 import { Plus } from 'lucide-react';
+import React from 'react';
 
 interface LayoutProps {
     field: any;
@@ -18,7 +18,12 @@ export const GroupLayout: React.FC<LayoutProps> = ({ field, children, isBuilder 
             )}
             style={{
                 borderStyle: (field.options?.border_style as any) || undefined,
-                borderWidth: field.options?.border_width !== undefined ? `${field.options.border_width}px` : field.options?.border_style === 'solid' ? '1px' : undefined,
+                borderWidth:
+                    field.options?.border_width !== undefined
+                        ? `${field.options.border_width}px`
+                        : field.options?.border_style === 'solid'
+                          ? '1px'
+                          : undefined,
                 borderColor: field.options?.border_color || undefined,
                 backgroundColor: field.options?.background_color || undefined,
             }}
@@ -41,7 +46,8 @@ export const GridXLayout: React.FC<LayoutProps> = ({ field, children }) => {
         <div
             className="grid w-full gap-4"
             style={{
-                gridTemplateColumns: (field.options?.col_sizes || []).filter((s: string) => s).join(' ') || `repeat(${field.options?.grid_cols || 1}, 1fr)`,
+                gridTemplateColumns:
+                    (field.options?.col_sizes || []).filter((s: string) => s).join(' ') || `repeat(${field.options?.grid_cols || 1}, 1fr)`,
                 justifyContent: field.options?.justify_content || undefined,
                 alignItems: field.options?.align_items || undefined,
                 borderStyle: (field.options?.border_style as any) || undefined,
@@ -74,7 +80,7 @@ export const GridYLayout: React.FC<LayoutProps> = ({ field, children }) => {
 };
 
 export const EmptyDropZone: React.FC = () => (
-    <div className="border-primary/20 bg-primary/5 text-primary/40 hover:bg-primary/10 flex w-full items-center justify-center rounded-lg border-2 border-dashed py-8 text-[10px] font-black tracking-widest uppercase transition-all">
+    <div className="border-primary/20 bg-primary/5 text-primary/40 hover:bg-primary/10 flex w-full items-center justify-center rounded-lg border-2 border-dashed py-8 text-[10px] font-black uppercase transition-all">
         <Plus size={14} className="mr-2" /> Letakkan elemen di sini
     </div>
 );

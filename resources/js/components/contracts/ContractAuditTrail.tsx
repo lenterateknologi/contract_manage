@@ -96,7 +96,7 @@ export default function ContractAuditTrail({ contract }: Props) {
                             setFilters(newFilters);
                             fetchHistories(newFilters);
                         }}
-                        className="h-10 text-[10px] tracking-widest uppercase"
+                        className="h-10 text-[10px] uppercase"
                     />
                 </div>
 
@@ -111,7 +111,7 @@ export default function ContractAuditTrail({ contract }: Props) {
                         )}
                     >
                         <ListFilter size={14} strokeWidth={3} />
-                        <span className="text-[10px] tracking-widest uppercase">Filter</span>
+                        <span className="text-[10px] uppercase">Filter</span>
                         {activeCount > 0 && (
                             <span className="ml-1 flex h-4 w-4 items-center justify-center rounded-md bg-white text-[8px] font-bold text-black dark:bg-black dark:text-white">
                                 {activeCount}
@@ -162,7 +162,7 @@ export default function ContractAuditTrail({ contract }: Props) {
                 {loading ? (
                     <div className="flex flex-col items-center justify-center gap-4 py-16">
                         <LoadingLottie width={100} height={100} />
-                        <span className="text-[9px] font-bold tracking-widest text-black/40 uppercase dark:text-white/40">Memuat Riwayat...</span>
+                        <span className="text-[9px] font-bold text-black/40 uppercase dark:text-white/40">Memuat Riwayat...</span>
                     </div>
                 ) : (
                     <div className="relative">
@@ -181,7 +181,7 @@ export default function ContractAuditTrail({ contract }: Props) {
                                                 </span>
                                                 <span
                                                     className={cn(
-                                                        'rounded border px-2 py-0.5 text-[8px] font-bold tracking-widest uppercase shadow-sm',
+                                                        'rounded border px-2 py-0.5 text-[8px] font-bold uppercase shadow-sm',
                                                         h.action.includes('APPROVE')
                                                             ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black'
                                                             : h.action.includes('REJECT')

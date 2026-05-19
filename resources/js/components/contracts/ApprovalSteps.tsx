@@ -1,13 +1,13 @@
 import { Button } from '@/components/ui/base/Button';
+import { FilterCategory, FilterSheet } from '@/components/ui/data/FilterSheet';
+import { SearchInput } from '@/components/ui/forms/SearchInput';
 import { cn } from '@/lib/utils';
 import { Contract, ContractApproval, UserProfile } from '@/types/contracts';
 import axios from 'axios';
-import { Check, Clock, Download, Info, ListFilter, Loader2, Search, Send, X } from 'lucide-react';
+import { Check, Clock, Download, Info, ListFilter, Loader2, Send, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { FilterSheet, FilterCategory } from '@/components/ui/data/FilterSheet';
 import { useToast } from './Toast';
 import { Avatar, StatusBadge } from './ui';
-import { SearchInput } from '@/components/ui/forms/SearchInput';
 
 interface Props {
     contract: Contract;
@@ -39,24 +39,24 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
     const handleSigningAction = async (action: 'download' | 'upload', file?: File) => {
         if (action === 'download') {
             // Trigger actual download from the latest agreement version
-            const versions = contract.versions?.filter(v => v.document_type === 'agreement') || [];
+            const versions = contract.versions?.filter((v) => v.document_type === 'agreement') || [];
             if (versions.length === 0) {
                 showToast('Tidak ada dokumen agreement yang ditemukan.', 'danger');
                 return;
             }
             const latest = versions.sort((a, b) => b.version_no - a.version_no)[0];
             window.open(`/api/contracts/versions/${latest.id}/download`, '_blank');
-            
+
             // Mark as downloaded in metadata (local update then refresh)
             const newMeta = { ...contract.metadata };
             if (!newMeta.signing_state) newMeta.signing_state = {};
             const key = isP1 ? 'p1_downloaded_at' : 'p2_downloaded_at';
             newMeta.signing_state[key] = new Date().toISOString();
-            
+
             try {
                 await axios.patch(`/api/contracts/${contract.id}`, { metadata: newMeta });
                 showToast('Dokumen berhasil diunduh.', 'success');
-                // Component will refresh via parent's onUpdate if we emit it, 
+                // Component will refresh via parent's onUpdate if we emit it,
                 // but for now let's hope the user refreshes or we find a way.
                 // Actually we should probably call a refresh function.
             } catch (e) {
@@ -212,22 +212,22 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                     <Clock size={12} />
                 )}
             </div>
-            <div className={cn(
-                "flex-1 rounded-xl border p-4 transition-all hover:shadow-md bg-white dark:bg-slate-900/40",
-                a.status === 'approved' && "border-emerald-100 bg-emerald-50/10 dark:border-emerald-500/20 dark:bg-emerald-500/5",
-                a.status === 'pending' && "border-amber-100 bg-amber-50/10 dark:border-amber-500/20 dark:bg-amber-500/5",
-                a.status === 'rejected' && "border-red-100 bg-red-50/10 dark:border-red-500/20 dark:bg-red-500/5",
-                a.status === 'waiting' && "border-border/60 bg-muted/5 opacity-75"
-            )}>
+            <div
+                className={cn(
+                    'flex-1 rounded-xl border bg-white p-4 transition-all hover:shadow-md dark:bg-slate-900/40',
+                    a.status === 'approved' && 'border-emerald-100 bg-emerald-50/10 dark:border-emerald-500/20 dark:bg-emerald-500/5',
+                    a.status === 'pending' && 'border-amber-100 bg-amber-50/10 dark:border-amber-500/20 dark:bg-amber-500/5',
+                    a.status === 'rejected' && 'border-red-100 bg-red-50/10 dark:border-red-500/20 dark:bg-red-500/5',
+                    a.status === 'waiting' && 'border-border/60 bg-muted/5 opacity-75',
+                )}
+            >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex flex-col">
-                        <span className="text-sm font-bold text-foreground">
-                            {a.sequence === 1 ? 'Pengajuan Awal (Drafting)' : (a.step_name || a.role || 'Unnamed Step')}
+                        <span className="text-foreground text-sm font-bold">
+                            {a.sequence === 1 ? 'Pengajuan Awal (Drafting)' : a.step_name || a.role || 'Unnamed Step'}
                         </span>
                         {a.step_description && a.step_description !== a.step_name && (
-                            <span className="text-[10px] text-muted-foreground italic line-clamp-1">
-                                {a.step_description}
-                            </span>
+                            <span className="text-muted-foreground line-clamp-1 text-[10px] italic">{a.step_description}</span>
                         )}
                     </div>
                     <div className="flex items-center gap-2">
@@ -235,38 +235,34 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                     </div>
                 </div>
 
-                <div className="mt-3 border-t border-border/40 pt-2.5">
+                <div className="border-border/40 mt-3 border-t pt-2.5">
                     {a.approver ? (
                         <div className="flex items-center gap-2">
                             <Avatar user={a.approver} size="sm" />
                             <div className="flex flex-col">
-                                <span className="text-xs font-semibold text-foreground">{a.approver.name}</span>
-                                <span className="text-[10px] text-muted-foreground">
+                                <span className="text-foreground text-xs font-semibold">{a.approver.name}</span>
+                                <span className="text-muted-foreground text-[10px]">
                                     {a.approver.email} {a.decided_at ? ` • ${a.decided_at}` : ''}
                                 </span>
                             </div>
                         </div>
                     ) : (
                         <div className="flex items-center gap-2">
-                            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                            <div className="bg-muted text-muted-foreground flex h-6 w-6 items-center justify-center rounded-lg">
                                 <i className="fa-solid fa-user-clock text-[10px]" />
                             </div>
                             <div className="flex flex-col">
-                                <span className="text-xs font-medium text-foreground/70">
+                                <span className="text-foreground/70 text-xs font-medium">
                                     {a.target_approvers || `Menunggu ${a.role || 'Approver'}`}
                                 </span>
-                                {a.target_emails && (
-                                    <span className="text-[10px] text-muted-foreground/60">
-                                        {a.target_emails}
-                                    </span>
-                                )}
+                                {a.target_emails && <span className="text-muted-foreground/60 text-[10px]">{a.target_emails}</span>}
                             </div>
                         </div>
                     )}
                 </div>
 
                 {a.comment && (
-                    <div className="mt-2 rounded-lg bg-muted/30 p-2 text-[10px] text-muted-foreground italic border-l-2 border-border">
+                    <div className="bg-muted/30 text-muted-foreground border-border mt-2 rounded-lg border-l-2 p-2 text-[10px] italic">
                         "{a.comment}"
                     </div>
                 )}
@@ -279,29 +275,24 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                     <i className="fa-solid fa-pen-nib text-xs" />
                                 </div>
                                 <div>
-                                    <h4 className="text-[11px] font-bold text-blue-700 uppercase tracking-wider dark:text-blue-400">
+                                    <h4 className="text-[11px] font-bold tracking-wider text-blue-700 uppercase dark:text-blue-400">
                                         Progres Penandatanganan
                                     </h4>
-                                    <p className="text-[10px] text-blue-600/70 dark:text-blue-400/60 font-medium">
+                                    <p className="text-[10px] font-medium text-blue-600/70 dark:text-blue-400/60">
                                         Fase: {signingPhase.replace('_', ' ')}
                                     </p>
                                 </div>
                             </div>
-                            <span className="text-sm font-black text-blue-600 dark:text-blue-400">
-                                {signingState?.progress || 0}%
-                            </span>
+                            <span className="text-sm font-black text-blue-600 dark:text-blue-400">{signingState?.progress || 0}%</span>
                         </div>
 
                         <div className="h-1.5 w-full overflow-hidden rounded-full bg-blue-200 dark:bg-blue-900/40">
-                            <div 
-                                className="h-full bg-blue-500 transition-all duration-500" 
-                                style={{ width: `${signingState?.progress || 0}%` }} 
-                            />
+                            <div className="h-full bg-blue-500 transition-all duration-500" style={{ width: `${signingState?.progress || 0}%` }} />
                         </div>
 
                         <div className="space-y-2">
                             {signingPhase === 'SETUP' && (
-                                <div className="flex items-center gap-2 text-blue-600/60 italic text-[10px]">
+                                <div className="flex items-center gap-2 text-[10px] text-blue-600/60 italic">
                                     <Loader2 size={12} className="animate-spin" />
                                     <span>Menunggu Staff Legal melakukan konfigurasi delegasi...</span>
                                 </div>
@@ -310,43 +301,51 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                             {signingPhase === 'P1_PENDING' && (
                                 <>
                                     {!isP1 ? (
-                                        <p className="text-[10px] text-muted-foreground italic">Menunggu Pihak 1 mengunggah dokumen yang telah ditandatangani.</p>
+                                        <p className="text-muted-foreground text-[10px] italic">
+                                            Menunggu Pihak 1 mengunggah dokumen yang telah ditandatangani.
+                                        </p>
                                     ) : (
                                         <div className="flex flex-col gap-2">
                                             <p className="text-[10px] font-bold text-blue-700 uppercase">Aksi Pihak 1:</p>
                                             <div className="flex gap-2">
-                                                <Button 
-                                                    size="sm" 
-                                                    variant="outline" 
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
                                                     onClick={() => handleSigningAction('download')}
-                                                    className="h-8 text-[10px] gap-2 border-blue-200 text-blue-600 hover:bg-blue-100"
+                                                    className="h-8 gap-2 border-blue-200 text-[10px] text-blue-600 hover:bg-blue-100"
                                                 >
                                                     <Download size={12} /> Unduh Draft
                                                 </Button>
                                                 <div className="relative">
-                                                    <input 
-                                                        type="file" 
-                                                        id="p1-upload" 
-                                                        className="hidden" 
+                                                    <input
+                                                        type="file"
+                                                        id="p1-upload"
+                                                        className="hidden"
                                                         onChange={(e) => {
                                                             const f = e.target.files?.[0];
                                                             if (f) handleSigningAction('upload', f);
                                                         }}
                                                         disabled={!p1Downloaded || uploading}
                                                     />
-                                                    <Button 
-                                                        size="sm" 
-                                                        variant="primary" 
+                                                    <Button
+                                                        size="sm"
+                                                        variant="primary"
                                                         onClick={() => document.getElementById('p1-upload')?.click()}
                                                         disabled={!p1Downloaded || uploading}
-                                                        className="h-8 text-[10px] gap-2 shadow-blue-500/20"
+                                                        className="h-8 gap-2 text-[10px] shadow-blue-500/20"
                                                     >
-                                                        {uploading ? <Loader2 size={12} className="animate-spin" /> : <i className="fa-solid fa-cloud-arrow-up text-[10px]" />}
+                                                        {uploading ? (
+                                                            <Loader2 size={12} className="animate-spin" />
+                                                        ) : (
+                                                            <i className="fa-solid fa-cloud-arrow-up text-[10px]" />
+                                                        )}
                                                         Unggah TTD P1
                                                     </Button>
                                                 </div>
                                             </div>
-                                            {!p1Downloaded && <p className="text-[9px] text-rose-500 font-medium">* Anda wajib mengunduh draft terlebih dahulu.</p>}
+                                            {!p1Downloaded && (
+                                                <p className="text-[9px] font-medium text-rose-500">* Anda wajib mengunduh draft terlebih dahulu.</p>
+                                            )}
                                         </div>
                                     )}
                                 </>
@@ -355,43 +354,53 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                             {signingPhase === 'P2_PENDING' && (
                                 <>
                                     {!isP2 ? (
-                                        <p className="text-[10px] text-muted-foreground italic">Menunggu Pihak 2 melakukan finalisasi penandatanganan.</p>
+                                        <p className="text-muted-foreground text-[10px] italic">
+                                            Menunggu Pihak 2 melakukan finalisasi penandatanganan.
+                                        </p>
                                     ) : (
                                         <div className="flex flex-col gap-2">
                                             <p className="text-[10px] font-bold text-blue-700 uppercase">Aksi Pihak 2:</p>
                                             <div className="flex gap-2">
-                                                <Button 
-                                                    size="sm" 
-                                                    variant="outline" 
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
                                                     onClick={() => handleSigningAction('download')}
-                                                    className="h-8 text-[10px] gap-2 border-blue-200 text-blue-600 hover:bg-blue-100"
+                                                    className="h-8 gap-2 border-blue-200 text-[10px] text-blue-600 hover:bg-blue-100"
                                                 >
                                                     <Download size={12} /> Unduh TTD P1
                                                 </Button>
                                                 <div className="relative">
-                                                    <input 
-                                                        type="file" 
-                                                        id="p2-upload" 
-                                                        className="hidden" 
+                                                    <input
+                                                        type="file"
+                                                        id="p2-upload"
+                                                        className="hidden"
                                                         onChange={(e) => {
                                                             const f = e.target.files?.[0];
                                                             if (f) handleSigningAction('upload', f);
                                                         }}
                                                         disabled={!p2Downloaded || uploading}
                                                     />
-                                                    <Button 
-                                                        size="sm" 
-                                                        variant="primary" 
+                                                    <Button
+                                                        size="sm"
+                                                        variant="primary"
                                                         onClick={() => document.getElementById('p2-upload')?.click()}
                                                         disabled={!p2Downloaded || uploading}
-                                                        className="h-8 text-[10px] gap-2 shadow-blue-500/20"
+                                                        className="h-8 gap-2 text-[10px] shadow-blue-500/20"
                                                     >
-                                                        {uploading ? <Loader2 size={12} className="animate-spin" /> : <i className="fa-solid fa-file-signature text-[10px]" />}
+                                                        {uploading ? (
+                                                            <Loader2 size={12} className="animate-spin" />
+                                                        ) : (
+                                                            <i className="fa-solid fa-file-signature text-[10px]" />
+                                                        )}
                                                         Unggah Final Agreement
                                                     </Button>
                                                 </div>
                                             </div>
-                                            {!p2Downloaded && <p className="text-[9px] text-rose-500 font-medium">* Anda wajib mengunduh dokumen TTD Pihak 1 terlebih dahulu.</p>}
+                                            {!p2Downloaded && (
+                                                <p className="text-[9px] font-medium text-rose-500">
+                                                    * Anda wajib mengunduh dokumen TTD Pihak 1 terlebih dahulu.
+                                                </p>
+                                            )}
                                         </div>
                                     )}
                                 </>
@@ -409,18 +418,18 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
             <div className="relative z-10 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-emerald-500 bg-emerald-500 text-white shadow-md dark:border-white dark:bg-white dark:text-[#172554]">
                 <Send size={12} />
             </div>
-            <div className="flex-1 rounded-xl border border-border/60 p-4 bg-muted/10 dark:bg-white/5 transition-all hover:shadow-sm">
+            <div className="border-border/60 bg-muted/10 flex-1 rounded-xl border p-4 transition-all hover:shadow-sm dark:bg-white/5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-sm font-bold text-foreground">Pengajuan Awal</span>
-                    <span className="text-[10px] bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 font-bold px-2 py-0.5 rounded-full">
+                    <span className="text-foreground text-sm font-bold">Pengajuan Awal</span>
+                    <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
                         SELESAI
                     </span>
                 </div>
-                <div className="mt-3 border-t border-border/40 pt-2.5 flex items-center gap-2">
+                <div className="border-border/40 mt-3 flex items-center gap-2 border-t pt-2.5">
                     <Avatar user={creator} size="sm" />
                     <div className="flex flex-col">
-                        <span className="text-xs font-semibold text-foreground">{creator?.name}</span>
-                        <span className="text-[10px] text-muted-foreground">
+                        <span className="text-foreground text-xs font-semibold">{creator?.name}</span>
+                        <span className="text-muted-foreground text-[10px]">
                             {creator?.email} • {submittedAt ? `Diajukan: ${submittedAt}` : 'Belum diajukan'}
                         </span>
                     </div>
@@ -432,15 +441,15 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
     const renderProjected = () => (
         <div key="projected" className="relative flex gap-4 pb-8">
             <div className="absolute top-8 bottom-0 left-[13px] w-px bg-black/10 dark:bg-white/10" />
-            <div className="relative z-10 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-border/60 bg-muted text-muted-foreground shadow-sm dark:bg-white/5 dark:text-white/40">
+            <div className="border-border/60 bg-muted text-muted-foreground relative z-10 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border shadow-sm dark:bg-white/5 dark:text-white/40">
                 <Info size={12} />
             </div>
-            <div className="flex-1 rounded-xl border border-dashed border-border/80 p-4 bg-muted/5 dark:bg-white/[0.02] transition-all">
+            <div className="border-border/80 bg-muted/5 flex-1 rounded-xl border border-dashed p-4 transition-all dark:bg-white/[0.02]">
                 <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-foreground/60">Atasan Langsung (Manager Dept)</span>
-                    <span className="text-[10px] bg-muted px-2 py-0.5 rounded-full font-bold text-muted-foreground dark:bg-white/10">Fase 1</span>
+                    <span className="text-foreground/60 text-sm font-bold">Atasan Langsung (Manager Dept)</span>
+                    <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[10px] font-bold dark:bg-white/10">Fase 1</span>
                 </div>
-                <div className="mt-2 text-xs font-medium text-muted-foreground">
+                <div className="text-muted-foreground mt-2 text-xs font-medium">
                     Status: {creator.department_id ? 'Tersedia' : 'Belum Ditentukan'}
                 </div>
             </div>
@@ -451,11 +460,11 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
         <div className="animate-in fade-in relative flex flex-col gap-6 duration-500">
             <div className="mb-2 flex items-center gap-4">
                 <div className="flex-1">
-                    <SearchInput 
+                    <SearchInput
                         placeholder="CARI NAMA / ROLE..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="h-10 text-[10px] tracking-widest uppercase"
+                        className="h-10 text-[10px] uppercase"
                     />
                 </div>
 
@@ -470,7 +479,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                         )}
                     >
                         <ListFilter size={14} strokeWidth={3} />
-                        <span className="text-[10px] tracking-widest uppercase">Filter</span>
+                        <span className="text-[10px] uppercase">Filter</span>
                         {activeCount > 0 && (
                             <span className="ml-1 flex h-4 w-4 items-center justify-center rounded-md bg-white text-[8px] font-bold text-black dark:bg-black dark:text-white">
                                 {activeCount}
@@ -515,7 +524,10 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
             />
 
             <div className="relative px-2">
-                {!activeCount && !search && !approvals.some(a => a.sequence === 1) && renderInitiator(filteredSteps.length === 0 && !showProjectedManager)}
+                {!activeCount &&
+                    !search &&
+                    !approvals.some((a) => a.sequence === 1) &&
+                    renderInitiator(filteredSteps.length === 0 && !showProjectedManager)}
                 {!activeCount && !search && showProjectedManager && renderProjected()}
                 {filteredSteps.map((a, i) => renderStep(a, i, i === filteredSteps.length - 1))}
             </div>
