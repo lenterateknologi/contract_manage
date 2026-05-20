@@ -3,8 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\AccessModule;
-use App\Models\ContractStatus;
-use App\Models\ContractType;
 use App\Models\Department;
 use App\Models\Module;
 use App\Models\ModuleGroup;
@@ -38,7 +36,7 @@ class MasterSeeder extends Seeder
                 'role' => 'Admin',
                 'department_id' => $legalId,
                 'is_active' => true,
-            ]
+            ],
         );
 
         $procId = Department::where('code', 'PROC')->value('id');
@@ -80,25 +78,25 @@ class MasterSeeder extends Seeder
                 'icon' => $g['icon'],
             ]);
         }
- 
+
         $mods = [
             // Beranda
             ['name' => 'Dashboard Utama', 'identifier' => 'DASH', 'group' => 'Beranda', 'route' => '/dashboard', 'icon' => 'LayoutGrid'],
-            
+
             // Modul Kontrak
             ['name' => 'Draft saya', 'identifier' => 'MY_CTC', 'group' => 'Modul Kontrak', 'route' => '/contracts/mine', 'icon' => 'FilePlus'],
             ['name' => 'Semua Kontrak', 'identifier' => 'CONTRACTS', 'group' => 'Modul Kontrak', 'route' => '/contracts', 'icon' => 'Files'],
             ['name' => 'Perlu Persetujuan', 'identifier' => 'PENDING', 'group' => 'Modul Kontrak', 'route' => '/contracts/pending', 'icon' => 'ClipboardCheck'],
             ['name' => 'Masa Berlaku', 'identifier' => 'EXPIRY', 'group' => 'Modul Kontrak', 'route' => '/contracts/expiry', 'icon' => 'CalendarClock'],
- 
+
             // Desain Template
             ['name' => 'Kategori Kontrak', 'identifier' => 'ADMIN_TYPES', 'group' => 'Desain Template', 'route' => '/admin/contract-types', 'icon' => 'FolderClosed'],
             ['name' => 'Formulir Digital', 'identifier' => 'ADMIN_FORMS', 'group' => 'Desain Template', 'route' => '/admin/form-templates', 'icon' => 'ScanLine'],
- 
+
             // Konfigurasi Alur
             ['name' => 'Alur Persetujuan', 'identifier' => 'ADMIN_WORKFLOWS', 'group' => 'Konfigurasi Alur', 'route' => '/admin/workflows', 'icon' => 'Workflow'],
             ['name' => 'Master Status', 'identifier' => 'ADMIN_STATUS', 'group' => 'Konfigurasi Alur', 'route' => '/admin/contract-statuses', 'icon' => 'Tags'],
- 
+
             // Data Master
             ['name' => 'Data Group', 'identifier' => 'ADMIN_GROUPS', 'group' => 'Data Master', 'route' => '/admin/company-groups', 'icon' => 'Users'],
             ['name' => 'Data Region', 'identifier' => 'ADMIN_REGIONS', 'group' => 'Data Master', 'route' => '/admin/regions', 'icon' => 'GitBranch'],
@@ -107,7 +105,7 @@ class MasterSeeder extends Seeder
             ['name' => 'Hak Akses & Peran', 'identifier' => 'ADMIN_ROLES', 'group' => 'Data Master', 'route' => '/admin/roles', 'icon' => 'KeyRound'],
             ['name' => 'Data Departemen', 'identifier' => 'ADMIN_DEPTS', 'group' => 'Data Master', 'route' => '/admin/departments', 'icon' => 'Building2'],
             ['name' => 'Daftar Vendor', 'identifier' => 'ADMIN_VENDORS', 'group' => 'Data Master', 'route' => '/admin/vendors', 'icon' => 'Truck'],
- 
+
             // Sistem & Laporan
             ['name' => 'Analitik Kontrak', 'identifier' => 'ANLTX', 'group' => 'Sistem & Laporan', 'route' => '/admin/reports/analytics', 'icon' => 'BarChart3'],
             ['name' => 'Jejak Audit', 'identifier' => 'AUDIT', 'group' => 'Sistem & Laporan', 'route' => '/admin/reports/audit', 'icon' => 'History'],
@@ -127,7 +125,6 @@ class MasterSeeder extends Seeder
 
         // 8. Workflows & Steps are now handled by A1WorkflowSeeder.
         // This avoids duplication and ensures the 14-step workflow is the source of truth.
-
 
         // 9. Access Modules (Permissions) - Full for Admin
         $allRoles = Role::all();
@@ -151,9 +148,13 @@ class MasterSeeder extends Seeder
                 $isManager = $role->name === 'Manager';
 
                 // Audit only for Admin
-                if ($module->identifier === 'AUDIT' && !$isAdmin) continue;
+                if ($module->identifier === 'AUDIT' && ! $isAdmin) {
+                    continue;
+                }
                 // Admin sections only for Admin
-                if (str_starts_with($module->route, '/admin') && !$isAdmin) continue;
+                if (str_starts_with($module->route, '/admin') && ! $isAdmin) {
+                    continue;
+                }
 
                 AccessModule::create([
                     'id' => Str::uuid(),

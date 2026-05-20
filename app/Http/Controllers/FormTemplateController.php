@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\FormTemplate;
 use App\Jobs\GeneratePdfJob;
+use App\Models\FormTemplate;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\URL;
 
 class FormTemplateController extends Controller
 {
@@ -37,7 +37,7 @@ class FormTemplateController extends Controller
     public function builder(?FormTemplate $template = null)
     {
         if (! $template) {
-            $template = new FormTemplate;
+            $template = new FormTemplate();
         } else {
             $template->load('fields');
         }
@@ -72,7 +72,7 @@ class FormTemplateController extends Controller
             $printUrl = URL::temporarySignedRoute(
                 'admin.form-templates.render-adhoc',
                 now()->addMinutes(30),
-                ['key' => $cacheKey]
+                ['key' => $cacheKey],
             );
 
             if (app()->environment('local')) {
@@ -88,7 +88,7 @@ class FormTemplateController extends Controller
 
             return response()->json([
                 'job_id' => $jobId,
-                'message' => 'PDF generation started in background.'
+                'message' => 'PDF generation started in background.',
             ]);
 
         } catch (\Exception $e) {
@@ -102,15 +102,15 @@ class FormTemplateController extends Controller
     public function checkPdfStatus(string $jobId)
     {
         $status = Cache::get('pdf_status_' . $jobId);
-        if (!$status) {
+        if (! $status) {
             return response()->json(['status' => 'not_found'], 404);
         }
+
         return response()->json($status);
     }
 
     /**
      * Export form to PDF without requiring a saved template (Ad-hoc).
-
      */
     public function exportAdhoc(Request $request)
     {
@@ -131,7 +131,7 @@ class FormTemplateController extends Controller
             $printUrl = URL::temporarySignedRoute(
                 'admin.form-templates.render-adhoc',
                 now()->addMinutes(10),
-                ['key' => $key]
+                ['key' => $key],
             );
 
             // Force 127.0.0.1 on local dev
@@ -152,7 +152,7 @@ class FormTemplateController extends Controller
                     '--no-first-run',
                     '--no-zygote',
                     '--single-process',
-                    '--disable-extensions'
+                    '--disable-extensions',
                 ])
                 ->timeout(180)
                 ->paperSize(210, 297, 'mm')
@@ -162,13 +162,13 @@ class FormTemplateController extends Controller
                 ->setDelay(1000)
                 ->pdf();
 
-
             return response($pdfContent)
                 ->header('Content-Type', 'application/pdf')
                 ->header('Content-Disposition', 'attachment; filename="' . ($templateData['name'] ?? 'test') . '.pdf"');
 
         } catch (\Exception $e) {
             Log::error('Ad-hoc Browsershot Export Failed: ' . $e->getMessage());
+
             return response()->json(['message' => 'Gagal render PDF: ' . $e->getMessage()], 500);
         }
     }
@@ -179,13 +179,15 @@ class FormTemplateController extends Controller
     public function renderAdhoc(string $key)
     {
         $data = Cache::get($key);
-        if (!$data) abort(404, 'Data preview kedaluwarsa.');
+        if (! $data) {
+            abort(404, 'Data preview kedaluwarsa.');
+        }
 
         // Convert the virtual template data into an object/array compatible with FormPrint
         $templateData = $data['template'];
 
         // Ensure logo is Base64 encoded for the ad-hoc render too
-        if (!empty($templateData['letterhead_json']['logo_url'])) {
+        if (! empty($templateData['letterhead_json']['logo_url'])) {
             $logoBase64 = $this->getLogoBase64($templateData['letterhead_json']['logo_url']);
             if ($logoBase64) {
                 $templateData['letterhead_json']['logo_url'] = $logoBase64;
@@ -200,7 +202,6 @@ class FormTemplateController extends Controller
 
     /**
      * Store or update a form template and its fields.
-
      */
     public function save(Request $request, ?FormTemplate $template = null)
     {
@@ -215,7 +216,7 @@ class FormTemplateController extends Controller
 
         return DB::transaction(function () use ($request, $template) {
             if (! $template) {
-                $template = new FormTemplate;
+                $template = new FormTemplate();
                 $template->created_by = Auth::id();
             }
 
@@ -235,7 +236,7 @@ class FormTemplateController extends Controller
             // First pass: Create all fields without setting parent_id
             foreach ($allFieldsData as $fieldData) {
                 $label = $fieldData['label'] ?? '';
-                $name = $fieldData['name'] ?? (!empty($label) ? Str::snake($label) : 'field_' . Str::random(6));
+                $name = $fieldData['name'] ?? (! empty($label) ? Str::snake($label) : 'field_' . Str::random(6));
 
                 $field = $template->fields()->create([
                     'label' => $label,
@@ -267,13 +268,12 @@ class FormTemplateController extends Controller
         });
     }
 
-
     /**
      * Render the form in a minimalist printable layout (Inertia).
      */
     public function renderPrint(Request $request, FormTemplate $template)
     {
-        $template->load(['fields' => fn($q) => $q->orderBy('order')]);
+        $template->load(['fields' => fn ($q) => $q->orderBy('order')]);
         $formData = json_decode($request->input('data', '[]'), true) ?? [];
 
         // Inline logo as Base64 to prevent deadlock during PDF generation
@@ -292,7 +292,6 @@ class FormTemplateController extends Controller
         ]);
     }
 
-
     /**
      * Export form to PDF (Download).
      */
@@ -304,17 +303,16 @@ class FormTemplateController extends Controller
             $formData = $request->input('data', '[]');
 
             // Generate a signed URL for Browsershot to visit
-            $printUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+            $printUrl = URL::temporarySignedRoute(
                 'admin.form-templates.render-print',
                 now()->addMinutes(10),
-                ['template' => $template->id, 'data' => $formData]
+                ['template' => $template->id, 'data' => $formData],
             );
 
             // Force 127.0.0.1 on local dev to avoid localhost resolution delays
             if (app()->environment('local')) {
                 $printUrl = str_replace('localhost', '127.0.0.1', $printUrl);
             }
-
 
             // High-Fidelity PDF rendering via Browsershot (Turbo Optimized)
             $pdfContent = \Spatie\Browsershot\Browsershot::url($printUrl)
@@ -329,7 +327,7 @@ class FormTemplateController extends Controller
                     '--no-first-run',
                     '--no-zygote',
                     '--single-process',
-                    '--disable-extensions'
+                    '--disable-extensions',
                 ])
                 ->timeout(180)
                 ->paperSize(210, 297, 'mm')
@@ -338,12 +336,6 @@ class FormTemplateController extends Controller
                 ->waitForSelector('#pdf-render-complete')
                 ->setDelay(1000)
                 ->pdf();
-
-
-
-
-
-
 
             return response($pdfContent)
                 ->header('Content-Type', 'application/pdf')
@@ -375,17 +367,16 @@ class FormTemplateController extends Controller
         try {
             $formData = $request->input('data', '[]');
 
-            $printUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+            $printUrl = URL::temporarySignedRoute(
                 'admin.form-templates.render-print',
                 now()->addMinutes(10),
-                ['template' => $template->id, 'data' => $formData]
+                ['template' => $template->id, 'data' => $formData],
             );
 
             // Force 127.0.0.1 on local dev
             if (app()->environment('local')) {
                 $printUrl = str_replace('localhost', '127.0.0.1', $printUrl);
             }
-
 
             // High-Fidelity Preview via Browsershot (Turbo Optimized)
             $pdfContent = \Spatie\Browsershot\Browsershot::url($printUrl)
@@ -400,7 +391,7 @@ class FormTemplateController extends Controller
                     '--no-first-run',
                     '--no-zygote',
                     '--single-process',
-                    '--disable-extensions'
+                    '--disable-extensions',
                 ])
                 ->timeout(180)
                 ->paperSize(210, 297, 'mm')
@@ -409,12 +400,6 @@ class FormTemplateController extends Controller
                 ->waitForSelector('#pdf-render-complete')
                 ->setDelay(1000)
                 ->pdf();
-
-
-
-
-
-
 
             return response($pdfContent)
                 ->header('Content-Type', 'application/pdf')
@@ -435,7 +420,6 @@ class FormTemplateController extends Controller
         }
     }
 
-
     /**
      * Remove the specified template.
      */
@@ -449,12 +433,15 @@ class FormTemplateController extends Controller
     public function bulkDestroy(Request $request)
     {
         $ids = $request->input('ids', []);
-        if (empty($ids)) return back();
+        if (empty($ids)) {
+            return back();
+        }
 
         FormTemplate::whereIn('id', $ids)->delete();
+
         return back()->with('success', count($ids) . ' templates deleted successfully.');
     }
-    
+
     /**
      * Duplicate a form template with all its fields.
      */
@@ -516,7 +503,9 @@ class FormTemplateController extends Controller
      */
     private function getLogoBase64(?string $logoUrl): ?string
     {
-        if (!$logoUrl) return null;
+        if (! $logoUrl) {
+            return null;
+        }
 
         try {
             $path = null;
@@ -533,7 +522,7 @@ class FormTemplateController extends Controller
                 $path = storage_path('app/public/' . $trimmedPath);
 
                 // Fallback to public path if storage path doesn'tExist
-                if (!file_exists($path)) {
+                if (! file_exists($path)) {
                     $path = public_path($trimmedPath);
                 }
             }
@@ -551,19 +540,20 @@ class FormTemplateController extends Controller
             elseif (str_starts_with($logoUrl, 'http')) {
                 $content = file_get_contents($logoUrl);
                 $type = pathinfo(parse_url($logoUrl, PHP_URL_PATH), PATHINFO_EXTENSION) ?: 'png';
+
                 return 'data:image/' . $type . ';base64,' . base64_encode($content);
             }
 
             if ($path && file_exists($path)) {
                 $type = pathinfo($path, PATHINFO_EXTENSION);
                 $data = file_get_contents($path);
+
                 return 'data:image/' . $type . ';base64,' . base64_encode($data);
             }
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::warning('PDF Logo Base64 failed: ' . $e->getMessage());
+            Log::warning('PDF Logo Base64 failed: ' . $e->getMessage());
         }
 
         return null;
     }
 }
-

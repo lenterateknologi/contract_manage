@@ -4,9 +4,9 @@ namespace App\Actions\Contract;
 
 use App\Models\Contract;
 use App\Models\ContractHistory;
+use App\Models\ContractType;
 use App\Models\NumberingFormat;
 use App\Models\User;
-use App\Models\ContractType;
 use App\Services\ContractWorkflowService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -60,7 +60,7 @@ class StoreContractAction
                     'category' => $validated['category'] ?? 'contract',
                     'topic' => $validated['topic'] ?? 'perjanjian',
                     'project_name' => $validated['project_name'] ?? null,
-                ]
+                ],
             ]);
 
             ContractHistory::create(['contract_id' => $contract->id, 'action' => 'CONTRACT_CREATED', 'description' => 'Kontrak dibuat', 'actor_id' => $userId]);

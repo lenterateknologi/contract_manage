@@ -51,12 +51,12 @@ class ForgotPassword extends Model
 
     public function isRedeemed(): bool
     {
-        return !is_null($this->redeemed_at);
+        return ! is_null($this->redeemed_at);
     }
 
     public function isValid(): bool
     {
-        return !$this->isExpired() && !$this->isRedeemed();
+        return ! $this->isExpired() && ! $this->isRedeemed();
     }
 
     public function markAsRedeemed(): void

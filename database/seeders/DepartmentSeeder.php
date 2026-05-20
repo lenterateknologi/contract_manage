@@ -15,7 +15,7 @@ class DepartmentSeeder extends Seeder
     {
         $admin = User::firstWhere('email', 'admin@example.com') ?? User::first();
         $adminId = $admin ? $admin->id : null;
-        
+
         // Get a default company to link departments to
         $defaultCompany = \App\Models\Company::where('code', 'LTI')->first();
         $companyId = $defaultCompany ? $defaultCompany->id : null;
@@ -42,7 +42,7 @@ class DepartmentSeeder extends Seeder
                     'created_by' => $adminId,
                     'updated_by' => $adminId,
                     'deleted_at' => null,
-                ]
+                ],
             );
         }
     }

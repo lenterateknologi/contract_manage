@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
+return new class() extends Migration
 {
     /**
      * Run the migrations.
@@ -12,13 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('m_workflow_steps', function (Blueprint $table) {
-            if (!Schema::hasColumn('m_workflow_steps', 'step_category')) {
+            if (! Schema::hasColumn('m_workflow_steps', 'step_category')) {
                 $table->string('step_category')->nullable()->after('step_type');
             }
-            if (!Schema::hasColumn('m_workflow_steps', 'is_optional')) {
+            if (! Schema::hasColumn('m_workflow_steps', 'is_optional')) {
                 $table->boolean('is_optional')->default(false)->after('step_category');
             }
-            if (!Schema::hasColumn('m_workflow_steps', 'optional_label')) {
+            if (! Schema::hasColumn('m_workflow_steps', 'optional_label')) {
                 $table->string('optional_label')->nullable()->after('is_optional');
             }
         });
@@ -39,7 +39,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('m_workflow_step_selection_rules');
-        
+
         Schema::table('m_workflow_steps', function (Blueprint $table) {
             $table->dropColumn(['step_category', 'is_optional', 'optional_label']);
         });

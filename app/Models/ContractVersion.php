@@ -12,6 +12,7 @@ class ContractVersion extends Model
     protected $table = 't_contract_versions';
 
     use HasUuids, SoftDeletes;
+
     protected $fillable = [
         'contract_id',
         'document_type',

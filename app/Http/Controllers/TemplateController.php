@@ -7,9 +7,7 @@ use App\Models\TemplateFolder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class TemplateController extends Controller
 {
@@ -71,6 +69,7 @@ class TemplateController extends Controller
     public function destroyFolder(TemplateFolder $folder)
     {
         $folder->delete();
+
         return back()->with('success', 'Folder berhasil dihapus.');
     }
 
@@ -131,7 +130,7 @@ class TemplateController extends Controller
      */
     public function downloadTemplate(ContractTemplate $template)
     {
-        if (!Storage::exists($template->file_path)) {
+        if (! Storage::exists($template->file_path)) {
             abort(404, 'File tidak ditemukan.');
         }
 
@@ -148,6 +147,7 @@ class TemplateController extends Controller
         }
 
         $template->delete();
+
         return back()->with('success', 'Template berhasil dihapus.');
     }
 

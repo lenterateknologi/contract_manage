@@ -2,54 +2,44 @@
 
 namespace App\Http\Controllers;
 
-use OpenApi\Attributes as OA;
+use App\Actions\Admin\RoleAccessAction;
 
-use App\Models\AccessModule;
-use App\Models\ContractStatus;
 use App\Models\Department;
-use App\Models\ContractType;
 use App\Models\Module;
 use App\Models\ModuleGroup;
 use App\Models\Role;
-use App\Models\RoleModuleGroup;
 use App\Models\User;
-use App\Models\Vendor;
-use App\Models\CompanyGroup;
-use App\Models\Region;
-use App\Models\Company;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
-use App\Actions\Admin\RoleAccessAction;
+use OpenApi\Attributes as OA;
 
 class AdminController extends Controller
 {
     #[OA\Get(
-        path: "/api/admin/users",
-        summary: "Get list of users",
-        tags: ["Admin"],
-        security: [["bearerAuth" => []]],
+        path: '/api/admin/users',
+        summary: 'Get list of users',
+        tags: ['Admin'],
+        security: [['bearerAuth' => []]],
         responses: [
-            new OA\Response(response: 200, description: "List of users")
-        ]
+            new OA\Response(response: 200, description: 'List of users'),
+        ],
     )]
     public function users(Request $request)
     {
         $query = User::with('department')
             ->when($request->search, function ($q, $search) {
-                $q->where(function($qq) use ($search) {
+                $q->where(function ($qq) use ($search) {
                     $qq->where('name', 'ilike', "%{$search}%")
-                       ->orWhere('email', 'ilike', "%{$search}%")
-                       ->orWhere('username', 'ilike', "%{$search}%");
+                        ->orWhere('email', 'ilike', "%{$search}%")
+                        ->orWhere('username', 'ilike', "%{$search}%");
                 });
             })
             ->when($request->role, function ($q, $role) {
-                $q->whereIn('role', (array)$role);
+                $q->whereIn('role', (array) $role);
             })
             ->when($request->department_id, function ($q, $deptId) {
-                $q->whereIn('department_id', (array)$deptId);
+                $q->whereIn('department_id', (array) $deptId);
             });
 
         if ($request->wantsJson()) {
@@ -74,21 +64,21 @@ class AdminController extends Controller
     }
 
     #[OA\Get(
-        path: "/api/admin/roles",
-        summary: "Get list of roles",
-        tags: ["Admin"],
-        security: [["bearerAuth" => []]],
+        path: '/api/admin/roles',
+        summary: 'Get list of roles',
+        tags: ['Admin'],
+        security: [['bearerAuth' => []]],
         responses: [
-            new OA\Response(response: 200, description: "List of roles")
-        ]
+            new OA\Response(response: 200, description: 'List of roles'),
+        ],
     )]
     public function roles(Request $request)
     {
         $query = Role::query()
             ->when($request->search, function ($q, $search) {
-                $q->where(function($qq) use ($search) {
+                $q->where(function ($qq) use ($search) {
                     $qq->where('name', 'ilike', "%{$search}%")
-                       ->orWhere('description', 'ilike', "%{$search}%");
+                        ->orWhere('description', 'ilike', "%{$search}%");
                 });
             })
             ->when($request->created_from, function ($q, $from) {
@@ -132,7 +122,7 @@ class AdminController extends Controller
     public function updateRole(Request $request, Role $role)
     {
         $data = $request->validate([
-            'name' => 'required|string|max:255|unique:m_roles,name,'.$role->id,
+            'name' => 'required|string|max:255|unique:m_roles,name,' . $role->id,
             'description' => 'nullable|string',
         ]);
 
@@ -160,9 +150,12 @@ class AdminController extends Controller
     public function bulkDestroyRole(Request $request)
     {
         $ids = $request->input('ids', []);
-        if (empty($ids)) return back();
+        if (empty($ids)) {
+            return back();
+        }
 
         Role::whereIn('id', $ids)->delete();
+
         return back()->with('success', count($ids) . ' role berhasil dihapus.');
     }
 
@@ -176,6 +169,7 @@ class AdminController extends Controller
         $modules->transform(function ($module) {
             $module->access = $module->accessModules->first();
             unset($module->accessModules);
+
             return $module;
         });
 
@@ -268,16 +262,15 @@ class AdminController extends Controller
 
     /**
      * Update user details.
-     * @param Request $request
-     * @param User $user
+     *
      * @return \Illuminate\Http\RedirectResponse
      */
     public function updateUser(Request $request, User $user)
     {
         $data = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:m_users,email,'.$user->id,
-            'username' => 'required|string|max:20|unique:m_users,username,'.$user->id,
+            'email' => 'required|email|unique:m_users,email,' . $user->id,
+            'username' => 'required|string|max:20|unique:m_users,username,' . $user->id,
             'role' => 'required|string',
             'position' => 'nullable|string',
             'phone' => 'nullable|string',
@@ -318,7 +311,9 @@ class AdminController extends Controller
     public function bulkDestroyUser(Request $request)
     {
         $ids = $request->input('ids', []);
-        if (empty($ids)) return back();
+        if (empty($ids)) {
+            return back();
+        }
 
         // Prevent deleting yourself
         if (in_array(Auth::id(), $ids)) {
@@ -326,6 +321,7 @@ class AdminController extends Controller
         }
 
         User::whereIn('id', $ids)->delete();
+
         return back()->with('success', count($ids) . ' pengguna berhasil dihapus.');
     }
 }

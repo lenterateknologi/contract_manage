@@ -2,56 +2,49 @@
 
 namespace App\Http\Controllers;
 
-use OpenApi\Attributes as OA;
-
-use App\Models\Approval;
-use App\Models\Contract;
-use App\Models\ContractAttachment;
-use App\Models\ContractFormSubmission;
-use App\Models\ContractFormSubmissionVersion;
-use App\Models\FormTemplate;
-use App\Models\ContractHistory;
-use App\Models\ContractType;
-use App\Models\ContractVersion;
-use App\Models\SubmissionType;
-use App\Models\Role;
-use App\Models\User;
-use App\Services\ContractWorkflowService;
-use App\Actions\Contract\StoreContractAction;
-use App\Actions\Contract\UpdateContractAction;
 use App\Actions\Contract\ApproveContractAction;
-use App\Actions\Contract\RejectContractAction;
+
 use App\Actions\Contract\ExportContractAction;
 use App\Actions\Contract\FileAction;
+use App\Actions\Contract\RejectContractAction;
+use App\Actions\Contract\StoreContractAction;
+use App\Actions\Contract\UpdateContractAction;
 use App\Formatters\ContractFormatter;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\AccessModule;
+use App\Models\Approval;
+use App\Models\Contract;
+use App\Models\ContractType;
+use App\Models\FormTemplate;
+use App\Models\Role;
+use App\Models\SubmissionType;
+use App\Models\User;
+use App\Models\Vendor;
+use App\Services\ContractWorkflowService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
-use App\Jobs\GeneratePdfJob;
-use Illuminate\Support\Facades\Cache;
-use App\Models\Vendor;
-use Illuminate\Support\Facades\URL;
-use App\Models\AccessModule;
-
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+
 use Inertia\Response;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use OpenApi\Attributes as OA;
 
 class ContractController extends Controller
 {
     private ContractWorkflowService $workflowService;
+
     private StoreContractAction $storeAction;
+
     private UpdateContractAction $updateAction;
+
     private ApproveContractAction $approveAction;
+
     private RejectContractAction $rejectAction;
+
     private FileAction $fileAction;
+
     private ExportContractAction $exportAction;
 
     public function __construct(
@@ -61,7 +54,7 @@ class ContractController extends Controller
         ApproveContractAction $approveAction,
         RejectContractAction $rejectAction,
         FileAction $fileAction,
-        ExportContractAction $exportAction
+        ExportContractAction $exportAction,
     ) {
         $this->workflowService = $workflowService;
         $this->storeAction = $storeAction;
@@ -73,18 +66,18 @@ class ContractController extends Controller
     }
 
     #[OA\Get(
-        path: "/api/contracts",
-        summary: "Get list of contracts",
-        tags: ["Contracts"],
-        security: [["bearerAuth" => []]],
+        path: '/api/contracts',
+        summary: 'Get list of contracts',
+        tags: ['Contracts'],
+        security: [['bearerAuth' => []]],
         parameters: [
-            new OA\Parameter(name: "view", in: "query", description: "Filter by view (dashboard, contracts, mine, pending, etc.)", schema: new OA\Schema(type: "string")),
-            new OA\Parameter(name: "search", in: "query", description: "Search query", schema: new OA\Schema(type: "string")),
-            new OA\Parameter(name: "per_page", in: "query", description: "Items per page", schema: new OA\Schema(type: "integer", default: 10))
+            new OA\Parameter(name: 'view', in: 'query', description: 'Filter by view (dashboard, contracts, mine, pending, etc.)', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'search', in: 'query', description: 'Search query', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'per_page', in: 'query', description: 'Items per page', schema: new OA\Schema(type: 'integer', default: 10)),
         ],
         responses: [
-            new OA\Response(response: 200, description: "List of contracts")
-        ]
+            new OA\Response(response: 200, description: 'List of contracts'),
+        ],
     )]
     public function index(Request $request): JsonResponse
     {
@@ -112,23 +105,23 @@ class ContractController extends Controller
             'types' => ContractType::all(),
             'submissionTypes' => SubmissionType::where('is_active', true)->get(),
             'users' => User::with('department')
-                ->when(Auth::user()->role === 'Manager', function($q) {
+                ->when(Auth::user()->role === 'Manager', function ($q) {
                     return $q->where('department_id', Auth::user()->department_id);
                 })
-                ->orderBy('name')->get()->map(fn($u) => ContractFormatter::formatUser($u)),
-            'vendors' => Vendor::with('documents')->where('is_active', true)->orderBy('name')->get()->map(fn($v) => [
+                ->orderBy('name')->get()->map(fn ($u) => ContractFormatter::formatUser($u)),
+            'vendors' => Vendor::with('documents')->where('is_active', true)->orderBy('name')->get()->map(fn ($v) => [
                 'id' => $v->id,
                 'name' => $v->name,
                 'pic_name' => $v->pic_name,
                 'pic_position' => $v->pic_position,
                 'address' => $v->address,
-                'documents' => $v->documents->map(fn($d) => [
+                'documents' => $v->documents->map(fn ($d) => [
                     'id' => $d->id,
                     'name' => $d->document_name,
                     'type' => $d->document_type,
                 ]),
             ]),
-            'formTemplates' => \App\Models\FormTemplate::where('is_active', true)->with('contractType')->withCount('fields')->get()->map(fn ($ft) => [
+            'formTemplates' => FormTemplate::where('is_active', true)->with('contractType')->withCount('fields')->get()->map(fn ($ft) => [
                 'id' => $ft->id,
                 'name' => $ft->name,
                 'description' => $ft->description,
@@ -138,7 +131,7 @@ class ContractController extends Controller
                 'fields_count' => $ft->fields_count,
             ]),
             'departments' => \App\Models\Department::orderBy('name')->get(),
-            'roles' => \App\Models\Role::orderBy('name')->get(),
+            'roles' => Role::orderBy('name')->get(),
             'filters' => array_merge($request->only(['search', 'status', 'contract_type_id', 'role_id', 'department_id', 'created_from', 'created_to']), [
                 'per_page' => $request->integer('per_page', 10),
             ]),
@@ -153,31 +146,37 @@ class ContractController extends Controller
                 $viewTitle = 'Dashboard';
                 $viewDesc = 'Statistik dan ringkasan aktivitas kontrak.';
                 $viewIcon = 'LayoutGrid';
+
                 break;
             case 'mine':
                 $viewTitle = 'Kontrak Saya';
                 $viewDesc = 'Daftar kontrak yang Anda buat.';
                 $viewIcon = 'FileEdit';
+
                 break;
             case 'pending':
                 $viewTitle = 'Pending Approval';
                 $viewDesc = 'Kontrak yang menunggu persetujuan Anda.';
                 $viewIcon = 'Clock';
+
                 break;
             case 'expiry':
                 $viewTitle = 'Masa Berlaku';
                 $viewDesc = 'Kontrak yang akan atau telah berakhir.';
                 $viewIcon = 'History';
+
                 break;
             case 'f1':
                 $viewTitle = 'Formulir F1';
                 $viewDesc = 'Daftar kontrak dengan dokumen F1.';
                 $viewIcon = 'FilePlus';
+
                 break;
             case 'f2':
                 $viewTitle = 'Formulir F2';
                 $viewDesc = 'Daftar kontrak dengan dokumen F2.';
                 $viewIcon = 'FilePlus';
+
                 break;
         }
 
@@ -198,7 +197,7 @@ class ContractController extends Controller
         $contract = Contract::with([
             'creator', 'contractType', 'approvals.approver', 'approvals.workflowStep',
             'workflow.steps', 'versions.uploader', 'histories.actor', 'messages.user',
-            'attachments.uploader', 'formSubmissions', 'vendor.documents'
+            'attachments.uploader', 'formSubmissions', 'vendor.documents',
         ])->findOrFail($id);
 
         // Authorization: Only Admin or Creator can view drafts
@@ -218,18 +217,18 @@ class ContractController extends Controller
             'types' => ContractType::all(),
             'submissionTypes' => SubmissionType::where('is_active', true)->get(),
             'users' => User::with('department')
-                ->when(Auth::user()->role === 'Manager', function($q) {
+                ->when(Auth::user()->role === 'Manager', function ($q) {
                     return $q->where('department_id', Auth::user()->department_id);
                 })
-                ->orderBy('name')->get()->map(fn($u) => ContractFormatter::formatUser($u)),
-            'vendors' => Vendor::where('is_active', true)->orderBy('name')->get()->map(fn($v) => [
+                ->orderBy('name')->get()->map(fn ($u) => ContractFormatter::formatUser($u)),
+            'vendors' => Vendor::where('is_active', true)->orderBy('name')->get()->map(fn ($v) => [
                 'id' => $v->id,
                 'name' => $v->name,
                 'pic_name' => $v->pic_name,
                 'pic_position' => $v->pic_position,
                 'address' => $v->address,
             ]),
-            'formTemplates' => \App\Models\FormTemplate::where('is_active', true)->with('contractType')->withCount('fields')->get()->map(fn ($ft) => [
+            'formTemplates' => FormTemplate::where('is_active', true)->with('contractType')->withCount('fields')->get()->map(fn ($ft) => [
                 'id' => $ft->id,
                 'name' => $ft->name,
                 'description' => $ft->description,
@@ -256,14 +255,14 @@ class ContractController extends Controller
             'creator.department', 'contractType', 'submissionType', 'approvals.approver.department', 'approvals.workflowStep',
             'workflow.steps', 'versions.uploader', 'histories.actor', 'messages.user',
             'attachments.uploader', 'formSubmissions', 'vendor.documents', 'initiator.department', 'parent',
-            'assignedPic', 'assignedBy'
+            'assignedPic', 'assignedBy',
         ])->latest();
-
 
         // Apply View Filter
         switch ($view) {
             case 'mine':
                 $query->where('t_contracts.created_by', Auth::id());
+
                 break;
             case 'pending':
                 $query->whereHas('approvals', function ($q) {
@@ -271,19 +270,24 @@ class ContractController extends Controller
                         ->where('status', 'pending')
                         ->whereColumn('workflow_step_id', 't_contracts.workflow_step_id');
                 });
+
                 break;
             case 'expiry':
                 $query->whereNotNull('end_date');
+
                 break;
             case 'f1':
                 $query->whereHas('versions', fn ($q) => $q->where('document_type', 'f1'));
+
                 break;
             case 'f2':
                 $query->whereHas('versions', fn ($q) => $q->where('document_type', 'f2'));
+
                 break;
             case 'contracts':
             default:
                 $query->where('status', '!=', 'draft');
+
                 break;
             case 'all':
                 // No status filter
@@ -321,18 +325,24 @@ class ContractController extends Controller
 
         // Apply Department Filter
         if ($request->filled('department_id')) {
-            $query->where(function($q) use ($request) {
-                $q->whereHas('initiator', function($sq) use ($request) {
-                    if (is_array($request->department_id)) $sq->whereIn('department_id', $request->department_id);
-                    else $sq->where('department_id', $request->department_id);
+            $query->where(function ($q) use ($request) {
+                $q->whereHas('initiator', function ($sq) use ($request) {
+                    if (is_array($request->department_id)) {
+                        $sq->whereIn('department_id', $request->department_id);
+                    } else {
+                        $sq->where('department_id', $request->department_id);
+                    }
                 })
-                ->orWhere(function($sq) use ($request) {
-                    $sq->whereNull('initiated_by_id')
-                       ->whereHas('creator', function($ssq) use ($request) {
-                           if (is_array($request->department_id)) $ssq->whereIn('department_id', $request->department_id);
-                           else $ssq->where('department_id', $request->department_id);
-                       });
-                });
+                    ->orWhere(function ($sq) use ($request) {
+                        $sq->whereNull('initiated_by_id')
+                            ->whereHas('creator', function ($ssq) use ($request) {
+                                if (is_array($request->department_id)) {
+                                    $ssq->whereIn('department_id', $request->department_id);
+                                } else {
+                                    $ssq->where('department_id', $request->department_id);
+                                }
+                            });
+                    });
             });
         }
 
@@ -344,7 +354,6 @@ class ContractController extends Controller
             $query->whereDate('created_at', '<=', $request->created_to);
         }
 
-
         return $query;
     }
 
@@ -354,7 +363,7 @@ class ContractController extends Controller
         $isAdmin = $user->role === 'Admin';
         $baseQuery = Contract::query();
 
-        if (!$isAdmin) {
+        if (! $isAdmin) {
             $baseQuery->where('t_contracts.created_by', $user->id);
         }
 
@@ -377,11 +386,11 @@ class ContractController extends Controller
 
             $totalDays = $approvedContracts->sum(function ($c) use ($firstApprovals) {
                 $firstSentAt = $firstApprovals[$c->id] ?? null;
+
                 return $firstSentAt ? Carbon::parse($firstSentAt)->diffInHours($c->updated_at) / 24 : 0;
             });
             $avgDays = round($totalDays / $approvedContracts->count(), 1);
         }
-
 
         $pendingApprovals = Approval::where('user_id', Auth::id())->where('status', 'pending')->count();
 
@@ -403,7 +412,7 @@ class ContractController extends Controller
             ->select('status', DB::raw('count(*) as count'))
             ->groupBy('status')
             ->get()
-            ->map(fn($item) => [
+            ->map(fn ($item) => [
                 'status' => $item->status,
                 'count' => (int) $item->count,
             ])
@@ -412,13 +421,13 @@ class ContractController extends Controller
         // --- Type Distribution (Top 5) ---
         $typeDistribution = DB::table('t_contracts')
             ->join('m_contract_types', 't_contracts.contract_type_id', '=', 'm_contract_types.id')
-            ->when(!$isAdmin, fn($q) => $q->where('t_contracts.created_by', $user->id))
+            ->when(! $isAdmin, fn ($q) => $q->where('t_contracts.created_by', $user->id))
             ->select('m_contract_types.name as type_name', DB::raw('count(*) as count'))
             ->groupBy('m_contract_types.name')
             ->orderByDesc('count')
             ->limit(5)
             ->get()
-            ->map(fn($item) => [
+            ->map(fn ($item) => [
                 'name' => $item->type_name,
                 'count' => (int) $item->count,
             ])
@@ -426,7 +435,7 @@ class ContractController extends Controller
 
         // --- Monthly Trend (last 6 months) ---
         $monthlyTrend = DB::table('t_contracts')
-            ->when(!$isAdmin, fn($q) => $q->where('t_contracts.created_by', $user->id))
+            ->when(! $isAdmin, fn ($q) => $q->where('t_contracts.created_by', $user->id))
             ->select(
                 DB::getDriverName() === 'sqlite'
                     ? DB::raw("strftime('%Y-%m', created_at) as month_key")
@@ -434,15 +443,15 @@ class ContractController extends Controller
                 DB::getDriverName() === 'sqlite'
                     ? DB::raw("strftime('%m', created_at) as month_label")
                     : DB::raw("to_char(created_at, 'Mon') as month_label"),
-                DB::raw('count(*) as total')
+                DB::raw('count(*) as total'),
             )
             ->where('created_at', '>=', now()->subMonths(6))
             ->groupBy('month_key', 'month_label')
             ->orderBy('month_key')
             ->get()
-            ->map(fn($item) => [
+            ->map(fn ($item) => [
                 'month' => DB::getDriverName() === 'sqlite'
-                    ? \Carbon\Carbon::createFromFormat('m', $item->month_label)->format('M')
+                    ? Carbon::createFromFormat('m', $item->month_label)->format('M')
                     : $item->month_label,
                 'total' => (int) $item->total,
             ])
@@ -452,7 +461,7 @@ class ContractController extends Controller
         $recentActivity = DB::table('t_contract_h')
             ->leftJoin('m_users', 't_contract_h.actor_id', '=', 'm_users.id')
             ->leftJoin('t_contracts', 't_contract_h.contract_id', '=', 't_contracts.id')
-            ->when(!$isAdmin, fn($q) => $q->where('t_contracts.created_by', $user->id))
+            ->when(! $isAdmin, fn ($q) => $q->where('t_contracts.created_by', $user->id))
             ->select(
                 't_contract_h.id',
                 't_contract_h.action',
@@ -466,7 +475,7 @@ class ContractController extends Controller
             ->orderByDesc('t_contract_h.created_at')
             ->limit(10)
             ->get()
-            ->map(fn($item) => [
+            ->map(fn ($item) => [
                 'id' => $item->id,
                 'action' => $item->action,
                 'description' => $item->description,
@@ -482,7 +491,7 @@ class ContractController extends Controller
         $recentContracts = DB::table('t_contracts')
             ->leftJoin('m_users', 't_contracts.created_by', '=', 'm_users.id')
             ->leftJoin('m_contract_types', 't_contracts.contract_type_id', '=', 'm_contract_types.id')
-            ->when(!$isAdmin, fn($q) => $q->where('t_contracts.created_by', $user->id))
+            ->when(! $isAdmin, fn ($q) => $q->where('t_contracts.created_by', $user->id))
             ->select(
                 't_contracts.id',
                 't_contracts.contract_no',
@@ -495,7 +504,7 @@ class ContractController extends Controller
             ->orderByDesc('t_contracts.created_at')
             ->limit(5)
             ->get()
-            ->map(fn($item) => [
+            ->map(fn ($item) => [
                 'id' => $item->id,
                 'contract_no' => $item->contract_no,
                 'title' => $item->title,
@@ -533,17 +542,17 @@ class ContractController extends Controller
     }
 
     #[OA\Get(
-        path: "/api/contracts/{id}",
-        summary: "Get contract details",
-        tags: ["Contracts"],
-        security: [["bearerAuth" => []]],
+        path: '/api/contracts/{id}',
+        summary: 'Get contract details',
+        tags: ['Contracts'],
+        security: [['bearerAuth' => []]],
         parameters: [
-            new OA\Parameter(name: "id", in: "path", description: "Contract ID", required: true, schema: new OA\Schema(type: "string"))
+            new OA\Parameter(name: 'id', in: 'path', description: 'Contract ID', required: true, schema: new OA\Schema(type: 'string')),
         ],
         responses: [
-            new OA\Response(response: 200, description: "Contract details"),
-            new OA\Response(response: 404, description: "Contract not found")
-        ]
+            new OA\Response(response: 200, description: 'Contract details'),
+            new OA\Response(response: 404, description: 'Contract not found'),
+        ],
     )]
     public function show(string $id): JsonResponse
     {
@@ -562,7 +571,7 @@ class ContractController extends Controller
             'formSubmissions',
             'vendor.documents',
             'assignedPic',
-            'assignedBy'
+            'assignedBy',
         ])->findOrFail($id);
 
         // Authorization: Only Admin or Creator can view drafts
@@ -577,18 +586,19 @@ class ContractController extends Controller
     {
         $contractType = $request->query('contract_type');
         $workflows = $this->workflowService->getAvailableWorkflows(Auth::user(), $contractType);
+
         return response()->json($workflows);
     }
 
     public function getUsers(): JsonResponse
     {
         $users = User::with('department')
-            ->when(Auth::user()->role === 'Manager', function($q) {
+            ->when(Auth::user()->role === 'Manager', function ($q) {
                 return $q->where('department_id', Auth::user()->department_id);
             })
             ->orderBy('name')
             ->get()
-            ->map(fn($u) => ContractFormatter::formatUser($u));
+            ->map(fn ($u) => ContractFormatter::formatUser($u));
 
         return response()->json($users);
     }
@@ -598,27 +608,26 @@ class ContractController extends Controller
         return response()->json(Role::orderBy('name')->get());
     }
 
-
     #[OA\Post(
-        path: "/api/contracts",
-        summary: "Create a new contract",
-        tags: ["Contracts"],
-        security: [["bearerAuth" => []]],
+        path: '/api/contracts',
+        summary: 'Create a new contract',
+        tags: ['Contracts'],
+        security: [['bearerAuth' => []]],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
                 properties: [
-                    new OA\Property(property: "title", type: "string"),
-                    new OA\Property(property: "contract_type_id", type: "string"),
-                    new OA\Property(property: "submission_type_id", type: "string"),
-                    new OA\Property(property: "vendor_id", type: "string")
-                ]
-            )
+                    new OA\Property(property: 'title', type: 'string'),
+                    new OA\Property(property: 'contract_type_id', type: 'string'),
+                    new OA\Property(property: 'submission_type_id', type: 'string'),
+                    new OA\Property(property: 'vendor_id', type: 'string'),
+                ],
+            ),
         ),
         responses: [
-            new OA\Response(response: 201, description: "Contract created"),
-            new OA\Response(response: 422, description: "Validation error")
-        ]
+            new OA\Response(response: 201, description: 'Contract created'),
+            new OA\Response(response: 422, description: 'Validation error'),
+        ],
     )]
     public function store(Request $request): JsonResponse
     {
@@ -647,6 +656,7 @@ class ContractController extends Controller
         ]);
 
         $contract = $this->storeAction->execute($validated);
+
         return response()->json(ContractFormatter::formatContract($contract), 201);
     }
 
@@ -657,34 +667,36 @@ class ContractController extends Controller
         if ($contract->status !== 'draft') {
             if ($request->has('metadata') && count($request->except(['_method'])) === 1) {
                 $contract->update(['metadata' => $request->input('metadata')]);
+
                 return response()->json(ContractFormatter::formatContract($contract));
             }
+
             return response()->json(['message' => 'Hanya kontrak berstatus draft yang dapat diedit.'], 422);
         }
 
         $validated = $request->validate([
-            'title'            => 'sometimes|required|string|max:255',
-            'description'      => 'nullable|string',
+            'title' => 'sometimes|required|string|max:255',
+            'description' => 'nullable|string',
             'contract_type_id' => 'nullable|uuid|exists:m_contract_types,id',
             'submission_type_id' => 'nullable|uuid|exists:m_submission_types,id',
-            'contract_no'      => 'nullable|string',
-            'contract_date'    => 'nullable|date',
-            'end_date'         => 'nullable|date',
-            'crown_no'         => 'nullable|string|max:255',
+            'contract_no' => 'nullable|string',
+            'contract_date' => 'nullable|date',
+            'end_date' => 'nullable|date',
+            'crown_no' => 'nullable|string|max:255',
             'transaction_type' => 'nullable|string|in:Perjanjian Baru,Addendum,Amandement,Perubahan Perjanjian,General',
-            'initiated_by_id'  => 'nullable|uuid|exists:m_users,id',
-            'vendor_id'        => 'nullable|uuid|exists:m_vendors,id',
-            'kop_sub_topik'    => 'nullable|string',
-            'parent_id'        => 'nullable|exists:t_contracts,id',
-            'p1_entity'        => 'nullable|string',
-            'p1_signer'        => 'nullable|string',
+            'initiated_by_id' => 'nullable|uuid|exists:m_users,id',
+            'vendor_id' => 'nullable|uuid|exists:m_vendors,id',
+            'kop_sub_topik' => 'nullable|string',
+            'parent_id' => 'nullable|exists:t_contracts,id',
+            'p1_entity' => 'nullable|string',
+            'p1_signer' => 'nullable|string',
             'p1_signer_position' => 'nullable|string',
-            'p1_address'       => 'nullable|string',
-            'p2_entity'        => 'nullable|string',
-            'p2_signer'        => 'nullable|string',
+            'p1_address' => 'nullable|string',
+            'p2_entity' => 'nullable|string',
+            'p2_signer' => 'nullable|string',
             'p2_signer_position' => 'nullable|string',
-            'p2_address'       => 'nullable|string',
-            'metadata'         => 'nullable|array',
+            'p2_address' => 'nullable|string',
+            'metadata' => 'nullable|array',
         ]);
 
         $contract = $this->updateAction->execute($contract, $validated);
@@ -711,16 +723,16 @@ class ContractController extends Controller
         });
     }
 
-
-
     public function bulkDestroy(Request $request): JsonResponse
     {
-        if (!$this->checkBulkPermission('can_bulk_delete')) {
+        if (! $this->checkBulkPermission('can_bulk_delete')) {
             return response()->json(['message' => 'Anda tidak memiliki izin untuk aksi massal ini.'], 403);
         }
 
         $ids = $request->input('ids');
-        if (empty($ids)) return response()->json(['message' => 'Tidak ada kontrak yang dipilih.'], 422);
+        if (empty($ids)) {
+            return response()->json(['message' => 'Tidak ada kontrak yang dipilih.'], 422);
+        }
 
         return DB::transaction(function () use ($ids) {
             $contracts = Contract::whereIn('id', $ids)->get();
@@ -738,11 +750,12 @@ class ContractController extends Controller
         });
     }
 
-
     protected function checkBulkPermission($permission)
     {
         $role = Role::where('name', Auth::user()->role)->first();
-        if (!$role) return false;
+        if (! $role) {
+            return false;
+        }
 
         return AccessModule::where('role_id', $role->id)
             ->join('m_modules', 'm_access_modules.module_id', '=', 'm_modules.id')
@@ -750,5 +763,4 @@ class ContractController extends Controller
             ->where($permission, true)
             ->exists();
     }
-
 }

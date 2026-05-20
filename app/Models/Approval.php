@@ -2,20 +2,23 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Auth;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Support\Facades\Auth;
 
 class Approval extends Model
 {
     protected $table = 't_approvals';
 
     use HasUuids, SoftDeletes;
+
     public $incrementing = false;
+
     protected $keyType = 'string';
+
     protected $fillable = [
         'contract_id',
         'workflow_step_id',

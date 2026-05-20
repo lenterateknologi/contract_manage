@@ -31,7 +31,7 @@ class EmailTestController extends Controller
         if (app()->environment('production')) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Email testing is not available in production environment.'
+                'message' => 'Email testing is not available in production environment.',
             ], 403);
         }
 
@@ -46,27 +46,27 @@ class EmailTestController extends Controller
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Validation failed',
-                    'errors' => $validator->errors()
+                    'errors' => $validator->errors(),
                 ], 422);
             }
 
             // Send test email
             Mail::raw($request->message, function ($mail) use ($request) {
                 $mail->to($request->email)
-                     ->subject($request->subject)
-                     ->from(config('mail.from.address'), config('mail.from.name'));
+                    ->subject($request->subject)
+                    ->from(config('mail.from.address'), config('mail.from.name'));
             });
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Test email sent successfully to ' . $request->email
+                'message' => 'Test email sent successfully to ' . $request->email,
             ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to send test email: ' . $e->getMessage(),
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }

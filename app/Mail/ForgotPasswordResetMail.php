@@ -12,7 +12,9 @@ class ForgotPasswordResetMail extends Mailable implements ShouldQueue
     use Queueable, SerializesModels;
 
     public $user;
+
     public $resetUrl;
+
     public $expireAt;
 
     public function __construct($user, string $resetUrl, $expireAt)
@@ -25,11 +27,11 @@ class ForgotPasswordResetMail extends Mailable implements ShouldQueue
     public function build()
     {
         return $this->subject('Password Reset Request')
-                    ->view('emails.forgot-password')
-                    ->with([
-                        'user' => $this->user,
-                        'resetUrl' => $this->resetUrl,
-                        'expireAt' => $this->expireAt,
-                    ]);
+            ->view('emails.forgot-password')
+            ->with([
+                'user' => $this->user,
+                'resetUrl' => $this->resetUrl,
+                'expireAt' => $this->expireAt,
+            ]);
     }
 }

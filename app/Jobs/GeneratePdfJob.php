@@ -19,7 +19,9 @@ class GeneratePdfJob implements ShouldQueue
     public $timeout = 300; // 5 minutes
 
     protected string $jobId;
+
     protected string $printUrl;
+
     protected string $fileName;
 
     /**
@@ -53,10 +55,10 @@ class GeneratePdfJob implements ShouldQueue
                     '--no-first-run',
                     '--no-zygote',
                     '--single-process',
-                    '--disable-extensions'
+                    '--disable-extensions',
                 ])
                 ->console(function ($message) {
-                    Log::info("[CHROME CONSOLE] " . $message);
+                    Log::info('[CHROME CONSOLE] ' . $message);
                 })
                 ->timeout(300)
                 ->paperSize(210, 297, 'mm')
@@ -67,8 +69,6 @@ class GeneratePdfJob implements ShouldQueue
                 ->preventUnsuccessfulResponse()
                 ->pdf();
 
-
-
             // Save to public storage
             $path = 'pdfs/' . $this->fileName;
             Storage::disk('public')->put($path, $pdfContent);
@@ -76,14 +76,14 @@ class GeneratePdfJob implements ShouldQueue
             Cache::put('pdf_status_' . $this->jobId, [
                 'status' => 'completed',
                 'url' => Storage::url($path),
-                'progress' => 100
+                'progress' => 100,
             ], 1800);
 
         } catch (\Exception $e) {
             Log::error('Queue PDF Export Failed: ' . $e->getMessage());
             Cache::put('pdf_status_' . $this->jobId, [
                 'status' => 'failed',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 1800);
         }
     }

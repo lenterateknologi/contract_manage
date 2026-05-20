@@ -2,11 +2,10 @@
 
 namespace App\Actions\Contract;
 
-use App\Models\Contract;
-use App\Models\Approval;
-use App\Models\User;
-use App\Models\Role;
 use App\Models\AccessModule;
+use App\Models\Approval;
+use App\Models\Contract;
+use App\Models\Role;
 use App\Services\ContractWorkflowService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -28,7 +27,7 @@ class ApproveContractAction
             $note,
             $attachmentPath,
             $assignedPicId,
-            $executionOrder
+            $executionOrder,
         );
     }
 
@@ -50,6 +49,7 @@ class ApproveContractAction
                     }
                 }
             }
+
             return $count;
         });
     }
@@ -57,7 +57,9 @@ class ApproveContractAction
     public function checkBulkPermission(string $permission): bool
     {
         $role = Role::where('name', Auth::user()->role)->first();
-        if (!$role) return false;
+        if (! $role) {
+            return false;
+        }
 
         return AccessModule::where('role_id', $role->id)
             ->join('m_modules', 'm_access_modules.module_id', '=', 'm_modules.id')

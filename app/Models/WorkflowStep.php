@@ -2,14 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 use Illuminate\Database\Eloquent\SoftDeletes;
-
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class WorkflowStep extends Model
 {
@@ -18,7 +18,9 @@ class WorkflowStep extends Model
     use HasUuids, SoftDeletes;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
+
     protected $fillable = [
         'workflow_id',
         'approver_type',
@@ -60,6 +62,7 @@ class WorkflowStep extends Model
     ];
 
     protected $with = ['approverRoles', 'approverDepartments', 'approverUsers'];
+
     protected $appends = ['role', 'department_ids', 'department_names', 'user_ids', 'name'];
 
     public function getNameAttribute()
@@ -82,7 +85,6 @@ class WorkflowStep extends Model
         return $this->hasMany(WorkflowStepUser::class, 'workflow_step_id');
     }
 
-
     public function getRoleAttribute()
     {
         return $this->approverRoles->pluck('role_name')->toArray();
@@ -96,7 +98,7 @@ class WorkflowStep extends Model
     public function getDepartmentNamesAttribute()
     {
         // Load the departments relation if not loaded
-        return $this->approverDepartments->map(function($sd) {
+        return $this->approverDepartments->map(function ($sd) {
             return $sd->department?->name ?? 'All Departments';
         })->unique()->toArray();
     }

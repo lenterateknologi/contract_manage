@@ -151,15 +151,16 @@ class ContractFormatter
 
     public static function getNextStep(Contract $contract): ?WorkflowStep
     {
-        if (!$contract->workflowStep || !$contract->workflow) {
+        if (! $contract->workflowStep || ! $contract->workflow) {
             return null;
         }
+
         return app(ContractWorkflowService::class)->findNextValidStep($contract, $contract->workflowStep);
     }
 
     public static function formatUser($user): ?array
     {
-        if (!$user) {
+        if (! $user) {
             return null;
         }
 
@@ -179,7 +180,7 @@ class ContractFormatter
 
     public static function mapApprovalTimeline($c): array
     {
-        if (!$c->workflow) {
+        if (! $c->workflow) {
             return [];
         }
 
@@ -188,15 +189,15 @@ class ContractFormatter
         $workflowService = app(ContractWorkflowService::class);
 
         foreach ($workflowSteps as $step) {
-            if (!$workflowService->shouldExecuteStep($c, $step)) {
+            if (! $workflowService->shouldExecuteStep($c, $step)) {
                 continue;
             }
             $approvals = $c->approvals->where('workflow_step_id', $step->id);
 
-            $deptNames = (array)$step->department_names;
+            $deptNames = (array) $step->department_names;
             $deptName = count($deptNames) > 0 ? implode(', ', $deptNames) : null;
 
-            if (!$deptName && $step->approver_type === 'initiator' && $c->initiator?->department) {
+            if (! $deptName && $step->approver_type === 'initiator' && $c->initiator?->department) {
                 $deptName = $c->initiator->department->name;
             }
 
@@ -210,8 +211,8 @@ class ContractFormatter
                 $targetApprovers = $approvers->pluck('name')->implode(', ');
                 $targetEmails = $approvers->pluck('email')->implode(', ');
             } elseif ($step->approver_type === 'initiator') {
-                 $targetApprovers = $c->initiator?->name;
-                 $targetEmails = $c->initiator?->email;
+                $targetApprovers = $c->initiator?->name;
+                $targetEmails = $c->initiator?->email;
             } elseif ($step->approver_type === 'assigned_pic') {
                 if ($c->assigned_pic_id) {
                     $targetApprovers = $c->assignedPic?->name;
@@ -220,15 +221,15 @@ class ContractFormatter
                     $targetApprovers = 'PIC (Belum Ditugaskan)';
                 }
             } elseif ($step->approver_type === 'role') {
-                $roles = (array)$step->role;
-                $targetDeptIds = !empty($step->department_ids) ? $step->department_ids : ($step->department_id ? [$step->department_id] : []);
-                $query = \App\Models\User::whereIn('role', $roles);
-                if (!empty($targetDeptIds)) {
+                $roles = (array) $step->role;
+                $targetDeptIds = ! empty($step->department_ids) ? $step->department_ids : ($step->department_id ? [$step->department_id] : []);
+                $query = User::whereIn('role', $roles);
+                if (! empty($targetDeptIds)) {
                     $query->whereIn('department_id', $targetDeptIds);
                 }
                 $approvers = $query->get();
                 if ($approvers->isEmpty()) {
-                    $approvers = \App\Models\User::whereIn('role', $roles)->get();
+                    $approvers = User::whereIn('role', $roles)->get();
                 }
                 $targetApprovers = $approvers->pluck('name')->implode(', ');
                 $targetEmails = $approvers->pluck('email')->implode(', ');
@@ -236,16 +237,16 @@ class ContractFormatter
 
             if ($approvals->isNotEmpty()) {
                 $isRoleBased = $step->approver_type === 'role';
-                $hasDecision = $approvals->contains(fn($a) => in_array($a->status, ['approved', 'rejected']));
-                $isAllPending = $approvals->every(fn($a) => $a->status === 'pending');
+                $hasDecision = $approvals->contains(fn ($a) => in_array($a->status, ['approved', 'rejected']));
+                $isAllPending = $approvals->every(fn ($a) => $a->status === 'pending');
 
                 if ($isAllPending && $approvals->count() > 1) {
                     $first = $approvals->first();
-                    $candidateNames = $approvals->map(fn($a) => $a->approver?->name ?? $a->approver_name)->implode(', ');
-                    $candidateEmails = $approvals->map(fn($a) => $a->approver?->email)->filter()->implode(', ');
+                    $candidateNames = $approvals->map(fn ($a) => $a->approver?->name ?? $a->approver_name)->implode(', ');
+                    $candidateEmails = $approvals->map(fn ($a) => $a->approver?->email)->filter()->implode(', ');
 
                     $timeline[] = [
-                        'id' => 'step-group-'.$step->id,
+                        'id' => 'step-group-' . $step->id,
                         'user_id' => null,
                         'approver_name' => $first->role,
                         'role' => $first->role,
@@ -264,7 +265,7 @@ class ContractFormatter
                 } else {
                     $approvalsToDisplay = $approvals;
                     if ($isRoleBased && $hasDecision) {
-                        $approvalsToDisplay = $approvals->filter(fn($a) => in_array($a->status, ['approved', 'rejected']));
+                        $approvalsToDisplay = $approvals->filter(fn ($a) => in_array($a->status, ['approved', 'rejected']));
                     }
 
                     foreach ($approvalsToDisplay as $a) {
@@ -300,7 +301,7 @@ class ContractFormatter
                 }
 
                 $timeline[] = [
-                    'id' => 'step-'.$step->id,
+                    'id' => 'step-' . $step->id,
                     'user_id' => null,
                     'approver_name' => $approverName,
                     'role' => $roleLabel,

@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use App\Models\Department;
 use App\Models\Role;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -17,7 +17,7 @@ class UserSeeder extends Seeder
         // Ensure roles and departments are available
         $roles = Role::pluck('id', 'name')->all();
         $depts = Department::pluck('id', 'code')->all();
-        
+
         // Get a default company to link users to
         $defaultCompany = \App\Models\Company::where('code', 'LTI')->first();
         $companyId = $defaultCompany ? $defaultCompany->id : null;
@@ -190,28 +190,28 @@ class UserSeeder extends Seeder
                 array_merge($userData, [
                     'company_id' => $companyId,
                     'role_id' => $roleId,
-                    'is_active' => true, 
-                    'deleted_at' => null
-                ])
+                    'is_active' => true,
+                    'deleted_at' => null,
+                ]),
             );
         }
 
         // Now seed more users in a structured way
         $deptModels = Department::all();
-        
+
         foreach ($deptModels as $dept) {
             // Check if this department already has a manager from the specific list above
             $hasManager = User::where('department_id', $dept->id)
                 ->where('role', 'Manager')
                 ->exists();
-            
+
             // If no manager, create one
-            if (!$hasManager) {
+            if (! $hasManager) {
                 User::withTrashed()->updateOrCreate(
-                    ['email' => "manager.".strtolower($dept->code)."@example.com"],
+                    ['email' => 'manager.' . strtolower($dept->code) . '@example.com'],
                     [
                         'name' => fake()->name(),
-                        'username' => '2000'.str_pad(mt_rand(1, 999999), 12, '0', STR_PAD_LEFT),
+                        'username' => '2000' . str_pad(mt_rand(1, 999999), 12, '0', STR_PAD_LEFT),
                         'password' => Hash::make('password'),
                         'role' => 'Manager',
                         'role_id' => $roles['Manager'] ?? null,
@@ -224,7 +224,7 @@ class UserSeeder extends Seeder
                         'text_color' => '#0f172a',
                         'is_active' => true,
                         'deleted_at' => null,
-                    ]
+                    ],
                 );
             }
 
@@ -233,9 +233,9 @@ class UserSeeder extends Seeder
             for ($i = 1; $i <= $staffCount; $i++) {
                 $name = fake()->name();
                 $initials = collect(explode(' ', $name))->map(fn ($n) => strtoupper(substr($n, 0, 1)))->take(2)->join('');
-                
+
                 User::withTrashed()->updateOrCreate(
-                    ['email' => "staff{$i}.".strtolower($dept->code)."@example.com"],
+                    ['email' => "staff{$i}." . strtolower($dept->code) . '@example.com'],
                     [
                         'name' => $name,
                         'username' => '3000' . str_pad(mt_rand(1, 99999999), 12, '0', STR_PAD_LEFT),
@@ -251,7 +251,7 @@ class UserSeeder extends Seeder
                         'text_color' => '#ffffff',
                         'is_active' => true,
                         'deleted_at' => null,
-                    ]
+                    ],
                 );
             }
         }

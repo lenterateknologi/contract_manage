@@ -53,7 +53,7 @@ class ReportController extends Controller
         if ($approvedContracts->count() > 0) {
             $totalDays = $approvedContracts->sum(function ($c) {
                 $firstSentAt = Approval::where('contract_id', $c->id)->oldest()->value('created_at');
-                if (!$firstSentAt) {
+                if (! $firstSentAt) {
                     return 0;
                 }
 
@@ -118,7 +118,7 @@ class ReportController extends Controller
             ->select(
                 DB::raw($monthExpression),
                 'm_contract_types.name as type_name',
-                DB::raw('count(*) as count')
+                DB::raw('count(*) as count'),
             )
             ->where('t_contracts.created_at', '>=', now()->subMonths(6))
             ->groupBy('month', 'type_name')

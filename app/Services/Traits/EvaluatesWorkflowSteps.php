@@ -3,8 +3,8 @@
 namespace App\Services\Traits;
 
 use App\Models\Contract;
-use App\Models\WorkflowStep;
 use App\Models\User;
+use App\Models\WorkflowStep;
 use Illuminate\Support\Facades\Auth;
 
 trait EvaluatesWorkflowSteps
@@ -55,7 +55,7 @@ trait EvaluatesWorkflowSteps
         }
 
         // Rule 4: Skip Department Manager Review if Initiator is Manager/Head
-        $roles = (array)$step->role;
+        $roles = (array) $step->role;
         $lowerRoles = array_map('strtolower', $roles);
         if (in_array('manager', $lowerRoles)) {
             $initiator = $contract->initiator;
@@ -91,7 +91,7 @@ trait EvaluatesWorkflowSteps
         $condition = $step->condition_expression ?? '';
 
         // Dynamic Meta Key logic: if condition is set and not a special 'initiator_' keyword
-        if (!empty($condition) && !str_starts_with($condition, 'initiator_')) {
+        if (! empty($condition) && ! str_starts_with($condition, 'initiator_')) {
             $metadata = $contract->metadata ?? [];
             $val = $metadata[$condition] ?? null;
             if ($condition === 'contract.has_tax' && $val === null) {
@@ -125,7 +125,7 @@ trait EvaluatesWorkflowSteps
 
         // Condition: Skip if initiator is Legal (used for Manager step)
         if (str_contains($condition, 'initiator_not_legal')) {
-            return ($contract->initiator->department?->code !== 'LGL');
+            return $contract->initiator->department?->code !== 'LGL';
         }
 
         // Condition: Skip Management if Initiator is already Management/Direksi
@@ -133,7 +133,8 @@ trait EvaluatesWorkflowSteps
             $initiatorRoleName = $contract->initiator->getAttribute('role') ?: ($contract->initiator->role()->first()->name ?? '');
             $roleName = strtolower($initiatorRoleName);
             $exemptRoles = ['manager', 'director', 'direktur', 'direksi', 'admin'];
-            return !in_array($roleName, $exemptRoles);
+
+            return ! in_array($roleName, $exemptRoles);
         }
 
         // If no recognized condition, execute by default
@@ -174,6 +175,7 @@ trait EvaluatesWorkflowSteps
                 }
             }
         }
+
         return (float) $clean;
     }
 
@@ -183,7 +185,9 @@ trait EvaluatesWorkflowSteps
      */
     private function handleAutoApproval(Contract $contract, ?User $user): void
     {
-        if (!$user) return;
+        if (! $user) {
+            return;
+        }
 
         $pendingApprovals = $contract->approvals()
             ->where('workflow_step_id', $contract->workflow_step_id)

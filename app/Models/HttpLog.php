@@ -7,7 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class HttpLog extends Model
 {
     protected $connection = 'log';
+
     protected $table = 't_http_log';
+
     protected $fillable = [
         'id',
         'method',

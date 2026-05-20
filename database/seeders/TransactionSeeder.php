@@ -19,7 +19,7 @@ class TransactionSeeder extends Seeder
 
     public function run(): void
     {
-        // Wipe existing data - Use forceDelete because unique constraints (like contract_no) 
+        // Wipe existing data - Use forceDelete because unique constraints (like contract_no)
         // often don't ignore soft-deleted records.
         ContractMessage::query()->forceDelete();
         ContractHistory::query()->forceDelete();
@@ -72,7 +72,7 @@ class TransactionSeeder extends Seeder
             'Jasa Konsultasi Audit Pajak',
             'Pengadaan Seragam Kerja Lapangan',
             'Integrasi API Payment Gateway',
-            'Kontrak Langganan Internet Fiber Optic'
+            'Kontrak Langganan Internet Fiber Optic',
         ];
 
         $statuses = ['draft', 'in_review', 'revision', 'approved'];
@@ -83,13 +83,13 @@ class TransactionSeeder extends Seeder
             $monthOffset = rand(0, 5);
             $dayOffset = rand(1, 28);
             $createdAt = now()->subMonths($monthOffset)->subDays($dayOffset);
-            
+
             $typeIdx = array_rand($typeNames);
             $type = $typeNames[$typeIdx];
-            
+
             $userIdx = array_rand($userNames);
             $user = $userNames[$userIdx];
-            
+
             $c = Contract::create([
                 'contract_no' => 'REQ-CMS-' . str_pad($i + 1, 3, '0', STR_PAD_LEFT),
                 'crown_no' => 'CTR-CROW-' . str_pad($i + 1, 3, '0', STR_PAD_LEFT),
@@ -125,10 +125,11 @@ class TransactionSeeder extends Seeder
     private function tid(string $code): string
     {
         $id = $this->typeMap[strtolower($code)] ?? null;
-        if (!$id) {
+        if (! $id) {
             // Fallback for names if code not found
             $id = ContractType::where('name', 'ilike', $code)->value('id');
         }
+
         return $id ?? ContractType::first()->id; // Fallback to first if all else fails
     }
 

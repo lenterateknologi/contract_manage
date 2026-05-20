@@ -28,7 +28,6 @@ class Region extends Model
         'is_active' => 'boolean',
     ];
 
-
     public function companies()
     {
         return $this->hasMany(Company::class, 'region_id');

@@ -2,14 +2,14 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
+use App\Models\ContractStatus;
+use App\Models\ContractType;
+use App\Models\Department;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
-use App\Models\WorkflowStepRole;
 use App\Models\WorkflowStepDepartment;
-use App\Models\ContractStatus;
-use App\Models\Department;
-use App\Models\ContractType;
+use App\Models\WorkflowStepRole;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
 class A1WorkflowSeeder extends Seeder
@@ -25,7 +25,7 @@ class A1WorkflowSeeder extends Seeder
 
             // 1. Get Status IDs
             $statuses = ContractStatus::pluck('id', 'code')->toArray();
-            
+
             // 2. Get Department IDs
             $depts = Department::pluck('id', 'name')->toArray();
             $legalDeptId = $depts['Legal & Compliance'] ?? null;
@@ -50,7 +50,7 @@ class A1WorkflowSeeder extends Seeder
                     'actor' => 'initiator',
                     'roles' => ['initiator'],
                     'reject_target' => null,
-                    'status' => 'draft'
+                    'status' => 'draft',
                 ],
                 [
                     'step' => 2,
@@ -59,7 +59,7 @@ class A1WorkflowSeeder extends Seeder
                     'actor' => 'atasan',
                     'roles' => ['Manager'],
                     'reject_target' => 1,
-                    'status' => 'in_review'
+                    'status' => 'in_review',
                 ],
                 [
                     'step' => 3,
@@ -70,7 +70,7 @@ class A1WorkflowSeeder extends Seeder
                     'dept_id' => $taxDeptId,
                     'reject_target' => 1,
                     'status' => 'in_review',
-                    'condition' => 'contract.has_tax'
+                    'condition' => 'contract.has_tax',
                 ],
                 [
                     'step' => 4,
@@ -80,7 +80,7 @@ class A1WorkflowSeeder extends Seeder
                     'roles' => ['VP'],
                     'dept_id' => $mgmtDeptId,
                     'reject_target' => 1,
-                    'status' => 'in_review'
+                    'status' => 'in_review',
                 ],
                 [
                     'step' => 5,
@@ -90,7 +90,7 @@ class A1WorkflowSeeder extends Seeder
                     'roles' => ['CEO'],
                     'dept_id' => $mgmtDeptId,
                     'reject_target' => 1,
-                    'status' => 'in_review'
+                    'status' => 'in_review',
                 ],
                 [
                     'step' => 6,
@@ -100,7 +100,7 @@ class A1WorkflowSeeder extends Seeder
                     'roles' => ['Manager'],
                     'dept_id' => $legalDeptId,
                     'reject_target' => 1,
-                    'status' => 'in_review'
+                    'status' => 'in_review',
                 ],
                 [
                     'step' => 7,
@@ -110,7 +110,7 @@ class A1WorkflowSeeder extends Seeder
                     'roles' => ['Staff'],
                     'dept_id' => $legalDeptId,
                     'reject_target' => 6,
-                    'status' => 'in_review'
+                    'status' => 'in_review',
                 ],
                 [
                     'step' => 8,
@@ -120,7 +120,7 @@ class A1WorkflowSeeder extends Seeder
                     'roles' => ['Manager'],
                     'dept_id' => $legalDeptId,
                     'reject_target' => 7,
-                    'status' => 'in_review'
+                    'status' => 'in_review',
                 ],
                 [
                     'step' => 9,
@@ -129,7 +129,7 @@ class A1WorkflowSeeder extends Seeder
                     'actor' => 'initiator',
                     'roles' => ['initiator'],
                     'reject_target' => 7,
-                    'status' => 'in_review'
+                    'status' => 'in_review',
                 ],
                 [
                     'step' => 10,
@@ -139,7 +139,7 @@ class A1WorkflowSeeder extends Seeder
                     'roles' => ['Staff'],
                     'dept_id' => $legalDeptId,
                     'reject_target' => 7,
-                    'status' => 'in_review'
+                    'status' => 'in_review',
                 ],
                 [
                     'step' => 11,
@@ -149,7 +149,7 @@ class A1WorkflowSeeder extends Seeder
                     'roles' => ['Manager'],
                     'dept_id' => $legalDeptId,
                     'reject_target' => 10,
-                    'status' => 'in_review'
+                    'status' => 'in_review',
                 ],
                 [
                     'step' => 12,
@@ -159,7 +159,7 @@ class A1WorkflowSeeder extends Seeder
                     'roles' => ['Director'], // Fallback for VP
                     'dept_id' => $legalDeptId,
                     'reject_target' => 11,
-                    'status' => 'in_review'
+                    'status' => 'in_review',
                 ],
                 [
                     'step' => 13,
@@ -168,7 +168,7 @@ class A1WorkflowSeeder extends Seeder
                     'actor' => 'atasan',
                     'roles' => ['Manager'],
                     'reject_target' => 10,
-                    'status' => 'in_review'
+                    'status' => 'in_review',
                 ],
                 [
                     'step' => 14,
@@ -178,7 +178,7 @@ class A1WorkflowSeeder extends Seeder
                     'roles' => ['CEO'],
                     'dept_id' => $mgmtDeptId,
                     'reject_target' => 10,
-                    'status' => 'in_review'
+                    'status' => 'in_review',
                 ],
                 [
                     'step' => 15,
@@ -191,8 +191,8 @@ class A1WorkflowSeeder extends Seeder
                     'status' => 'locked',
                     'meta' => [
                         'signing_p1_type' => 'initiator',
-                        'signing_p2_type' => 'director'
-                    ]
+                        'signing_p2_type' => 'director',
+                    ],
                 ],
                 [
                     'step' => 16,
@@ -202,7 +202,7 @@ class A1WorkflowSeeder extends Seeder
                     'roles' => ['Staff'],
                     'dept_id' => $legalDeptId,
                     'reject_target' => null,
-                    'status' => 'archived'
+                    'status' => 'archived',
                 ],
             ];
 
@@ -260,7 +260,7 @@ class A1WorkflowSeeder extends Seeder
                         'name' => $name,
                         'workflow_id' => $workflow->id,
                         'is_active' => true,
-                    ]
+                    ],
                 );
             }
 
@@ -273,22 +273,28 @@ class A1WorkflowSeeder extends Seeder
                 switch (strtoupper($step->step_type)) {
                     case 'APPROVAL':
                         $actions = ['approve', 'reject', 'return'];
+
                         break;
                     case 'REVIEW':
                         $actions = ['review', 'return'];
+
                         break;
                     case 'UPLOAD':
                     case 'SIGNING':
                         $actions = ['upload', 'return'];
+
                         break;
                     case 'DRAFTING':
                         $actions = ($step->step === 1) ? ['approve'] : ['approve', 'assign'];
+
                         break;
                     case 'CLOSING':
                         $actions = ['approve'];
+
                         break;
                     default:
                         $actions = ['approve', 'reject'];
+
                         break;
                 }
                 $step->update(['allowed_actions' => $actions]);

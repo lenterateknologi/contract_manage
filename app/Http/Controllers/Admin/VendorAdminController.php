@@ -15,18 +15,18 @@ class VendorAdminController extends Controller
     {
         $query = Vendor::query()
             ->when($request->search, function ($q, $search) {
-                $q->where(function($qq) use ($search) {
+                $q->where(function ($qq) use ($search) {
                     $qq->where('name', 'ilike', "%{$search}%")
-                       ->orWhere('code', 'ilike', "%{$search}%")
-                       ->orWhere('category', 'ilike', "%{$search}%")
-                       ->orWhere('email', 'ilike', "%{$search}%");
+                        ->orWhere('code', 'ilike', "%{$search}%")
+                        ->orWhere('category', 'ilike', "%{$search}%")
+                        ->orWhere('email', 'ilike', "%{$search}%");
                 });
             })
             ->when($request->category, function ($q, $category) {
-                $q->whereIn('category', (array)$category);
+                $q->whereIn('category', (array) $category);
             })
             ->when($request->is_active, function ($q, $active) {
-                $bools = collect((array)$active)->map(fn($v) => filter_var($v, FILTER_VALIDATE_BOOLEAN))->toArray();
+                $bools = collect((array) $active)->map(fn ($v) => filter_var($v, FILTER_VALIDATE_BOOLEAN))->toArray();
                 $q->whereIn('is_active', $bools);
             });
 
@@ -56,6 +56,7 @@ class VendorAdminController extends Controller
     public function edit(Vendor $vendor)
     {
         $vendor->load('documents');
+
         return Inertia::render('admin/vendors/form', [
             'vendor' => $vendor,
             'breadcrumbs' => [
@@ -159,6 +160,7 @@ class VendorAdminController extends Controller
         }
 
         $document->delete();
+
         return back()->with('success', 'Dokumen berhasil dihapus.');
     }
 
@@ -172,9 +174,12 @@ class VendorAdminController extends Controller
     public function bulkDestroy(Request $request)
     {
         $ids = $request->input('ids', []);
-        if (empty($ids)) return back();
+        if (empty($ids)) {
+            return back();
+        }
 
         Vendor::whereIn('id', $ids)->delete();
+
         return back()->with('success', count($ids) . ' vendor berhasil dihapus.');
     }
 }

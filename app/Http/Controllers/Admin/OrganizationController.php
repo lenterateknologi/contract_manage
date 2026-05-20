@@ -17,11 +17,11 @@ class OrganizationController extends Controller
     public function companyGroups(Request $request)
     {
         return Inertia::render('admin/index', [
-            'currentView'  => 'company-groups',
-            'companyGroups'=> CompanyGroup::with(['companies.region'])->get(),
-            'regions'      => Region::all(),
-            'filters'      => $request->only(['search', 'action', 'id']),
-            'breadcrumbs'  => [
+            'currentView' => 'company-groups',
+            'companyGroups' => CompanyGroup::with(['companies.region'])->get(),
+            'regions' => Region::all(),
+            'filters' => $request->only(['search', 'action', 'id']),
+            'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Data Group', 'href' => route('admin.company-groups'), 'icon' => 'Users'],
             ],
@@ -31,30 +31,33 @@ class OrganizationController extends Controller
     public function storeCompanyGroup(Request $request)
     {
         $data = $request->validate([
-            'name'        => 'required|string|max:255',
-            'code'        => 'required|string|max:50|unique:m_company_groups,code',
+            'name' => 'required|string|max:255',
+            'code' => 'required|string|max:50|unique:m_company_groups,code',
             'description' => 'nullable|string',
         ]);
         $data['created_by'] = $data['updated_by'] = Auth::id();
         CompanyGroup::create($data);
+
         return back()->with('success', 'Group berhasil dibuat.');
     }
 
     public function updateCompanyGroup(Request $request, CompanyGroup $group)
     {
         $data = $request->validate([
-            'name'        => 'required|string|max:255',
-            'code'        => 'required|string|max:50|unique:m_company_groups,code,'.$group->id,
+            'name' => 'required|string|max:255',
+            'code' => 'required|string|max:50|unique:m_company_groups,code,' . $group->id,
             'description' => 'nullable|string',
         ]);
         $data['updated_by'] = Auth::id();
         $group->update($data);
+
         return back()->with('success', 'Group berhasil diperbarui.');
     }
 
     public function destroyCompanyGroup(CompanyGroup $group)
     {
         $group->delete();
+
         return back()->with('success', 'Group berhasil dihapus.');
     }
 
@@ -62,6 +65,7 @@ class OrganizationController extends Controller
     {
         $ids = $request->validate(['ids' => 'required|array'])['ids'];
         CompanyGroup::whereIn('id', $ids)->delete();
+
         return back()->with('success', 'Grup terpilih berhasil dihapus.');
     }
 
@@ -70,11 +74,11 @@ class OrganizationController extends Controller
     public function regions(Request $request)
     {
         return Inertia::render('admin/index', [
-            'currentView'   => 'regions',
-            'regions'       => Region::with(['companies.group'])->get(),
+            'currentView' => 'regions',
+            'regions' => Region::with(['companies.group'])->get(),
             'companyGroups' => CompanyGroup::all(),
-            'filters'       => $request->only(['search', 'action', 'id', 'company_group_id']),
-            'breadcrumbs'   => [
+            'filters' => $request->only(['search', 'action', 'id', 'company_group_id']),
+            'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Data Region', 'href' => route('admin.regions'), 'icon' => 'GitBranch'],
             ],
@@ -84,34 +88,37 @@ class OrganizationController extends Controller
     public function storeRegion(Request $request)
     {
         $data = $request->validate([
-            'name'             => 'required|string|max:255',
-            'code'             => 'required|string|max:50|unique:m_regions,code',
-            'alias'            => 'nullable|string|max:50',
+            'name' => 'required|string|max:255',
+            'code' => 'required|string|max:50|unique:m_regions,code',
+            'alias' => 'nullable|string|max:50',
             'id_portal_master' => 'nullable|string|max:50',
-            'description'      => 'nullable|string',
+            'description' => 'nullable|string',
         ]);
         $data['created_by'] = $data['updated_by'] = Auth::id();
         Region::create($data);
+
         return back()->with('success', 'Region berhasil dibuat.');
     }
 
     public function updateRegion(Request $request, Region $region)
     {
         $data = $request->validate([
-            'name'             => 'required|string|max:255',
-            'code'             => 'required|string|max:50|unique:m_regions,code,'.$region->id,
-            'alias'            => 'nullable|string|max:50',
+            'name' => 'required|string|max:255',
+            'code' => 'required|string|max:50|unique:m_regions,code,' . $region->id,
+            'alias' => 'nullable|string|max:50',
             'id_portal_master' => 'nullable|string|max:50',
-            'description'      => 'nullable|string',
+            'description' => 'nullable|string',
         ]);
         $data['updated_by'] = Auth::id();
         $region->update($data);
+
         return back()->with('success', 'Region berhasil diperbarui.');
     }
 
     public function destroyRegion(Region $region)
     {
         $region->delete();
+
         return back()->with('success', 'Region berhasil dihapus.');
     }
 
@@ -119,6 +126,7 @@ class OrganizationController extends Controller
     {
         $ids = $request->validate(['ids' => 'required|array'])['ids'];
         Region::whereIn('id', $ids)->delete();
+
         return back()->with('success', 'Wilayah terpilih berhasil dihapus.');
     }
 
@@ -127,12 +135,12 @@ class OrganizationController extends Controller
     public function companies(Request $request)
     {
         return Inertia::render('admin/index', [
-            'currentView'   => 'companies',
-            'companies'     => Company::with(['region', 'group'])->get(),
-            'regions'       => Region::all(),
+            'currentView' => 'companies',
+            'companies' => Company::with(['region', 'group'])->get(),
+            'regions' => Region::all(),
             'companyGroups' => CompanyGroup::all(),
-            'filters'       => $request->only(['search', 'action', 'id', 'region_id']),
-            'breadcrumbs'   => [
+            'filters' => $request->only(['search', 'action', 'id', 'region_id']),
+            'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Data Company', 'href' => route('admin.companies'), 'icon' => 'Building2'],
             ],
@@ -143,13 +151,14 @@ class OrganizationController extends Controller
     {
         $data = $request->validate([
             'company_group_id' => 'required|uuid|exists:m_company_groups,id',
-            'region_id'        => 'required|uuid|exists:m_regions,id',
-            'name'             => 'required|string|max:255',
-            'code'             => 'required|string|max:50|unique:m_companies,code',
-            'address'          => 'nullable|string',
+            'region_id' => 'required|uuid|exists:m_regions,id',
+            'name' => 'required|string|max:255',
+            'code' => 'required|string|max:50|unique:m_companies,code',
+            'address' => 'nullable|string',
         ]);
         $data['created_by'] = $data['updated_by'] = Auth::id();
         Company::create($data);
+
         return back()->with('success', 'Company berhasil dibuat.');
     }
 
@@ -157,19 +166,21 @@ class OrganizationController extends Controller
     {
         $data = $request->validate([
             'company_group_id' => 'required|uuid|exists:m_company_groups,id',
-            'region_id'        => 'required|uuid|exists:m_regions,id',
-            'name'             => 'required|string|max:255',
-            'code'             => 'required|string|max:50|unique:m_companies,code,'.$company->id,
-            'address'          => 'nullable|string',
+            'region_id' => 'required|uuid|exists:m_regions,id',
+            'name' => 'required|string|max:255',
+            'code' => 'required|string|max:50|unique:m_companies,code,' . $company->id,
+            'address' => 'nullable|string',
         ]);
         $data['updated_by'] = Auth::id();
         $company->update($data);
+
         return back()->with('success', 'Company berhasil diperbarui.');
     }
 
     public function destroyCompany(Company $company)
     {
         $company->delete();
+
         return back()->with('success', 'Company berhasil dihapus.');
     }
 
@@ -177,6 +188,7 @@ class OrganizationController extends Controller
     {
         $ids = $request->validate(['ids' => 'required|array'])['ids'];
         Company::whereIn('id', $ids)->delete();
+
         return back()->with('success', 'Perusahaan terpilih berhasil dihapus.');
     }
 }

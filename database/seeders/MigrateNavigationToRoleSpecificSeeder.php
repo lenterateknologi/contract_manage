@@ -25,7 +25,7 @@ class MigrateNavigationToRoleSpecificSeeder extends Seeder
             foreach ($groups as $group) {
                 RoleModuleGroup::updateOrCreate(
                     ['role_id' => $role->id, 'module_group_id' => $group->id],
-                    ['sort_number' => $group->sort_number ?? 0]
+                    ['sort_number' => $group->sort_number ?? 0],
                 );
             }
 
@@ -39,7 +39,7 @@ class MigrateNavigationToRoleSpecificSeeder extends Seeder
                 if ($access) {
                     $access->update([
                         'module_group_id' => $module->module_group_id,
-                        'sort_number' => $module->sort_number ?? 0
+                        'sort_number' => $module->sort_number ?? 0,
                     ]);
                 }
             }

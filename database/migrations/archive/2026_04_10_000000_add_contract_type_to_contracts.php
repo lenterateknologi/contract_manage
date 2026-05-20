@@ -3,9 +3,8 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\DB;
 
-return new class extends Migration
+return new class() extends Migration
 {
     /**
      * Run the migrations.
@@ -13,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('contracts', function (Blueprint $table) {
-            if (!Schema::hasColumn('contracts', 'contract_type')) {
+            if (! Schema::hasColumn('contracts', 'contract_type')) {
                 $table->string('contract_type', 100)->default('Service Agreement')->index();
             }
         });

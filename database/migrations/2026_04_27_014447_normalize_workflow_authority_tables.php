@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
+return new class() extends Migration
 {
     /**
      * Run the migrations.
@@ -62,7 +62,8 @@ return new class extends Migration
         Schema::table('m_workflow_steps', function (Blueprint $table) {
             try {
                 $table->dropIndex('m_workflow_steps_role_index');
-            } catch (\Exception $e) {}
+            } catch (Exception $e) {
+            }
 
             $columns = ['role', 'department_ids', 'user_ids', 'department_id'];
             foreach ($columns as $col) {

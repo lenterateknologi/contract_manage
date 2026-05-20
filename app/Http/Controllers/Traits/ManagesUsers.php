@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Traits;
 
-use App\Models\User;
-use App\Models\Role;
 use App\Models\Department;
+use App\Models\Role;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -13,29 +13,29 @@ use OpenApi\Attributes as OA;
 trait ManagesUsers
 {
     #[OA\Get(
-        path: "/api/admin/users",
-        summary: "Get list of users",
-        tags: ["Admin"],
-        security: [["bearerAuth" => []]],
+        path: '/api/admin/users',
+        summary: 'Get list of users',
+        tags: ['Admin'],
+        security: [['bearerAuth' => []]],
         responses: [
-            new OA\Response(response: 200, description: "List of users")
-        ]
+            new OA\Response(response: 200, description: 'List of users'),
+        ],
     )]
     public function users(Request $request)
     {
         $query = User::with('department')
             ->when($request->search, function ($q, $search) {
-                $q->where(function($qq) use ($search) {
+                $q->where(function ($qq) use ($search) {
                     $qq->where('name', 'ilike', "%{$search}%")
-                       ->orWhere('email', 'ilike', "%{$search}%")
-                       ->orWhere('username', 'ilike', "%{$search}%");
+                        ->orWhere('email', 'ilike', "%{$search}%")
+                        ->orWhere('username', 'ilike', "%{$search}%");
                 });
             })
             ->when($request->role, function ($q, $role) {
-                $q->whereIn('role', (array)$role);
+                $q->whereIn('role', (array) $role);
             })
             ->when($request->department_id, function ($q, $deptId) {
-                $q->whereIn('department_id', (array)$deptId);
+                $q->whereIn('department_id', (array) $deptId);
             });
 
         if ($request->wantsJson()) {
@@ -89,8 +89,8 @@ trait ManagesUsers
     {
         $data = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:m_users,email,'.$user->id,
-            'username' => 'required|string|max:20|unique:m_users,username,'.$user->id,
+            'email' => 'required|email|unique:m_users,email,' . $user->id,
+            'username' => 'required|string|max:20|unique:m_users,username,' . $user->id,
             'role' => 'required|string',
             'position' => 'nullable|string',
             'phone' => 'nullable|string',
@@ -131,7 +131,9 @@ trait ManagesUsers
     public function bulkDestroyUser(Request $request)
     {
         $ids = $request->input('ids', []);
-        if (empty($ids)) return back();
+        if (empty($ids)) {
+            return back();
+        }
 
         // Prevent deleting yourself
         if (in_array(Auth::id(), $ids)) {
@@ -139,6 +141,7 @@ trait ManagesUsers
         }
 
         User::whereIn('id', $ids)->delete();
+
         return back()->with('success', count($ids) . ' pengguna berhasil dihapus.');
     }
 }

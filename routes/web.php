@@ -6,14 +6,12 @@ use App\Http\Controllers\Admin\VendorAdminController;
 use App\Http\Controllers\Admin\WorkflowAdminController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ContractController;
-use App\Http\Controllers\ContractMessageController;
 use App\Http\Controllers\EmailTestController;
 use App\Http\Controllers\FormTemplateController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TemplateController;
 use App\Models\Contract;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -43,7 +41,6 @@ Route::get('/api/contracts/{id}/audit-trail/document/print', [ContractController
     ->name('contracts.audit.document.print')
     ->middleware('signed');
 
-
 Route::middleware(['auth'])->group(function () {
 
     Route::get('dashboard', [ContractController::class, 'contractsView'])->defaults('view', 'dashboard')->name('dashboard');
@@ -58,8 +55,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('my-contracts', [ContractController::class, 'contractsView'])->defaults('view', 'mine'); // Backward compat
 
     Route::get('contracts/{id}', [ContractController::class, 'showView'])->name('contracts.show');
-
-
 
     // Version Comparison for any authorized user
     Route::get('/admin/contracts/{id}/form-submissions/{type}/compare', [ContractController::class, 'compareFormVersions'])->name('contracts.form-submissions.compare');
@@ -149,7 +144,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/workflows/{workflow}/steps', [WorkflowAdminController::class, 'steps'])->name('admin.workflows.steps');
         Route::post('/workflows/{workflow}/steps', [WorkflowAdminController::class, 'updateSteps'])->name('admin.workflows.steps.update');
 
-
         Route::get('/reports/analytics', function () {
             return Inertia::render('admin/reports/analytics', [
                 'breadcrumbs' => [
@@ -170,7 +164,6 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/api/reports/data', [ReportController::class, 'index']);
         Route::get('/api/reports/export', [ReportController::class, 'exportCsv']);
         Route::get('/api/reports/audit/export', [ReportController::class, 'exportAuditCsv']);
-
 
         // Roles & Access
         Route::get('/roles', [AdminController::class, 'roles'])->name('admin.roles');
@@ -231,14 +224,10 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/form-templates/{template}/duplicate', [FormTemplateController::class, 'duplicate'])->name('admin.form-templates.duplicate');
         Route::patch('/form-templates/{template}/metadata', [FormTemplateController::class, 'updateMetadata'])->name('admin.form-templates.metadata.update');
 
-
-
-
         // API aliases have been moved to api.php
 
     });
 });
 
-
-require __DIR__.'/settings.php';
-require __DIR__.'/auth.php';
+require __DIR__ . '/settings.php';
+require __DIR__ . '/auth.php';

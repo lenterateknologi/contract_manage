@@ -22,7 +22,7 @@ class NumberingFormat extends Model
     public static function generateNextNumber(string $module, array $context = []): string
     {
         $format = self::where('module', $module)->where('is_active', true)->first();
-        if (!$format) {
+        if (! $format) {
             return strtoupper($module) . '-' . date('Y') . '-' . strtoupper(\Illuminate\Support\Str::random(5));
         }
 

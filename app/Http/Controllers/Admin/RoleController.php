@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Admin\RoleAccessAction;
 use App\Http\Controllers\Controller;
-use App\Models\Role;
 use App\Models\Module;
 use App\Models\ModuleGroup;
-use App\Actions\Admin\RoleAccessAction;
+use App\Models\Role;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use OpenApi\Attributes as OA;
@@ -14,21 +14,21 @@ use OpenApi\Attributes as OA;
 class RoleController extends Controller
 {
     #[OA\Get(
-        path: "/api/admin/roles",
-        summary: "Get list of roles",
-        tags: ["Admin"],
-        security: [["bearerAuth" => []]],
+        path: '/api/admin/roles',
+        summary: 'Get list of roles',
+        tags: ['Admin'],
+        security: [['bearerAuth' => []]],
         responses: [
-            new OA\Response(response: 200, description: "List of roles")
-        ]
+            new OA\Response(response: 200, description: 'List of roles'),
+        ],
     )]
     public function index(Request $request)
     {
         $query = Role::query()
             ->when($request->search, function ($q, $search) {
-                $q->where(function($qq) use ($search) {
+                $q->where(function ($qq) use ($search) {
                     $qq->where('name', 'ilike', "%{$search}%")
-                       ->orWhere('description', 'ilike', "%{$search}%");
+                        ->orWhere('description', 'ilike', "%{$search}%");
                 });
             })
             ->when($request->created_from, function ($q, $from) {
@@ -72,7 +72,7 @@ class RoleController extends Controller
     public function update(Request $request, Role $role)
     {
         $data = $request->validate([
-            'name' => 'required|string|max:255|unique:m_roles,name,'.$role->id,
+            'name' => 'required|string|max:255|unique:m_roles,name,' . $role->id,
             'description' => 'nullable|string',
         ]);
 
@@ -99,9 +99,12 @@ class RoleController extends Controller
     public function bulkDestroy(Request $request)
     {
         $ids = $request->input('ids', []);
-        if (empty($ids)) return back();
+        if (empty($ids)) {
+            return back();
+        }
 
         Role::whereIn('id', $ids)->delete();
+
         return back()->with('success', count($ids) . ' role berhasil dihapus.');
     }
 
@@ -115,6 +118,7 @@ class RoleController extends Controller
         $modules->transform(function ($module) {
             $module->access = $module->accessModules->first();
             unset($module->accessModules);
+
             return $module;
         });
 

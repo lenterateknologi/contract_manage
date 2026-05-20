@@ -2,10 +2,10 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
+return new class() extends Migration
 {
     /**
      * Run the migrations.
@@ -24,7 +24,7 @@ return new class extends Migration
 
         // Seed default format
         DB::table('m_numbering_formats')->insert([
-            'id' => \Illuminate\Support\Str::uuid(),
+            'id' => Illuminate\Support\Str::uuid(),
             'module' => 'contract',
             'format_pattern' => '{{nomor}}/{{tanggal}}-{{bulan}}/{{kode_departemen}}/{{kode_perjanjian}}/{{CMS}}/{{tahun}}',
             'current_number' => 0,

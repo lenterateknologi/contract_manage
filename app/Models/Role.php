@@ -11,6 +11,7 @@ class Role extends Model
     protected $table = 'm_roles';
 
     use SoftDeletes;
+
     public $incrementing = false;
 
     protected $keyType = 'string';

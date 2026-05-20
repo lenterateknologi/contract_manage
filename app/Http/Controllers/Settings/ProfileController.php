@@ -19,15 +19,15 @@ class ProfileController extends Controller
     public function edit(Request $request): Response
     {
         $user = $request->user();
-        
+
         // Fetch recent contracts created by user or where user is an approver
         $recentContracts = \App\Models\Contract::where('created_by', $user->id)
-            ->orWhereHas('approvals', fn($q) => $q->where('user_id', $user->id))
+            ->orWhereHas('approvals', fn ($q) => $q->where('user_id', $user->id))
             ->with(['contractType', 'creator', 'workflow', 'approvals'])
             ->latest()
             ->take(10)
             ->get()
-            ->map(fn($c) => [
+            ->map(fn ($c) => [
                 'id' => $c->id,
                 'contract_no' => $c->contract_no,
                 'title' => $c->title,
@@ -42,7 +42,7 @@ class ProfileController extends Controller
             ->where('id', '!=', $user->id)
             ->take(8)
             ->get()
-            ->map(fn($u) => [
+            ->map(fn ($u) => [
                 'id' => $u->id,
                 'name' => $u->name,
                 'initials' => $u->initials,

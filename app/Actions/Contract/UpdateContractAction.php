@@ -12,7 +12,7 @@ class UpdateContractAction
     {
         $contract->update($validated);
 
-        if (!empty($validated['contract_type_id'])) {
+        if (! empty($validated['contract_type_id'])) {
             $contract->contract_type = $contract->contractType?->name ?? $contract->contract_type;
             $contract->save();
         }

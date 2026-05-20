@@ -3,7 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
-return new class extends Migration
+return new class() extends Migration
 {
     /**
      * Run the migrations.
@@ -16,25 +16,27 @@ return new class extends Migration
 
         DB::statement('CREATE EXTENSION IF NOT EXISTS "pgcrypto"');
 
-        DB::statement(<<<'SQL'
-            CREATE OR REPLACE FUNCTION set_jobs_uuid()
-            RETURNS TRIGGER AS $$
-            BEGIN
-                IF NEW.id IS NULL THEN
-                    NEW.id := gen_random_uuid();
-                END IF;
-                RETURN NEW;
-            END;
-            $$ LANGUAGE plpgsql;
-        SQL
+        DB::statement(
+            <<<'SQL'
+                    CREATE OR REPLACE FUNCTION set_jobs_uuid()
+                    RETURNS TRIGGER AS $$
+                    BEGIN
+                        IF NEW.id IS NULL THEN
+                            NEW.id := gen_random_uuid();
+                        END IF;
+                        RETURN NEW;
+                    END;
+                    $$ LANGUAGE plpgsql;
+                SQL
         );
 
-        DB::statement(<<<'SQL'
-            CREATE TRIGGER trigger_set_jobs_uuid
-            BEFORE INSERT ON jobs
-            FOR EACH ROW
-            EXECUTE FUNCTION set_jobs_uuid();
-        SQL
+        DB::statement(
+            <<<'SQL'
+                    CREATE TRIGGER trigger_set_jobs_uuid
+                    BEFORE INSERT ON jobs
+                    FOR EACH ROW
+                    EXECUTE FUNCTION set_jobs_uuid();
+                SQL
         );
     }
 

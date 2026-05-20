@@ -2,12 +2,12 @@
 
 namespace App\Services;
 
-use App\Models\Contract;
-use App\Models\Workflow;
-use App\Models\WorkflowStep;
 use App\Models\Approval;
+use App\Models\Contract;
 use App\Models\ContractStatus;
 use App\Models\User;
+use App\Models\Workflow;
+use App\Models\WorkflowStep;
 use App\Services\Traits\EvaluatesWorkflowSteps;
 use Illuminate\Support\Facades\Auth;
 
@@ -16,6 +16,7 @@ class ContractWorkflowService
     use EvaluatesWorkflowSteps;
 
     protected SLAService $slaService;
+
     protected ContractWorkflowQueryService $queryService;
 
     public function __construct(SLAService $slaService, ContractWorkflowQueryService $queryService)
@@ -31,22 +32,20 @@ class ContractWorkflowService
         $topic = $metadata['topic'] ?? ($contract->metadata['topic'] ?? 'perjanjian');
         $now = now();
 
-
         $workflow = null;
         if ($workflowId) {
             $workflow = Workflow::find($workflowId);
         }
 
-        if (!$workflow) {
+        if (! $workflow) {
             $taxRequired = $metadata['tax_required'] ?? ($contract->metadata['tax_required'] ?? false);
             $typeStr = $contract->contract_type ?: ($contract->contractType ? $contract->contractType->code : 'General');
             $workflow = Workflow::getDefaultByContractType($typeStr, (bool) $taxRequired);
         }
 
-        if (!$workflow) {
+        if (! $workflow) {
             throw new \Exception('Alur kerja tidak ditemukan dan tidak ada alur default untuk tipe kontrak ini.');
         }
-
 
         if (strtolower($topic) === 'nda') {
             $contract->update([
@@ -65,7 +64,6 @@ class ContractWorkflowService
             return $contract->fresh();
         }
 
-
         $draftingHours = $workflow->sla_drafting_hours ?: 72;
         $totalHours = $workflow->sla_total_hours ?: 240;
         $cutoffHour = $workflow->sla_cutoff_hour ?: 16;
@@ -75,7 +73,6 @@ class ContractWorkflowService
         if (strtolower($topic) !== 'review') {
             $totalDeadline = $this->slaService->calculateBusinessDeadline($now, $totalHours, $cutoffHour);
         }
-
 
         $metadata = array_merge($contract->metadata ?? [], $metadata, [
             'tax_required' => $metadata['tax_required'] ?? ($contract->metadata['tax_required'] ?? false),
@@ -88,27 +85,24 @@ class ContractWorkflowService
         $contract->update(['metadata' => $metadata]);
         $contract = $contract->fresh();
 
-
         $contract->approvals()->delete();
-
 
         $firstStep = $workflow->steps()->orderBy('step')->first();
 
-
         while ($firstStep) {
 
-            if (!$this->shouldExecuteStep($contract, $firstStep)) {
+            if (! $this->shouldExecuteStep($contract, $firstStep)) {
                 $firstStep = $this->findNextValidStep($contract, $firstStep);
+
                 continue;
             }
 
             break;
         }
 
-        if (!$firstStep) {
+        if (! $firstStep) {
             throw new \Exception('Tidak ada tahapan alur kerja yang valid untuk permintaan ini.');
         }
-
 
         $contract->update([
             'workflow_id' => $workflow->id,
@@ -117,9 +111,7 @@ class ContractWorkflowService
             'submitted_at' => $firstStep->step === 1 ? $contract->submitted_at : now(),
         ]);
 
-
         $this->createApprovalForStep($contract, $firstStep);
-
 
         if ($contract->initiated_by_id && $contract->initiated_by_id !== $contract->created_by) {
             if ($contract->initiator) {
@@ -127,9 +119,7 @@ class ContractWorkflowService
             }
         }
 
-
         $this->queryService->logHistory($contract, 'CONTRACT_SENT', 'Kontrak dikirim untuk persetujuan', Auth::id());
-
 
         $this->handleAutoApproval($contract, Auth::user());
 
@@ -149,7 +139,7 @@ class ContractWorkflowService
     public function createApprovalForStep(Contract $contract, WorkflowStep $step): void
     {
 
-        $roles = (array)$step->role;
+        $roles = (array) $step->role;
         $lowerRoles = array_map('strtolower', $roles);
         $approvers = collect();
 
@@ -171,7 +161,6 @@ class ContractWorkflowService
             $lowerRoles = ['vp'];
         }
 
-
         if ($step->step_category === 'joint_upload') {
             $metadata = $contract->metadata ?? [];
             $order = $metadata['step_12_order'] ?? null;
@@ -179,7 +168,7 @@ class ContractWorkflowService
 
             if ($order) {
                 $remaining = array_diff($order, $finished);
-                if (!empty($remaining)) {
+                if (! empty($remaining)) {
                     $nextActorKey = array_values($remaining)[0];
                     if ($nextActorKey === 'initiator') {
                         $approvers = collect([$contract->initiator]);
@@ -194,7 +183,6 @@ class ContractWorkflowService
                 }
             }
         }
-
 
         if ($step->step_type === 'SIGNING') {
             $metadata = $contract->metadata ?? [];
@@ -225,7 +213,6 @@ class ContractWorkflowService
             }
         }
 
-
         if ($approvers->isEmpty()) {
             if ($step->approver_type === 'atasan') {
 
@@ -251,15 +238,13 @@ class ContractWorkflowService
 
                     $query = User::whereIn('role', $roles);
 
+                    $targetDeptIds = ! empty($step->department_ids) ? $step->department_ids : ($step->department_id ? [$step->department_id] : []);
 
-                    $targetDeptIds = !empty($step->department_ids) ? $step->department_ids : ($step->department_id ? [$step->department_id] : []);
-
-                    if (!empty($targetDeptIds)) {
+                    if (! empty($targetDeptIds)) {
                         $query->whereIn('department_id', $targetDeptIds);
                     }
 
                     $approvers = $query->get();
-
 
                     if ($approvers->isEmpty()) {
                         $approvers = User::whereIn('role', $roles)->get();
@@ -267,7 +252,6 @@ class ContractWorkflowService
                 }
             }
         }
-
 
         foreach ($approvers as $approver) {
             Approval::create([
@@ -280,7 +264,7 @@ class ContractWorkflowService
                 'status' => 'pending',
                 'created_by' => Auth::id(),
                 'updated_by' => Auth::id(),
-                'sequence'   => $step->step,
+                'sequence' => $step->step,
             ]);
         }
     }
@@ -291,12 +275,11 @@ class ContractWorkflowService
     public function approveContract(Contract $contract, Approval $approval, ?string $comment = null, ?string $attachmentPath = null, ?string $assignedPicId = null, ?string $executionOrder = null): Contract
     {
 
-        if (!in_array($approval->status, ['pending', 'waiting'])) {
+        if (! in_array($approval->status, ['pending', 'waiting'])) {
             return $contract;
         }
 
         $isRoleBased = $approval->workflowStep->approver_type === 'role';
-
 
         if ($isRoleBased) {
             $alreadyApproved = $contract->approvals()
@@ -307,16 +290,14 @@ class ContractWorkflowService
             if ($alreadyApproved) {
 
                 $approval->delete();
+
                 return $contract;
             }
         }
 
-
         $approval->approve($comment, $attachmentPath);
 
-
         $this->queryService->logHistory($contract, 'APPROVAL_APPROVED', "Disetujui oleh {$approval->approver_name} ({$approval->role})", Auth::id());
-
 
         if ($assignedPicId) {
             $metadata = $contract->metadata ?? [];
@@ -326,15 +307,12 @@ class ContractWorkflowService
             $contract->update([
                 'assigned_pic_id' => $assignedPicId,
                 'assigned_by_id' => Auth::id(),
-                'metadata' => $metadata
+                'metadata' => $metadata,
             ]);
 
             $pic = User::find($assignedPicId);
-            $this->queryService->logHistory($contract, 'WORKFLOW_ASSIGNED', "PIC ditugaskan ke: " . ($pic ? $pic->name : $assignedPicId), Auth::id());
+            $this->queryService->logHistory($contract, 'WORKFLOW_ASSIGNED', 'PIC ditugaskan ke: ' . ($pic ? $pic->name : $assignedPicId), Auth::id());
         }
-
-
-
 
         $currentStepApprovals = $contract->approvals()
             ->where('workflow_step_id', $approval->workflow_step_id)
@@ -343,15 +321,13 @@ class ContractWorkflowService
         $isRoleBased = $approval->workflowStep->approver_type === 'role';
 
         $allApproved = $isRoleBased
-            ? $currentStepApprovals->contains(fn($a) => $a->status === 'approved')
-            : $currentStepApprovals->every(fn($a) => $a->status === 'approved');
-
+            ? $currentStepApprovals->contains(fn ($a) => $a->status === 'approved')
+            : $currentStepApprovals->every(fn ($a) => $a->status === 'approved');
 
         if ($approval->workflowStep->step_category === 'joint_upload') {
             $metadata = $contract->metadata ?? [];
 
-
-            if (!isset($metadata['step_12_order'])) {
+            if (! isset($metadata['step_12_order'])) {
                 $order = $executionOrder ?? 'legal_first';
                 $metadata['step_12_order'] = ($order === 'initiator_first') ? ['initiator', 'legal'] : ['legal', 'initiator'];
                 $metadata['step_12_finished'] = [];
@@ -361,12 +337,12 @@ class ContractWorkflowService
                 }
 
                 $contract->update(['metadata' => $metadata]);
-                $this->queryService->logHistory($contract, 'WORKFLOW_ORDER_SET', "Urutan penyelesaian diatur: " . ($order === 'initiator_first' ? 'Inisiator dulu' : 'Legal dulu'), Auth::id());
-
+                $this->queryService->logHistory($contract, 'WORKFLOW_ORDER_SET', 'Urutan penyelesaian diatur: ' . ($order === 'initiator_first' ? 'Inisiator dulu' : 'Legal dulu'), Auth::id());
 
                 $remaining = array_diff($metadata['step_12_order'], $metadata['step_12_finished']);
-                if (!empty($remaining)) {
+                if (! empty($remaining)) {
                     $this->createApprovalForStep($contract, $approval->workflowStep);
+
                     return $contract->fresh();
                 }
             } else {
@@ -380,16 +356,15 @@ class ContractWorkflowService
                 $contract->update(['metadata' => $metadata]);
 
                 $remaining = array_diff($metadata['step_12_order'], $metadata['step_12_finished']);
-                if (!empty($remaining)) {
+                if (! empty($remaining)) {
                     $this->createApprovalForStep($contract, $approval->workflowStep);
+
                     return $contract->fresh();
                 }
             }
 
-
             $allApproved = true;
         }
-
 
         if ($approval->workflowStep->step_type === 'SIGNING') {
             $metadata = $contract->metadata ?? [];
@@ -397,7 +372,6 @@ class ContractWorkflowService
             $phase = $signing['phase'] ?? 'SETUP';
 
             if ($phase === 'SETUP') {
-
 
                 $p1UserId = request()->input('p1_user_id');
                 $p2UserId = request()->input('p2_user_id');
@@ -417,6 +391,7 @@ class ContractWorkflowService
                 $this->queryService->logHistory($contract, 'SIGNING_SETUP', "Delegasi Penandatanganan: P1 ({$p1?->name}) & P2 ({$p2?->name})", Auth::id());
 
                 $this->createApprovalForStep($contract, $approval->workflowStep);
+
                 return $contract->fresh();
             } elseif ($phase === 'P1_PENDING') {
 
@@ -427,9 +402,10 @@ class ContractWorkflowService
                 $metadata['signing_state'] = $signing;
                 $contract->update(['metadata' => $metadata]);
 
-                $this->queryService->logHistory($contract, 'SIGNING_P1_COMPLETE', "Pihak 1 telah mengunggah dokumen ttd (Progres 50%)", Auth::id());
+                $this->queryService->logHistory($contract, 'SIGNING_P1_COMPLETE', 'Pihak 1 telah mengunggah dokumen ttd (Progres 50%)', Auth::id());
 
                 $this->createApprovalForStep($contract, $approval->workflowStep);
+
                 return $contract->fresh();
             } elseif ($phase === 'P2_PENDING') {
 
@@ -440,7 +416,7 @@ class ContractWorkflowService
                 $metadata['signing_state'] = $signing;
                 $contract->update(['metadata' => $metadata]);
 
-                $this->queryService->logHistory($contract, 'SIGNING_COMPLETED', "Penandatanganan selesai (Progres 100%)", Auth::id());
+                $this->queryService->logHistory($contract, 'SIGNING_COMPLETED', 'Penandatanganan selesai (Progres 100%)', Auth::id());
 
                 $allApproved = true;
             }
@@ -455,7 +431,6 @@ class ContractWorkflowService
                     ->delete();
             }
 
-
             $isLegalStep = str_contains(strtolower($approval->role), 'legal') ||
                           str_contains(strtolower($approval->workflowStep?->description ?? ''), 'legal');
 
@@ -465,7 +440,6 @@ class ContractWorkflowService
                 $metadata['drafting_finished_at'] = now()->toIso8601String();
                 $contract->update(['metadata' => $metadata]);
             }
-
 
             $nextStep = $this->findNextValidStep($contract, $approval->workflowStep);
 
@@ -480,17 +454,12 @@ class ContractWorkflowService
                     'status' => $nextStep->status ? $nextStep->status->code : $contract->status,
                 ]);
 
-
                 $this->createApprovalForStep($contract, $nextStep);
-
 
                 $this->queryService->logHistory($contract, 'WORKFLOW_ADVANCED', "Alur kerja berlanjut ke tahap {$nextStep->step}: {$nextStep->description}", Auth::id());
 
-
-
                 $this->handleAutoApproval($contract, Auth::user());
             } else {
-
 
                 $finalStatusId = $approval->workflowStep->status_id;
                 $finalStatus = $approval->workflowStep->status;
@@ -525,7 +494,6 @@ class ContractWorkflowService
 
         $approval->reject($reason, $attachmentPath);
 
-
         Approval::where('contract_id', $contract->id)
             ->where('workflow_step_id', $approval->workflow_step_id)
             ->where('status', 'pending')
@@ -544,7 +512,7 @@ class ContractWorkflowService
 
             if ($targetStep) {
                 $statusId = $targetStep->status_id;
-                if (!$statusId) {
+                if (! $statusId) {
                     $revisionStatus = ContractStatus::where('code', 'revision')->first();
                     $statusId = $revisionStatus?->id;
                 }
@@ -553,7 +521,6 @@ class ContractWorkflowService
                     'status_id' => $statusId,
                     'status' => $targetStep->status ? $targetStep->status->code : 'revision',
                 ]);
-
 
                 $this->createApprovalForStep($contract, $targetStep);
 
@@ -580,16 +547,14 @@ class ContractWorkflowService
                 'status_id' => $revisionStatus?->id,
                 'workflow_step_id' => $targetStep ? $targetStep->id : null,
             ]);
-            $description .= " Sent back to Initiator for revision at Step 1.";
+            $description .= ' Sent back to Initiator for revision at Step 1.';
         }
-
 
         $contract->approvals()
             ->where('workflow_step_id', $approval->workflow_step_id)
             ->where('status', 'pending')
             ->get()
-            ->each(fn($a) => $a->reject('Ditolak oleh ' . $approval->approver_name));
-
+            ->each(fn ($a) => $a->reject('Ditolak oleh ' . $approval->approver_name));
 
         $this->queryService->logHistory($contract, 'APPROVAL_REJECTED', $description, Auth::id());
 

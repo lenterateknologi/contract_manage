@@ -2,8 +2,8 @@
 
 namespace App\Actions\Contract;
 
-use App\Models\Contract;
 use App\Models\Approval;
+use App\Models\Contract;
 use App\Services\ContractWorkflowService;
 
 class RejectContractAction

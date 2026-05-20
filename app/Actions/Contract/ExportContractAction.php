@@ -2,10 +2,11 @@
 
 namespace App\Actions\Contract;
 
+use App\Jobs\GeneratePdfJob;
 use App\Models\Contract;
 use App\Models\ContractFormSubmission;
 use App\Models\FormTemplate;
-use App\Jobs\GeneratePdfJob;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -13,7 +14,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ExportContractAction
@@ -22,11 +22,21 @@ class ExportContractAction
     {
         $query = $contract->histories()->with('actor')->orderBy('created_at', 'desc');
 
-        if ($request->action) $query->where('action', $request->action);
-        if ($request->actor_id) $query->where('actor_id', $request->actor_id);
-        if ($request->date_from) $query->whereDate('created_at', '>=', $request->date_from);
-        if ($request->date_to) $query->whereDate('created_at', '<=', $request->date_to);
-        if ($request->search) $query->where('description', 'like', '%' . $request->search . '%');
+        if ($request->action) {
+            $query->where('action', $request->action);
+        }
+        if ($request->actor_id) {
+            $query->where('actor_id', $request->actor_id);
+        }
+        if ($request->date_from) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+        if ($request->date_to) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+        if ($request->search) {
+            $query->where('description', 'like', '%' . $request->search . '%');
+        }
 
         $histories = $query->get();
 
@@ -72,7 +82,7 @@ class ExportContractAction
 
             $params = array_merge($request->only(['status', 'role', 'department']), [
                 'id' => $contract->id,
-                'generated_by' => $userName
+                'generated_by' => $userName,
             ]);
 
             if (app()->environment('local')) {
@@ -85,28 +95,29 @@ class ExportContractAction
             $printUrl = URL::temporarySignedRoute(
                 'contracts.approval.document.print',
                 now()->addMinutes(30),
-                $params
+                $params,
             );
 
             $safeNo = Str::slug($contract->contract_no ?: 'contract');
-            $fileName = "Approval_Timeline_{$safeNo}_" . time() . ".pdf";
+            $fileName = "Approval_Timeline_{$safeNo}_" . time() . '.pdf';
 
             GeneratePdfJob::dispatch(
                 $jobId,
                 $printUrl,
-                $fileName
+                $fileName,
             );
 
             return response()->json([
                 'success' => true,
                 'job_id' => $jobId,
-                'message' => 'Laporan alur approval sedang diproses.'
+                'message' => 'Laporan alur approval sedang diproses.',
             ]);
         } catch (\Exception $e) {
-            Log::error("Failed to queue Approval Timeline PDF: " . $e->getMessage());
+            Log::error('Failed to queue Approval Timeline PDF: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal memproses laporan alur approval.'
+                'message' => 'Gagal memproses laporan alur approval.',
             ], 500);
         }
     }
@@ -126,8 +137,8 @@ class ExportContractAction
                     'search' => $request->search,
                     'actor_id' => $request->actor_id,
                     'date_from' => $request->date_from,
-                    'date_to' => $request->date_to
-                ]
+                    'date_to' => $request->date_to,
+                ],
             );
 
             if (app()->environment('local')) {
@@ -145,11 +156,12 @@ class ExportContractAction
 
             return response()->json([
                 'success' => true,
-                'job_id' => $jobId
+                'job_id' => $jobId,
             ]);
 
         } catch (\Exception $e) {
-            Log::critical("Audit PDF Queue Failure: " . $e->getMessage());
+            Log::critical('Audit PDF Queue Failure: ' . $e->getMessage());
+
             return response()->json(['message' => 'Gagal antrikan PDF: ' . $e->getMessage()], 500);
         }
     }
@@ -162,7 +174,7 @@ class ExportContractAction
             $printUrl = URL::temporarySignedRoute(
                 'contracts.audit.document.print',
                 now()->addMinutes(15),
-                ['id' => $contract->id, 'search' => $request->search, 'actor_id' => $request->actor_id, 'date_from' => $request->date_from, 'date_to' => $request->date_to]
+                ['id' => $contract->id, 'search' => $request->search, 'actor_id' => $request->actor_id, 'date_from' => $request->date_from, 'date_to' => $request->date_to],
             );
 
             if (app()->environment('local')) {
@@ -181,7 +193,7 @@ class ExportContractAction
                     '--no-first-run',
                     '--no-zygote',
                     '--single-process',
-                    '--disable-extensions'
+                    '--disable-extensions',
                 ])
                 ->timeout(180)
                 ->format('A4')
@@ -200,7 +212,7 @@ class ExportContractAction
             } else {
                 $finalPdf = $pdfContent->pdf();
 
-                if (!Storage::disk('local')->exists($pdfDir)) {
+                if (! Storage::disk('local')->exists($pdfDir)) {
                     Storage::disk('local')->makeDirectory($pdfDir);
                 }
                 Storage::disk('local')->put($pdfPath, $finalPdf);
@@ -216,10 +228,18 @@ class ExportContractAction
             $contract->load(['creator', 'contractType']);
 
             $query = $contract->histories()->with('actor');
-            if ($request->filled('search')) $query->where('description', 'like', '%' . $request->search . '%');
-            if ($request->filled('actor_id')) $query->where('actor_id', $request->actor_id);
-            if ($request->filled('date_from')) $query->whereDate('created_at', '>=', $request->date_from);
-            if ($request->filled('date_to')) $query->whereDate('created_at', '<=', $request->date_to);
+            if ($request->filled('search')) {
+                $query->where('description', 'like', '%' . $request->search . '%');
+            }
+            if ($request->filled('actor_id')) {
+                $query->where('actor_id', $request->actor_id);
+            }
+            if ($request->filled('date_from')) {
+                $query->whereDate('created_at', '>=', $request->date_from);
+            }
+            if ($request->filled('date_to')) {
+                $query->whereDate('created_at', '<=', $request->date_to);
+            }
             $histories = $query->orderBy('created_at', 'asc')->get();
 
             $pdf = Pdf::loadView('pdf.contract-audit', [
@@ -228,6 +248,7 @@ class ExportContractAction
                 'generated_at' => now()->format('d M Y H:i'),
                 'generated_by' => Auth::user()->name,
             ]);
+
             return $pdf->download("Audit_Trail_{$contract->contract_no}.pdf");
         }
     }
@@ -247,8 +268,9 @@ class ExportContractAction
             $template = $submission ? $submission->template : FormTemplate::where('document_type', $type)->first();
         }
 
-        if (!$template) {
+        if (! $template) {
             Log::error("Template not found in PDF Queue. Type: {$type}, Provided ID: " . ($templateId ?? 'none'));
+
             return response()->json(['message' => 'Template not found.'], 404);
         }
 
@@ -284,7 +306,7 @@ class ExportContractAction
             $printUrl = URL::temporarySignedRoute(
                 'admin.form-templates.render-adhoc',
                 now()->addMinutes(30),
-                ['key' => $cacheKey]
+                ['key' => $cacheKey],
             );
 
             if (app()->environment('local')) {
@@ -301,13 +323,14 @@ class ExportContractAction
 
             return response()->json([
                 'success' => true,
-                'job_id' => $jobId
+                'job_id' => $jobId,
             ]);
         } catch (\Exception $e) {
             Log::critical("PDF Queue Failure for ID {$contract->id}: " . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
-                'type' => $type
+                'type' => $type,
             ]);
+
             return response()->json([
                 'message' => 'Gagal antrikan PDF: ' . $e->getMessage(),
             ], 500);
@@ -320,7 +343,7 @@ class ExportContractAction
 
         $template = FormTemplate::where('document_type', $type)->first();
 
-        if (!$template) {
+        if (! $template) {
             return response()->json(['message' => "Form template $type not found."], 404);
         }
 
@@ -342,7 +365,7 @@ class ExportContractAction
             $formData = $this->applyInheritance($f1Data, $contract, $formData);
         }
 
-        if (!$formData && $type === 'f1') {
+        if (! $formData && $type === 'f1') {
             return response()->json(['message' => 'Data form belum diisi.'], 404);
         }
 
@@ -353,6 +376,7 @@ class ExportContractAction
 
         if (Storage::disk('local')->exists($pdfPath)) {
             $content = Storage::disk('local')->get($pdfPath);
+
             return response($content)
                 ->header('Content-Type', 'application/pdf')
                 ->header('Content-Disposition', "$disposition; filename=\"{$pdfFileName}\"");
@@ -362,7 +386,7 @@ class ExportContractAction
             $printUrl = URL::temporarySignedRoute(
                 'admin.form-templates.render-print',
                 now()->addMinutes(10),
-                ['template' => $template->id, 'data' => key_exists('id', $formData) ? json_encode($formData) : json_encode($formData)]
+                ['template' => $template->id, 'data' => array_key_exists('id', $formData) ? json_encode($formData) : json_encode($formData)],
             );
 
             if (app()->environment('local')) {
@@ -381,7 +405,7 @@ class ExportContractAction
                     '--no-first-run',
                     '--no-zygote',
                     '--single-process',
-                    '--disable-extensions'
+                    '--disable-extensions',
                 ])
                 ->timeout(180)
                 ->format('A4')
@@ -392,7 +416,7 @@ class ExportContractAction
 
             $finalPdf = $pdfContent->pdf();
 
-            if (!Storage::disk('local')->exists($pdfDir)) {
+            if (! Storage::disk('local')->exists($pdfDir)) {
                 Storage::disk('local')->makeDirectory($pdfDir);
             }
             Storage::disk('local')->put($pdfPath, $finalPdf);
@@ -417,6 +441,7 @@ class ExportContractAction
             if ($disposition === 'inline') {
                 return $pdf->stream($fileName);
             }
+
             return $pdf->download($fileName);
         }
     }
@@ -427,17 +452,17 @@ class ExportContractAction
 
         $inheritanceMap = [
             'meta_perjanjian_tentang' => 'meta_judul_kontrak',
-            'meta_f2_scope'           => 'meta_ringkasan_klausul',
-            'meta_f2_price'           => 'meta_nilai_transaksi',
-            'meta_f2_payment'         => 'meta_mekanisme_pembayaran',
-            'meta_f2_tenure'          => 'meta_masa_berlaku',
-            'meta_f2_location'        => 'meta_lokasi',
-            'perjanjian_tentang'      => 'meta_judul_kontrak',
-            'f2_scope'                => 'meta_ringkasan_klausul',
+            'meta_f2_scope' => 'meta_ringkasan_klausul',
+            'meta_f2_price' => 'meta_nilai_transaksi',
+            'meta_f2_payment' => 'meta_mekanisme_pembayaran',
+            'meta_f2_tenure' => 'meta_masa_berlaku',
+            'meta_f2_location' => 'meta_lokasi',
+            'perjanjian_tentang' => 'meta_judul_kontrak',
+            'f2_scope' => 'meta_ringkasan_klausul',
         ];
 
         foreach ($inheritanceMap as $f2Field => $f1Field) {
-            if (empty($formData[$f2Field]) && !empty($f1Data[$f1Field])) {
+            if (empty($formData[$f2Field]) && ! empty($f1Data[$f1Field])) {
                 $formData[$f2Field] = $f1Data[$f1Field];
             }
         }
@@ -447,31 +472,55 @@ class ExportContractAction
             'meta_p2_entity', 'meta_p2_signer', 'meta_p2_signer_position', 'meta_p2_alamat',
             'meta_judul_kontrak', 'meta_tgl_dibuat', 'meta_tipe_perjanjian', 'meta_nomor',
             'meta_topik', 'meta_sub_topik', 'meta_ringkasan_klausul',
-            'v_p1_entity', 'v_p2_entity'
+            'v_p1_entity', 'v_p2_entity',
         ];
         foreach ($f1PassthroughFields as $key) {
-            if (empty($formData[$key]) && !empty($f1Data[$key])) {
+            if (empty($formData[$key]) && ! empty($f1Data[$key])) {
                 $formData[$key] = $f1Data[$key];
             }
         }
 
-        if (empty($formData['meta_p1_entity']))   $formData['meta_p1_entity']   = 'PT. Lentera Teknologi';
-        if (empty($formData['meta_p1_signer']))   $formData['meta_p1_signer']   = $contract->initiator?->name ?? $contract->creator?->name ?? '';
-        if (empty($formData['meta_p1_signer_position'])) $formData['meta_p1_signer_position'] = $contract->initiator?->role ?? $contract->creator?->role ?? 'Direktur';
-        if (empty($formData['meta_p1_alamat']))   $formData['meta_p1_alamat']   = 'The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan';
+        if (empty($formData['meta_p1_entity'])) {
+            $formData['meta_p1_entity'] = 'PT. Lentera Teknologi';
+        }
+        if (empty($formData['meta_p1_signer'])) {
+            $formData['meta_p1_signer'] = $contract->initiator?->name ?? $contract->creator?->name ?? '';
+        }
+        if (empty($formData['meta_p1_signer_position'])) {
+            $formData['meta_p1_signer_position'] = $contract->initiator?->role ?? $contract->creator?->role ?? 'Direktur';
+        }
+        if (empty($formData['meta_p1_alamat'])) {
+            $formData['meta_p1_alamat'] = 'The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan';
+        }
 
         if ($contract->vendor_id && $contract->vendor) {
             $v = $contract->vendor;
-            if (empty($formData['meta_p2_entity']))          $formData['meta_p2_entity']          = $v->name;
-            if (empty($formData['meta_p2_signer']))          $formData['meta_p2_signer']          = $pic = $v->pic_name;
-            if (empty($formData['meta_p2_signer_position'])) $formData['meta_p2_signer_position'] = $v->pic_position;
-            if (empty($formData['meta_p2_alamat']))          $formData['meta_p2_alamat']          = $v->address;
+            if (empty($formData['meta_p2_entity'])) {
+                $formData['meta_p2_entity'] = $v->name;
+            }
+            if (empty($formData['meta_p2_signer'])) {
+                $formData['meta_p2_signer'] = $pic = $v->pic_name;
+            }
+            if (empty($formData['meta_p2_signer_position'])) {
+                $formData['meta_p2_signer_position'] = $v->pic_position;
+            }
+            if (empty($formData['meta_p2_alamat'])) {
+                $formData['meta_p2_alamat'] = $v->address;
+            }
         }
 
-        if (empty($formData['meta_nomor']))       $formData['meta_nomor']       = $contract->contract_no;
-        if (empty($formData['meta_topik']))       $formData['meta_topik']       = $contract->contractType?->name ?? $contract->contract_type ?? '';
-        if (empty($formData['meta_tipe_perjanjian'])) $formData['meta_tipe_perjanjian'] = $contract->transaction_type ?? 'Perjanjian Baru';
-        if (empty($formData['meta_tgl_dibuat']))  $formData['meta_tgl_dibuat']  = $contract->contract_date ? $contract->contract_date->toDateString() : now()->toDateString();
+        if (empty($formData['meta_nomor'])) {
+            $formData['meta_nomor'] = $contract->contract_no;
+        }
+        if (empty($formData['meta_topik'])) {
+            $formData['meta_topik'] = $contract->contractType?->name ?? $contract->contract_type ?? '';
+        }
+        if (empty($formData['meta_tipe_perjanjian'])) {
+            $formData['meta_tipe_perjanjian'] = $contract->transaction_type ?? 'Perjanjian Baru';
+        }
+        if (empty($formData['meta_tgl_dibuat'])) {
+            $formData['meta_tgl_dibuat'] = $contract->contract_date ? $contract->contract_date->toDateString() : now()->toDateString();
+        }
 
         return $formData;
     }

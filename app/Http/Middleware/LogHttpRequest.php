@@ -12,7 +12,7 @@ use Symfony\Component\HttpFoundation\Response;
 class LogHttpRequest
 {
     /**
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param Closure(Request): (Response) $next
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -27,7 +27,7 @@ class LogHttpRequest
         try {
             $url = $request->fullUrl();
             $parsedUrl = parse_url($url);
-            
+
             $body = $request->isMethod('get') ? null : json_encode($request->all());
             if ($body && strlen($body) > 60000) {
                 $body = substr($body, 0, 60000) . '... [TRUNCATED]';

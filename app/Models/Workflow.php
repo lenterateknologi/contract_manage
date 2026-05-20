@@ -2,14 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Workflow extends Model
 {
@@ -18,7 +17,9 @@ class Workflow extends Model
     use HasUuids, SoftDeletes;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
+
     protected $fillable = [
         'contract_type',
         'department_id',
@@ -61,6 +62,7 @@ class Workflow extends Model
     ];
 
     protected $with = ['initiatorRolesData', 'initiatorDepartmentsData', 'initiatorUsersData'];
+
     protected $appends = ['initiator_roles', 'initiator_users', 'initiator_departments'];
 
     public function initiatorRolesData(): HasMany
@@ -93,7 +95,7 @@ class Workflow extends Model
         return $this->initiatorUsersData->pluck('user_id')->toArray();
     }
 
-    public function department(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);
     }
@@ -115,15 +117,19 @@ class Workflow extends Model
             $workflow = self::where('contract_type', $contractType)
                 ->where('is_tax_involved', $taxRequired)
                 ->first();
-            
-            if ($workflow) return $workflow;
+
+            if ($workflow) {
+                return $workflow;
+            }
 
             // Fallback to any default for this contract type
             $default = self::where('contract_type', $contractType)
                 ->where('is_default', true)
                 ->first();
-            
-            if ($default) return $default;
+
+            if ($default) {
+                return $default;
+            }
         }
 
         // Global fallback

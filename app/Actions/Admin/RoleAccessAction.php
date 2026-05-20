@@ -2,10 +2,9 @@
 
 namespace App\Actions\Admin;
 
-use App\Models\Role;
-use App\Models\Module;
-use App\Models\ModuleGroup;
 use App\Models\AccessModule;
+use App\Models\Module;
+use App\Models\Role;
 use App\Models\RoleModuleGroup;
 use Illuminate\Support\Facades\DB;
 
@@ -13,22 +12,18 @@ class RoleAccessAction
 {
     /**
      * Update access matrix for a role.
-     *
-     * @param Role $role
-     * @param array $accesses
-     * @return void
      */
     public function updateRoleAccess(Role $role, array $accesses): void
     {
         DB::transaction(function () use ($role, $accesses) {
             foreach ($accesses as $accessData) {
                 // Logic: If any permission is true, can_read MUST be true
-                $canRead = $accessData['can_read'] || 
-                           $accessData['can_create'] || 
-                           $accessData['can_update'] || 
-                           $accessData['can_delete'] || 
-                           ($accessData['can_approve'] ?? false) || 
-                           ($accessData['can_bulk_approve'] ?? false) || 
+                $canRead = $accessData['can_read'] ||
+                           $accessData['can_create'] ||
+                           $accessData['can_update'] ||
+                           $accessData['can_delete'] ||
+                           ($accessData['can_approve'] ?? false) ||
+                           ($accessData['can_bulk_approve'] ?? false) ||
                            ($accessData['can_bulk_delete'] ?? false);
 
                 $existingAccess = AccessModule::where('role_id', $role->id)
@@ -37,7 +32,7 @@ class RoleAccessAction
 
                 // Auto-assign module_group_id if it's new read access and group is empty
                 $targetGroupId = $existingAccess?->module_group_id;
-                if ($canRead && !$targetGroupId) {
+                if ($canRead && ! $targetGroupId) {
                     $module = Module::find($accessData['module_id']);
                     $targetGroupId = $module?->module_group_id;
                 }
@@ -56,7 +51,7 @@ class RoleAccessAction
                         'can_bulk_approve' => $accessData['can_bulk_approve'] ?? false,
                         'can_bulk_delete' => $accessData['can_bulk_delete'] ?? false,
                         'module_group_id' => $targetGroupId,
-                    ]
+                    ],
                 );
             }
         });
@@ -64,10 +59,6 @@ class RoleAccessAction
 
     /**
      * Reorder role navigation structure.
-     *
-     * @param Role $role
-     * @param array $groups
-     * @return void
      */
     public function reorderRoleNavigation(Role $role, array $groups): void
     {
@@ -82,7 +73,7 @@ class RoleAccessAction
                         'role_id' => $roleId,
                         'module_group_id' => $groupData['id'],
                     ],
-                    []
+                    [],
                 );
 
                 if (! empty($groupData['modules'])) {

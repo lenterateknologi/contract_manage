@@ -2,10 +2,10 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
+return new class() extends Migration
 {
     /**
      * Run the migrations.
@@ -43,13 +43,13 @@ return new class extends Migration
         });
 
         Schema::table('m_workflow_steps', function (Blueprint $table) {
-             if (config('database.default') === 'pgsql') {
+            if (config('database.default') === 'pgsql') {
                 // This is complex to reverse safely, but for dev:
                 DB::statement('ALTER TABLE m_workflow_steps ALTER COLUMN department_id TYPE uuid USING (department_id->>0)::uuid');
             } else {
                 $table->uuid('department_id')->nullable()->change();
             }
-            
+
             $table->foreign('department_id')->references('id')->on('m_departments')->onDelete('set null');
         });
     }

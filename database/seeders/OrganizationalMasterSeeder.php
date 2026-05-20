@@ -1,13 +1,13 @@
 <?php
- 
+
 namespace Database\Seeders;
- 
+
 use App\Models\Company;
 use App\Models\CompanyGroup;
 use App\Models\Region;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
- 
+
 class OrganizationalMasterSeeder extends Seeder
 {
     /**
@@ -23,11 +23,11 @@ class OrganizationalMasterSeeder extends Seeder
         } else {
             DB::statement('SET FOREIGN_KEY_CHECKS = 0;');
         }
-        
+
         Company::truncate();
         Region::truncate();
         CompanyGroup::truncate();
-        
+
         if ($driver === 'pgsql') {
             DB::statement('SET session_replication_role = "origin";');
         } elseif ($driver === 'sqlite') {
@@ -63,7 +63,7 @@ class OrganizationalMasterSeeder extends Seeder
 
         // 2. Create Regions from provided list
         $lktGroup = $groups['LKT'];
-        
+
         $regionList = [
             ['code' => '03', 'alias' => 'BPN', 'id_portal_master' => '14', 'name' => 'KALIMANTAN TIMUR'],
             ['code' => '05', 'alias' => 'JKT', 'id_portal_master' => '16', 'name' => 'JAKARTA'],
@@ -72,7 +72,7 @@ class OrganizationalMasterSeeder extends Seeder
             ['code' => '01', 'alias' => 'PKU', 'id_portal_master' => '12', 'name' => 'RIAU'],
             ['code' => '02', 'alias' => 'PTK', 'id_portal_master' => '13', 'name' => 'KALIMANTAN BARAT'],
         ];
-        
+
         foreach ($regionList as $r) {
             $region = Region::create([
                 'name' => $r['name'],
@@ -87,14 +87,14 @@ class OrganizationalMasterSeeder extends Seeder
             $companyNames = [
                 "PT. {$r['alias']} JAYA ABADI",
                 "PT. {$r['alias']} SUMBER MAKMUR",
-                "PT. {$r['alias']} LESTARI"
+                "PT. {$r['alias']} LESTARI",
             ];
 
             foreach ($companyNames as $index => $name) {
                 Company::create([
                     'name' => $name,
                     'code' => "{$r['alias']}-" . ($index + 1),
-                    'alias' => $r['alias'] . " " . ($index + 1),
+                    'alias' => $r['alias'] . ' ' . ($index + 1),
                     'address' => "Alamat dummy di {$r['name']}",
                     'company_group_id' => $lktGroup->id,
                     'region_id' => $region->id,

@@ -59,7 +59,7 @@ class VendorSeeder extends Seeder
                     'created_by' => $adminId,
                     'updated_by' => $adminId,
                     'deleted_at' => null,
-                ])
+                ]),
             );
         }
     }

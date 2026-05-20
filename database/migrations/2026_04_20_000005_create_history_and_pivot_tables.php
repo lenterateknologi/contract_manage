@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
+return new class() extends Migration
 {
     /**
      * Run the migrations.
@@ -47,9 +47,9 @@ return new class extends Migration
         // 4. HTTP Log History (t_http_log_h)
         // Check if log connection exists in config, if not fallback to default
         $connection = config('database.connections.log') ? 'log' : config('database.default');
-        
+
         Schema::connection($connection)->dropIfExists('t_http_log_h');
-        Schema::connection($connection)->create('t_http_log_h', function (Blueprint $table) {  
+        Schema::connection($connection)->create('t_http_log_h', function (Blueprint $table) {
             $table->id(); // Using standard ID for consistency in baseline
             $table->string('method', 10)->index()->default('GET');
             $table->text('full_url')->nullable();
@@ -73,7 +73,7 @@ return new class extends Migration
     {
         $connection = config('database.connections.log') ? 'log' : config('database.default');
         Schema::connection($connection)->dropIfExists('t_http_log_h');
-        
+
         Schema::dropIfExists('t_workflow_step_users');
         Schema::dropIfExists('t_contract_form_submission_h');
         Schema::dropIfExists('t_contract_h');

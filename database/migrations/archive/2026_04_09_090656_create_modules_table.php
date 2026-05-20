@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
+return new class() extends Migration
 {
     /**
      * Run the migrations.
@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('modules', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('code',10)->unique();
-            $table->string('title',255);
+            $table->string('code', 10)->unique();
+            $table->string('title', 255);
             $table->integer('sort_number')->default(0);
             $table->text('url')->nullable();
             $table->text('icon')->nullable();

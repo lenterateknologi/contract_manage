@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
+use App\Models\AccessModule;
 use App\Models\Module;
 use App\Models\ModuleGroup;
 use App\Models\Role;
 use App\Models\User;
-use App\Models\AccessModule;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -58,7 +58,7 @@ class AccessModuleSeeder extends Seeder
                         'can_approve' => $role->name === 'Admin' || $role->name === 'Manager' || $role->name === 'Director',
                         'module_group_id' => $module->module_group_id,
                         'sequence' => $mIdx + 1,
-                    ]
+                    ],
                 );
             }
         }

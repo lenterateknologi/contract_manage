@@ -35,7 +35,7 @@ class ForgotPasswordController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
-        if (!$user) {
+        if (! $user) {
             return back()->withErrors([
                 'email' => 'No account found with this email address.',
             ]);
@@ -67,7 +67,7 @@ class ForgotPasswordController extends Controller
     {
         $forgotPassword = ForgotPassword::where('token', $token)->first();
 
-        if (!$forgotPassword || !$forgotPassword->isValid()) {
+        if (! $forgotPassword || ! $forgotPassword->isValid()) {
             return Inertia::render('auth/reset-password', [
                 'token' => $token,
                 'email' => '',
@@ -96,7 +96,7 @@ class ForgotPasswordController extends Controller
             ->where('email', $request->email)
             ->first();
 
-        if (!$forgotPassword || !$forgotPassword->isValid()) {
+        if (! $forgotPassword || ! $forgotPassword->isValid()) {
             return back()->withErrors([
                 'token' => 'This password reset link is invalid or has expired.',
             ]);

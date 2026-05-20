@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
+return new class() extends Migration
 {
     /**
      * Run the migrations.
@@ -13,12 +13,12 @@ return new class extends Migration
     {
         Schema::table('m_workflow_steps', function (Blueprint $table) {
             $table->uuid('status_id')->nullable();
-            
+
             // Add foreign key constraint
             $table->foreign('status_id')
-                  ->references('id')
-                  ->on('m_contract_statuses')
-                  ->onDelete('set null');
+                ->references('id')
+                ->on('m_contract_statuses')
+                ->onDelete('set null');
         });
     }
 

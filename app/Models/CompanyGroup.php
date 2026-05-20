@@ -26,7 +26,6 @@ class CompanyGroup extends Model
         'is_active' => 'boolean',
     ];
 
-
     public function companies()
     {
         return $this->hasMany(Company::class, 'company_group_id');

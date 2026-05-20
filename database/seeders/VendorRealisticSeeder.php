@@ -4,9 +4,9 @@ namespace Database\Seeders;
 
 use App\Models\Vendor;
 use App\Models\VendorDocument;
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
-use Carbon\Carbon;
 
 class VendorRealisticSeeder extends Seeder
 {
@@ -47,7 +47,7 @@ class VendorRealisticSeeder extends Seeder
                     ['type' => 'NIB', 'name' => 'NIB OSS Terintegrasi'],
                     ['type' => 'SIUP', 'name' => 'Izin Usaha Sektoral'],
                     ['type' => 'AKTA_PENDIRIAN', 'name' => 'Akta Pendirian PT Integra'],
-                ]
+                ],
             ],
             [
                 'code' => 'VND-2026-002',
@@ -72,7 +72,7 @@ class VendorRealisticSeeder extends Seeder
                 'docs' => [
                     ['type' => 'AKTA_PENDIRIAN', 'name' => 'Akta Pembentukan CV'],
                     ['type' => 'NIB', 'name' => 'NIB OSS CV Mitra Katering'],
-                ]
+                ],
             ],
             [
                 'code' => 'VND-2026-003',
@@ -98,7 +98,7 @@ class VendorRealisticSeeder extends Seeder
                     ['type' => 'AKTA_PENDIRIAN', 'name' => 'Akta Pendirian PT SIG'],
                     ['type' => 'AKTA_PERUBAHAN', 'name' => 'Akta Perubahan Pengurus Terakhir'],
                     ['type' => 'NPWP', 'name' => 'Sertifikat PKP Elektronik'],
-                ]
+                ],
             ],
             [
                 'code' => 'VND-2026-004',
@@ -123,7 +123,7 @@ class VendorRealisticSeeder extends Seeder
                 'docs' => [
                     ['type' => 'KTP_DIREKTUR', 'name' => 'KTP Agus Pratama'],
                     ['type' => 'NPWP', 'name' => 'NPWP Pribadi'],
-                ]
+                ],
             ],
             [
                 'code' => 'VND-2026-005',
@@ -147,8 +147,8 @@ class VendorRealisticSeeder extends Seeder
                 'is_active' => true,
                 'docs' => [
                     ['type' => 'AKTA_PENDIRIAN', 'name' => 'Akta Pendirian MLS'],
-                ]
-            ]
+                ],
+            ],
         ];
 
         foreach ($vendors as $vendorData) {

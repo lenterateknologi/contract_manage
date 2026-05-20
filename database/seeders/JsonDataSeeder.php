@@ -4,8 +4,8 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 
 class JsonDataSeeder extends Seeder
 {
@@ -21,6 +21,7 @@ class JsonDataSeeder extends Seeder
 
         if (empty($jsonFiles)) {
             $this->command->warn('No JSON files found in storage/app/private/');
+
             return;
         }
 
@@ -28,8 +29,9 @@ class JsonDataSeeder extends Seeder
             $tableName = basename($file, '.json');
             $this->command->info("Seeding table: {$tableName}");
 
-            if (!Schema::hasTable($tableName)) {
+            if (! Schema::hasTable($tableName)) {
                 $this->command->error("Table {$tableName} does not exist. Skipping.");
+
                 continue;
             }
 
@@ -38,12 +40,13 @@ class JsonDataSeeder extends Seeder
 
             if (empty($data)) {
                 $this->command->line("No data found for {$tableName}. Skipping.");
+
                 continue;
             }
 
             // Disable foreign key checks for PostgreSQL (since it's pgsql in .env)
             DB::statement('SET CONSTRAINTS ALL DEFERRED');
-            
+
             // Clear existing data
             DB::table($tableName)->delete();
 
@@ -53,7 +56,7 @@ class JsonDataSeeder extends Seeder
                 DB::table($tableName)->insert($chunk);
             }
 
-            $this->command->info("Seeded " . count($data) . " rows into {$tableName}.");
+            $this->command->info('Seeded ' . count($data) . " rows into {$tableName}.");
         }
     }
 }

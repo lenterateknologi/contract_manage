@@ -2,14 +2,14 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
+return new class() extends Migration
 {
     /**
      * Run the migrations.
-     * This migration FORCES a reset of the workflow system to UUIDs by dropping 
+     * This migration FORCES a reset of the workflow system to UUIDs by dropping
      * and recreating the tables. This is necessary for PostgreSQL compatibility.
      */
     public function up(): void
@@ -65,7 +65,7 @@ return new class extends Migration
             $table->uuid('created_by')->index();
             $table->uuid('updated_by')->index();
             $table->timestamps();
-            
+
             $table->foreign('contract_id')->references('id')->on('contracts')->onDelete('cascade');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
         });
@@ -92,7 +92,7 @@ return new class extends Migration
         Schema::table('contracts', function (Blueprint $table) {
             $table->uuid('workflow_id')->nullable()->after('status');
             $table->uuid('workflow_step_id')->nullable()->after('workflow_id');
-            
+
             $table->foreign('workflow_id')->references('id')->on('workflows')->onDelete('set null');
             $table->foreign('workflow_step_id')->references('id')->on('workflow_steps')->onDelete('set null');
         });

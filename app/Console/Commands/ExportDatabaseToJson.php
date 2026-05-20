@@ -29,7 +29,7 @@ class ExportDatabaseToJson extends Command
     public function handle()
     {
         $tablesArg = $this->argument('tables');
-        
+
         if ($tablesArg) {
             $tablesToExport = explode(',', $tablesArg);
         } else {
@@ -43,6 +43,7 @@ class ExportDatabaseToJson extends Command
 
         if (empty($tablesToExport)) {
             $this->warn('No tables found to export.');
+
             return;
         }
 
@@ -50,11 +51,12 @@ class ExportDatabaseToJson extends Command
 
         foreach ($tablesToExport as $table) {
             $this->info("Exporting table: {$table}");
-            
+
             $data = DB::table($table)->get();
-            
+
             if ($data->isEmpty()) {
                 $this->line("Table {$table} is empty, skipping.");
+
                 continue;
             }
 
@@ -62,7 +64,7 @@ class ExportDatabaseToJson extends Command
             $fileName = "{$table}.json";
 
             Storage::disk('local')->put($fileName, $json);
-            
+
             $this->info("Exported to storage/app/private/{$fileName}");
         }
 

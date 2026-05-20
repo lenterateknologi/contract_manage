@@ -116,7 +116,7 @@ class HandleInertiaRequests extends Middleware
                 'm_modules.name',
                 'm_modules.route',
                 'm_modules.icon',
-                'm_module_groups.name as group_title'
+                'm_module_groups.name as group_title',
             )
             ->groupBy('m_modules.id', 'm_modules.name', 'm_modules.route', 'm_modules.icon', 'm_module_groups.name')
             ->get();
@@ -162,6 +162,7 @@ class HandleInertiaRequests extends Middleware
                 usort($sortedItems, function ($a, $b) use ($moduleOrder) {
                     $orderA = $moduleOrder[$a['title']] ?? 999;
                     $orderB = $moduleOrder[$b['title']] ?? 999;
+
                     return $orderA <=> $orderB;
                 });
 
@@ -175,6 +176,7 @@ class HandleInertiaRequests extends Middleware
         uksort($groups, function ($a, $b) use ($groupOrder) {
             $orderA = $groupOrder[$a] ?? 999;
             $orderB = $groupOrder[$b] ?? 999;
+
             return $orderA <=> $orderB;
         });
 

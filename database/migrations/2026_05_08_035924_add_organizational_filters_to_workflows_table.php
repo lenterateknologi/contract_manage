@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
+return new class() extends Migration
 {
     /**
      * Run the migrations.
@@ -38,7 +38,7 @@ return new class extends Migration
     {
         Schema::table('m_workflow_steps', function (Blueprint $table) {
             $table->dropColumn(['company_group_ids', 'region_ids', 'company_ids']);
-            
+
             $table->foreignUuid('company_group_id')->nullable()->constrained('m_company_groups')->nullOnDelete();
             $table->foreignUuid('region_id')->nullable()->constrained('m_regions')->nullOnDelete();
             $table->foreignUuid('company_id')->nullable()->constrained('m_companies')->nullOnDelete();

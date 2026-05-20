@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
+return new class() extends Migration
 {
     /**
      * Run the migrations.
@@ -16,21 +16,21 @@ return new class extends Migration
             $table->string('kop_topik')->nullable();
             $table->string('kop_sub_topik')->nullable();
             $table->string('kop_lampiran')->nullable();
-            
+
             // F1 Informasi Dasar
             $table->text('f1_tujuan')->nullable();
             $table->string('f1_sifat')->nullable();
-            
+
             // F1 Pihak Pertama
             $table->string('p1_entity')->nullable();
             $table->string('p1_signer')->nullable();
             $table->text('p1_address')->nullable();
-            
+
             // F1 Pihak Kedua
             $table->string('p2_entity')->nullable();
             $table->string('p2_signer')->nullable();
             $table->text('p2_address')->nullable();
-            
+
             // F2 Isi Perjanjian
             $table->text('f2_scope')->nullable();
             $table->string('f2_price')->nullable();

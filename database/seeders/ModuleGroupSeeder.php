@@ -27,15 +27,17 @@ class ModuleGroupSeeder extends Seeder
         foreach ($groups as $data) {
             $group = ModuleGroup::withTrashed()->where('name', $data['name'])->first();
             if ($group) {
-                if ($group->trashed()) $group->restore();
+                if ($group->trashed()) {
+                    $group->restore();
+                }
                 $group->update([
-                    'icon'       => $data['icon'],
+                    'icon' => $data['icon'],
                     'updated_by' => $adminId,
                 ]);
             } else {
                 ModuleGroup::create([
-                    'name'       => $data['name'],
-                    'icon'       => $data['icon'],
+                    'name' => $data['name'],
+                    'icon' => $data['icon'],
                     'created_by' => $adminId,
                     'updated_by' => $adminId,
                 ]);

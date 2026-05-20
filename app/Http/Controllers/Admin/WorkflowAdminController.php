@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Admin\WorkflowAction;
 use App\Http\Controllers\Controller;
+use App\Models\Company;
+use App\Models\CompanyGroup;
+use App\Models\ContractStatus;
 use App\Models\ContractType;
 use App\Models\Department;
+use App\Models\Region;
 use App\Models\Role;
 use App\Models\User;
-use App\Models\CompanyGroup;
-use App\Models\Region;
-use App\Models\Company;
-use App\Models\ContractStatus;
 use App\Models\Workflow;
-use App\Actions\Admin\WorkflowAction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -24,10 +24,10 @@ class WorkflowAdminController extends Controller
         $query = Workflow::with(['steps.approverRoles', 'steps.approverDepartments', 'steps.approverUsers', 'initiatorRolesData', 'initiatorDepartmentsData', 'initiatorUsersData'])
             ->when($request->search, function ($q, $search) {
                 $q->where('name', 'ilike', "%{$search}%")
-                  ->orWhere('description', 'ilike', "%{$search}%");
+                    ->orWhere('description', 'ilike', "%{$search}%");
             })
             ->when($request->contract_type, function ($q, $type) {
-                $q->whereIn('contract_type', (array)$type);
+                $q->whereIn('contract_type', (array) $type);
             })
             ->when($request->company_group_id, function ($q, $id) {
                 $q->whereJsonContains('company_group_ids', $id);
@@ -92,17 +92,18 @@ class WorkflowAdminController extends Controller
     public function edit(Workflow $workflow)
     {
         $workflow->load(['steps.approverRoles', 'steps.approverDepartments', 'steps.approverUsers', 'initiatorRolesData', 'initiatorDepartmentsData', 'initiatorUsersData']);
-        
+
         $workflowData = $workflow->toArray();
         $workflowData['initiator_roles'] = $workflow->initiatorRolesData->pluck('role_name')->toArray();
         $workflowData['initiator_users'] = $workflow->initiatorUsersData->pluck('user_id')->toArray();
         $workflowData['initiator_departments'] = $workflow->initiatorDepartmentsData->pluck('department_id')->toArray();
-        
-        $workflowData['steps'] = $workflow->steps->map(function($s) {
+
+        $workflowData['steps'] = $workflow->steps->map(function ($s) {
             $sd = $s->toArray();
             $sd['role'] = $s->approverRoles->pluck('role_name')->toArray();
             $sd['user_ids'] = $s->approverUsers->pluck('user_id')->toArray();
             $sd['department_ids'] = $s->approverDepartments->pluck('department_id')->toArray();
+
             return $sd;
         });
 
@@ -168,11 +169,13 @@ class WorkflowAdminController extends Controller
 
         try {
             $action->store($data);
+
             return redirect()->route('admin.workflows')->with('success', 'Workflow berhasil dibuat.');
         } catch (\Exception $e) {
             Log::error('Workflow Store Error: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
+
             return back()->withErrors(['error' => 'Gagal menyimpan alur kerja: ' . $e->getMessage()]);
         }
     }
@@ -225,9 +228,11 @@ class WorkflowAdminController extends Controller
 
         try {
             $action->update($workflow, $data);
+
             return redirect()->route('admin.workflows')->with('success', 'Workflow berhasil diperbarui.');
         } catch (\Exception $e) {
             Log::error('Workflow Update Error: ' . $e->getMessage());
+
             return back()->withErrors(['error' => 'Gagal memperbarui alur kerja: ' . $e->getMessage()]);
         }
     }
@@ -235,6 +240,7 @@ class WorkflowAdminController extends Controller
     public function destroy(Workflow $workflow, WorkflowAction $action)
     {
         $action->destroy($workflow);
+
         return redirect()->back();
     }
 
@@ -283,9 +289,12 @@ class WorkflowAdminController extends Controller
     public function bulkDestroy(Request $request)
     {
         $ids = $request->input('ids', []);
-        if (empty($ids)) return back();
+        if (empty($ids)) {
+            return back();
+        }
 
         Workflow::whereIn('id', $ids)->delete();
+
         return back()->with('success', count($ids) . ' alur kerja berhasil dihapus.');
     }
 }

@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\ContractType;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 class ContractTypeSeeder extends Seeder
 {
@@ -28,7 +27,7 @@ class ContractTypeSeeder extends Seeder
         foreach ($types as $t) {
             ContractType::withTrashed()->updateOrCreate(
                 ['code' => $t['code']],
-                array_merge($t, ['deleted_at' => null])
+                array_merge($t, ['deleted_at' => null]),
             );
         }
     }
