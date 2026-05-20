@@ -12,8 +12,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        //Schema::dropIfExists('m_company');
-        DB::statement('DROP TABLE IF EXISTS m_company CASCADE');
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement('DROP TABLE IF EXISTS m_company CASCADE');
+        } else {
+            Schema::dropIfExists('m_company');
+        }
         Schema::create('m_company', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('code', 15)->unique()->index();
