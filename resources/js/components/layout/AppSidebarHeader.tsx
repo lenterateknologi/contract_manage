@@ -20,7 +20,7 @@ export const AppSidebarHeader = memo(function AppSidebarHeader({ breadcrumbs = [
     return (
         <div
             className={cn(
-                'overflow-hidden transition-all duration-300 ease-in-out origin-top',
+                'origin-top overflow-hidden transition-all duration-300 ease-in-out',
                 isDetailRoute ? 'pointer-events-none h-0 opacity-0' : 'h-[88px] opacity-100',
             )}
         >
@@ -30,7 +30,7 @@ export const AppSidebarHeader = memo(function AppSidebarHeader({ breadcrumbs = [
                     'bg-card/90 dark:bg-card/90 backdrop-blur-xl',
                     'border-border/60 dark:border-border/60 border shadow-xl dark:shadow-black/20',
                     'transform transition-all duration-300 ease-in-out',
-                    isDetailRoute ? 'opacity-0 scale-[0.97]' : 'opacity-100 scale-100',
+                    isDetailRoute ? 'scale-[0.97] opacity-0' : 'scale-100 opacity-100',
                 )}
             >
                 {/* Left Section: Context & Navigation */}

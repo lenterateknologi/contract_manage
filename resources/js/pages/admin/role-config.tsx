@@ -88,39 +88,34 @@ const ModuleRow = React.memo(
         return (
             <tr
                 className={cn(
-                    'border-b border-border hover:bg-muted/30 group last:border-b-0 transition-colors',
+                    'border-border hover:bg-muted/30 group border-b transition-colors last:border-b-0',
                     'content-visibility-auto contain-intrinsic-size-[auto_60px]', // Native Virtualization
                 )}
             >
-                <td className="sticky left-0 z-10 border-r border-border bg-card px-5 py-4 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
+                <td className="border-border bg-card sticky left-0 z-10 border-r px-5 py-4 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
                     <div className="flex flex-col">
-                        <span className="text-sm font-bold tracking-tight text-foreground">
-                            {module.name}
-                        </span>
-                        <span className="font-mono text-xs tracking-wide text-muted-foreground/60 uppercase">{module.identifier}</span>
+                        <span className="text-foreground text-sm font-bold tracking-tight">{module.name}</span>
+                        <span className="text-muted-foreground/60 font-mono text-xs tracking-wide uppercase">{module.identifier}</span>
                     </div>
                 </td>
                 {PERMISSIONS.map((p) => (
                     <td
                         key={p}
-                        className={cn(
-                            'border-r border-border px-2 py-4 text-center last:border-r-0',
-                            access[p] ? 'bg-primary/5' : 'bg-transparent',
-                        )}
+                        className={cn('border-border border-r px-2 py-4 text-center last:border-r-0', access[p] ? 'bg-primary/5' : 'bg-transparent')}
                     >
                         <div className="flex justify-center">
                             <Checkbox
-                                className="h-5 w-5 rounded border-border transition-transform active:scale-90"
+                                className="border-border h-5 w-5 rounded transition-transform active:scale-90"
                                 checked={access[p] || false}
                                 onCheckedChange={(checked) => onToggle(module.id, p, checked as boolean)}
                             />
                         </div>
                     </td>
                 ))}
-                <td className="bg-muted/40 group-hover:bg-muted border-l border-border px-2 py-4 text-center transition-colors">
+                <td className="bg-muted/40 group-hover:bg-muted border-border border-l px-2 py-4 text-center transition-colors">
                     <div className="flex justify-center">
                         <Checkbox
-                            className="h-5 w-5 rounded border-border transition-transform active:scale-90"
+                            className="border-border h-5 w-5 rounded transition-transform active:scale-90"
                             checked={!!isRowAllChecked}
                             onCheckedChange={(checked) => onSetRow(module.id, !!checked)}
                         />
@@ -140,7 +135,7 @@ const SortableModuleItem = ({ module, onRemove }: { module: Module; onRemove: (i
             ref={setNodeRef}
             style={style}
             className={cn(
-                'group flex items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-sm transition-all',
+                'group border-border bg-card flex items-center gap-3 rounded-xl border p-3 shadow-sm transition-all',
                 isDragging && 'border-primary ring-primary/10 z-50 scale-[1.02] opacity-50 shadow-2xl ring-2',
             )}
         >
@@ -152,10 +147,8 @@ const SortableModuleItem = ({ module, onRemove }: { module: Module; onRemove: (i
                 <GripVertical size={16} />
             </div>
             <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-bold text-foreground tracking-tight">{module.name}</p>
-                <p className="mt-0.5 truncate text-xs font-semibold tracking-wide text-muted-foreground">
-                    {module.route || 'SYSTEM_INTERNAL'}
-                </p>
+                <p className="text-foreground truncate text-sm font-bold tracking-tight">{module.name}</p>
+                <p className="text-muted-foreground mt-0.5 truncate text-xs font-semibold tracking-wide">{module.route || 'SYSTEM_INTERNAL'}</p>
             </div>
             <button
                 onClick={() => onRemove(module.id)}
@@ -175,11 +168,11 @@ const SortableGroupItem = ({ group, onRemoveModule }: { group: Group; onRemoveMo
             ref={setNodeRef}
             style={style}
             className={cn(
-                'overflow-hidden rounded-2xl border border-border bg-card/40 shadow-sm transition-all',
+                'border-border bg-card/40 overflow-hidden rounded-2xl border shadow-sm transition-all',
                 isDragging && 'border-primary ring-primary/5 z-40 opacity-50 shadow-2xl ring-2',
             )}
         >
-            <div className="flex items-center justify-between border-b border-border bg-card px-4 py-3.5">
+            <div className="border-border bg-card flex items-center justify-between border-b px-4 py-3.5">
                 <div className="flex items-center gap-3">
                     <div
                         {...listeners}
@@ -189,9 +182,7 @@ const SortableGroupItem = ({ group, onRemoveModule }: { group: Group; onRemoveMo
                         <GripVertical size={16} />
                     </div>
                     <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-bold text-foreground tracking-tight">
-                            {group.name}
-                        </h3>
+                        <h3 className="text-foreground text-sm font-bold tracking-tight">{group.name}</h3>
                         <span className="bg-primary/10 text-primary rounded-lg px-2 py-0.5 text-xs font-bold shadow-sm">
                             {group.modules.length} UNITS
                         </span>
@@ -205,10 +196,8 @@ const SortableGroupItem = ({ group, onRemoveModule }: { group: Group; onRemoveMo
                     ))}
                 </SortableContext>
                 {group.modules.length === 0 && (
-                    <div className="border border-dashed border-border bg-muted/20 flex flex-col items-center justify-center rounded-xl py-8">
-                        <span className="text-xs font-medium text-muted-foreground/60 uppercase">
-                            Drop module here
-                        </span>
+                    <div className="border-border bg-muted/20 flex flex-col items-center justify-center rounded-xl border border-dashed py-8">
+                        <span className="text-muted-foreground/60 text-xs font-medium uppercase">Drop module here</span>
                     </div>
                 )}
             </div>
@@ -221,17 +210,17 @@ const AvailableListContainer = ({ modules, onQuickAdd }: { modules: Module[]; on
     return (
         <div
             ref={setNodeRef}
-            className="sticky top-6 col-span-12 flex h-[calc(100vh-320px)] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-md lg:col-span-4"
+            className="border-border bg-card sticky top-6 col-span-12 flex h-[calc(100vh-320px)] flex-col overflow-hidden rounded-2xl border shadow-md lg:col-span-4"
         >
-            <div className="flex shrink-0 items-center justify-between border-b border-border p-5 bg-muted/20">
+            <div className="border-border bg-muted/20 flex shrink-0 items-center justify-between border-b p-5">
                 <div className="flex items-center gap-3">
-                    <h2 className="text-sm font-bold tracking-tight text-foreground uppercase">Repository</h2>
+                    <h2 className="text-foreground text-sm font-bold tracking-tight uppercase">Repository</h2>
                 </div>
                 <span className="bg-primary/10 text-primary rounded-lg px-2.5 py-1 text-xs font-bold uppercase shadow-sm">
                     {modules.length} UNITS
                 </span>
             </div>
-            <div className="scrollbar-hide flex-1 space-y-3 overflow-y-auto p-5 bg-card/10">
+            <div className="scrollbar-hide bg-card/10 flex-1 space-y-3 overflow-y-auto p-5">
                 <SortableContext id="available-context" items={modules.map((m) => m.id)} strategy={verticalListSortingStrategy}>
                     {modules.map((module) => (
                         <AvailableModuleItem key={module.id} module={module} onQuickAdd={onQuickAdd} />
@@ -239,8 +228,8 @@ const AvailableListContainer = ({ modules, onQuickAdd }: { modules: Module[]; on
                 </SortableContext>
                 {modules.length === 0 && (
                     <div className="flex flex-col items-center justify-center px-6 py-24 text-center opacity-40 select-none">
-                        <Layers className="mb-4 text-muted-foreground/40" size={48} strokeWidth={1} />
-                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Kosong</p>
+                        <Layers className="text-muted-foreground/40 mb-4" size={48} strokeWidth={1} />
+                        <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">Kosong</p>
                     </div>
                 )}
             </div>
@@ -259,7 +248,7 @@ const AvailableModuleItem = ({ module, onQuickAdd }: { module: Module; onQuickAd
             ref={setNodeRef}
             style={style}
             className={cn(
-                'group flex items-center justify-between rounded-xl border border-border bg-card p-4 transition-all hover:shadow-sm hover:border-border/80',
+                'group border-border bg-card hover:border-border/80 flex items-center justify-between rounded-xl border p-4 transition-all hover:shadow-sm',
                 isDragging && 'border-primary ring-primary/10 z-50 scale-[1.02] opacity-50 shadow-2xl ring-2',
             )}
         >
@@ -272,8 +261,8 @@ const AvailableModuleItem = ({ module, onQuickAdd }: { module: Module; onQuickAd
                     <GripVertical size={16} />
                 </div>
                 <div className="min-w-0">
-                    <span className="block truncate text-sm font-bold text-foreground tracking-tight uppercase">{module.name}</span>
-                    <span className="mt-0.5 block truncate text-xs font-semibold tracking-wide text-muted-foreground/70 uppercase">
+                    <span className="text-foreground block truncate text-sm font-bold tracking-tight uppercase">{module.name}</span>
+                    <span className="text-muted-foreground/70 mt-0.5 block truncate text-xs font-semibold tracking-wide uppercase">
                         {module.route || 'NO_PATH'}
                     </span>
                 </div>
@@ -379,7 +368,7 @@ export default function RoleConfig({ role, modules, navigation, allModules, defa
                     return newAccess;
                 }
                 return access;
-              }),
+            }),
         );
     };
 
@@ -616,11 +605,11 @@ export default function RoleConfig({ role, modules, navigation, allModules, defa
                     {/* Utility Buttons Container */}
                     <div className="mr-4 flex items-center transition-all">
                         {activeTab === 'access' ? (
-                            <div className="flex bg-muted rounded-xl p-1">
+                            <div className="bg-muted flex rounded-xl p-1">
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-8 rounded-lg text-xs font-bold transition-all hover:bg-card"
+                                    className="hover:bg-card h-8 rounded-lg text-xs font-bold transition-all"
                                     onClick={() => setAll(true)}
                                 >
                                     <CheckSquare className="mr-1.5 h-4 w-4" /> Pilih Semua
@@ -628,7 +617,7 @@ export default function RoleConfig({ role, modules, navigation, allModules, defa
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-8 rounded-lg text-xs font-bold transition-all hover:bg-card"
+                                    className="hover:bg-card h-8 rounded-lg text-xs font-bold transition-all"
                                     onClick={() => setAll(false)}
                                 >
                                     <Square className="mr-1.5 h-4 w-4" /> Bersihkan
@@ -640,7 +629,7 @@ export default function RoleConfig({ role, modules, navigation, allModules, defa
                     </div>
 
                     {/* Tab Switcher */}
-                    <div className="flex bg-muted rounded-xl p-1">
+                    <div className="bg-muted flex rounded-xl p-1">
                         <button
                             onClick={() => setActiveTab('access')}
                             type="button"
@@ -674,12 +663,12 @@ export default function RoleConfig({ role, modules, navigation, allModules, defa
             {activeTab === 'access' ? (
                 <div className="grid grid-cols-1 gap-8">
                     <FormSection title="Matriks Hak Akses" subtitle="Tentukan izin spesifik untuk setiap modul operasional">
-                        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+                        <div className="border-border bg-card overflow-hidden rounded-2xl border shadow-sm">
                             <div className="scrollbar-hide overflow-x-auto">
                                 <table className="w-full border-collapse">
                                     <thead>
-                                        <tr className="bg-muted text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                                            <th className="sticky left-0 z-30 min-w-[240px] border-r border-border bg-muted px-6 py-4 text-left font-bold text-foreground">
+                                        <tr className="bg-muted text-muted-foreground text-xs font-bold tracking-wider uppercase">
+                                            <th className="border-border bg-muted text-foreground sticky left-0 z-30 min-w-[240px] border-r px-6 py-4 text-left font-bold">
                                                 Scope Modul
                                             </th>
                                             {PERMISSIONS.map((p) => {
@@ -687,7 +676,7 @@ export default function RoleConfig({ role, modules, navigation, allModules, defa
                                                 return (
                                                     <th
                                                         key={p}
-                                                        className="min-w-[120px] border-r border-border px-2 py-4 text-center last:border-r-0"
+                                                        className="border-border min-w-[120px] border-r px-2 py-4 text-center last:border-r-0"
                                                     >
                                                         <div className="flex flex-col items-center gap-2">
                                                             <span className="font-bold">{permissionLabels[p]}</span>
@@ -700,12 +689,10 @@ export default function RoleConfig({ role, modules, navigation, allModules, defa
                                                     </th>
                                                 );
                                             })}
-                                            <th className="min-w-[80px] border-l border-border bg-muted px-2 py-4 text-center font-bold">
-                                                Full
-                                            </th>
+                                            <th className="border-border bg-muted min-w-[80px] border-l px-2 py-4 text-center font-bold">Full</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-border">
+                                    <tbody className="divide-border divide-y">
                                         {Object.entries(groupedModules).map(([groupId, group]) => {
                                             const groupModuleIds = group.modules.map((m) => m.id);
                                             const groupAccesses = accessForm.data.accesses.filter((a) => groupModuleIds.includes(a.module_id));
@@ -722,8 +709,8 @@ export default function RoleConfig({ role, modules, navigation, allModules, defa
 
                                             return (
                                                 <React.Fragment key={groupId}>
-                                                    <tr className="bg-muted/30 border-b border-border">
-                                                        <td className="flex items-center gap-3 px-5 py-3.5 font-bold text-foreground">
+                                                    <tr className="bg-muted/30 border-border border-b">
+                                                        <td className="text-foreground flex items-center gap-3 px-5 py-3.5 font-bold">
                                                             <div className="bg-primary/10 text-primary rounded-lg p-1.5">
                                                                 <LayoutGrid className="h-4 w-4" />
                                                             </div>
@@ -732,10 +719,7 @@ export default function RoleConfig({ role, modules, navigation, allModules, defa
                                                         {PERMISSIONS.map((p) => {
                                                             const isGroupColumnChecked = groupAccesses.every((a) => (a as any)[p]);
                                                             return (
-                                                                <td
-                                                                    key={p}
-                                                                    className="border-l border-border px-2 py-3 text-center"
-                                                                >
+                                                                <td key={p} className="border-border border-l px-2 py-3 text-center">
                                                                     <div className="flex justify-center">
                                                                         <Checkbox
                                                                             className="h-4 w-4 rounded transition-all active:scale-90"
@@ -746,7 +730,7 @@ export default function RoleConfig({ role, modules, navigation, allModules, defa
                                                                 </td>
                                                             );
                                                         })}
-                                                        <td className="bg-muted/50 border-l border-border px-2 py-3 text-center">
+                                                        <td className="bg-muted/50 border-border border-l px-2 py-3 text-center">
                                                             <div className="flex justify-center">
                                                                 <Checkbox
                                                                     className="h-4 w-4 rounded transition-all active:scale-90"
@@ -792,22 +776,20 @@ export default function RoleConfig({ role, modules, navigation, allModules, defa
                         </div>
                     </FormSection>
 
-                    <div className="group relative max-w-4xl overflow-hidden rounded-2xl border border-border p-6 shadow-sm bg-card transition-all">
-                        <div className="absolute top-0 right-0 p-6 opacity-5 transition-opacity group-hover:opacity-10 pointer-events-none">
+                    <div className="group border-border bg-card relative max-w-4xl overflow-hidden rounded-2xl border p-6 shadow-sm transition-all">
+                        <div className="pointer-events-none absolute top-0 right-0 p-6 opacity-5 transition-opacity group-hover:opacity-10">
                             <ShieldAlert size={120} strokeWidth={1} />
                         </div>
                         <div className="relative z-10 flex items-start gap-4">
-                            <div className="bg-amber-100 dark:bg-amber-500/10 text-amber-600 rounded-2xl p-3">
+                            <div className="rounded-2xl bg-amber-100 p-3 text-amber-600 dark:bg-amber-500/10">
                                 <ShieldAlert className="h-6 w-6" />
                             </div>
                             <div className="space-y-2">
-                                <h4 className="text-sm font-bold tracking-tight text-foreground">
-                                    Protokol Keamanan Perubahan
-                                </h4>
-                                <p className="text-xs font-semibold text-muted-foreground/80 uppercase leading-relaxed tracking-wide">
+                                <h4 className="text-foreground text-sm font-bold tracking-tight">Protokol Keamanan Perubahan</h4>
+                                <p className="text-muted-foreground/80 text-xs leading-relaxed font-semibold tracking-wide uppercase">
                                     Setiap modifikasi hak akses akan langsung mengikat seluruh personil dengan role{' '}
-                                    <span className="text-primary font-bold">{role.name}</span>.
-                                    Pastikan tingkat otorisasi sudah sesuai dengan batas wewenang struktural sebelum menyimpan perubahan ini.
+                                    <span className="text-primary font-bold">{role.name}</span>. Pastikan tingkat otorisasi sudah sesuai dengan batas
+                                    wewenang struktural sebelum menyimpan perubahan ini.
                                 </p>
                             </div>
                         </div>
@@ -838,19 +820,15 @@ export default function RoleConfig({ role, modules, navigation, allModules, defa
                     <DragOverlay dropAnimation={{ sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: '0.5' } } }) }}>
                         {activeId ? (
                             activeType === 'group' ? (
-                                <div className="flex w-[400px] cursor-grabbing items-center gap-3 rounded-2xl border border-border bg-card p-3 opacity-90 shadow-2xl ring-4 ring-primary/5">
+                                <div className="border-border bg-card ring-primary/5 flex w-[400px] cursor-grabbing items-center gap-3 rounded-2xl border p-3 opacity-90 shadow-2xl ring-4">
                                     <GripVertical className="text-primary" size={16} />
-                                    <h3 className="text-sm font-bold text-foreground">
-                                        {navItems.find((g) => g.id === activeId)?.name}
-                                    </h3>
+                                    <h3 className="text-foreground text-sm font-bold">{navItems.find((g) => g.id === activeId)?.name}</h3>
                                 </div>
                             ) : (
-                                <div className="flex w-[280px] scale-105 cursor-grabbing items-center gap-3 rounded-xl border border-border bg-card p-3 opacity-95 shadow-2xl">
+                                <div className="border-border bg-card flex w-[280px] scale-105 cursor-grabbing items-center gap-3 rounded-xl border p-3 opacity-95 shadow-2xl">
                                     <GripVertical size={14} className="text-primary" />
                                     <div className="min-w-0 flex-1">
-                                        <p className="text-sm font-bold text-foreground">
-                                            {allModules.find((m) => m.id === activeId)?.name}
-                                        </p>
+                                        <p className="text-foreground text-sm font-bold">{allModules.find((m) => m.id === activeId)?.name}</p>
                                     </div>
                                 </div>
                             )

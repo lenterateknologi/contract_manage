@@ -74,12 +74,19 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                 accessorKey: 'name',
                 cell: (row) => (
                     <div className="flex items-center gap-3 select-none">
-                        <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all duration-200 select-none shadow-sm', roleColor(row.name))}>
+                        <div
+                            className={cn(
+                                'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-sm transition-all duration-200 select-none',
+                                roleColor(row.name),
+                            )}
+                        >
                             <ShieldCheck size={18} />
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-slate-900 dark:text-slate-100 text-sm leading-tight font-bold tracking-wide select-none">{row.name}</span>
-                            <span className="text-muted-foreground/80 dark:text-slate-400/80 mt-0.5 text-xs font-medium">
+                            <span className="text-sm leading-tight font-bold tracking-wide text-slate-900 select-none dark:text-slate-100">
+                                {row.name}
+                            </span>
+                            <span className="text-muted-foreground/80 mt-0.5 text-xs font-medium dark:text-slate-400/80">
                                 Terdaftar: {new Date(row.created_at).toLocaleDateString('id-ID')}
                             </span>
                         </div>
@@ -91,9 +98,11 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                 accessorKey: 'description',
                 cell: (row) =>
                     row.description ? (
-                        <span className="text-muted-foreground dark:text-slate-300 block max-w-sm truncate text-sm leading-tight font-medium">{row.description}</span>
+                        <span className="text-muted-foreground block max-w-sm truncate text-sm leading-tight font-medium dark:text-slate-300">
+                            {row.description}
+                        </span>
                     ) : (
-                        <span className="text-muted-foreground/30 dark:text-slate-700 text-sm leading-none font-medium italic">—</span>
+                        <span className="text-muted-foreground/30 text-sm leading-none font-medium italic dark:text-slate-700">—</span>
                     ),
             },
             {
@@ -105,17 +114,17 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                             variant="outline"
                             size="sm"
                             onClick={() => router.get(`/admin/roles/${row.id}/config?tab=access`)}
-                            className="flex h-8 items-center gap-1.5 px-3.5 text-xs font-bold tracking-wide active:scale-95 border-border/80 dark:border-slate-800/80 hover:bg-muted/60 dark:hover:bg-slate-800/60 rounded-xl"
+                            className="border-border/80 hover:bg-muted/60 flex h-8 items-center gap-1.5 rounded-xl px-3.5 text-xs font-bold tracking-wide active:scale-95 dark:border-slate-800/80 dark:hover:bg-slate-800/60"
                         >
-                            <Key size={12} className="opacity-60 text-primary" /> Hak Akses
+                            <Key size={12} className="text-primary opacity-60" /> Hak Akses
                         </Button>
                         <Button
                             variant="outline"
                             size="sm"
                             onClick={() => router.get(`/admin/roles/${row.id}/config?tab=navigation`)}
-                            className="flex h-8 items-center gap-1.5 px-3.5 text-xs font-bold tracking-wide active:scale-95 border-border/80 dark:border-slate-800/80 hover:bg-muted/60 dark:hover:bg-slate-800/60 rounded-xl"
+                            className="border-border/80 hover:bg-muted/60 flex h-8 items-center gap-1.5 rounded-xl px-3.5 text-xs font-bold tracking-wide active:scale-95 dark:border-slate-800/80 dark:hover:bg-slate-800/60"
                         >
-                            <LayoutGrid size={12} className="opacity-60 text-primary" /> Navigasi
+                            <LayoutGrid size={12} className="text-primary opacity-60" /> Navigasi
                         </Button>
                     </div>
                 ),
@@ -174,7 +183,7 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                             type="button"
                             variant="ghost"
                             onClick={() => setIsConfirmOpen(true)}
-                            className="h-10 rounded-xl border border-rose-500/20 px-4 text-xs font-bold text-rose-500 transition-all hover:bg-rose-500 dark:hover:bg-rose-500/20 hover:text-white active:scale-95 select-none duration-200"
+                            className="h-10 rounded-xl border border-rose-500/20 px-4 text-xs font-bold text-rose-500 transition-all duration-200 select-none hover:bg-rose-500 hover:text-white active:scale-95 dark:hover:bg-rose-500/20"
                         >
                             <Trash2 size={15} className="mr-2" /> Hapus
                         </Button>
@@ -197,7 +206,7 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                     description={`Apakah Anda yakin ingin menghapus role ${editingRole?.name}? Seluruh mapping hak akses untuk role ini akan dihapus permanen.`}
                     confirmText="Hapus Role"
                 />
-                <div className="grid grid-cols-1 gap-8 md:grid-cols-12 select-none animate-in fade-in duration-200">
+                <div className="animate-in fade-in grid grid-cols-1 gap-8 duration-200 select-none md:grid-cols-12">
                     {/* Main Column: 8 Columns */}
                     <div className="space-y-8 md:col-span-8">
                         <FormSection title="Identitas Role" subtitle="Nama jabatan dan penjelasan otoritas sistem">
@@ -224,20 +233,20 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
 
                     {/* Side Column: 4 Columns */}
                     <div className="flex flex-col pt-6 md:col-span-4 md:pt-0">
-                        <div className="border-border/80 dark:border-slate-800/80 bg-muted/20 dark:bg-slate-900/40 backdrop-blur-sm group relative overflow-hidden rounded-2xl border p-6 select-none shadow-sm transition-all duration-200">
+                        <div className="border-border/80 bg-muted/20 group relative overflow-hidden rounded-2xl border p-6 shadow-sm backdrop-blur-sm transition-all duration-200 select-none dark:border-slate-800/80 dark:bg-slate-900/40">
                             <div className="absolute top-0 right-0 p-4 opacity-5 transition-opacity duration-200 group-hover:opacity-10">
                                 <ShieldCheck size={80} strokeWidth={1} />
                             </div>
 
                             <div className="relative z-10 mb-4 flex items-center gap-3">
-                                <span className="text-slate-900 dark:text-slate-100 text-xs font-bold tracking-wider uppercase">Pusat Otoritas</span>
+                                <span className="text-xs font-bold tracking-wider text-slate-900 uppercase dark:text-slate-100">Pusat Otoritas</span>
                             </div>
 
-                            <div className="border-border/60 dark:border-slate-800/60 relative z-10 mb-4 space-y-3 border-y border-dashed py-4">
-                                <span className="text-slate-900 dark:text-slate-100 block text-sm leading-tight font-bold tracking-tight">
+                            <div className="border-border/60 relative z-10 mb-4 space-y-3 border-y border-dashed py-4 dark:border-slate-800/60">
+                                <span className="block text-sm leading-tight font-bold tracking-tight text-slate-900 dark:text-slate-100">
                                     {form.data.name || 'Nama Role'}
                                 </span>
-                                <p className="text-muted-foreground dark:text-slate-400 text-xs leading-relaxed font-medium tracking-wide">
+                                <p className="text-muted-foreground text-xs leading-relaxed font-medium tracking-wide dark:text-slate-400">
                                     {form.data.description || 'Deskripsi belum diatur untuk role ini...'}
                                 </p>
                             </div>
@@ -248,7 +257,7 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                                         type="button"
                                         variant="outline"
                                         onClick={() => router.get(`/admin/roles/${editingRole.id}/config?tab=access`)}
-                                        className="h-9 gap-2 text-xs font-bold active:scale-95 rounded-xl border-border/80 dark:border-slate-800/80"
+                                        className="border-border/80 h-9 gap-2 rounded-xl text-xs font-bold active:scale-95 dark:border-slate-800/80"
                                     >
                                         <Key size={12} className="text-primary" /> Hak Akses
                                     </Button>
@@ -256,14 +265,14 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                                         type="button"
                                         variant="outline"
                                         onClick={() => router.get(`/admin/roles/${editingRole.id}/config?tab=navigation`)}
-                                        className="h-9 gap-2 text-xs font-bold active:scale-95 rounded-xl border-border/80 dark:border-slate-800/80"
+                                        className="border-border/80 h-9 gap-2 rounded-xl text-xs font-bold active:scale-95 dark:border-slate-800/80"
                                     >
                                         <LayoutGrid size={12} className="text-primary" /> Navigasi
                                     </Button>
                                 </div>
                             )}
 
-                            <p className="text-muted-foreground/60 dark:text-slate-500 relative z-10 text-[11px] leading-normal font-medium tracking-tight">
+                            <p className="text-muted-foreground/60 relative z-10 text-[11px] leading-normal font-medium tracking-tight dark:text-slate-500">
                                 Role menentukan hak akses pengguna terhadap modul-modul sistem. Setelah menyimpan, Anda dapat mengatur hak akses
                                 spesifik per modul.
                             </p>
@@ -275,7 +284,7 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
     }
 
     return (
-        <div className="bg-card/40 dark:bg-slate-900/20 backdrop-blur-sm border border-border/60 dark:border-slate-800/60 m-5 rounded-2xl p-6 shadow-sm animate-in fade-in duration-200 select-none">
+        <div className="bg-card/40 border-border/60 animate-in fade-in m-5 rounded-2xl border p-6 shadow-sm backdrop-blur-sm duration-200 select-none dark:border-slate-800/60 dark:bg-slate-900/20">
             <TableMasterData
                 title="Database Role & Otoritas"
                 columns={columns}
@@ -294,7 +303,7 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                         <Button
                             variant="white"
                             onClick={openCreate}
-                            className="h-10 px-5 gap-2 rounded-xl text-xs font-bold tracking-wide transition-all duration-200 border border-border bg-card dark:bg-slate-900/60 text-foreground shadow-sm hover:bg-muted/60 dark:hover:bg-slate-800/60 hover:border-border hover:shadow-md select-none"
+                            className="border-border bg-card text-foreground hover:bg-muted/60 hover:border-border h-10 gap-2 rounded-xl border px-5 text-xs font-bold tracking-wide shadow-sm transition-all duration-200 select-none hover:shadow-md dark:bg-slate-900/60 dark:hover:bg-slate-800/60"
                         >
                             <Plus size={15} className="text-primary" /> Tambah Role
                         </Button>

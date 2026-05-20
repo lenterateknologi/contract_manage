@@ -110,9 +110,13 @@ class ReportController extends Controller
             });
 
         // Monthly Trend
+        $monthExpression = DB::getDriverName() === 'sqlite'
+            ? "strftime('%Y-%m', t_contracts.created_at) as month"
+            : "to_char(t_contracts.created_at, 'YYYY-MM') as month";
+
         $monthlyTrend = (clone $query)->leftJoin('m_contract_types', 't_contracts.contract_type_id', '=', 'm_contract_types.id')
             ->select(
-                DB::raw("to_char(t_contracts.created_at, 'YYYY-MM') as month"),
+                DB::raw($monthExpression),
                 'm_contract_types.name as type_name',
                 DB::raw('count(*) as count')
             )

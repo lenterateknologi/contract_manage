@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
+import { cn } from '@/lib/utils';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { cn } from '@/lib/utils';
-import { Copy, Trash2, GripVertical, Plus } from 'lucide-react';
+import { Copy, GripVertical, Trash2 } from 'lucide-react';
+import React from 'react';
 
 // New modular imports
-import { getTypographyStyle, getPaddingStyle } from './utils';
-import { TextField, TextAreaField, LabeledValueField } from './fields/InputFields';
+import { LabeledValueField, TextAreaField, TextField } from './fields/InputFields';
+import { EmptyDropZone, GridXLayout, GridYLayout, GroupLayout } from './fields/LayoutFields';
 import { CheckboxField, RadioField, SelectField } from './fields/SelectionFields';
-import { ImageField, StaticTextField, SignatureBoxField, PageBreakField } from './fields/VisualFields';
-import { GroupLayout, GridXLayout, GridYLayout, EmptyDropZone } from './fields/LayoutFields';
+import { ImageField, PageBreakField, SignatureBoxField, StaticTextField } from './fields/VisualFields';
+import { getPaddingStyle } from './utils';
 
 export interface FormField {
     id: string;
@@ -124,7 +124,11 @@ export const FormElement: React.FC<FormElementProps> = (props) => {
     const renderContent = () => {
         switch (field.type) {
             case 'group':
-                return <GroupLayout field={field} isBuilder={isBuilder}>{renderChildren(field.id)}</GroupLayout>;
+                return (
+                    <GroupLayout field={field} isBuilder={isBuilder}>
+                        {renderChildren(field.id)}
+                    </GroupLayout>
+                );
             case 'grid_x':
                 return <GridXLayout field={field}>{renderChildren(field.id)}</GridXLayout>;
             case 'grid_y':
@@ -167,7 +171,7 @@ export const FormElement: React.FC<FormElementProps> = (props) => {
             className={cn(
                 'group/element form-element-container relative',
                 isBuilder && 'hover:ring-primary/40 rounded-sm transition-all hover:ring-1',
-                isBuilder && isSelected && 'ring-primary shadow-primary/20 ring-2 shadow-lg',
+                isBuilder && isSelected && 'ring-primary shadow-primary/20 shadow-lg ring-2',
             )}
             onClick={(e) => {
                 if (isBuilder) {
@@ -177,17 +181,17 @@ export const FormElement: React.FC<FormElementProps> = (props) => {
             }}
         >
             {renderContent()}
-            
+
             {isBuilder && isSelected && (
-                <div className="bg-primary absolute -top-3 right-0 z-50 flex items-center gap-1 rounded-t-md px-1.5 py-0.5 text-white shadow-sm animate-in fade-in slide-in-from-bottom-1">
-                    <button onClick={() => onDuplicate?.(field.id)} className="hover:bg-white/20 rounded p-0.5 transition-colors">
+                <div className="bg-primary animate-in fade-in slide-in-from-bottom-1 absolute -top-3 right-0 z-50 flex items-center gap-1 rounded-t-md px-1.5 py-0.5 text-white shadow-sm">
+                    <button onClick={() => onDuplicate?.(field.id)} className="rounded p-0.5 transition-colors hover:bg-white/20">
                         <Copy size={10} />
                     </button>
-                    <button onClick={() => onRemove?.(field.id)} className="hover:bg-red-500 rounded p-0.5 transition-colors">
+                    <button onClick={() => onRemove?.(field.id)} className="rounded p-0.5 transition-colors hover:bg-red-500">
                         <Trash2 size={10} />
                     </button>
-                    <div className="bg-white/30 mx-1 h-3 w-px" />
-                    <div className="cursor-grab active:cursor-grabbing p-0.5">
+                    <div className="mx-1 h-3 w-px bg-white/30" />
+                    <div className="cursor-grab p-0.5 active:cursor-grabbing">
                         <GripVertical size={10} />
                     </div>
                 </div>

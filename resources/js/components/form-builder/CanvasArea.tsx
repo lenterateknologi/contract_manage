@@ -1,8 +1,8 @@
-import React from 'react';
-import { cn } from '@/lib/utils';
-import { ScrollArea } from '@/components/ui/base/ScrollArea';
 import { InteractiveForm } from '@/components/form-renderer/InteractiveForm';
-import { Edit3, Play, Eye } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/base/ScrollArea';
+import { cn } from '@/lib/utils';
+import { Edit3, Eye, Play } from 'lucide-react';
+import React from 'react';
 
 interface CanvasAreaProps {
     viewMode: 'editor' | 'filling' | 'pdf';
@@ -46,12 +46,12 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
                             className={cn(
                                 'flex items-center gap-2.5 rounded-xl px-5 py-2 transition-all duration-300',
                                 viewMode === mode.id
-                                    ? 'bg-card ring-border/50 z-10 scale-105 shadow-lg ring-1 text-black'
+                                    ? 'bg-card ring-border/50 z-10 scale-105 text-black shadow-lg ring-1'
                                     : 'text-muted-foreground/30 hover:text-foreground/60 hover:bg-muted/20',
                             )}
                         >
                             <mode.icon size={14} strokeWidth={2.5} />
-                            <span className="text-[10px] font-semibold font-sans tracking-[0.1em] uppercase">{mode.label}</span>
+                            <span className="font-sans text-[10px] font-semibold tracking-[0.1em] uppercase">{mode.label}</span>
                         </button>
                     ))}
                 </div>

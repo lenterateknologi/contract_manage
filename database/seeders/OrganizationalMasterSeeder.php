@@ -15,14 +15,26 @@ class OrganizationalMasterSeeder extends Seeder
      */
     public function run(): void
     {
-        // PostgreSQL equivalent to disable foreign key checks
-        DB::statement('SET session_replication_role = "replica";');
+        $driver = DB::getDriverName();
+        if ($driver === 'pgsql') {
+            DB::statement('SET session_replication_role = "replica";');
+        } elseif ($driver === 'sqlite') {
+            DB::statement('PRAGMA foreign_keys = OFF;');
+        } else {
+            DB::statement('SET FOREIGN_KEY_CHECKS = 0;');
+        }
         
         Company::truncate();
         Region::truncate();
         CompanyGroup::truncate();
         
-        DB::statement('SET session_replication_role = "origin";');
+        if ($driver === 'pgsql') {
+            DB::statement('SET session_replication_role = "origin";');
+        } elseif ($driver === 'sqlite') {
+            DB::statement('PRAGMA foreign_keys = ON;');
+        } else {
+            DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
+        }
 
         // 1. Create Company Groups from provided list
         $groupList = [

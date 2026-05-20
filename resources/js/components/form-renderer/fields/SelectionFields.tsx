@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
 import { Label } from '@/components/ui/base/Label';
 import { cn } from '@/lib/utils';
+import React, { useState } from 'react';
 import { getTypographyStyle, renderValue } from '../utils';
 
 interface FieldProps {
@@ -56,9 +56,7 @@ export const RadioField: React.FC<FieldProps> = ({ field, value, onChange, readO
     if (readOnly) {
         return (
             <div className="flex flex-col gap-1.5 py-1">
-                {field.label && (
-                    <div className="text-muted-foreground mb-0.5 text-[10px] font-black tracking-tight uppercase">{field.label}</div>
-                )}
+                {field.label && <div className="text-muted-foreground mb-0.5 text-[10px] font-black tracking-tight uppercase">{field.label}</div>}
                 <div className="flex flex-wrap gap-4">
                     {options.map((opt: any) => (
                         <div key={opt.value} className="flex items-center gap-1.5">
@@ -102,9 +100,7 @@ export const RadioField: React.FC<FieldProps> = ({ field, value, onChange, readO
                                 value === opt.value ? 'border-primary bg-white' : 'border-border group-hover:border-primary bg-white',
                             )}
                         >
-                            {value === opt.value && (
-                                <div className="bg-primary animate-in zoom-in-50 h-2 w-2 rounded-full duration-200" />
-                            )}
+                            {value === opt.value && <div className="bg-primary animate-in zoom-in-50 h-2 w-2 rounded-full duration-200" />}
                         </div>
                         <span className="text-foreground/70 group-hover:text-primary text-[11px] font-bold uppercase transition-colors select-none">
                             {opt.label}
@@ -143,15 +139,16 @@ export const SelectField: React.FC<FieldProps> = ({ field, value, onChange, read
     }
 
     if (field.type === 'searchable_select') {
-        const filtered = searchQuery
-            ? selectOptions.filter((o: any) => o.label.toLowerCase().includes(searchQuery.toLowerCase()))
-            : selectOptions;
+        const filtered = searchQuery ? selectOptions.filter((o: any) => o.label.toLowerCase().includes(searchQuery.toLowerCase())) : selectOptions;
         const selectedLabel = selectOptions.find((o: any) => o.value === value)?.label || '';
 
         return (
             <div className="relative w-full">
                 {field.label && (
-                    <Label className="text-foreground/70 mb-1 block text-[10px] font-black tracking-tight uppercase" style={getTypographyStyle(field, 0.8, true)}>
+                    <Label
+                        className="text-foreground/70 mb-1 block text-[10px] font-black tracking-tight uppercase"
+                        style={getTypographyStyle(field, 0.8, true)}
+                    >
                         {field.label}
                         {field.is_required && <span className="text-destructive ml-0.5 font-bold">*</span>}
                     </Label>
@@ -169,7 +166,12 @@ export const SelectField: React.FC<FieldProps> = ({ field, value, onChange, read
                         <span className={cn('truncate text-left', selectedLabel ? 'text-foreground' : 'text-muted-foreground/60 font-medium italic')}>
                             {selectedLabel || field.placeholder || 'Pilih...'}
                         </span>
-                        <i className={cn('fa-solid fa-chevron-down text-muted-foreground/40 text-[10px] transition-transform', isOpen && 'rotate-180')} />
+                        <i
+                            className={cn(
+                                'fa-solid fa-chevron-down text-muted-foreground/40 text-[10px] transition-transform',
+                                isOpen && 'rotate-180',
+                            )}
+                        />
                     </button>
                     {isOpen && (
                         <>
@@ -194,12 +196,19 @@ export const SelectField: React.FC<FieldProps> = ({ field, value, onChange, read
                                         <button
                                             key={opt.value}
                                             type="button"
-                                            onClick={() => { onChange?.(opt.value); setIsOpen(false); setSearchQuery(''); }}
-                                            className={cn('flex w-full items-center justify-between px-3 py-1.5 text-left text-[11px] font-bold transition-all', value === opt.value ? 'bg-primary/10 text-primary' : 'text-foreground/70 hover:bg-muted')}
+                                            onClick={() => {
+                                                onChange?.(opt.value);
+                                                setIsOpen(false);
+                                                setSearchQuery('');
+                                            }}
+                                            className={cn(
+                                                'flex w-full items-center justify-between px-3 py-1.5 text-left text-[11px] font-bold transition-all',
+                                                value === opt.value ? 'bg-primary/10 text-primary' : 'text-foreground/70 hover:bg-muted',
+                                            )}
                                             style={getTypographyStyle(field)}
                                         >
                                             <span className="truncate">{opt.label}</span>
-                                            {value === opt.value && <i className="fa-solid fa-check text-primary shrink-0 ml-2 text-[10px]" />}
+                                            {value === opt.value && <i className="fa-solid fa-check text-primary ml-2 shrink-0 text-[10px]" />}
                                         </button>
                                     ))}
                                 </div>
@@ -214,7 +223,10 @@ export const SelectField: React.FC<FieldProps> = ({ field, value, onChange, read
     return (
         <div className="relative w-full">
             {field.label && (
-                <Label className="text-foreground/80 mb-1 block text-[10px] font-black tracking-tight uppercase" style={getTypographyStyle(field, 0.8, true)}>
+                <Label
+                    className="text-foreground/80 mb-1 block text-[10px] font-black tracking-tight uppercase"
+                    style={getTypographyStyle(field, 0.8, true)}
+                >
                     {field.label}
                     {field.is_required && <span className="text-destructive ml-0.5 font-bold">*</span>}
                 </Label>

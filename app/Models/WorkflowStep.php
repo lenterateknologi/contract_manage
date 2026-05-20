@@ -82,10 +82,6 @@ class WorkflowStep extends Model
         return $this->hasMany(WorkflowStepUser::class, 'workflow_step_id');
     }
 
-    public function selectionRules(): HasMany
-    {
-        return $this->hasMany(WorkflowStepSelectionRule::class, 'workflow_step_id');
-    }
 
     public function getRoleAttribute()
     {

@@ -1,7 +1,13 @@
 <?php
 
+use App\Http\Controllers\Admin\VendorAdminController;
+use App\Http\Controllers\Admin\WorkflowAdminController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ContractController;
+use App\Http\Controllers\ContractFileController;
+use App\Http\Controllers\ContractExportController;
+use App\Http\Controllers\ContractApprovalController;
+use App\Http\Controllers\ContractFormController;
 use App\Http\Controllers\ContractMessageController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TemplateController;
@@ -19,46 +25,46 @@ Route::middleware('auth')->group(function () {
     Route::get('/contracts/{id}', [ContractController::class, 'show']);
     Route::patch('/contracts/{id}', [ContractController::class, 'update']);
     Route::delete('/contracts/{id}', [ContractController::class, 'destroy']);
-    Route::post('/contracts/{id}/send', [ContractController::class, 'send']);
-    Route::post('/contracts/{id}/approve', [ContractController::class, 'approve']);
-    Route::post('/contracts/{id}/reject', [ContractController::class, 'reject']);
-    Route::post('/contracts/{id}/revision', [ContractController::class, 'uploadRevision']);
-    Route::post('/contracts/{id}/version', [ContractController::class, 'changeVersion']);
-    Route::post('/contracts/{id}/attachments', [ContractController::class, 'uploadAttachment']);
-    Route::delete('/contracts/{id}/attachments/{atId}', [ContractController::class, 'deleteAttachment']);
-    Route::get('/contracts/{id}/download', [ContractController::class, 'download'])->name('api.contracts.download');
-    Route::get('/contracts/{id}/file/{versionNo}', [ContractController::class, 'fileContent'])->name('api.contracts.file-url');
-    Route::get('/contracts/{id}/attachment/{atId}', [ContractController::class, 'attachmentFile'])->name('api.contracts.attachment-file');
-    Route::get('/contracts/{id}/pdf/{versionNo}', [ContractController::class, 'pdfPreview'])->name('api.contracts.pdf-preview');
-    Route::get('/contracts/{id}/attachment-pdf/{atId}', [ContractController::class, 'attachmentPdfPreview'])->name('api.contracts.attachment-pdf-preview');
-    Route::get('/contracts/{id}/vendor-document/{docId}', [ContractController::class, 'vendorDocumentFile'])->name('api.contracts.vendor-document-file');
-    Route::get('/contracts/{id}/vendor-document-pdf/{docId}', [ContractController::class, 'vendorDocumentPdfPreview'])->name('api.contracts.vendor-document-pdf-preview');
+    Route::post('/contracts/{id}/send', [ContractApprovalController::class, 'send']);
+    Route::post('/contracts/{id}/approve', [ContractApprovalController::class, 'approve']);
+    Route::post('/contracts/{id}/reject', [ContractApprovalController::class, 'reject']);
+    Route::post('/contracts/{id}/revision', [ContractFileController::class, 'uploadRevision']);
+    Route::post('/contracts/{id}/version', [ContractFileController::class, 'changeVersion']);
+    Route::post('/contracts/{id}/attachments', [ContractFileController::class, 'uploadAttachment']);
+    Route::delete('/contracts/{id}/attachments/{atId}', [ContractFileController::class, 'deleteAttachment']);
+    Route::get('/contracts/{id}/download', [ContractFileController::class, 'download'])->name('api.contracts.download');
+    Route::get('/contracts/{id}/file/{versionNo}', [ContractFileController::class, 'fileContent'])->name('api.contracts.file-url');
+    Route::get('/contracts/{id}/attachment/{atId}', [ContractFileController::class, 'attachmentFile'])->name('api.contracts.attachment-file');
+    Route::get('/contracts/{id}/pdf/{versionNo}', [ContractFileController::class, 'pdfPreview'])->name('api.contracts.pdf-preview');
+    Route::get('/contracts/{id}/attachment-pdf/{atId}', [ContractFileController::class, 'attachmentPdfPreview'])->name('api.contracts.attachment-pdf-preview');
+    Route::get('/contracts/{id}/vendor-document/{docId}', [ContractFileController::class, 'vendorDocumentFile'])->name('api.contracts.vendor-document-file');
+    Route::get('/contracts/{id}/vendor-document-pdf/{docId}', [ContractFileController::class, 'vendorDocumentPdfPreview'])->name('api.contracts.vendor-document-pdf-preview');
 
     // ── Contract Transactions (Messages, Forms, Agreements, Audit) ──
     Route::get('/contracts/{contractId}/messages', [ContractMessageController::class, 'index']);
     Route::post('/contracts/{contractId}/messages', [ContractMessageController::class, 'store']);
     Route::post('/contracts/{contractId}/messages/read', [ContractMessageController::class, 'markRead']);
 
-    Route::get('/contracts/{id}/form-submissions/{type}', [ContractController::class, 'getFormSubmission']);
-    Route::post('/contracts/{id}/form-submissions', [ContractController::class, 'saveFormSubmission']);
-    Route::get('/contracts/{id}/form-submissions/{type}/compare', [ContractController::class, 'compareFormVersions']);
-    Route::get('/contracts/{id}/form-submissions/{type}/pdf/queue', [ContractController::class, 'exportFormSubmissionPdfQueue'])->name('api.contracts.form-submissions.pdf.queue');
-    Route::get('/contracts/{id}/form-submissions/{type}/pdf', [ContractController::class, 'exportFormSubmissionPdf'])->name('api.contracts.form-submissions.pdf');
+    Route::get('/contracts/{id}/form-submissions/{type}', [ContractFormController::class, 'getFormSubmission']);
+    Route::post('/contracts/{id}/form-submissions', [ContractFormController::class, 'saveFormSubmission']);
+    Route::get('/contracts/{id}/form-submissions/{type}/compare', [ContractFormController::class, 'compareFormVersions']);
+    Route::get('/contracts/{id}/form-submissions/{type}/pdf/queue', [ContractExportController::class, 'exportFormSubmissionPdfQueue'])->name('api.contracts.form-submissions.pdf.queue');
+    Route::get('/contracts/{id}/form-submissions/{type}/pdf', [ContractExportController::class, 'exportFormSubmissionPdf'])->name('api.contracts.form-submissions.pdf');
 
-    Route::post('/contracts/{id}/agreement', [ContractController::class, 'uploadAgreement']);
-    Route::get('/contracts/{id}/agreement/versions', [ContractController::class, 'getAgreementVersions']);
-    Route::get('/contracts/{id}/agreement/compare', [ContractController::class, 'compareAgreementVersions']);
+    Route::post('/contracts/{id}/agreement', [ContractFileController::class, 'uploadAgreement']);
+    Route::get('/contracts/{id}/agreement/versions', [ContractFileController::class, 'getAgreementVersions']);
+    Route::get('/contracts/{id}/agreement/compare', [ContractFileController::class, 'compareAgreementVersions']);
 
-    Route::get('/contracts/{id}/audit-trail', [ContractController::class, 'getAuditTrail']);
-    Route::get('/contracts/{id}/audit-trail/document', [ContractController::class, 'renderAuditDocument'])->name('api.contracts.audit.document');
-    Route::get('/contracts/{id}/audit-trail/pdf', [ContractController::class, 'exportAuditPdf'])->name('api.contracts.audit.pdf');
-    Route::get('/contracts/{id}/audit-trail/pdf/queue', [ContractController::class, 'exportAuditPdfQueue'])->name('api.contracts.audit.pdf.queue');
-    Route::get('/contracts/{id}/approval/pdf/queue', [ContractController::class, 'exportApprovalTimelinePdfQueue'])->name('api.contracts.approval.pdf.queue');
-    Route::get('/contracts/{id}/audit-trail/excel', [ContractController::class, 'exportAuditExcel'])->name('api.contracts.audit.excel');
+    Route::get('/contracts/{id}/audit-trail', [ContractExportController::class, 'getAuditTrail']);
+    Route::get('/contracts/{id}/audit-trail/document', [ContractExportController::class, 'renderAuditDocument'])->name('api.contracts.audit.document');
+    Route::get('/contracts/{id}/audit-trail/pdf', [ContractExportController::class, 'exportAuditPdf'])->name('api.contracts.audit.pdf');
+    Route::get('/contracts/{id}/audit-trail/pdf/queue', [ContractExportController::class, 'exportAuditPdfQueue'])->name('api.contracts.audit.pdf.queue');
+    Route::get('/contracts/{id}/approval/pdf/queue', [ContractExportController::class, 'exportApprovalTimelinePdfQueue'])->name('api.contracts.approval.pdf.queue');
+    Route::get('/contracts/{id}/audit-trail/excel', [ContractExportController::class, 'exportAuditExcel'])->name('api.contracts.audit.excel');
 
     // Bulk Actions
     Route::post('/contracts/bulk-delete', [ContractController::class, 'bulkDestroy']);
-    Route::post('/contracts/bulk-approve', [ContractController::class, 'bulkApprove']);
+    Route::post('/contracts/bulk-approve', [ContractApprovalController::class, 'bulkApprove']);
 
     // Helpers
     Route::get('/form-templates/{id}/fields', function ($id) {
@@ -112,22 +118,22 @@ Route::middleware('auth')->group(function () {
         Route::post('/contract-statuses/bulk-delete', [AdminController::class, 'bulkDestroyStatuses']);
 
         // Vendors
-        Route::get('/vendors', [AdminController::class, 'vendors']);
-        Route::post('/vendors', [AdminController::class, 'storeVendor']);
-        Route::put('/vendors/{vendor}', [AdminController::class, 'updateVendor']);
-        Route::delete('/vendors/{vendor}', [AdminController::class, 'destroyVendor']);
-        Route::post('/vendors/bulk-delete', [AdminController::class, 'bulkDestroyVendor']);
-        Route::post('/vendors/{vendor}/documents', [AdminController::class, 'uploadVendorDocument']);
-        Route::delete('/vendors/{vendor}/documents/{document}', [AdminController::class, 'destroyVendorDocument']);
+        Route::get('/vendors', [VendorAdminController::class, 'index']);
+        Route::post('/vendors', [VendorAdminController::class, 'store']);
+        Route::put('/vendors/{vendor}', [VendorAdminController::class, 'update']);
+        Route::delete('/vendors/{vendor}', [VendorAdminController::class, 'destroy']);
+        Route::post('/vendors/bulk-delete', [VendorAdminController::class, 'bulkDestroy']);
+        Route::post('/vendors/{vendor}/documents', [VendorAdminController::class, 'uploadDocument']);
+        Route::delete('/vendors/{vendor}/documents/{document}', [VendorAdminController::class, 'destroyDocument']);
 
         // Workflows
-        Route::get('/workflows', [AdminController::class, 'workflows']);
-        Route::post('/workflows', [AdminController::class, 'storeWorkflow']);
-        Route::put('/workflows/{workflow}', [AdminController::class, 'updateWorkflow']);
-        Route::delete('/workflows/{workflow}', [AdminController::class, 'destroyWorkflow']);
-        Route::post('/workflows/bulk-delete', [AdminController::class, 'bulkDestroyWorkflows']);
-        Route::get('/workflows/{workflow}/steps', [AdminController::class, 'workflowSteps']);
-        Route::post('/workflows/{workflow}/steps', [AdminController::class, 'updateWorkflowSteps']);
+        Route::get('/workflows', [WorkflowAdminController::class, 'index']);
+        Route::post('/workflows', [WorkflowAdminController::class, 'store']);
+        Route::put('/workflows/{workflow}', [WorkflowAdminController::class, 'update']);
+        Route::delete('/workflows/{workflow}', [WorkflowAdminController::class, 'destroy']);
+        Route::post('/workflows/bulk-delete', [WorkflowAdminController::class, 'bulkDestroy']);
+        Route::get('/workflows/{workflow}/steps', [WorkflowAdminController::class, 'steps']);
+        Route::post('/workflows/{workflow}/steps', [WorkflowAdminController::class, 'updateSteps']);
 
         // Company Groups, Regions, Companies
         Route::get('/company-groups', [AdminController::class, 'companyGroups']);

@@ -32,24 +32,40 @@ function deptColor(name: string) {
 
 const DeptCell = ({ name, code }: Readonly<{ name: string; code: string }>) => (
     <div className="flex items-center gap-3 select-none">
-        <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all duration-200 shadow-sm backdrop-blur-sm select-none', deptColor(name))}>
+        <div
+            className={cn(
+                'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-sm backdrop-blur-sm transition-all duration-200 select-none',
+                deptColor(name),
+            )}
+        >
             <Building2 size={18} />
         </div>
         <div className="flex min-w-0 flex-col">
-            <span className="text-slate-900 dark:text-slate-100 mb-0.5 truncate text-sm leading-tight font-bold tracking-wide">{name}</span>
-            <div className="text-muted-foreground/80 dark:text-slate-400 flex items-center gap-1.5 font-mono text-xs leading-none font-semibold">{code}</div>
+            <span className="mb-0.5 truncate text-sm leading-tight font-bold tracking-wide text-slate-900 dark:text-slate-100">{name}</span>
+            <div className="text-muted-foreground/80 flex items-center gap-1.5 font-mono text-xs leading-none font-semibold dark:text-slate-400">
+                {code}
+            </div>
         </div>
     </div>
 );
 
 const DescriptionCell = ({ description }: Readonly<{ description?: string }>) => (
-    <span className="text-muted-foreground dark:text-slate-300/80 line-clamp-1 max-w-[300px] text-sm font-medium tracking-wide">{description || '—'}</span>
+    <span className="text-muted-foreground line-clamp-1 max-w-[300px] text-sm font-medium tracking-wide dark:text-slate-300/80">
+        {description || '—'}
+    </span>
 );
 
 const VisibilityCell = ({ isActive }: Readonly<{ isActive: boolean }>) => (
     <div className="flex items-center gap-2 select-none">
-        <div className={cn('h-2 w-2 shrink-0 rounded-full', isActive ? 'bg-emerald-500 animate-pulse' : 'bg-rose-400')} />
-        <span className={cn('text-xs font-bold tracking-wide', isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400')}>{isActive ? 'Aktif' : 'Nonaktif'}</span>
+        <div className={cn('h-2 w-2 shrink-0 rounded-full', isActive ? 'animate-pulse bg-emerald-500' : 'bg-rose-400')} />
+        <span
+            className={cn(
+                'text-xs font-bold tracking-wide',
+                isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400',
+            )}
+        >
+            {isActive ? 'Aktif' : 'Nonaktif'}
+        </span>
     </div>
 );
 
@@ -166,7 +182,7 @@ export function DepartmentManagement({ departments, filters }: Readonly<Departme
                             type="button"
                             variant="ghost"
                             onClick={() => setIsConfirmOpen(true)}
-                            className="h-10 rounded-xl border border-rose-500/20 px-4 text-xs font-bold text-rose-500 transition-all hover:bg-rose-500 dark:hover:bg-rose-500/20 hover:text-white active:scale-95 select-none duration-200"
+                            className="h-10 rounded-xl border border-rose-500/20 px-4 text-xs font-bold text-rose-500 transition-all duration-200 select-none hover:bg-rose-500 hover:text-white active:scale-95 dark:hover:bg-rose-500/20"
                         >
                             <Trash2 size={15} className="mr-2" /> Hapus
                         </Button>
@@ -189,7 +205,7 @@ export function DepartmentManagement({ departments, filters }: Readonly<Departme
                     description={`Apakah Anda yakin ingin menghapus departemen ${editingDept?.name}? Tindakan ini tidak dapat dibatalkan.`}
                     confirmText="Hapus Departemen"
                 />
-                <div className="grid grid-cols-1 gap-8 md:grid-cols-12 select-none animate-in fade-in duration-200">
+                <div className="animate-in fade-in grid grid-cols-1 gap-8 duration-200 select-none md:grid-cols-12">
                     {/* Main Column: 8 Columns */}
                     <div className="space-y-8 md:col-span-8">
                         <FormSection title="Data Organisasi" subtitle="Identitas unik dan deskripsi unit kerja">
@@ -232,16 +248,16 @@ export function DepartmentManagement({ departments, filters }: Readonly<Departme
                             />
                         </FormSection>
 
-                        <div className="border-border/80 dark:border-slate-800/80 bg-muted/20 dark:bg-slate-900/40 backdrop-blur-sm group relative overflow-hidden rounded-2xl border p-6 select-none shadow-sm transition-all duration-200">
-                            <div className="absolute top-0 right-0 p-4 opacity-5 transition-opacity group-hover:opacity-10 duration-200">
+                        <div className="border-border/80 bg-muted/20 group relative overflow-hidden rounded-2xl border p-6 shadow-sm backdrop-blur-sm transition-all duration-200 select-none dark:border-slate-800/80 dark:bg-slate-900/40">
+                            <div className="absolute top-0 right-0 p-4 opacity-5 transition-opacity duration-200 group-hover:opacity-10">
                                 <Building2 size={80} strokeWidth={1} />
                             </div>
 
                             <div className="relative z-10 mb-4 flex items-center gap-3">
-                                <span className="text-slate-900 dark:text-slate-100 text-xs font-bold tracking-wider uppercase">Arsitektur Unit</span>
+                                <span className="text-xs font-bold tracking-wider text-slate-900 uppercase dark:text-slate-100">Arsitektur Unit</span>
                             </div>
 
-                            <p className="text-muted-foreground dark:text-slate-400 relative z-10 text-xs leading-relaxed font-medium">
+                            <p className="text-muted-foreground relative z-10 text-xs leading-relaxed font-medium dark:text-slate-400">
                                 Departemen digunakan untuk mengelompokkan pengguna dan menentukan keterlibatan dalam alur persetujuan (Workflow)
                                 secara otomatis.
                             </p>
@@ -253,7 +269,7 @@ export function DepartmentManagement({ departments, filters }: Readonly<Departme
     }
 
     return (
-        <div className="bg-card/40 dark:bg-slate-900/20 backdrop-blur-sm border border-border/60 dark:border-slate-800/60 m-5 rounded-2xl p-6 shadow-sm animate-in fade-in duration-200 select-none">
+        <div className="bg-card/40 border-border/60 animate-in fade-in m-5 rounded-2xl border p-6 shadow-sm backdrop-blur-sm duration-200 select-none dark:border-slate-800/60 dark:bg-slate-900/20">
             <TableMasterData
                 title="Database Unit / Departemen"
                 columns={columns}
@@ -272,7 +288,7 @@ export function DepartmentManagement({ departments, filters }: Readonly<Departme
                         <Button
                             variant="white"
                             onClick={openCreate}
-                            className="h-10 px-5 gap-2 rounded-xl text-xs font-bold tracking-wide transition-all duration-200 border border-border bg-card dark:bg-slate-900/60 text-foreground shadow-sm hover:bg-muted/60 dark:hover:bg-slate-800/60 hover:border-border hover:shadow-md select-none"
+                            className="border-border bg-card text-foreground hover:bg-muted/60 hover:border-border h-10 gap-2 rounded-xl border px-5 text-xs font-bold tracking-wide shadow-sm transition-all duration-200 select-none hover:shadow-md dark:bg-slate-900/60 dark:hover:bg-slate-800/60"
                         >
                             <Plus size={15} className="text-primary" /> Tambah Unit
                         </Button>

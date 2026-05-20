@@ -35,20 +35,30 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 const VendorCell = ({ name, companyType, code, isActive }: Readonly<{ name: string; companyType?: string; code: string; isActive: boolean }>) => (
     <div className="group flex items-center gap-3 select-none">
-        <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all duration-200 select-none backdrop-blur-sm shadow-sm', vendorColor(name))}>
+        <div
+            className={cn(
+                'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-sm backdrop-blur-sm transition-all duration-200 select-none',
+                vendorColor(name),
+            )}
+        >
             <Truck size={18} />
         </div>
         <div className="flex min-w-0 flex-col">
             <div className="mb-0.5 flex items-center gap-2">
-                <span className="text-slate-900 dark:text-slate-100 truncate text-sm leading-tight font-bold tracking-wide">{name}</span>
-                <span className="text-muted-foreground/80 dark:text-slate-400 border-border dark:border-slate-800 border-l pl-2 text-[10px] font-bold tracking-wider uppercase select-none">
+                <span className="truncate text-sm leading-tight font-bold tracking-wide text-slate-900 dark:text-slate-100">{name}</span>
+                <span className="text-muted-foreground/80 border-border border-l pl-2 text-[10px] font-bold tracking-wider uppercase select-none dark:border-slate-800 dark:text-slate-400">
                     {companyType || 'CV'}
                 </span>
             </div>
-            <div className="text-muted-foreground/80 dark:text-slate-400 flex items-center gap-2 font-mono text-xs leading-none font-semibold">
+            <div className="text-muted-foreground/80 flex items-center gap-2 font-mono text-xs leading-none font-semibold dark:text-slate-400">
                 {code}
-                <div className={cn('h-1.5 w-1.5 rounded-full', isActive ? 'bg-emerald-500 animate-pulse' : 'bg-rose-400')} />
-                <span className={cn('text-xs font-bold tracking-wide select-none transition-colors duration-200', isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400')}>
+                <div className={cn('h-1.5 w-1.5 rounded-full', isActive ? 'animate-pulse bg-emerald-500' : 'bg-rose-400')} />
+                <span
+                    className={cn(
+                        'text-xs font-bold tracking-wide transition-colors duration-200 select-none',
+                        isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400',
+                    )}
+                >
                     {isActive ? 'Terverifikasi' : 'Belum Verifikasi'}
                 </span>
             </div>
@@ -60,21 +70,21 @@ const CategoryCell = ({ category, email, phone }: Readonly<{ category?: string; 
     <div className="flex flex-col gap-1.5 select-none">
         <span
             className={cn(
-                'inline-block w-fit rounded-xl px-3 py-1 text-xs font-bold tracking-wide backdrop-blur-sm shadow-sm',
-                CATEGORY_COLORS[category ?? ''] ?? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-500/20',
+                'inline-block w-fit rounded-xl px-3 py-1 text-xs font-bold tracking-wide shadow-sm backdrop-blur-sm',
+                CATEGORY_COLORS[category ?? ''] ?? 'border border-slate-500/20 bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
             )}
         >
             {category || 'General Supplier'}
         </span>
         <div className="flex flex-col pl-0.5">
             {email && (
-                <div className="text-muted-foreground/80 dark:text-slate-400 flex items-center gap-1.5 text-xs font-medium lowercase">
-                    <Mail size={12} className="shrink-0 opacity-60 text-primary" /> {email}
+                <div className="text-muted-foreground/80 flex items-center gap-1.5 text-xs font-medium lowercase dark:text-slate-400">
+                    <Mail size={12} className="text-primary shrink-0 opacity-60" /> {email}
                 </div>
             )}
             {phone && (
-                <div className="text-muted-foreground/80 dark:text-slate-400 flex items-center gap-1.5 text-xs font-medium">
-                    <Phone size={12} className="shrink-0 opacity-60 text-primary" /> {phone}
+                <div className="text-muted-foreground/80 flex items-center gap-1.5 text-xs font-medium dark:text-slate-400">
+                    <Phone size={12} className="text-primary shrink-0 opacity-60" /> {phone}
                 </div>
             )}
         </div>
@@ -83,8 +93,10 @@ const CategoryCell = ({ category, email, phone }: Readonly<{ category?: string; 
 
 const PicCell = ({ picName, directorName, picPosition }: Readonly<{ picName?: string; directorName?: string; picPosition?: string }>) => (
     <div className="flex flex-col select-none">
-        <span className="text-slate-900 dark:text-slate-100 truncate text-sm font-bold tracking-wide">{picName || directorName || '—'}</span>
-        <span className="text-muted-foreground/80 dark:text-slate-400 mt-0.5 text-[11px] leading-none font-bold uppercase tracking-wider">{picPosition || 'DIREKTUR UTAMA'}</span>
+        <span className="truncate text-sm font-bold tracking-wide text-slate-900 dark:text-slate-100">{picName || directorName || '—'}</span>
+        <span className="text-muted-foreground/80 mt-0.5 text-[11px] leading-none font-bold tracking-wider uppercase dark:text-slate-400">
+            {picPosition || 'DIREKTUR UTAMA'}
+        </span>
     </div>
 );
 
@@ -92,19 +104,26 @@ const ComplianceCell = ({ docCount }: Readonly<{ docCount?: number }>) => {
     const score = Math.round(((docCount || 0) / 10) * 100);
     const status = score >= 80 ? 'SANGAT BAIK' : score >= 50 ? 'CUKUP' : 'KRITIS';
     const colorClass =
-        score >= 80 ? 'text-emerald-500 bg-emerald-500/10 dark:bg-emerald-500/20' : score >= 50 ? 'text-amber-500 bg-amber-500/10 dark:bg-amber-500/20' : 'text-rose-500 bg-rose-500/10 dark:bg-rose-500/20';
+        score >= 80
+            ? 'text-emerald-500 bg-emerald-500/10 dark:bg-emerald-500/20'
+            : score >= 50
+              ? 'text-amber-500 bg-amber-500/10 dark:bg-amber-500/20'
+              : 'text-rose-500 bg-rose-500/10 dark:bg-rose-500/20';
 
     return (
         <div className="flex flex-col items-end gap-1.5 select-none">
-            <div className={cn('rounded-xl px-3 py-1 text-xs font-bold tracking-wider backdrop-blur-sm shadow-sm', colorClass)}>{status}</div>
+            <div className={cn('rounded-xl px-3 py-1 text-xs font-bold tracking-wider shadow-sm backdrop-blur-sm', colorClass)}>{status}</div>
             <div className="flex items-center gap-2">
-                <div className="bg-muted dark:bg-slate-800 h-1.5 w-20 overflow-hidden rounded-full border border-border/40">
+                <div className="bg-muted border-border/40 h-1.5 w-20 overflow-hidden rounded-full border dark:bg-slate-800">
                     <div
-                        className={cn('h-full transition-all duration-300', score >= 80 ? 'bg-emerald-500' : score >= 50 ? 'bg-amber-500' : 'bg-rose-500')}
+                        className={cn(
+                            'h-full transition-all duration-300',
+                            score >= 80 ? 'bg-emerald-500' : score >= 50 ? 'bg-amber-500' : 'bg-rose-500',
+                        )}
                         style={{ width: `${score}%` }}
                     />
                 </div>
-                <span className="text-slate-900 dark:text-slate-100 text-xs font-bold">{score}%</span>
+                <span className="text-xs font-bold text-slate-900 dark:text-slate-100">{score}%</span>
             </div>
         </div>
     );
@@ -182,7 +201,7 @@ export function VendorManagement({ vendors, filters }: Readonly<VendorManagement
     );
 
     return (
-        <div className="bg-card/40 dark:bg-slate-900/20 backdrop-blur-sm border border-border/60 dark:border-slate-800/60 m-5 rounded-2xl p-6 shadow-sm animate-in fade-in duration-200 select-none">
+        <div className="bg-card/40 border-border/60 animate-in fade-in m-5 rounded-2xl border p-6 shadow-sm backdrop-blur-sm duration-200 select-none dark:border-slate-800/60 dark:bg-slate-900/20">
             <TableMasterData
                 title="Database Rekanan / Vendor"
                 data={vendors?.data || []}

@@ -1,5 +1,5 @@
-import { UserProfile } from '@/types/contracts';
 import { cn } from '@/lib/utils';
+import { UserProfile } from '@/types/contracts';
 
 // ─── Status config ─────────────────────────────────────────────────
 const STATUS_LABEL: Record<string, string> = {
@@ -29,7 +29,12 @@ const STATUS_CLS: Record<string, string> = {
 export function StatusBadge({ status, label }: { status: string; label?: string }) {
     const cls = STATUS_CLS[status] ?? STATUS_CLS.draft;
     return (
-        <span className={cn('inline-flex items-center rounded-lg px-2.5 py-1 text-[10.5px] font-bold tracking-tight uppercase border transition-all duration-300', cls)}>
+        <span
+            className={cn(
+                'inline-flex items-center rounded-lg border px-2.5 py-1 text-[10.5px] font-bold tracking-tight uppercase transition-all duration-300',
+                cls,
+            )}
+        >
             {label ?? STATUS_LABEL[status] ?? status}
         </span>
     );
@@ -49,7 +54,7 @@ export function Avatar({
     if (!user) return null;
     return (
         <span
-            className={`inline-flex flex-shrink-0 items-center justify-center rounded-full font-bold bg-black text-white dark:bg-white dark:text-black shadow-sm ${sizeMap[size]} ${className}`}
+            className={`inline-flex flex-shrink-0 items-center justify-center rounded-full bg-black font-bold text-white shadow-sm dark:bg-white dark:text-black ${sizeMap[size]} ${className}`}
         >
             {user.initials}
         </span>
@@ -60,11 +65,11 @@ export function Avatar({
 export function ProgressBar({ done, total, pct }: { done: number; total: number; pct: number }) {
     return (
         <div>
-            <div className="text-black/40 dark:text-white/40 mb-1 text-xs">
+            <div className="mb-1 text-xs text-black/40 dark:text-white/40">
                 {done}/{total}
             </div>
-            <div className="bg-black/5 dark:bg-white/5 h-1 w-20 overflow-hidden rounded-full border border-black/5 dark:border-white/5">
-                <div className="bg-black dark:bg-white h-full rounded-full transition-all" style={{ width: `${pct}%` }} />
+            <div className="h-1 w-20 overflow-hidden rounded-full border border-black/5 bg-black/5 dark:border-white/5 dark:bg-white/5">
+                <div className="h-full rounded-full bg-black transition-all dark:bg-white" style={{ width: `${pct}%` }} />
             </div>
         </div>
     );

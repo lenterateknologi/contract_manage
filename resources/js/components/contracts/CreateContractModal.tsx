@@ -113,10 +113,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                         <FilePlus2 size={20} className="text-primary" />
                         <h2 className="text-sm font-semibold">Buat Kontrak Baru</h2>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="rounded-lg p-1.5 text-muted-foreground transition-all hover:text-foreground"
-                    >
+                    <button onClick={onClose} className="text-muted-foreground hover:text-foreground rounded-lg p-1.5 transition-all">
                         <X size={18} />
                     </button>
                 </div>
@@ -125,7 +122,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                 <div className="custom-scrollbar max-h-[75vh] space-y-6 overflow-y-auto p-6">
                     {isLegalOrAdmin && (
                         <div className="border-border bg-muted/40 space-y-3 rounded-xl border p-4">
-                            <label className="flex items-center gap-2 text-xs font-semibold text-foreground">
+                            <label className="text-foreground flex items-center gap-2 text-xs font-semibold">
                                 <ShieldCheck size={14} className="text-primary" /> Dibuat Untuk (Initiator)
                             </label>
                             <select
@@ -145,7 +142,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                                             ))}
                                 </optgroup>
                             </select>
-                            <div className="flex gap-2 text-xs leading-relaxed text-muted-foreground italic">
+                            <div className="text-muted-foreground flex gap-2 text-xs leading-relaxed italic">
                                 <span className="shrink-0 font-bold">Legal Helper:</span>
                                 <span>Workflow akan disesuaikan dengan departemen initiator yang dipilih.</span>
                             </div>
@@ -153,9 +150,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                     )}
 
                     <div className="space-y-3">
-                        <label className="px-1 text-xs font-semibold text-foreground uppercase tracking-wider">
-                            Kategori Dokumen
-                        </label>
+                        <label className="text-foreground px-1 text-xs font-semibold tracking-wider uppercase">Kategori Dokumen</label>
                         <div className="grid grid-cols-3 gap-2">
                             {[
                                 { id: 'contract', label: 'F1 Kontrak', icon: FileText },
@@ -181,18 +176,18 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                     {category === 'nda' ? (
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <label className="px-1 text-xs font-semibold text-foreground">
+                                <label className="text-foreground px-1 text-xs font-semibold">
                                     Nama Project <span className="text-rose-500">*</span>
                                 </label>
                                 <input
                                     value={projectName}
                                     onChange={(e) => setProjectName(e.target.value)}
                                     placeholder="Masukkan nama project"
-                                    className="border-border bg-card focus:ring-primary w-full rounded-lg border py-2.5 px-4 text-sm font-medium text-foreground transition-all outline-none focus:ring-1"
+                                    className="border-border bg-card focus:ring-primary text-foreground w-full rounded-lg border px-4 py-2.5 text-sm font-medium transition-all outline-none focus:ring-1"
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="px-1 text-xs font-semibold text-foreground">
+                                <label className="text-foreground px-1 text-xs font-semibold">
                                     Pihak Kedua (Vendor) <span className="text-rose-500">*</span>
                                 </label>
                                 <select
@@ -202,7 +197,9 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                                 >
                                     <option value="">Pilih Vendor</option>
                                     {vendors.map((v) => (
-                                        <option key={v.id} value={v.id}>{v.name}</option>
+                                        <option key={v.id} value={v.id}>
+                                            {v.name}
+                                        </option>
                                     ))}
                                 </select>
                             </div>
@@ -211,7 +208,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                         <>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <label className="px-1 text-xs font-semibold text-foreground">
+                                    <label className="text-foreground px-1 text-xs font-semibold">
                                         Tipe Pengajuan <span className="text-rose-500">*</span>
                                     </label>
                                     <select
@@ -222,7 +219,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                                         <option value="">Tipe Pengajuan</option>
                                         {Array.isArray(submissionTypes) &&
                                             submissionTypes
-                                                .filter(st => {
+                                                .filter((st) => {
                                                     if (category === 'non-contract') return ['Surat Kuasa', 'Review'].includes(st.name);
                                                     return ['Perjanjian Baru', 'Addendum/Amendment'].includes(st.name);
                                                 })
@@ -238,7 +235,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="px-1 text-xs font-semibold text-foreground">
+                                    <label className="text-foreground px-1 text-xs font-semibold">
                                         Jenis Kontrak <span className="text-rose-500">*</span>
                                     </label>
                                     <select
@@ -266,16 +263,16 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                             </div>
 
                             <div className="space-y-2">
-                                <label className="px-1 text-xs font-semibold text-foreground">
+                                <label className="text-foreground px-1 text-xs font-semibold">
                                     Judul Kontrak <span className="text-rose-500">*</span>
                                 </label>
                                 <div className="relative">
-                                    <FileText className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                    <FileText className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                                     <input
                                         value={title}
                                         onChange={(e) => setTitle(e.target.value)}
                                         placeholder="Masukkan judul kontrak"
-                                        className="border-border bg-card focus:ring-primary w-full rounded-lg border py-2.5 pr-4 pl-10 text-sm font-medium text-foreground transition-all outline-none placeholder:text-muted-foreground focus:ring-1"
+                                        className="border-border bg-card focus:ring-primary text-foreground placeholder:text-muted-foreground w-full rounded-lg border py-2.5 pr-4 pl-10 text-sm font-medium transition-all outline-none focus:ring-1"
                                     />
                                 </div>
                                 {errors.title && <div className="mt-1 px-1 text-xs font-medium text-rose-500">{errors.title}</div>}
@@ -283,14 +280,14 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                         </>
                     )}
 
-                    <div className="border-border bg-muted/20 space-y-3 rounded-xl border p-4 transition-all hover:bg-muted/30">
+                    <div className="border-border bg-muted/20 hover:bg-muted/30 space-y-3 rounded-xl border p-4 transition-all">
                         <label className="flex cursor-pointer items-start gap-3">
                             <div className="relative mt-0.5 flex h-5 w-5 items-center justify-center">
                                 <input
                                     type="checkbox"
                                     checked={taxRequired}
                                     onChange={(e) => setTaxRequired(e.target.checked)}
-                                    className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border-2 border-slate-300 bg-white transition-all checked:border-primary checked:bg-primary focus:outline-none dark:border-slate-700 dark:bg-slate-900"
+                                    className="peer checked:border-primary checked:bg-primary h-5 w-5 cursor-pointer appearance-none rounded-md border-2 border-slate-300 bg-white transition-all focus:outline-none dark:border-slate-700 dark:bg-slate-900"
                                 />
                                 <Check
                                     size={14}
@@ -299,8 +296,8 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                                 />
                             </div>
                             <div className="flex flex-col gap-0.5">
-                                <span className="text-sm font-bold text-foreground">Butuh Persetujuan Pajak?</span>
-                                <span className="text-[10px] leading-tight text-muted-foreground">
+                                <span className="text-foreground text-sm font-bold">Butuh Persetujuan Pajak?</span>
+                                <span className="text-muted-foreground text-[10px] leading-tight">
                                     Centang jika kontrak ini memiliki implikasi perpajakan yang perlu divalidasi tim Tax.
                                 </span>
                             </div>
@@ -320,7 +317,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                     <Button
                         variant="ghost"
                         onClick={onClose}
-                        className="h-10 px-4 text-xs font-bold text-muted-foreground transition-all hover:text-foreground"
+                        className="text-muted-foreground hover:text-foreground h-10 px-4 text-xs font-bold transition-all"
                     >
                         Batal
                     </Button>

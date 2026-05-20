@@ -17,10 +17,10 @@ interface StatusManagementProps {
 
 const StatusLabelCell = ({ row }: { readonly row: any }) => (
     <div className="group flex flex-col select-none">
-        <span className="text-slate-900 dark:text-slate-200 inline-block text-sm font-semibold transition-transform group-hover:translate-x-1 duration-200">
+        <span className="inline-block text-sm font-semibold text-slate-900 transition-transform duration-200 group-hover:translate-x-1 dark:text-slate-200">
             {row.label}
         </span>
-        <span className="text-muted-foreground dark:text-slate-400 mt-0.5 font-mono text-xs font-medium">{row.code}</span>
+        <span className="text-muted-foreground mt-0.5 font-mono text-xs font-medium dark:text-slate-400">{row.code}</span>
     </div>
 );
 
@@ -48,10 +48,10 @@ const ConfigBadge = ({
 }) => (
     <div
         className={cn(
-            'flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-medium transition-all duration-200 select-none backdrop-blur-sm shadow-sm',
+            'flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-medium shadow-sm backdrop-blur-sm transition-all duration-200 select-none',
             active
                 ? 'bg-primary/10 border-primary/30 text-primary dark:text-primary'
-                : 'text-muted-foreground border-border/40 dark:border-slate-800/40 bg-muted/20 dark:bg-slate-800/20 opacity-70',
+                : 'text-muted-foreground border-border/40 bg-muted/20 opacity-70 dark:border-slate-800/40 dark:bg-slate-800/20',
         )}
     >
         {active ? <ActiveIcon size={12} /> : <InactiveIcon size={12} />}
@@ -109,14 +109,11 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                 cell: (row) => (
                     <div className="flex items-center justify-end gap-2 select-none">
                         <div
-                            className={cn(
-                                'h-2 w-2 rounded-full',
-                                row.is_active ? 'animate-pulse bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700',
-                            )}
+                            className={cn('h-2 w-2 rounded-full', row.is_active ? 'animate-pulse bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700')}
                         />
                         <span
                             className={cn(
-                                'text-xs font-bold tracking-wide select-none transition-colors duration-200',
+                                'text-xs font-bold tracking-wide transition-colors duration-200 select-none',
                                 row.is_active ? 'text-slate-900 dark:text-slate-100' : 'text-slate-400 dark:text-slate-600',
                             )}
                         >
@@ -184,7 +181,7 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                 isDirty={form.isDirty}
                 isEdit={isEdit}
             >
-                <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 animate-in fade-in duration-200 select-none">
+                <div className="animate-in fade-in grid grid-cols-1 gap-10 duration-200 select-none lg:grid-cols-12">
                     <div className="space-y-12 lg:col-span-8">
                         {/* Section 1: Dasar */}
                         <FormSection title="Arsitektur Identitas" subtitle="Parameter dasar yang mendefinisikan status dalam database">
@@ -217,43 +214,39 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                         <FormSection title="Skema Warna & Tipografi" subtitle="Pengaturan visual untuk badge dan audit trail">
                             <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
                                 <div className="space-y-3">
-                                    <label className="text-muted-foreground ml-1 text-xs font-bold tracking-wide uppercase">
-                                        Warna Teks
-                                    </label>
-                                    <div className="border-border/80 dark:border-slate-800/80 bg-muted/20 dark:bg-slate-900/40 backdrop-blur-sm flex items-center gap-3 rounded-2xl border p-3.5 transition-all duration-200">
+                                    <label className="text-muted-foreground ml-1 text-xs font-bold tracking-wide uppercase">Warna Teks</label>
+                                    <div className="border-border/80 bg-muted/20 flex items-center gap-3 rounded-2xl border p-3.5 backdrop-blur-sm transition-all duration-200 dark:border-slate-800/80 dark:bg-slate-900/40">
                                         <input
                                             type="color"
                                             value={form.data.color}
                                             onChange={(e) => form.setData('color', e.target.value)}
                                             className="h-8 w-12 cursor-pointer rounded-lg border-none bg-transparent"
                                         />
-                                        <span className="text-slate-900 dark:text-slate-100 font-mono text-sm font-bold tracking-wider uppercase">
+                                        <span className="font-mono text-sm font-bold tracking-wider text-slate-900 uppercase dark:text-slate-100">
                                             {form.data.color}
                                         </span>
                                     </div>
                                 </div>
                                 <div className="space-y-3">
-                                    <label className="text-muted-foreground ml-1 text-xs font-bold tracking-wide uppercase">
-                                        Warna Latar
-                                    </label>
-                                    <div className="border-border/80 dark:border-slate-800/80 bg-muted/20 dark:bg-slate-900/40 backdrop-blur-sm flex items-center gap-3 rounded-2xl border p-3.5 transition-all duration-200">
+                                    <label className="text-muted-foreground ml-1 text-xs font-bold tracking-wide uppercase">Warna Latar</label>
+                                    <div className="border-border/80 bg-muted/20 flex items-center gap-3 rounded-2xl border p-3.5 backdrop-blur-sm transition-all duration-200 dark:border-slate-800/80 dark:bg-slate-900/40">
                                         <input
                                             type="color"
                                             value={form.data.bg_color}
                                             onChange={(e) => form.setData('bg_color', e.target.value)}
                                             className="h-8 w-12 cursor-pointer rounded-lg border-none bg-transparent"
                                         />
-                                        <span className="text-slate-900 dark:text-slate-100 font-mono text-sm font-bold tracking-wider uppercase">
+                                        <span className="font-mono text-sm font-bold tracking-wider text-slate-900 uppercase dark:text-slate-100">
                                             {form.data.bg_color}
                                         </span>
                                     </div>
                                 </div>
-                                <div className="border-border/80 dark:border-slate-800/80 bg-muted/10 dark:bg-slate-900/20 backdrop-blur-sm flex flex-col items-center justify-center rounded-2xl border border-dashed p-6 transition-all duration-200">
+                                <div className="border-border/80 bg-muted/10 flex flex-col items-center justify-center rounded-2xl border border-dashed p-6 backdrop-blur-sm transition-all duration-200 dark:border-slate-800/80 dark:bg-slate-900/20">
                                     <span className="text-muted-foreground mb-4 text-xs font-bold tracking-wider uppercase opacity-80 select-none">
                                         Live Badge Preview
                                     </span>
                                     <div
-                                        className="rounded-xl border border-border px-6 py-2 text-xs font-semibold shadow-sm backdrop-blur-md transition-all duration-200 select-none hover:scale-105"
+                                        className="border-border rounded-xl border px-6 py-2 text-xs font-semibold shadow-sm backdrop-blur-md transition-all duration-200 select-none hover:scale-105"
                                         style={{ color: form.data.color, backgroundColor: form.data.bg_color }}
                                     >
                                         {form.data.label || 'PREVIEW'}
@@ -266,8 +259,8 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                     <div className="space-y-10 lg:col-span-4">
                         <div className="sticky top-6 space-y-10">
                             {/* Mode Tampilan Widget */}
-                            <div className="border-border/60 dark:border-slate-800/60 bg-muted/10 dark:bg-slate-900/20 backdrop-blur-sm rounded-2xl border p-6 select-none shadow-sm">
-                                <h3 className="text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+                            <div className="border-border/60 bg-muted/10 rounded-2xl border p-6 shadow-sm backdrop-blur-sm select-none dark:border-slate-800/60 dark:bg-slate-900/20">
+                                <h3 className="mb-4 flex items-center gap-2 text-xs font-bold tracking-wider text-slate-900 uppercase dark:text-slate-100">
                                     <LayoutTemplate size={14} className="text-primary" /> Strategi Render
                                 </h3>
 
@@ -294,7 +287,7 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                                                 'group flex w-full items-start gap-4 rounded-xl border p-3.5 text-left transition-all duration-200 select-none',
                                                 form.data.display_mode === mode.id
                                                     ? 'bg-primary border-primary text-white shadow-md'
-                                                    : 'border-border/60 dark:border-slate-800/60 text-slate-800 dark:text-slate-200 hover:border-primary/50 bg-card dark:bg-slate-900/40 hover:shadow-sm',
+                                                    : 'border-border/60 hover:border-primary/50 bg-card text-slate-800 hover:shadow-sm dark:border-slate-800/60 dark:bg-slate-900/40 dark:text-slate-200',
                                             )}
                                         >
                                             <div
@@ -302,7 +295,7 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                                                     'rounded-lg p-2 transition-colors duration-200',
                                                     form.data.display_mode === mode.id
                                                         ? 'bg-white/20'
-                                                        : 'bg-muted dark:bg-slate-800/60 group-hover:bg-primary/10',
+                                                        : 'bg-muted group-hover:bg-primary/10 dark:bg-slate-800/60',
                                                 )}
                                             >
                                                 <mode.icon size={16} />
@@ -318,7 +311,7 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
 
                             {/* Operational Controls */}
                             <div className="space-y-4 select-none">
-                                <h3 className="text-slate-900 dark:text-slate-100 px-1 text-xs font-bold uppercase tracking-wider">
+                                <h3 className="px-1 text-xs font-bold tracking-wider text-slate-900 uppercase dark:text-slate-100">
                                     Kontrol Perilaku
                                 </h3>
                                 <div className="space-y-3">
@@ -345,19 +338,19 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                                         <div
                                             key={ctrl.id}
                                             onClick={() => form.setData(ctrl.id as any, !form.data[ctrl.id as keyof typeof form.data])}
-                                            className="bg-card dark:bg-slate-900/20 backdrop-blur-sm border-border/60 dark:border-slate-800/60 group hover:bg-muted/30 dark:hover:bg-slate-800/40 flex cursor-pointer items-center gap-4 rounded-xl border p-3.5 transition-all duration-200 select-none shadow-sm"
+                                            className="bg-card border-border/60 group hover:bg-muted/30 flex cursor-pointer items-center gap-4 rounded-xl border p-3.5 shadow-sm backdrop-blur-sm transition-all duration-200 select-none dark:border-slate-800/60 dark:bg-slate-900/20 dark:hover:bg-slate-800/40"
                                         >
                                             <Checkbox
                                                 id={ctrl.id}
                                                 checked={!!form.data[ctrl.id as keyof typeof form.data]}
                                                 onCheckedChange={() => {}} // Handled by div
-                                                className="h-5 w-5 border-border dark:border-slate-700 data-[state=checked]:bg-primary"
+                                                className="border-border data-[state=checked]:bg-primary h-5 w-5 dark:border-slate-700"
                                             />
                                             <div className="flex flex-col">
-                                                <span className="text-slate-900 dark:text-slate-100 text-xs font-bold tracking-wide">
+                                                <span className="text-xs font-bold tracking-wide text-slate-900 dark:text-slate-100">
                                                     {ctrl.label}
                                                 </span>
-                                                <span className="text-muted-foreground dark:text-slate-400 mt-0.5 text-xs font-medium">
+                                                <span className="text-muted-foreground mt-0.5 text-xs font-medium dark:text-slate-400">
                                                     {ctrl.desc}
                                                 </span>
                                             </div>
@@ -366,10 +359,11 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                                 </div>
                             </div>
 
-                            <div className="flex gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/5 dark:bg-amber-500/10 p-4 backdrop-blur-sm animate-in fade-in duration-300">
+                            <div className="animate-in fade-in flex gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 backdrop-blur-sm duration-300 dark:bg-amber-500/10">
                                 <AlertCircle size={16} className="mt-0.5 shrink-0 text-amber-500" />
                                 <p className="text-xs leading-relaxed font-semibold text-amber-600 dark:text-amber-400">
-                                    Peringatan: Perubahan parameter visual akan berdampak langsung pada audit trail dan dashboard di seluruh sistem secara global.
+                                    Peringatan: Perubahan parameter visual akan berdampak langsung pada audit trail dan dashboard di seluruh sistem
+                                    secara global.
                                 </p>
                             </div>
                         </div>
@@ -380,7 +374,7 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
     }
 
     return (
-        <div className="bg-card/40 dark:bg-slate-900/20 backdrop-blur-sm border border-border/60 dark:border-slate-800/60 m-5 rounded-2xl p-6 shadow-sm animate-in fade-in duration-200 select-none">
+        <div className="bg-card/40 border-border/60 animate-in fade-in m-5 rounded-2xl border p-6 shadow-sm backdrop-blur-sm duration-200 select-none dark:border-slate-800/60 dark:bg-slate-900/20">
             <TableMasterData
                 title="Manajemen Parameter Status"
                 borderless={true}
@@ -396,7 +390,7 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                     <Button
                         variant="white"
                         onClick={openCreate}
-                        className="h-10 px-5 gap-2 rounded-xl text-xs font-bold tracking-wide transition-all duration-200 border border-border bg-card dark:bg-slate-900/60 text-foreground shadow-sm hover:bg-muted/60 dark:hover:bg-slate-800/60 hover:border-border hover:shadow-md select-none"
+                        className="border-border bg-card text-foreground hover:bg-muted/60 hover:border-border h-10 gap-2 rounded-xl border px-5 text-xs font-bold tracking-wide shadow-sm transition-all duration-200 select-none hover:shadow-md dark:bg-slate-900/60 dark:hover:bg-slate-800/60"
                     >
                         <Plus size={14} className="text-primary" /> Registrasi Status Baru
                     </Button>

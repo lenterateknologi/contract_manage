@@ -12,6 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('m_contract_types', function (Blueprint $table) {
+            $table->dropForeign(['form_template_id']);
             $table->dropColumn(['type', 'input_mechanism', 'form_template_id']);
             
             $table->string('f1_input_mechanism')->default('digital')->nullable();

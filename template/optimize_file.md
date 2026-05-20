@@ -1,9 +1,0 @@
-    1585 ./resources/js/pages/contracts/index.tsx
-    1730 ./app/Http/Controllers/AdminController.php
-    2711 ./app/Http/Controllers/ContractController.php
-    1007 ./resources/js/pages/admin/form-builder.tsx
-    2831 ./resources/js/pages/admin/workflows/form.tsx
-     854 ./app/Services/ContractWorkflowService.php
-     952 ./resources/js/components/contracts/FormSubmissionTab.tsx
-     891 ./resources/js/pages/admin/templates.tsx
-     873 ./resources/js/pages/admin/role-config.tsx

@@ -1,4 +1,3 @@
-import { cn } from '@/lib/utils';
 import { Head } from '@inertiajs/react';
 import { ArrowLeftRight, Download, Loader2 } from 'lucide-react';
 import React, { useState } from 'react';
@@ -43,9 +42,7 @@ export default function CompareAgreements({ contract, versions, initialV1, initi
                     <div className="flex flex-col">
                         <h2 className="flex items-center gap-2 text-sm font-bold text-black">
                             Perbandingan Persetujuan
-                            <span className="rounded border border-black bg-black px-1.5 py-0.5 text-[9px] font-bold text-white">
-                                Mode Audit
-                            </span>
+                            <span className="rounded border border-black bg-black px-1.5 py-0.5 text-[9px] font-bold text-white">Mode Audit</span>
                         </h2>
                         <p className="mt-0.5 text-xs font-bold text-black">
                             {contract.contract_no} &bull; {contract.title}
@@ -79,7 +76,7 @@ export default function CompareAgreements({ contract, versions, initialV1, initi
                             <select
                                 value={v1}
                                 onChange={(e) => setV1(Number(e.target.value))}
-                                className="cursor-pointer rounded-lg border-2 border-black bg-white px-4 py-2 text-xs font-bold text-black outline-none transition-all hover:bg-black hover:text-white"
+                                className="cursor-pointer rounded-lg border-2 border-black bg-white px-4 py-2 text-xs font-bold text-black transition-all outline-none hover:bg-black hover:text-white"
                             >
                                 {[...versions]
                                     .sort((a, b) => b.version_no - a.version_no)
@@ -124,7 +121,7 @@ export default function CompareAgreements({ contract, versions, initialV1, initi
                             <select
                                 value={v2}
                                 onChange={(e) => setV2(Number(e.target.value))}
-                                className="cursor-pointer rounded-lg border-2 border-black bg-white px-4 py-2 text-xs font-bold text-black outline-none transition-all hover:bg-black hover:text-white"
+                                className="cursor-pointer rounded-lg border-2 border-black bg-white px-4 py-2 text-xs font-bold text-black transition-all outline-none hover:bg-black hover:text-white"
                             >
                                 {[...versions]
                                     .sort((a, b) => b.version_no - a.version_no)
@@ -166,11 +163,15 @@ export default function CompareAgreements({ contract, versions, initialV1, initi
                     <span className="text-[10px] font-bold">Mode Perbandingan</span>
                 </div>
             </div>
-            
-            <style dangerouslySetInnerHTML={{ __html: `
+
+            <style
+                dangerouslySetInnerHTML={{
+                    __html: `
                 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-            `}} />
+            `,
+                }}
+            />
         </div>
     );
 }

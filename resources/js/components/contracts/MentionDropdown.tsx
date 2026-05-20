@@ -1,4 +1,3 @@
-import React from 'react';
 import { cn } from '@/lib/utils';
 import { Avatar } from './ui';
 
@@ -10,26 +9,16 @@ interface MentionDropdownProps {
     insertMention: (user: any) => void;
 }
 
-export function MentionDropdown({
-    isOpen,
-    users,
-    mentionIndex,
-    setMentionIndex,
-    insertMention,
-}: MentionDropdownProps) {
+export function MentionDropdown({ isOpen, users, mentionIndex, setMentionIndex, insertMention }: MentionDropdownProps) {
     if (!isOpen || users.length === 0) return null;
 
     return (
-        <div className="absolute bottom-full left-0 z-50 mb-2 w-56 overflow-hidden rounded-xl border border-border bg-white dark:bg-slate-900 shadow-2xl animate-in slide-in-from-bottom-1 duration-200">
-            <div className="border-b border-border bg-muted/60 dark:bg-white/5 px-3 py-1.5 flex items-center justify-between">
-                <span className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase">
-                    PILIH PENGGUNA
-                </span>
-                <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold">
-                    {users.length}
-                </span>
+        <div className="border-border animate-in slide-in-from-bottom-1 absolute bottom-full left-0 z-50 mb-2 w-56 overflow-hidden rounded-xl border bg-white shadow-2xl duration-200 dark:bg-slate-900">
+            <div className="border-border bg-muted/60 flex items-center justify-between border-b px-3 py-1.5 dark:bg-white/5">
+                <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">PILIH PENGGUNA</span>
+                <span className="bg-primary/10 text-primary rounded px-1.5 py-0.5 text-[9px] font-bold">{users.length}</span>
             </div>
-            <div className="max-h-[200px] overflow-y-auto divide-y divide-border/40">
+            <div className="divide-border/40 max-h-[200px] divide-y overflow-y-auto">
                 {users.map((u: any, i: number) => (
                     <button
                         key={u.id || i}
@@ -38,15 +27,15 @@ export function MentionDropdown({
                         className={cn(
                             'flex w-full items-center gap-2.5 p-2.5 text-left transition-all',
                             i === mentionIndex
-                                ? 'bg-primary text-white dark:bg-primary dark:text-white shadow-sm'
+                                ? 'bg-primary dark:bg-primary text-white shadow-sm dark:text-white'
                                 : 'hover:bg-muted dark:hover:bg-white/5',
                         )}
                     >
-                        <Avatar user={u} size="sm" className="ring-1 ring-border/50" />
+                        <Avatar user={u} size="sm" className="ring-border/50 ring-1" />
                         <div className="flex min-w-0 flex-col">
                             <span
                                 className={cn(
-                                    'truncate text-xs font-bold leading-tight',
+                                    'truncate text-xs leading-tight font-bold',
                                     i === mentionIndex ? 'text-inherit' : 'text-foreground dark:text-white',
                                 )}
                             >
@@ -54,7 +43,7 @@ export function MentionDropdown({
                             </span>
                             <span
                                 className={cn(
-                                    'text-[10px] font-medium mt-0.5 leading-none opacity-85',
+                                    'mt-0.5 text-[10px] leading-none font-medium opacity-85',
                                     i === mentionIndex ? 'text-inherit' : 'text-muted-foreground dark:text-white/60',
                                 )}
                             >

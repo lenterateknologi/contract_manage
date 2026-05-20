@@ -261,19 +261,12 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
                                                             <option value="">Pilih approver untuk {step.name}...</option>
                                                             {users
                                                                 .filter((u: any) => {
-                                                                    const rules = step.selection_rules || [];
-                                                                    if (rules.length === 0) {
-                                                                        // Fallback to legacy role_id filter if no specific rules
-                                                                        return !step.role_id || u.role_id === step.role_id;
-                                                                    }
-
-                                                                    // Check if user matches ANY of the rules (OR logic)
-                                                                    return rules.some((rule: any) => {
-                                                                        const matchesRole = !rule.role_id || u.role_id === rule.role_id;
-                                                                        const matchesDept =
-                                                                            !rule.department_id || u.department_id === rule.department_id;
-                                                                        return matchesRole && matchesDept;
-                                                                    });
+                                                                    // Filter by approver roles configured on the step
+                                                                    const roles: string[] = step.role || [];
+                                                                    if (roles.length === 0) return true;
+                                                                    return roles.some((r: string) =>
+                                                                        u.role?.toLowerCase() === r.toLowerCase()
+                                                                    );
                                                                 })
                                                                 .map((u: any) => (
                                                                     <option key={u.id} value={u.id.toString()}>
@@ -291,7 +284,6 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
                                     </div>
                                 </div>
                             )}
-
 
                             {!selectedWorkflow.steps?.some((s: any) => s.is_optional || s.step_type === 'selection') && (
                                 <div className="flex flex-col items-center justify-center space-y-2 rounded-2xl border border-dashed border-slate-100 bg-slate-50 p-6 text-center dark:border-slate-800 dark:bg-slate-950">

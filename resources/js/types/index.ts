@@ -2,12 +2,15 @@ import { LucideIcon } from 'lucide-react';
 
 export interface Auth {
     user: User | null;
-    permissions: Record<string, {
-        read: boolean;
-        create: boolean;
-        update: boolean;
-        delete: boolean;
-    }>;
+    permissions: Record<
+        string,
+        {
+            read: boolean;
+            create: boolean;
+            update: boolean;
+            delete: boolean;
+        }
+    >;
 }
 
 export interface BreadcrumbItem {

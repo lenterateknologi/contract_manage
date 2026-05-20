@@ -41,7 +41,7 @@ import {
     X,
     type LucideIcon,
 } from 'lucide-react';
-import React, { useEffect, useMemo, useRef, useState, memo } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import AppLogo from './AppLogo';
 
 const iconMap: Record<string, LucideIcon> = {

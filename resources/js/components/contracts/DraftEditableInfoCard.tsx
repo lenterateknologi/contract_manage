@@ -1,5 +1,4 @@
 import { Avatar } from '@/components/contracts/ui';
-import { contractApi } from '@/lib/contract-api';
 import { cn } from '@/lib/utils';
 import { Contract, ContractType } from '@/types/contracts';
 import { Check, ChevronDown, ChevronUp, Info, Loader2 } from 'lucide-react';
@@ -48,6 +47,7 @@ export function DraftEditableInfoCard({
     const [title, setTitle] = useState(selected.title);
     const [description, setDescription] = useState(selected.description || '');
     const [typeId, setTypeId] = useState(() => {
+        if (selected.contract_type_id) return String(selected.contract_type_id);
         const t = types.find((x) => x.name === selected.contract_type);
         return t ? String(t.id) : '';
     });
@@ -61,13 +61,14 @@ export function DraftEditableInfoCard({
         setTaxRequired(!!selected.metadata?.tax_required);
     }, [selected.metadata?.tax_required]);
 
-
-
     useEffect(() => {
         setTitle(selected.title);
         setDescription(selected.description || '');
-        const t = types.find((x) => x.name === selected.contract_type);
-        setTypeId(t ? String(t.id) : '');
+        const typeVal = selected.contract_type_id
+            ? String(selected.contract_type_id)
+            : (types.find((x) => x.name === selected.contract_type)?.id ? String(types.find((x) => x.name === selected.contract_type)?.id) : '');
+        setTypeId(typeVal);
+        setVendorId(selected.vendor_id || '');
         setSubmissionTypeId(selected.submission_type_id || '');
         setKopSubTopik((selected as any).kop_sub_topik || '');
         setTaxRequired(!!selected.metadata?.tax_required);
@@ -76,6 +77,7 @@ export function DraftEditableInfoCard({
         selected.title,
         selected.description,
         selected.contract_type,
+        selected.contract_type_id,
         selected.vendor_id,
         selected.submission_type_id,
         selected.transaction_type,
@@ -87,8 +89,9 @@ export function DraftEditableInfoCard({
     const [localSaving, setLocalSaving] = useState(false);
 
     const hasChanges = useMemo(() => {
-        const origType = types.find((x) => x.name === selected.contract_type);
-        const origTypeId = origType ? String(origType.id) : '';
+        const origTypeId = selected.contract_type_id
+            ? String(selected.contract_type_id)
+            : (types.find((x) => x.name === selected.contract_type)?.id ? String(types.find((x) => x.name === selected.contract_type)?.id) : '');
         return (
             title !== selected.title ||
             description !== (selected.description || '') ||

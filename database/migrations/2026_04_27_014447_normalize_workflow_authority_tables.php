@@ -60,6 +60,10 @@ return new class extends Migration
 
         // 3. Clean up old JSON columns
         Schema::table('m_workflow_steps', function (Blueprint $table) {
+            try {
+                $table->dropIndex('m_workflow_steps_role_index');
+            } catch (\Exception $e) {}
+
             $columns = ['role', 'department_ids', 'user_ids', 'department_id'];
             foreach ($columns as $col) {
                 if (Schema::hasColumn('m_workflow_steps', $col)) {
