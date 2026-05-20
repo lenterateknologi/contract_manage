@@ -28,10 +28,17 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
                 </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-                <Link className="block w-full" method="post" href={route('logout')} as="button" replace onClick={cleanup}>
-                    <LogOut className="mr-2" />
-                    Keluar
+            <DropdownMenuItem asChild className="focus:bg-blue-600 focus:text-white">
+                <Link
+                    className="flex w-full items-center hover:text-white"
+                    method="post"
+                    href={route('logout')}
+                    as="button"
+                    replace
+                    onClick={cleanup}
+                >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Log out
                 </Link>
             </DropdownMenuItem>
         </>

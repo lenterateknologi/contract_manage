@@ -113,7 +113,10 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                         <FilePlus2 size={20} className="text-primary" />
                         <h2 className="text-sm font-semibold">Buat Kontrak Baru</h2>
                     </div>
-                    <button onClick={onClose} className="text-muted-foreground hover:text-foreground rounded-lg p-1.5 transition-all">
+                    <button
+                        onClick={onClose}
+                        className="rounded-lg p-1.5 text-black/50 transition-all hover:text-black dark:text-white/50 dark:hover:text-white"
+                    >
                         <X size={18} />
                     </button>
                 </div>
@@ -149,27 +152,54 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                         </div>
                     )}
 
-                    <div className="space-y-3">
-                        <label className="text-foreground px-1 text-xs font-semibold tracking-wider uppercase">Kategori Dokumen</label>
-                        <div className="grid grid-cols-3 gap-2">
-                            {[
-                                { id: 'contract', label: 'F1 Kontrak', icon: FileText },
-                                { id: 'non-contract', label: 'F1 Non-Kontrak', icon: ShieldCheck },
-                                { id: 'nda', label: 'NDA Template', icon: FilePlus2 },
-                            ].map((cat) => (
-                                <button
-                                    key={cat.id}
-                                    onClick={() => setCategory(cat.id as any)}
-                                    className={`flex flex-col items-center justify-center gap-2 rounded-xl border p-3 transition-all ${
-                                        category === cat.id
-                                            ? 'bg-primary/10 border-primary text-primary shadow-sm'
-                                            : 'bg-card border-border text-muted-foreground hover:border-primary/50'
-                                    }`}
-                                >
-                                    <cat.icon size={18} />
-                                    <span className="text-[10px] font-bold uppercase">{cat.label}</span>
-                                </button>
-                            ))}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="px-1 text-[11px] font-semibold text-black dark:text-white">
+                                Tipe Pengajuan <span className="text-rose-500">*</span>
+                            </label>
+                            <select
+                                value={submissionTypeId}
+                                onChange={(e) => setSubmissionTypeId(e.target.value)}
+                                className="border-sidebar-border bg-sidebar-accent/20 text-sidebar-foreground focus:ring-sidebar-primary w-full rounded-lg border px-3 py-2.5 text-[12px] transition-all outline-none focus:ring-1"
+                            >
+                                <option value="">Tipe Pengajuan</option>
+                                {Array.isArray(submissionTypes) &&
+                                    submissionTypes.map((st) => (
+                                        <option key={st.id} value={st.id}>
+                                            {st.name}
+                                        </option>
+                                    ))}
+                            </select>
+                            {errors.submission_type_id && (
+                                <div className="mt-1 px-1 text-[10px] font-medium text-rose-500">{errors.submission_type_id}</div>
+                            )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="px-1 text-[11px] font-semibold text-black dark:text-white">
+                                Jenis Kontrak <span className="text-rose-500">*</span>
+                            </label>
+                            <select
+                                value={typeId}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setTypeId(val);
+                                    const selectedType = Array.isArray(types) ? types.find((t) => String(t.id) === val) : undefined;
+                                    if (selectedType) setTitle(selectedType.name);
+                                }}
+                                className="border-sidebar-border bg-sidebar-accent/20 text-sidebar-foreground focus:ring-sidebar-primary w-full rounded-lg border px-3 py-2.5 text-[12px] transition-all outline-none focus:ring-1"
+                            >
+                                <option value="">Pilih Tipe</option>
+                                {Array.isArray(types) &&
+                                    types.map((t) => (
+                                        <option key={t.id} value={t.id}>
+                                            {t.name}
+                                        </option>
+                                    ))}
+                            </select>
+                            {errors.contract_type_id && (
+                                <div className="mt-1 px-1 text-[10px] font-medium text-rose-500">{errors.contract_type_id}</div>
+                            )}
                         </div>
                     </div>
 
