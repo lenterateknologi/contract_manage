@@ -38,10 +38,13 @@ class ModuleSeeder extends Seeder
             ['identifier' => 'ADMIN_STATUS',   'name' => 'Master Status',    'route' => '/admin/contract-statuses','icon' => 'Tags',     'group' => 'Konfigurasi Alur', 'sequence' => 2],
 
             // Data Master
-            ['identifier' => 'ADMIN_USERS',   'name' => 'Manajemen Pengguna', 'route' => '/admin/users',       'icon' => 'UserCog',  'group' => 'Data Master', 'sequence' => 1],
-            ['identifier' => 'ADMIN_ROLES',   'name' => 'Hak Akses & Peran', 'route' => '/admin/roles',        'icon' => 'KeyRound', 'group' => 'Data Master', 'sequence' => 2],
-            ['identifier' => 'ADMIN_DEPTS',   'name' => 'Data Departemen',    'route' => '/admin/departments', 'icon' => 'Building2','group' => 'Data Master', 'sequence' => 3],
-            ['identifier' => 'ADMIN_VENDORS', 'name' => 'Daftar Vendor',      'route' => '/admin/vendors',     'icon' => 'Truck',    'group' => 'Data Master', 'sequence' => 4],
+            ['identifier' => 'ADMIN_GROUPS',  'name' => 'Data Group',      'route' => '/admin/company-groups', 'icon' => 'Users',        'group' => 'Data Master', 'sequence' => 1],
+            ['identifier' => 'ADMIN_REGIONS', 'name' => 'Data Region',     'route' => '/admin/regions',        'icon' => 'GitBranch',    'group' => 'Data Master', 'sequence' => 2],
+            ['identifier' => 'ADMIN_COMPANIES','name' => 'Data Company',    'route' => '/admin/companies',      'icon' => 'Building2',    'group' => 'Data Master', 'sequence' => 3],
+            ['identifier' => 'ADMIN_USERS',   'name' => 'Manajemen Pengguna', 'route' => '/admin/users',       'icon' => 'UserCog',  'group' => 'Data Master', 'sequence' => 4],
+            ['identifier' => 'ADMIN_ROLES',   'name' => 'Hak Akses & Peran', 'route' => '/admin/roles',        'icon' => 'KeyRound', 'group' => 'Data Master', 'sequence' => 5],
+            ['identifier' => 'ADMIN_DEPTS',   'name' => 'Data Departemen',    'route' => '/admin/departments', 'icon' => 'Building2','group' => 'Data Master', 'sequence' => 6],
+            ['identifier' => 'ADMIN_VENDORS', 'name' => 'Daftar Vendor',      'route' => '/admin/vendors',     'icon' => 'Truck',    'group' => 'Data Master', 'sequence' => 7],
 
             // Sistem & Laporan
             ['identifier' => 'ANLTX', 'name' => 'Analitik Kontrak', 'route' => '/admin/reports/analytics', 'icon' => 'BarChart3', 'group' => 'Sistem & Laporan', 'sequence' => 1],

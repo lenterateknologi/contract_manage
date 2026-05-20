@@ -1,8 +1,8 @@
 import { Button } from '@/components/ui/base/Button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/overlays/Dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/overlays/DropdownMenu';
 import { Input } from '@/components/ui/base/Input';
 import { Label } from '@/components/ui/base/Label';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/overlays/Dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/overlays/DropdownMenu';
 import { cn } from '@/lib/utils';
 import { Head, router } from '@inertiajs/react';
 import {
@@ -233,22 +233,18 @@ export default function Templates({ folders, templates }: Props) {
         <>
             <Head title="Template Kontrak" />
 
-            <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-background antialiased">
+            <div className="bg-background flex h-[calc(100vh-64px)] overflow-hidden antialiased">
                 {/* Fixed Sidebar for Tree Navigation */}
-                <div className="flex w-72 shrink-0 flex-col gap-6 overflow-y-auto border-r border-border bg-card/40 p-6 select-none">
+                <div className="border-border bg-card/40 flex w-72 shrink-0 flex-col gap-6 overflow-y-auto border-r p-6 select-none">
                     <div className="flex items-center justify-between px-1">
                         <div className="space-y-1">
-                            <h3 className="text-xs font-bold tracking-wider text-foreground uppercase">
-                                Struktur Folder
-                            </h3>
-                            <p className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
-                                Hierarchy Explorer
-                            </p>
+                            <h3 className="text-foreground text-xs font-bold tracking-wider uppercase">Struktur Folder</h3>
+                            <p className="text-muted-foreground text-[10px] font-semibold tracking-wide uppercase">Hierarchy Explorer</p>
                         </div>
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm transition-all active:scale-95"
+                            className="bg-primary text-primary-foreground hover:bg-primary/90 h-8 w-8 rounded-xl shadow-sm transition-all active:scale-95"
                             onClick={() => setIsFolderModalOpen(true)}
                         >
                             <Plus size={14} />
@@ -259,8 +255,8 @@ export default function Templates({ folders, templates }: Props) {
                             className={cn(
                                 'group flex cursor-pointer items-center gap-3 rounded-xl border border-transparent px-4 py-3 text-sm transition-all active:scale-[0.98]',
                                 currentFolderId === null
-                                    ? 'bg-primary font-bold text-primary-foreground shadow-sm'
-                                    : 'font-medium tracking-tight text-muted-foreground hover:bg-muted hover:text-foreground',
+                                    ? 'bg-primary text-primary-foreground font-bold shadow-sm'
+                                    : 'text-muted-foreground hover:bg-muted hover:text-foreground font-medium tracking-tight',
                             )}
                             onClick={() => setCurrentFolderId(null)}
                         >
@@ -290,14 +286,14 @@ export default function Templates({ folders, templates }: Props) {
                 </div>
 
                 {/* Main Content Area */}
-                <div className="flex min-w-0 flex-1 flex-col bg-background">
+                <div className="bg-background flex min-w-0 flex-1 flex-col">
                     {/* Toolbar */}
-                    <div className="sticky top-0 z-20 flex h-20 shrink-0 items-center justify-between gap-6 border-b border-border bg-background px-8">
+                    <div className="border-border bg-background sticky top-0 z-20 flex h-20 shrink-0 items-center justify-between gap-6 border-b px-8">
                         <div className="flex items-center gap-4 overflow-hidden">
                             <Button
                                 variant="outline"
                                 size="icon"
-                                className="h-10 w-10 shrink-0 rounded-xl border border-border bg-card shadow-sm hover:bg-muted hover:text-foreground disabled:opacity-50"
+                                className="border-border bg-card hover:bg-muted hover:text-foreground h-10 w-10 shrink-0 rounded-xl border shadow-sm disabled:opacity-50"
                                 onClick={() => setCurrentFolderId(currentFolder?.parent_id || null)}
                                 disabled={currentFolderId === null}
                             >
@@ -306,17 +302,17 @@ export default function Templates({ folders, templates }: Props) {
 
                             <nav className="flex items-center overflow-hidden text-xs font-semibold tracking-wide whitespace-nowrap">
                                 <span
-                                    className="cursor-pointer text-muted-foreground/80 hover:text-foreground transition-colors uppercase"
+                                    className="text-muted-foreground/80 hover:text-foreground cursor-pointer uppercase transition-colors"
                                     onClick={() => setCurrentFolderId(null)}
                                 >
                                     Assets
                                 </span>
                                 {folderPath.map((f, i) => (
                                     <React.Fragment key={f.id}>
-                                        <ChevronRight size={14} className="mx-2 shrink-0 text-muted-foreground/40" />
+                                        <ChevronRight size={14} className="text-muted-foreground/40 mx-2 shrink-0" />
                                         <span
                                             className={cn(
-                                                'max-w-[150px] cursor-pointer truncate transition-colors uppercase',
+                                                'max-w-[150px] cursor-pointer truncate uppercase transition-colors',
                                                 i === folderPath.length - 1
                                                     ? 'text-foreground font-bold'
                                                     : 'text-muted-foreground/80 hover:text-foreground font-semibold',
@@ -332,11 +328,11 @@ export default function Templates({ folders, templates }: Props) {
 
                         <div className="flex items-center gap-3">
                             <div className="relative hidden w-56 md:block">
-                                <Search className="absolute top-1/2 left-3.5 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/60" />
+                                <Search className="text-muted-foreground/60 absolute top-1/2 left-3.5 h-3.5 w-3.5 -translate-y-1/2" />
                                 <Input
                                     type="search"
                                     placeholder="Cari item..."
-                                    className="h-10 rounded-xl border border-border bg-card pl-10 text-xs font-medium focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary transition-all"
+                                    className="border-border bg-card focus-visible:ring-primary focus-visible:border-primary h-10 rounded-xl border pl-10 text-xs font-medium transition-all focus-visible:ring-1"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                 />
@@ -349,14 +345,15 @@ export default function Templates({ folders, templates }: Props) {
                                         variant="outline"
                                         size="sm"
                                         className={cn(
-                                            'h-10 gap-2 rounded-xl border border-border px-4 text-xs font-semibold hover:bg-muted active:scale-95',
-                                            fileTypeFilter && 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground border-none',
+                                            'border-border hover:bg-muted h-10 gap-2 rounded-xl border px-4 text-xs font-semibold active:scale-95',
+                                            fileTypeFilter &&
+                                                'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground border-none',
                                         )}
                                     >
                                         <Filter size={14} />
                                         <span className="hidden lg:inline">Filter</span>
                                         {fileTypeFilter && (
-                                            <span className="flex h-4 min-w-[16px] items-center justify-center rounded-md bg-background px-1 text-[10px] font-bold text-foreground">
+                                            <span className="bg-background text-foreground flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[10px] font-bold">
                                                 1
                                             </span>
                                         )}
@@ -365,10 +362,7 @@ export default function Templates({ folders, templates }: Props) {
                                 <DropdownMenuContent align="end" className="w-48">
                                     <DropdownMenuItem
                                         onClick={() => setFileTypeFilter(null)}
-                                        className={cn(
-                                            'text-xs font-medium cursor-pointer',
-                                            fileTypeFilter === null ? 'bg-muted' : '',
-                                        )}
+                                        className={cn('cursor-pointer text-xs font-medium', fileTypeFilter === null ? 'bg-muted' : '')}
                                     >
                                         Semua Tipe File
                                     </DropdownMenuItem>
@@ -376,10 +370,7 @@ export default function Templates({ folders, templates }: Props) {
                                         <DropdownMenuItem
                                             key={type}
                                             onClick={() => setFileTypeFilter(type)}
-                                            className={cn(
-                                                'text-xs font-medium cursor-pointer',
-                                                fileTypeFilter === type ? 'bg-muted' : '',
-                                            )}
+                                            className={cn('cursor-pointer text-xs font-medium', fileTypeFilter === type ? 'bg-muted' : '')}
                                         >
                                             {type}
                                         </DropdownMenuItem>
@@ -390,7 +381,7 @@ export default function Templates({ folders, templates }: Props) {
                             <Button
                                 size="sm"
                                 variant="outline"
-                                className="h-10 gap-2 rounded-xl border border-border bg-card px-4 text-xs font-bold hover:bg-muted active:scale-95 transition-all"
+                                className="border-border bg-card hover:bg-muted h-10 gap-2 rounded-xl border px-4 text-xs font-bold transition-all active:scale-95"
                                 onClick={() => setIsFolderModalOpen(true)}
                             >
                                 <FolderPlus size={14} />
@@ -399,7 +390,7 @@ export default function Templates({ folders, templates }: Props) {
 
                             <Button
                                 size="sm"
-                                className="h-10 gap-2 rounded-xl bg-primary px-4 text-xs font-bold text-primary-foreground hover:bg-primary/90 shadow-sm active:scale-95 transition-all"
+                                className="bg-primary text-primary-foreground hover:bg-primary/90 h-10 gap-2 rounded-xl px-4 text-xs font-bold shadow-sm transition-all active:scale-95"
                                 onClick={() => setIsUploadModalOpen(true)}
                             >
                                 <Upload size={14} />
@@ -410,7 +401,7 @@ export default function Templates({ folders, templates }: Props) {
 
                     {/* File List / Grid - Right Click Enabled Background */}
                     <div
-                        className="custom-scrollbar flex-1 overflow-y-auto bg-muted/20 p-8"
+                        className="custom-scrollbar bg-muted/20 flex-1 overflow-y-auto p-8"
                         onContextMenu={(e) => handleContextMenu(e, 'background', currentFolderId || 'root', 'Background')}
                     >
                         <div className="grid auto-rows-max grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
@@ -419,22 +410,18 @@ export default function Templates({ folders, templates }: Props) {
                                 <div
                                     key={folder.id}
                                     className={cn(
-                                        'group relative flex h-24 cursor-pointer items-center gap-4 rounded-xl border border-border bg-card p-5 transition-all select-none hover:-translate-y-0.5 hover:shadow-md hover:border-border/80',
-                                        contextMenu.item?.id === folder.id && contextMenu.isOpen
-                                            ? 'border-primary ring-1 ring-primary'
-                                            : 'shadow-sm',
+                                        'group border-border bg-card hover:border-border/80 relative flex h-24 cursor-pointer items-center gap-4 rounded-xl border p-5 transition-all select-none hover:-translate-y-0.5 hover:shadow-md',
+                                        contextMenu.item?.id === folder.id && contextMenu.isOpen ? 'border-primary ring-primary ring-1' : 'shadow-sm',
                                     )}
                                     onClick={() => setCurrentFolderId(folder.id)}
                                     onContextMenu={(e) => handleContextMenu(e, 'folder', folder.id, folder.name)}
                                 >
-                                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-muted/40 text-muted-foreground transition-all group-hover:bg-primary/10 group-hover:text-primary">
+                                    <div className="border-border bg-muted/40 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-all">
                                         <Folder size={20} fill="currentColor" fillOpacity={0.1} />
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                        <h4 className="mb-1 truncate text-sm font-bold text-foreground">
-                                            {folder.name}
-                                        </h4>
-                                        <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                                        <h4 className="text-foreground mb-1 truncate text-sm font-bold">{folder.name}</h4>
+                                        <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
                                             {folder.templates_count} items
                                         </p>
                                     </div>
@@ -442,7 +429,7 @@ export default function Templates({ folders, templates }: Props) {
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-8 w-8 shrink-0 rounded-lg opacity-0 transition-opacity group-hover:opacity-100 hover:bg-muted"
+                                        className="hover:bg-muted h-8 w-8 shrink-0 rounded-lg opacity-0 transition-opacity group-hover:opacity-100"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             handleContextMenu(e as any, 'folder', folder.id, folder.name);
@@ -458,29 +445,25 @@ export default function Templates({ folders, templates }: Props) {
                                 <div
                                     key={template.id}
                                     className={cn(
-                                        'group relative cursor-default overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all select-none hover:-translate-y-0.5 hover:shadow-md hover:border-border/80',
-                                        contextMenu.item?.id === template.id && contextMenu.isOpen
-                                            ? 'border-primary ring-1 ring-primary'
-                                            : '',
+                                        'group border-border bg-card hover:border-border/80 relative cursor-default overflow-hidden rounded-xl border shadow-sm transition-all select-none hover:-translate-y-0.5 hover:shadow-md',
+                                        contextMenu.item?.id === template.id && contextMenu.isOpen ? 'border-primary ring-primary ring-1' : '',
                                     )}
                                     onContextMenu={(e) => handleContextMenu(e, 'template', template.id, template.name)}
                                 >
                                     <div className="flex items-center gap-4 p-5">
-                                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-muted/40 text-muted-foreground transition-all group-hover:bg-primary/10 group-hover:text-primary">
+                                        <div className="border-border bg-muted/40 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-all">
                                             <FileText size={20} />
                                         </div>
                                         <div className="min-w-0 flex-1">
-                                            <h4 className="mb-1 truncate text-sm font-bold text-foreground">
-                                                {template.name}
-                                            </h4>
-                                            <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                                            <h4 className="text-foreground mb-1 truncate text-sm font-bold">{template.name}</h4>
+                                            <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
                                                 {template.file_type} • {formatSize(template.file_size)}
                                             </p>
                                         </div>
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="h-8 w-8 shrink-0 rounded-lg opacity-0 transition-opacity group-hover:opacity-100 hover:bg-muted"
+                                            className="hover:bg-muted h-8 w-8 shrink-0 rounded-lg opacity-0 transition-opacity group-hover:opacity-100"
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 handleContextMenu(e as any, 'template', template.id, template.name);
@@ -489,13 +472,13 @@ export default function Templates({ folders, templates }: Props) {
                                             <MoreHorizontal size={14} className="text-muted-foreground" />
                                         </Button>
                                     </div>
-                                    <div className="flex items-center justify-between border-t border-border bg-muted/30 px-5 py-3">
-                                        <span className="max-w-[100px] truncate text-xs font-medium text-muted-foreground/80">
+                                    <div className="border-border bg-muted/30 flex items-center justify-between border-t px-5 py-3">
+                                        <span className="text-muted-foreground/80 max-w-[100px] truncate text-xs font-medium">
                                             Oleh {template.creator?.name || 'System'}
                                         </span>
                                         <a
                                             href={route('admin.templates.download', template.id)}
-                                            className="text-xs font-bold text-primary hover:underline transition-all"
+                                            className="text-primary text-xs font-bold transition-all hover:underline"
                                             onClick={(e) => e.stopPropagation()}
                                         >
                                             Download
@@ -506,13 +489,11 @@ export default function Templates({ folders, templates }: Props) {
 
                             {filteredFolders.length === 0 && filteredTemplates.length === 0 && (
                                 <div className="col-span-full flex flex-col items-center justify-center py-32 opacity-70 select-none">
-                                    <div className="mb-6 rounded-3xl border border-dashed border-border bg-muted/30 p-8">
-                                        <Folder className="h-16 w-16 text-muted-foreground/30" strokeWidth={1} />
+                                    <div className="border-border bg-muted/30 mb-6 rounded-3xl border border-dashed p-8">
+                                        <Folder className="text-muted-foreground/30 h-16 w-16" strokeWidth={1} />
                                     </div>
-                                    <p className="text-sm font-bold tracking-wide text-muted-foreground uppercase">
-                                        Repository Kosong
-                                    </p>
-                                    <p className="mt-2 text-xs font-medium tracking-normal text-muted-foreground/60 italic">
+                                    <p className="text-muted-foreground text-sm font-bold tracking-wide uppercase">Repository Kosong</p>
+                                    <p className="text-muted-foreground/60 mt-2 text-xs font-medium tracking-normal italic">
                                         Klik kanan atau gunakan toolbar untuk menambahkan item
                                     </p>
                                 </div>
@@ -524,16 +505,16 @@ export default function Templates({ folders, templates }: Props) {
 
             {/* Delete Confirmation Dialog */}
             <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-                <DialogContent className="overflow-hidden bg-card border border-border rounded-xl p-8 shadow-2xl sm:max-w-[400px]">
+                <DialogContent className="bg-card border-border overflow-hidden rounded-xl border p-8 shadow-2xl sm:max-w-[400px]">
                     <div className="flex flex-col items-center text-center">
                         <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/30">
                             <AlertTriangle size={28} />
                         </div>
                         <DialogHeader className="p-0">
-                            <DialogTitle className="mb-2 text-base font-bold tracking-tight text-foreground">
+                            <DialogTitle className="text-foreground mb-2 text-base font-bold tracking-tight">
                                 Hapus {selectedItem?.type === 'folder' ? 'Folder' : 'Item'}?
                             </DialogTitle>
-                            <DialogDescription className="max-w-[280px] text-xs leading-relaxed font-medium text-muted-foreground">
+                            <DialogDescription className="text-muted-foreground max-w-[280px] text-xs leading-relaxed font-medium">
                                 Apakah Anda yakin ingin menghapus <span className="font-bold text-rose-500">"{selectedItem?.name}"</span>?
                                 {selectedItem?.type === 'folder' && ' Semua isi di dalamnya akan terhapus permanen.'}
                             </DialogDescription>
@@ -542,7 +523,7 @@ export default function Templates({ folders, templates }: Props) {
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-11 rounded-xl border-border bg-card text-xs font-bold hover:bg-muted"
+                                className="border-border bg-card hover:bg-muted h-11 rounded-xl text-xs font-bold"
                                 onClick={() => setIsDeleteModalOpen(false)}
                             >
                                 Batal
@@ -550,7 +531,7 @@ export default function Templates({ folders, templates }: Props) {
                             <Button
                                 variant="destructive"
                                 size="sm"
-                                className="h-11 rounded-xl bg-rose-600 hover:bg-rose-700 text-xs font-bold uppercase transition-all active:scale-95"
+                                className="h-11 rounded-xl bg-rose-600 text-xs font-bold uppercase transition-all hover:bg-rose-700 active:scale-95"
                                 onClick={handleDelete}
                             >
                                 Hapus Sekarang
@@ -562,18 +543,16 @@ export default function Templates({ folders, templates }: Props) {
 
             {/* Move Dialog */}
             <Dialog open={isMoveModalOpen} onOpenChange={setIsMoveModalOpen}>
-                <DialogContent className="overflow-hidden border border-border bg-card p-0 shadow-2xl sm:max-w-[450px]">
-                    <DialogHeader className="bg-muted/40 p-6 border-b border-border">
+                <DialogContent className="border-border bg-card overflow-hidden border p-0 shadow-2xl sm:max-w-[450px]">
+                    <DialogHeader className="bg-muted/40 border-border border-b p-6">
                         <DialogTitle className="text-base font-bold">Pindahkan Asset</DialogTitle>
-                        <DialogDescription className="text-xs font-medium text-muted-foreground/80 mt-1">
+                        <DialogDescription className="text-muted-foreground/80 mt-1 text-xs font-medium">
                             Pilih folder tujuan untuk memindahkan <strong>{selectedItem?.name}</strong>.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="p-6">
-                        <Label className="mb-3 block text-xs font-bold text-muted-foreground tracking-wide">
-                            Folder Tujuan
-                        </Label>
-                        <div className="overflow-hidden rounded-xl border border-border bg-muted/10">
+                        <Label className="text-muted-foreground mb-3 block text-xs font-bold tracking-wide">Folder Tujuan</Label>
+                        <div className="border-border bg-muted/10 overflow-hidden rounded-xl border">
                             <div className="custom-scrollbar h-64 overflow-y-auto p-2">
                                 <div
                                     className={cn(
@@ -586,10 +565,7 @@ export default function Templates({ folders, templates }: Props) {
                                 >
                                     <Folder
                                         size={16}
-                                        className={cn(
-                                            'transition-colors',
-                                            targetFolderId === null ? 'fill-current' : 'text-muted-foreground/60',
-                                        )}
+                                        className={cn('transition-colors', targetFolderId === null ? 'fill-current' : 'text-muted-foreground/60')}
                                     />
                                     Repository Root
                                 </div>
@@ -620,18 +596,18 @@ export default function Templates({ folders, templates }: Props) {
                             </div>
                         </div>
                     </div>
-                    <DialogFooter className="gap-3 px-6 pb-6 border-t border-border/10 pt-4">
+                    <DialogFooter className="border-border/10 gap-3 border-t px-6 pt-4 pb-6">
                         <Button
                             variant="ghost"
                             size="sm"
-                            className="h-10 rounded-xl px-4 text-xs font-bold hover:bg-muted"
+                            className="hover:bg-muted h-10 rounded-xl px-4 text-xs font-bold"
                             onClick={() => setIsMoveModalOpen(false)}
                         >
                             Batal
                         </Button>
                         <Button
                             size="sm"
-                            className="h-10 rounded-xl bg-primary px-6 text-xs font-bold text-primary-foreground hover:bg-primary/90 transition-all active:scale-95 shadow-sm"
+                            className="bg-primary text-primary-foreground hover:bg-primary/90 h-10 rounded-xl px-6 text-xs font-bold shadow-sm transition-all active:scale-95"
                             onClick={handleMove}
                         >
                             Pindahkan Sekarang
@@ -642,41 +618,38 @@ export default function Templates({ folders, templates }: Props) {
 
             {/* Folder Creation Modal */}
             <Dialog open={isFolderModalOpen} onOpenChange={setIsFolderModalOpen}>
-                <DialogContent className="overflow-hidden border border-border bg-card p-0 shadow-2xl sm:max-w-[420px]">
-                    <DialogHeader className="bg-muted/40 p-6 border-b border-border">
+                <DialogContent className="border-border bg-card overflow-hidden border p-0 shadow-2xl sm:max-w-[420px]">
+                    <DialogHeader className="bg-muted/40 border-border border-b p-6">
                         <DialogTitle className="text-base font-bold">Buat Folder</DialogTitle>
-                        <DialogDescription className="text-xs font-medium text-muted-foreground mt-1">
+                        <DialogDescription className="text-muted-foreground mt-1 text-xs font-medium">
                             Tambahkan folder baru untuk mengelompokkan template.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="p-6">
-                        <Label
-                            htmlFor="name"
-                            className="mb-3 block text-xs font-bold text-muted-foreground tracking-wide"
-                        >
+                        <Label htmlFor="name" className="text-muted-foreground mb-3 block text-xs font-bold tracking-wide">
                             Nama Folder
                         </Label>
                         <Input
                             id="name"
-                            className="h-11 rounded-xl border border-border bg-muted/20 text-sm font-medium shadow-sm transition-all focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary"
+                            className="border-border bg-muted/20 focus-visible:ring-primary focus-visible:border-primary h-11 rounded-xl border text-sm font-medium shadow-sm transition-all focus-visible:ring-1"
                             value={newFolderName}
                             onChange={(e) => setNewFolderName(e.target.value)}
                             placeholder="Contoh: Perjanjian Kerja Sama"
                             autoFocus
                         />
                     </div>
-                    <DialogFooter className="gap-3 px-6 pb-6 border-t border-border/10 pt-4">
+                    <DialogFooter className="border-border/10 gap-3 border-t px-6 pt-4 pb-6">
                         <Button
                             variant="ghost"
                             size="sm"
-                            className="h-10 rounded-xl px-4 text-xs font-bold hover:bg-muted"
+                            className="hover:bg-muted h-10 rounded-xl px-4 text-xs font-bold"
                             onClick={() => setIsFolderModalOpen(false)}
                         >
                             Batal
                         </Button>
                         <Button
                             size="sm"
-                            className="h-10 rounded-xl bg-primary px-6 text-xs font-bold text-primary-foreground hover:bg-primary/90 transition-all active:scale-95"
+                            className="bg-primary text-primary-foreground hover:bg-primary/90 h-10 rounded-xl px-6 text-xs font-bold transition-all active:scale-95"
                             onClick={handleCreateFolder}
                         >
                             Simpan Folder
@@ -687,40 +660,37 @@ export default function Templates({ folders, templates }: Props) {
 
             {/* Rename Modal */}
             <Dialog open={isRenameModalOpen} onOpenChange={setIsRenameModalOpen}>
-                <DialogContent className="overflow-hidden border border-border bg-card p-0 shadow-2xl sm:max-w-[420px]">
-                    <DialogHeader className="bg-muted/40 p-6 border-b border-border">
+                <DialogContent className="border-border bg-card overflow-hidden border p-0 shadow-2xl sm:max-w-[420px]">
+                    <DialogHeader className="bg-muted/40 border-border border-b p-6">
                         <DialogTitle className="text-base font-bold">Ubah Nama</DialogTitle>
-                        <DialogDescription className="text-xs font-medium text-muted-foreground mt-1">
+                        <DialogDescription className="text-muted-foreground mt-1 text-xs font-medium">
                             Ubah nama untuk "<strong>{selectedItem?.name}</strong>".
                         </DialogDescription>
                     </DialogHeader>
                     <div className="p-6">
-                        <Label
-                            htmlFor="rename-input"
-                            className="mb-3 block text-xs font-bold text-muted-foreground tracking-wide"
-                        >
+                        <Label htmlFor="rename-input" className="text-muted-foreground mb-3 block text-xs font-bold tracking-wide">
                             Nama Baru
                         </Label>
                         <Input
                             id="rename-input"
-                            className="h-11 rounded-xl border border-border bg-muted/20 text-sm font-medium shadow-sm transition-all focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary"
+                            className="border-border bg-muted/20 focus-visible:ring-primary focus-visible:border-primary h-11 rounded-xl border text-sm font-medium shadow-sm transition-all focus-visible:ring-1"
                             value={newFolderName}
                             onChange={(e) => setNewFolderName(e.target.value)}
                             autoFocus
                         />
                     </div>
-                    <DialogFooter className="gap-3 px-6 pb-6 border-t border-border/10 pt-4">
+                    <DialogFooter className="border-border/10 gap-3 border-t px-6 pt-4 pb-6">
                         <Button
                             variant="ghost"
                             size="sm"
-                            className="h-10 rounded-xl px-4 text-xs font-bold hover:bg-muted"
+                            className="hover:bg-muted h-10 rounded-xl px-4 text-xs font-bold"
                             onClick={() => setIsRenameModalOpen(false)}
                         >
                             Batal
                         </Button>
                         <Button
                             size="sm"
-                            className="h-10 rounded-xl bg-primary px-6 text-xs font-bold text-primary-foreground hover:bg-primary/90 transition-all active:scale-95"
+                            className="bg-primary text-primary-foreground hover:bg-primary/90 h-10 rounded-xl px-6 text-xs font-bold transition-all active:scale-95"
                             onClick={handleRename}
                         >
                             Terapkan Perubahan
@@ -731,25 +701,22 @@ export default function Templates({ folders, templates }: Props) {
 
             {/* Upload Modal */}
             <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
-                <DialogContent className="overflow-hidden border border-border bg-card p-0 shadow-2xl sm:max-w-[450px]">
+                <DialogContent className="border-border bg-card overflow-hidden border p-0 shadow-2xl sm:max-w-[450px]">
                     <form onSubmit={handleUploadTemplate}>
-                        <DialogHeader className="bg-muted/40 p-6 border-b border-border">
+                        <DialogHeader className="bg-muted/40 border-border border-b p-6">
                             <DialogTitle className="text-base font-bold">Unggah Asset</DialogTitle>
-                            <DialogDescription className="text-xs font-medium text-muted-foreground mt-1">
+                            <DialogDescription className="text-muted-foreground mt-1 text-xs font-medium">
                                 Tambahkan file baru ke dalam repository.
                             </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4 p-6">
                             <div className="grid gap-1.5">
-                                <Label
-                                    htmlFor="tpl-name"
-                                    className="text-xs font-bold text-muted-foreground tracking-wide"
-                                >
+                                <Label htmlFor="tpl-name" className="text-muted-foreground text-xs font-bold tracking-wide">
                                     Nama Tampilan
                                 </Label>
                                 <Input
                                     id="tpl-name"
-                                    className="h-11 rounded-xl border border-border bg-muted/20 text-xs font-medium shadow-sm transition-all focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary"
+                                    className="border-border bg-muted/20 focus-visible:ring-primary focus-visible:border-primary h-11 rounded-xl border text-xs font-medium shadow-sm transition-all focus-visible:ring-1"
                                     value={uploadData.name}
                                     onChange={(e) => setUploadData({ ...uploadData, name: e.target.value })}
                                     placeholder="Contoh: Kontrak Pihak Ketiga"
@@ -757,27 +724,21 @@ export default function Templates({ folders, templates }: Props) {
                                 />
                             </div>
                             <div className="grid gap-1.5">
-                                <Label
-                                    htmlFor="tpl-desc"
-                                    className="text-xs font-bold text-muted-foreground tracking-wide"
-                                >
+                                <Label htmlFor="tpl-desc" className="text-muted-foreground text-xs font-bold tracking-wide">
                                     Deskripsi (Opsional)
                                 </Label>
                                 <Input
                                     id="tpl-desc"
-                                    className="h-11 rounded-xl border border-border bg-muted/20 text-xs font-medium shadow-sm transition-all focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary"
+                                    className="border-border bg-muted/20 focus-visible:ring-primary focus-visible:border-primary h-11 rounded-xl border text-xs font-medium shadow-sm transition-all focus-visible:ring-1"
                                     value={uploadData.description}
                                     onChange={(e) => setUploadData({ ...uploadData, description: e.target.value })}
                                 />
                             </div>
                             <div className="grid gap-1.5">
-                                <Label
-                                    htmlFor="tpl-file"
-                                    className="text-xs font-bold text-muted-foreground tracking-wide"
-                                >
+                                <Label htmlFor="tpl-file" className="text-muted-foreground text-xs font-bold tracking-wide">
                                     File Sumber
                                 </Label>
-                                <div className="group/field relative cursor-pointer rounded-2xl border border-dashed border-border p-6 text-center shadow-inner transition-all hover:border-primary hover:bg-primary/5">
+                                <div className="group/field border-border hover:border-primary hover:bg-primary/5 relative cursor-pointer rounded-2xl border border-dashed p-6 text-center shadow-inner transition-all">
                                     <Input
                                         id="tpl-file"
                                         type="file"
@@ -786,25 +747,25 @@ export default function Templates({ folders, templates }: Props) {
                                         required
                                     />
                                     <div className="space-y-2">
-                                        <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-muted text-muted-foreground transition-all group-hover/field:bg-primary/10 group-hover/field:text-primary">
+                                        <div className="bg-muted text-muted-foreground group-hover/field:bg-primary/10 group-hover/field:text-primary mx-auto flex h-11 w-11 items-center justify-center rounded-xl transition-all">
                                             <Upload size={18} />
                                         </div>
-                                        <p className="mx-auto max-w-[300px] truncate text-xs font-bold text-foreground">
+                                        <p className="text-foreground mx-auto max-w-[300px] truncate text-xs font-bold">
                                             {uploadData.file ? uploadData.file.name : 'Pilih atau Seret File di Sini'}
                                         </p>
-                                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                                        <p className="text-muted-foreground text-[10px] font-semibold tracking-wide uppercase">
                                             MAX 10MB • DOCX, PDF, XLSX
                                         </p>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <DialogFooter className="gap-3 px-6 pb-6 border-t border-border/10 pt-4">
+                        <DialogFooter className="border-border/10 gap-3 border-t px-6 pt-4 pb-6">
                             <Button
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                className="h-10 rounded-xl px-4 text-xs font-bold hover:bg-muted"
+                                className="hover:bg-muted h-10 rounded-xl px-4 text-xs font-bold"
                                 onClick={() => setIsUploadModalOpen(false)}
                             >
                                 Batal
@@ -812,7 +773,7 @@ export default function Templates({ folders, templates }: Props) {
                             <Button
                                 type="submit"
                                 size="sm"
-                                className="h-10 rounded-xl bg-primary px-6 text-xs font-bold text-primary-foreground hover:bg-primary/90 transition-all active:scale-95"
+                                className="bg-primary text-primary-foreground hover:bg-primary/90 h-10 rounded-xl px-6 text-xs font-bold transition-all active:scale-95"
                             >
                                 Konfirmasi Unggah
                             </Button>
@@ -834,7 +795,7 @@ function FolderTreeItem({ folder, allFolders, currentId, onSelect, expandedFolde
         <div className="ml-1.5">
             <div
                 className={cn(
-                    'group flex cursor-pointer items-center gap-1.5 rounded-xl px-2 py-1.5 transition-all text-xs select-none',
+                    'group flex cursor-pointer items-center gap-1.5 rounded-xl px-2 py-1.5 text-xs transition-all select-none',
                     isSelected ? 'bg-primary/10 border-primary border-l-2' : 'hover:bg-muted/60',
                 )}
                 onClick={() => onSelect(folder.id)}
@@ -862,9 +823,7 @@ function FolderTreeItem({ folder, allFolders, currentId, onSelect, expandedFolde
                         isSelected ? 'text-primary fill-primary/10' : 'text-muted-foreground/40 group-hover:text-muted-foreground',
                     )}
                 />
-                <span
-                    className={cn('truncate text-xs tracking-tight', isSelected ? 'text-primary font-bold' : 'text-muted-foreground font-medium')}
-                >
+                <span className={cn('truncate text-xs tracking-tight', isSelected ? 'text-primary font-bold' : 'text-muted-foreground font-medium')}>
                     {folder.name}
                 </span>
             </div>

@@ -1,6 +1,6 @@
+import { Button } from '@/components/ui/base/Button';
 import { Contract, ContractType } from '@/types/contracts';
 import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/base/Button';
 
 interface EditContractModalProps {
     open: boolean;
@@ -99,11 +99,12 @@ export function EditContractModal({
                                 onChange={(e) => setTypeId(e.target.value)}
                                 className="bg-muted/30 border-border focus:border-primary/50 w-full rounded-lg border px-3 py-2 text-sm transition-all outline-none"
                             >
-                                {Array.isArray(types) && types.map((t) => (
-                                    <option key={t.id} value={t.id}>
-                                        {t.name}
-                                    </option>
-                                ))}
+                                {Array.isArray(types) &&
+                                    types.map((t) => (
+                                        <option key={t.id} value={t.id}>
+                                            {t.name}
+                                        </option>
+                                    ))}
                             </select>
                         </div>
                         <div>
@@ -114,11 +115,12 @@ export function EditContractModal({
                                 className="bg-muted/30 border-border focus:border-primary/50 w-full rounded-lg border px-3 py-2 text-sm transition-all outline-none"
                             >
                                 <option value="">Pilih Tipe</option>
-                                {Array.isArray(submissionTypes) && submissionTypes.map((st) => (
-                                    <option key={st.id} value={st.id}>
-                                        {st.name}
-                                    </option>
-                                ))}
+                                {Array.isArray(submissionTypes) &&
+                                    submissionTypes.map((st) => (
+                                        <option key={st.id} value={st.id}>
+                                            {st.name}
+                                        </option>
+                                    ))}
                             </select>
                         </div>
                         <div>
@@ -126,14 +128,15 @@ export function EditContractModal({
                             <select
                                 value={vendorId}
                                 onChange={(e) => setVendorId(e.target.value)}
-                                className="bg-muted/30 border-border focus:border-primary/50 w-full rounded-lg border px-3 py-2 text-sm font-bold text-black dark:text-white transition-all outline-none"
+                                className="bg-muted/30 border-border focus:border-primary/50 w-full rounded-lg border px-3 py-2 text-sm font-bold text-black transition-all outline-none dark:text-white"
                             >
                                 <option value="">Pilih Vendor</option>
-                                {Array.isArray(vendors) && vendors.map((v) => (
-                                    <option key={v.id} value={v.id}>
-                                        {v.name}
-                                    </option>
-                                ))}
+                                {Array.isArray(vendors) &&
+                                    vendors.map((v) => (
+                                        <option key={v.id} value={v.id}>
+                                            {v.name}
+                                        </option>
+                                    ))}
                             </select>
                         </div>
                         <div>
@@ -151,7 +154,7 @@ export function EditContractModal({
                         <Button
                             variant="outline"
                             onClick={onClose}
-                            className="flex-1 rounded-lg h-11 text-[11px] font-black uppercase tracking-widest transition-all"
+                            className="h-11 flex-1 rounded-lg text-[11px] font-black uppercase transition-all"
                         >
                             Batal
                         </Button>
@@ -168,7 +171,7 @@ export function EditContractModal({
                                 })
                             }
                             disabled={processing || !title}
-                            className="flex-1 rounded-lg h-11 text-[11px] font-black uppercase tracking-widest shadow-lg active:scale-95 disabled:opacity-50"
+                            className="h-11 flex-1 rounded-lg text-[11px] font-black uppercase shadow-lg active:scale-95 disabled:opacity-50"
                         >
                             {processing ? <i className="fa-solid fa-spinner fa-spin mr-2" /> : <i className="fa-solid fa-save mr-2" />}
                             Simpan Perubahan

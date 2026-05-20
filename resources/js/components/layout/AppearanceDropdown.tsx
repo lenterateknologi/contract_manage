@@ -12,14 +12,14 @@ export default function AppearanceToggleDropdown({ className = '', ...props }: H
 
     return (
         <div className={className} {...props}>
-            <Button 
-                variant="ghost" 
-                size="icon" 
+            <Button
+                variant="ghost"
+                size="icon"
                 onClick={toggleAppearance}
-                className="h-9 w-9 rounded-lg hover:bg-sidebar-accent transition-all duration-300 group"
+                className="hover:bg-sidebar-accent group h-9 w-9 rounded-lg transition-all duration-300"
             >
-                <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 text-sidebar-foreground/70 group-hover:text-sidebar-primary" />
-                <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 text-sidebar-foreground/70 group-hover:text-sidebar-primary" />
+                <Sun className="text-sidebar-foreground/70 group-hover:text-sidebar-primary h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
+                <Moon className="text-sidebar-foreground/70 group-hover:text-sidebar-primary absolute h-[1.2rem] w-[1.2rem] scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
                 <span className="sr-only">Toggle theme</span>
             </Button>
         </div>

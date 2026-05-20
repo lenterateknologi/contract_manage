@@ -54,7 +54,7 @@ export const renderValue = (val: any, field: any, diffStatus?: string, compariso
 
     if (field.type === 'signature') {
         return (
-            <div className="rounded-xl border-2 border-dashed border-slate-200 p-4 text-center text-[10px] font-bold tracking-widest text-slate-400 uppercase">
+            <div className="rounded-xl border-2 border-dashed border-slate-200 p-4 text-center text-[10px] font-bold text-slate-400 uppercase">
                 Digital Signature Field
             </div>
         );
@@ -77,15 +77,19 @@ export const getTypographyStyle = (field: any, scale = 1, isLabel = false) => {
 
 export const getPaddingStyle = (field: any) => {
     const isLayout = ['group', 'grid_x', 'grid_y', 'grid_view'].includes(field.type);
-    
+
     // For non-layout fields, we often want to force 0 padding to keep the UI clean
     // unless the user really explicitly set it (but even then, for H1 we usually want 0)
     const isContent = ['static_text', 'image', 'f1_header', 'page_break'].includes(field.type);
 
-    const paddingTop = (isContent) ? 0 : (field.options?.padding_top ?? field.options?.padding_y ?? (isLayout ? field.options?.padding_all : 0) ?? 0);
-    const paddingBottom = (isContent) ? 0 : (field.options?.padding_bottom ?? field.options?.padding_y ?? (isLayout ? field.options?.padding_all : 0) ?? 0);
-    const paddingLeft = (isContent) ? 0 : (field.options?.padding_left ?? field.options?.padding_x ?? (isLayout ? field.options?.padding_all : 0) ?? 0);
-    const paddingRight = (isContent) ? 0 : (field.options?.padding_right ?? field.options?.padding_x ?? (isLayout ? field.options?.padding_all : 0) ?? 0);
+    const paddingTop = isContent ? 0 : (field.options?.padding_top ?? field.options?.padding_y ?? (isLayout ? field.options?.padding_all : 0) ?? 0);
+    const paddingBottom = isContent
+        ? 0
+        : (field.options?.padding_bottom ?? field.options?.padding_y ?? (isLayout ? field.options?.padding_all : 0) ?? 0);
+    const paddingLeft = isContent ? 0 : (field.options?.padding_left ?? field.options?.padding_x ?? (isLayout ? field.options?.padding_all : 0) ?? 0);
+    const paddingRight = isContent
+        ? 0
+        : (field.options?.padding_right ?? field.options?.padding_x ?? (isLayout ? field.options?.padding_all : 0) ?? 0);
 
     return {
         paddingTop: `${paddingTop}mm`,

@@ -86,14 +86,13 @@ class MasterSeeder extends Seeder
             ['name' => 'Dashboard Utama', 'identifier' => 'DASH', 'group' => 'Beranda', 'route' => '/dashboard', 'icon' => 'LayoutGrid'],
             
             // Modul Kontrak
+            ['name' => 'Draft saya', 'identifier' => 'MY_CTC', 'group' => 'Modul Kontrak', 'route' => '/contracts/mine', 'icon' => 'FilePlus'],
             ['name' => 'Semua Kontrak', 'identifier' => 'CONTRACTS', 'group' => 'Modul Kontrak', 'route' => '/contracts', 'icon' => 'Files'],
-            ['name' => 'Draft Saya', 'identifier' => 'MY_CTC', 'group' => 'Modul Kontrak', 'route' => '/contracts/mine', 'icon' => 'UserCheck'],
-            ['name' => 'Perlu Persetujuan', 'identifier' => 'PENDING', 'group' => 'Modul Kontrak', 'route' => '/contracts/pending', 'icon' => 'Clock'],
+            ['name' => 'Perlu Persetujuan', 'identifier' => 'PENDING', 'group' => 'Modul Kontrak', 'route' => '/contracts/pending', 'icon' => 'ClipboardCheck'],
             ['name' => 'Masa Berlaku', 'identifier' => 'EXPIRY', 'group' => 'Modul Kontrak', 'route' => '/contracts/expiry', 'icon' => 'CalendarClock'],
  
             // Desain Template
             ['name' => 'Kategori Kontrak', 'identifier' => 'ADMIN_TYPES', 'group' => 'Desain Template', 'route' => '/admin/contract-types', 'icon' => 'FolderClosed'],
-            // ['name' => 'Isi Kontrak', 'identifier' => 'ADMIN_TEMPLATES', 'group' => 'Desain Template', 'route' => '/admin/templates', 'icon' => 'FileCode'], // HIDDEN
             ['name' => 'Formulir Digital', 'identifier' => 'ADMIN_FORMS', 'group' => 'Desain Template', 'route' => '/admin/form-templates', 'icon' => 'ScanLine'],
  
             // Konfigurasi Alur
@@ -101,6 +100,9 @@ class MasterSeeder extends Seeder
             ['name' => 'Master Status', 'identifier' => 'ADMIN_STATUS', 'group' => 'Konfigurasi Alur', 'route' => '/admin/contract-statuses', 'icon' => 'Tags'],
  
             // Data Master
+            ['name' => 'Data Group', 'identifier' => 'ADMIN_GROUPS', 'group' => 'Data Master', 'route' => '/admin/company-groups', 'icon' => 'Users'],
+            ['name' => 'Data Region', 'identifier' => 'ADMIN_REGIONS', 'group' => 'Data Master', 'route' => '/admin/regions', 'icon' => 'GitBranch'],
+            ['name' => 'Data Company', 'identifier' => 'ADMIN_COMPANIES', 'group' => 'Data Master', 'route' => '/admin/companies', 'icon' => 'Building2'],
             ['name' => 'Manajemen Pengguna', 'identifier' => 'ADMIN_USERS', 'group' => 'Data Master', 'route' => '/admin/users', 'icon' => 'UserCog'],
             ['name' => 'Hak Akses & Peran', 'identifier' => 'ADMIN_ROLES', 'group' => 'Data Master', 'route' => '/admin/roles', 'icon' => 'KeyRound'],
             ['name' => 'Data Departemen', 'identifier' => 'ADMIN_DEPTS', 'group' => 'Data Master', 'route' => '/admin/departments', 'icon' => 'Building2'],
@@ -123,63 +125,9 @@ class MasterSeeder extends Seeder
             ]);
         }
 
-        // 8. Workflows & Steps (Dual-Workflow Strategy: Standard vs With Tax)
-        $pksTypeId = ContractType::where('code', 'PKS')->value('id');
-        $jasaTypeId = ContractType::where('code', 'JASA')->value('id');
+        // 8. Workflows & Steps are now handled by A1WorkflowSeeder.
+        // This avoids duplication and ensures the 14-step workflow is the source of truth.
 
-        $workflowConfigs = [
-            [
-                'name' => 'PKS Standard',
-                'type_id' => $pksTypeId,
-                'type_name' => 'Perjanjian Kerja Sama',
-                'is_tax' => false,
-                'steps' => [
-                    ['role' => 'Manager', 'desc' => 'Direct Review', 'dept' => 'LGL'],
-                    ['role' => 'Director', 'desc' => 'Final Approval', 'dept' => 'FIN'],
-                ]
-            ],
-        ];
-
-        // Clear existing workflows first
-        \App\Models\WorkflowStepRole::query()->delete();
-        \App\Models\WorkflowStepDepartment::query()->delete();
-        \App\Models\WorkflowStepUser::query()->delete();
-        \App\Models\WorkflowStep::withTrashed()->forceDelete();
-        \App\Models\Workflow::withTrashed()->forceDelete();
-
-        foreach ($workflowConfigs as $wf) {
-            $workflow = \App\Models\Workflow::updateOrCreate([
-                'name' => $wf['name'],
-                'contract_type' => $wf['type_name'],
-            ], [
-                'is_tax_involved' => $wf['is_tax'],
-                'is_default' => !$wf['is_tax'], // Default is the standard one
-                'is_template' => true,
-                'created_by' => $admin->id,
-            ]);
-
-            $workflow->steps()->forceDelete();
-
-            foreach ($wf['steps'] as $idx => $s) {
-                $deptId = Department::where('code', $s['dept'])->value('id');
-                $step = \App\Models\WorkflowStep::create([
-                    'workflow_id' => $workflow->id,
-                    'step' => $idx + 1,
-                    'description' => $s['desc'],
-                    'created_by' => $admin->id,
-                    'approver_type' => 'role',
-                    'is_active' => true,
-                ]);
-
-                if (!empty($s['role'])) {
-                    $step->approverRoles()->create(['role_name' => $s['role']]);
-                }
-
-                if ($deptId) {
-                    $step->approverDepartments()->create(['department_id' => $deptId]);
-                }
-            }
-        }
 
         // 9. Access Modules (Permissions) - Full for Admin
         $allRoles = Role::all();

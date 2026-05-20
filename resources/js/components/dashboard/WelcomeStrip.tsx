@@ -6,12 +6,10 @@ interface WelcomeStripProps {
 
 export function WelcomeStrip({ metrics: m }: WelcomeStripProps) {
     return (
-        <div className="flex items-center justify-between rounded-2xl border border-sidebar-border/40 bg-gradient-to-r from-sidebar-accent/40 to-transparent px-6 py-4">
+        <div className="border-sidebar-border/40 from-sidebar-accent/40 flex items-center justify-between rounded-2xl border bg-gradient-to-r to-transparent px-6 py-4">
             <div>
-                <h2 className="text-base font-semibold tracking-tight text-sidebar-foreground">
-                    Dashboard Kontrak
-                </h2>
-                <p className="text-[12px] text-sidebar-foreground/50">
+                <h2 className="text-sidebar-foreground text-base font-semibold tracking-tight">Dashboard Kontrak</h2>
+                <p className="text-sidebar-foreground/50 text-[12px]">
                     {new Date().toLocaleDateString('id-ID', {
                         weekday: 'long',
                         year: 'numeric',
@@ -21,13 +19,10 @@ export function WelcomeStrip({ metrics: m }: WelcomeStripProps) {
                 </p>
             </div>
             {m.avgCycleTime > 0 && (
-                <div className="hidden md:flex flex-col items-end">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-sidebar-foreground/30">
-                        Rata-rata Siklus
-                    </span>
-                    <span className="text-xl font-bold text-sidebar-foreground">
-                        {m.avgCycleTime}{' '}
-                        <span className="text-sm font-normal text-sidebar-foreground/40">hari</span>
+                <div className="hidden flex-col items-end md:flex">
+                    <span className="text-sidebar-foreground/30 text-[10px] font-bold uppercase">Rata-rata Siklus</span>
+                    <span className="text-sidebar-foreground text-xl font-bold">
+                        {m.avgCycleTime} <span className="text-sidebar-foreground/40 text-sm font-normal">hari</span>
                     </span>
                 </div>
             )}

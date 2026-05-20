@@ -9,6 +9,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
+            OrganizationalMasterSeeder::class, // 0. Organizational Master (Groups, Regions, Companies)
             RoleSeeder::class,               // 1. Roles
             DepartmentSeeder::class,         // 2. Departments
             ContractTypeSeeder::class,       // 3. Types
@@ -18,7 +19,8 @@ class DatabaseSeeder extends Seeder
             VendorSeeder::class,             // 7. Vendors Base
             VendorRealisticSeeder::class,    // 8. Premium Vendors
             UserSeeder::class,               // 9. Extended Users
-            SampleSeeder::class,             // 10. Transactions & Redesigns
+            A1WorkflowSeeder::class,         // 10. Unified A1 Workflow (14 Steps)
+            SampleSeeder::class,             // 11. Transactions & Redesigns
         ]);
     }
 }

@@ -3,9 +3,9 @@ import { Head, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { FormEventHandler } from 'react';
 
-import InputError from '@/components/ui/base/InputError';
 import { Button } from '@/components/ui/base/Button';
 import { Input } from '@/components/ui/base/Input';
+import InputError from '@/components/ui/base/InputError';
 import { Label } from '@/components/ui/base/Label';
 import AuthLayout from '@/layouts/auth-layout';
 

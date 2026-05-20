@@ -1,5 +1,5 @@
-import { usePage } from '@inertiajs/react';
 import { SharedData } from '@/types';
+import { usePage } from '@inertiajs/react';
 
 export function usePermissions(moduleCode?: string) {
     const { auth } = usePage<SharedData>().props;
@@ -10,7 +10,7 @@ export function usePermissions(moduleCode?: string) {
             permissions,
             can: (code: string, action: 'read' | 'create' | 'update' | 'delete') => {
                 return !!permissions[code]?.[action];
-            }
+            },
         };
     }
 

@@ -22,7 +22,13 @@ export const ImageField: React.FC<VisualFieldProps> = ({ field }) => {
                 width={field.options?.width || field.options?.size || field.options?.logo_size || 120}
                 height={field.options?.height || undefined}
                 style={{
-                    width: field.options?.width ? `${field.options.width}px` : field.options?.size ? `${field.options.size}px` : field.options?.logo_size ? `${field.options.logo_size}px` : '120px',
+                    width: field.options?.width
+                        ? `${field.options.width}px`
+                        : field.options?.size
+                          ? `${field.options.size}px`
+                          : field.options?.logo_size
+                            ? `${field.options.logo_size}px`
+                            : '120px',
                     height: field.options?.height ? `${field.options.height}px` : 'auto',
                 }}
                 alt="document logo"
@@ -62,7 +68,7 @@ export const StaticTextField: React.FC<VisualFieldProps> = ({ field, previewData
                 ...getTypographyStyle(field),
             }}
         >
-            {prefix && <span className="mr-2 font-bold tracking-widest uppercase">{prefix}</span>}
+            {prefix && <span className="mr-2 font-bold uppercase">{prefix}</span>}
             {(replacedText || '').trim()}
         </div>
     );
@@ -73,10 +79,7 @@ export const SignatureBoxField: React.FC<{ field: any; value: any }> = ({ field,
         <div className="flex w-full max-w-[180px] flex-col gap-1 py-2">
             <div className="border-border bg-card ring-border/20 overflow-hidden rounded-lg border shadow-sm ring-1">
                 <div className="bg-muted/50 border-border border-b px-3 py-1.5 text-center">
-                    <span
-                        className="text-foreground/60 shrink-0 text-[10px] font-black tracking-widest uppercase"
-                        style={getTypographyStyle(field, 0.7, true)}
-                    >
+                    <span className="text-foreground/60 shrink-0 text-[10px] font-black uppercase" style={getTypographyStyle(field, 0.7, true)}>
                         {field.label || 'Tanda Tangan'}
                     </span>
                 </div>
@@ -89,7 +92,7 @@ export const SignatureBoxField: React.FC<{ field: any; value: any }> = ({ field,
                         <div className="border-border/30 mb-2 h-4 w-full border-b-2" />
                     )}
                 </div>
-                <div className="border-border bg-muted/20 text-muted-foreground flex justify-between border-t px-3 py-2 text-start text-[8px] font-bold tracking-widest uppercase">
+                <div className="border-border bg-muted/20 text-muted-foreground flex justify-between border-t px-3 py-2 text-start text-[8px] font-bold uppercase">
                     <span>TGL:</span>
                     <span>................</span>
                 </div>
@@ -100,23 +103,18 @@ export const SignatureBoxField: React.FC<{ field: any; value: any }> = ({ field,
 
 export const PageBreakField: React.FC<{ isBuilder?: boolean }> = ({ isBuilder }) => {
     return (
-        <div className={cn(
-            "w-full my-4 print:my-0",
-            isBuilder ? "relative py-4" : "h-0 overflow-hidden"
-        )}>
+        <div className={cn('my-4 w-full print:my-0', isBuilder ? 'relative py-4' : 'h-0 overflow-hidden')}>
             {isBuilder && (
-                <div className="flex items-center gap-3 opacity-60 hover:opacity-100 transition-opacity">
+                <div className="flex items-center gap-3 opacity-60 transition-opacity hover:opacity-100">
                     <div className="flex-1 border-t-2 border-dashed border-indigo-300" />
-                    <div className="bg-indigo-600 text-white text-[9px] font-black uppercase px-3 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
+                    <div className="flex items-center gap-1.5 rounded-full bg-indigo-600 px-3 py-1 text-[9px] font-black text-white uppercase shadow-sm">
                         <Scissors size={10} />
                         Halaman Baru Mulai Di Sini
                     </div>
                     <div className="flex-1 border-t-2 border-dashed border-indigo-300" />
                 </div>
             )}
-            {!isBuilder && (
-                <div style={{ pageBreakAfter: 'always', breakAfter: 'page' }} />
-            )}
+            {!isBuilder && <div style={{ pageBreakAfter: 'always', breakAfter: 'page' }} />}
         </div>
     );
 };

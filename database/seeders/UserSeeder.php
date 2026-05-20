@@ -17,6 +17,10 @@ class UserSeeder extends Seeder
         // Ensure roles and departments are available
         $roles = Role::pluck('id', 'name')->all();
         $depts = Department::pluck('id', 'code')->all();
+        
+        // Get a default company to link users to
+        $defaultCompany = \App\Models\Company::where('code', 'LTI')->first();
+        $companyId = $defaultCompany ? $defaultCompany->id : null;
 
         $users = [
             [
@@ -123,12 +127,72 @@ class UserSeeder extends Seeder
                 'text_color' => '#9d174d',
                 'username' => '1000000000000008',
             ],
+            [
+                'name' => 'Rendi',
+                'email' => 'rendi@example.com',
+                'password' => Hash::make('password'),
+                'initials' => 'R',
+                'role' => 'Staff',
+                'position' => 'Legal Specialist',
+                'phone' => '081234567897',
+                'department_id' => $depts['LGL'] ?? null,
+                'bg_color' => '#ede9fe',
+                'text_color' => '#5b21b6',
+                'username' => '1000000000000009',
+            ],
+            [
+                'name' => 'Nisa',
+                'email' => 'nisa@example.com',
+                'password' => Hash::make('password'),
+                'initials' => 'N',
+                'role' => 'Staff',
+                'position' => 'Legal Compliance',
+                'phone' => '081234567898',
+                'department_id' => $depts['LGL'] ?? null,
+                'bg_color' => '#e0f2fe',
+                'text_color' => '#0369a1',
+                'username' => '1000000000000010',
+            ],
+            [
+                'name' => 'Vice President (VP)',
+                'email' => 'vp@example.com',
+                'password' => Hash::make('password'),
+                'initials' => 'VP',
+                'role' => 'VP',
+                'position' => 'Vice President',
+                'phone' => '081234567899',
+                'department_id' => $depts['MGT'] ?? null,
+                'bg_color' => '#faf5ff',
+                'text_color' => '#6b21a8',
+                'username' => '1000000000000011',
+            ],
+            [
+                'name' => 'Chief Executive Officer (CEO)',
+                'email' => 'ceo@example.com',
+                'password' => Hash::make('password'),
+                'initials' => 'CEO',
+                'role' => 'CEO',
+                'position' => 'Chief Executive Officer',
+                'phone' => '081234567900',
+                'department_id' => $depts['MGT'] ?? null,
+                'bg_color' => '#fff7ed',
+                'text_color' => '#c2410c',
+                'username' => '1000000000000012',
+            ],
         ];
 
         foreach ($users as $userData) {
+            $roleName = $userData['role'] ?? 'Staff';
+            $roleId = $roles[$roleName] ?? null;
+
             User::withTrashed()->updateOrCreate(
                 ['email' => $userData['email']],
-                array_merge($userData, ['is_active' => true, 'deleted_at' => null])
+                array_merge($userData, [
+                    'company_id' => $companyId,
+                    'role_id' => $roleId,
+                    'is_active' => true, 
+                    'deleted_at' => null
+                ])
             );
         }
 
@@ -150,9 +214,11 @@ class UserSeeder extends Seeder
                         'username' => '2000'.str_pad(mt_rand(1, 999999), 12, '0', STR_PAD_LEFT),
                         'password' => Hash::make('password'),
                         'role' => 'Manager',
+                        'role_id' => $roles['Manager'] ?? null,
                         'position' => 'Manager of ' . $dept->name,
                         'phone' => fake()->phoneNumber(),
                         'department_id' => $dept->id,
+                        'company_id' => $companyId,
                         'initials' => 'M' . substr($dept->code, 0, 1),
                         'bg_color' => '#f1f5f9',
                         'text_color' => '#0f172a',
@@ -175,9 +241,11 @@ class UserSeeder extends Seeder
                         'username' => '3000' . str_pad(mt_rand(1, 99999999), 12, '0', STR_PAD_LEFT),
                         'password' => Hash::make('password'),
                         'role' => 'Staff',
+                        'role_id' => $roles['Staff'] ?? null,
                         'position' => 'Staff of ' . $dept->name,
                         'phone' => fake()->phoneNumber(),
                         'department_id' => $dept->id,
+                        'company_id' => $companyId,
                         'initials' => $initials,
                         'bg_color' => fake()->hexColor(),
                         'text_color' => '#ffffff',

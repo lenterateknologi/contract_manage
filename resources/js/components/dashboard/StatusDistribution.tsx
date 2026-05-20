@@ -10,11 +10,11 @@ export function StatusDistribution({ items }: StatusDistributionProps) {
     const total = items.reduce((sum, s) => sum + s.count, 0) || 1;
 
     return (
-        <div className="rounded-2xl border border-sidebar-border/60 bg-card text-card-foreground p-6 shadow-sm lg:col-span-4">
+        <div className="border-sidebar-border/60 bg-card text-card-foreground rounded-2xl border p-6 shadow-sm lg:col-span-4">
             <SectionTitle>Distribusi Status</SectionTitle>
             <div className="space-y-3">
                 {items.length === 0 ? (
-                    <p className="py-4 text-center text-[12px] text-sidebar-foreground/30">Belum ada data</p>
+                    <p className="text-sidebar-foreground/30 py-4 text-center text-[12px]">Belum ada data</p>
                 ) : (
                     items.map((s) => {
                         const cfg = STATUS_CONFIG[s.status] ?? {
@@ -32,15 +32,12 @@ export function StatusDistribution({ items }: StatusDistributionProps) {
                                         <span className={cn('text-[12px] font-semibold', cfg.color)}>{cfg.label}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-[11px] font-bold text-sidebar-foreground">{s.count}</span>
-                                        <span className="text-[10px] text-sidebar-foreground/30">{pct}%</span>
+                                        <span className="text-sidebar-foreground text-[11px] font-bold">{s.count}</span>
+                                        <span className="text-sidebar-foreground/30 text-[10px]">{pct}%</span>
                                     </div>
                                 </div>
-                                <div className="h-1.5 w-full overflow-hidden rounded-full bg-sidebar-accent/50">
-                                    <div
-                                        className={cn('h-full rounded-full transition-all duration-700', cfg.dot)}
-                                        style={{ width: `${pct}%` }}
-                                    />
+                                <div className="bg-sidebar-accent/50 h-1.5 w-full overflow-hidden rounded-full">
+                                    <div className={cn('h-full rounded-full transition-all duration-700', cfg.dot)} style={{ width: `${pct}%` }} />
                                 </div>
                             </div>
                         );

@@ -119,22 +119,65 @@ class HandleInertiaRequests extends Middleware
                 'm_module_groups.name as group_title'
             )
             ->groupBy('m_modules.id', 'm_modules.name', 'm_modules.route', 'm_modules.icon', 'm_module_groups.name')
-            ->orderBy('m_module_groups.name')
-            ->orderBy('m_modules.name')
             ->get();
 
-        return $modules->groupBy(fn ($item) => trim($item->group_title))
-            ->map(function ($items, $title) {
+        $groupOrder = [
+            'Beranda' => 1,
+            'Modul Kontrak' => 2,
+            'Desain Template' => 3,
+            'Konfigurasi Alur' => 4,
+            'Data Master' => 5,
+            'Sistem & Laporan' => 6,
+        ];
+
+        $moduleOrder = [
+            'Dashboard Utama' => 1,
+            'Draft saya' => 2,
+            'Semua Kontrak' => 3,
+            'Perlu Persetujuan' => 4,
+            'Masa Berlaku' => 5,
+            'Kategori Kontrak' => 6,
+            'Formulir Digital' => 7,
+            'Alur Persetujuan' => 8,
+            'Master Status' => 9,
+            'Data Group' => 10,
+            'Data Region' => 11,
+            'Data Company' => 12,
+            'Manajemen Pengguna' => 13,
+            'Hak Akses & Peran' => 14,
+            'Data Departemen' => 15,
+            'Daftar Vendor' => 16,
+            'Analitik Kontrak' => 17,
+            'Jejak Audit' => 18,
+        ];
+
+        $groups = $modules->groupBy(fn ($item) => trim($item->group_title))
+            ->map(function ($items, $title) use ($moduleOrder) {
+                $sortedItems = $items->map(fn ($module) => [
+                    'title' => $module->name,
+                    'url' => $module->route,
+                    'icon' => $module->icon,
+                ])->values()->all();
+
+                usort($sortedItems, function ($a, $b) use ($moduleOrder) {
+                    $orderA = $moduleOrder[$a['title']] ?? 999;
+                    $orderB = $moduleOrder[$b['title']] ?? 999;
+                    return $orderA <=> $orderB;
+                });
+
                 return [
                     'title' => $title,
-                    'items' => $items->map(fn ($module) => [
-                        'title' => $module->name,
-                        'url' => $module->route,
-                        'icon' => $module->icon,
-                    ])->values()->all(),
+                    'items' => $sortedItems,
                 ];
             })
-            ->values()
             ->all();
+
+        uksort($groups, function ($a, $b) use ($groupOrder) {
+            $orderA = $groupOrder[$a] ?? 999;
+            $orderB = $groupOrder[$b] ?? 999;
+            return $orderA <=> $orderB;
+        });
+
+        return array_values($groups);
     }
 }

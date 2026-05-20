@@ -113,13 +113,20 @@ function SearchableCategory({
                         </div>
                         <ChevronDown size={15} className="text-muted-foreground group-hover:text-foreground transition-colors" />
                     </PopoverTrigger>
-                    <PopoverContent align="start" className="w-[300px] p-0 overflow-hidden rounded-xl border-border bg-popover text-popover-foreground shadow-xl">
+                    <PopoverContent 
+                        align="start" 
+                        onPointerDown={(e: React.PointerEvent) => e.stopPropagation()}
+                        className="w-[300px] p-0 overflow-hidden rounded-xl border-border bg-popover text-popover-foreground shadow-xl z-[9999]"
+                    >
                         <div className="p-2 border-b border-border bg-muted/20">
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" size={14} />
                                 <Input 
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
+                                    onKeyDown={(e: React.KeyboardEvent) => e.stopPropagation()}
+                                    onPointerDown={(e: React.PointerEvent) => e.stopPropagation()}
+                                    onClick={(e: React.MouseEvent) => e.stopPropagation()}
                                     placeholder="Cari opsi..."
                                     className="h-9 pl-9 text-xs font-medium bg-background border-input rounded-lg focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary transition-all"
                                 />
@@ -139,7 +146,10 @@ function SearchableCategory({
                                         return (
                                             <button 
                                                 key={String(opt.value)}
-                                                onClick={() => onToggle(opt.value)}
+                                                onMouseDown={(e: React.MouseEvent) => {
+                                                    e.preventDefault();
+                                                    onToggle(opt.value);
+                                                }}
                                                 className={cn(
                                                     "w-full flex items-center justify-between p-2.5 rounded-lg text-left transition-all group",
                                                     isSelected 

@@ -1,6 +1,6 @@
-import React from 'react';
+import { FormTemplate, InteractiveForm } from '@/components/form-renderer/InteractiveForm';
 import { Head } from '@inertiajs/react';
-import { InteractiveForm, FormTemplate } from '@/components/form-renderer/InteractiveForm';
+import React from 'react';
 
 interface Props {
     template: FormTemplate;
@@ -22,22 +22,20 @@ export default function FormPrint({ template, formData }: Props) {
     }, []);
 
     return (
-        <div className="bg-white min-h-screen">
+        <div className="min-h-screen bg-white">
             <Head>
                 <title>{`Print: ${template.name}`}</title>
                 <link rel="preconnect" href="https://fonts.googleapis.com" />
                 <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-                <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet" />
-            </Head>
-            
-            {/* Minimalist container for PDF rendering */}
-            <div className="mx-auto w-[210mm] form-print-container">
-                <InteractiveForm 
-                    template={template}
-                    formData={formData}
-                    readOnly={true}
-                    className="border-none shadow-none ring-0 w-full"
+                <link
+                    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Roboto:wght@400;500;700;900&display=swap"
+                    rel="stylesheet"
                 />
+            </Head>
+
+            {/* Minimalist container for PDF rendering */}
+            <div className="form-print-container mx-auto w-[210mm]">
+                <InteractiveForm template={template} formData={formData} readOnly={true} className="w-full border-none shadow-none ring-0" />
             </div>
 
             {/* Signal for Browsershot that React has finished mounting and rendering */}
@@ -45,7 +43,9 @@ export default function FormPrint({ template, formData }: Props) {
 
             {/* Print-specific style to ensure no backgrounds are lost and margins are handled */}
 
-            <style dangerouslySetInnerHTML={{ __html: `
+            <style
+                dangerouslySetInnerHTML={{
+                    __html: `
                 @page {
                     size: A4;
                     margin: 0;
@@ -79,7 +79,9 @@ export default function FormPrint({ template, formData }: Props) {
                     page-break-inside: auto;
                     break-inside: auto;
                 }
-            `}} />
+            `,
+                }}
+            />
         </div>
     );
 }

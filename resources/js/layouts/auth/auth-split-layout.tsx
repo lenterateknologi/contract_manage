@@ -25,8 +25,9 @@ export default function AuthSplitLayout({ children, title, description, isSucces
     };
 
     const handleNavigation = (event: any) => {
-        // If it's an external link or already exiting, don't intercept
-        if (isExiting || event.detail.visit.url.origin !== globalThis.location.origin) return;
+        const visit = event.detail.visit;
+        // Only intercept GET requests from this origin to avoid blocking form submissions or external links
+        if (isExiting || visit.method !== 'get' || visit.url.origin !== globalThis.location.origin) return;
 
         // Prevent immediate navigation
         event.preventDefault();
@@ -72,10 +73,8 @@ export default function AuthSplitLayout({ children, title, description, isSucces
                     {/* Main Content Area - Vertically Centered and High-Density */}
                     <div className="w-full max-w-[380px] p-6 md:max-w-[480px] lg:p-8">
                         <div className="mb-8 space-y-1.5 text-center md:text-left">
-                            <h1 className="text-2xl font-bold tracking-tight text-slate-900 leading-tight">
-                                {title || 'Selamat Datang!'}
-                            </h1>
-                            <p className="text-sm font-medium text-slate-500 leading-normal">
+                            <h1 className="text-2xl leading-tight font-bold tracking-tight text-slate-900">{title || 'Selamat Datang!'}</h1>
+                            <p className="text-sm leading-normal font-medium text-slate-500">
                                 {description || 'Silakan lengkapi data Anda untuk melanjutkan.'}
                             </p>
                         </div>
@@ -114,9 +113,7 @@ export default function AuthSplitLayout({ children, title, description, isSucces
                                 }}
                             />
                         </div>
-                        <span className="font-bold tracking-[0.4em] text-sm uppercase text-slate-900">
-                            {isSuccess ? 'BERHASIL MASUK' : 'MEMUAT'}
-                        </span>
+                        <span className="text-sm font-bold tracking-[0.4em] text-slate-900 uppercase">{isSuccess ? 'BERHASIL MASUK' : 'MEMUAT'}</span>
                     </div>
                 </div>
             )}

@@ -1,4 +1,11 @@
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/navigation/Breadcrumb';
+import {
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList,
+    BreadcrumbPage,
+    BreadcrumbSeparator,
+} from '@/components/ui/navigation/Breadcrumb';
 import { type BreadcrumbItem as BreadcrumbItemType } from '@/types';
 import { Fragment } from 'react';
 
@@ -6,7 +13,7 @@ export function Breadcrumbs({ breadcrumbs }: { breadcrumbs: BreadcrumbItemType[]
     return (
         <>
             {breadcrumbs.length > 0 && (
-                <Breadcrumb className="text-[12px] font-semibold text-sidebar-foreground/60">
+                <Breadcrumb className="text-sidebar-foreground/60 text-[12px] font-semibold">
                     <BreadcrumbList className="text-sidebar-foreground/40 gap-1 sm:gap-1">
                         {breadcrumbs.map((item, index) => {
                             const isLast = index === breadcrumbs.length - 1;
@@ -17,7 +24,7 @@ export function Breadcrumbs({ breadcrumbs }: { breadcrumbs: BreadcrumbItemType[]
                                             <BreadcrumbPage className="text-sidebar-foreground font-bold tracking-wide">{item.title}</BreadcrumbPage>
                                         ) : (
                                             <BreadcrumbLink href={item.href} className="hover:text-sidebar-primary transition-colors">
-                                                <span className="sr-only">{item.title}</span>
+                                                {item.title}
                                             </BreadcrumbLink>
                                         )}
                                     </BreadcrumbItem>

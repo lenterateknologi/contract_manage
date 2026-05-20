@@ -1,24 +1,24 @@
-import { Head } from '@inertiajs/react';
-import { BreadcrumbItem } from '@/types';
-import { 
-    BarChart3, 
-    TrendingUp, 
-    CheckCircle2, 
-    Clock, 
-    FileText, 
-    Download, 
-    Filter,
-    ArrowUpRight,
-    ArrowDownRight,
-    Activity,
-    Calendar,
-    Users
-} from 'lucide-react';
 import { Button } from '@/components/ui/base/Button';
-import React, { useEffect, useState, useMemo } from 'react';
-import axios from 'axios';
+import { FilterCategory, FilterSheet } from '@/components/ui/data/FilterSheet';
 import { cn } from '@/lib/utils';
-import { FilterSheet, FilterCategory } from '@/components/ui/data/FilterSheet';
+import { BreadcrumbItem } from '@/types';
+import { Head } from '@inertiajs/react';
+import axios from 'axios';
+import {
+    Activity,
+    ArrowDownRight,
+    ArrowUpRight,
+    BarChart3,
+    Calendar,
+    CheckCircle2,
+    Clock,
+    Download,
+    FileText,
+    Filter,
+    TrendingUp,
+    Users,
+} from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 interface AnalyticsData {
     metrics: {
@@ -43,37 +43,40 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
         date_from: '',
         date_to: '',
         contract_type_ids: [],
-        creator_ids: []
+        creator_ids: [],
     });
 
     const fetchData = (currentFilters = filters) => {
         setLoading(true);
-        axios.post('/admin/api/reports/data', currentFilters).then(res => {
-            const raw = res.data;
-            setData({
-                metrics: {
-                    totalContracts: raw.metrics.totalContracts,
-                    pendingApprovals: raw.metrics.pendingApprovals,
-                    approvedThisMonth: raw.metrics.approvedThisMonth,
-                    avgCycleTime: raw.metrics.avgCycleTime,
-                    revisionsRate: 15.5,
-                },
-                statusDistribution: raw.statusDistribution.map((s: any) => ({
-                    status: s.status,
-                    label: s.label || s.status.toUpperCase(),
-                    count: s.count,
-                    color: s.color || '#94a3b8'
-                })),
-                typesDistribution: raw.types.map((t: any) => ({
-                    name: t.name,
-                    count: Math.floor(Math.random() * 10) + 1
-                })),
-                recentContracts: raw.contracts.slice(0, 10),
-                types: raw.types,
-                users: raw.users
-            });
-            setLoading(false);
-        }).catch(() => setLoading(false));
+        axios
+            .post('/admin/api/reports/data', currentFilters)
+            .then((res) => {
+                const raw = res.data;
+                setData({
+                    metrics: {
+                        totalContracts: raw.metrics.totalContracts,
+                        pendingApprovals: raw.metrics.pendingApprovals,
+                        approvedThisMonth: raw.metrics.approvedThisMonth,
+                        avgCycleTime: raw.metrics.avgCycleTime,
+                        revisionsRate: 15.5,
+                    },
+                    statusDistribution: raw.statusDistribution.map((s: any) => ({
+                        status: s.status,
+                        label: s.label || s.status.toUpperCase(),
+                        count: s.count,
+                        color: s.color || '#94a3b8',
+                    })),
+                    typesDistribution: raw.types.map((t: any) => ({
+                        name: t.name,
+                        count: Math.floor(Math.random() * 10) + 1,
+                    })),
+                    recentContracts: raw.contracts.slice(0, 10),
+                    types: raw.types,
+                    users: raw.users,
+                });
+                setLoading(false);
+            })
+            .catch(() => setLoading(false));
     };
 
     useEffect(() => {
@@ -84,112 +87,110 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
         window.location.href = '/admin/api/reports/export';
     };
 
-    const filterCategories: FilterCategory[] = useMemo(() => [
-        { label: 'Rentang Waktu', key: 'date', type: 'date-range' },
-        { 
-            label: 'Tipe Kontrak', 
-            key: 'contract_type_ids', 
-            type: 'searchable', 
-            options: data?.types.map(t => ({ label: t.name, value: t.id })) || [] 
-        },
-        { 
-            label: 'Pembuat', 
-            key: 'creator_ids', 
-            type: 'searchable', 
-            options: data?.users.map(u => ({ label: u.name, value: u.id })) || [] 
-        }
-    ], [data]);
+    const filterCategories: FilterCategory[] = useMemo(
+        () => [
+            { label: 'Rentang Waktu', key: 'date', type: 'date-range' },
+            {
+                label: 'Tipe Kontrak',
+                key: 'contract_type_ids',
+                type: 'searchable',
+                options: data?.types.map((t) => ({ label: t.name, value: t.id })) || [],
+            },
+            {
+                label: 'Pembuat',
+                key: 'creator_ids',
+                type: 'searchable',
+                options: data?.users.map((u) => ({ label: u.name, value: u.id })) || [],
+            },
+        ],
+        [data],
+    );
 
     return (
         <>
             <Head title="Analitik Kontrak" />
-            
-            <div className="flex flex-col flex-1 p-6 space-y-6 bg-background">
+
+            <div className="bg-background flex flex-1 flex-col space-y-6 p-6">
                 {/* Header Section */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
                     <div className="space-y-1">
-                        <h1 className="text-2xl font-bold tracking-tight text-foreground font-montserrat">
-                            Analitik Kontrak
-                        </h1>
-                        <p className="text-sm text-muted-foreground font-medium">
+                        <h1 className="text-foreground font-montserrat text-2xl font-bold tracking-tight">Analitik Kontrak</h1>
+                        <p className="text-muted-foreground text-sm font-medium">
                             Pantau performa operasional dan statistik kontrak secara real-time.
                         </p>
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <Button 
-                            variant="outline" 
+                        <Button
+                            variant="outline"
                             onClick={() => setIsFilterOpen(true)}
                             className="bg-card border-border text-foreground hover:bg-muted font-bold"
                         >
-                            <Filter className="w-4 h-4 mr-2" />
+                            <Filter className="mr-2 h-4 w-4" />
                             Saring Data
                         </Button>
-                        <Button 
-                            onClick={handleExport}
-                            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
-                        >
-                            <Download className="w-4 h-4 mr-2" />
+                        <Button onClick={handleExport} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
+                            <Download className="mr-2 h-4 w-4" />
                             Ekspor Laporan
                         </Button>
                     </div>
                 </div>
 
                 {/* Main Metrics */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <MetricCard 
-                        title="Total Kontrak" 
-                        value={data?.metrics.totalContracts || 0} 
-                        icon={<FileText className="w-5 h-5" />}
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+                    <MetricCard
+                        title="Total Kontrak"
+                        value={data?.metrics.totalContracts || 0}
+                        icon={<FileText className="h-5 w-5" />}
                         trend="+12%"
                         isPositive={true}
                     />
-                    <MetricCard 
-                        title="Menunggu Persetujuan" 
-                        value={data?.metrics.pendingApprovals || 0} 
-                        icon={<Clock className="w-5 h-5 text-amber-500" />}
+                    <MetricCard
+                        title="Menunggu Persetujuan"
+                        value={data?.metrics.pendingApprovals || 0}
+                        icon={<Clock className="h-5 w-5 text-amber-500" />}
                         description="Kontrak dalam antrean review"
                     />
-                    <MetricCard 
-                        title="Disetujui Bulan Ini" 
-                        value={data?.metrics.approvedThisMonth || 0} 
-                        icon={<CheckCircle2 className="w-5 h-5 text-emerald-500" />}
+                    <MetricCard
+                        title="Disetujui Bulan Ini"
+                        value={data?.metrics.approvedThisMonth || 0}
+                        icon={<CheckCircle2 className="h-5 w-5 text-emerald-500" />}
                         trend="+5%"
                         isPositive={true}
                     />
-                    <MetricCard 
-                        title="Rata-rata Waktu Proses" 
-                        value={data?.metrics.avgCycleTime || 0} 
-                        icon={<TrendingUp className="w-5 h-5 text-indigo-500" />}
+                    <MetricCard
+                        title="Rata-rata Waktu Proses"
+                        value={data?.metrics.avgCycleTime || 0}
+                        icon={<TrendingUp className="h-5 w-5 text-indigo-500" />}
                         unit=" hari"
                         description="Kecepatan approval rata-rata"
                     />
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
                     {/* Charts Section (Visual Sim) */}
-                    <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
-                            <div className="flex items-center justify-between mb-6">
-                                <h3 className="text-sm font-bold uppercase tracking-wider text-foreground flex items-center gap-2">
-                                    <Activity className="w-4 h-4" />
+                    <div className="space-y-6 lg:col-span-2">
+                        <div className="bg-card border-border rounded-2xl border p-6 shadow-sm">
+                            <div className="mb-6 flex items-center justify-between">
+                                <h3 className="text-foreground flex items-center gap-2 text-sm font-bold tracking-wider uppercase">
+                                    <Activity className="h-4 w-4" />
                                     Distribusi Status Kontrak
                                 </h3>
                             </div>
-                            
+
                             <div className="space-y-4">
                                 {data?.statusDistribution.map((s, idx) => (
                                     <div key={idx} className="space-y-2">
-                                        <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-tight">
+                                        <div className="flex items-center justify-between text-xs font-semibold tracking-tight uppercase">
                                             <span className="text-muted-foreground">{s.label}</span>
                                             <span className="text-foreground">{s.count} Kontrak</span>
                                         </div>
-                                        <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                                            <div 
+                                        <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
+                                            <div
                                                 className="h-full rounded-full transition-all duration-1000"
-                                                style={{ 
+                                                style={{
                                                     width: `${(s.count / (data?.metrics.totalContracts || 1)) * 100}%`,
-                                                    backgroundColor: s.color 
+                                                    backgroundColor: s.color,
                                                 }}
                                             />
                                         </div>
@@ -199,32 +200,36 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
                         </div>
 
                         {/* Recent Activity Mini Table */}
-                        <div className="bg-card rounded-2xl border border-border p-6 shadow-sm overflow-hidden">
-                            <h3 className="text-sm font-bold uppercase tracking-wider text-foreground mb-6 flex items-center gap-2">
-                                <Calendar className="w-4 h-4" />
+                        <div className="bg-card border-border overflow-hidden rounded-2xl border p-6 shadow-sm">
+                            <h3 className="text-foreground mb-6 flex items-center gap-2 text-sm font-bold tracking-wider uppercase">
+                                <Calendar className="h-4 w-4" />
                                 Registrasi Kontrak Terbaru
                             </h3>
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left">
                                     <thead>
-                                        <tr className="border-b border-border">
-                                            <th className="pb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">No. Kontrak</th>
-                                            <th className="pb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Judul</th>
-                                            <th className="pb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Status</th>
-                                            <th className="pb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground text-right">Tanggal</th>
+                                        <tr className="border-border border-b">
+                                            <th className="text-muted-foreground pb-3 text-xs font-bold tracking-wider uppercase">No. Kontrak</th>
+                                            <th className="text-muted-foreground pb-3 text-xs font-bold tracking-wider uppercase">Judul</th>
+                                            <th className="text-muted-foreground pb-3 text-xs font-bold tracking-wider uppercase">Status</th>
+                                            <th className="text-muted-foreground pb-3 text-right text-xs font-bold tracking-wider uppercase">
+                                                Tanggal
+                                            </th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-border">
+                                    <tbody className="divide-border divide-y">
                                         {data?.recentContracts.map((c, idx) => (
                                             <tr key={idx} className="group hover:bg-muted/30 transition-colors">
-                                                <td className="py-3 text-xs font-mono font-bold text-primary uppercase">{c.contract_no}</td>
-                                                <td className="py-3 text-xs font-semibold text-foreground uppercase truncate max-w-[200px]">{c.title}</td>
+                                                <td className="text-primary py-3 font-mono text-xs font-bold uppercase">{c.contract_no}</td>
+                                                <td className="text-foreground max-w-[200px] truncate py-3 text-xs font-semibold uppercase">
+                                                    {c.title}
+                                                </td>
                                                 <td className="py-3">
-                                                    <span className="px-2 py-0.5 rounded-full text-xs font-semibold uppercase tracking-tight bg-muted text-muted-foreground">
+                                                    <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-xs font-semibold tracking-tight uppercase">
                                                         {c.status}
                                                     </span>
                                                 </td>
-                                                <td className="py-3 text-xs font-semibold text-muted-foreground text-right">
+                                                <td className="text-muted-foreground py-3 text-right text-xs font-semibold">
                                                     {new Date(c.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })}
                                                 </td>
                                             </tr>
@@ -237,19 +242,20 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
 
                     {/* Secondary Insights */}
                     <div className="space-y-6">
-                        <div className="bg-primary rounded-2xl p-6 text-primary-foreground shadow-sm relative overflow-hidden">
+                        <div className="bg-primary text-primary-foreground relative overflow-hidden rounded-2xl p-6 shadow-sm">
                             <div className="relative z-10 space-y-4">
-                                <div className="p-2 bg-primary-foreground/10 rounded-lg w-fit">
-                                    <TrendingUp className="w-5 h-5 text-primary-foreground" />
+                                <div className="bg-primary-foreground/10 w-fit rounded-lg p-2">
+                                    <TrendingUp className="text-primary-foreground h-5 w-5" />
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-xs font-bold uppercase tracking-wider opacity-70">Insights Operasional</p>
+                                    <p className="text-xs font-bold tracking-wider uppercase opacity-70">Insights Operasional</p>
                                     <h4 className="text-lg font-bold">Tren Kontrak</h4>
                                 </div>
-                                <p className="text-xs opacity-90 leading-relaxed font-medium">
-                                    Volume kontrak bulan ini meningkat sebesar <span className="font-bold text-emerald-300">12%</span> dibandingkan bulan lalu.
+                                <p className="text-xs leading-relaxed font-medium opacity-90">
+                                    Volume kontrak bulan ini meningkat sebesar <span className="font-bold text-emerald-300">12%</span> dibandingkan
+                                    bulan lalu.
                                 </p>
-                                <button className="text-xs font-bold uppercase tracking-wider border-b border-primary-foreground/30 pb-0.5 hover:border-primary-foreground transition-all">
+                                <button className="border-primary-foreground/30 hover:border-primary-foreground border-b pb-0.5 text-xs font-bold tracking-wider uppercase transition-all">
                                     Lihat Detail Tren
                                 </button>
                             </div>
@@ -258,9 +264,9 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
                             </div>
                         </div>
 
-                        <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
-                            <h3 className="text-sm font-bold uppercase tracking-wider text-foreground mb-6 flex items-center gap-2">
-                                <Users className="w-4 h-4" />
+                        <div className="bg-card border-border rounded-2xl border p-6 shadow-sm">
+                            <h3 className="text-foreground mb-6 flex items-center gap-2 text-sm font-bold tracking-wider uppercase">
+                                <Users className="h-4 w-4" />
                                 Departemen Teraktif
                             </h3>
                             <div className="space-y-4">
@@ -270,12 +276,14 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
                                     { name: 'Information Tech', count: 5, percentage: 40 },
                                 ].map((dept, idx) => (
                                     <div key={idx} className="flex items-center gap-4">
-                                        <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center font-bold text-foreground shrink-0 border border-border">
+                                        <div className="bg-muted text-foreground border-border flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border font-bold">
                                             #{idx + 1}
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-xs font-semibold text-foreground truncate uppercase">{dept.name}</p>
-                                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{dept.count} Kontrak Aktif</p>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-foreground truncate text-xs font-semibold uppercase">{dept.name}</p>
+                                            <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+                                                {dept.count} Kontrak Aktif
+                                            </p>
                                         </div>
                                     </div>
                                 ))}
@@ -285,14 +293,14 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
                 </div>
             </div>
 
-            <FilterSheet 
+            <FilterSheet
                 isOpen={isFilterOpen}
                 onOpenChange={setIsFilterOpen}
                 title="Penyaringan Data"
                 description="Sesuaikan kriteria untuk melihat data spesifik."
                 categories={filterCategories}
                 activeFilters={filters}
-                onFilterChange={(key, val) => setFilters(p => ({ ...p, [key]: val }))}
+                onFilterChange={(key, val) => setFilters((p) => ({ ...p, [key]: val }))}
                 onReset={() => setFilters({ date_from: '', date_to: '', contract_type_ids: [], creator_ids: [] })}
                 applyText="Terapkan Filter"
             />
@@ -300,51 +308,57 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
     );
 }
 
-function MetricCard({ title, value, icon, trend, isPositive, unit = "", description }: { 
-    title: string; 
-    value: number | string; 
-    icon: React.ReactNode; 
-    trend?: string; 
+function MetricCard({
+    title,
+    value,
+    icon,
+    trend,
+    isPositive,
+    unit = '',
+    description,
+}: {
+    title: string;
+    value: number | string;
+    icon: React.ReactNode;
+    trend?: string;
     isPositive?: boolean;
     unit?: string;
     description?: string;
 }) {
     return (
-        <div className="bg-card p-6 rounded-2xl border border-border shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-            <div className="flex justify-between items-start relative z-10">
-                <div className="space-y-4 flex-1">
+        <div className="bg-card border-border group relative overflow-hidden rounded-2xl border p-6 shadow-sm transition-shadow hover:shadow-md">
+            <div className="relative z-10 flex items-start justify-between">
+                <div className="flex-1 space-y-4">
                     <div className="space-y-1">
-                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{title}</p>
+                        <p className="text-muted-foreground text-xs font-bold tracking-wider uppercase">{title}</p>
                         <div className="flex items-baseline gap-1">
-                            <span className="text-2xl font-bold text-foreground tracking-tight">
-                                {value}
-                            </span>
-                            {unit && <span className="text-sm font-semibold text-muted-foreground uppercase">{unit}</span>}
+                            <span className="text-foreground text-2xl font-bold tracking-tight">{value}</span>
+                            {unit && <span className="text-muted-foreground text-sm font-semibold uppercase">{unit}</span>}
                         </div>
                     </div>
-                    
+
                     {trend ? (
                         <div className="flex items-center gap-1.5">
-                            <div className={cn(
-                                "flex items-center px-1.5 py-0.5 rounded-lg text-xs font-semibold",
-                                isPositive ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" : "bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400"
-                            )}>
-                                {isPositive ? <ArrowUpRight className="w-3 h-3 mr-0.5" /> : <ArrowDownRight className="w-3 h-3 mr-0.5" />}
+                            <div
+                                className={cn(
+                                    'flex items-center rounded-lg px-1.5 py-0.5 text-xs font-semibold',
+                                    isPositive
+                                        ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400'
+                                        : 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400',
+                                )}
+                            >
+                                {isPositive ? <ArrowUpRight className="mr-0.5 h-3 w-3" /> : <ArrowDownRight className="mr-0.5 h-3 w-3" />}
                                 {trend}
                             </div>
-                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">vs Bulan Lalu</span>
+                            <span className="text-muted-foreground text-xs font-medium tracking-wider uppercase">vs Bulan Lalu</span>
                         </div>
                     ) : description ? (
-                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-tight">{description}</p>
+                        <p className="text-muted-foreground text-xs font-medium tracking-tight uppercase">{description}</p>
                     ) : null}
                 </div>
-                <div className="p-3 bg-muted rounded-xl group-hover:bg-primary/5 transition-colors">
-                    {icon}
-                </div>
+                <div className="bg-muted group-hover:bg-primary/5 rounded-xl p-3 transition-colors">{icon}</div>
             </div>
-            <div className="absolute -bottom-4 -right-4 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity">
-                {icon}
-            </div>
+            <div className="absolute -right-4 -bottom-4 opacity-[0.03] transition-opacity group-hover:opacity-[0.06]">{icon}</div>
         </div>
     );
 }

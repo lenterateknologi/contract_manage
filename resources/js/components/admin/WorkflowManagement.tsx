@@ -14,14 +14,12 @@ const WorkflowNameCell = ({ row }: { readonly row: any }) => (
                 {row.name}
             </span>
             {row.is_default && (
-                <div className="bg-primary/[0.05] border-primary/10 text-primary/40 rounded border px-1.5 py-0.5 text-[7px] font-semibold tracking-widest uppercase dark:border-white/10 dark:bg-white/[0.05] dark:text-white/40">
+                <div className="bg-primary/[0.05] border-primary/10 text-primary/40 rounded border px-1.5 py-0.5 text-[7px] font-semibold uppercase dark:border-white/10 dark:bg-white/[0.05] dark:text-white/40">
                     DEFAULT
                 </div>
             )}
         </div>
-        <span className="text-primary/30 mt-0.5 text-[8px] font-bold tracking-widest uppercase italic dark:text-white/30">
-            {row.contract_type || 'GLOBAL'}
-        </span>
+        <span className="text-primary/30 mt-0.5 text-[8px] font-bold uppercase italic dark:text-white/30">{row.contract_type || 'GLOBAL'}</span>
     </div>
 );
 
@@ -38,7 +36,7 @@ const InitiatorCell = ({ row }: { readonly row: any }) => {
             <div className="bg-primary/[0.03] text-primary/40 rounded-md p-1 dark:bg-white/[0.03] dark:text-white/40">
                 <Icon size={10} />
             </div>
-            <span className="text-primary/60 text-[9px] font-semibold tracking-widest uppercase dark:text-white/60">{text}</span>
+            <span className="text-primary/60 text-[9px] font-semibold uppercase dark:text-white/60">{text}</span>
         </div>
     );
 };
@@ -60,7 +58,7 @@ const StepsCell = ({ row }: { readonly row: any }) => (
                 </div>
             )}
         </div>
-        <span className="text-primary/30 text-[9px] font-semibold tracking-widest uppercase dark:text-white/30">{row.steps?.length || 0} TAHAP</span>
+        <span className="text-primary/30 text-[9px] font-semibold uppercase dark:text-white/30">{row.steps?.length || 0} TAHAP</span>
     </div>
 );
 

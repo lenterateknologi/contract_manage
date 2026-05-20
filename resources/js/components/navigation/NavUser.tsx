@@ -1,12 +1,12 @@
-import React, { memo } from 'react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/overlays/DropdownMenu';
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/navigation/Sidebar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/overlays/DropdownMenu';
 import { UserInfo } from '@/components/user/UserInfo';
 import { UserMenuContent } from '@/components/user/UserMenuContent';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { type SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
 import { ChevronsUpDown } from 'lucide-react';
+import { memo } from 'react';
 
 export const NavUser = memo(function NavUser() {
     const { auth } = usePage<SharedData>().props;
@@ -22,7 +22,11 @@ export const NavUser = memo(function NavUser() {
             <SidebarMenuItem>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <SidebarMenuButton size="lg" className="text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent group" tooltip={auth.user.name}>
+                        <SidebarMenuButton
+                            size="lg"
+                            className="text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent group"
+                            tooltip={auth.user.name}
+                        >
                             <UserInfo user={auth.user} />
                             <ChevronsUpDown className="ml-auto size-4" />
                         </SidebarMenuButton>

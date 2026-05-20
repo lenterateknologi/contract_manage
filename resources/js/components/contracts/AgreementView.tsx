@@ -4,7 +4,7 @@ import { SearchInput } from '@/components/ui/forms/SearchInput';
 import { cn } from '@/lib/utils';
 import { Contract } from '@/types/contracts';
 import axios from 'axios';
-import { ArrowRight, ChevronDown, Diff, FileText, History, Loader2, MoreVertical, RefreshCw, Upload } from 'lucide-react';
+import { ArrowRight, Diff, FileText, History, Loader2, MoreVertical, RefreshCw, Upload } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 interface AgreementVersion {
@@ -122,7 +122,7 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
                 <div className="flex items-center gap-4">
                     <div className="flex flex-col">
                         <div className="flex items-center gap-2">
-                            <h4 className="text-xs font-bold tracking-tight text-black dark:text-white uppercase">Preview Persetujuan</h4>
+                            <h4 className="text-xs font-bold tracking-tight text-black uppercase dark:text-white">Preview Persetujuan</h4>
                             {selectedVno && (
                                 <span className="rounded bg-black/5 px-1.5 py-0.5 text-[9px] font-bold text-black/60 dark:bg-white/10 dark:text-white/60">
                                     V{selectedVno}
@@ -135,26 +135,26 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
                 <div className="flex items-center gap-2.5" ref={dropdownRef}>
                     {versions.length > 0 && (
                         <div className="relative">
-                        <button
-                            onClick={() => setShowVersions(!showVersions)}
-                            className={cn(
-                                'group flex h-8 items-center gap-2 rounded-lg border text-[11px] font-bold uppercase transition-all active:scale-95',
-                                showVersions
-                                    ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black'
-                                    : 'border-black/5 bg-white text-black/60 hover:border-black/20 hover:text-black dark:border-white/5 dark:bg-transparent dark:text-white/60 dark:hover:text-white',
-                            )}
-                        >
-                            <History
-                                size={14}
+                            <button
+                                onClick={() => setShowVersions(!showVersions)}
                                 className={cn(
-                                    'ml-3 transition-colors',
+                                    'group flex h-8 items-center gap-2 rounded-lg border text-[11px] font-bold uppercase transition-all active:scale-95',
                                     showVersions
-                                        ? 'text-white'
-                                        : 'text-black/40 group-hover:text-black dark:text-white/40 dark:group-hover:text-white',
+                                        ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black'
+                                        : 'border-black/5 bg-white text-black/60 hover:border-black/20 hover:text-black dark:border-white/5 dark:bg-transparent dark:text-white/60 dark:hover:text-white',
                                 )}
-                            />
-                            <span className="mr-3">{versions.length} Versi</span>
-                        </button>
+                            >
+                                <History
+                                    size={14}
+                                    className={cn(
+                                        'ml-3 transition-colors',
+                                        showVersions
+                                            ? 'text-white'
+                                            : 'text-black/40 group-hover:text-black dark:text-white/40 dark:group-hover:text-white',
+                                    )}
+                                />
+                                <span className="mr-3">{versions.length} Versi</span>
+                            </button>
 
                             {showVersions && (
                                 <div className="animate-in fade-in zoom-in-95 dark:bg-sidebar absolute top-full left-0 z-[999] mt-2 w-72 origin-top-left rounded-xl border border-black/10 bg-white p-1 shadow-2xl duration-200 dark:border-white/10">
@@ -216,16 +216,16 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
                         </button>
 
                         {showMoreActions && (
-                            <div className="animate-in fade-in zoom-in-95 dark:bg-sidebar absolute top-full right-0 z-[999] mt-2 w-48 origin-top-right rounded-xl border border-black/10 bg-white p-1 shadow-2xl duration-200 dark:border-white/10">
+                            <div className="animate-in fade-in zoom-in-95 absolute top-full right-0 z-[999] mt-2 w-64 origin-top-right rounded-2xl border border-black/10 bg-white p-1.5 shadow-2xl backdrop-blur-xl duration-200 dark:border-white/10 dark:bg-[#1e293b]">
                                 <button
                                     onClick={() => {
                                         loadVersions();
                                         setShowMoreActions(false);
                                     }}
-                                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-xs font-bold tracking-widest text-black uppercase transition-all hover:bg-black/5 dark:text-white dark:hover:bg-white/5"
+                                    className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-xs font-semibold text-[#0f172a] transition-all hover:bg-black/5 dark:text-white dark:hover:bg-white/5"
                                 >
-                                    <RefreshCw size={14} className="text-black dark:text-white" />
-                                    REFRESH LIST
+                                    <RefreshCw size={16} className="opacity-40" />
+                                    Refresh List
                                 </button>
 
                                 {versions.length > 1 && (
@@ -234,10 +234,10 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
                                             handleCompare();
                                             setShowMoreActions(false);
                                         }}
-                                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-xs font-bold tracking-widest text-black uppercase transition-all hover:bg-black/5 dark:text-white dark:hover:bg-white/5"
+                                        className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-xs font-semibold text-[#0f172a] transition-all hover:bg-black/5 dark:text-white dark:hover:bg-white/5"
                                     >
-                                        <Diff size={14} className="text-black dark:text-white" />
-                                        COMPARE VERSIONS
+                                        <Diff size={16} className="opacity-40" />
+                                        Bandingkan Versi
                                     </button>
                                 )}
                             </div>

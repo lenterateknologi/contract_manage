@@ -1,6 +1,6 @@
-import React from 'react';
 import { Label } from '@/components/ui/base/Label';
 import { cn } from '@/lib/utils';
+import React from 'react';
 import { getTypographyStyle, renderValue } from '../utils';
 
 interface FieldProps {
@@ -24,7 +24,7 @@ export const TextField: React.FC<FieldProps> = ({ field, value, onChange, readOn
                     </span>
                 )}
                 <span
-                    className="text-foreground border-border min-h-[32px] flex-1 border-b border-dotted pb-1.5 text-[11px] font-bold leading-relaxed"
+                    className="text-foreground border-border min-h-[32px] flex-1 border-b border-dotted pb-1.5 text-[11px] leading-relaxed font-bold"
                     style={getTypographyStyle(field)}
                 >
                     {renderValue(value, field)}
@@ -45,7 +45,7 @@ export const TextField: React.FC<FieldProps> = ({ field, value, onChange, readOn
                 <input
                     type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}
                     placeholder={field.placeholder}
-                    value={field.type === 'date' && typeof value === 'string' ? value.split('T')[0].split(' ')[0] : (value || '')}
+                    value={field.type === 'date' && typeof value === 'string' ? value.split('T')[0].split(' ')[0] : value || ''}
                     onChange={(e) => onChange?.(e.target.value)}
                     className={cn(
                         'placeholder:text-muted-foreground/50 flex min-h-[32px] w-full text-[11px] font-bold transition-all placeholder:italic',
@@ -73,7 +73,7 @@ export const TextAreaField: React.FC<FieldProps> = ({ field, value, onChange, re
                     </div>
                 )}
                 <span
-                    className="text-foreground border-border block min-h-[32px] flex-1 border-b border-dotted pb-1.5 text-[11px] font-bold leading-relaxed"
+                    className="text-foreground border-border block min-h-[32px] flex-1 border-b border-dotted pb-1.5 text-[11px] leading-relaxed font-bold"
                     style={getTypographyStyle(field)}
                 >
                     {renderValue(value, field)}
@@ -131,7 +131,7 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
                 <span
                     className={cn(
                         'text-foreground border-border min-h-[24px] flex-1 pb-1 text-[11px] font-bold',
-                        isDashed ? 'border-b border-dotted' : 'border rounded px-2 py-1',
+                        isDashed ? 'border-b border-dotted' : 'rounded border px-2 py-1',
                     )}
                     style={getTypographyStyle(field)}
                 >

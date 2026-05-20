@@ -1,9 +1,9 @@
+import { SearchInput } from '@/components/ui/forms/SearchInput';
 import { contractApi } from '@/lib/contract-api';
 import { Contract } from '@/types/contracts';
+import { X } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { Avatar } from './ui';
-import { SearchInput } from '@/components/ui/forms/SearchInput';
-import { X } from 'lucide-react';
 
 interface Props {
     contracts: Contract[];
@@ -20,7 +20,7 @@ function MsgBubble({ msg, isMe }: { msg: any; isMe: boolean }) {
         return (
             <div className="mb-1 flex flex-col items-end gap-1">
                 <div className="mr-1 flex items-center gap-1.5">
-                    <span className="text-[10px] font-black text-black dark:text-white uppercase tracking-widest">You</span>
+                    <span className="text-[10px] font-black text-black uppercase dark:text-white">You</span>
                     {role && (
                         <span className="px-1.2 py-0.3 rounded-md border border-gray-100 bg-gray-50 text-[10px] font-medium text-gray-400">
                             {role}
@@ -28,9 +28,7 @@ function MsgBubble({ msg, isMe }: { msg: any; isMe: boolean }) {
                     )}
                 </div>
                 <div className="group relative max-w-[85%]">
-                    <div
-                        className="rounded-[14px_14px_4px_14px] px-3 py-2 text-[12px] leading-relaxed bg-black dark:bg-white text-white dark:text-black shadow-lg select-text font-medium"
-                    >
+                    <div className="rounded-[14px_14px_4px_14px] bg-black px-3 py-2 text-[12px] leading-relaxed font-medium text-white shadow-lg select-text dark:bg-white dark:text-black">
                         {msg.message}
                     </div>
                 </div>
@@ -73,7 +71,7 @@ function DateSeparator({ date }: { date: string }) {
             <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-100"></div>
             </div>
-            <span className="relative rounded-full border border-gray-100 bg-white px-3 py-1 text-[9px] font-bold tracking-widest text-gray-400 uppercase shadow-sm">
+            <span className="relative rounded-full border border-gray-100 bg-white px-3 py-1 text-[9px] font-bold text-gray-400 uppercase shadow-sm">
                 {date}
             </span>
         </div>
@@ -181,7 +179,7 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
-                className="fixed right-5 bottom-[10%] z-[200] flex h-12 w-12 cursor-move items-center justify-center rounded-full bg-black dark:bg-white text-white dark:text-black shadow-2xl transition-all select-none hover:opacity-90 active:scale-95"
+                className="fixed right-5 bottom-[10%] z-[200] flex h-12 w-12 cursor-move items-center justify-center rounded-full bg-black text-white shadow-2xl transition-all select-none hover:opacity-90 active:scale-95 dark:bg-white dark:text-black"
                 style={{
                     transform: `translate(${pos.x}px, ${pos.y}px)`,
                     touchAction: 'none',
@@ -189,7 +187,7 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
             >
                 <i className={`fa-solid ${open ? 'fa-xmark' : 'fa-comments'} text-[18px]`} />
                 {totalUnread > 0 && (
-                    <span className="pointer-events-none absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black dark:bg-white text-[10px] font-black text-white dark:text-black shadow-lg border border-white dark:border-black">
+                    <span className="pointer-events-none absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border border-white bg-black text-[10px] font-black text-white shadow-lg dark:border-black dark:bg-white dark:text-black">
                         {totalUnread}
                     </span>
                 )}
@@ -234,8 +232,8 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
 
                         {/* Search Sub-header for Thread */}
                         {activeId && showSearchThread && (
-                            <div className="flex items-center gap-2 border-b border-black/5 bg-black/[0.02] dark:bg-white/[0.02] px-4 py-2 animate-in slide-in-from-top duration-300">
-                                <SearchInput 
+                            <div className="animate-in slide-in-from-top flex items-center gap-2 border-b border-black/5 bg-black/[0.02] px-4 py-2 duration-300 dark:bg-white/[0.02]">
+                                <SearchInput
                                     autoFocus
                                     value={searchThread}
                                     onChange={(e) => setSearchThread(e.target.value)}
@@ -247,7 +245,7 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
                                         setShowSearchThread(false);
                                         setSearchThread('');
                                     }}
-                                    className="text-black/40 dark:text-white/40 transition-colors hover:text-black dark:hover:text-white"
+                                    className="text-black/40 transition-colors hover:text-black dark:text-white/40 dark:hover:text-white"
                                 >
                                     <X size={14} />
                                 </button>
@@ -256,8 +254,8 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
 
                         {/* Search header for List view */}
                         {!activeId && (
-                            <div className="flex items-center gap-2 border-b border-black/5 px-4 py-3 bg-black/[0.02] dark:bg-white/[0.02]">
-                                <SearchInput 
+                            <div className="flex items-center gap-2 border-b border-black/5 bg-black/[0.02] px-4 py-3 dark:bg-white/[0.02]">
+                                <SearchInput
                                     value={searchList}
                                     onChange={(e) => setSearchList(e.target.value)}
                                     placeholder="Cari kontrak..."
@@ -307,7 +305,7 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
                                                     )}
                                                 </div>
                                                 {unread > 0 && (
-                                                    <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-black dark:bg-white text-[10px] font-bold text-white dark:text-black">
+                                                    <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-black text-[10px] font-bold text-white dark:bg-white dark:text-black">
                                                         {unread}
                                                     </span>
                                                 )}
@@ -364,12 +362,12 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
                                         onChange={(e) => setInput(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && send()}
                                         placeholder="Tulis pesan..."
-                                        className="flex-1 rounded-lg border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 px-3 py-2 text-[12px] text-black dark:text-white placeholder-black/30 dark:placeholder-white/30 outline-none focus:border-black dark:focus:border-white"
+                                        className="flex-1 rounded-lg border border-black/10 bg-black/5 px-3 py-2 text-[12px] text-black placeholder-black/30 outline-none focus:border-black dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder-white/30 dark:focus:border-white"
                                     />
                                     <button
                                         onClick={send}
                                         disabled={sending || !input.trim()}
-                                        className="rounded-lg bg-black dark:bg-white px-3 py-2 text-[12px] text-white dark:text-black transition-all hover:opacity-90 disabled:opacity-30 shadow-lg active:scale-95"
+                                        className="rounded-lg bg-black px-3 py-2 text-[12px] text-white shadow-lg transition-all hover:opacity-90 active:scale-95 disabled:opacity-30 dark:bg-white dark:text-black"
                                     >
                                         <i className="fa-solid fa-paper-plane text-[11px]" />
                                     </button>

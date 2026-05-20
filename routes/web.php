@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Controllers\Admin\MasterConfigController;
+use App\Http\Controllers\Admin\OrganizationController;
+use App\Http\Controllers\Admin\VendorAdminController;
+use App\Http\Controllers\Admin\WorkflowAdminController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ContractController;
 use App\Http\Controllers\ContractMessageController;
@@ -13,14 +17,7 @@ use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-    if (Auth::check()) {
-        return redirect()->route('dashboard');
-    }
-    return Inertia::render('auth/login', [
-        'canResetPassword' => Route::has('password.request'),
-        'status' => session('status'),
-        'canTestEmail' => !app()->environment('production'),
-    ]);
+    return redirect()->route('dashboard');
 })->name('home');
 
 // Email testing (only in non-production environments)
@@ -62,64 +59,11 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('contracts/{id}', [ContractController::class, 'showView'])->name('contracts.show');
 
-    // ── Contract API (under web middleware so session auth works) ──
-    Route::prefix('api')->group(function () {
-        Route::get('/contracts', [ContractController::class, 'index']);
-        Route::get('/contract-types', [ContractController::class, 'getTypes']);
-        Route::get('/contracts/submission-types', [ContractController::class, 'getSubmissionTypes']);
-        Route::post('/contracts', [ContractController::class, 'store']);
-        Route::get('/contracts/workflows', [ContractController::class, 'getWorkflows']);
-        Route::get('/contracts/users', [ContractController::class, 'getUsers']);
-        Route::get('/contracts/roles', [ContractController::class, 'getRoles']);
-        Route::get('/contracts/{id}', [ContractController::class, 'show']);
-        Route::patch('/contracts/{id}', [ContractController::class, 'update']);
-        Route::delete('/contracts/{id}', [ContractController::class, 'destroy']);
-        Route::post('/contracts/{id}/send', [ContractController::class, 'send']);
-        Route::post('/contracts/{id}/approve', [ContractController::class, 'approve']);
-        Route::post('/contracts/{id}/reject', [ContractController::class, 'reject']);
-        Route::post('/contracts/{id}/revision', [ContractController::class, 'uploadRevision']);
-        Route::post('/contracts/{id}/version', [ContractController::class, 'changeVersion']);
-        Route::post('/contracts/{id}/attachments', [ContractController::class, 'uploadAttachment']);
-        Route::delete('/contracts/{id}/attachments/{atId}', [ContractController::class, 'deleteAttachment']);
-        Route::get('/contracts/{id}/download', [ContractController::class, 'download'])->name('contracts.download');
-        Route::get('/contracts/{id}/file/{versionNo}', [ContractController::class, 'fileContent'])->name('contracts.file-url');
-        Route::get('/contracts/{id}/attachment/{atId}', [ContractController::class, 'attachmentFile'])->name('contracts.attachment-file');
-        Route::get('/contracts/{id}/pdf/{versionNo}', [ContractController::class, 'pdfPreview'])->name('contracts.pdf-preview');
-        Route::get('/contracts/{id}/attachment-pdf/{atId}', [ContractController::class, 'attachmentPdfPreview'])->name('contracts.attachment-pdf-preview');
-        Route::get('/contracts/{id}/vendor-document/{docId}', [ContractController::class, 'vendorDocumentFile'])->name('contracts.vendor-document-file');
-        Route::get('/contracts/{id}/vendor-document-pdf/{docId}', [ContractController::class, 'vendorDocumentPdfPreview'])->name('contracts.vendor-document-pdf-preview');
-
-        // Form Submissions (F1/F2)
-        Route::post('/contracts/{id}/form-submissions', [ContractController::class, 'saveFormSubmission']);
-        Route::get('/contracts/{id}/form-submissions/{type}', [ContractController::class, 'getFormSubmission']);
-        Route::get('/contracts/{id}/form-submissions/{type}/pdf', [ContractController::class, 'exportFormSubmissionPdf']);
 
 
-        Route::get('/form-templates/{id}/fields', function ($id) {
-            $tpl = \App\Models\FormTemplate::with(['fields' => fn($q) => $q->orderBy('order')])->findOrFail($id);
-            return response()->json($tpl);
-        });
-
-        Route::get('/contracts/{contractId}/messages', [ContractMessageController::class, 'index']);
-        Route::post('/contracts/{contractId}/messages', [ContractMessageController::class, 'store']);
-        Route::post('/contracts/{contractId}/messages/read', [ContractMessageController::class, 'markRead']);
-
-        // Agreement Data Management
-        Route::post('/contracts/{id}/agreement', [ContractController::class, 'uploadAgreement']);
-        Route::get('/contracts/{id}/agreement/versions', [ContractController::class, 'getAgreementVersions']);
-
-        // Audit Trail
-        Route::get('/contracts/{id}/audit-trail', [ContractController::class, 'getAuditTrail']);
-        Route::get('/contracts/{id}/audit-trail/document', [ContractController::class, 'renderAuditDocument'])->name('contracts.audit.document');
-        Route::get('/contracts/{id}/audit-trail/pdf', [ContractController::class, 'exportAuditPdf'])->name('contracts.audit.pdf');
-        Route::get('/contracts/{id}/audit-trail/pdf/queue', [ContractController::class, 'exportAuditPdfQueue'])->name('contracts.audit.pdf.queue');
-        Route::get('/contracts/{id}/approval/pdf/queue', [ContractController::class, 'exportApprovalTimelinePdfQueue'])->name('contracts.approval.pdf.queue');
-        Route::get('/contracts/{id}/audit-trail/excel', [ContractController::class, 'exportAuditExcel'])->name('contracts.audit.excel');
-
-        // Bulk Actions
-        Route::post('/contracts/bulk-delete', [ContractController::class, 'bulkDestroy']);
-        Route::post('/contracts/bulk-approve', [ContractController::class, 'bulkApprove']);
-    });
+    // Version Comparison for any authorized user
+    Route::get('/admin/contracts/{id}/form-submissions/{type}/compare', [ContractController::class, 'compareFormVersions'])->name('contracts.form-submissions.compare');
+    Route::get('/admin/contracts/{id}/agreement/compare', [ContractController::class, 'compareAgreementVersions'])->name('contracts.agreement.compare');
 
     Route::middleware(['admin'])->prefix('admin')->group(function () {
         Route::get('/contracts', [ContractController::class, 'contractsView'])->defaults('view', 'contracts')->name('admin.contracts.index');
@@ -136,52 +80,74 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/users/{user}', [AdminController::class, 'destroyUser'])->name('admin.users.destroy');
         Route::post('/users/bulk-delete', [AdminController::class, 'bulkDestroyUser'])->name('admin.users.bulk-destroy');
 
-        Route::get('/contract-types', [AdminController::class, 'contractTypes'])->name('admin.contract-types');
-        Route::get('/contract-types/create', [AdminController::class, 'createContractType'])->name('admin.contract-types.create');
-        Route::get('/contract-types/{type}/edit', [AdminController::class, 'editContractType'])->name('admin.contract-types.edit');
-        Route::post('/contract-types', [AdminController::class, 'storeContractType'])->name('admin.contract-types.store');
-        Route::put('/contract-types/{type}', [AdminController::class, 'updateContractType'])->name('admin.contract-types.update');
-        Route::delete('/contract-types/{type}', [AdminController::class, 'destroyContractType'])->name('admin.contract-types.destroy');
-        Route::post('/contract-types/bulk-delete', [AdminController::class, 'bulkDestroyContractTypes'])->name('admin.contract-types.bulk-destroy');
+        Route::get('/contract-types', [MasterConfigController::class, 'contractTypes'])->name('admin.contract-types');
+        Route::get('/contract-types/create', [MasterConfigController::class, 'createContractType'])->name('admin.contract-types.create');
+        Route::get('/contract-types/{type}/edit', [MasterConfigController::class, 'editContractType'])->name('admin.contract-types.edit');
+        Route::post('/contract-types', [MasterConfigController::class, 'storeContractType'])->name('admin.contract-types.store');
+        Route::put('/contract-types/{type}', [MasterConfigController::class, 'updateContractType'])->name('admin.contract-types.update');
+        Route::delete('/contract-types/{type}', [MasterConfigController::class, 'destroyContractType'])->name('admin.contract-types.destroy');
+        Route::post('/contract-types/bulk-delete', [MasterConfigController::class, 'bulkDestroyContractTypes'])->name('admin.contract-types.bulk-destroy');
 
         // Master Status
-        Route::get('/contract-statuses', [AdminController::class, 'contractStatuses'])->name('admin.contract-statuses');
-        Route::post('/contract-statuses', [AdminController::class, 'storeContractStatus'])->name('admin.contract-statuses.store');
-        Route::put('/contract-statuses/{status}', [AdminController::class, 'updateContractStatus'])->name('admin.contract-statuses.update');
-        Route::delete('/contract-statuses/{status}', [AdminController::class, 'destroyContractStatus'])->name('admin.contract-statuses.delete');
-        Route::post('/contract-statuses/bulk-delete', [AdminController::class, 'bulkDestroyStatuses'])->name('admin.contract-statuses.bulk-destroy');
+        Route::get('/contract-statuses', [MasterConfigController::class, 'contractStatuses'])->name('admin.contract-statuses');
+        Route::post('/contract-statuses', [MasterConfigController::class, 'storeContractStatus'])->name('admin.contract-statuses.store');
+        Route::put('/contract-statuses/{status}', [MasterConfigController::class, 'updateContractStatus'])->name('admin.contract-statuses.update');
+        Route::delete('/contract-statuses/{status}', [MasterConfigController::class, 'destroyContractStatus'])->name('admin.contract-statuses.delete');
+        Route::post('/contract-statuses/bulk-delete', [MasterConfigController::class, 'bulkDestroyStatuses'])->name('admin.contract-statuses.bulk-destroy');
 
-        Route::get('/numbering-formats', [AdminController::class, 'numberingFormats'])->name('admin.numbering-formats');
-        Route::put('/numbering-formats/{format}', [AdminController::class, 'updateNumberingFormat'])->name('admin.numbering-formats.update');
+        // Master Group
+        Route::get('/company-groups', [OrganizationController::class, 'companyGroups'])->name('admin.company-groups');
+        Route::post('/company-groups', [OrganizationController::class, 'storeCompanyGroup'])->name('admin.company-groups.store');
+        Route::put('/company-groups/{group}', [OrganizationController::class, 'updateCompanyGroup'])->name('admin.company-groups.update');
+        Route::delete('/company-groups/{group}', [OrganizationController::class, 'destroyCompanyGroup'])->name('admin.company-groups.destroy');
+        Route::post('/company-groups/bulk-delete', [OrganizationController::class, 'bulkDestroyCompanyGroup'])->name('admin.company-groups.bulk-destroy');
+
+        // Master Region
+        Route::get('/regions', [OrganizationController::class, 'regions'])->name('admin.regions');
+        Route::post('/regions', [OrganizationController::class, 'storeRegion'])->name('admin.regions.store');
+        Route::put('/regions/{region}', [OrganizationController::class, 'updateRegion'])->name('admin.regions.update');
+        Route::delete('/regions/{region}', [OrganizationController::class, 'destroyRegion'])->name('admin.regions.destroy');
+        Route::post('/regions/bulk-delete', [OrganizationController::class, 'bulkDestroyRegion'])->name('admin.regions.bulk-destroy');
+
+        // Master Company
+        Route::get('/companies', [OrganizationController::class, 'companies'])->name('admin.companies');
+        Route::post('/companies', [OrganizationController::class, 'storeCompany'])->name('admin.companies.store');
+        Route::put('/companies/{company}', [OrganizationController::class, 'updateCompany'])->name('admin.companies.update');
+        Route::delete('/companies/{company}', [OrganizationController::class, 'destroyCompany'])->name('admin.companies.destroy');
+        Route::post('/companies/bulk-delete', [OrganizationController::class, 'bulkDestroyCompany'])->name('admin.companies.bulk-destroy');
+
+        Route::get('/numbering-formats', [MasterConfigController::class, 'numberingFormats'])->name('admin.numbering-formats');
+        Route::put('/numbering-formats/{format}', [MasterConfigController::class, 'updateNumberingFormat'])->name('admin.numbering-formats.update');
 
         // Master Departemen
-        Route::get('/departments', [AdminController::class, 'departments'])->name('admin.departments');
-        Route::post('/departments', [AdminController::class, 'storeDepartment'])->name('admin.departments.store');
-        Route::put('/departments/{department}', [AdminController::class, 'updateDepartment'])->name('admin.departments.update');
-        Route::delete('/departments/{department}', [AdminController::class, 'destroyDepartment'])->name('admin.departments.destroy');
-        Route::post('/departments/bulk-delete', [AdminController::class, 'bulkDestroyDepartment'])->name('admin.departments.bulk-destroy');
+        Route::get('/departments', [MasterConfigController::class, 'departments'])->name('admin.departments');
+        Route::post('/departments', [MasterConfigController::class, 'storeDepartment'])->name('admin.departments.store');
+        Route::put('/departments/{department}', [MasterConfigController::class, 'updateDepartment'])->name('admin.departments.update');
+        Route::delete('/departments/{department}', [MasterConfigController::class, 'destroyDepartment'])->name('admin.departments.destroy');
+        Route::post('/departments/bulk-delete', [MasterConfigController::class, 'bulkDestroyDepartment'])->name('admin.departments.bulk-destroy');
 
         // Master Vendor
-        Route::get('/vendors', [AdminController::class, 'vendors'])->name('admin.vendors');
-        Route::get('/vendors/create', [AdminController::class, 'createVendor'])->name('admin.vendors.create');
-        Route::post('/vendors', [AdminController::class, 'storeVendor'])->name('admin.vendors.store');
-        Route::get('/vendors/{vendor}/edit', [AdminController::class, 'editVendor'])->name('admin.vendors.edit');
-        Route::put('/vendors/{vendor}', [AdminController::class, 'updateVendor'])->name('admin.vendors.update');
-        Route::delete('/vendors/{vendor}', [AdminController::class, 'destroyVendor'])->name('admin.vendors.destroy');
-        Route::post('/vendors/bulk-delete', [AdminController::class, 'bulkDestroyVendor'])->name('admin.vendors.bulk-destroy');
-        Route::post('/vendors/{vendor}/documents', [AdminController::class, 'uploadVendorDocument'])->name('admin.vendors.documents.upload');
-        Route::delete('/vendors/{vendor}/documents/{document}', [AdminController::class, 'destroyVendorDocument'])->name('admin.vendors.documents.destroy');
+        Route::get('/vendors', [VendorAdminController::class, 'index'])->name('admin.vendors');
+        Route::get('/vendors/create', [VendorAdminController::class, 'create'])->name('admin.vendors.create');
+        Route::post('/vendors', [VendorAdminController::class, 'store'])->name('admin.vendors.store');
+        Route::get('/vendors/{vendor}/edit', [VendorAdminController::class, 'edit'])->name('admin.vendors.edit');
+        Route::put('/vendors/{vendor}', [VendorAdminController::class, 'update'])->name('admin.vendors.update');
+        Route::delete('/vendors/{vendor}', [VendorAdminController::class, 'destroy'])->name('admin.vendors.destroy');
+        Route::post('/vendors/bulk-delete', [VendorAdminController::class, 'bulkDestroy'])->name('admin.vendors.bulk-destroy');
+        Route::post('/vendors/{vendor}/documents', [VendorAdminController::class, 'uploadDocument'])->name('admin.vendors.documents.upload');
+        Route::delete('/vendors/{vendor}/documents/{document}', [VendorAdminController::class, 'destroyDocument'])->name('admin.vendors.documents.destroy');
 
         // Workflows
-        Route::get('/workflows', [AdminController::class, 'workflows'])->name('admin.workflows');
-        Route::get('/workflows/create', [AdminController::class, 'createWorkflow'])->name('admin.workflows.create');
-        Route::post('/workflows', [AdminController::class, 'storeWorkflow'])->name('admin.workflows.store');
-        Route::get('/workflows/{workflow}/edit', [AdminController::class, 'editWorkflow'])->name('admin.workflows.edit');
-        Route::put('/workflows/{workflow}', [AdminController::class, 'updateWorkflow'])->name('admin.workflows.update');
-        Route::delete('/workflows/{workflow}', [AdminController::class, 'destroyWorkflow'])->name('admin.workflows.destroy');
-        Route::post('/workflows/bulk-delete', [AdminController::class, 'bulkDestroyWorkflows'])->name('admin.workflows.bulk-destroy');
-        Route::get('/workflows/{workflow}/steps', [AdminController::class, 'workflowSteps'])->name('admin.workflows.steps');
-        Route::post('/workflows/{workflow}/steps', [AdminController::class, 'updateWorkflowSteps'])->name('admin.workflows.steps.update');
+        Route::get('/workflows', [WorkflowAdminController::class, 'index'])->name('admin.workflows');
+        Route::get('/workflows/create', [WorkflowAdminController::class, 'create'])->name('admin.workflows.create');
+        Route::post('/workflows', [WorkflowAdminController::class, 'store'])->name('admin.workflows.store');
+        Route::get('/workflows/{workflow}/edit', [WorkflowAdminController::class, 'edit'])->name('admin.workflows.edit');
+        Route::put('/workflows/{workflow}', [WorkflowAdminController::class, 'update'])->name('admin.workflows.update');
+        Route::delete('/workflows/{workflow}', [WorkflowAdminController::class, 'destroy'])->name('admin.workflows.destroy');
+        Route::post('/workflows/bulk-delete', [WorkflowAdminController::class, 'bulkDestroy'])->name('admin.workflows.bulk-destroy');
+        Route::get('/workflows/visualize', [WorkflowAdminController::class, 'visualize'])->name('admin.workflows.visualize');
+        Route::get('/workflows/{workflow}/steps', [WorkflowAdminController::class, 'steps'])->name('admin.workflows.steps');
+        Route::post('/workflows/{workflow}/steps', [WorkflowAdminController::class, 'updateSteps'])->name('admin.workflows.steps.update');
 
 
         Route::get('/reports/analytics', function () {
@@ -205,6 +171,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/api/reports/export', [ReportController::class, 'exportCsv']);
         Route::get('/api/reports/audit/export', [ReportController::class, 'exportAuditCsv']);
 
+
         // Roles & Access
         Route::get('/roles', [AdminController::class, 'roles'])->name('admin.roles');
         Route::post('/roles', [AdminController::class, 'storeRole'])->name('admin.roles.store');
@@ -216,22 +183,20 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/roles/{role}/reorder', [AdminController::class, 'reorderRoleNavigation'])->name('admin.roles.reorder');
 
         // Navigation Management (Combined)
-        Route::get('/navigation', [AdminController::class, 'navigation'])->name('admin.navigation');
-        Route::post('/navigation/reorder', [AdminController::class, 'reorderNavigation'])->name('admin.navigation.reorder');
+        Route::get('/navigation', [MasterConfigController::class, 'navigation'])->name('admin.navigation');
+        Route::post('/navigation/reorder', [MasterConfigController::class, 'reorderNavigation'])->name('admin.navigation.reorder');
 
-        // Module Groups (Keep individual CRUD but we focus on navigation page)
-        Route::get('/module-groups', [AdminController::class, 'moduleGroups'])->name('admin.module-groups.index');
-        Route::post('/module-groups', [AdminController::class, 'storeModuleGroup'])->name('admin.module-groups.store');
-        Route::put('/module-groups/{group}', [AdminController::class, 'updateModuleGroup'])->name('admin.module-groups.update');
-        Route::delete('/module-groups/{group}', [AdminController::class, 'destroyModuleGroup'])->name('admin.module-groups.destroy');
-        Route::post('/module-groups/bulk-delete', [AdminController::class, 'bulkDestroyModuleGroups'])->name('admin.module-groups.bulk-destroy');
+        Route::get('/module-groups', [MasterConfigController::class, 'moduleGroups'])->name('admin.module-groups.index');
+        Route::post('/module-groups', [MasterConfigController::class, 'storeModuleGroup'])->name('admin.module-groups.store');
+        Route::put('/module-groups/{group}', [MasterConfigController::class, 'updateModuleGroup'])->name('admin.module-groups.update');
+        Route::delete('/module-groups/{group}', [MasterConfigController::class, 'destroyModuleGroup'])->name('admin.module-groups.destroy');
+        Route::post('/module-groups/bulk-delete', [MasterConfigController::class, 'bulkDestroyModuleGroups'])->name('admin.module-groups.bulk-destroy');
 
-        // Modules (Keep individual CRUD)
-        Route::get('/modules', [AdminController::class, 'modules'])->name('admin.modules.index');
-        Route::post('/modules', [AdminController::class, 'storeModule'])->name('admin.modules.store');
-        Route::put('/modules/{module}', [AdminController::class, 'updateModule'])->name('admin.modules.update');
-        Route::delete('/modules/{module}', [AdminController::class, 'destroyModule'])->name('admin.modules.destroy');
-        Route::post('/modules/bulk-delete', [AdminController::class, 'bulkDestroyModules'])->name('admin.modules.bulk-destroy');
+        Route::get('/modules', [MasterConfigController::class, 'modules'])->name('admin.modules.index');
+        Route::post('/modules', [MasterConfigController::class, 'storeModule'])->name('admin.modules.store');
+        Route::put('/modules/{module}', [MasterConfigController::class, 'updateModule'])->name('admin.modules.update');
+        Route::delete('/modules/{module}', [MasterConfigController::class, 'destroyModule'])->name('admin.modules.destroy');
+        Route::post('/modules/bulk-delete', [MasterConfigController::class, 'bulkDestroyModules'])->name('admin.modules.bulk-destroy');
 
         // Email testing
         Route::post('/test-email', [EmailTestController::class, 'sendTestEmail'])->name('admin.test-email');
@@ -260,8 +225,6 @@ Route::middleware(['auth'])->group(function () {
 
         // Contract Form Submission Exports (using admin prefix for consistency/reliability)
         Route::post('/contracts/{id}/form-submissions/{type}/export-queue', [ContractController::class, 'exportFormSubmissionPdfQueue'])->name('admin.contracts.export-queue');
-        Route::get('/contracts/{id}/form-submissions/{type}/compare', [ContractController::class, 'compareFormVersions'])->name('admin.contracts.form-submissions.compare');
-        Route::get('/contracts/{id}/agreement/compare', [ContractController::class, 'compareAgreementVersions'])->name('admin.contracts.agreement.compare');
 
         Route::delete('/form-templates/{template}', [FormTemplateController::class, 'destroy'])->name('admin.form-templates.destroy');
         Route::post('/form-templates/bulk-delete', [FormTemplateController::class, 'bulkDestroy'])->name('admin.form-templates.bulk-destroy');
@@ -271,14 +234,11 @@ Route::middleware(['auth'])->group(function () {
 
 
 
-        Route::get('/api/contracts/message-attachment/{messageId}', [ContractMessageController::class, 'downloadAttachment'])->name('contracts.message-attachment');
+        // API aliases have been moved to api.php
 
-        Route::get('/api/templates/data', [TemplateController::class, 'getApiData'])->name('admin.templates.api.data');
-
-        // API aliases under admin prefix (called by frontend with /admin/api/... prefix)
-        Route::get('/api/contracts/submission-types', [ContractController::class, 'getSubmissionTypes'])->name('admin.api.contracts.submission-types');
     });
 });
+
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

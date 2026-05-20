@@ -15,6 +15,8 @@ class ContractType extends Model
     protected $fillable = [
         'name',
         'code',
+        'workflow_id',
+        'features',
         'description',
         'f1_input_mechanism',
         'f1_form_template_id',
@@ -22,6 +24,10 @@ class ContractType extends Model
         'f2_input_mechanism',
         'f2_form_template_id',
         'f2_contract_template_id',
+    ];
+
+    protected $casts = [
+        'features' => 'array',
     ];
 
     public function contracts()
@@ -32,5 +38,10 @@ class ContractType extends Model
     public function formTemplates()
     {
         return $this->hasMany(FormTemplate::class);
+    }
+
+    public function workflow()
+    {
+        return $this->belongsTo(Workflow::class);
     }
 }

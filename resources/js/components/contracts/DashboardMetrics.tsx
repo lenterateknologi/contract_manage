@@ -1,4 +1,3 @@
-import { router } from '@inertiajs/react';
 import { ActivityFeed } from '@/components/dashboard/ActivityFeed';
 import { KpiStrip } from '@/components/dashboard/KpiStrip';
 import { MonthlyTrend } from '@/components/dashboard/MonthlyTrend';
@@ -7,6 +6,7 @@ import { StatusDistribution } from '@/components/dashboard/StatusDistribution';
 import { TypeDistribution } from '@/components/dashboard/TypeDistribution';
 import { WelcomeStrip } from '@/components/dashboard/WelcomeStrip';
 import { DashboardData } from '@/components/dashboard/types';
+import { router } from '@inertiajs/react';
 
 export function DashboardMetrics({ metrics }: { metrics: any }) {
     if (!metrics) return null;
@@ -20,12 +20,10 @@ export function DashboardMetrics({ metrics }: { metrics: any }) {
         avgCycleTime: 0,
     };
 
-    const goTo = (view: string) =>
-        router.get('/contracts', { view }, { preserveState: false });
+    const goTo = (view: string) => router.get('/contracts', { view }, { preserveState: false });
 
     return (
         <div className="animate-in fade-in slide-in-from-top-4 space-y-6 duration-500">
-
             {/* 1. Welcome Strip */}
             <WelcomeStrip metrics={m} />
 
@@ -44,7 +42,6 @@ export function DashboardMetrics({ metrics }: { metrics: any }) {
                 <ActivityFeed items={data.recentActivity ?? []} />
                 <RecentContracts items={data.recentContracts ?? []} onViewAll={() => goTo('contracts')} />
             </div>
-
         </div>
     );
 }

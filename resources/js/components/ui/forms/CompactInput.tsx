@@ -14,9 +14,9 @@ const CompactInput = React.forwardRef<HTMLInputElement, CompactInputProps>(
         return (
             <div className={cn("space-y-1.5 w-full group", containerClassName)}>
                 <div className="flex items-center justify-between px-0.5">
-                    <Label 
+                    <Label
                         className={cn(
-                            "text-xs font-bold uppercase tracking-widest transition-colors",
+                            "text-xs font-bold uppercase  transition-colors",
                             error ? "text-rose-500" : "text-primary/60 dark:text-white/60"
                         )}
                     >
@@ -28,7 +28,7 @@ const CompactInput = React.forwardRef<HTMLInputElement, CompactInputProps>(
                         </span>
                     )}
                 </div>
-                
+
                 <div className="relative">
                     {Icon && (
                         <div className="absolute left-3 top-1/2 -translate-y-1/2 text-primary/10 dark:text-white/10 group-focus-within:text-primary dark:group-focus-within:text-white transition-colors">
@@ -41,8 +41,8 @@ const CompactInput = React.forwardRef<HTMLInputElement, CompactInputProps>(
                             "flex h-9 w-full rounded-lg border bg-white dark:bg-white/[0.02] px-3 text-sm font-medium transition-all outline-none",
                             "placeholder:text-primary/10 dark:placeholder:text-white/10",
                             Icon && "pl-9",
-                            error 
-                                ? "border-rose-500 text-rose-500 focus:ring-1 focus:ring-rose-500" 
+                            error
+                                ? "border-rose-500 text-rose-500 focus:ring-1 focus:ring-rose-500"
                                 : "border-primary/5 dark:border-white/5 text-black dark:text-white focus:border-primary/20 dark:focus:border-white/20 focus:bg-primary/[0.01] dark:focus:bg-white/[0.01] shadow-sm",
                             className
                         )}

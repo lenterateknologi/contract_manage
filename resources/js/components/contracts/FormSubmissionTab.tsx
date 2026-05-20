@@ -8,7 +8,7 @@ import { contractApi } from '@/lib/contract-api';
 import { cn } from '@/lib/utils';
 import { Contract } from '@/types/contracts';
 import axios from 'axios';
-import { ArrowRight, Check, ChevronDown, Columns, Download, FileText, FolderOpen, History, Loader2, MoreVertical, PlusCircle } from 'lucide-react';
+import { ArrowRight, Check, Columns, Download, FileText, FolderOpen, History, Loader2, MoreVertical, PlusCircle } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface FormTemplateInfo {
@@ -40,6 +40,8 @@ const api = axios.create({
 // ── F2 important field keys (from F1 data) ──────────────────────────
 // These are the F1 field names (snake_case) that should appear in the F2 summary.
 const F2_IMPORTANT_FIELDS: { key: string; label: string; width: string; type?: string }[] = [
+    { key: 'crown_no', label: 'No. Kontrak (F2)', width: '1/2' },
+    { key: 'meta_no_kontrak', label: 'No. Kontrak (Draft)', width: '1/2' },
     { key: 'meta_judul_kontrak', label: 'Judul Perjanjian', width: '1/1' },
     { key: 'meta_tipe_perjanjian', label: 'Tipe Perjanjian', width: '1/2' },
     { key: 'meta_tgl_dibuat', label: 'Tanggal', width: '1/2' },
@@ -54,14 +56,13 @@ const F2_IMPORTANT_FIELDS: { key: string; label: string; width: string; type?: s
     { key: 'meta_mekanisme_pembayaran', label: 'Mekanisme Bayar', width: '1/2' },
     // Signature boxes
     { key: 'meta_pic', label: 'PIC', width: '1/3', type: 'signature_box' },
-    { key: 'meta_manager_legal', label: 'Manager Legal', width: '1/3', type: 'signature_box' },
     { key: 'meta_vp_legal', label: 'VP Legal / Management', width: '1/3', type: 'signature_box' },
 ];
 
 /**
  * Fuzzy matching helper to autofill F1 form fields from general contract data.
  */
-const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' | 'f2') => {
+const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' | 'f2', users: any[] = []) => {
     const name = field.name.toLowerCase();
 
     // Special Case: F2 Ruang Lingkup composite
@@ -75,13 +76,14 @@ const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' | 'f2')
 
     // 1. Identification / Metadata
     if (name === 'meta_nomor') return contract.contract_no || '';
-    if (name === 'meta_nomor_kontrak') return (contract as any).crown_no || '';
-    if (name === 'meta_judul') return contract.title || '';
-    if (name === 'meta_topik') {
+    if (name === 'meta_nomor_kontrak' || name === 'meta_no_kontrak' || name === 'meta_no_pengajuan')
+        return (contract as any).crown_no || contract.contract_no || '';
+    if (name === 'meta_judul' || name === 'meta_judul_kontrak' || name === 'meta_nama_kontrak') return contract.title || '';
+    if (name === 'meta_topik' || name === 'meta_jenis_kontrak') {
         const type = (contract as any).contract_type;
         return type?.name || (typeof type === 'string' ? type : '');
     }
-    if (name === 'meta_sub_topik') return (contract as any).kop_sub_topik || '';
+    if (name === 'meta_sub_topik' || name === 'meta_kop_sub_topik') return (contract as any).kop_sub_topik || '';
     if (name === 'meta_lampiran') {
         const vendor = (contract as any).vendor;
         const docs = vendor?.documents || [];
@@ -98,7 +100,7 @@ const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' | 'f2')
     }
 
     // 2. Dates
-    if (name === 'meta_tgl_dibuat' || name === 'tanggal') {
+    if (name === 'meta_tgl_dibuat' || name === 'tanggal' || name === 'meta_tanggal') {
         const now = new Date();
         const dateStr = now.toLocaleDateString('en-CA'); // YYYY-MM-DD
         const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
@@ -114,26 +116,53 @@ const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' | 'f2')
 
     // 3. Parties & Metadata
     if (name === 'meta_p1_entity') return 'PT. LENTERA TEKNOLOGI';
-    if (name === 'meta_type' || name === 'meta_tipe_perjanjian') return (contract as any).submission_type || (contract as any).transaction_type || '';
-    if (name === 'meta_transaction_type') return (contract as any).transaction_type || '';
+    if (name === 'meta_type' || name === 'meta_tipe_perjanjian') return (contract as any).submission_type || '';
+    if (name === 'meta_perjanjian') return (contract as any).submission_type || '';
     if (name === 'meta_p1_signer') return contract.p1_signer || (contract as any).initiator?.name || '';
     if (name === 'meta_p1_signer_position') return contract.p1_signer_position || (contract as any).initiator?.role || '';
     if (name === 'meta_p1_alamat') return 'The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan';
 
     const vendor = (contract as any).vendor;
-    if (name === 'meta_p2_entity') return vendor?.name || '';
+    if (name === 'meta_p2_entity' || name === 'meta_vendor_name') return vendor?.name || '';
     if (name === 'meta_p2_signer') return vendor?.pic_name || '';
     if (name === 'meta_p2_signer_position') return vendor?.pic_position || '';
     if (name === 'meta_p2_alamat') return vendor?.address || '';
 
     if (name === 'meta_lokasi') return (contract as any).location || '';
-    if (name === 'meta_nilai_transaksi') return (contract as any).amount || '';
+    if (name === 'meta_nilai_transaksi' || name === 'meta_amount') return (contract as any).amount || '';
     if (name === 'meta_mekanisme_pembayaran') return (contract as any).payment_terms || '';
     if (name === 'meta_deskripsi' || name === 'keterangan') return contract.description || '';
 
-    // Fallback
-    if (contract.metadata && (contract.metadata as any)[field.name]) {
-        return (contract.metadata as any)[field.name];
+    if (name === 'crown_no' || name === 'meta_no_kontrak') return (contract as any).crown_no || (contract as any).contract_no || '';
+
+    // 4. Management Approvers for Signature Boxes
+    if (name === 'meta_manager_legal') {
+        const approvals = contract.approvals || [];
+        const ceoApproval = approvals.find((a) => a.role === 'CEO');
+        if (ceoApproval) {
+            return ceoApproval.approver?.name || ceoApproval.approver_name || ceoApproval.target_approvers || '';
+        }
+        return '';
+    }
+
+    if (name === 'meta_vp_legal') {
+        const approvals = contract.approvals || [];
+        const vpApproval = approvals.find((a) => a.role === 'VP');
+        if (vpApproval) {
+            return vpApproval.approver?.name || vpApproval.approver_name || vpApproval.target_approvers || '';
+        }
+        return '';
+    }
+
+    // 5. Tax Requirement
+    if (name === 'meta_tax_required' || name === 'meta_pajak') {
+        return contract.metadata?.tax_required ? 'Ya' : 'Tidak';
+    }
+
+    // Fallback to direct metadata match
+    if (contract.metadata && (contract.metadata as any)[field.name] !== undefined) {
+        const val = (contract.metadata as any)[field.name];
+        return val === null ? '' : String(val);
     }
 
     return null;
@@ -148,13 +177,26 @@ export function FormSubmissionTab({
     selected,
     formTemplates,
     onContractUpdated,
+    users = [],
+    meUser,
 }: {
     docType: 'f1' | 'f2';
     selected: Contract;
     formTemplates: FormTemplateInfo[];
     onContractUpdated: (c: Contract) => void;
+    users?: any[];
+    meUser?: any;
 }) {
-    return <GenericFormTab docType={docType} selected={selected} formTemplates={formTemplates} onContractUpdated={onContractUpdated} />;
+    return (
+        <GenericFormTab
+            docType={docType}
+            selected={selected}
+            formTemplates={formTemplates}
+            onContractUpdated={onContractUpdated}
+            users={users}
+            meUser={meUser}
+        />
+    );
 }
 
 /**
@@ -166,11 +208,15 @@ function GenericFormTab({
     selected,
     formTemplates,
     onContractUpdated,
+    users = [],
+    meUser,
 }: {
     docType: 'f1' | 'f2';
     selected: Contract;
     formTemplates: FormTemplateInfo[];
     onContractUpdated: (c: Contract) => void;
+    users?: any[];
+    meUser?: any;
 }) {
     const { showToast, showProgress, hideProgress } = useToast();
     const [fields, setFields] = useState<FormField[]>([]);
@@ -223,7 +269,7 @@ function GenericFormTab({
                 let hasChanged = false;
                 fields.forEach((f) => {
                     if (f.type !== 'kop_surat' && f.type !== 'form_title') {
-                        const val = getAutofillValue(f, selected, docType);
+                        const val = getAutofillValue(f, selected, docType, users);
                         if (val !== null) {
                             // Date fields marked as meta_tgl_dibuat/tanggal are always updated to current time
                             // Other fields use the "Smart Sync" logic to preserve manual edits.
@@ -264,7 +310,7 @@ function GenericFormTab({
                 showToast('Data sinkron dengan informasi kontrak & vendor.', 'success');
             }
         },
-        [fields, selected, originalData, showToast, manualFields, docType],
+        [fields, selected, originalData, showToast, manualFields, docType, users],
     );
 
     // Auto-sync whenever contract metadata changes
@@ -298,7 +344,7 @@ function GenericFormTab({
                 const autofilled: Record<string, any> = {};
                 tplFields.forEach((f) => {
                     if (f.type !== 'kop_surat' && f.type !== 'form_title') {
-                        const val = getAutofillValue(f, selected, docType);
+                        const val = getAutofillValue(f, selected, docType, users);
                         if (val !== null) autofilled[f.name] = val;
                     }
                 });
@@ -320,7 +366,7 @@ function GenericFormTab({
                 const initial: Record<string, any> = {};
                 tplFields.forEach((f) => {
                     if (f.type !== 'kop_surat' && f.type !== 'form_title') {
-                        const autofillValue = getAutofillValue(f, selected, docType);
+                        const autofillValue = getAutofillValue(f, selected, docType, users);
                         initial[f.name] = autofillValue !== null ? autofillValue : '';
                     }
                 });
@@ -536,7 +582,7 @@ function GenericFormTab({
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-black/10 dark:bg-white/10">
                     <FileText className="text-black/40 dark:text-white/40" size={24} />
                 </div>
-                <h5 className="mb-1 font-bold tracking-widest text-black uppercase dark:text-white" style={{ fontSize: 12 }}>
+                <h5 className="mb-1 font-bold text-black uppercase dark:text-white" style={{ fontSize: 12 }}>
                     Belum Ada Template {docType.toUpperCase()}
                 </h5>
             </div>
@@ -545,7 +591,7 @@ function GenericFormTab({
 
     if (loading)
         return (
-            <div className="flex flex-col items-center justify-center py-20 text-[10px] font-bold tracking-widest text-black/40 uppercase dark:text-white/40">
+            <div className="flex flex-col items-center justify-center py-20 text-[10px] font-bold text-black/40 uppercase dark:text-white/40">
                 <LoadingLottie width={80} height={80} className="mb-4" />
                 Memuat form {docType.toUpperCase()}...
             </div>
@@ -566,7 +612,7 @@ function GenericFormTab({
                 <div className="dark:bg-sidebar/90 animate-in fade-in zoom-in-95 fixed inset-0 z-[100] flex flex-col bg-white/90 backdrop-blur-md duration-300">
                     <div className="flex h-16 items-center justify-between border-b border-black/10 px-6 dark:border-white/10">
                         <div className="flex flex-col">
-                            <h3 className="flex items-center gap-2 text-[11px] font-bold tracking-widest text-black uppercase dark:text-white">
+                            <h3 className="flex items-center gap-2 text-[11px] font-bold text-black uppercase dark:text-white">
                                 <FileText size={16} className="text-black dark:text-white" /> Preview Dokumen {docType.toUpperCase()}
                             </h3>
                             <span className="text-[9px] font-bold tracking-wider text-black/40 uppercase dark:text-white/40">
@@ -577,13 +623,13 @@ function GenericFormTab({
                             <a
                                 href={pdfPreviewUrl}
                                 download={`${selected.contract_no}_${docType.toUpperCase()}.pdf`}
-                                className="flex items-center gap-2 rounded-lg bg-black px-6 py-2.5 text-[10px] font-bold tracking-widest text-white uppercase shadow-lg transition-all hover:opacity-90 active:scale-95 dark:bg-white dark:text-black"
+                                className="flex items-center gap-2 rounded-lg bg-black px-6 py-2.5 text-[10px] font-bold text-white uppercase shadow-lg transition-all hover:opacity-90 active:scale-95 dark:bg-white dark:text-black"
                             >
                                 <Download size={14} /> Download PDF
                             </a>
                             <button
                                 onClick={() => setPdfPreviewUrl(null)}
-                                className="rounded-lg bg-black/5 px-4 py-2.5 text-[10px] font-bold tracking-widest text-black uppercase transition-all hover:bg-black/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+                                className="rounded-lg bg-black/5 px-4 py-2.5 text-[10px] font-bold text-black uppercase transition-all hover:bg-black/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
                             >
                                 Tutup
                             </button>
@@ -597,11 +643,71 @@ function GenericFormTab({
                 </div>
             )}
 
+            {isF2 && (meUser?.department === 'Legal' || meUser?.role === 'PIC Legal' || meUser?.role === 'Admin') && (
+                <div className="bg-primary/5 border-b border-black/10 px-6 py-4 dark:border-white/10 dark:bg-white/5">
+                    <div className="flex flex-wrap items-end gap-6">
+                        {(meUser?.role === 'Legal Staff' || meUser?.role === 'Admin' || meUser?.role === 'PIC Legal') && (
+                            <div className="min-w-[200px] flex-1 space-y-1.5">
+                                <label className="text-primary/60 flex items-center gap-1.5 text-[10px] font-black uppercase dark:text-white/60">
+                                    <i className="fa-solid fa-hashtag" /> No. Kontrak (F2)
+                                </label>
+                                <div className="group relative flex gap-2">
+                                    <div className="text-primary/40 group-focus-within:text-primary absolute inset-y-0 left-0 flex items-center pl-3 transition-colors dark:text-white/40 dark:group-focus-within:text-white">
+                                        <i className="fa-solid fa-hashtag text-[10px]" />
+                                    </div>
+                                    <input
+                                        type="text"
+                                        placeholder="Input No. Kontrak..."
+                                        value={(selected as any).crown_no || ''}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            onContractUpdated({ ...selected, crown_no: val } as any);
+                                            // Trigger debounced update to server
+                                            contractApi.update(selected.id, { crown_no: val });
+                                        }}
+                                        className="focus:border-primary/50 h-10 flex-1 rounded-xl border border-black/10 bg-white pr-4 pl-9 text-xs font-medium shadow-sm transition-all outline-none dark:border-white/10 dark:bg-black/20 dark:focus:border-white/50"
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {(meUser?.role === 'PIC Legal' || meUser?.role === 'Admin') && (
+                            <div className="flex h-10 items-center gap-4 rounded-lg border border-black/10 bg-white px-4 shadow-sm dark:border-white/10 dark:bg-black/20">
+                                <label className="flex items-center gap-1.5 text-[10px] font-black text-black/60 uppercase dark:text-white/60">
+                                    <i className="fa-solid fa-signature" /> Digital Signature
+                                </label>
+                                <button
+                                    onClick={() => {
+                                        const next = !selected.is_digital_signature;
+                                        onContractUpdated({ ...selected, is_digital_signature: next } as any);
+                                        contractApi.update(selected.id, { is_digital_signature: next });
+                                    }}
+                                    className={cn(
+                                        'focus-visible:ring-ring focus-visible:ring-offset-background relative inline-flex h-5 w-10 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+                                        selected.is_digital_signature ? 'bg-primary' : 'bg-black/20 dark:bg-white/20',
+                                    )}
+                                >
+                                    <span
+                                        className={cn(
+                                            'pointer-events-none block h-4 w-4 rounded-full bg-white shadow-lg ring-0 transition-transform',
+                                            selected.is_digital_signature ? 'translate-x-5' : 'translate-x-1',
+                                        )}
+                                    />
+                                </button>
+                                <span className="text-[10px] font-black text-black uppercase dark:text-white">
+                                    {selected.is_digital_signature ? 'Aktif' : 'Non-Aktif'}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
             <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between border-b border-black/5 bg-white/50 px-6 backdrop-blur-md dark:border-white/5 dark:bg-black/50">
                 <div className="flex items-center gap-4">
                     <div className="flex flex-col">
                         <div className="flex items-center gap-2">
-                            <h4 className="text-xs font-bold tracking-tight text-black dark:text-white uppercase">
+                            <h4 className="text-xs font-bold tracking-tight text-black uppercase dark:text-white">
                                 {docType === 'f1' ? 'F1 Internal' : 'F2 Summary'}
                             </h4>
                             <span className="rounded bg-black/5 px-1.5 py-0.5 text-[9px] font-bold text-black/60 dark:bg-white/10 dark:text-white/60">

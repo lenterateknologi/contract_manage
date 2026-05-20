@@ -1,21 +1,30 @@
-import React, { memo } from 'react';
 import { Button } from '@/components/ui/base/Button';
-import { HelpCircle, ExternalLink, Book } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/overlays/DropdownMenu';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/overlays/DropdownMenu';
+import { Book, ExternalLink, HelpCircle } from 'lucide-react';
+import { memo } from 'react';
 
 export const HeaderHelp = memo(function HeaderHelp() {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg text-sidebar-foreground/80 hover:text-sidebar-primary hover:bg-sidebar-accent transition-all group">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-sidebar-foreground/80 hover:text-sidebar-primary hover:bg-sidebar-accent group h-9 w-9 rounded-lg transition-all"
+                >
                     <HelpCircle className="h-[1.2rem] w-[1.2rem]" />
                     <span className="sr-only">Help</span>
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 mt-1" align="end">
-                <DropdownMenuLabel className="font-bold text-xs uppercase tracking-widest text-sidebar-foreground/40 px-4 py-3">
-                    Pusat Bantuan
-                </DropdownMenuLabel>
+            <DropdownMenuContent className="mt-1 w-56" align="end">
+                <DropdownMenuLabel className="text-sidebar-foreground/40 px-4 py-3 text-xs font-bold uppercase">Pusat Bantuan</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="cursor-pointer py-2">
                     <Book className="mr-2 h-4 w-4 opacity-70" />

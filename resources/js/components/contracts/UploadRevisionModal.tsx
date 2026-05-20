@@ -74,7 +74,7 @@ export default function UploadRevisionModal({ open, onClose, onSubmit, initialTy
                                 <button
                                     key={t}
                                     onClick={() => setType(t)}
-                                    className={`flex-1 rounded-md py-1.5 text-[11px] font-black tracking-widest uppercase transition-all ${type === t ? 'bg-black text-white dark:bg-white dark:text-black shadow-lg' : 'text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white'}`}
+                                    className={`flex-1 rounded-md py-1.5 text-[11px] font-black uppercase transition-all ${type === t ? 'bg-black text-white shadow-lg dark:bg-white dark:text-black' : 'text-black/40 hover:text-black dark:text-white/40 dark:hover:text-white'}`}
                                 >
                                     {t === 'f1' ? 'F1 (Utama)' : 'F2'}
                                 </button>
@@ -92,12 +92,12 @@ export default function UploadRevisionModal({ open, onClose, onSubmit, initialTy
                                 className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
                             />
                             <div
-                                className={`flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-6 transition-all ${file ? 'border-black bg-black/5 dark:border-white dark:bg-white/5' : 'border-black/10 bg-black/5 dark:border-white/10 dark:bg-white/5 group-hover:border-black dark:group-hover:border-white'}`}
+                                className={`flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-6 transition-all ${file ? 'border-black bg-black/5 dark:border-white dark:bg-white/5' : 'border-black/10 bg-black/5 group-hover:border-black dark:border-white/10 dark:bg-white/5 dark:group-hover:border-white'}`}
                             >
                                 <i
                                     className={`fa-solid ${file ? 'fa-file-circle-check text-black dark:text-white' : 'fa-cloud-arrow-up text-black/20 dark:text-white/20'} text-2xl`}
                                 />
-                                <div className="text-black/40 dark:text-white/40 max-w-full truncate px-4 text-[11px] font-black uppercase tracking-widest">
+                                <div className="max-w-full truncate px-4 text-[11px] font-black text-black/40 uppercase dark:text-white/40">
                                     {file ? file.name : 'Mendukung .docx, .doc, .pdf'}
                                 </div>
                             </div>
@@ -109,7 +109,7 @@ export default function UploadRevisionModal({ open, onClose, onSubmit, initialTy
                             value={changelog}
                             onChange={(e) => setChangelog(e.target.value)}
                             placeholder="Apa yang berubah pada versi ini?"
-                            className="border-black/10 dark:border-white/10 placeholder:text-black/20 dark:placeholder:text-white/20 w-full rounded-lg border bg-black/5 dark:bg-white/5 px-3 py-2 text-[12px] text-black dark:text-white outline-none focus:border-black dark:focus:border-white transition-all"
+                            className="w-full rounded-lg border border-black/10 bg-black/5 px-3 py-2 text-[12px] text-black transition-all outline-none placeholder:text-black/20 focus:border-black dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-white/20 dark:focus:border-white"
                         />
                     </div>
                 </div>
@@ -120,7 +120,7 @@ export default function UploadRevisionModal({ open, onClose, onSubmit, initialTy
                     <button
                         onClick={handleSubmit}
                         disabled={loading || !changelog.trim()}
-                        className="bg-black dark:bg-white flex items-center gap-1.5 rounded-lg px-4 py-2 text-[12px] font-black tracking-widest uppercase text-white dark:text-black transition-all active:scale-95 disabled:opacity-30 shadow-lg"
+                        className="flex items-center gap-1.5 rounded-lg bg-black px-4 py-2 text-[12px] font-black text-white uppercase shadow-lg transition-all active:scale-95 disabled:opacity-30 dark:bg-white dark:text-black"
                     >
                         <i className="fa-solid fa-upload text-[11px]" /> {loading ? 'Mengupload...' : 'Upload'}
                     </button>

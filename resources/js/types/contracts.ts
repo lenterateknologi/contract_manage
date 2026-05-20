@@ -2,6 +2,7 @@
 export interface UserProfile {
     id: string;
     name: string;
+    email: string;
     initials: string;
     role: string;
     department_id: string | null;
@@ -32,15 +33,19 @@ export interface ContractVersion {
 export interface ContractApproval {
     id: string;
     approver_id: string; // compatibility with old code
-    user_id: string | null;     // new system
+    user_id: string | null; // new system
     approver_name: string | null;
     role: string;
     department_name?: string;
     target_approvers?: string;
+    target_emails?: string;
     sequence: number;
     status: 'pending' | 'waiting' | 'approved' | 'rejected';
     comment: string | null;
     decided_at: string | null;
+    step_type?: string;
+    step_name?: string;
+    step_description?: string;
     approver: UserProfile;
 }
 
@@ -102,6 +107,7 @@ export interface Contract {
     id: string;
     contract_no: string;
     crown_no?: string | null;
+    is_digital_signature?: boolean;
     title: string;
     description: string;
     contract_date: string | null;
@@ -134,6 +140,7 @@ export interface Contract {
     allow_info_edit?: boolean;
     allow_reference?: boolean;
     current_version: number;
+    requires_pic_assignment?: boolean;
     created_at: string;
     submitted_at: string | null;
     creator: UserProfile;
@@ -176,7 +183,14 @@ export interface Contract {
         step: number;
         role: string;
         description: string;
+        step_type: string;
+        step_category: string | null;
+        target_approvers?: string | null;
     } | null;
+    can_approve?: boolean;
+    pending_approval_id?: string;
+    assigned_pic?: UserProfile | null;
+    assigned_by?: UserProfile | null;
 }
 
 export type ContractStatus = 'draft' | 'in_review' | 'revision' | 'approved' | 'locked' | 'archived';

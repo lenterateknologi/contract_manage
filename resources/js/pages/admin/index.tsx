@@ -1,9 +1,12 @@
 import { Head } from '@inertiajs/react';
 
+import { CompanyGroupManagement } from '@/components/admin/CompanyGroupManagement';
+import { CompanyManagement } from '@/components/admin/CompanyManagement';
 import { ContractTypeManagement } from '@/components/admin/ContractTypeManagement';
 import { DepartmentManagement } from '@/components/admin/DepartmentManagement';
 import { NavigationManagement } from '@/components/admin/NavigationManagement';
 import { NumberingFormatManagement } from '@/components/admin/NumberingFormatManagement';
+import { RegionManagement } from '@/components/admin/RegionManagement';
 import { RoleManagement } from '@/components/admin/RoleManagement';
 import { StatusManagement } from '@/components/admin/StatusManagement';
 import { UserManagement } from '@/components/admin/UserManagement';
@@ -38,6 +41,9 @@ interface Props {
     formTemplates?: any;
     contractTemplates?: any;
     contractStatuses?: any;
+    companyGroups?: any;
+    regions?: any;
+    companies?: any;
     filters?: any;
 }
 
@@ -65,6 +71,9 @@ export default function AdminIndex({
     formTemplates,
     contractTemplates,
     contractStatuses,
+    companyGroups,
+    regions,
+    companies,
     filters = {},
 }: Readonly<Props>) {
     // View Metadata Mapping
@@ -79,6 +88,9 @@ export default function AdminIndex({
         'module-groups': 'Grup Modul',
         modules: 'Modul & Menu',
         'numbering-formats': 'Pengaturan Penomoran',
+        'company-groups': 'Data Group',
+        regions: 'Data Region',
+        companies: 'Data Company',
     };
 
     const viewTitle = viewTitleMap[currentView] || 'Administrasi Sistem';
@@ -112,9 +124,15 @@ export default function AdminIndex({
                 return <VendorManagement vendors={vendors} filters={filters} />;
             case 'numbering-formats':
                 return <NumberingFormatManagement formats={formats} />;
+            case 'company-groups':
+                return <CompanyGroupManagement groups={companyGroups} filters={filters} />;
+            case 'regions':
+                return <RegionManagement regions={regions} filters={filters} />;
+            case 'companies':
+                return <CompanyManagement companies={companies} regions={regions} groups={companyGroups} filters={filters} />;
             default:
                 return (
-                    <div className="flex h-full items-center justify-center text-xs font-black tracking-widest text-slate-400 uppercase">
+                    <div className="flex h-full items-center justify-center text-xs font-black text-slate-400 uppercase">
                         Pilih menu administrasi untuk mengelola sistem
                     </div>
                 );

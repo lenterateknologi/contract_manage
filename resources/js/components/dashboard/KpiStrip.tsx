@@ -17,19 +17,24 @@ function KpiCard({ label, value, subtext, icon, accentClass, onClick }: KpiCardP
         <div
             onClick={onClick}
             className={cn(
-                'group relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-sidebar-border/60 bg-card p-5 shadow-sm transition-all duration-300',
-                onClick && 'cursor-pointer hover:shadow-md hover:-translate-y-0.5',
+                'group border-sidebar-border/60 bg-card relative flex flex-col gap-4 overflow-hidden rounded-2xl border p-5 shadow-sm transition-all duration-300',
+                onClick && 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md',
             )}
         >
             <div className="flex items-start justify-between">
-                <div className={cn('flex h-11 w-11 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110', accentClass)}>
+                <div
+                    className={cn(
+                        'flex h-11 w-11 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110',
+                        accentClass,
+                    )}
+                >
                     {icon}
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-card-foreground/40">{subtext}</span>
+                <span className="text-card-foreground/40 text-[10px] font-bold uppercase">{subtext}</span>
             </div>
             <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-card-foreground/60 mb-1">{label}</p>
-                <span className="text-3xl font-bold tracking-tight text-card-foreground">{value}</span>
+                <p className="text-card-foreground/60 mb-1 text-[11px] font-semibold tracking-wider uppercase">{label}</p>
+                <span className="text-card-foreground text-3xl font-bold tracking-tight">{value}</span>
             </div>
         </div>
     );

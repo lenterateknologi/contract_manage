@@ -1,5 +1,5 @@
-import React from 'react';
 import { useForm } from '@inertiajs/react';
+import React from 'react';
 
 export function ProfileView({ meUser, showToast }: { meUser: any; showToast: any }) {
     const {
@@ -78,7 +78,11 @@ export function ProfileView({ meUser, showToast }: { meUser: any; showToast: any
                                 />
                             </div>
                         </div>
-                        <button type="submit" disabled={pProcessing} className="mt-4 w-full rounded-lg bg-blue-600 py-3 text-sm font-bold text-white shadow-lg shadow-blue-100 transition-all hover:bg-blue-700 hover:shadow-blue-200 active:scale-[0.98] disabled:opacity-50">
+                        <button
+                            type="submit"
+                            disabled={pProcessing}
+                            className="mt-4 w-full rounded-lg bg-blue-600 py-3 text-sm font-bold text-white shadow-lg shadow-blue-100 transition-all hover:bg-blue-700 hover:shadow-blue-200 active:scale-[0.98] disabled:opacity-50"
+                        >
                             {pProcessing ? <i className="fa-solid fa-spinner fa-spin mr-2" /> : <i className="fa-solid fa-check mr-2" />}
                             {pProcessing ? 'Menyimpan...' : 'Simpan Perubahan'}
                         </button>
@@ -92,24 +96,43 @@ export function ProfileView({ meUser, showToast }: { meUser: any; showToast: any
                             <label className="text-muted-foreground mb-1.5 ml-1 block text-xs font-bold uppercase">Password Saat Ini</label>
                             <div className="relative">
                                 <i className="fa-solid fa-key absolute top-1/2 left-3 -translate-y-1/2 text-xs text-gray-300" />
-                                <input type="password" value={qData.current_password} onChange={(e) => setQData('current_password', e.target.value)} className="bg-muted/50 border-border focus:bg-card w-full rounded-lg border py-2.5 pr-3 pl-9 text-sm transition-all outline-none focus:border-blue-500" />
+                                <input
+                                    type="password"
+                                    value={qData.current_password}
+                                    onChange={(e) => setQData('current_password', e.target.value)}
+                                    className="bg-muted/50 border-border focus:bg-card w-full rounded-lg border py-2.5 pr-3 pl-9 text-sm transition-all outline-none focus:border-blue-500"
+                                />
                             </div>
                         </div>
                         <div>
                             <label className="text-muted-foreground mb-1.5 ml-1 block text-xs font-bold uppercase">Password Baru</label>
                             <div className="relative">
                                 <i className="fa-solid fa-lock absolute top-1/2 left-3 -translate-y-1/2 text-xs text-gray-300" />
-                                <input type="password" value={qData.password} onChange={(e) => setQData('password', e.target.value)} className="bg-muted/50 border-border focus:bg-card w-full rounded-lg border py-2.5 pr-3 pl-9 text-sm transition-all outline-none focus:border-blue-500" />
+                                <input
+                                    type="password"
+                                    value={qData.password}
+                                    onChange={(e) => setQData('password', e.target.value)}
+                                    className="bg-muted/50 border-border focus:bg-card w-full rounded-lg border py-2.5 pr-3 pl-9 text-sm transition-all outline-none focus:border-blue-500"
+                                />
                             </div>
                         </div>
                         <div>
                             <label className="text-muted-foreground mb-1.5 ml-1 block text-xs font-bold uppercase">Konfirmasi Password</label>
                             <div className="relative">
                                 <i className="fa-solid fa-shield absolute top-1/2 left-3 -translate-y-1/2 text-xs text-gray-300" />
-                                <input type="password" value={qData.password_confirmation} onChange={(e) => setQData('password_confirmation', e.target.value)} className="bg-muted/50 border-border focus:bg-card w-full rounded-lg border py-2.5 pr-3 pl-9 text-sm transition-all outline-none focus:border-blue-500" />
+                                <input
+                                    type="password"
+                                    value={qData.password_confirmation}
+                                    onChange={(e) => setQData('password_confirmation', e.target.value)}
+                                    className="bg-muted/50 border-border focus:bg-card w-full rounded-lg border py-2.5 pr-3 pl-9 text-sm transition-all outline-none focus:border-blue-500"
+                                />
                             </div>
                         </div>
-                        <button type="submit" disabled={qProcessing} className="bg-primary text-primary-foreground shadow-primary/20 hover:bg-primary/90 hover:shadow-primary/30 mt-4 w-full rounded-lg py-3 text-sm font-bold shadow-lg transition-all active:scale-[0.98] disabled:opacity-50">
+                        <button
+                            type="submit"
+                            disabled={qProcessing}
+                            className="bg-primary text-primary-foreground shadow-primary/20 hover:bg-primary/90 hover:shadow-primary/30 mt-4 w-full rounded-lg py-3 text-sm font-bold shadow-lg transition-all active:scale-[0.98] disabled:opacity-50"
+                        >
                             {qProcessing ? <i className="fa-solid fa-spinner fa-spin mr-2" /> : <i className="fa-solid fa-lock-open mr-2" />}
                             {qProcessing ? 'Memperbarui...' : 'Update Password'}
                         </button>

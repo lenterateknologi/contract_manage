@@ -13,6 +13,7 @@ class Department extends Model
     use HasUuids, SoftDeletes;
 
     protected $fillable = [
+        'company_id',
         'code',
         'name',
         'description',
@@ -24,6 +25,11 @@ class Department extends Model
     protected $casts = [
         'is_active' => 'boolean',
     ];
+
+    public function company()
+    {
+        return $this->belongsTo(Company::class, 'company_id');
+    }
 
     public function users()
     {

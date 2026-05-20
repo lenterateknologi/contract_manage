@@ -72,8 +72,8 @@ export function RecentContracts({ items, onViewAll }: RecentContractsProps) {
                                         key={c.id}
                                         onClick={() => router.get(`/contracts/${c.id}`)}
                                         className={cn(
-                                            'group cursor-pointer border-l-[3px] transition-all duration-200 bg-card hover:bg-muted/30 text-card-foreground',
-                                            accentCfg.border
+                                            'group bg-card hover:bg-muted/30 text-card-foreground cursor-pointer border-l-[3px] transition-all duration-200',
+                                            accentCfg.border,
                                         )}
                                     >
                                         {/* No. Kontrak */}

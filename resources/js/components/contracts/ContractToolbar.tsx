@@ -1,11 +1,11 @@
 import { FilterChips } from '@/components/contracts/FilterChips';
-import { AdvancedFilters } from '@/types/filters';
 import { Button } from '@/components/ui/base/Button';
 import { Input } from '@/components/ui/base/Input';
 import { SimpleFilters } from '@/components/ui/data/SimpleFilters';
+import { cn } from '@/lib/utils';
+import { AdvancedFilters } from '@/types/filters';
 import { router } from '@inertiajs/react';
 import { LayoutGrid, List as ListIcon, RefreshCcw, Search } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import React from 'react';
 
 interface ContractToolbarProps {
@@ -42,16 +42,16 @@ export function ContractToolbar({
     primaryAction,
 }: ContractToolbarProps) {
     return (
-        <div className="mb-4 flex flex-col gap-4 rounded-xl border border-border bg-card p-4 shadow-sm">
+        <div className="border-border bg-card mb-4 flex flex-col gap-4 rounded-xl border p-4 shadow-sm">
             <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
                 <div className="flex max-w-md flex-1 items-center gap-3">
-                    <div className="relative flex-1 max-w-md">
-                        <Search className="absolute top-2.5 left-3 h-4 w-4 text-muted-foreground/50" />
+                    <div className="relative max-w-md flex-1">
+                        <Search className="text-muted-foreground/50 absolute top-2.5 left-3 h-4 w-4" />
                         <Input
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder={placeholder}
-                            className="pl-10 h-10 border-border bg-background focus:ring-primary/20 text-sm placeholder:text-muted-foreground/40 transition-all font-medium"
+                            className="border-border bg-background focus:ring-primary/20 placeholder:text-muted-foreground/40 h-10 pl-10 text-sm font-medium transition-all"
                         />
                     </div>
 
@@ -79,20 +79,20 @@ export function ContractToolbar({
                         variant="outline"
                         size="icon"
                         onClick={() => router.reload({ preserveScroll: true, preserveState: true } as any)}
-                        className="h-10 w-10 shrink-0 border-border bg-background"
+                        className="border-border bg-background h-10 w-10 shrink-0"
                     >
                         <RefreshCcw className="h-4 w-4" />
                     </Button>
                 </div>
 
-                <div className="flex h-10 overflow-hidden rounded-lg border border-border bg-background shadow-sm">
+                <div className="border-border bg-background flex h-10 overflow-hidden rounded-lg border shadow-sm">
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => setLayout('list')}
                         className={cn(
-                            "px-2.5 transition-colors",
-                            layout === 'list' ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+                            'px-2.5 transition-colors',
+                            layout === 'list' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted',
                         )}
                     >
                         <ListIcon size={16} />
@@ -102,8 +102,8 @@ export function ContractToolbar({
                         size="sm"
                         onClick={() => setLayout('card')}
                         className={cn(
-                            "px-2.5 transition-colors",
-                            layout === 'card' ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+                            'px-2.5 transition-colors',
+                            layout === 'card' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted',
                         )}
                     >
                         <LayoutGrid size={16} />
