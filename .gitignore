@@ -6,6 +6,8 @@
 .phpunit.result.cache
 .agent
 .agents
+.claude
+.github
 .gemini
 /.fleet
 /.idea

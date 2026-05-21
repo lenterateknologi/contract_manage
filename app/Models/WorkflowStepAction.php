@@ -27,6 +27,8 @@ class WorkflowStepAction extends Model
         'autofilled_fields',
         'signing_parties',
         'assignee_config',
+        'alias',
+        'description',
         'is_active',
         'created_by',
         'updated_by',

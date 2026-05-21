@@ -111,11 +111,16 @@ class WorkflowAdminController extends Controller
                     'id' => $action->id,
                     'master_action_id' => $action->master_action_id,
                     'master_action_name' => $action->masterAction->name ?? '',
+                    'master_action' => $action->masterAction,
                     'next_step_id' => $action->next_step_id,
                     'next_workflow_id' => $action->next_workflow_id,
                     'next_workflow_step_id' => $action->next_workflow_step_id,
                     'required_fields' => $action->required_fields ?? [],
                     'autofilled_fields' => $action->autofilled_fields ?? [],
+                    'signing_parties' => $action->signing_parties ?? [],
+                    'assignee_config' => $action->assignee_config ?? [],
+                    'alias' => $action->alias,
+                    'description' => $action->description,
                     'is_active' => $action->is_active,
                 ];
             })->toArray();
@@ -162,6 +167,9 @@ class WorkflowAdminController extends Controller
             'initiator_users' => 'nullable|array',
             'initiator_departments' => 'nullable|array',
             'steps' => 'nullable|array',
+            'steps.*.id' => 'nullable|string',
+            'steps.*.label' => 'nullable|string',
+            'steps.*.is_mandatory' => 'nullable|boolean',
             'steps.*.role' => 'nullable',
             'steps.*.description' => 'nullable|string',
             'steps.*.approver_type' => 'nullable|string',
@@ -190,6 +198,8 @@ class WorkflowAdminController extends Controller
             'steps.*.actions.*.autofilled_fields' => 'nullable|array',
             'steps.*.actions.*.signing_parties' => 'nullable|array',
             'steps.*.actions.*.assignee_config' => 'nullable|array',
+            'steps.*.actions.*.alias' => 'nullable|string',
+            'steps.*.actions.*.description' => 'nullable|string',
             'steps.*.actions.*.is_active' => 'nullable|boolean',
         ]);
 
@@ -225,6 +235,7 @@ class WorkflowAdminController extends Controller
             'initiator_users' => 'nullable|array',
             'initiator_departments' => 'nullable|array',
             'steps' => 'nullable|array',
+            'steps.*.id' => 'nullable|string',
             'steps.*.role' => 'nullable',
             'steps.*.description' => 'nullable|string',
             'steps.*.approver_type' => 'nullable|string',
@@ -256,13 +267,15 @@ class WorkflowAdminController extends Controller
             'steps.*.actions.*.autofilled_fields' => 'nullable|array',
             'steps.*.actions.*.signing_parties' => 'nullable|array',
             'steps.*.actions.*.assignee_config' => 'nullable|array',
+            'steps.*.actions.*.alias' => 'nullable|string',
+            'steps.*.actions.*.description' => 'nullable|string',
             'steps.*.actions.*.is_active' => 'nullable|boolean',
         ]);
 
         try {
             $action->update($workflow, $data);
 
-            return redirect()->route('admin.workflows')->with('success', 'Workflow berhasil diperbarui.');
+            return redirect()->route('admin.workflows.edit', $workflow->id)->with('success', 'Workflow berhasil diperbarui.');
         } catch (\Exception $e) {
             Log::error('Workflow Update Error: ' . $e->getMessage());
 
@@ -294,6 +307,7 @@ class WorkflowAdminController extends Controller
     {
         $data = $request->validate([
             'steps' => 'nullable|array',
+            'steps.*.id' => 'nullable|string',
             'steps.*.role' => 'nullable',
             'steps.*.description' => 'nullable|string',
             'steps.*.approver_type' => 'nullable|string',
@@ -307,7 +321,26 @@ class WorkflowAdminController extends Controller
             'steps.*.role_id' => 'nullable|string',
             'steps.*.user_ids' => 'nullable|array',
             'steps.*.department_ids' => 'nullable|array',
+            'steps.*.label' => 'nullable|string',
+            'steps.*.is_mandatory' => 'nullable|boolean',
             'steps.*.meta' => 'nullable|array',
+            'steps.*.company_group_ids' => 'nullable|array',
+            'steps.*.region_ids' => 'nullable|array',
+            'steps.*.company_ids' => 'nullable|array',
+            'steps.*.actions' => 'nullable|array',
+            'steps.*.actions.*.id' => 'nullable|string',
+            'steps.*.actions.*.master_action_id' => 'nullable|string',
+            'steps.*.actions.*.master_action_name' => 'nullable|string',
+            'steps.*.actions.*.next_step_id' => 'nullable|string',
+            'steps.*.actions.*.next_workflow_id' => 'nullable|string',
+            'steps.*.actions.*.next_workflow_step_id' => 'nullable|string',
+            'steps.*.actions.*.required_fields' => 'nullable|array',
+            'steps.*.actions.*.autofilled_fields' => 'nullable|array',
+            'steps.*.actions.*.signing_parties' => 'nullable|array',
+            'steps.*.actions.*.assignee_config' => 'nullable|array',
+            'steps.*.actions.*.alias' => 'nullable|string',
+            'steps.*.actions.*.description' => 'nullable|string',
+            'steps.*.actions.*.is_active' => 'nullable|boolean',
         ]);
 
         $action->updateSteps($workflow, $data);
@@ -351,5 +384,170 @@ class WorkflowAdminController extends Controller
         $masterAction->delete();
 
         return back()->with('success', 'Master Aksi berhasil dihapus.');
+    }
+
+    public function export(Request $request)
+    {
+        $ids = $request->input('ids');
+        if (empty($ids)) {
+            return back()->withErrors(['error' => 'Pilih alur kerja yang ingin diekspor.']);
+        }
+
+        $workflows = Workflow::with([
+            'steps.approverRoles',
+            'steps.approverDepartments',
+            'steps.approverUsers',
+            'steps.actions.masterAction',
+            'initiatorRolesData',
+            'initiatorDepartmentsData',
+            'initiatorUsersData',
+        ])->whereIn('id', (array) $ids)->get();
+
+        $exportData = [];
+
+        foreach ($workflows as $workflow) {
+            $workflowData = collect($workflow->toArray())->only([
+                'contract_type',
+                'department_id',
+                'name',
+                'description',
+                'is_default',
+                'is_template',
+                'is_tax_involved',
+                'initiator_type',
+                'sla_drafting_hours',
+                'sla_total_hours',
+                'sla_cutoff_hour',
+                'scope',
+                'workflow_category',
+                'company_group_ids',
+                'region_ids',
+                'company_ids',
+                'approver_roles',
+                'approver_departments',
+                'approver_users',
+                'legal_roles',
+                'legal_departments',
+                'legal_users',
+            ])->toArray();
+
+            $workflowData['initiator_roles'] = $workflow->initiatorRolesData->pluck('role_name')->toArray();
+            $workflowData['initiator_departments'] = $workflow->initiatorDepartmentsData->pluck('department_id')->toArray();
+            $workflowData['initiator_users'] = $workflow->initiatorUsersData->pluck('user_id')->toArray();
+
+            $stepIdMap = [];
+            foreach ($workflow->steps as $index => $step) {
+                $stepIdMap[$step->id] = "step_{$index}";
+            }
+
+            $workflowData['steps'] = $workflow->steps->map(function ($step) use ($stepIdMap) {
+                $stepData = collect($step->toArray())->only([
+                    'approver_type',
+                    'step_category',
+                    'is_optional',
+                    'optional_label',
+                    'condition_expression',
+                    'description',
+                    'phase',
+                    'uploader_type',
+                    'hierarchy_level',
+                    'role_id',
+                    'company_group_ids',
+                    'region_ids',
+                    'company_ids',
+                    'label',
+                    'allowed_actions',
+                    'is_mandatory',
+                    'meta',
+                ])->toArray();
+
+                $stepData['id'] = $stepIdMap[$step->id];
+                $stepData['role'] = $step->approverRoles->pluck('role_name')->toArray();
+                $stepData['department_ids'] = $step->approverDepartments->pluck('department_id')->toArray();
+                $stepData['user_ids'] = $step->approverUsers->pluck('user_id')->toArray();
+
+                $stepData['actions'] = $step->actions->map(function ($action) use ($stepIdMap) {
+                    $actionData = collect($action->toArray())->only([
+                        'required_fields',
+                        'autofilled_fields',
+                        'signing_parties',
+                        'assignee_config',
+                        'alias',
+                        'description',
+                        'is_active',
+                        'next_workflow_id',
+                        'next_workflow_step_id',
+                    ])->toArray();
+
+                    $actionData['master_action_name'] = $action->masterAction->name ?? null;
+                    if ($action->next_step_id && isset($stepIdMap[$action->next_step_id])) {
+                        $actionData['next_step_id'] = $stepIdMap[$action->next_step_id];
+                    } else {
+                        $actionData['next_step_id'] = null;
+                    }
+
+                    return $actionData;
+                })->toArray();
+
+                return $stepData;
+            })->toArray();
+
+            $exportData[] = $workflowData;
+        }
+
+        $fileName = 'workflows_export_' . date('Ymd_His') . '.json';
+
+        return response()->streamDownload(function () use ($exportData) {
+            echo json_encode($exportData, JSON_PRETTY_PRINT);
+        }, $fileName, [
+            'Content-Type' => 'application/json',
+        ]);
+    }
+
+    public function import(Request $request, WorkflowAction $action)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:json',
+        ]);
+
+        try {
+            $content = file_get_contents($request->file('file')->getRealPath());
+            $data = json_decode($content, true);
+
+            if (! is_array($data)) {
+                return back()->withErrors(['error' => 'Format file JSON tidak valid.']);
+            }
+
+            // Normalise single object to array of objects
+            if (isset($data['name']) && ! isset($data[0])) {
+                $data = [$data];
+            }
+
+            $count = 0;
+            \Illuminate\Support\Facades\DB::transaction(function () use ($data, $action, &$count) {
+                foreach ($data as $workflowData) {
+                    $originalName = $workflowData['name'] ?? 'Imported Workflow';
+                    $name = $originalName;
+                    $i = 1;
+                    while (Workflow::where('name', $name)->exists()) {
+                        $name = $originalName . " (Copy {$i})";
+                        $i++;
+                    }
+                    $workflowData['name'] = $name;
+                    $workflowData['is_default'] = false;
+
+                    $action->store($workflowData);
+                    $count++;
+                }
+            });
+
+            return redirect()->route('admin.workflows')->with('success', "{$count} Alur Kerja berhasil diimpor.");
+        } catch (\Exception $e) {
+            Log::error('Workflow Import Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return back()->withErrors(['error' => 'Gagal mengimpor alur kerja: ' . $e->getMessage()]);
+        }
     }
 }

@@ -11,6 +11,7 @@ import {
     CheckCircle2,
     ChevronUp,
     Copy,
+    CornerDownLeft,
     Eye,
     FileSignature,
     GitBranch,
@@ -28,6 +29,7 @@ import { ApproveModal } from './modals/ApproveModal';
 import { AssignModal } from './modals/AssignModal';
 import { ManageMasterActionsModal } from './modals/ManageMasterActionsModal';
 import { RejectModal } from './modals/RejectModal';
+import { ReturnModal } from './modals/ReturnModal';
 import { ReviewModal } from './modals/ReviewModal';
 import { UploadModal } from './modals/UploadModal';
 import { SignerModal } from './modals/SignerModal';
@@ -172,7 +174,9 @@ export default function SortableStepItem({
                     next_workflow_id: null,
                     next_workflow_step_id: null,
                     required_fields: [],
-                    autofilled_fields: []
+                    autofilled_fields: [],
+                    alias: '',
+                    description: ''
                 };
             });
         }
@@ -190,7 +194,9 @@ export default function SortableStepItem({
                 next_workflow_id: null,
                 next_workflow_step_id: null,
                 required_fields: [],
-                autofilled_fields: []
+                autofilled_fields: [],
+                alias: '',
+                description: ''
             }
         ];
         updateLocalStep(idx, { actions: next, allowed_actions: next.map((a: any) => a.master_action?.code || a.master_action_name?.toLowerCase()).filter(Boolean) });
@@ -208,7 +214,7 @@ export default function SortableStepItem({
     };
 
     // Simulation active modal state
-    const [activeModal, setActiveModal] = useState<'approve' | 'reject' | 'assign_pic' | 'upload' | 'review' | 'sign' | null>(null);
+    const [activeModal, setActiveModal] = useState<'approve' | 'reject' | 'return' | 'assign_pic' | 'upload' | 'review' | 'sign' | null>(null);
     const [showManageMasterActions, setShowManageMasterActions] = useState(false);
 
     // Filtered users for select dropdowns
@@ -364,6 +370,10 @@ export default function SortableStepItem({
                                                 } else if (code === 'review') {
                                                     color = 'bg-indigo-600 hover:bg-indigo-700';
                                                     icon = Eye;
+                                                } else if (code === 'return' || code.includes('kembalikan')) {
+                                                    color = 'bg-amber-500 hover:bg-amber-600';
+                                                    icon = CornerDownLeft;
+                                                    actionType = 'return';
                                                 } else if (code.includes('sign') || code.includes('tangan') || code.includes('paraf')) {
                                                     color = 'bg-amber-600 hover:bg-amber-700';
                                                     icon = FileSignature;
@@ -382,11 +392,11 @@ export default function SortableStepItem({
                                                 }
 
                                                 buttons.push({
-                                                    label: name,
+                                                    label: act.alias || name,
                                                     actionType,
                                                     color,
                                                     icon,
-                                                    tooltip,
+                                                    tooltip: act.description || tooltip,
                                                     act
                                                 });
                                             }
@@ -398,7 +408,7 @@ export default function SortableStepItem({
                                                     title={btn.tooltip}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        if (['approve', 'reject', 'assign_pic', 'upload', 'review', 'sign'].includes(btn.actionType)) {
+                                                        if (['approve', 'reject', 'return', 'assign_pic', 'upload', 'review', 'sign'].includes(btn.actionType)) {
                                                             setActiveModal(btn.actionType as any);
                                                         } else {
                                                             showToast(`Simulasi: Menjalankan aksi "${btn.label}" (${btn.tooltip}). Kolom Wajib: ${(btn.act.required_fields || []).join(', ') || '-'}`, 'success');
@@ -481,7 +491,7 @@ export default function SortableStepItem({
                             )}
                         >
                             {isExpanded ? <ChevronUp size={12} /> : <Settings2 size={12} />}
-                            {isExpanded ? 'SIMPAN' : 'EDIT'}
+                            {isExpanded ? 'TUTUP' : 'EDIT'}
                         </Button>
                         <Button
                             variant="ghost"
@@ -1112,18 +1122,32 @@ export default function SortableStepItem({
                                                         )}
                                                     </div>
 
+                                                    {/* Cell 1b: Alias Aksi */}
+                                                    <div className="space-y-1">
+                                                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Alias Aksi (Label Tombol)</label>
+                                                        <input
+                                                            type="text"
+                                                            value={act.alias || ''}
+                                                            onChange={(e) => updateAction(actIdx, { alias: e.target.value })}
+                                                            className="h-8 w-full rounded-lg border-slate-200 bg-slate-50/50 px-2.5 text-[10px] font-bold transition-all focus:border-slate-900 focus:bg-white dark:border-slate-800 dark:bg-slate-900"
+                                                            placeholder="Contoh: Kirim Review, Kembalikan ke Legal"
+                                                        />
+                                                    </div>
+
                                                     {/* Cell 2: Transisi Ke & Conditional Details */}
                                                     <div className="space-y-3">
                                                         <div className="space-y-1">
                                                             <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Transisi Ke</label>
                                                             <Select
-                                                                value={
-                                                                    act.next_workflow_id
-                                                                        ? 'cross_workflow'
-                                                                        : act.next_step_id
-                                                                            ? 'jump_step'
-                                                                            : 'sequential'
-                                                                }
+                                                                value={(() => {
+                                                                    if (act.next_workflow_id) return 'cross_workflow';
+                                                                    if (act.next_step_id) {
+                                                                        const prevStep = allWorkflowSteps[idx - 1];
+                                                                        if (prevStep && act.next_step_id === prevStep.id) return 'back';
+                                                                        return 'jump_step';
+                                                                    }
+                                                                    return 'sequential';
+                                                                })()}
                                                                 onValueChange={(val) => {
                                                                     if (val === 'sequential') {
                                                                         updateAction(actIdx, {
@@ -1132,14 +1156,15 @@ export default function SortableStepItem({
                                                                             next_workflow_step_id: null
                                                                         });
                                                                     } else if (val === 'back') {
+                                                                        const prevStep = allWorkflowSteps[idx - 1];
                                                                         updateAction(actIdx, {
-                                                                            next_step_id: null,
+                                                                            next_step_id: prevStep?.id || null,
                                                                             next_workflow_id: null,
                                                                             next_workflow_step_id: null
                                                                         });
                                                                     } else if (val === 'jump_step') {
                                                                         updateAction(actIdx, {
-                                                                            next_step_id: allWorkflowSteps.find(s => s.id !== step.id)?.id || null,
+                                                                            next_step_id: allWorkflowSteps.find((s: any) => s.id !== step.id)?.id || null,
                                                                             next_workflow_id: null,
                                                                             next_workflow_step_id: null
                                                                         });
@@ -1173,7 +1198,7 @@ export default function SortableStepItem({
                                                             </Select>
                                                         </div>
 
-                                                        {(!act.next_workflow_id && act.next_step_id) && (
+                                                        {(!act.next_workflow_id && act.next_step_id && (() => { const prev = allWorkflowSteps[idx - 1]; return !prev || act.next_step_id !== prev.id; })()) && (
                                                             <div className="space-y-1 bg-slate-50/40 p-2.5 rounded-xl border border-slate-100 dark:bg-slate-900/10 dark:border-slate-800">
                                                                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Pilih Target Langkah (Alur Ini)</label>
                                                                 <Select
@@ -1242,6 +1267,18 @@ export default function SortableStepItem({
                                                         )}
                                                     </div>
 
+                                                    {/* Cell 2b: Deskripsi Aksi */}
+                                                    <div className="space-y-1">
+                                                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Deskripsi Aksi (Tooltip)</label>
+                                                        <input
+                                                            type="text"
+                                                            value={act.description || ''}
+                                                            onChange={(e) => updateAction(actIdx, { description: e.target.value })}
+                                                            className="h-8 w-full rounded-lg border-slate-200 bg-slate-50/50 px-2.5 text-[10px] font-bold transition-all focus:border-slate-900 focus:bg-white dark:border-slate-800 dark:bg-slate-900"
+                                                            placeholder="Deskripsi singkat fungsi tombol ini..."
+                                                        />
+                                                    </div>
+
                                                     {/* Cell 3: Required Fields */}
                                                     <div className="space-y-1">
                                                         <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Kolom Wajib Diisi (Required)</label>
@@ -1265,7 +1302,7 @@ export default function SortableStepItem({
                                                     </div>
 
                                                     {/* Cell 5: Signers (Conditional) */}
-                                                    {(act.master_action?.code?.includes('SIGNATURE') || act.master_action_name?.toLowerCase().includes('signature')) && (
+                                                    {(act.master_action?.code?.toLowerCase() === 'signature') && (
                                                         <div className="space-y-2 col-span-1 sm:col-span-2 bg-amber-50/50 p-3 rounded-xl border border-amber-100/50 dark:bg-amber-900/10 dark:border-amber-800/30">
                                                             <div className="flex items-center gap-1.5">
                                                                 <FileSignature size={12} className="text-amber-500" />
@@ -1291,7 +1328,7 @@ export default function SortableStepItem({
                                                     )}
 
                                                     {/* Cell 6: Assignee Config (Conditional) */}
-                                                    {(act.master_action?.code?.includes('ASSIGN_PIC') || act.master_action_name?.toLowerCase().includes('assign_pic')) && (
+                                                    {(act.master_action?.code?.toLowerCase() === 'assign_pic') && (
                                                         <div className="space-y-3 col-span-1 sm:col-span-2 bg-indigo-50/50 p-3 rounded-xl border border-indigo-100/50 dark:bg-indigo-900/10 dark:border-indigo-800/30">
                                                             <div className="flex items-center gap-1.5">
                                                                 <UsersIcon size={12} className="text-indigo-500" />
@@ -1393,8 +1430,10 @@ export default function SortableStepItem({
 
             <RejectModal isOpen={activeModal === 'reject'} onClose={() => setActiveModal(null)} step={step} idx={idx} showToast={showToast} />
 
+            <ReturnModal isOpen={activeModal === 'return'} onClose={() => setActiveModal(null)} step={step} idx={idx} showToast={showToast} />
+
             {(() => {
-                const assignAction = actions.find((a: any) => a.master_action?.code?.includes('assign_pic') || a.master_action_name?.toLowerCase().includes('assign_pic'));
+                const assignAction = actions.find((a: any) => a.master_action?.code?.toLowerCase().includes('assign') || a.master_action_name?.toLowerCase().includes('assign'));
                 const assigneeOptions: any[] = [];
 
                 if (assignAction?.assignee_config) {
@@ -1428,7 +1467,7 @@ export default function SortableStepItem({
             <ReviewModal isOpen={activeModal === 'review'} onClose={() => setActiveModal(null)} step={step} idx={idx} showToast={showToast} />
 
             {(() => {
-                const signAction = actions.find((a: any) => a.master_action?.code?.includes('sign') || a.master_action_name?.toLowerCase().includes('sign') || a.master_action_name?.toLowerCase().includes('tangan') || a.master_action_name?.toLowerCase().includes('paraf'));
+                const signAction = actions.find((a: any) => a.master_action?.code?.toLowerCase().includes('sign') || a.master_action_name?.toLowerCase().includes('sign') || a.master_action_name?.toLowerCase().includes('tangan') || a.master_action_name?.toLowerCase().includes('paraf'));
                 const ALL_ROLES = [
                     { value: 'initiator', label: 'INISIATOR (PIC / PEMBUAT)' },
                     { value: 'pic', label: 'PIC DITUGASKAN' },

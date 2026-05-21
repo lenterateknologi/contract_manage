@@ -42,6 +42,8 @@ class WorkflowAction
                 foreach ($data['steps'] as $index => $stepData) {
                     $stepClientId = $stepData['id'] ?? "new-{$index}";
                     $step = $workflow->steps()->create([
+                        'label' => $stepData['label'] ?? null,
+                        'is_mandatory' => $stepData['is_mandatory'] ?? true,
                         'approver_type' => $stepData['approver_type'] ?? 'role',
                         'description' => $stepData['description'] ?? '',
                         'step' => $index + 1,
@@ -246,6 +248,8 @@ class WorkflowAction
             if (! empty($data['steps'])) {
                 foreach ($data['steps'] as $index => $stepData) {
                     $step = $workflow->steps()->create([
+                        'label' => $stepData['label'] ?? null,
+                        'is_mandatory' => $stepData['is_mandatory'] ?? true,
                         'approver_type' => $stepData['approver_type'] ?? 'role',
                         'description' => $stepData['description'] ?? '',
                         'step' => $index + 1,
@@ -361,6 +365,8 @@ class WorkflowAction
                 'autofilled_fields' => $actData['autofilled_fields'] ?? [],
                 'signing_parties' => $actData['signing_parties'] ?? [],
                 'assignee_config' => $actData['assignee_config'] ?? [],
+                'alias' => $actData['alias'] ?? null,
+                'description' => $actData['description'] ?? null,
                 'is_active' => $actData['is_active'] ?? true,
                 'updated_by' => Auth::id(),
             ];

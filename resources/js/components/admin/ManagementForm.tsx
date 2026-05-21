@@ -29,7 +29,7 @@ export function ManagementForm({
     onCollapseAll,
 }: ManagementFormProps) {
     return (
-        <div className="animate-in fade-in slide-in-from-right-5 bg-card border-border/60 text-foreground m-5 flex flex-col overflow-hidden rounded-2xl border font-sans antialiased shadow-sm">
+        <div className="animate-in fade-in slide-in-from-right-5 bg-card border-border/60 text-foreground m-5 flex flex-col overflow-hidden rounded-2xl border font-sans antialiased shadow-sm" style={{ maxHeight: 'calc(100svh - 2.5rem)' }}>
             {/* COMPACT STICKY HEADER */}
             <div className="sticky top-0 z-50 border-border/60 bg-muted/95 backdrop-blur supports-[backdrop-filter]:bg-muted/65 flex shrink-0 items-center justify-between border-b px-6 py-4">
                 <div className="flex items-center gap-3">
@@ -78,7 +78,7 @@ export function ManagementForm({
             </div>
 
             {/* COMPACT FORM BODY */}
-            <div className="bg-card flex-1 p-6 md:p-8">
+            <div className="bg-card flex-1 overflow-y-auto p-6 md:p-8">
                 <div className="mx-auto w-full max-w-[1600px]">{children}</div>
             </div>
         </div>

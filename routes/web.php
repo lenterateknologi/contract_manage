@@ -136,6 +136,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/workflows', [WorkflowAdminController::class, 'index'])->name('admin.workflows');
         Route::get('/workflows/create', [WorkflowAdminController::class, 'create'])->name('admin.workflows.create');
         Route::post('/workflows', [WorkflowAdminController::class, 'store'])->name('admin.workflows.store');
+        Route::get('/workflows/export', [WorkflowAdminController::class, 'export'])->name('admin.workflows.export');
+        Route::post('/workflows/import', [WorkflowAdminController::class, 'import'])->name('admin.workflows.import');
         Route::get('/workflows/{workflow}/edit', [WorkflowAdminController::class, 'edit'])->name('admin.workflows.edit');
         Route::put('/workflows/{workflow}', [WorkflowAdminController::class, 'update'])->name('admin.workflows.update');
         Route::delete('/workflows/{workflow}', [WorkflowAdminController::class, 'destroy'])->name('admin.workflows.destroy');

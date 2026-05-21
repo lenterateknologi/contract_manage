@@ -145,6 +145,8 @@ export default function WorkflowEditor({
     const handleSubmit = (e?: React.FormEvent) => {
         if (e) e.preventDefault();
         const options = {
+            preserveScroll: true,
+            preserveState: true,
             onSuccess: () => showToast('Konfigurasi alur berhasil disimpan', 'success'),
             onError: (err: any) => showToast(err.error || 'Gagal menyimpan alur', 'danger'),
         };
