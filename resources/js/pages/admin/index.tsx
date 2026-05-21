@@ -13,6 +13,8 @@ import { UserManagement } from '@/components/admin/UserManagement';
 import { VendorManagement } from '@/components/admin/VendorManagement';
 import { WorkflowManagement } from '@/components/admin/WorkflowManagement';
 import { ToastProvider } from '@/components/contracts/Toast';
+import { MembersPerDivision } from '@/components/dashboard/MembersPerDivision';
+import { MasterDataSync } from '@/components/admin/MasterDataSync';
 
 interface PaginatedData<T> {
     data: T[];
@@ -45,6 +47,14 @@ interface Props {
     regions?: any;
     companies?: any;
     filters?: any;
+    counts?: {
+        company_groups: number;
+        regions: number;
+        companies: number;
+        departments: number;
+        contract_statuses: number;
+        contract_types: number;
+    };
 }
 
 /**
@@ -75,6 +85,7 @@ export default function AdminIndex({
     regions,
     companies,
     filters = {},
+    counts,
 }: Readonly<Props>) {
     // View Metadata Mapping
     const viewTitleMap: Record<string, string> = {
@@ -91,6 +102,8 @@ export default function AdminIndex({
         'company-groups': 'Data Group',
         regions: 'Data Region',
         companies: 'Data Company',
+        'master-data-sync': 'Ekspor Impor Master',
+
     };
 
     const viewTitle = viewTitleMap[currentView] || 'Administrasi Sistem';
@@ -130,6 +143,8 @@ export default function AdminIndex({
                 return <RegionManagement regions={regions} filters={filters} />;
             case 'companies':
                 return <CompanyManagement companies={companies} regions={regions} groups={companyGroups} filters={filters} />;
+            case 'members':
+                return <MembersPerDivision />;
             default:
                 return (
                     <div className="flex h-full items-center justify-center text-xs font-black text-slate-400 uppercase">

@@ -1328,7 +1328,7 @@ export default function SortableStepItem({
                                                     )}
 
                                                     {/* Cell 6: Assignee Config (Conditional) */}
-                                                    {(act.master_action?.code?.toLowerCase() === 'assign_pic') && (
+                                                    {(act.master_action?.code?.toLowerCase() == 'assign_pic') && (
                                                         <div className="space-y-3 col-span-1 sm:col-span-2 bg-indigo-50/50 p-3 rounded-xl border border-indigo-100/50 dark:bg-indigo-900/10 dark:border-indigo-800/30">
                                                             <div className="flex items-center gap-1.5">
                                                                 <UsersIcon size={12} className="text-indigo-500" />

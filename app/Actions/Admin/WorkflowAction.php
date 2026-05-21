@@ -28,12 +28,18 @@ class WorkflowAction
             }
             if (! empty($data['initiator_departments'])) {
                 foreach ($data['initiator_departments'] as $deptId) {
-                    $workflow->initiatorDepartmentsData()->create(['department_id' => $deptId]);
+                    $resolvedId = $this->resolveDepartmentId($deptId);
+                    if ($resolvedId) {
+                        $workflow->initiatorDepartmentsData()->create(['department_id' => $resolvedId]);
+                    }
                 }
             }
             if (! empty($data['initiator_users'])) {
                 foreach ($data['initiator_users'] as $userId) {
-                    $workflow->initiatorUsersData()->create(['user_id' => $userId]);
+                    $resolvedId = $this->resolveUserId($userId);
+                    if ($resolvedId) {
+                        $workflow->initiatorUsersData()->create(['user_id' => $resolvedId]);
+                    }
                 }
             }
 
@@ -73,12 +79,18 @@ class WorkflowAction
                     }
                     if (! empty($stepData['department_ids'])) {
                         foreach ((array) $stepData['department_ids'] as $deptId) {
-                            $step->approverDepartments()->create(['department_id' => $deptId]);
+                            $resolvedId = $this->resolveDepartmentId($deptId);
+                            if ($resolvedId) {
+                                $step->approverDepartments()->create(['department_id' => $resolvedId]);
+                            }
                         }
                     }
                     if (! empty($stepData['user_ids'])) {
                         foreach ((array) $stepData['user_ids'] as $userId) {
-                            $step->approverUsers()->create(['user_id' => $userId]);
+                            $resolvedId = $this->resolveUserId($userId);
+                            if ($resolvedId) {
+                                $step->approverUsers()->create(['user_id' => $resolvedId]);
+                            }
                         }
                     }
                 }
@@ -121,14 +133,20 @@ class WorkflowAction
             $workflow->initiatorDepartmentsData()->delete();
             if (! empty($data['initiator_departments'])) {
                 foreach ((array) $data['initiator_departments'] as $deptId) {
-                    $workflow->initiatorDepartmentsData()->create(['department_id' => $deptId]);
+                    $resolvedId = $this->resolveDepartmentId($deptId);
+                    if ($resolvedId) {
+                        $workflow->initiatorDepartmentsData()->create(['department_id' => $resolvedId]);
+                    }
                 }
             }
 
             $workflow->initiatorUsersData()->delete();
             if (! empty($data['initiator_users'])) {
                 foreach ((array) $data['initiator_users'] as $userId) {
-                    $workflow->initiatorUsersData()->create(['user_id' => $userId]);
+                    $resolvedId = $this->resolveUserId($userId);
+                    if ($resolvedId) {
+                        $workflow->initiatorUsersData()->create(['user_id' => $resolvedId]);
+                    }
                 }
             }
 
@@ -141,6 +159,11 @@ class WorkflowAction
             if (! empty($stepsToDelete)) {
                 WorkflowStep::whereIn('id', $stepsToDelete)->forceDelete();
             }
+
+            // Shift existing step numbers to avoid unique constraint violations during reordering
+            WorkflowStep::where('workflow_id', $workflow->id)->update([
+                'step' => DB::raw('step + 10000'),
+            ]);
 
             $stepIdMap = [];
             if (! empty($data['steps'])) {
@@ -192,14 +215,20 @@ class WorkflowAction
                     $step->approverDepartments()->delete();
                     if (! empty($stepData['department_ids'])) {
                         foreach ((array) $stepData['department_ids'] as $deptId) {
-                            $step->approverDepartments()->create(['department_id' => $deptId]);
+                            $resolvedId = $this->resolveDepartmentId($deptId);
+                            if ($resolvedId) {
+                                $step->approverDepartments()->create(['department_id' => $resolvedId]);
+                            }
                         }
                     }
 
                     $step->approverUsers()->delete();
                     if (! empty($stepData['user_ids'])) {
                         foreach ((array) $stepData['user_ids'] as $userId) {
-                            $step->approverUsers()->create(['user_id' => $userId]);
+                            $resolvedId = $this->resolveUserId($userId);
+                            if ($resolvedId) {
+                                $step->approverUsers()->create(['user_id' => $resolvedId]);
+                            }
                         }
                     }
                 }
@@ -278,13 +307,19 @@ class WorkflowAction
 
                     if (! empty($stepData['department_ids'])) {
                         foreach ((array) $stepData['department_ids'] as $deptId) {
-                            $step->approverDepartments()->create(['department_id' => $deptId]);
+                            $resolvedId = $this->resolveDepartmentId($deptId);
+                            if ($resolvedId) {
+                                $step->approverDepartments()->create(['department_id' => $resolvedId]);
+                            }
                         }
                     }
 
                     if (! empty($stepData['user_ids'])) {
                         foreach ((array) $stepData['user_ids'] as $userId) {
-                            $step->approverUsers()->create(['user_id' => $userId]);
+                            $resolvedId = $this->resolveUserId($userId);
+                            if ($resolvedId) {
+                                $step->approverUsers()->create(['user_id' => $resolvedId]);
+                            }
                         }
                     }
                 }
@@ -382,5 +417,23 @@ class WorkflowAction
                 $action->update($actionFields);
             }
         }
+    }
+
+    private function resolveDepartmentId(string $identifier): ?string
+    {
+        if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $identifier)) {
+            return $identifier;
+        }
+
+        return \App\Models\Department::where('code', $identifier)->value('id');
+    }
+
+    private function resolveUserId(string $identifier): ?string
+    {
+        if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $identifier)) {
+            return $identifier;
+        }
+
+        return \App\Models\User::where('email', $identifier)->value('id');
     }
 }

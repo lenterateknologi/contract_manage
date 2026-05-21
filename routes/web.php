@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\MasterConfigController;
+use App\Http\Controllers\Admin\MasterDataAdminController;
 use App\Http\Controllers\Admin\OrganizationController;
 use App\Http\Controllers\Admin\VendorAdminController;
 use App\Http\Controllers\Admin\WorkflowAdminController;
@@ -70,6 +71,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/contracts', [ContractController::class, 'store'])->name('contracts.store');
 
         Route::get('/users', [AdminController::class, 'users'])->name('admin.users');
+        Route::get('/members', [AdminController::class, 'members'])->name('admin.members');
         Route::post('/users', [AdminController::class, 'storeUser'])->name('admin.users.store');
         Route::put('/users/{user}', [AdminController::class, 'updateUser'])->name('admin.users.update');
         Route::delete('/users/{user}', [AdminController::class, 'destroyUser'])->name('admin.users.destroy');
@@ -147,6 +149,11 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/workflows/{workflow}/steps', [WorkflowAdminController::class, 'updateSteps'])->name('admin.workflows.steps.update');
         Route::put('/workflows/master-actions/{id}', [WorkflowAdminController::class, 'updateMasterAction'])->name('admin.workflows.master-actions.update');
         Route::delete('/workflows/master-actions/{id}', [WorkflowAdminController::class, 'destroyMasterAction'])->name('admin.workflows.master-actions.destroy');
+
+        // Master Data Sync
+        Route::get('/master-data-sync', [MasterDataAdminController::class, 'index'])->name('admin.master-data-sync');
+        Route::get('/master-data-sync/export', [MasterDataAdminController::class, 'export'])->name('admin.master-data-sync.export');
+        Route::post('/master-data-sync/import', [MasterDataAdminController::class, 'import'])->name('admin.master-data-sync.import');
 
         Route::get('/reports/analytics', function () {
             return Inertia::render('admin/reports/analytics', [

@@ -395,12 +395,12 @@ class WorkflowAdminController extends Controller
 
         $workflows = Workflow::with([
             'steps.approverRoles',
-            'steps.approverDepartments',
-            'steps.approverUsers',
+            'steps.approverDepartments.department',
+            'steps.approverUsers.user',
             'steps.actions.masterAction',
             'initiatorRolesData',
-            'initiatorDepartmentsData',
-            'initiatorUsersData',
+            'initiatorDepartmentsData.department',
+            'initiatorUsersData.user',
         ])->whereIn('id', (array) $ids)->get();
 
         $exportData = [];
@@ -432,8 +432,12 @@ class WorkflowAdminController extends Controller
             ])->toArray();
 
             $workflowData['initiator_roles'] = $workflow->initiatorRolesData->pluck('role_name')->toArray();
-            $workflowData['initiator_departments'] = $workflow->initiatorDepartmentsData->pluck('department_id')->toArray();
-            $workflowData['initiator_users'] = $workflow->initiatorUsersData->pluck('user_id')->toArray();
+            $workflowData['initiator_departments'] = $workflow->initiatorDepartmentsData->map(function ($item) {
+                return $item->department->code ?? $item->department_id;
+            })->filter()->values()->toArray();
+            $workflowData['initiator_users'] = $workflow->initiatorUsersData->map(function ($item) {
+                return $item->user->email ?? $item->user_id;
+            })->filter()->values()->toArray();
 
             $stepIdMap = [];
             foreach ($workflow->steps as $index => $step) {
@@ -463,8 +467,12 @@ class WorkflowAdminController extends Controller
 
                 $stepData['id'] = $stepIdMap[$step->id];
                 $stepData['role'] = $step->approverRoles->pluck('role_name')->toArray();
-                $stepData['department_ids'] = $step->approverDepartments->pluck('department_id')->toArray();
-                $stepData['user_ids'] = $step->approverUsers->pluck('user_id')->toArray();
+                $stepData['department_ids'] = $step->approverDepartments->map(function ($item) {
+                    return $item->department->code ?? $item->department_id;
+                })->filter()->values()->toArray();
+                $stepData['user_ids'] = $step->approverUsers->map(function ($item) {
+                    return $item->user->email ?? $item->user_id;
+                })->filter()->values()->toArray();
 
                 $stepData['actions'] = $step->actions->map(function ($action) use ($stepIdMap) {
                     $actionData = collect($action->toArray())->only([

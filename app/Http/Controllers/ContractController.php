@@ -132,7 +132,13 @@ class ContractController extends Controller
             ]),
             'departments' => \App\Models\Department::orderBy('name')->get(),
             'roles' => Role::orderBy('name')->get(),
-            'filters' => array_merge($request->only(['search', 'status', 'contract_type_id', 'role_id', 'department_id', 'created_from', 'created_to']), [
+            'regions' => \App\Models\Region::orderBy('name')->get(),
+            'contractStatuses' => \App\Models\ContractStatus::all(),
+            'filters' => array_merge($request->only([
+                'search', 'status', 'contract_type_id', 'role_id', 'department_id',
+                'created_from', 'created_to', 'region_ids', 'vendor_ids', 'statuses',
+                'contract_type_ids', 'pic_ids', 'department_ids'
+            ]), [
                 'per_page' => $request->integer('per_page', 10),
             ]),
         ];
@@ -361,15 +367,119 @@ class ContractController extends Controller
     {
         $user = Auth::user();
         $isAdmin = $user->role === 'Admin';
-        $baseQuery = Contract::query();
 
-        if (! $isAdmin) {
-            $baseQuery->where('t_contracts.created_by', $user->id);
+        // Normalize array filters
+        $normalizeArray = function ($val) {
+            if (empty($val)) {
+                return [];
+            }
+            if (is_array($val)) {
+                return $val;
+            }
+            return array_filter(explode(',', $val));
+        };
+
+        $regionIds = $normalizeArray($request->input('region_ids', []));
+        $vendorIds = $normalizeArray($request->input('vendor_ids', []));
+        $statuses = $normalizeArray($request->input('statuses', []));
+        $contractTypeIds = $normalizeArray($request->input('contract_type_ids', []));
+        $picIds = $normalizeArray($request->input('pic_ids', []));
+        $departmentIds = $normalizeArray($request->input('department_ids', []));
+        $createdFrom = $request->input('created_from');
+        $createdTo = $request->input('created_to');
+
+        // Automatically restrict non-Admin users to their own department/division
+        if (! $isAdmin && $user->department_id) {
+            $departmentIds = [$user->department_id];
         }
 
-        // --- KPI Metrics ---
-        $totalContracts = (clone $baseQuery)->count();
+        $baseQuery = Contract::query();
 
+        // Apply division restriction for non-Admins
+        if (! $isAdmin && $user->department_id) {
+            $baseQuery->where(function ($q) use ($user) {
+                $q->whereHas('initiator', function ($sq) use ($user) {
+                    $sq->where('department_id', $user->department_id);
+                })
+                ->orWhere(function ($sq) use ($user) {
+                    $sq->whereNull('initiated_by_id')
+                        ->whereHas('creator', function ($ssq) use ($user) {
+                            $ssq->where('department_id', $user->department_id);
+                        });
+                });
+            });
+        }
+
+        // Apply Global Filters
+        if (! empty($createdFrom)) {
+            $baseQuery->whereDate('created_at', '>=', $createdFrom);
+        }
+        if (! empty($createdTo)) {
+            $baseQuery->whereDate('created_at', '<=', $createdTo);
+        }
+
+        if (! empty($statuses)) {
+            $baseQuery->whereIn('status', $statuses);
+        } else {
+            // Exclude drafts by default from dashboard
+            $baseQuery->where('status', '!=', 'draft');
+        }
+
+        if (! empty($contractTypeIds)) {
+            $baseQuery->whereIn('contract_type_id', $contractTypeIds);
+        }
+
+        if (! empty($vendorIds)) {
+            $baseQuery->whereIn('vendor_id', $vendorIds);
+        }
+
+        if (! empty($picIds)) {
+            $baseQuery->whereIn('assigned_pic_id', $picIds);
+        }
+
+        if (! empty($departmentIds)) {
+            $baseQuery->where(function ($q) use ($departmentIds) {
+                $q->whereHas('initiator', function ($sq) use ($departmentIds) {
+                    $sq->whereIn('department_id', $departmentIds);
+                })
+                ->orWhere(function ($sq) use ($departmentIds) {
+                    $sq->whereNull('initiated_by_id')
+                        ->whereHas('creator', function ($ssq) use ($departmentIds) {
+                            $ssq->whereIn('department_id', $departmentIds);
+                        });
+                });
+            });
+        }
+
+        if (! empty($regionIds)) {
+            $baseQuery->where(function ($q) use ($regionIds) {
+                $q->whereHas('initiator.department.company', function ($sq) use ($regionIds) {
+                    $sq->whereIn('region_id', $regionIds);
+                })
+                ->orWhere(function ($sq) use ($regionIds) {
+                    $sq->whereNull('initiated_by_id')
+                        ->whereHas('creator.department.company', function ($ssq) use ($regionIds) {
+                            $ssq->whereIn('region_id', $regionIds);
+                        });
+                });
+            });
+        }
+
+        // 1. KPI Cards values
+        $totalContracts = (clone $baseQuery)->count();
+        $activeContracts = (clone $baseQuery)->where('status', 'approved')->where(fn($q) => $q->whereNull('end_date')->orWhereDate('end_date', '>=', now()->toDateString()))->count();
+        $expiringContracts = (clone $baseQuery)->where('status', 'approved')->whereNotNull('end_date')->whereDate('end_date', '>=', now()->toDateString())->whereDate('end_date', '<=', now()->addDays(30)->toDateString())->count();
+        $expiredContracts = (clone $baseQuery)->where('status', 'approved')->whereNotNull('end_date')->whereDate('end_date', '<', now()->toDateString())->count();
+        $pendingContracts = (clone $baseQuery)->whereIn('status', ['in_review', 'locked'])->count();
+
+        $renewedContractsCount = (clone $baseQuery)->whereNotNull('parent_id')->count();
+        $renewalRate = ($expiredContracts + $renewedContractsCount) > 0
+            ? round(($renewedContractsCount / ($expiredContracts + $renewedContractsCount)) * 100, 1)
+            : 0;
+
+        $totalValue = (clone $baseQuery)->select('f2_price')->get()->sum(fn($c) => $this->parsePrice($c->f2_price));
+
+        // Average Cycle Time
         $approvedContracts = (clone $baseQuery)
             ->where('status', 'approved')
             ->orderByDesc('updated_at')
@@ -386,28 +496,83 @@ class ContractController extends Controller
 
             $totalDays = $approvedContracts->sum(function ($c) use ($firstApprovals) {
                 $firstSentAt = $firstApprovals[$c->id] ?? null;
-
                 return $firstSentAt ? Carbon::parse($firstSentAt)->diffInHours($c->updated_at) / 24 : 0;
             });
             $avgDays = round($totalDays / $approvedContracts->count(), 1);
         }
 
-        $pendingApprovals = Approval::where('user_id', Auth::id())->where('status', 'pending')->count();
+        // 2. Overview Tab Datasets
+        // Expiry timeline counts
+        $expiryTimeline = [
+            'under30' => (clone $baseQuery)->where('status', 'approved')->whereNotNull('end_date')->whereDate('end_date', '>=', now()->toDateString())->whereDate('end_date', '<', now()->addDays(30)->toDateString())->count(),
+            'under60' => (clone $baseQuery)->where('status', 'approved')->whereNotNull('end_date')->whereDate('end_date', '>=', now()->addDays(30)->toDateString())->whereDate('end_date', '<', now()->addDays(60)->toDateString())->count(),
+            'under90' => (clone $baseQuery)->where('status', 'approved')->whereNotNull('end_date')->whereDate('end_date', '>=', now()->addDays(60)->toDateString())->whereDate('end_date', '<', now()->addDays(90)->toDateString())->count(),
+            'above90' => (clone $baseQuery)->where('status', 'approved')->where(fn($q) => $q->whereNull('end_date')->orWhereDate('end_date', '>=', now()->addDays(90)->toDateString()))->count(),
+        ];
 
-        $approvedThisMonth = (clone $baseQuery)
+        // Approval Status
+        $approvalStatusCounts = [
+            'approved' => (clone $baseQuery)->where('status', 'approved')->count(),
+            'pending' => (clone $baseQuery)->whereIn('status', ['in_review', 'locked'])->count(),
+            'revision' => (clone $baseQuery)->where('status', 'revision')->count(),
+            'rejected' => (clone $baseQuery)->where('status', 'rejected')->count(),
+        ];
+
+        // Recent Contracts (5 latest)
+        $recentContracts = (clone $baseQuery)
+            ->with(['creator', 'contractType'])
+            ->orderByDesc('created_at')
+            ->limit(5)
+            ->get()
+            ->map(fn ($item) => [
+                'id' => $item->id,
+                'contract_no' => $item->contract_no,
+                'title' => $item->title,
+                'status' => $item->status,
+                'creator' => $item->creator?->name,
+                'type' => $item->contractType?->name,
+                'price' => $item->f2_price,
+                'created_at' => $item->created_at,
+            ])
+            ->values();
+
+        // Upcoming Renewals (5 latest)
+        $upcomingRenewals = (clone $baseQuery)
             ->where('status', 'approved')
-            ->where('updated_at', '>=', now()->startOfMonth())
-            ->count();
-
-        $revisionCount = (clone $baseQuery)->where('status', 'revision')->count();
-        $expiringCount = (clone $baseQuery)
             ->whereNotNull('end_date')
-            ->whereDate('end_date', '>=', now())
-            ->whereDate('end_date', '<=', now()->addDays(30))
-            ->count();
-        $attentionCount = $revisionCount + $expiringCount;
+            ->whereDate('end_date', '>=', now()->toDateString())
+            ->orderBy('end_date', 'asc')
+            ->limit(5)
+            ->get()
+            ->map(fn ($item) => [
+                'id' => $item->id,
+                'contract_no' => $item->contract_no,
+                'title' => $item->title,
+                'end_date' => $item->end_date,
+                'vendor_name' => $item->vendor?->name,
+                'creator' => $item->creator?->name,
+            ])
+            ->values();
 
-        // --- Status Distribution ---
+        // Pending Approvals List (5 latest)
+        $pendingApprovalsList = Approval::where('user_id', Auth::id())
+            ->where('status', 'pending')
+            ->with(['contract.creator', 'contract.contractType'])
+            ->orderByDesc('created_at')
+            ->limit(5)
+            ->get()
+            ->map(fn ($app) => [
+                'id' => $app->id,
+                'contract_id' => $app->contract_id,
+                'contract_no' => $app->contract?->contract_no,
+                'title' => $app->contract?->title,
+                'creator' => $app->contract?->creator?->name,
+                'type' => $app->contract?->contractType?->name,
+                'requested_at' => $app->created_at,
+            ])
+            ->values();
+
+        // Status distribution for donut
         $statusDistribution = (clone $baseQuery)
             ->select('status', DB::raw('count(*) as count'))
             ->groupBy('status')
@@ -418,46 +583,285 @@ class ContractController extends Controller
             ])
             ->values();
 
-        // --- Type Distribution (Top 5) ---
-        $typeDistribution = DB::table('t_contracts')
-            ->join('m_contract_types', 't_contracts.contract_type_id', '=', 'm_contract_types.id')
-            ->when(! $isAdmin, fn ($q) => $q->where('t_contracts.created_by', $user->id))
-            ->select('m_contract_types.name as type_name', DB::raw('count(*) as count'))
-            ->groupBy('m_contract_types.name')
-            ->orderByDesc('count')
-            ->limit(5)
+        // 3. Trend Tab Datasets
+        // Monthly Growth
+        $monthlyTrend = collect();
+        for ($i = 5; $i >= 0; $i--) {
+            $monthStart = now()->subMonths($i)->startOfMonth();
+            $monthEnd = now()->subMonths($i)->endOfMonth();
+            $contractsInMonth = (clone $baseQuery)->whereBetween('created_at', [$monthStart, $monthEnd])->get();
+            $monthlyTrend->push([
+                'month' => $monthStart->translatedFormat('M'),
+                'count' => $contractsInMonth->count(),
+                'value' => $contractsInMonth->sum(fn($c) => $this->parsePrice($c->f2_price)),
+            ]);
+        }
+
+        // Renewal vs Expired Trend
+        $renewalVsExpiredTrend = collect();
+        for ($i = 5; $i >= 0; $i--) {
+            $monthStart = now()->subMonths($i)->startOfMonth();
+            $monthEnd = now()->subMonths($i)->endOfMonth();
+            $expiredCount = (clone $baseQuery)->where('status', 'approved')->whereBetween('end_date', [$monthStart, $monthEnd])->count();
+            $renewedCount = (clone $baseQuery)->whereNotNull('parent_id')->whereBetween('created_at', [$monthStart, $monthEnd])->count();
+            $renewalVsExpiredTrend->push([
+                'month' => $monthStart->translatedFormat('M'),
+                'expired' => $expiredCount,
+                'renewed' => $renewedCount,
+            ]);
+        }
+
+        // Monthly Approval Trend
+        $monthlyApprovalTrend = collect();
+        for ($i = 5; $i >= 0; $i--) {
+            $monthStart = now()->subMonths($i)->startOfMonth();
+            $monthEnd = now()->subMonths($i)->endOfMonth();
+            $contracts = (clone $baseQuery)->whereBetween('created_at', [$monthStart, $monthEnd])->get();
+            $monthlyApprovalTrend->push([
+                'month' => $monthStart->translatedFormat('M'),
+                'approved' => $contracts->where('status', 'approved')->count(),
+                'pending' => $contracts->whereIn('status', ['in_review', 'locked'])->count(),
+                'revision' => $contracts->where('status', 'revision')->count(),
+                'rejected' => $contracts->where('status', 'rejected')->count(),
+            ]);
+        }
+
+        // Top Vendor Activity
+        $topVendors = (clone $baseQuery)
+            ->whereNotNull('vendor_id')
+            ->with('vendor')
             ->get()
-            ->map(fn ($item) => [
-                'name' => $item->type_name,
-                'count' => (int) $item->count,
+            ->groupBy('vendor_id')
+            ->map(function ($group) {
+                $vendor = $group->first()->vendor;
+                return [
+                    'name' => $vendor?->name ?? 'Unknown Vendor',
+                    'count' => $group->count(),
+                    'value' => $group->sum(fn($c) => $this->parsePrice($c->f2_price)),
+                ];
+            })
+            ->sortByDesc('value')
+            ->take(5)
+            ->values();
+
+        // Category Trend
+        $allCategories = ContractType::all();
+        $categoryTrend = collect();
+        for ($i = 5; $i >= 0; $i--) {
+            $monthStart = now()->subMonths($i)->startOfMonth();
+            $monthEnd = now()->subMonths($i)->endOfMonth();
+            $row = ['month' => $monthStart->translatedFormat('M')];
+            foreach ($allCategories as $cat) {
+                $count = (clone $baseQuery)->where('contract_type_id', $cat->id)->whereBetween('created_at', [$monthStart, $monthEnd])->count();
+                $row[$cat->name] = $count;
+            }
+            $categoryTrend->push($row);
+        }
+
+        // 4. Analisis Tab Datasets
+        // Expiry Risk Heatmap
+        $expiryRiskHeatmap = (clone $baseQuery)
+            ->where('status', 'approved')
+            ->with(['initiator.department', 'creator.department'])
+            ->get()
+            ->groupBy(function($c) {
+                return $c->initiator?->department?->name ?? $c->creator?->department?->name ?? 'Tanpa Divisi';
+            })
+            ->map(function ($group, $deptName) {
+                $highRisk = 0; $medRisk = 0; $lowRisk = 0;
+                foreach ($group as $c) {
+                    if (empty($c->end_date)) {
+                        $lowRisk++;
+                        continue;
+                    }
+                    $days = Carbon::parse($c->end_date)->diffInDays(now(), false);
+                    if ($days > 0 || abs($days) < 30) {
+                        $highRisk++;
+                    } elseif (abs($days) <= 90) {
+                        $medRisk++;
+                    } else {
+                        $lowRisk++;
+                    }
+                }
+                return [
+                    'department' => $deptName,
+                    'high' => $highRisk,
+                    'medium' => $medRisk,
+                    'low' => $lowRisk,
+                ];
+            })
+            ->values();
+
+        // Renewal Failure Count per Category
+        $allContracts = Contract::select('id', 'parent_id')->get();
+        $renewedIds = $allContracts->whereNotNull('parent_id')->pluck('parent_id')->all();
+        $renewalFailureByCategory = (clone $baseQuery)
+            ->where('status', 'approved')
+            ->whereNotNull('end_date')
+            ->whereDate('end_date', '<', now()->toDateString())
+            ->with('contractType')
+            ->get()
+            ->groupBy(fn($c) => $c->contractType?->name ?? 'Lainnya')
+            ->map(function ($group, $catName) use ($renewedIds) {
+                $renewed = 0; $failed = 0;
+                foreach ($group as $c) {
+                    if (in_array($c->id, $renewedIds)) {
+                        $renewed++;
+                    } else {
+                        $failed++;
+                    }
+                }
+                return ['category' => $catName, 'renewed' => $renewed, 'failed' => $failed];
+            })
+            ->values();
+
+        // Vendor Performance
+        $vendorPerformance = (clone $baseQuery)
+            ->whereNotNull('vendor_id')
+            ->with('vendor')
+            ->get()
+            ->groupBy('vendor_id')
+            ->map(function ($group) use ($renewedIds) {
+                $vendor = $group->first()->vendor;
+                $total = $group->count();
+                $renewed = $group->filter(fn($c) => in_array($c->id, $renewedIds) || $c->parent_id !== null)->count();
+
+                $approvedGroup = $group->where('status', 'approved');
+                $avgDays = 0;
+                if ($approvedGroup->count() > 0) {
+                    $contractIds = $approvedGroup->pluck('id');
+                    $firstApprovals = Approval::whereIn('contract_id', $contractIds)
+                        ->select('contract_id', DB::raw('MIN(created_at) as first_sent_at'))
+                        ->groupBy('contract_id')
+                        ->pluck('first_sent_at', 'contract_id')
+                        ->all();
+                    $totalDays = $approvedGroup->sum(function ($c) use ($firstApprovals) {
+                        $firstSentAt = $firstApprovals[$c->id] ?? null;
+                        return $firstSentAt ? Carbon::parse($firstSentAt)->diffInHours($c->updated_at) / 24 : 0;
+                    });
+                    $avgDays = round($totalDays / $approvedGroup->count(), 1);
+                }
+                return [
+                    'name' => $vendor?->name ?? 'Unknown',
+                    'total' => $total,
+                    'renewal_rate' => $total > 0 ? round(($renewed / $total) * 100, 1) : 0,
+                    'avg_cycle_time' => $avgDays,
+                ];
+            })
+            ->sortByDesc('total')
+            ->take(5)
+            ->values();
+
+        // Value Distribution
+        $valueDistribution = [
+            ['range' => '< Rp 50M', 'count' => 0],
+            ['range' => 'Rp 50M - 500M', 'count' => 0],
+            ['range' => '> Rp 500M', 'count' => 0],
+        ];
+        $prices = (clone $baseQuery)->select('f2_price')->get()->map(fn($c) => $this->parsePrice($c->f2_price));
+        foreach ($prices as $price) {
+            if ($price < 50000000) {
+                $valueDistribution[0]['count']++;
+            } elseif ($price <= 500000000) {
+                $valueDistribution[1]['count']++;
+            } else {
+                $valueDistribution[2]['count']++;
+            }
+        }
+
+        // Budget Allocation (Value by Category)
+        $budgetAllocation = (clone $baseQuery)
+            ->with('contractType')
+            ->get()
+            ->groupBy(fn($c) => $c->contractType?->name ?? 'Lainnya')
+            ->map(fn($group, $catName) => [
+                'name' => $catName,
+                'value' => $group->sum(fn($c) => $this->parsePrice($c->f2_price)),
             ])
             ->values();
 
-        // --- Monthly Trend (last 6 months) ---
-        $monthlyTrend = DB::table('t_contracts')
-            ->when(! $isAdmin, fn ($q) => $q->where('t_contracts.created_by', $user->id))
-            ->select(
-                DB::getDriverName() === 'sqlite'
-                    ? DB::raw("strftime('%Y-%m', created_at) as month_key")
-                    : DB::raw("to_char(created_at, 'YYYY-MM') as month_key"),
-                DB::getDriverName() === 'sqlite'
-                    ? DB::raw("strftime('%m', created_at) as month_label")
-                    : DB::raw("to_char(created_at, 'Mon') as month_label"),
-                DB::raw('count(*) as total'),
-            )
-            ->where('created_at', '>=', now()->subMonths(6))
-            ->groupBy('month_key', 'month_label')
-            ->orderBy('month_key')
+        // Approval Duration per Department
+        $approvalDurationByDept = (clone $baseQuery)
+            ->where('status', 'approved')
+            ->with(['initiator.department', 'creator.department'])
             ->get()
-            ->map(fn ($item) => [
-                'month' => DB::getDriverName() === 'sqlite'
-                    ? Carbon::createFromFormat('m', $item->month_label)->format('M')
-                    : $item->month_label,
-                'total' => (int) $item->total,
-            ])
+            ->groupBy(function($c) {
+                return $c->initiator?->department?->name ?? $c->creator?->department?->name ?? 'Tanpa Divisi';
+            })
+            ->map(function ($group, $deptName) {
+                $contractIds = $group->pluck('id');
+                $firstApprovals = Approval::whereIn('contract_id', $contractIds)
+                    ->select('contract_id', DB::raw('MIN(created_at) as first_sent_at'))
+                    ->groupBy('contract_id')
+                    ->pluck('first_sent_at', 'contract_id')
+                    ->all();
+                $totalDays = $group->sum(function ($c) use ($firstApprovals) {
+                    $firstSentAt = $firstApprovals[$c->id] ?? null;
+                    return $firstSentAt ? Carbon::parse($firstSentAt)->diffInHours($c->updated_at) / 24 : 0;
+                });
+                return [
+                    'department' => $deptName,
+                    'avg_days' => $group->count() > 0 ? round($totalDays / $group->count(), 1) : 0,
+                ];
+            })
             ->values();
 
-        // --- Recent Activity Feed ---
+        // 5. Workload Tab Datasets
+        // User Workloads
+        $userWorkloads = User::with('department')
+            ->get()
+            ->map(function ($u) {
+                $activeCount = Contract::where('assigned_pic_id', $u->id)->whereIn('status', ['in_review', 'revision'])->count();
+                $pendingCount = Approval::where('user_id', $u->id)->where('status', 'pending')->count();
+                $initiatedCount = Contract::where(function ($query) use ($u) {
+                    $query->where('initiated_by_id', $u->id)->orWhere(function ($q) use ($u) {
+                        $q->whereNull('initiated_by_id')->where('created_by', $u->id);
+                    });
+                })->count();
+                return [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'email' => $u->email,
+                    'initials' => $u->initials,
+                    'role' => $u->role,
+                    'position' => $u->position,
+                    'bg_color' => $u->bg_color,
+                    'text_color' => $u->text_color,
+                    'department_name' => $u->department?->name,
+                    'department_id' => $u->department_id,
+                    'active_contracts_count' => $activeCount,
+                    'pending_tasks_count' => $pendingCount,
+                    'initiated_contracts_count' => $initiatedCount,
+                    'load_status' => $activeCount >= 3 ? 'Sibuk' : 'Ready',
+                ];
+            })
+            ->sortByDesc('active_contracts_count')
+            ->values();
+
+        // Department Workload Heatmap
+        $departmentWorkload = (clone $baseQuery)
+            ->whereIn('status', ['in_review', 'revision', 'locked'])
+            ->with(['initiator.department', 'creator.department'])
+            ->get()
+            ->groupBy(function($c) {
+                return $c->initiator?->department?->name ?? $c->creator?->department?->name ?? 'Tanpa Divisi';
+            })
+            ->map(fn($group, $deptName) => [
+                'department' => $deptName,
+                'in_review' => $group->where('status', 'in_review')->count(),
+                'revision' => $group->where('status', 'revision')->count(),
+                'locked' => $group->where('status', 'locked')->count(),
+                'total' => $group->count(),
+            ])
+            ->sortByDesc('total')
+            ->values();
+
+        // Renewal completion rate
+        $totalExpired = (clone $baseQuery)->where('status', 'approved')->whereNotNull('end_date')->whereDate('end_date', '<', now()->toDateString())->count();
+        $totalRenewed = (clone $baseQuery)->whereNotNull('parent_id')->count();
+        $renewalCompletionRate = $totalExpired > 0 ? round(($totalRenewed / $totalExpired) * 100, 1) : 100;
+
+        // Recent Activity Feed
         $recentActivity = DB::table('t_contract_h')
             ->leftJoin('m_users', 't_contract_h.actor_id', '=', 'm_users.id')
             ->leftJoin('t_contracts', 't_contract_h.contract_id', '=', 't_contracts.id')
@@ -470,7 +874,7 @@ class ContractController extends Controller
                 'm_users.name as actor_name',
                 't_contracts.id as contract_id',
                 't_contracts.title as contract_title',
-                't_contracts.contract_no',
+                't_contracts.contract_no'
             )
             ->orderByDesc('t_contract_h.created_at')
             ->limit(10)
@@ -487,49 +891,135 @@ class ContractController extends Controller
             ])
             ->values();
 
-        // --- Recent Contracts (5 latest) ---
-        $recentContracts = DB::table('t_contracts')
-            ->leftJoin('m_users', 't_contracts.created_by', '=', 'm_users.id')
-            ->leftJoin('m_contract_types', 't_contracts.contract_type_id', '=', 'm_contract_types.id')
-            ->when(! $isAdmin, fn ($q) => $q->where('t_contracts.created_by', $user->id))
-            ->select(
-                't_contracts.id',
-                't_contracts.contract_no',
-                't_contracts.title',
-                't_contracts.status',
-                't_contracts.created_at',
-                'm_users.name as creator_name',
-                'm_contract_types.name as type_name',
-            )
-            ->orderByDesc('t_contracts.created_at')
-            ->limit(5)
+        // Category Traffic
+        $categoryTraffic = ContractType::orderBy('name')
             ->get()
-            ->map(fn ($item) => [
-                'id' => $item->id,
-                'contract_no' => $item->contract_no,
-                'title' => $item->title,
-                'status' => $item->status,
-                'creator' => $item->creator_name,
-                'type' => $item->type_name,
-                'created_at' => $item->created_at,
-            ])
-            ->values();
+            ->map(function ($type) use ($baseQuery) {
+                $incoming = (clone $baseQuery)->where('contract_type_id', $type->id)->whereIn('status', ['in_review', 'revision'])->count();
+                $outgoing = (clone $baseQuery)->where('contract_type_id', $type->id)->whereIn('status', ['approved', 'locked', 'archived'])->count();
+                return [
+                    'category_name' => $type->name,
+                    'incoming_count' => $incoming,
+                    'outgoing_count' => $outgoing,
+                ];
+            })
+            ->values()
+            ->all();
+
+        // Department Traffic
+        $departmentTraffic = \App\Models\Department::orderBy('name')
+            ->get()
+            ->map(function ($dept) use ($baseQuery) {
+                $incoming = (clone $baseQuery)->where(function ($q) use ($dept) {
+                    $q->whereHas('initiator', fn ($sq) => $sq->where('department_id', $dept->id))
+                        ->orWhere(function ($sq) use ($dept) {
+                            $sq->whereNull('initiated_by_id')
+                                ->whereHas('creator', fn ($ssq) => $ssq->where('department_id', $dept->id));
+                        });
+                })
+                    ->whereIn('status', ['in_review', 'revision'])
+                    ->count();
+
+                $outgoing = (clone $baseQuery)->where(function ($q) use ($dept) {
+                    $q->whereHas('initiator', fn ($sq) => $sq->where('department_id', $dept->id))
+                        ->orWhere(function ($sq) use ($dept) {
+                            $sq->whereNull('initiated_by_id')
+                                ->whereHas('creator', fn ($ssq) => $ssq->where('department_id', $dept->id));
+                        });
+                })
+                    ->whereIn('status', ['approved', 'locked', 'archived'])
+                    ->count();
+
+                return [
+                    'department_id' => $dept->id,
+                    'department_name' => $dept->name,
+                    'incoming_count' => $incoming,
+                    'outgoing_count' => $outgoing,
+                    'member_count' => User::where('department_id', $dept->id)->count(),
+                ];
+            })
+            ->values()
+            ->all();
 
         return [
             'metrics' => [
                 'totalContracts' => $totalContracts,
-                'pendingApprovals' => $pendingApprovals,
-                'approvedThisMonth' => $approvedThisMonth,
-                'attentionCount' => $attentionCount,
+                'activeContracts' => $activeContracts,
+                'expiringContracts' => $expiringContracts,
+                'expiredContracts' => $expiredContracts,
+                'pendingContracts' => $pendingContracts,
+                'pendingApprovals' => $pendingContracts, // fallback compatibility
+                'renewalRate' => $renewalRate,
+                'totalValue' => $totalValue,
                 'avgCycleTime' => $avgDays,
             ],
+            // Tab 1: Ringkasan
             'statusDistribution' => $statusDistribution,
-            'typeDistribution' => $typeDistribution,
-            'monthlyTrend' => $monthlyTrend,
-            'recentActivity' => $recentActivity,
+            'expiryTimeline' => $expiryTimeline,
+            'approvalStatusCounts' => $approvalStatusCounts,
             'recentContracts' => $recentContracts,
+            'upcomingRenewals' => $upcomingRenewals,
+            'pendingApprovalsList' => $pendingApprovalsList,
+            'recentActivity' => $recentActivity,
+
+            // Tab 2: Trend
+            'monthlyTrend' => $monthlyTrend,
+            'renewalVsExpiredTrend' => $renewalVsExpiredTrend,
+            'monthlyApprovalTrend' => $monthlyApprovalTrend,
+            'topVendors' => $topVendors,
+            'categoryTrend' => $categoryTrend,
+
+            // Tab 3: Analisis
+            'expiryRiskHeatmap' => $expiryRiskHeatmap,
+            'renewalFailureByCategory' => $renewalFailureByCategory,
+            'vendorPerformance' => $vendorPerformance,
+            'valueDistribution' => $valueDistribution,
+            'budgetAllocation' => $budgetAllocation,
+            'approvalDurationByDept' => $approvalDurationByDept,
+
+            // Tab 4: Workload
+            'userWorkloads' => $userWorkloads,
+            'departmentWorkload' => $departmentWorkload,
+            'categoryTraffic' => $categoryTraffic,
+            'renewalCompletionRate' => $renewalCompletionRate,
+            'departmentTraffic' => $departmentTraffic,
         ];
     }
+
+    private function parsePrice(?string $price): float
+    {
+        if (empty($price)) {
+            return 0.0;
+        }
+        $clean = preg_replace('/[^\d.,]/', '', $price);
+        $hasDot = str_contains($clean, '.');
+        $hasComma = str_contains($clean, ',');
+
+        if ($hasDot && $hasComma) {
+            if (strpos($clean, '.') < strpos($clean, ',')) {
+                $clean = str_replace('.', '', $clean);
+                $clean = str_replace(',', '.', $clean);
+            } else {
+                $clean = str_replace(',', '', $clean);
+            }
+        } elseif ($hasComma) {
+            if (preg_match('/,\d{2}$/', $clean)) {
+                $clean = str_replace(',', '.', $clean);
+            } else {
+                $clean = str_replace(',', '', $clean);
+            }
+        } elseif ($hasDot) {
+            if (substr_count($clean, '.') > 1) {
+                $clean = str_replace('.', '', $clean);
+            } else {
+                if (preg_match('/\.\d{3}$/', $clean)) {
+                    $clean = str_replace('.', '', $clean);
+                }
+            }
+        }
+        return (float) $clean;
+    }
+    
 
     public function getTypes(): JsonResponse
     {
