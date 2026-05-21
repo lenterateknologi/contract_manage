@@ -24,13 +24,13 @@ const WorkflowNameCell = ({ row }: { readonly row: any }) => (
 );
 
 const InitiatorCell = ({ row }: { readonly row: any }) => {
-    let text =
+    const text =
         row.initiator_type === 'all'
             ? 'Publik'
             : row.initiator_type === 'role'
               ? `${row.initiator_roles?.length || 0} Role`
               : `${row.initiator_users?.length || 0} User`;
-    let Icon = row.initiator_type === 'all' ? UsersIcon : row.initiator_type === 'role' ? Shield : UserCheck;
+    const Icon = row.initiator_type === 'all' ? UsersIcon : row.initiator_type === 'role' ? Shield : UserCheck;
     return (
         <div className="flex items-center gap-2">
             <div className="bg-primary/[0.03] text-primary/40 rounded-md p-1 dark:bg-white/[0.03] dark:text-white/40">

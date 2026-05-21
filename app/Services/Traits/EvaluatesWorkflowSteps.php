@@ -89,22 +89,130 @@ trait EvaluatesWorkflowSteps
         }
 
         $condition = $step->condition_expression ?? '';
+        $meta = $step->meta ?? [];
+
+        // Check if there is a structured meta condition
+        if (! empty($meta['condition_key'])) {
+            $key = $meta['condition_key'];
+            $operator = $meta['condition_operator'] ?? 'truthy';
+            $expected = $meta['condition_value'] ?? '';
+
+            $metadata = $contract->metadata ?? [];
+            $actual = $metadata[$key] ?? null;
+
+            if ($key === 'contract.has_tax' && $actual === null) {
+                $actual = $metadata['tax_required'] ?? null;
+            }
+
+            $isActive = false;
+            switch ($operator) {
+                case '==':
+                    $actualStr = is_bool($actual) ? ($actual ? 'true' : 'false') : (string) $actual;
+                    $isActive = ($actualStr === (string) $expected ||
+                                 (in_array($expected, ['true', '1', 'yes'], true) && in_array($actual, [true, 'true', 1, '1', 'on', 'yes'], true)) ||
+                                 (in_array($expected, ['false', '0', 'no'], true) && in_array($actual, [false, 'false', 0, '0', 'off', 'no', null], true)));
+
+                    break;
+                case '!=':
+                    $actualStr = is_bool($actual) ? ($actual ? 'true' : 'false') : (string) $actual;
+                    $isActive = ($actualStr !== (string) $expected &&
+                                 ! (in_array($expected, ['true', '1', 'yes'], true) && in_array($actual, [true, 'true', 1, '1', 'on', 'yes'], true)) &&
+                                 ! (in_array($expected, ['false', '0', 'no'], true) && in_array($actual, [false, 'false', 0, '0', 'off', 'no', null], true)));
+
+                    break;
+                case '>':
+                    $isActive = ((float) $actual > (float) $expected);
+
+                    break;
+                case '<':
+                    $isActive = ((float) $actual < (float) $expected);
+
+                    break;
+                case 'contains':
+                    $isActive = ($actual !== null && str_contains(strtolower((string) $actual), strtolower((string) $expected)));
+
+                    break;
+                case 'truthy':
+                default:
+                    $isActive = in_array($actual, [true, 'true', 1, '1', 'on', 'yes'], true);
+
+                    break;
+            }
+
+            if (! $isActive) {
+                return false;
+            }
+        }
 
         // Dynamic Meta Key logic: if condition is set and not a special 'initiator_' keyword
         if (! empty($condition) && ! str_starts_with($condition, 'initiator_')) {
             $metadata = $contract->metadata ?? [];
-            $val = $metadata[$condition] ?? null;
-            if ($condition === 'contract.has_tax' && $val === null) {
-                $val = $metadata['tax_required'] ?? null;
+
+            // Detect if condition contains operators for dynamic parsing
+            $key = $condition;
+            $operator = 'truthy';
+            $expected = '';
+
+            foreach (['==', '!=', '>', '<', 'contains'] as $op) {
+                if (str_contains($condition, " {$op} ")) {
+                    $parts = explode(" {$op} ", $condition);
+                    $key = trim($parts[0]);
+                    $operator = $op;
+                    $expected = trim($parts[1]);
+
+                    break;
+                } elseif (str_contains($condition, $op)) {
+                    $parts = explode($op, $condition);
+                    $key = trim($parts[0]);
+                    $operator = $op;
+                    $expected = trim($parts[1]);
+
+                    break;
+                }
             }
 
-            // If the meta key exists and is truthy, the step is active
-            if (in_array($val, [true, 'true', 1, '1', 'on', 'yes'], true)) {
-                return true;
+            $actual = $metadata[$key] ?? null;
+            if ($key === 'contract.has_tax' && $actual === null) {
+                $actual = $metadata['tax_required'] ?? null;
             }
 
-            // Otherwise, skip the step
-            return false;
+            $isActive = false;
+            if ($operator === 'truthy') {
+                $isActive = in_array($actual, [true, 'true', 1, '1', 'on', 'yes'], true);
+            } else {
+                switch ($operator) {
+                    case '==':
+                        $actualStr = is_bool($actual) ? ($actual ? 'true' : 'false') : (string) $actual;
+                        $isActive = ($actualStr === (string) $expected ||
+                                     (in_array($expected, ['true', '1', 'yes'], true) && in_array($actual, [true, 'true', 1, '1', 'on', 'yes'], true)) ||
+                                     (in_array($expected, ['false', '0', 'no'], true) && in_array($actual, [false, 'false', 0, '0', 'off', 'no', null], true)));
+
+                        break;
+                    case '!=':
+                        $actualStr = is_bool($actual) ? ($actual ? 'true' : 'false') : (string) $actual;
+                        $isActive = ($actualStr !== (string) $expected &&
+                                     ! (in_array($expected, ['true', '1', 'yes'], true) && in_array($actual, [true, 'true', 1, '1', 'on', 'yes'], true)) &&
+                                     ! (in_array($expected, ['false', '0', 'no'], true) && in_array($actual, [false, 'false', 0, '0', 'off', 'no', null], true)));
+
+                        break;
+                    case '>':
+                        $isActive = ((float) $actual > (float) $expected);
+
+                        break;
+                    case '<':
+                        $isActive = ((float) $actual < (float) $expected);
+
+                        break;
+                    case 'contains':
+                        $isActive = ($actual !== null && str_contains(strtolower((string) $actual), strtolower((string) $expected)));
+
+                        break;
+                }
+            }
+
+            if (! $isActive) {
+                return false;
+            }
         }
 
         // Condition: Direct Supervisor Review (only if initiator is Staff)
@@ -197,9 +305,8 @@ trait EvaluatesWorkflowSteps
 
         foreach ($pendingApprovals as $approval) {
             $step = $approval->workflowStep;
-            // UPLOAD and SIGNING require physical actions — skip auto-approval for those
-            $autoApproveTypes = ['REVIEW', 'APPROVAL', 'SELECTION'];
-            if (in_array(strtoupper($step->step_type), $autoApproveTypes)) {
+            $skipCategories = ['signing', 'upload', 'joint_upload'];
+            if (! in_array(strtolower($step->step_category ?? ''), $skipCategories)) {
                 $this->approveContract($contract, $approval, 'Sistem: Persetujuan Otomatis (Sama dengan penyetujui/inisiator sebelumnya)');
             }
         }

@@ -109,7 +109,7 @@ export const InteractiveForm: React.FC<InteractiveFormProps> = ({
 
         const rootFields = (template?.fields || []).filter((f) => !f.parent_id).sort((a, b) => (a.order || 0) - (b.order || 0));
 
-        let resultPages: FormField[][] = [[]];
+        const resultPages: FormField[][] = [[]];
         let currentHeight = 0;
         let currentPageIdx = 0;
 

@@ -44,7 +44,7 @@ export function RejectModal({ isOpen, onClose, step, idx, showToast }: RejectMod
                     <AlertCircle size={16} className="mt-0.5 shrink-0 animate-pulse text-rose-500" />
                     <div className="text-[11px] leading-relaxed font-medium text-rose-700 dark:text-rose-400">
                         <strong>Pemberitahuan Rejeksi:</strong> Kontrak akan dikembalikan ke{' '}
-                        <strong>{step.reject_target ? `TAHAP ${step.reject_target}` : 'INISIATOR'}</strong> untuk direvisi sesuai alasan penolakan di
+                        <strong>TAHAP 1 (INISIATOR)</strong> untuk direvisi sesuai alasan penolakan di
                         bawah.
                     </div>
                 </div>

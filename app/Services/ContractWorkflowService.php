@@ -104,10 +104,16 @@ class ContractWorkflowService
             throw new \Exception('Tidak ada tahapan alur kerja yang valid untuk permintaan ini.');
         }
 
+        $statusStr = ($firstStep->meta && isset($firstStep->meta['target_status']) && ! empty($firstStep->meta['target_status']))
+            ? $firstStep->meta['target_status']
+            : ($firstStep->step === 1 ? 'draft' : 'in_review');
+        $nextStatus = ContractStatus::where('code', $statusStr)->first();
+
         $contract->update([
             'workflow_id' => $workflow->id,
             'workflow_step_id' => $firstStep->id,
-            'status' => $firstStep->step === 1 ? 'draft' : 'in_review',
+            'status_id' => $nextStatus?->id ?: $contract->status_id,
+            'status' => $nextStatus?->code ?: $statusStr,
             'submitted_at' => $firstStep->step === 1 ? $contract->submitted_at : now(),
         ]);
 
@@ -184,7 +190,7 @@ class ContractWorkflowService
             }
         }
 
-        if ($step->step_type === 'SIGNING') {
+        if ($step->step_category === 'signing') {
             $metadata = $contract->metadata ?? [];
             $signing = $metadata['signing_state'] ?? ['phase' => 'SETUP', 'progress' => 0];
             $phase = $signing['phase'] ?? 'SETUP';
@@ -272,7 +278,7 @@ class ContractWorkflowService
     /**
      * Approve a contract (handles approval and moves to next step if all approved)
      */
-    public function approveContract(Contract $contract, Approval $approval, ?string $comment = null, ?string $attachmentPath = null, ?string $assignedPicId = null, ?string $executionOrder = null): Contract
+    public function approveContract(Contract $contract, Approval $approval, ?string $comment = null, ?string $attachmentPath = null, ?string $assignedPicId = null, ?string $executionOrder = null, ?string $actionCode = 'approve'): Contract
     {
 
         if (! in_array($approval->status, ['pending', 'waiting'])) {
@@ -366,7 +372,7 @@ class ContractWorkflowService
             $allApproved = true;
         }
 
-        if ($approval->workflowStep->step_type === 'SIGNING') {
+        if ($approval->workflowStep->step_category === 'signing') {
             $metadata = $contract->metadata ?? [];
             $signing = $metadata['signing_state'] ?? ['phase' => 'SETUP', 'progress' => 0];
             $phase = $signing['phase'] ?? 'SETUP';
@@ -441,17 +447,62 @@ class ContractWorkflowService
                 $contract->update(['metadata' => $metadata]);
             }
 
-            $nextStep = $this->findNextValidStep($contract, $approval->workflowStep);
+            $actionCode = $actionCode ?? 'approve';
+            $stepAction = $approval->workflowStep->actions()
+                ->whereHas('masterAction', function ($query) use ($actionCode) {
+                    $query->where('code', $actionCode);
+                })->first();
+
+            // Apply autofill fields
+            if ($stepAction && ! empty($stepAction->autofilled_fields)) {
+                $metadata = $contract->metadata ?? [];
+                foreach ($stepAction->autofilled_fields as $field) {
+                    $metadata[$field] = now()->toIso8601String();
+                }
+                $contract->update(['metadata' => $metadata]);
+            }
+
+            // Determine next step
+            $nextStep = null;
+            if ($stepAction) {
+                if ($stepAction->next_workflow_id) {
+                    // Cross-workflow transition!
+                    $contract->update(['workflow_id' => $stepAction->next_workflow_id]);
+                    if ($stepAction->next_workflow_step_id) {
+                        $nextStep = WorkflowStep::find($stepAction->next_workflow_step_id);
+                    } else {
+                        $nextStep = WorkflowStep::where('workflow_id', $stepAction->next_workflow_id)
+                            ->orderBy('step')
+                            ->first();
+                    }
+                } elseif ($stepAction->next_step_id) {
+                    $nextStep = WorkflowStep::find($stepAction->next_step_id);
+                } else {
+                    $nextStep = $this->findNextValidStep($contract, $approval->workflowStep);
+                }
+            } else {
+                $nextStep = $this->findNextValidStep($contract, $approval->workflowStep);
+            }
 
             if ($nextStep) {
+                $statusStr = ($nextStep->meta && isset($nextStep->meta['target_status']) && ! empty($nextStep->meta['target_status']))
+                    ? $nextStep->meta['target_status']
+                    : null;
 
-                $statusId = $nextStep->status_id ?: $contract->status_id;
+                if (! $statusStr) {
+                    $statusStr = 'in_review';
+                    if ($nextStep->step_category === 'signing') {
+                        $statusStr = 'locked';
+                    } elseif ($nextStep->step === 1) {
+                        $statusStr = 'draft';
+                    }
+                }
+                $nextStatus = ContractStatus::where('code', $statusStr)->first();
 
                 $contract->update([
                     'workflow_step_id' => $nextStep->id,
-                    'status_id' => $statusId,
-
-                    'status' => $nextStep->status ? $nextStep->status->code : $contract->status,
+                    'status_id' => $nextStatus?->id ?: $contract->status_id,
+                    'status' => $nextStatus?->code ?: $statusStr,
                 ]);
 
                 $this->createApprovalForStep($contract, $nextStep);
@@ -460,14 +511,11 @@ class ContractWorkflowService
 
                 $this->handleAutoApproval($contract, Auth::user());
             } else {
-
-                $finalStatusId = $approval->workflowStep->status_id;
-                $finalStatus = $approval->workflowStep->status;
-
-                if ($approval->workflowStep->step_type === 'CLOSING' && $finalStatus) {
+                $archivedStatus = ContractStatus::where('code', 'archived')->first();
+                if ($approval->workflowStep->step_category === 'closing' && $archivedStatus) {
                     $contract->update([
-                        'status_id' => $finalStatus->id,
-                        'status' => $finalStatus->code,
+                        'status_id' => $archivedStatus->id,
+                        'status' => $archivedStatus->code,
                         'workflow_step_id' => null,
                     ]);
                     $this->queryService->logHistory($contract, 'CONTRACT_COMPLETED', 'Alur kerja selesai (Arsip).', Auth::id());
@@ -499,56 +547,49 @@ class ContractWorkflowService
             ->where('status', 'pending')
             ->delete();
 
-        $currentStep = $approval->workflowStep;
-        $targetSequence = $currentStep->reject_target;
+        // Look up custom reject action config
+        $stepAction = $approval->workflowStep->actions()
+            ->whereHas('masterAction', function ($query) {
+                $query->where('code', 'reject');
+            })->first();
 
-        $description = "Rejected by {$approval->approver_name} ({$approval->role}): {$reason}.";
-
-        if ($targetSequence) {
-
-            $targetStep = WorkflowStep::where('workflow_id', $currentStep->workflow_id)
-                ->where('step', $targetSequence)
-                ->first();
-
-            if ($targetStep) {
-                $statusId = $targetStep->status_id;
-                if (! $statusId) {
-                    $revisionStatus = ContractStatus::where('code', 'revision')->first();
-                    $statusId = $revisionStatus?->id;
+        $targetStep = null;
+        if ($stepAction) {
+            if ($stepAction->next_workflow_id) {
+                $contract->update(['workflow_id' => $stepAction->next_workflow_id]);
+                if ($stepAction->next_workflow_step_id) {
+                    $targetStep = WorkflowStep::find($stepAction->next_workflow_step_id);
+                } else {
+                    $targetStep = WorkflowStep::where('workflow_id', $stepAction->next_workflow_id)
+                        ->orderBy('step')
+                        ->first();
                 }
-                $contract->update([
-                    'workflow_step_id' => $targetStep->id,
-                    'status_id' => $statusId,
-                    'status' => $targetStep->status ? $targetStep->status->code : 'revision',
-                ]);
-
-                $this->createApprovalForStep($contract, $targetStep);
-
-                $description .= " Sent back to Step {$targetSequence}: {$targetStep->description}.";
-            } else {
-
-                $revisionStatus = ContractStatus::where('code', 'revision')->first();
-                $contract->update([
-                    'status' => 'revision',
-                    'status_id' => $revisionStatus?->id,
-                    'workflow_step_id' => null,
-                ]);
-                $description .= " Sent back to Initiator (Target Step {$targetSequence} not found).";
+            } elseif ($stepAction->next_step_id) {
+                $targetStep = WorkflowStep::find($stepAction->next_step_id);
             }
-        } else {
+        }
 
+        if (! $targetStep) {
             $targetStep = WorkflowStep::where('workflow_id', $contract->workflow_id)
                 ->where('step', 1)
                 ->first();
-
-            $revisionStatus = ContractStatus::where('code', 'revision')->first();
-            $contract->update([
-                'status' => 'revision',
-                'status_id' => $revisionStatus?->id,
-                'workflow_step_id' => $targetStep ? $targetStep->id : null,
-            ]);
-            $description .= ' Sent back to Initiator for revision at Step 1.';
         }
+
+        $description = "Rejected by {$approval->approver_name} ({$approval->role}): {$reason}.";
+
+        $statusStr = ($targetStep && $targetStep->meta && isset($targetStep->meta['target_status']) && ! empty($targetStep->meta['target_status']))
+            ? $targetStep->meta['target_status']
+            : 'revision';
+        $revisionStatus = ContractStatus::where('code', $statusStr)->first();
+        $contract->update([
+            'status' => $revisionStatus?->code ?: $statusStr,
+            'status_id' => $revisionStatus?->id,
+            'workflow_step_id' => $targetStep ? $targetStep->id : null,
+        ]);
+
+        $description .= $targetStep
+            ? " Sent back to step {$targetStep->step}: {$targetStep->description}."
+            : ' Sent back to Initiator for revision.';
 
         $contract->approvals()
             ->where('workflow_step_id', $approval->workflow_step_id)

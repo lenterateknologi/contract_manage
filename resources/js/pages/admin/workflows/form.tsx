@@ -1,4 +1,5 @@
 import { FormSection, ManagementForm } from '@/components/admin/ManagementForm';
+import { SearchableMultiSelect } from '@/components/ui/forms/SearchableMultiSelect';
 import { WorkflowVisualizer } from '@/components/admin/WorkflowVisualizer';
 import { useToast } from '@/components/contracts/Toast';
 import { Button } from '@/components/ui/base/Button';
@@ -10,15 +11,11 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSo
 import { Head, router, useForm } from '@inertiajs/react';
 import {
     CheckCircle2,
-    ChevronUp,
     Edit3,
     ExternalLink,
     GitBranch,
-    Info,
     LayoutTemplate,
     PlusCircle,
-    Search,
-    Settings2,
     Shield,
     Users as UsersIcon,
 } from 'lucide-react';
@@ -40,14 +37,11 @@ export default function WorkflowEditor({
     companyGroups = [],
     regions = [],
     companies = [],
+    masterActions = [],
+    allWorkflows = [],
 }: any) {
     const { showToast } = useToast();
     const [isOrgExpanded, setIsOrgExpanded] = useState(false);
-    const [isInitiatorExpanded, setIsInitiatorExpanded] = useState(false);
-
-    const [initiatorUserSearch, setInitiatorUserSearch] = useState('');
-    const [initiatorRoleSearch, setInitiatorRoleSearch] = useState('');
-    const [initiatorDeptSearch, setInitiatorDeptSearch] = useState('');
 
     const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'list' | 'visual'>('list');
@@ -108,15 +102,38 @@ export default function WorkflowEditor({
     };
 
     const addLocalStep = () => {
+        const approveMaster = (masterActions || []).find((ma: any) => ma.code === 'approve');
+        const rejectMaster = (masterActions || []).find((ma: any) => ma.code === 'reject');
         form.setData('steps', [
             ...form.data.steps,
             {
                 id: `new-${Date.now()}`,
                 label: '',
-                actor_type: 'approver',
-                allowed_actions: ['approve', 'reject'],
+                approver_type: 'role',
+                step_category: null,
+                actions: [
+                    {
+                        id: `new-action-approve-${Date.now()}`,
+                        master_action_id: approveMaster?.id || '',
+                        master_action: approveMaster || null,
+                        next_step_id: null,
+                        next_workflow_id: null,
+                        next_workflow_step_id: null,
+                        required_fields: [],
+                        autofilled_fields: []
+                    },
+                    {
+                        id: `new-action-reject-${Date.now()}`,
+                        master_action_id: rejectMaster?.id || '',
+                        master_action: rejectMaster || null,
+                        next_step_id: null,
+                        next_workflow_id: null,
+                        next_workflow_step_id: null,
+                        required_fields: [],
+                        autofilled_fields: []
+                    }
+                ],
                 condition_expression: null,
-                status_id: null,
                 role: [],
                 department_ids: [],
                 user_ids: [],
@@ -149,6 +166,7 @@ export default function WorkflowEditor({
                     processing={form.processing}
                     isDirty={form.isDirty}
                     isEdit={!!workflow}
+                    onCollapseAll={() => setExpandedStepId(null)}
                     headerActions={
                         <Button
                             type="button"
@@ -218,285 +236,60 @@ export default function WorkflowEditor({
                                     />
 
                                     {/* Column 2: Otoritas Akses (Initiator) */}
-                                    <div className={cn('transition-all duration-300', isInitiatorExpanded ? 'lg:col-span-2' : 'lg:col-span-1')}>
-                                        <div
-                                            className={cn(
-                                                'flex h-full flex-col rounded-2xl border bg-slate-50 p-5 transition-all dark:bg-slate-900/50',
-                                                form.data.initiator_roles.length > 0 ||
-                                                    form.data.initiator_departments.length > 0 ||
-                                                    form.data.initiator_users.length > 0
-                                                    ? 'border-slate-200 dark:border-slate-800'
-                                                    : 'border-dashed border-slate-200 dark:border-slate-800',
-                                            )}
-                                        >
-                                            <div className="mb-4 flex items-center justify-between">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-xl">
-                                                        <Shield size={16} />
-                                                    </div>
-                                                    <span className="text-[11px] font-black text-slate-900 uppercase dark:text-white">
-                                                        Otoritas Inisiator
-                                                    </span>
+                                    <div className="lg:col-span-1">
+                                        <div className="flex h-full flex-col rounded-2xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900/50">
+                                            <div className="mb-4 flex items-center gap-3">
+                                                <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-xl">
+                                                    <Shield size={16} />
                                                 </div>
-                                                <Button
-                                                    type="button"
-                                                    variant="outline"
-                                                    onClick={() => setIsInitiatorExpanded(!isInitiatorExpanded)}
-                                                    className={cn(
-                                                        'h-8 gap-2 rounded-lg px-4 text-[10px] font-bold tracking-tight uppercase transition-all',
-                                                        isInitiatorExpanded
-                                                            ? 'border-slate-900 bg-slate-900 text-white'
-                                                            : 'border-slate-200 text-slate-600 dark:border-slate-800 dark:text-slate-400',
-                                                    )}
-                                                >
-                                                    {isInitiatorExpanded ? <ChevronUp size={12} /> : <Settings2 size={12} />}
-                                                    {isInitiatorExpanded ? 'TUTUP' : 'ATUR'}
-                                                </Button>
+                                                <span className="text-[11px] font-black text-slate-900 uppercase dark:text-white">
+                                                    Otoritas Inisiator
+                                                </span>
                                             </div>
-                                            {/* ... Initiator Summary and Content ... */}
-                                            {!isInitiatorExpanded && (
-                                                <div className="flex flex-wrap gap-2">
-                                                    {form.data.initiator_roles.length === 0 &&
-                                                    form.data.initiator_departments.length === 0 &&
-                                                    form.data.initiator_users.length === 0 ? (
-                                                        <div className="flex items-center gap-2 px-3 py-2 text-[11px] font-medium text-slate-400 italic">
-                                                            <Info size={12} /> Seluruh Personel (Global)
-                                                        </div>
-                                                    ) : (
-                                                        <>
-                                                            {form.data.initiator_roles.map((roleId: string) => (
-                                                                <div
-                                                                    key={roleId}
-                                                                    className="flex items-center gap-1.5 rounded-lg border border-blue-100 bg-blue-50 px-3 py-1.5 text-[11px] font-bold text-blue-700"
-                                                                >
-                                                                    <span className="text-[9px] opacity-50">ROLE:</span> {roleId}
-                                                                </div>
-                                                            ))}
-                                                            {form.data.initiator_departments.map((deptId: string) => {
-                                                                const dept = departments.find((d: any) => String(d.id) === String(deptId));
-                                                                return (
-                                                                    <div
-                                                                        key={deptId}
-                                                                        className="flex items-center gap-1.5 rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-1.5 text-[11px] font-bold text-indigo-700"
-                                                                    >
-                                                                        <span className="text-[9px] opacity-50">UNIT:</span> {dept?.name || deptId}
-                                                                    </div>
-                                                                );
-                                                            })}
-                                                            {form.data.initiator_users.map((userId: string) => {
-                                                                const user = users.find((u: any) => String(u.id) === String(userId));
-                                                                return (
-                                                                    <div
-                                                                        key={userId}
-                                                                        className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-100 px-3 py-1.5 text-[11px] font-bold text-slate-700"
-                                                                    >
-                                                                        <span className="text-[9px] opacity-50">USER:</span> {user?.name || userId}
-                                                                    </div>
-                                                                );
-                                                            })}
-                                                        </>
-                                                    )}
+
+                                            <div className="space-y-4">
+                                                {/* Selector 1: Role */}
+                                                <div className="space-y-1.5">
+                                                    <label className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-tight">
+                                                        <Shield size={10} /> Role
+                                                    </label>
+                                                    <SearchableMultiSelect
+                                                        values={form.data.initiator_roles || []}
+                                                        onValuesChange={(vals: string[]) => form.setData('initiator_roles', vals)}
+                                                        options={roles.map((r: any) => ({ value: r.name, label: r.name }))}
+                                                        placeholder="Semua Role..."
+                                                        triggerClassName="min-h-8 h-auto py-1 text-[10px] font-black uppercase bg-slate-50/50 border-slate-200 focus:border-slate-900 dark:bg-slate-900/50 dark:border-slate-800"
+                                                    />
                                                 </div>
-                                            )}
-                                            {isInitiatorExpanded && (
-                                                <div className="mt-6 flex-1 border-t border-slate-200 pt-6 dark:border-slate-800">
-                                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                                                        {/* Role Column */}
-                                                        <div className="space-y-4">
-                                                            <div className="flex items-center gap-2 px-1">
-                                                                <Shield size={12} className="text-slate-400" />
-                                                                <span className="text-[10px] font-black text-slate-500 uppercase">ROLE POOL</span>
-                                                            </div>
-                                                            <div className="custom-scrollbar max-h-[200px] space-y-1 overflow-y-auto">
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => form.setData('initiator_roles', [])}
-                                                                    className={cn(
-                                                                        'flex w-full items-center justify-between rounded-xl border p-2 text-left transition-all',
-                                                                        !form.data.initiator_roles || form.data.initiator_roles.length === 0
-                                                                            ? 'border-slate-900 bg-slate-900 text-white shadow-lg'
-                                                                            : 'border-transparent text-slate-400 italic hover:bg-slate-100',
-                                                                    )}
-                                                                >
-                                                                    <span className="text-[10px] font-bold uppercase">SEMUA ROLE</span>
-                                                                    {(!form.data.initiator_roles || form.data.initiator_roles.length === 0) && (
-                                                                        <CheckCircle2 size={10} />
-                                                                    )}
-                                                                </button>
-                                                                {roles
-                                                                    .filter(
-                                                                        (r: any) =>
-                                                                            !initiatorRoleSearch ||
-                                                                            r.name.toLowerCase().includes(initiatorRoleSearch.toLowerCase()),
-                                                                    )
-                                                                    .map((role: any) => {
-                                                                        const isSelected = form.data.initiator_roles.includes(role.name);
-                                                                        return (
-                                                                            <button
-                                                                                key={role.id}
-                                                                                type="button"
-                                                                                onClick={() => {
-                                                                                    const newRoles = isSelected
-                                                                                        ? form.data.initiator_roles.filter(
-                                                                                              (r: string) => r !== role.name,
-                                                                                          )
-                                                                                        : [...form.data.initiator_roles, role.name];
-                                                                                    form.setData('initiator_roles', newRoles);
-                                                                                }}
-                                                                                className={cn(
-                                                                                    'flex w-full items-center justify-between rounded-xl border p-2 text-left transition-all',
-                                                                                    isSelected ? 'bg-slate-900 text-white' : 'hover:bg-slate-100',
-                                                                                )}
-                                                                            >
-                                                                                <span className="text-[10px] font-bold uppercase">{role.name}</span>
-                                                                                {isSelected && <CheckCircle2 size={10} />}
-                                                                            </button>
-                                                                        );
-                                                                    })}
-                                                            </div>
-                                                        </div>
-                                                        {/* Unit Column */}
-                                                        <div className="space-y-4 border-l border-slate-100 pl-6 dark:border-slate-800">
-                                                            <div className="flex items-center gap-2 px-1">
-                                                                <UsersIcon size={12} className="text-slate-400" />
-                                                                <span className="text-[10px] font-black text-slate-500 uppercase">UNIT POOL</span>
-                                                            </div>
-                                                            <div className="group/search relative">
-                                                                <Search
-                                                                    className="absolute top-1/2 left-3 -translate-y-1/2 text-slate-300"
-                                                                    size={13}
-                                                                />
-                                                                <input
-                                                                    placeholder="CARI UNIT..."
-                                                                    value={initiatorDeptSearch}
-                                                                    onChange={(e) => setInitiatorDeptSearch(e.target.value)}
-                                                                    className="h-9 w-full rounded-xl border border-slate-200 bg-white pr-3 pl-10 text-[10px] font-bold uppercase outline-none focus:border-slate-900 dark:border-slate-800 dark:bg-black/50"
-                                                                />
-                                                            </div>
-                                                            <div className="custom-scrollbar max-h-[200px] space-y-1 overflow-y-auto pr-2">
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => form.setData('initiator_departments', [])}
-                                                                    className={cn(
-                                                                        'flex w-full items-center justify-between rounded-xl border p-2 text-left transition-all',
-                                                                        !form.data.initiator_departments ||
-                                                                            form.data.initiator_departments.length === 0
-                                                                            ? 'border-slate-900 bg-slate-900 text-white shadow-lg'
-                                                                            : 'border-transparent text-slate-400 italic hover:bg-slate-100',
-                                                                    )}
-                                                                >
-                                                                    <span className="text-[10px] font-bold uppercase">SEMUA UNIT</span>
-                                                                    {(!form.data.initiator_departments ||
-                                                                        form.data.initiator_departments.length === 0) && <CheckCircle2 size={10} />}
-                                                                </button>
-                                                                {departments
-                                                                    .filter(
-                                                                        (d: any) =>
-                                                                            !initiatorDeptSearch ||
-                                                                            d.name.toLowerCase().includes(initiatorDeptSearch.toLowerCase()),
-                                                                    )
-                                                                    .map((dept: any) => {
-                                                                        const isSelected = form.data.initiator_departments.includes(String(dept.id));
-                                                                        return (
-                                                                            <button
-                                                                                key={dept.id}
-                                                                                type="button"
-                                                                                onClick={() => {
-                                                                                    const next = isSelected
-                                                                                        ? form.data.initiator_departments.filter(
-                                                                                              (id: string) => id !== String(dept.id),
-                                                                                          )
-                                                                                        : [...form.data.initiator_departments, String(dept.id)];
-                                                                                    form.setData('initiator_departments', next);
-                                                                                }}
-                                                                                className={cn(
-                                                                                    'flex w-full items-center justify-between rounded-xl border p-2 text-left transition-all',
-                                                                                    isSelected ? 'bg-slate-900 text-white' : 'hover:bg-slate-100',
-                                                                                )}
-                                                                            >
-                                                                                <span className="text-[10px] font-bold uppercase">{dept.name}</span>
-                                                                                {isSelected && <CheckCircle2 size={10} />}
-                                                                            </button>
-                                                                        );
-                                                                    })}
-                                                            </div>
-                                                        </div>
-                                                        {/* User Column */}
-                                                        <div className="space-y-4 border-l border-slate-100 pl-6 dark:border-slate-800">
-                                                            <div className="flex items-center gap-2 px-1">
-                                                                <UsersIcon size={12} className="text-slate-400" />
-                                                                <span className="text-[10px] font-black text-slate-500 uppercase">USER POOL</span>
-                                                            </div>
-                                                            <div className="group/search relative">
-                                                                <Search
-                                                                    className="absolute top-1/2 left-3 -translate-y-1/2 text-slate-300"
-                                                                    size={13}
-                                                                />
-                                                                <input
-                                                                    placeholder="CARI USER..."
-                                                                    value={initiatorUserSearch}
-                                                                    onChange={(e) => setInitiatorUserSearch(e.target.value)}
-                                                                    className="h-9 w-full rounded-xl border border-slate-200 bg-white pr-3 pl-10 text-[10px] font-bold uppercase outline-none focus:border-slate-900 dark:border-slate-800 dark:bg-black/50"
-                                                                />
-                                                            </div>
-                                                            <div className="custom-scrollbar max-h-[200px] space-y-1 overflow-y-auto pr-2">
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => form.setData('initiator_users', [])}
-                                                                    className={cn(
-                                                                        'flex w-full items-center justify-between rounded-xl border p-2 text-left transition-all',
-                                                                        !form.data.initiator_users || form.data.initiator_users.length === 0
-                                                                            ? 'border-slate-900 bg-slate-900 text-white shadow-lg'
-                                                                            : 'border-transparent text-slate-400 italic hover:bg-slate-100',
-                                                                    )}
-                                                                >
-                                                                    <span className="text-[10px] font-bold uppercase">SEMUA USER</span>
-                                                                    {(!form.data.initiator_users || form.data.initiator_users.length === 0) && (
-                                                                        <CheckCircle2 size={10} />
-                                                                    )}
-                                                                </button>
-                                                                {users
-                                                                    .filter(
-                                                                        (u: any) =>
-                                                                            !initiatorUserSearch ||
-                                                                            u.name.toLowerCase().includes(initiatorUserSearch.toLowerCase()),
-                                                                    )
-                                                                    .map((user: any) => {
-                                                                        const isSelected = form.data.initiator_users.includes(String(user.id));
-                                                                        return (
-                                                                            <button
-                                                                                key={user.id}
-                                                                                type="button"
-                                                                                onClick={() => {
-                                                                                    const next = isSelected
-                                                                                        ? form.data.initiator_users.filter(
-                                                                                              (id: string) => id !== String(user.id),
-                                                                                          )
-                                                                                        : [...form.data.initiator_users, String(user.id)];
-                                                                                    form.setData('initiator_users', next);
-                                                                                }}
-                                                                                className={cn(
-                                                                                    'flex w-full items-center justify-between rounded-xl border p-2 text-left transition-all',
-                                                                                    isSelected ? 'bg-slate-900 text-white' : 'hover:bg-slate-100',
-                                                                                )}
-                                                                            >
-                                                                                <div className="flex flex-col">
-                                                                                    <span className="text-[10px] font-bold uppercase">
-                                                                                        {user.name}
-                                                                                    </span>
-                                                                                    <span className="text-[8px] font-medium tracking-tight text-slate-400 uppercase">
-                                                                                        {user.role}
-                                                                                    </span>
-                                                                                </div>
-                                                                                {isSelected && <CheckCircle2 size={10} />}
-                                                                            </button>
-                                                                        );
-                                                                    })}
-                                                            </div>
-                                                        </div>
-                                                    </div>
+
+                                                {/* Selector 2: Unit / Department */}
+                                                <div className="space-y-1.5">
+                                                    <label className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-tight">
+                                                        <UsersIcon size={10} /> Unit / Department
+                                                    </label>
+                                                    <SearchableMultiSelect
+                                                        values={form.data.initiator_departments?.map(String) || []}
+                                                        onValuesChange={(vals: string[]) => form.setData('initiator_departments', vals)}
+                                                        options={departments.map((d: any) => ({ value: String(d.id), label: d.name }))}
+                                                        placeholder="Semua Unit..."
+                                                        triggerClassName="min-h-8 h-auto py-1 text-[10px] font-black uppercase bg-slate-50/50 border-slate-200 focus:border-slate-900 dark:bg-slate-900/50 dark:border-slate-800"
+                                                    />
                                                 </div>
-                                            )}
+
+                                                {/* Selector 3: User */}
+                                                <div className="space-y-1.5">
+                                                    <label className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-tight">
+                                                        <UsersIcon size={10} /> User
+                                                    </label>
+                                                    <SearchableMultiSelect
+                                                        values={form.data.initiator_users?.map(String) || []}
+                                                        onValuesChange={(vals: string[]) => form.setData('initiator_users', vals)}
+                                                        options={users.map((u: any) => ({ value: String(u.id), label: `${u.name} (${u.role})` }))}
+                                                        placeholder="Semua User..."
+                                                        triggerClassName="min-h-8 h-auto py-1 text-[10px] font-black uppercase bg-slate-50/50 border-slate-200 focus:border-slate-900 dark:bg-slate-900/50 dark:border-slate-800"
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -599,6 +392,9 @@ export default function WorkflowEditor({
                                                             idx={idx}
                                                             totalSteps={form.data.steps.length}
                                                             contractStatuses={contractStatuses}
+                                                            masterActions={masterActions}
+                                                            allWorkflows={allWorkflows}
+                                                            allWorkflowSteps={form.data.steps}
                                                             duplicateLocalStep={(i: number) => {
                                                                 const newStep = { ...form.data.steps[i], id: `new-${Date.now()}` };
                                                                 const s = [...form.data.steps];

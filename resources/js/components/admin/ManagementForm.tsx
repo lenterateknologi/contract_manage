@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/base/Button';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, ChevronsUp } from 'lucide-react';
 import React from 'react';
 
 interface ManagementFormProps {
@@ -13,6 +13,7 @@ interface ManagementFormProps {
     isEdit?: boolean;
     children: React.ReactNode;
     headerActions?: React.ReactNode;
+    onCollapseAll?: () => void;
 }
 
 export function ManagementForm({
@@ -25,11 +26,12 @@ export function ManagementForm({
     isEdit = false,
     children,
     headerActions,
+    onCollapseAll,
 }: ManagementFormProps) {
     return (
         <div className="animate-in fade-in slide-in-from-right-5 bg-card border-border/60 text-foreground m-5 flex flex-col overflow-hidden rounded-2xl border font-sans antialiased shadow-sm">
             {/* COMPACT STICKY HEADER */}
-            <div className="border-border/60 bg-muted/40 z-40 flex shrink-0 items-center justify-between border-b px-6 py-4">
+            <div className="sticky top-0 z-50 border-border/60 bg-muted/95 backdrop-blur supports-[backdrop-filter]:bg-muted/65 flex shrink-0 items-center justify-between border-b px-6 py-4">
                 <div className="flex items-center gap-3">
                     <Button variant="ghost" size="icon" className="hover:bg-muted h-8 w-8 shrink-0 rounded-xl" onClick={onClose}>
                         <ArrowLeft size={16} />
@@ -45,6 +47,17 @@ export function ManagementForm({
                 </div>
 
                 <div className="flex items-center gap-3">
+                    {onCollapseAll && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={onCollapseAll}
+                            className="hover:bg-slate-100 dark:hover:bg-slate-800 h-9 w-9 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                            title="Tutup Semua Expand"
+                        >
+                            <ChevronsUp size={16} />
+                        </Button>
+                    )}
                     {headerActions}
                     <Button
                         variant="primary"
@@ -88,7 +101,7 @@ export function FormSection({
     const hasHeader = title || headerAction;
 
     return (
-        <div className={cn('border-border/60 bg-card overflow-hidden rounded-xl border shadow-sm', className)}>
+        <>
             {hasHeader && (
                 <div className="bg-muted/30 border-border/40 flex items-center justify-between border-b px-5 py-3.5">
                     <div className="space-y-0.5">
@@ -102,8 +115,8 @@ export function FormSection({
                     {headerAction}
                 </div>
             )}
-            <div className="text-foreground p-6">{children}</div>
-        </div>
+            {children}
+        </>
     );
 }
 

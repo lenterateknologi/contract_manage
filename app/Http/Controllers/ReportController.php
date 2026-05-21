@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\AuditReportExport;
+use App\Exports\ContractReportExport;
 use App\Models\Approval;
 use App\Models\Contract;
 use App\Models\ContractHistory;
@@ -10,7 +12,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller
 {
@@ -155,7 +157,7 @@ class ReportController extends Controller
         ]);
     }
 
-    public function exportCsv(Request $request): StreamedResponse
+    public function exportCsv(Request $request)
     {
         $query = Contract::with(['creator', 'contractType', 'submissionType']);
 
@@ -190,51 +192,10 @@ class ReportController extends Controller
 
         $contracts = $query->orderByDesc('t_contracts.created_at')->get();
 
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="rekap_kontrak_' . date('Ymd') . '.csv"',
-        ];
-
-        return new StreamedResponse(function () use ($contracts) {
-            $handle = fopen('php://output', 'w');
-
-            // Add BOM for Excel UTF-8 support
-            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
-
-            // Headers
-            fputcsv($handle, [
-                'ID',
-                'No. Kontrak',
-                'Judul',
-                'Tipe',
-                'Perjanjian',
-                'Status',
-                'Pembuat',
-                'Tgl Dibuat',
-                'Versi Terakhir',
-                'Deskripsi',
-            ]);
-
-            foreach ($contracts as $c) {
-                fputcsv($handle, [
-                    $c->id,
-                    $c->contract_no,
-                    $c->title,
-                    $c->contractType?->name ?? '—',
-                    $c->submissionType?->name ?? '—',
-                    strtoupper($c->status),
-                    $c->creator?->name ?? '—',
-                    $c->created_at->toDateString(),
-                    $c->current_version,
-                    $c->description,
-                ]);
-            }
-
-            fclose($handle);
-        }, 200, $headers);
+        return Excel::download(new ContractReportExport($contracts), 'rekap_kontrak_' . date('Ymd') . '.xlsx');
     }
 
-    public function exportAuditCsv(Request $request): StreamedResponse
+    public function exportAuditCsv(Request $request)
     {
         $query = Contract::query();
 
@@ -273,35 +234,6 @@ class ReportController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="audit_trail_' . date('Ymd') . '.csv"',
-        ];
-
-        return new StreamedResponse(function () use ($histories) {
-            $handle = fopen('php://output', 'w');
-            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF)); // BOM
-
-            fputcsv($handle, [
-                'Waktu',
-                'No. Kontrak',
-                'Judul Kontrak',
-                'Aksi',
-                'Deskripsi',
-                'Aktor',
-            ]);
-
-            foreach ($histories as $h) {
-                fputcsv($handle, [
-                    $h->created_at->toDateTimeString(),
-                    $h->contract->contract_no,
-                    $h->contract->title,
-                    strtoupper($h->action),
-                    $h->description,
-                    $h->actor?->name ?? '—',
-                ]);
-            }
-            fclose($handle);
-        }, 200, $headers);
+        return Excel::download(new AuditReportExport($histories), 'audit_trail_' . date('Ymd') . '.xlsx');
     }
 }

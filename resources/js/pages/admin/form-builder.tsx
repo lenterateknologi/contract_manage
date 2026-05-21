@@ -81,7 +81,7 @@ function FormBuilder({ template }: Props) {
 
             // Migrate Types
             let type = f.type;
-            let options = f.options || {};
+            const options = f.options || {};
             if (type === 'text') {
                 type = 'textfield';
             } else if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(type)) {
@@ -454,7 +454,7 @@ function FormBuilder({ template }: Props) {
         const updatedActive = { ...activeField, parent_id: newParentId };
         newFields.splice(oldIndex, 1);
 
-        let newIndex = newFields.findIndex((f) => f.id === overId);
+        const newIndex = newFields.findIndex((f) => f.id === overId);
         if (['group', 'grid_view', 'grid_x', 'grid_y'].includes(overField.type)) {
             // Add to the end of the children list
             newFields.push(updatedActive);

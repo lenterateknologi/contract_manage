@@ -83,6 +83,7 @@ class ContractApprovalController extends Controller
             'execution_order' => 'nullable|string',
             'p1_user_id' => 'nullable|uuid|exists:m_users,id',
             'p2_user_id' => 'nullable|uuid|exists:m_users,id',
+            'action_code' => 'nullable|string',
         ]);
 
         $contract = Contract::findOrFail($id);
@@ -118,6 +119,7 @@ class ContractApprovalController extends Controller
             $attachmentPath,
             $request->assigned_pic_id,
             $request->execution_order,
+            $request->action_code,
         );
 
         return response()->json(ContractFormatter::formatContract($contract));

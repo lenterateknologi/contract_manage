@@ -2,7 +2,7 @@ import { WorkflowVisualizer } from '@/components/admin/WorkflowVisualizer';
 import { Button } from '@/components/ui/base/Button';
 import { cn } from '@/lib/utils';
 import { Head } from '@inertiajs/react';
-import { ArrowRightLeft, CheckCircle2, GitBranch, LayoutGrid, List, RefreshCw, Shield, Upload, Users, X } from 'lucide-react';
+import { ArrowRightLeft, CheckCircle2, FileSignature, GitBranch, LayoutGrid, List, RefreshCw, Shield, Upload, Users, X } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 interface Props {
@@ -45,20 +45,31 @@ export default function Visualize({ breadcrumbs }: Props) {
         return () => window.removeEventListener('storage', handleStorage);
     }, []);
 
-    const getIcon = (type: string) => {
-        switch (type?.toUpperCase()) {
-            case 'APPROVAL':
-                return Shield;
-            case 'REVIEW':
-                return GitBranch;
-            case 'SELECTION':
-                return Users;
-            case 'UPLOAD':
-                return Upload;
-            case 'CLOSING':
+    const getCategoryIcon = (category: string) => {
+        switch (category?.toLowerCase()) {
+            case 'signing':
+                return FileSignature;
+            case 'closing':
                 return CheckCircle2;
             default:
                 return Shield;
+        }
+    };
+
+    const getActorLabel = (approverType: string) => {
+        switch (approverType) {
+            case 'initiator':
+                return 'INISIATOR';
+            case 'atasan':
+                return 'ATASAN LANGSUNG';
+            case 'assigned_pic':
+                return 'PIC DITUGASKAN';
+            case 'user':
+                return 'USER POOL';
+            case 'role':
+                return 'ROLE POOL';
+            default:
+                return 'BELUM DIATUR';
         }
     };
 
@@ -149,15 +160,15 @@ export default function Visualize({ breadcrumbs }: Props) {
                                     <thead>
                                         <tr className="border-b border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50">
                                             <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Step</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Type</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Description</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Target Rejection</th>
+                                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Pemeran</th>
+                                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Kategori</th>
+                                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Deskripsi</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
                                         {steps.length > 0 ? (
                                             steps.map((step, idx) => {
-                                                const Icon = getIcon(step.step_type);
+                                                const Icon = getCategoryIcon(step.step_category);
                                                 return (
                                                     <tr key={idx} className="group transition-colors hover:bg-slate-50/50 dark:hover:bg-white/[0.02]">
                                                         <td className="px-6 py-4">
@@ -166,33 +177,24 @@ export default function Visualize({ breadcrumbs }: Props) {
                                                             </span>
                                                         </td>
                                                         <td className="px-6 py-4">
+                                                            <span className="text-[10px] font-black tracking-tight text-slate-700 uppercase dark:text-slate-300">
+                                                                {getActorLabel(step.approver_type)}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-6 py-4">
                                                             <div className="flex items-center gap-3">
                                                                 <div className="bg-primary/5 text-primary rounded-lg p-2">
                                                                     <Icon size={14} />
                                                                 </div>
                                                                 <span className="text-[10px] font-black tracking-tight text-slate-700 uppercase dark:text-slate-300">
-                                                                    {step.step_type}
+                                                                    {step.step_category || 'REGULER'}
                                                                 </span>
                                                             </div>
                                                         </td>
                                                         <td className="px-6 py-4">
                                                             <span className="text-xs font-bold text-slate-600 italic dark:text-slate-400">
-                                                                "{step.description || 'No description provided'}"
+                                                                "{step.label || step.description || 'No description provided'}"
                                                             </span>
-                                                        </td>
-                                                        <td className="px-6 py-4">
-                                                            {step.reject_target !== undefined && step.reject_target !== null ? (
-                                                                <div className="flex w-fit items-center gap-2 rounded-full bg-rose-500/5 px-3 py-1.5 text-[10px] font-black text-rose-500 uppercase">
-                                                                    <ArrowRightLeft size={12} />
-                                                                    {step.reject_target === 0
-                                                                        ? 'KEMBALI KE AWAL'
-                                                                        : `KEMBALI KE TAHAP ${step.reject_target}`}
-                                                                </div>
-                                                            ) : (
-                                                                <span className="text-[10px] font-bold text-slate-300 uppercase italic">
-                                                                    Not defined
-                                                                </span>
-                                                            )}
                                                         </td>
                                                     </tr>
                                                 );

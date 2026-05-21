@@ -47,7 +47,7 @@ export default function ContractAuditTrail({ contract }: Props) {
 
     const getActionIcon = (action: string) => {
         const a = action.toLowerCase();
-        let bgClass = 'bg-black text-white dark:bg-white dark:text-black';
+        const bgClass = 'bg-black text-white dark:bg-white dark:text-black';
         let icon = <FileText size={10} strokeWidth={4} />;
 
         if (a.includes('approve')) {
@@ -142,7 +142,7 @@ export default function ContractAuditTrail({ contract }: Props) {
                         date_to: filters.date_to,
                     }}
                     onFilterChange={(key, val) => {
-                        let newFilters = { ...filters };
+                        const newFilters = { ...filters };
                         if (key === 'actor_id') {
                             newFilters.actor_id = filters.actor_id === val ? '' : val;
                         } else if (key === 'date_from' || key === 'date_to') {

@@ -9,6 +9,7 @@ use App\Models\CompanyGroup;
 use App\Models\ContractStatus;
 use App\Models\ContractType;
 use App\Models\Department;
+use App\Models\MasterAction;
 use App\Models\Region;
 use App\Models\Role;
 use App\Models\User;
@@ -81,6 +82,8 @@ class WorkflowAdminController extends Controller
             'regions' => Region::all(),
             'companies' => Company::all(),
             'contractStatuses' => ContractStatus::orderBy('label')->get(),
+            'masterActions' => MasterAction::where('is_active', true)->orderBy('name')->get(),
+            'allWorkflows' => Workflow::with('steps')->orderBy('name')->get(),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Alur Kerja (Workflows)', 'href' => route('admin.workflows'), 'icon' => 'GitBranch'],
@@ -91,7 +94,7 @@ class WorkflowAdminController extends Controller
 
     public function edit(Workflow $workflow)
     {
-        $workflow->load(['steps.approverRoles', 'steps.approverDepartments', 'steps.approverUsers', 'initiatorRolesData', 'initiatorDepartmentsData', 'initiatorUsersData']);
+        $workflow->load(['steps.approverRoles', 'steps.approverDepartments', 'steps.approverUsers', 'steps.actions.masterAction', 'initiatorRolesData', 'initiatorDepartmentsData', 'initiatorUsersData']);
 
         $workflowData = $workflow->toArray();
         $workflowData['initiator_roles'] = $workflow->initiatorRolesData->pluck('role_name')->toArray();
@@ -103,6 +106,19 @@ class WorkflowAdminController extends Controller
             $sd['role'] = $s->approverRoles->pluck('role_name')->toArray();
             $sd['user_ids'] = $s->approverUsers->pluck('user_id')->toArray();
             $sd['department_ids'] = $s->approverDepartments->pluck('department_id')->toArray();
+            $sd['actions'] = $s->actions->map(function ($action) {
+                return [
+                    'id' => $action->id,
+                    'master_action_id' => $action->master_action_id,
+                    'master_action_name' => $action->masterAction->name ?? '',
+                    'next_step_id' => $action->next_step_id,
+                    'next_workflow_id' => $action->next_workflow_id,
+                    'next_workflow_step_id' => $action->next_workflow_step_id,
+                    'required_fields' => $action->required_fields ?? [],
+                    'autofilled_fields' => $action->autofilled_fields ?? [],
+                    'is_active' => $action->is_active,
+                ];
+            })->toArray();
 
             return $sd;
         });
@@ -117,6 +133,8 @@ class WorkflowAdminController extends Controller
             'regions' => Region::all(),
             'companies' => Company::all(),
             'contractStatuses' => ContractStatus::orderBy('label')->get(),
+            'masterActions' => MasterAction::where('is_active', true)->orderBy('name')->get(),
+            'allWorkflows' => Workflow::with('steps')->orderBy('name')->get(),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Alur Kerja (Workflows)', 'href' => route('admin.workflows'), 'icon' => 'GitBranch'],
@@ -147,24 +165,32 @@ class WorkflowAdminController extends Controller
             'steps.*.role' => 'nullable',
             'steps.*.description' => 'nullable|string',
             'steps.*.approver_type' => 'nullable|string',
-            'steps.*.step_type' => 'nullable|string',
             'steps.*.step_category' => 'nullable|string',
             'steps.*.is_optional' => 'boolean',
             'steps.*.optional_label' => 'nullable|string',
             'steps.*.condition_expression' => 'nullable|string',
             'steps.*.phase' => 'nullable|string',
             'steps.*.uploader_type' => 'nullable|string',
-            'steps.*.reject_target' => 'nullable|string',
             'steps.*.hierarchy_level' => 'nullable|integer',
             'steps.*.role_id' => 'nullable|string',
             'steps.*.user_ids' => 'nullable|array',
             'steps.*.department_ids' => 'nullable|array',
-            'steps.*.status_id' => 'nullable|string',
-
             'steps.*.meta' => 'nullable|array',
             'steps.*.company_group_ids' => 'nullable|array',
             'steps.*.region_ids' => 'nullable|array',
             'steps.*.company_ids' => 'nullable|array',
+            'steps.*.actions' => 'nullable|array',
+            'steps.*.actions.*.id' => 'nullable|string',
+            'steps.*.actions.*.master_action_id' => 'nullable|string',
+            'steps.*.actions.*.master_action_name' => 'nullable|string',
+            'steps.*.actions.*.next_step_id' => 'nullable|string',
+            'steps.*.actions.*.next_workflow_id' => 'nullable|string',
+            'steps.*.actions.*.next_workflow_step_id' => 'nullable|string',
+            'steps.*.actions.*.required_fields' => 'nullable|array',
+            'steps.*.actions.*.autofilled_fields' => 'nullable|array',
+            'steps.*.actions.*.signing_parties' => 'nullable|array',
+            'steps.*.actions.*.assignee_config' => 'nullable|array',
+            'steps.*.actions.*.is_active' => 'nullable|boolean',
         ]);
 
         try {
@@ -202,28 +228,35 @@ class WorkflowAdminController extends Controller
             'steps.*.role' => 'nullable',
             'steps.*.description' => 'nullable|string',
             'steps.*.approver_type' => 'nullable|string',
-            'steps.*.step_type' => 'nullable|string',
             'steps.*.step_category' => 'nullable|string',
             'steps.*.is_optional' => 'boolean',
             'steps.*.optional_label' => 'nullable|string',
             'steps.*.condition_expression' => 'nullable|string',
             'steps.*.phase' => 'nullable|string',
             'steps.*.uploader_type' => 'nullable|string',
-            'steps.*.reject_target' => 'nullable|string',
             'steps.*.hierarchy_level' => 'nullable|integer',
             'steps.*.role_id' => 'nullable|string',
             'steps.*.user_ids' => 'nullable|array',
             'steps.*.department_ids' => 'nullable|array',
             'steps.*.label' => 'nullable|string',
-            'steps.*.actor_type' => 'nullable|string',
             'steps.*.allowed_actions' => 'nullable|array',
             'steps.*.is_mandatory' => 'nullable|boolean',
-            'steps.*.status_id' => 'nullable|string',
-
             'steps.*.meta' => 'nullable|array',
             'steps.*.company_group_ids' => 'nullable|array',
             'steps.*.region_ids' => 'nullable|array',
             'steps.*.company_ids' => 'nullable|array',
+            'steps.*.actions' => 'nullable|array',
+            'steps.*.actions.*.id' => 'nullable|string',
+            'steps.*.actions.*.master_action_id' => 'nullable|string',
+            'steps.*.actions.*.master_action_name' => 'nullable|string',
+            'steps.*.actions.*.next_step_id' => 'nullable|string',
+            'steps.*.actions.*.next_workflow_id' => 'nullable|string',
+            'steps.*.actions.*.next_workflow_step_id' => 'nullable|string',
+            'steps.*.actions.*.required_fields' => 'nullable|array',
+            'steps.*.actions.*.autofilled_fields' => 'nullable|array',
+            'steps.*.actions.*.signing_parties' => 'nullable|array',
+            'steps.*.actions.*.assignee_config' => 'nullable|array',
+            'steps.*.actions.*.is_active' => 'nullable|boolean',
         ]);
 
         try {
@@ -264,20 +297,16 @@ class WorkflowAdminController extends Controller
             'steps.*.role' => 'nullable',
             'steps.*.description' => 'nullable|string',
             'steps.*.approver_type' => 'nullable|string',
-            'steps.*.step_type' => 'nullable|string',
             'steps.*.step_category' => 'nullable|string',
             'steps.*.is_optional' => 'boolean',
             'steps.*.optional_label' => 'nullable|string',
             'steps.*.condition_expression' => 'nullable|string',
             'steps.*.phase' => 'nullable|string',
             'steps.*.uploader_type' => 'nullable|string',
-            'steps.*.reject_target' => 'nullable|string',
             'steps.*.hierarchy_level' => 'nullable|integer',
             'steps.*.role_id' => 'nullable|string',
             'steps.*.user_ids' => 'nullable|array',
             'steps.*.department_ids' => 'nullable|array',
-            'steps.*.status_id' => 'nullable|string',
-
             'steps.*.meta' => 'nullable|array',
         ]);
 
@@ -296,5 +325,31 @@ class WorkflowAdminController extends Controller
         Workflow::whereIn('id', $ids)->delete();
 
         return back()->with('success', count($ids) . ' alur kerja berhasil dihapus.');
+    }
+
+    public function updateMasterAction(Request $request, $id)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+
+        $masterAction = MasterAction::findOrFail($id);
+        $code = strtolower(str_replace(' ', '_', trim($data['name'])));
+
+        $masterAction->update([
+            'name' => trim($data['name']),
+            'code' => $code,
+            'updated_by' => \Illuminate\Support\Facades\Auth::id(),
+        ]);
+
+        return back()->with('success', 'Master Aksi berhasil diperbarui.');
+    }
+
+    public function destroyMasterAction($id)
+    {
+        $masterAction = MasterAction::findOrFail($id);
+        $masterAction->delete();
+
+        return back()->with('success', 'Master Aksi berhasil dihapus.');
     }
 }

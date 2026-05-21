@@ -2,8 +2,10 @@
 
 namespace App\Actions\Admin;
 
+use App\Models\MasterAction;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
+use App\Models\WorkflowStepAction;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -35,24 +37,23 @@ class WorkflowAction
                 }
             }
 
+            $stepIdMap = [];
             if (! empty($data['steps'])) {
                 foreach ($data['steps'] as $index => $stepData) {
+                    $stepClientId = $stepData['id'] ?? "new-{$index}";
                     $step = $workflow->steps()->create([
                         'approver_type' => $stepData['approver_type'] ?? 'role',
                         'description' => $stepData['description'] ?? '',
-                        'status_id' => $stepData['status_id'] ?? null,
                         'step' => $index + 1,
                         'created_by' => Auth::id(),
                         'updated_by' => Auth::id(),
                         'is_active' => true,
-                        'step_type' => $stepData['step_type'] ?? 'approval',
                         'step_category' => $stepData['step_category'] ?? null,
                         'is_optional' => $stepData['is_optional'] ?? false,
                         'optional_label' => $stepData['optional_label'] ?? null,
                         'condition_expression' => $stepData['condition_expression'] ?? null,
                         'phase' => $stepData['phase'] ?? 'f1_request',
                         'uploader_type' => $stepData['uploader_type'] ?? null,
-                        'reject_target' => $stepData['reject_target'] ?? 'initiator',
                         'hierarchy_level' => isset($stepData['hierarchy_level']) ? (int) $stepData['hierarchy_level'] : null,
                         'role_id' => $stepData['role_id'] ?? null,
                         'company_group_ids' => $stepData['company_group_ids'] ?? null,
@@ -60,6 +61,8 @@ class WorkflowAction
                         'company_ids' => $stepData['company_ids'] ?? null,
                         'meta' => $stepData['meta'] ?? null,
                     ]);
+
+                    $stepIdMap[$stepClientId] = $step->id;
 
                     if (! empty($stepData['role'])) {
                         foreach ((array) $stepData['role'] as $role) {
@@ -74,6 +77,18 @@ class WorkflowAction
                     if (! empty($stepData['user_ids'])) {
                         foreach ((array) $stepData['user_ids'] as $userId) {
                             $step->approverUsers()->create(['user_id' => $userId]);
+                        }
+                    }
+                }
+
+                // Second pass to sync step actions
+                foreach ($data['steps'] as $index => $stepData) {
+                    $stepClientId = $stepData['id'] ?? "new-{$index}";
+                    $stepId = $stepIdMap[$stepClientId] ?? null;
+                    if ($stepId) {
+                        $step = WorkflowStep::find($stepId);
+                        if ($step) {
+                            $this->syncStepActions($step, $stepData['actions'] ?? [], $stepIdMap);
                         }
                     }
                 }
@@ -125,35 +140,32 @@ class WorkflowAction
                 WorkflowStep::whereIn('id', $stepsToDelete)->forceDelete();
             }
 
+            $stepIdMap = [];
             if (! empty($data['steps'])) {
                 foreach ($data['steps'] as $index => $stepData) {
                     $stepId = $stepData['id'] ?? null;
-                    $isNew = ! $stepId || str_starts_with($stepId, 'new-');
+                    $isNew = ! $stepId || str_starts_with($stepId, 'new-') || ! in_array($stepId, $existingStepIds);
 
                     $stepFields = [
                         'label' => $stepData['label'] ?? null,
                         'description' => $stepData['description'] ?? '',
-                        'actor_type' => $stepData['actor_type'] ?? 'approver',
-                        'allowed_actions' => $stepData['allowed_actions'] ?? [],
                         'is_mandatory' => $stepData['is_mandatory'] ?? true,
-                        'status_id' => $stepData['status_id'] ?? null,
                         'step' => $index + 1,
                         'updated_by' => Auth::id(),
                         'is_active' => true,
-                        'step_type' => $stepData['step_type'] ?? 'approval',
                         'step_category' => $stepData['step_category'] ?? null,
                         'is_optional' => $stepData['is_optional'] ?? false,
                         'optional_label' => $stepData['optional_label'] ?? null,
                         'condition_expression' => $stepData['condition_expression'] ?? null,
                         'phase' => $stepData['phase'] ?? 'f1_request',
                         'uploader_type' => $stepData['uploader_type'] ?? null,
-                        'reject_target' => $stepData['reject_target'] ?? 'initiator',
                         'hierarchy_level' => isset($stepData['hierarchy_level']) ? (int) $stepData['hierarchy_level'] : null,
                         'role_id' => $stepData['role_id'] ?? null,
                         'company_group_ids' => $stepData['company_group_ids'] ?? null,
                         'region_ids' => $stepData['region_ids'] ?? null,
                         'company_ids' => $stepData['company_ids'] ?? null,
                         'meta' => $stepData['meta'] ?? null,
+                        'approver_type' => $stepData['approver_type'] ?? 'role',
                     ];
 
                     if ($isNew) {
@@ -163,6 +175,9 @@ class WorkflowAction
                         $step = WorkflowStep::where('workflow_id', $workflow->id)->findOrFail($stepId);
                         $step->update($stepFields);
                     }
+
+                    $stepClientId = $stepData['id'] ?? "new-{$index}";
+                    $stepIdMap[$stepClientId] = $step->id;
 
                     // Sync Approvers
                     $step->approverRoles()->delete();
@@ -183,6 +198,18 @@ class WorkflowAction
                     if (! empty($stepData['user_ids'])) {
                         foreach ((array) $stepData['user_ids'] as $userId) {
                             $step->approverUsers()->create(['user_id' => $userId]);
+                        }
+                    }
+                }
+
+                // Second pass to sync step actions
+                foreach ($data['steps'] as $index => $stepData) {
+                    $stepClientId = $stepData['id'] ?? "new-{$index}";
+                    $stepId = $stepIdMap[$stepClientId] ?? null;
+                    if ($stepId) {
+                        $step = WorkflowStep::find($stepId);
+                        if ($step) {
+                            $this->syncStepActions($step, $stepData['actions'] ?? [], $stepIdMap);
                         }
                     }
                 }
@@ -211,31 +238,33 @@ class WorkflowAction
                 $oldStep->approverRoles()->delete();
                 $oldStep->approverDepartments()->delete();
                 $oldStep->approverUsers()->delete();
+                $oldStep->actions()->delete();
             }
             $workflow->steps()->forceDelete();
 
+            $stepIdMap = [];
             if (! empty($data['steps'])) {
                 foreach ($data['steps'] as $index => $stepData) {
                     $step = $workflow->steps()->create([
                         'approver_type' => $stepData['approver_type'] ?? 'role',
                         'description' => $stepData['description'] ?? '',
-                        'status_id' => $stepData['status_id'] ?? null,
                         'step' => $index + 1,
                         'created_by' => Auth::id(),
                         'updated_by' => Auth::id(),
                         'is_active' => true,
-                        'step_type' => $stepData['step_type'] ?? 'approval',
                         'step_category' => $stepData['step_category'] ?? null,
                         'is_optional' => $stepData['is_optional'] ?? false,
                         'optional_label' => $stepData['optional_label'] ?? null,
                         'condition_expression' => $stepData['condition_expression'] ?? null,
                         'phase' => $stepData['phase'] ?? 'f1_request',
                         'uploader_type' => $stepData['uploader_type'] ?? null,
-                        'reject_target' => $stepData['reject_target'] ?? 'initiator',
                         'hierarchy_level' => isset($stepData['hierarchy_level']) ? (int) $stepData['hierarchy_level'] : null,
                         'role_id' => $stepData['role_id'] ?? null,
                         'meta' => $stepData['meta'] ?? null,
                     ]);
+
+                    $stepClientId = $stepData['id'] ?? $index;
+                    $stepIdMap[$stepClientId] = $step->id;
 
                     if (! empty($stepData['role'])) {
                         foreach ((array) $stepData['role'] as $role) {
@@ -255,9 +284,97 @@ class WorkflowAction
                         }
                     }
                 }
+
+                // Second pass to sync step actions
+                foreach ($data['steps'] as $index => $stepData) {
+                    $stepClientId = $stepData['id'] ?? $index;
+                    $stepId = $stepIdMap[$stepClientId] ?? null;
+                    if ($stepId) {
+                        $step = WorkflowStep::find($stepId);
+                        if ($step) {
+                            $this->syncStepActions($step, $stepData['actions'] ?? [], $stepIdMap);
+                        }
+                    }
+                }
             }
 
             return $workflow;
         });
+    }
+
+    /**
+     * Synchronize actions for a specific workflow step.
+     */
+    private function syncStepActions(WorkflowStep $step, array $actionsData, array $stepIdMap): void
+    {
+        $existingActionIds = $step->actions()->pluck('id')->toArray();
+        $inputActionIds = collect($actionsData)->pluck('id')->filter(fn ($id) => $id && ! str_starts_with($id, 'new-'))->toArray();
+
+        // Delete actions that are not in the input
+        $actionsToDelete = array_diff($existingActionIds, $inputActionIds);
+        if (! empty($actionsToDelete)) {
+            WorkflowStepAction::whereIn('id', $actionsToDelete)->forceDelete();
+        }
+
+        $masterActions = MasterAction::pluck('id', 'code')->toArray();
+
+        foreach ($actionsData as $actData) {
+            $masterActionId = $actData['master_action_id'] ?? null;
+
+            // If no master action ID, try using code or name
+            if (! $masterActionId && ! empty($actData['master_action_name'])) {
+                $code = strtolower(str_replace(' ', '_', trim($actData['master_action_name'])));
+                if (isset($masterActions[$code])) {
+                    $masterActionId = $masterActions[$code];
+                } else {
+                    $newMaster = MasterAction::create([
+                        'name' => trim($actData['master_action_name']),
+                        'code' => $code,
+                        'is_active' => true,
+                    ]);
+                    $masterActionId = $newMaster->id;
+                    $masterActions[$code] = $masterActionId;
+                }
+            }
+
+            if (! $masterActionId) {
+                continue;
+            }
+
+            // Resolve next step in the current workflow
+            $nextStepId = $actData['next_step_id'] ?? null;
+            if ($nextStepId) {
+                if (isset($stepIdMap[$nextStepId])) {
+                    $nextStepId = $stepIdMap[$nextStepId];
+                } else {
+                    // The target step was deleted or not present in the new steps list
+                    $nextStepId = null;
+                }
+            }
+
+            $actionFields = [
+                'master_action_id' => $masterActionId,
+                'next_step_id' => $nextStepId,
+                'next_workflow_id' => $actData['next_workflow_id'] ?? null,
+                'next_workflow_step_id' => $actData['next_workflow_step_id'] ?? null,
+                'required_fields' => $actData['required_fields'] ?? [],
+                'autofilled_fields' => $actData['autofilled_fields'] ?? [],
+                'signing_parties' => $actData['signing_parties'] ?? [],
+                'assignee_config' => $actData['assignee_config'] ?? [],
+                'is_active' => $actData['is_active'] ?? true,
+                'updated_by' => Auth::id(),
+            ];
+
+            $actionId = $actData['id'] ?? null;
+            $isNew = ! $actionId || str_starts_with($actionId, 'new-') || ! in_array($actionId, $existingActionIds);
+
+            if ($isNew) {
+                $actionFields['created_by'] = Auth::id();
+                $step->actions()->create($actionFields);
+            } else {
+                $action = WorkflowStepAction::findOrFail($actionId);
+                $action->update($actionFields);
+            }
+        }
     }
 }

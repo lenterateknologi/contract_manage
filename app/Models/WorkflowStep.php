@@ -25,7 +25,6 @@ class WorkflowStep extends Model
         'workflow_id',
         'approver_type',
         'step',
-        'step_type',
         'step_category',
         'is_optional',
         'optional_label',
@@ -33,20 +32,17 @@ class WorkflowStep extends Model
         'description',
         'phase',
         'uploader_type',
-        'reject_target',
         'hierarchy_level',
         'role_id',
         'company_group_ids',
         'region_ids',
         'company_ids',
         'label',
-        'actor_type',
         'allowed_actions',
         'is_mandatory',
         'created_by',
         'updated_by',
         'is_active',
-        'status_id',
         'meta',
     ];
 
@@ -61,13 +57,18 @@ class WorkflowStep extends Model
         'is_mandatory' => 'boolean',
     ];
 
-    protected $with = ['approverRoles', 'approverDepartments', 'approverUsers'];
+    protected $with = ['approverRoles', 'approverDepartments', 'approverUsers', 'actions.masterAction'];
 
     protected $appends = ['role', 'department_ids', 'department_names', 'user_ids', 'name'];
 
     public function getNameAttribute()
     {
         return $this->description;
+    }
+
+    public function actions(): HasMany
+    {
+        return $this->hasMany(WorkflowStepAction::class, 'workflow_step_id');
     }
 
     public function approverRoles(): HasMany
@@ -121,11 +122,6 @@ class WorkflowStep extends Model
     public function approvals(): HasMany
     {
         return $this->hasMany(Approval::class);
-    }
-
-    public function status(): BelongsTo
-    {
-        return $this->belongsTo(ContractStatus::class, 'status_id');
     }
 
     public function users(): BelongsToMany

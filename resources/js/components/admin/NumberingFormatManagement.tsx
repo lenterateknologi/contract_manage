@@ -281,4 +281,4 @@ function FormatCard({ format }: Readonly<{ format: NumberingFormat }>) {
     );
 }
 
-declare var route: any;
+declare let route: any;
