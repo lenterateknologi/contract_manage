@@ -47,10 +47,13 @@ class ContractWorkflowService
             throw new \Exception('Alur kerja tidak ditemukan dan tidak ada alur default untuk tipe kontrak ini.');
         }
 
+        $originWorkflowId = $contract->origin_workflow_id ?: $workflow->id;
+
         if (strtolower($topic) === 'nda') {
             $contract->update([
                 'status' => 'archived',
                 'workflow_id' => $workflow->id,
+                'origin_workflow_id' => $originWorkflowId,
                 'workflow_step_id' => null,
                 'submitted_at' => now(),
             ]);
@@ -111,6 +114,7 @@ class ContractWorkflowService
 
         $contract->update([
             'workflow_id' => $workflow->id,
+            'origin_workflow_id' => $originWorkflowId,
             'workflow_step_id' => $firstStep->id,
             'status_id' => $nextStatus?->id ?: $contract->status_id,
             'status' => $nextStatus?->code ?: $statusStr,

@@ -61,6 +61,18 @@ const AVAILABLE_FIELDS = [
     { value: 'closed_at', label: 'Waktu Selesai (closed_at)' },
 ];
 
+
+const AUTOFILLED_PARAMS = [
+    { value: 'received_at', label: 'Isi Waktu diterima' },
+    { value: 'assigned_at', label: 'Isi Waktu ditugaskan' },
+    { value: 'finished_at', label: 'Isi Waktu diselesaikan' },
+    { value: 'closed_at', label: 'Isi Waktu ditutup' },
+    { value: 'received_at-null', label: 'Kosongkan Waktu diterima' },
+    { value: 'assigned_at-null', label: 'Kosongkan Waktu ditugaskan' },
+    { value: 'finished_at-null', label: 'Kosongkan Waktu diselesaikan' },
+    { value: 'closed_at-null', label: 'Kosongkan Waktu ditutup' },
+];
+
 export default function SortableStepItem({
     step,
     idx,
@@ -1296,7 +1308,7 @@ export default function SortableStepItem({
                                                         <SearchableMultiSelect
                                                             values={act.autofilled_fields || []}
                                                             onValuesChange={(vals: string[]) => updateAction(actIdx, { autofilled_fields: vals })}
-                                                            options={AVAILABLE_FIELDS}
+                                                            options={AUTOFILLED_PARAMS}
                                                             placeholder="Pilih Kolom..."
                                                         />
                                                     </div>
@@ -1328,7 +1340,7 @@ export default function SortableStepItem({
                                                     )}
 
                                                     {/* Cell 6: Assignee Config (Conditional) */}
-                                                    {(act.master_action?.code?.toLowerCase() === 'assign_pic') && (
+                                                    {(act.master_action?.code?.toLowerCase() == 'assign') && (
                                                         <div className="space-y-3 col-span-1 sm:col-span-2 bg-indigo-50/50 p-3 rounded-xl border border-indigo-100/50 dark:bg-indigo-900/10 dark:border-indigo-800/30">
                                                             <div className="flex items-center gap-1.5">
                                                                 <UsersIcon size={12} className="text-indigo-500" />

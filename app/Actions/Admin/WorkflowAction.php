@@ -20,6 +20,11 @@ class WorkflowAction
             $workflowData = collect($data)->except(['initiator_roles', 'initiator_users', 'initiator_departments', 'steps'])->toArray();
             $workflow = Workflow::create($workflowData);
 
+            if ($workflow->is_default) {
+                Workflow::where('id', '!=', $workflow->id)
+                    ->update(['is_default' => false]);
+            }
+
             // Sync Initiators
             if (! empty($data['initiator_roles'])) {
                 foreach ($data['initiator_roles'] as $role) {
@@ -109,6 +114,11 @@ class WorkflowAction
             // Update basic info
             $workflowData = collect($data)->except(['initiator_roles', 'initiator_users', 'initiator_departments', 'steps'])->toArray();
             $workflow->update($workflowData);
+
+            if ($workflow->is_default) {
+                Workflow::where('id', '!=', $workflow->id)
+                    ->update(['is_default' => false]);
+            }
 
             // Sync Initiators (Role, Dept, User)
             $workflow->initiatorRolesData()->delete();

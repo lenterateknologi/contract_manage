@@ -3,6 +3,7 @@ import { SearchableMultiSelect } from '@/components/ui/forms/SearchableMultiSele
 import { WorkflowVisualizer } from '@/components/admin/WorkflowVisualizer';
 import { useToast } from '@/components/contracts/Toast';
 import { Button } from '@/components/ui/base/Button';
+import { Checkbox } from '@/components/ui/base/Checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
 import { cn } from '@/lib/utils';
 import { closestCenter, DndContext, DragEndEvent, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
@@ -184,7 +185,7 @@ export default function WorkflowEditor({
                         <FormSection>
                             <div className="space-y-6">
                                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-                                    <div className="lg:col-span-8">
+                                    <div className="lg:col-span-6">
                                         <div className="space-y-2">
                                             <label className="flex items-center gap-2 text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase dark:text-slate-500">
                                                 <Edit3 size={10} /> Nama Alur Kerja
@@ -198,7 +199,7 @@ export default function WorkflowEditor({
                                             />
                                         </div>
                                     </div>
-                                    <div className="lg:col-span-4">
+                                    <div className="lg:col-span-3">
                                         <div className="space-y-2">
                                             <label className="flex items-center gap-2 text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase dark:text-slate-500">
                                                 <LayoutTemplate size={10} /> Jenis Kontrak
@@ -221,6 +222,24 @@ export default function WorkflowEditor({
                                                     ))}
                                                 </SelectContent>
                                             </Select>
+                                        </div>
+                                    </div>
+                                    <div className="lg:col-span-3">
+                                        <div className="space-y-2">
+                                            <label className="flex items-center gap-2 text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase dark:text-slate-500">
+                                                Status Alur
+                                            </label>
+                                            <div className="border-slate-200 bg-slate-50/50 flex h-10 w-full items-center gap-3 rounded-xl border px-4 dark:border-slate-800 dark:bg-slate-900/50">
+                                                <Checkbox
+                                                    id="is_default"
+                                                    checked={form.data.is_default}
+                                                    onCheckedChange={(c) => form.setData('is_default', !!c)}
+                                                    className="h-4 w-4"
+                                                />
+                                                <label htmlFor="is_default" className="text-primary cursor-pointer text-[10px] font-bold uppercase dark:text-white">
+                                                    Alur Default
+                                                </label>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

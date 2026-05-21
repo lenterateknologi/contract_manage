@@ -14,8 +14,8 @@ const WorkflowNameCell = ({ row }: { readonly row: any }) => (
             <span className="text-primary text-[12px] font-semibold tracking-tight uppercase transition-transform group-hover:translate-x-1 dark:text-white">
                 {row.name}
             </span>
-            {row.is_default && (
-                <div className="bg-primary/[0.05] border-primary/10 text-primary/40 rounded border px-1.5 py-0.5 text-[7px] font-semibold uppercase dark:border-white/10 dark:bg-white/[0.05] dark:text-white/40">
+            {(row.is_default === true || row.is_default === 1 || row.is_default === '1') && (
+                <div className="bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-lg border px-1.5 py-0.5 text-[7px] font-black uppercase tracking-wider">
                     DEFAULT
                 </div>
             )}
