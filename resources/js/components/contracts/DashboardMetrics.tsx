@@ -5,18 +5,16 @@ import {
     TrendingUp,
     BarChart3,
     Briefcase,
-    Filter,
-    RotateCcw,
-    ChevronDown,
-    ChevronUp,
-    Calendar
+    SlidersHorizontal
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { SearchableMultiSelect } from '@/components/ui/forms/SearchableMultiSelect';
+import { FilterSheet, FilterCategory } from '@/components/ui/data/FilterSheet';
 import { OverviewTab } from '@/components/dashboard/OverviewTab';
 import { TrendTab } from '@/components/dashboard/TrendTab';
 import { AnalysisTab } from '@/components/dashboard/AnalysisTab';
 import { WorkloadTab } from '@/components/dashboard/WorkloadTab';
+import { Button } from '@/components/ui/base/Button';
+import { Badge } from '@/components/ui/base/Badge';
 
 const ensureArrayFilter = (val: any): string[] => {
     if (!val) return [];
@@ -27,7 +25,6 @@ const ensureArrayFilter = (val: any): string[] => {
 export function DashboardMetrics({ metrics }: { metrics: any }) {
     if (!metrics) return null;
 
-    // Retrieve global options and filters from Inertia page props
     const {
         filters = {},
         regions = [],
@@ -38,99 +35,173 @@ export function DashboardMetrics({ metrics }: { metrics: any }) {
         auth
     } = usePage<any>().props;
 
-    const loginUser = auth?.user;
-    const isAdmin = loginUser?.role === 'Admin';
-    const userDeptId = loginUser?.department_id;
+    const isAdmin = auth?.user?.role === 'Admin';
 
-    // Filter Area Collapsible State
-    const [isFilterExpanded, setIsFilterExpanded] = useState(true);
+    // Filter Sheet State
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-    // Local Filter States
-    const [createdFrom, setCreatedFrom] = useState(filters.created_from || '');
-    const [createdTo, setCreatedTo] = useState(filters.created_to || '');
-    const [regionIds, setRegionIds] = useState<string[]>(ensureArrayFilter(filters.region_ids));
-    const [vendorIds, setVendorIds] = useState<string[]>(ensureArrayFilter(filters.vendor_ids));
-    const [contractTypeIds, setContractTypeIds] = useState<string[]>(ensureArrayFilter(filters.contract_type_ids));
-    const [picIds, setPicIds] = useState<string[]>(ensureArrayFilter(filters.pic_ids));
-    const [departmentIds, setDepartmentIds] = useState<string[]>(
-        !isAdmin && userDeptId ? [String(userDeptId)] : ensureArrayFilter(filters.department_ids)
-    );
-    const [statuses, setStatuses] = useState<string[]>(ensureArrayFilter(filters.statuses));
+    // Filter values mapped from Inertia props
+    const activeFilters = useMemo(() => ({
+        period: filters.period || 'all',
+        created: {
+            from: filters.created_from || '',
+            to: filters.created_to || ''
+        },
+        region_ids: ensureArrayFilter(filters.region_ids),
+        vendor_ids: ensureArrayFilter(filters.vendor_ids),
+        contract_type_ids: ensureArrayFilter(filters.contract_type_ids),
+        pic_ids: ensureArrayFilter(filters.pic_ids),
+        department_ids: ensureArrayFilter(filters.department_ids),
+        statuses: ensureArrayFilter(filters.statuses),
+    }), [filters]);
 
-    // Sync state with incoming filters from Inertia (handles back/forward or resets)
-    useEffect(() => {
-        setCreatedFrom(filters.created_from || '');
-        setCreatedTo(filters.created_to || '');
-        setRegionIds(ensureArrayFilter(filters.region_ids));
-        setVendorIds(ensureArrayFilter(filters.vendor_ids));
-        setContractTypeIds(ensureArrayFilter(filters.contract_type_ids));
-        setPicIds(ensureArrayFilter(filters.pic_ids));
-        setDepartmentIds(!isAdmin && userDeptId ? [String(userDeptId)] : ensureArrayFilter(filters.department_ids));
-        setStatuses(ensureArrayFilter(filters.statuses));
-    }, [filters, isAdmin, userDeptId]);
+    const filterCategories = useMemo<FilterCategory[]>(() => {
+        const cats: FilterCategory[] = [
+            {
+                label: 'Periode Laporan',
+                key: 'period',
+                type: 'grid',
+                options: [
+                    { value: 'all', label: 'Semua Waktu' },
+                    { value: 'last_30_days', label: '30 Hari Terakhir' },
+                    { value: 'last_6_months', label: '6 Bulan Terakhir' },
+                    { value: 'last_year', label: '1 Tahun Terakhir' },
+                    { value: 'current_year', label: 'Tahun Berjalan' },
+                ]
+            },
+            {
+                label: 'Rentang Kustom',
+                key: 'created',
+                type: 'date-range'
+            },
+            {
+                label: 'Wilayah (Region)',
+                key: 'region_ids',
+                type: 'searchable',
+                options: regions.map((r: any) => ({ value: String(r.id), label: r.name }))
+            },
+            {
+                label: 'Vendor / Partner',
+                key: 'vendor_ids',
+                type: 'searchable',
+                options: vendors.map((v: any) => ({ value: String(v.id), label: v.name }))
+            },
+            {
+                label: 'Tipe Kontrak',
+                key: 'contract_type_ids',
+                type: 'searchable',
+                options: types.map((t: any) => ({ value: String(t.id), label: t.name }))
+            },
+            {
+                label: 'PIC / Person In Charge',
+                key: 'pic_ids',
+                type: 'searchable',
+                options: users.map((u: any) => ({ value: String(u.id), label: u.name }))
+            },
+            {
+                label: 'Status Progres',
+                key: 'statuses',
+                type: 'grid',
+                options: [
+                    { value: 'in_review', label: 'Review' },
+                    { value: 'revision', label: 'Revisi' },
+                    { value: 'pending', label: 'Pending Approval' },
+                    { value: 'approved', label: 'Disetujui' },
+                    { value: 'locked', label: 'Terkunci' },
+                ]
+            }
+        ];
 
-    // Format options for SearchableMultiSelect
-    const regionOptions = useMemo(() => regions.map((r: any) => ({ value: String(r.id), label: r.name })), [regions]);
-    const vendorOptions = useMemo(() => vendors.map((v: any) => ({ value: String(v.id), label: v.name })), [vendors]);
-    const departmentOptions = useMemo(() => departments.map((d: any) => ({ value: String(d.id), label: d.name })), [departments]);
-    const typeOptions = useMemo(() => types.map((t: any) => ({ value: String(t.id), label: t.name })), [types]);
-    const userOptions = useMemo(() => users.map((u: any) => ({ value: String(u.id), label: u.name })), [users]);
-    const statusOptions = [
-        { value: 'in_review', label: 'Review' },
-        { value: 'revision', label: 'Revisi' },
-        { value: 'pending', label: 'Pending Approval' },
-        { value: 'approved', label: 'Disetujui' },
-        { value: 'locked', label: 'Terkunci' },
-    ];
+        if (isAdmin) {
+            cats.splice( cats.length - 1, 0, {
+                label: 'Departemen / Divisi',
+                key: 'department_ids',
+                type: 'searchable',
+                options: departments.map((d: any) => ({ value: String(d.id), label: d.name }))
+            });
+        }
 
-    // Count active filters
-    const activeFiltersCount = useMemo(() => {
+        return cats;
+    }, [regions, vendors, types, users, departments, isAdmin]);
+
+    const activeCount = useMemo(() => {
         let count = 0;
-        if (createdFrom) count++;
-        if (createdTo) count++;
-        if (regionIds.length > 0) count++;
-        if (vendorIds.length > 0) count++;
-        if (contractTypeIds.length > 0) count++;
-        if (picIds.length > 0) count++;
-        if (isAdmin && departmentIds.length > 0) count++;
-        if (statuses.length > 0) count++;
+        if (filters.period && filters.period !== 'all') count++;
+        if (filters.created_from) count++;
+        if (filters.created_to) count++;
+        if (filters.region_ids) count++;
+        if (filters.vendor_ids) count++;
+        if (filters.contract_type_ids) count++;
+        if (filters.pic_ids) count++;
+        if (filters.department_ids) count++;
+        if (filters.statuses) count++;
         return count;
-    }, [createdFrom, createdTo, regionIds, vendorIds, contractTypeIds, picIds, departmentIds, statuses, isAdmin]);
+    }, [filters]);
+
+    const handleFilterChange = (key: string, value: any) => {
+        const newParams: any = { ...filters, view: 'dashboard' };
+        
+        if (key === 'created_from' || key === 'created_to') {
+            newParams[key] = value;
+            if (value) newParams.period = 'all';
+        } else if (Array.isArray(value)) {
+            newParams[key] = value.join(',');
+        } else {
+            newParams[key] = value;
+        }
+
+        router.get('/contracts', newParams, { preserveState: true, preserveScroll: true });
+    };
+
+    const handleReset = () => {
+        router.get('/contracts', { view: 'dashboard', period: 'all' }, { replace: true });
+    };
 
     const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'analysis' | 'workload'>('overview');
-
-    const handleNavigate = (targetView: string) => {
-        router.get('/contracts', { view: targetView });
-    };
-
-    const handleApplyFilters = () => {
-        router.get('/contracts', {
-            view: 'dashboard',
-            created_from: createdFrom,
-            created_to: createdTo,
-            region_ids: regionIds.join(','),
-            vendor_ids: vendorIds.join(','),
-            contract_type_ids: contractTypeIds.join(','),
-            pic_ids: picIds.join(','),
-            department_ids: departmentIds.join(','),
-            statuses: statuses.join(','),
-        }, {
-            preserveState: true,
-            preserveScroll: true,
-        });
-    };
-
-    const handleResetFilters = () => {
-        router.get('/contracts', {
-            view: 'dashboard',
-        }, {
-            preserveState: true,
-            preserveScroll: true,
-        });
-    };
+    const handleNavigate = (targetView: string) => router.get('/contracts', { view: targetView });
 
     return (
         <div className="animate-in fade-in slide-in-from-top-4 space-y-6 duration-500 select-none">
+            
+            {/* Dashboard Header with Filter Trigger */}
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/10">
+                        <LayoutDashboard size={20} />
+                    </div>
+                    <div>
+                        <h1 className="text-xl font-bold tracking-tight">Dashboard Kontrak</h1>
+                        <p className="text-muted-foreground text-xs">Sentralisasi Pemantauan Aset Hukum & Pengadaan</p>
+                    </div>
+                </div>
+
+                <Button
+                    variant={activeCount > 0 ? "primary" : "outline"}
+                    size="lg"
+                    onClick={() => setIsFilterOpen(true)}
+                    className="gap-2.5 font-bold"
+                >
+                    <SlidersHorizontal size={16} />
+                    Filter Data
+                    {activeCount > 0 && (
+                        <Badge variant="secondary" className="ml-1 h-5 min-w-[20px] rounded-full px-1.5 bg-white text-primary">
+                            {activeCount}
+                        </Badge>
+                    )}
+                </Button>
+            </div>
+
+            <FilterSheet
+                isOpen={isFilterOpen}
+                onOpenChange={setIsFilterOpen}
+                title="Parameter Analitik"
+                description="Gunakan filter di bawah untuk menyesuaikan cakupan data pada seluruh laporan dashboard."
+                categories={filterCategories}
+                activeFilters={activeFilters}
+                onFilterChange={handleFilterChange}
+                onReset={handleReset}
+                applyText="Terapkan"
+            />
 
             {/* Premium Tab Switcher */}
             <div className="flex border-b border-border/40 gap-6">

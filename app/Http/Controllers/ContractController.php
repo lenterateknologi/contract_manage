@@ -138,6 +138,7 @@ class ContractController extends Controller
                 'search', 'status', 'contract_type_id', 'role_id', 'department_id',
                 'created_from', 'created_to', 'region_ids', 'vendor_ids', 'statuses',
                 'contract_type_ids', 'pic_ids', 'department_ids', 'submission_type_id',
+                'period',
             ]), [
                 'per_page' => $request->integer('per_page', 10),
             ]),
@@ -397,6 +398,30 @@ class ContractController extends Controller
         $departmentIds = $normalizeArray($request->input('department_ids', []));
         $createdFrom = $request->input('created_from');
         $createdTo = $request->input('created_to');
+        $period = $request->input('period', 'all');
+
+        // Apply Period filter
+        if ($period !== 'all' && empty($createdFrom) && empty($createdTo)) {
+            switch ($period) {
+                case 'last_30_days':
+                    $createdFrom = now()->subDays(30)->toDateString();
+
+                    break;
+                case 'last_6_months':
+                    $createdFrom = now()->subMonths(6)->toDateString();
+
+                    break;
+                case 'last_year':
+                    $createdFrom = now()->subYear()->toDateString();
+
+                    break;
+                case 'current_year':
+                    $createdFrom = now()->startOfYear()->toDateString();
+
+                    break;
+            }
+            $createdTo = now()->toDateString();
+        }
 
         // Automatically restrict non-Admin users to their own department/division
         if (! $isAdmin && $user->department_id) {
@@ -477,33 +502,26 @@ class ContractController extends Controller
 
         // 1. KPI Cards values
         $totalContracts = (clone $baseQuery)->count();
+        $inProcessContracts = (clone $baseQuery)->whereIn('status', ['in_review', 'revision', 'pending', 'locked'])->count();
         $activeContracts = (clone $baseQuery)->where('status', 'approved')->where(fn ($q) => $q->whereNull('end_date')->orWhereDate('end_date', '>=', now()->toDateString()))->count();
-        $expiringContracts = (clone $baseQuery)->where('status', 'approved')->whereNotNull('end_date')->whereDate('end_date', '>=', now()->toDateString())->whereDate('end_date', '<=', now()->addDays(30)->toDateString())->count();
-        $expiredContracts = (clone $baseQuery)->where('status', 'approved')->whereNotNull('end_date')->whereDate('end_date', '<', now()->toDateString())->count();
-        $pendingContracts = (clone $baseQuery)->whereIn('status', ['in_review', 'locked'])->count();
+        $expiringSoonContracts = (clone $baseQuery)->where('status', 'approved')->whereNotNull('end_date')->whereDate('end_date', '>=', now()->toDateString())->whereDate('end_date', '<=', now()->addDays(30)->toDateString())->count();
 
+        // Legacy compatibility / Other tabs variables
+        $expiredContracts = (clone $baseQuery)->where('status', 'approved')->whereNotNull('end_date')->whereDate('end_date', '<', now()->toDateString())->count();
+        $pendingContracts = $inProcessContracts;
         $renewedContractsCount = (clone $baseQuery)->whereNotNull('parent_id')->count();
         $renewalRate = ($expiredContracts + $renewedContractsCount) > 0
             ? round(($renewedContractsCount / ($expiredContracts + $renewedContractsCount)) * 100, 1)
             : 0;
-
         $totalValue = (clone $baseQuery)->select('f2_price')->get()->sum(fn ($c) => $this->parsePrice($c->f2_price));
 
-        // Average Cycle Time
-        $approvedContracts = (clone $baseQuery)
-            ->where('status', 'approved')
-            ->orderByDesc('updated_at')
-            ->limit(50)
-            ->get();
+        $approvedContracts = (clone $baseQuery)->where('status', 'approved')->orderByDesc('updated_at')->limit(50)->get();
         $avgDays = 0;
         if ($approvedContracts->count() > 0) {
             $contractIds = $approvedContracts->pluck('id');
             $firstApprovals = Approval::whereIn('contract_id', $contractIds)
                 ->select('contract_id', DB::raw('MIN(created_at) as first_sent_at'))
-                ->groupBy('contract_id')
-                ->pluck('first_sent_at', 'contract_id')
-                ->all();
-
+                ->groupBy('contract_id')->pluck('first_sent_at', 'contract_id')->all();
             $totalDays = $approvedContracts->sum(function ($c) use ($firstApprovals) {
                 $firstSentAt = $firstApprovals[$c->id] ?? null;
 
@@ -512,8 +530,58 @@ class ContractController extends Controller
             $avgDays = round($totalDays / $approvedContracts->count(), 1);
         }
 
+        // Submission type distribution for donut
+        $submissionTypeDistribution = (clone $baseQuery)
+            ->whereNotNull('submission_type_id')
+            ->select('submission_type_id', DB::raw('count(*) as count'))
+            ->groupBy('submission_type_id')
+            ->with('submissionType:id,name')
+            ->get()
+            ->map(fn ($item) => [
+                'label' => $item->submissionType?->name ?? 'Unknown',
+                'count' => (int) $item->count,
+            ])
+            ->values();
+
+        // Contract type distribution for donut
+        $contractTypeDistribution = (clone $baseQuery)
+            ->whereNotNull('contract_type_id')
+            ->select('contract_type_id', DB::raw('count(*) as count'))
+            ->groupBy('contract_type_id')
+            ->with('contractType:id,name,parent_id')
+            ->get()
+            ->filter(function ($item) {
+                $ct = $item->contractType;
+
+                return $ct && $ct->parent_id !== null && $ct->parent_id !== $ct->id;
+            })
+            ->map(fn ($item) => [
+                'label' => $item->contractType?->name ?? 'Unknown',
+                'count' => (int) $item->count,
+            ])
+            ->values();
+
         // 2. Overview Tab Datasets
-        // Expiry timeline counts
+        // KPI Data to pass
+        $summary = [
+            'total' => $totalContracts,
+            'in_process' => $inProcessContracts,
+            'active' => $activeContracts,
+            'expiring_soon' => $expiringSoonContracts,
+        ];
+
+        // Status distribution for donut (keep for legacy compatibility)
+        $statusDistribution = (clone $baseQuery)
+            ->select('status', DB::raw('count(*) as count'))
+            ->groupBy('status')
+            ->get()
+            ->map(fn ($item) => [
+                'status' => $item->status,
+                'count' => (int) $item->count,
+            ])
+            ->values();
+
+        // Expiry timeline counts (keep for internal use or other tabs if needed, but primary focus is summary)
         $expiryTimeline = [
             'under30' => (clone $baseQuery)->where('status', 'approved')->whereNotNull('end_date')->whereDate('end_date', '>=', now()->toDateString())->whereDate('end_date', '<', now()->addDays(30)->toDateString())->count(),
             'under60' => (clone $baseQuery)->where('status', 'approved')->whereNotNull('end_date')->whereDate('end_date', '>=', now()->addDays(30)->toDateString())->whereDate('end_date', '<', now()->addDays(60)->toDateString())->count(),
@@ -524,7 +592,7 @@ class ContractController extends Controller
         // Approval Status
         $approvalStatusCounts = [
             'approved' => (clone $baseQuery)->where('status', 'approved')->count(),
-            'pending' => (clone $baseQuery)->whereIn('status', ['in_review', 'locked'])->count(),
+            'pending' => $inProcessContracts,
             'revision' => (clone $baseQuery)->where('status', 'revision')->count(),
             'rejected' => (clone $baseQuery)->where('status', 'rejected')->count(),
         ];
@@ -861,21 +929,30 @@ class ContractController extends Controller
             ->sortByDesc('active_contracts_count')
             ->values();
 
-        // Department Workload Heatmap
-        $departmentWorkload = (clone $baseQuery)
-            ->whereIn('status', ['in_review', 'revision', 'locked'])
-            ->with(['initiator.department', 'creator.department'])
-            ->get()
-            ->groupBy(function ($c) {
-                return $c->initiator?->department?->name ?? $c->creator?->department?->name ?? 'Tanpa Divisi';
+        // Department Workload Heatmap / Breakdown aligned with KPI cards
+        $users = User::with('department')->get();
+        $departmentWorkload = $users->groupBy(function ($u) {
+            return $u->department?->name ?? 'Tanpa Divisi';
+        })
+            ->map(function ($group, $deptName) {
+                $userIds = $group->pluck('id');
+
+                $activeReviews = Contract::whereIn('assigned_pic_id', $userIds)
+                    ->whereIn('status', ['in_review', 'revision'])
+                    ->count();
+
+                $pendingApprovals = Approval::whereIn('user_id', $userIds)
+                    ->where('status', 'pending')
+                    ->count();
+
+                return [
+                    'department' => $deptName,
+                    'active_reviews' => $activeReviews,
+                    'pending_approvals' => $pendingApprovals,
+                    'total' => $activeReviews + $pendingApprovals,
+                ];
             })
-            ->map(fn ($group, $deptName) => [
-                'department' => $deptName,
-                'in_review' => $group->where('status', 'in_review')->count(),
-                'revision' => $group->where('status', 'revision')->count(),
-                'locked' => $group->where('status', 'locked')->count(),
-                'total' => $group->count(),
-            ])
+            ->filter(fn ($item) => $item['total'] > 0)
             ->sortByDesc('total')
             ->values();
 
@@ -969,7 +1046,7 @@ class ContractController extends Controller
             'metrics' => [
                 'totalContracts' => $totalContracts,
                 'activeContracts' => $activeContracts,
-                'expiringContracts' => $expiringContracts,
+                'expiringContracts' => $expiringSoonContracts,
                 'expiredContracts' => $expiredContracts,
                 'pendingContracts' => $pendingContracts,
                 'pendingApprovals' => $pendingContracts, // fallback compatibility
@@ -977,6 +1054,10 @@ class ContractController extends Controller
                 'totalValue' => $totalValue,
                 'avgCycleTime' => $avgDays,
             ],
+            'summary' => $summary,
+            'activePeriod' => $period,
+            'submissionTypeDistribution' => $submissionTypeDistribution,
+            'contractTypeDistribution' => $contractTypeDistribution,
             // Tab 1: Ringkasan
             'statusDistribution' => $statusDistribution,
             'expiryTimeline' => $expiryTimeline,
