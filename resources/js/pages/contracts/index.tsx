@@ -354,6 +354,7 @@ function ContractPage({
         search?: string;
         status?: string;
         contract_type_id?: string;
+        submission_type_id?: string;
         per_page?: number;
         role_id?: string;
         department_id?: string;
@@ -685,6 +686,35 @@ function ContractPage({
                                                 <PlusCircle size={16} /> Kontrak Baru
                                             </Button>
                                         </div>
+                                    </div>
+
+                                    {/* Submission Type Tabs Filter */}
+                                    <div className="border-sidebar-border bg-background/50 border-b px-5 py-2 flex items-center gap-1.5 overflow-x-auto scrollbar-none backdrop-blur-md sticky top-[73px] z-10">
+                                        <button
+                                            onClick={() => handleFilterChange({ submission_type_id: undefined, page: 1 })}
+                                            className={cn(
+                                                "px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 whitespace-nowrap active:scale-95",
+                                                !filters.submission_type_id
+                                                    ? "bg-[var(--primary)] text-white shadow-sm font-bold"
+                                                    : "text-black/60 dark:text-white/60 hover:bg-black/5 dark:hover:bg-white/5 hover:text-black dark:hover:text-white"
+                                            )}
+                                        >
+                                            Semua Kontrak
+                                        </button>
+                                        {submissionTypes.map((type) => (
+                                            <button
+                                                key={type.id}
+                                                onClick={() => handleFilterChange({ submission_type_id: type.id, page: 1 })}
+                                                className={cn(
+                                                    "px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 whitespace-nowrap active:scale-95",
+                                                    filters.submission_type_id === type.id
+                                                        ? "bg-[var(--primary)] text-white shadow-sm font-bold"
+                                                        : "text-black/60 dark:text-white/60 hover:bg-black/5 dark:hover:bg-white/5 hover:text-black dark:hover:text-white"
+                                                )}
+                                            >
+                                                {type.name}
+                                            </button>
+                                        ))}
                                     </div>
 
                                     <div className={cn('flex-1 overflow-auto', layout === 'grid' && 'p-4')}>

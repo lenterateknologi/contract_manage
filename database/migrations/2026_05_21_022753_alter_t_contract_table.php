@@ -27,7 +27,7 @@ return new class() extends Migration
     public function down(): void
     {
         Schema::table('t_contracts', function (Blueprint $table) {
-            $table->dropColumn(['received_at', 'assigned_at', 'finished_at', 'closed_at', 'closed_by']);
+            $table->dropColumn(['received_at', 'assigned_at', 'finished_at', 'closed_at', 'closed_by', 'origin_workflow_id']);
         });
     }
 };

@@ -137,7 +137,7 @@ class ContractController extends Controller
             'filters' => array_merge($request->only([
                 'search', 'status', 'contract_type_id', 'role_id', 'department_id',
                 'created_from', 'created_to', 'region_ids', 'vendor_ids', 'statuses',
-                'contract_type_ids', 'pic_ids', 'department_ids',
+                'contract_type_ids', 'pic_ids', 'department_ids', 'submission_type_id',
             ]), [
                 'per_page' => $request->integer('per_page', 10),
             ]),
@@ -358,6 +358,15 @@ class ContractController extends Controller
         }
         if ($request->filled('created_to')) {
             $query->whereDate('created_at', '<=', $request->created_to);
+        }
+
+        // Apply Submission Type Filter
+        if ($request->filled('submission_type_id') && $request->submission_type_id !== 'all') {
+            if (is_array($request->submission_type_id)) {
+                $query->whereIn('submission_type_id', $request->submission_type_id);
+            } else {
+                $query->where('submission_type_id', $request->submission_type_id);
+            }
         }
 
         return $query;
