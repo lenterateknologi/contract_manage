@@ -454,23 +454,23 @@ export function FilterSheet({
                                 onReset();
                                 onOpenChange(false);
                             }}
-                            className="h-11 rounded-xl text-sm font-bold border-rose-200 dark:border-rose-900/50 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30 dark:hover:text-rose-400 text-rose-600 dark:text-rose-400 transition-all active:scale-95 flex items-center justify-center gap-2"
+                            className="h-11 text-xs font-bold border-rose-200 dark:border-rose-900/50 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30 dark:hover:text-rose-400 text-rose-600 dark:text-rose-400 gap-2"
                         >
-                            <RotateCcw size={14} strokeWidth={2} />
+                            <RotateCcw size={14} />
                             RESET
                         </Button>
                     ) : (
                         <Button 
                             variant="outline"
                             onClick={() => onOpenChange(false)}
-                            className="h-11 rounded-xl text-sm font-bold border-border hover:bg-muted text-muted-foreground transition-all active:scale-95"
+                            className="h-11 text-xs font-bold"
                         >
                             TUTUP
                         </Button>
                     )}
                     <Button 
                         onClick={() => onOpenChange(false)}
-                        className="h-11 rounded-xl text-sm font-bold bg-primary hover:bg-primary/90 text-primary-foreground transition-all shadow-md border-none active:scale-95"
+                        className="h-11 text-xs font-bold"
                     >
                         {totalResults !== undefined ? `${applyText} (${totalResults})` : applyText}
                     </Button>

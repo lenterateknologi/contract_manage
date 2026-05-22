@@ -5,10 +5,11 @@ import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { CompactSwitch } from '@/components/ui/forms/CompactSwitch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
+import { Modal } from '@/components/ui/overlays/Modal';
 import { usePermissions } from '@/hooks/use-permissions';
 import { cn } from '@/lib/utils';
 import { router, useForm } from '@inertiajs/react';
-import { Fingerprint, Mail, Phone, Plus, ShieldAlert, Trash2, UserCircle } from 'lucide-react';
+import { Download, FileSpreadsheet, Fingerprint, Mail, Phone, Plus, ShieldAlert, Trash2, Upload, UserCircle, Check, Loader2 } from 'lucide-react';
 import React, { useMemo } from 'react';
 import { FormSection, ManagementForm } from './ManagementForm';
 
@@ -116,6 +117,67 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
     const [isFormView, setIsFormView] = React.useState(false);
     const [editingUser, setEditingUser] = React.useState<any>(null);
     const [isConfirmOpen, setIsConfirmOpen] = React.useState(false);
+    const [isImportModalOpen, setIsImportModalOpen] = React.useState(false);
+    const [dragActive, setDragActive] = React.useState(false);
+
+    const importForm = useForm({
+        file: null as File | null,
+    });
+
+    const handleExportExcel = () => {
+        window.location.href = '/admin/users/export';
+    };
+
+    const handleDrag = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.type === "dragenter" || e.type === "dragover") {
+            setDragActive(true);
+        } else if (e.type === "dragleave") {
+            setDragActive(false);
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(false);
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            const file = e.dataTransfer.files[0];
+            if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                importForm.setData('file', file);
+            } else {
+                showToast('Hanya file Excel (.xlsx, .xls) yang diperbolehkan.', 'danger');
+            }
+        }
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                importForm.setData('file', file);
+            } else {
+                showToast('Hanya file Excel (.xlsx, .xls) yang diperbolehkan.', 'danger');
+            }
+        }
+    };
+
+    const handleImportSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!importForm.data.file) return;
+
+        importForm.post('/admin/users/import', {
+            onSuccess: () => {
+                setIsImportModalOpen(false);
+                importForm.reset();
+                showToast('Data karyawan berhasil diimpor.', 'success');
+            },
+            onError: (errors) => {
+                showToast(errors.error || 'Gagal mengimpor data.', 'danger');
+            }
+        });
+    };
 
     const form = useForm({
         name: '',
@@ -455,15 +517,36 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                 activeFilters={filters}
                 onFilterChange={handleFilterChange}
                 headerActions={
-                    canCreate && (
+                    <div className="flex items-center gap-2">
                         <Button
+                            type="button"
                             variant="white"
-                            onClick={openCreate}
-                            className="border-border bg-card text-foreground hover:bg-muted/60 hover:border-border h-10 gap-2 rounded-xl border px-5 text-xs font-bold tracking-wide shadow-sm transition-all duration-200 select-none hover:shadow-md dark:bg-slate-900/60 dark:hover:bg-slate-800/60"
+                            onClick={handleExportExcel}
+                            className="border-border bg-card text-foreground hover:bg-muted/60 hover:border-border h-10 gap-2 rounded-xl border px-4 text-xs font-bold tracking-wide shadow-sm transition-all duration-200 select-none hover:shadow-md dark:bg-slate-900/60 dark:hover:bg-slate-800/60"
                         >
-                            <Plus className="text-primary h-4 w-4" /> Tambah User
+                            <Download className="text-emerald-500 h-4 w-4" /> Export Excel
                         </Button>
-                    )
+                        {canCreate && (
+                            <>
+                                <Button
+                                    type="button"
+                                    variant="white"
+                                    onClick={() => setIsImportModalOpen(true)}
+                                    className="border-border bg-card text-foreground hover:bg-muted/60 hover:border-border h-10 gap-2 rounded-xl border px-4 text-xs font-bold tracking-wide shadow-sm transition-all duration-200 select-none hover:shadow-md dark:bg-slate-900/60 dark:hover:bg-slate-800/60"
+                                >
+                                    <Upload className="text-indigo-500 h-4 w-4" /> Import Excel
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="white"
+                                    onClick={openCreate}
+                                    className="border-border bg-card text-foreground hover:bg-muted/60 hover:border-border h-10 gap-2 rounded-xl border px-4 text-xs font-bold tracking-wide shadow-sm transition-all duration-200 select-none hover:shadow-md dark:bg-slate-900/60 dark:hover:bg-slate-800/60"
+                                >
+                                    <Plus className="text-primary h-4 w-4" /> Tambah User
+                                </Button>
+                            </>
+                        )}
+                    </div>
                 }
                 onRowClick={openEdit}
                 bulkActions={
@@ -505,6 +588,165 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                         ),
                 }}
             />
+
+            {canCreate && (
+                <Modal
+                    isOpen={isImportModalOpen}
+                    onClose={() => {
+                        setIsImportModalOpen(false);
+                        importForm.reset();
+                    }}
+                    title={
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-600 shadow-inner">
+                                <FileSpreadsheet size={20} />
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-bold tracking-wider text-slate-900 uppercase dark:text-white">Import Database Karyawan</h3>
+                                <p className="mt-0.5 text-[10px] font-medium text-slate-400 uppercase">Perbarui & tambah data karyawan secara massal</p>
+                            </div>
+                        </div>
+                    }
+                    maxWidth="md"
+                >
+                    <form onSubmit={handleImportSubmit} className="space-y-5 text-left mt-4">
+                        {(importForm.errors as any).error && (
+                            <div className="flex items-start gap-2.5 rounded-2xl border border-rose-500/20 bg-rose-500/5 p-4 text-[11px] font-bold text-rose-500 uppercase leading-normal">
+                                <ShieldAlert size={16} className="shrink-0 mt-0.5" />
+                                <div>
+                                    <span className="block font-black">Kesalahan Impor:</span>
+                                    <span className="block mt-0.5 font-medium whitespace-pre-wrap">{(importForm.errors as any).error}</span>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between px-1">
+                                <span className="text-[9px] font-black text-slate-400 uppercase">Petunjuk Format & Template</span>
+                            </div>
+                            <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+                                <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 leading-relaxed uppercase">
+                                    Sistem menggunakan format 3 worksheet dengan validasi departemen otomatis menggunakan VLOOKUP. Gunakan tombol di bawah ini untuk mengunduh database saat ini sebagai template acuan pengisian.
+                                </p>
+                                <Button
+                                    type="button"
+                                    variant="white"
+                                    onClick={handleExportExcel}
+                                    className="mt-3 h-8 gap-2 rounded-xl border border-slate-200 bg-white px-3 text-[10px] font-bold uppercase transition-all select-none hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950"
+                                >
+                                    <Download size={12} className="text-emerald-500" /> Unduh Template Database
+                                </Button>
+                            </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label className="px-1 text-[9px] font-black text-slate-400 uppercase">
+                                File Dokumen Excel <span className="text-rose-500">*</span>
+                            </label>
+                            <div 
+                                onDragEnter={handleDrag}
+                                onDragOver={handleDrag}
+                                onDragLeave={handleDrag}
+                                onDrop={handleDrop}
+                                className="relative"
+                            >
+                                <input 
+                                    type="file" 
+                                    id="import-excel-file" 
+                                    className="hidden" 
+                                    accept=".xlsx, .xls"
+                                    onChange={handleFileChange}
+                                    disabled={importForm.processing} 
+                                />
+
+                                {!importForm.data.file ? (
+                                    <label
+                                        htmlFor="import-excel-file"
+                                        className={cn(
+                                            "flex cursor-pointer flex-col items-center justify-center gap-4 rounded-3xl border-2 border-dashed p-10 text-center transition-all duration-200 select-none",
+                                            dragActive 
+                                                ? "border-indigo-500 bg-indigo-500/5 dark:bg-indigo-500/10" 
+                                                : "border-slate-200 bg-slate-50/20 hover:border-indigo-500 hover:bg-indigo-50/5 dark:border-slate-800"
+                                        )}
+                                    >
+                                        <div className={cn(
+                                            "flex h-14 w-14 items-center justify-center rounded-2xl shadow-inner transition-transform duration-200 hover:scale-110",
+                                            dragActive ? "bg-indigo-500 text-white" : "bg-indigo-500/10 text-indigo-600"
+                                        )}>
+                                            <Upload size={24} />
+                                        </div>
+                                        <div>
+                                            <h4 className="text-xs font-black text-slate-800 uppercase dark:text-slate-200">
+                                                Tarik & Lepas File Excel di Sini
+                                            </h4>
+                                            <p className="mt-1 text-[9px] font-bold tracking-wider text-slate-400 uppercase">
+                                                Atau klik untuk menelusuri penyimpanan lokal
+                                            </p>
+                                        </div>
+                                        <div className="rounded-xl border border-slate-100 bg-white px-3 py-1 text-[8px] font-bold text-slate-400 uppercase dark:border-slate-800 dark:bg-black/40">
+                                            Format: .xlsx atau .xls (Maks. 5MB)
+                                        </div>
+                                    </label>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center gap-4 rounded-3xl border-2 border-emerald-500/20 bg-emerald-500/[0.02] p-8 text-center dark:border-emerald-500/30 select-none">
+                                        <div className="flex h-14 w-14 animate-bounce items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 shadow-inner">
+                                            <FileSpreadsheet size={26} />
+                                        </div>
+                                        <div className="max-w-[320px]">
+                                            <h4 className="text-[10px] font-black tracking-wider text-emerald-600 uppercase dark:text-emerald-400">
+                                                File Excel Terpilih
+                                            </h4>
+                                            <p className="mx-auto mt-2 max-w-[280px] truncate rounded-xl border border-slate-100 bg-white px-3 py-1 text-xs font-black text-slate-800 uppercase dark:border-slate-800 dark:bg-black/30 dark:text-slate-200">
+                                                {importForm.data.file.name}
+                                            </p>
+                                            <p className="mt-1.5 text-[9px] font-bold text-slate-400 uppercase">
+                                                Ukuran: {(importForm.data.file.size / 1024).toFixed(1)} KB • Tipe: Excel Document
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => importForm.setData('file', null)}
+                                            className="mt-2 rounded-xl bg-rose-500/5 px-4 py-2 text-[9px] font-black text-rose-500 uppercase transition-all hover:bg-rose-500/10 hover:underline"
+                                        >
+                                            Ganti File
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="mt-6 flex items-center justify-end gap-3 border-t border-slate-100 pt-6 dark:border-slate-800">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setIsImportModalOpen(false);
+                                    importForm.reset();
+                                }}
+                                className="rounded-xl border border-slate-200 px-5 py-2.5 text-[10px] font-black text-slate-500 uppercase transition-all hover:bg-slate-50 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-900"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={importForm.processing || !importForm.data.file}
+                                className="flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-[10px] font-black text-white uppercase shadow-lg shadow-indigo-600/20 transition-all hover:scale-[1.02] hover:bg-indigo-700 active:scale-[0.98] disabled:opacity-50"
+                            >
+                                {importForm.processing ? (
+                                    <>
+                                        <Loader2 size={12} className="animate-spin" />
+                                        Memproses Impor...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Check size={12} />
+                                        Mulai Impor
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </form>
+                </Modal>
+            )}
         </div>
     );
 }

@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/base/Button';
 import { usePage } from '@inertiajs/react';
-import { AlertCircle, Check, FilePlus2, FileText, Loader2, ShieldCheck, X } from 'lucide-react';
+import { AlertCircle, Check, FilePlus2, Loader2, ShieldCheck, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface Props {
@@ -233,6 +233,38 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                             {errors.contract_type_id && (
                                 <div className="mt-1 px-1 text-[10px] font-medium text-rose-500">{errors.contract_type_id}</div>
                             )}
+                        </div>
+                    </div>
+
+
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <label className="text-foreground px-1 text-xs font-semibold">
+                                Nama Project <span className="text-rose-500">*</span>
+                            </label>
+                            <input
+                                value={projectName}
+                                onChange={(e) => setProjectName(e.target.value)}
+                                placeholder="Masukkan nama project"
+                                className="border-border bg-card focus:ring-primary text-foreground w-full rounded-lg border px-4 py-2.5 text-sm font-medium transition-all outline-none focus:ring-1"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-foreground px-1 text-xs font-semibold">
+                                Pihak Kedua (Vendor) <span className="text-rose-500">*</span>
+                            </label>
+                            <select
+                                value={vendorId}
+                                onChange={(e) => setVendorId(e.target.value)}
+                                className="border-border bg-card text-foreground focus:ring-primary w-full rounded-lg border px-3 py-2.5 text-sm transition-all outline-none focus:ring-1"
+                            >
+                                <option value="">Pilih Vendor</option>
+                                {vendors.map((v) => (
+                                    <option key={v.id} value={v.id}>
+                                        {v.name}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                     </div>
 

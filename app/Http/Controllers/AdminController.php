@@ -375,4 +375,24 @@ class AdminController extends Controller
 
         return back()->with('success', count($ids) . ' pengguna berhasil dihapus.');
     }
+
+    public function exportUsers()
+    {
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\UsersExport(), 'data_karyawan_' . date('Ymd') . '.xlsx');
+    }
+
+    public function importUsers(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls',
+        ]);
+
+        try {
+            \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\UsersImport(), $request->file('file'));
+
+            return back()->with('success', 'Data karyawan berhasil diimpor.');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Gagal mengimpor data: ' . $e->getMessage()]);
+        }
+    }
 }

@@ -71,6 +71,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/contracts', [ContractController::class, 'store'])->name('contracts.store');
 
         Route::get('/users', [AdminController::class, 'users'])->name('admin.users');
+        Route::get('/users/export', [AdminController::class, 'exportUsers'])->name('admin.users.export');
+        Route::post('/users/import', [AdminController::class, 'importUsers'])->name('admin.users.import');
         Route::get('/members', [AdminController::class, 'members'])->name('admin.members');
         Route::post('/users', [AdminController::class, 'storeUser'])->name('admin.users.store');
         Route::put('/users/{user}', [AdminController::class, 'updateUser'])->name('admin.users.update');

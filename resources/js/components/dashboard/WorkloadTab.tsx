@@ -7,16 +7,14 @@ import {
     Filter,
     Send,
     X,
-    CheckCircle2,
-    AlertTriangle,
-    ArrowUpRight,
-    ArrowDownLeft,
     Clock,
     UserCheck,
-    Layers
+    Layers,
+    ArrowDownLeft,
+    ArrowUpRight,
+    Activity
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { MembersPerDivision } from './MembersPerDivision';
 import {
     ResponsiveContainer,
     BarChart,
@@ -27,6 +25,10 @@ import {
     Tooltip,
     Legend
 } from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/base/Card';
+import { Button } from '@/components/ui/base/Button';
+import { Badge } from '@/components/ui/base/Badge';
+import { Input } from '@/components/ui/base/Input';
 
 interface UserWorkload {
     id: string;
@@ -53,9 +55,8 @@ interface CategoryTraffic {
 
 interface DepartmentWorkload {
     department: string;
-    in_review: number;
-    revision: number;
-    locked: number;
+    active_reviews: number;
+    pending_approvals: number;
     total: number;
 }
 
@@ -87,7 +88,6 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
 
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<'all' | 'ready' | 'sibuk'>('all');
-    // Lock non-admin to their own department id by default
     const [selectedDeptId, setSelectedDeptId] = useState<string>(
         !isAdmin && userDeptId ? String(userDeptId) : 'all'
     );
@@ -96,25 +96,19 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
     const [chatMessage, setChatMessage] = useState('');
     const [chatHistory, setChatHistory] = useState<Record<string, Array<{ sender: 'me' | 'them'; text: string; time: string }>>>({});
 
-    // Filter workloads
     const filteredWorkloads = useMemo(() => {
         return userWorkloads.filter(user => {
-            // Filter by division/department
             const matchesDept = selectedDeptId === 'all' || String(user.department_id) === selectedDeptId;
-
             const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 user.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (user.department_name && user.department_name.toLowerCase().includes(searchQuery.toLowerCase()));
-
             const matchesStatus = statusFilter === 'all' ||
                 (statusFilter === 'ready' && user.load_status === 'Ready') ||
                 (statusFilter === 'sibuk' && user.load_status === 'Sibuk');
-
             return matchesDept && matchesSearch && matchesStatus;
         });
     }, [userWorkloads, selectedDeptId, searchQuery, statusFilter]);
 
-    // Summary calculations
     const totalPendingTasks = useMemo(() => {
         return userWorkloads.reduce((sum, u) => sum + (u.pending_tasks_count || 0), 0);
     }, [userWorkloads]);
@@ -146,17 +140,13 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
     const handleSendMessage = (e: React.FormEvent) => {
         e.preventDefault();
         if (!chatMessage.trim() || !selectedChatUser) return;
-
         const time = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
         const newMessage = { sender: 'me' as const, text: chatMessage, time };
-
         setChatHistory(prev => ({
             ...prev,
             [selectedChatUser.id]: [...(prev[selectedChatUser.id] || []), newMessage]
         }));
         setChatMessage('');
-
-        // Mock auto reply
         setTimeout(() => {
             const replies = [
                 `Baik, pesan Anda telah saya terima. Saya sedang meninjau kontrak aktif dan akan segera memperbarui status alur persetujuannya.`,
@@ -165,7 +155,6 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
             ];
             const randomReply = replies[Math.floor(Math.random() * replies.length)];
             const replyTime = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-
             setChatHistory(prev => ({
                 ...prev,
                 [selectedChatUser.id]: [
@@ -178,385 +167,273 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            {/* Quick KPI Cards inside Workload Tab */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {/* 1. Laju Penyelesaian Perpanjangan */}
-                <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm">
-                    <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">Penyelesaian Perpanjangan</span>
-                        <div className="rounded-lg bg-emerald-500/10 p-2 text-emerald-500">
-                            <UserCheck size={16} />
+            {/* KPI Cards */}
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4 select-none">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
+                        <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Penyelesaian Renewal</CardTitle>
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 border border-emerald-500/10">
+                            <UserCheck className="h-4 w-4" />
                         </div>
-                    </div>
-                    <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-xl font-black text-foreground">{renewalCompletionRate}%</span>
-                    </div>
-                    <div className="mt-1 text-[9px] font-semibold text-muted-foreground">
-                        Persentase kontrak kadaluarsa yang berhasil diperpanjang.
-                    </div>
-                </div>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
+                        <div className="text-2xl font-bold">{renewalCompletionRate}%</div>
+                        <p className="text-[9px] font-medium text-muted-foreground uppercase mt-1">Laju Penyelesaian</p>
+                    </CardContent>
+                </Card>
 
-                {/* 2. Total Tugas Pending */}
-                <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm">
-                    <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">Tugas Persetujuan Pending</span>
-                        <div className="rounded-lg bg-amber-500/10 p-2 text-amber-500">
-                            <Clock size={16} />
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
+                        <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Tugas Pending</CardTitle>
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 border border-amber-500/10">
+                            <Clock className="h-4 w-4" />
                         </div>
-                    </div>
-                    <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-xl font-black text-foreground">{totalPendingTasks}</span>
-                        <span className="text-[9px] font-bold text-muted-foreground">Dokumen</span>
-                    </div>
-                    <div className="mt-1 text-[9px] font-semibold text-muted-foreground">
-                        Akumulasi dokumen persetujuan yang menunggu tanda tangan.
-                    </div>
-                </div>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
+                        <div className="text-2xl font-bold">{totalPendingTasks}</div>
+                        <p className="text-[9px] font-medium text-muted-foreground uppercase mt-1">Dokumen Menunggu</p>
+                    </CardContent>
+                </Card>
 
-                {/* 3. Total Kontrak Direview / Direvisi */}
-                <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm">
-                    <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">Aktif Direview & Revisi</span>
-                        <div className="rounded-lg bg-indigo-500/10 p-2 text-indigo-500">
-                            <Layers size={16} />
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
+                        <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Direview & Revisi</CardTitle>
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-600 border border-indigo-500/10">
+                            <Layers className="h-4 w-4" />
                         </div>
-                    </div>
-                    <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-xl font-black text-foreground">{totalActiveReviews}</span>
-                        <span className="text-[9px] font-bold text-muted-foreground">Kontrak</span>
-                    </div>
-                    <div className="mt-1 text-[9px] font-semibold text-muted-foreground">
-                        Kontrak yang sedang dalam proses revisi atau peninjauan aktif.
-                    </div>
-                </div>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
+                        <div className="text-2xl font-bold">{totalActiveReviews}</div>
+                        <p className="text-[9px] font-medium text-muted-foreground uppercase mt-1">Proses Aktif</p>
+                    </CardContent>
+                </Card>
 
-                {/* 4. Staff Legal Sibuk */}
-                <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm">
-                    <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">PIC Legal / Staff Sibuk</span>
-                        <div className="rounded-lg bg-rose-500/10 p-2 text-rose-500">
-                            <Briefcase size={16} />
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
+                        <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">PIC Legal Sibuk</CardTitle>
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600 border border-rose-500/10">
+                            <Briefcase className="h-4 w-4" />
                         </div>
-                    </div>
-                    <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-xl font-black text-foreground">{busyPicsCount}</span>
-                        <span className="text-[9px] font-bold text-muted-foreground">Orang</span>
-                    </div>
-                    <div className="mt-1 text-[9px] font-semibold text-muted-foreground">
-                        Jumlah PIC dengan beban kerja sibuk (≥ 3 kontrak aktif).
-                    </div>
-                </div>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
+                        <div className="text-2xl font-bold">{busyPicsCount}</div>
+                        <p className="text-[9px] font-medium text-muted-foreground uppercase mt-1">Beban Tinggi</p>
+                    </CardContent>
+                </Card>
             </div>
 
-            {/* Layout Charts & PICs */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                
-                {/* Left Columns (5 Cols): Department Workload & Category Traffic */}
                 <div className="lg:col-span-5 space-y-6">
-                    {/* Department Workload Breakdown */}
-                    <div className="border border-border/60 bg-card/45 backdrop-blur-md rounded-2xl p-5 shadow-xs transition-all duration-300 dark:border-slate-800/60 dark:bg-slate-900/15">
-                        <div className="border-b border-border/20 pb-3 mb-4 dark:border-slate-800/40">
-                            <h3 className="text-foreground text-xs font-extrabold tracking-wider uppercase">Beban Pengerjaan Per Divisi</h3>
-                            <p className="text-muted-foreground text-[9px] font-semibold mt-0.5">Distribusi kontrak aktif yang sedang ditangani oleh tiap divisi.</p>
-                        </div>
+                    <Card>
+                        <CardHeader className="p-5 pb-0">
+                            <CardTitle className="text-xs font-bold uppercase tracking-wider">Beban Pengerjaan Per Divisi</CardTitle>
+                            <p className="text-muted-foreground text-[9px] font-medium mt-0.5">Distribusi kontrak aktif yang sedang ditangani oleh tiap divisi.</p>
+                        </CardHeader>
+                        <CardContent className="p-5">
+                            <div className="h-[240px] w-full select-none">
+                                {isMounted && departmentWorkload.length > 0 ? (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart
+                                            data={departmentWorkload}
+                                            margin={{ top: 5, right: 5, left: -20, bottom: 5 }}
+                                        >
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0, 0, 0, 0.05)" />
+                                            <XAxis dataKey="department" fontSize={8} stroke="rgba(120, 120, 120, 0.6)" tickLine={false} axisLine={false} />
+                                            <YAxis fontSize={8} stroke="rgba(120, 120, 120, 0.6)" tickLine={false} axisLine={false} />
+                                            <Tooltip
+                                                contentStyle={{
+                                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                                    border: 'none',
+                                                    borderRadius: '8px',
+                                                    fontSize: '10px',
+                                                    color: '#fff'
+                                                }}
+                                            />
+                                            <Legend
+                                                verticalAlign="top"
+                                                height={30}
+                                                iconSize={8}
+                                                iconType="circle"
+                                                wrapperStyle={{ fontSize: '9px', fontWeight: 'bold' }}
+                                            />
+                                            <Bar dataKey="active_reviews" stackId="w" name="Review & Revisi" fill="#6366f1" barSize={14} />
+                                            <Bar dataKey="pending_approvals" stackId="w" name="Persetujuan Pending" fill="#f59e0b" radius={[2, 2, 0, 0]} barSize={14} />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <div className="flex flex-col items-center gap-2 opacity-30 text-center justify-center h-full">
+                                        <Activity size={32} />
+                                        <p className="text-[10px] font-bold uppercase">Data tidak tersedia</p>
+                                    </div>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
 
-                        <div className="h-[240px] w-full select-none">
-                            {isMounted && departmentWorkload.length > 0 ? (
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart
-                                        data={departmentWorkload}
-                                        margin={{ top: 5, right: 5, left: -20, bottom: 5 }}
-                                    >
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(120, 120, 120, 0.05)" />
-                                        <XAxis dataKey="department" fontSize={8} stroke="rgba(120, 120, 120, 0.6)" tickLine={false} axisLine={false} />
-                                        <YAxis fontSize={8} stroke="rgba(120, 120, 120, 0.6)" tickLine={false} axisLine={false} />
-                                        <Tooltip
-                                            contentStyle={{
-                                                backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                                                borderColor: 'rgba(255, 255, 255, 0.1)',
-                                                borderRadius: '12px',
-                                                fontSize: '10px',
-                                                color: '#f8fafc'
-                                            }}
-                                        />
-                                        <Legend
-                                            verticalAlign="top"
-                                            height={30}
-                                            iconSize={8}
-                                            iconType="circle"
-                                            wrapperStyle={{ fontSize: '9px', fontWeight: 'bold' }}
-                                        />
-                                        <Bar dataKey="in_review" stackId="w" name="Review" fill="#f59e0b" radius={[0, 0, 0, 0]} barSize={14} />
-                                        <Bar dataKey="revision" stackId="w" name="Revisi" fill="#6366f1" radius={[0, 0, 0, 0]} barSize={14} />
-                                        <Bar dataKey="locked" stackId="w" name="Terkunci" fill="#f43f5e" radius={[2, 2, 0, 0]} barSize={14} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            ) : (
-                                <div className="text-xs text-muted-foreground flex items-center justify-center h-full">
-                                    {departmentWorkload.length === 0 ? 'Belum ada data beban kerja divisi.' : 'Memuat...'}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Category Traffic */}
-                    <div className="border border-border/60 bg-card/45 backdrop-blur-md rounded-2xl p-5 shadow-xs transition-all duration-300 dark:border-slate-800/60 dark:bg-slate-900/15">
-                        <div className="flex items-center justify-between border-b border-border/20 pb-3 mb-4 dark:border-slate-800/40">
+                    <Card>
+                        <CardHeader className="p-5 pb-0 flex flex-row items-center justify-between space-y-0">
                             <div>
-                                <h3 className="text-foreground text-xs font-extrabold tracking-wider uppercase">Trafik Alur Kategori</h3>
-                                <p className="text-muted-foreground text-[9px] font-semibold mt-0.5">Kontrak Masuk (Review/Revisi) vs Keluar (Disetujui/Arsip)</p>
+                                <CardTitle className="text-xs font-bold uppercase tracking-wider">Trafik Alur Kategori</CardTitle>
+                                <p className="text-muted-foreground text-[9px] font-medium mt-0.5">Kontrak Masuk (Review) vs Keluar (Selesai)</p>
                             </div>
                             <div className="flex items-center gap-3 text-[9px] font-bold">
                                 <div className="flex items-center gap-1">
                                     <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                                    <span className="text-muted-foreground">Masuk</span>
+                                    <span className="text-muted-foreground uppercase">Masuk</span>
                                 </div>
                                 <div className="flex items-center gap-1">
                                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                                    <span className="text-muted-foreground">Keluar</span>
+                                    <span className="text-muted-foreground uppercase">Keluar</span>
                                 </div>
                             </div>
-                        </div>
-
-                        <div className="space-y-3.5">
+                        </CardHeader>
+                        <CardContent className="p-5 space-y-3.5">
                             {categoryTraffic.length === 0 ? (
-                                <div className="text-center py-6 text-xs text-muted-foreground font-medium">
-                                    Belum ada data trafik kategori kontrak.
-                                </div>
+                                <div className="text-center py-6 text-xs text-muted-foreground font-medium uppercase italic">Belum ada data trafik</div>
                             ) : (
                                 categoryTraffic.map((item, idx) => {
                                     const total = item.incoming_count + item.outgoing_count;
                                     const inPct = total > 0 ? (item.incoming_count / total) * 100 : 0;
                                     const outPct = total > 0 ? (item.outgoing_count / total) * 100 : 0;
-
                                     return (
                                         <div key={idx} className="space-y-1.5 group">
                                             <div className="flex items-center justify-between text-[11px] font-bold">
-                                                <span className="text-foreground truncate max-w-[160px]" title={item.category_name}>
-                                                    {item.category_name}
-                                                </span>
-                                                <div className="flex items-center gap-2 shrink-0 font-extrabold text-[9px]">
-                                                    <span className="text-amber-500 flex items-center gap-0.5">
-                                                        <ArrowDownLeft size={10} />
-                                                        {item.incoming_count}
-                                                    </span>
+                                                <span className="text-foreground truncate max-w-[160px]">{item.category_name}</span>
+                                                <div className="flex items-center gap-2 shrink-0 font-bold text-[9px] tabular-nums">
+                                                    <span className="text-amber-500 flex items-center gap-0.5"><ArrowDownLeft size={10} />{item.incoming_count}</span>
                                                     <span className="text-muted-foreground/30">|</span>
-                                                    <span className="text-emerald-500 flex items-center gap-0.5">
-                                                        <ArrowUpRight size={10} />
-                                                        {item.outgoing_count}
-                                                    </span>
+                                                    <span className="text-emerald-500 flex items-center gap-0.5"><ArrowUpRight size={10} />{item.outgoing_count}</span>
                                                 </div>
                                             </div>
-
-                                            <div className="h-2 w-full bg-muted/40 rounded-full overflow-hidden flex border border-border/20">
+                                            <div className="h-1.5 w-full bg-muted/40 rounded-full overflow-hidden flex border border-border/10">
                                                 {item.incoming_count > 0 && (
-                                                    <div
-                                                        style={{ width: `${inPct}%` }}
-                                                        className="h-full bg-gradient-to-r from-amber-400 to-amber-500 transition-all duration-500"
-                                                        title={`Masuk: ${item.incoming_count} (${Math.round(inPct)}%)`}
-                                                    />
+                                                    <div style={{ width: `${inPct}%` }} className="h-full bg-amber-500" />
                                                 )}
                                                 {item.outgoing_count > 0 && (
-                                                    <div
-                                                        style={{ width: `${outPct}%` }}
-                                                        className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 transition-all duration-500"
-                                                        title={`Keluar: ${item.outgoing_count} (${Math.round(outPct)}%)`}
-                                                    />
+                                                    <div style={{ width: `${outPct}%` }} className="h-full bg-emerald-500" />
                                                 )}
-                                                {total === 0 && <div className="h-full w-full bg-muted/20" />}
                                             </div>
                                         </div>
                                     );
                                 })
                             )}
-                        </div>
-                    </div>
+                        </CardContent>
+                    </Card>
                 </div>
 
-                {/* Right Columns (7 Cols): PIC Capacity & Workload Board */}
                 <div className="lg:col-span-7 space-y-4">
-                    {/* Board Control & Filters */}
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border border-border/40 bg-card/25 backdrop-blur-md p-3 rounded-2xl dark:border-slate-800/60">
-                        {/* Search and Dept Select */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border border-border/40 bg-card/40 p-3 rounded-xl">
                         <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 flex-1">
                             <div className="relative flex-1">
-                                <Search className="absolute left-3 top-2.5 text-muted-foreground" size={12} />
-                                <input
-                                    type="text"
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={12} />
+                                <Input
                                     placeholder="Cari nama, peran, divisi..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full pl-8 pr-4 py-1.5 text-[11px] bg-muted/40 border border-border/30 rounded-xl focus:outline-hidden focus:ring-1 focus:ring-primary focus:border-primary text-foreground font-semibold placeholder:text-muted-foreground/60"
+                                    className="h-9 pl-8 text-xs bg-background"
                                 />
                             </div>
-
                             <div className="relative shrink-0">
                                 <select
                                     value={selectedDeptId}
                                     onChange={(e) => setSelectedDeptId(e.target.value)}
                                     disabled={!isAdmin}
-                                    className="w-full md:w-auto pl-3 pr-8 py-1.5 text-[11px] bg-muted/40 border border-border/30 rounded-xl focus:outline-hidden focus:ring-1 focus:ring-primary focus:border-primary text-foreground font-bold cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed appearance-none"
+                                    className="h-9 w-full md:w-auto pl-3 pr-8 text-xs bg-background border border-input rounded-lg font-bold cursor-pointer disabled:opacity-75 appearance-none focus:ring-1 focus:ring-primary outline-none"
                                 >
-                                    {isAdmin && (
-                                        <option value="all" className="bg-card text-foreground font-semibold">Semua Divisi</option>
-                                    )}
-                                    {departments.map((dept: any) => {
-                                        if (!isAdmin && String(dept.id) !== selectedDeptId) {
-                                            return null;
-                                        }
-                                        return (
-                                            <option key={dept.id} value={String(dept.id)} className="bg-card text-foreground font-semibold">
-                                                {dept.name}
-                                            </option>
-                                        );
-                                    })}
+                                    {isAdmin && <option value="all">Semua Divisi</option>}
+                                    {departments.map((dept: any) => (
+                                        (!isAdmin && String(dept.id) !== selectedDeptId) ? null : 
+                                        <option key={dept.id} value={String(dept.id)}>{dept.name}</option>
+                                    ))}
                                 </select>
-                                <span className="absolute right-2.5 top-2.5 pointer-events-none text-muted-foreground">
-                                    <Filter size={10} className="opacity-60" />
-                                </span>
+                                <Filter size={10} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                             </div>
                         </div>
 
-                        {/* Status Toggle Buttons */}
-                        <div className="flex items-center gap-1.5 self-end sm:self-auto shrink-0">
-                            <button
+                        <div className="flex items-center gap-1.5">
+                            <Button
+                                variant={statusFilter === 'all' ? 'primary' : 'outline'}
+                                size="sm"
                                 onClick={() => setStatusFilter('all')}
-                                className={cn(
-                                    "px-2.5 py-1.5 rounded-lg text-[9px] font-extrabold uppercase transition-all duration-200 cursor-pointer border",
-                                    statusFilter === 'all'
-                                        ? "bg-foreground text-background border-foreground shadow-xs"
-                                        : "bg-muted/30 text-muted-foreground border-border/40 hover:bg-muted/65 hover:text-foreground"
-                                )}
+                                className="h-8 px-3 font-bold"
                             >
                                 Semua
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                                variant={statusFilter === 'ready' ? 'primary' : 'outline'}
+                                size="sm"
                                 onClick={() => setStatusFilter('ready')}
-                                className={cn(
-                                    "px-2.5 py-1.5 rounded-lg text-[9px] font-extrabold uppercase transition-all duration-200 cursor-pointer border flex items-center gap-1",
-                                    statusFilter === 'ready'
-                                        ? "bg-emerald-500 text-white border-emerald-500 shadow-xs"
-                                        : "bg-emerald-500/10 text-emerald-600 border-emerald-500/10 hover:bg-emerald-500/20 dark:text-emerald-400"
-                                )}
+                                className={cn("h-8 px-3 font-bold gap-1.5", statusFilter === 'ready' ? "bg-emerald-600 hover:bg-emerald-700 border-none" : "text-emerald-600 border-emerald-200 hover:bg-emerald-50")}
                             >
-                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                <span className={cn("h-1.5 w-1.5 rounded-full", statusFilter === 'ready' ? "bg-white" : "bg-emerald-500")} />
                                 Ready
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                                variant={statusFilter === 'sibuk' ? 'primary' : 'outline'}
+                                size="sm"
                                 onClick={() => setStatusFilter('sibuk')}
-                                className={cn(
-                                    "px-2.5 py-1.5 rounded-lg text-[9px] font-extrabold uppercase transition-all duration-200 cursor-pointer border flex items-center gap-1",
-                                    statusFilter === 'sibuk'
-                                        ? "bg-rose-500 text-white border-rose-500 shadow-xs"
-                                        : "bg-rose-500/10 text-rose-600 border-rose-500/10 hover:bg-rose-500/20 dark:text-rose-400"
-                                )}
+                                className={cn("h-8 px-3 font-bold gap-1.5", statusFilter === 'sibuk' ? "bg-rose-600 hover:bg-rose-700 border-none" : "text-rose-600 border-rose-200 hover:bg-rose-50")}
                             >
-                                <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />
+                                <span className={cn("h-1.5 w-1.5 rounded-full animate-pulse", statusFilter === 'sibuk' ? "bg-white" : "bg-rose-500")} />
                                 Sibuk
-                            </button>
+                            </Button>
                         </div>
                     </div>
 
-                    {/* PIC Workloads Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[580px] overflow-y-auto pr-1">
                         {filteredWorkloads.length === 0 ? (
-                            <div className="col-span-2 text-center py-10 border border-dashed border-border/60 rounded-2xl bg-card/25 text-xs font-semibold text-muted-foreground">
-                                Tidak ada staff PIC yang sesuai filter.
-                            </div>
+                            <Card className="col-span-2 border-dashed flex flex-col items-center justify-center py-10 opacity-60">
+                                <Briefcase className="h-8 w-8 mb-2 opacity-20" />
+                                <p className="text-xs font-bold uppercase tracking-wider">PIC tidak ditemukan</p>
+                            </Card>
                         ) : (
                             filteredWorkloads.map((user) => {
                                 const activeCount = user.active_contracts_count;
                                 const capacityPct = Math.min((activeCount / 5) * 100, 100);
                                 const isBusy = user.load_status === 'Sibuk';
-
-                                const customAvatarStyle = user.bg_color && user.text_color
-                                    ? { backgroundColor: user.bg_color, color: user.text_color }
-                                    : undefined;
-
+                                const customAvatarStyle = user.bg_color && user.text_color ? { backgroundColor: user.bg_color, color: user.text_color } : undefined;
                                 return (
-                                    <div
-                                        key={user.id}
-                                        className={cn(
-                                            "border bg-card/35 hover:bg-card/50 rounded-2xl p-4 transition-all duration-300 backdrop-blur-xs flex flex-col justify-between hover:shadow-md hover:-translate-y-0.5",
-                                            isBusy ? "border-rose-500/30 dark:border-rose-500/15" : "border-border/60 dark:border-slate-800/60"
-                                        )}
-                                    >
-                                        <div className="space-y-3">
-                                            {/* Name / Avatar / Role */}
-                                            <div className="flex items-start justify-between min-w-0 gap-2">
-                                                <div className="flex items-center gap-2.5 min-w-0">
-                                                    <div
-                                                        style={customAvatarStyle}
-                                                        className={cn(
-                                                            "h-8 w-8 rounded-full flex items-center justify-center text-[10px] font-extrabold border border-black/5 dark:border-white/5 shrink-0",
-                                                            !customAvatarStyle && "bg-muted text-muted-foreground"
-                                                        )}
-                                                    >
-                                                        {user.initials ?? user.name.substring(0, 2).toUpperCase()}
+                                    <Card key={user.id} className={cn("group transition-all hover:shadow-md", isBusy && "border-rose-200 dark:border-rose-900/40")}>
+                                        <CardContent className="p-4 flex flex-col justify-between h-full">
+                                            <div className="space-y-3">
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <div className="flex items-center gap-2.5 min-w-0">
+                                                        <div style={customAvatarStyle} className={cn("h-8 w-8 rounded-full flex items-center justify-center text-[10px] font-bold border border-black/5 dark:border-white/5 shrink-0", !customAvatarStyle && "bg-muted text-muted-foreground")}>
+                                                            {user.initials ?? user.name.substring(0, 2).toUpperCase()}
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <span className="text-[11px] font-bold block truncate leading-tight">{user.name}</span>
+                                                            <span className="text-muted-foreground text-[9px] font-medium truncate block mt-0.5">{user.position || user.role}</span>
+                                                        </div>
                                                     </div>
-                                                    <div className="min-w-0">
-                                                        <span className="text-foreground text-[11px] font-bold block truncate leading-snug">
-                                                            {user.name}
-                                                        </span>
-                                                        <span className="text-muted-foreground text-[9px] font-semibold truncate block mt-0.5">
-                                                            {user.position || user.role}
-                                                        </span>
+                                                    <Badge variant={isBusy ? "destructive" : "secondary"} className={cn("text-[8px] font-bold uppercase px-2 shrink-0 h-4", !isBusy && "bg-emerald-500/10 text-emerald-600 border-emerald-500/10 hover:bg-emerald-500/10")}>
+                                                        {user.load_status}
+                                                    </Badge>
+                                                </div>
+                                                <div className="text-[9px] font-bold text-muted-foreground bg-muted/50 px-2 py-1 rounded-lg w-max max-w-full truncate">
+                                                    {user.department_name || 'Direksi & Staff Umum'}
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center justify-between text-[9px] font-bold text-muted-foreground">
+                                                        <span>Kapasitas Kerja</span>
+                                                        <span className={cn(isBusy ? "text-rose-600" : "text-emerald-600")}>{activeCount} / 5 Kontrak</span>
+                                                    </div>
+                                                    <div className="h-1.5 w-full bg-muted/40 rounded-full overflow-hidden border border-border/5">
+                                                        <div style={{ width: `${capacityPct}%` }} className={cn("h-full transition-all duration-500", isBusy ? "bg-rose-500" : "bg-emerald-500")} />
                                                     </div>
                                                 </div>
-
-                                                <span className={cn(
-                                                    "text-[8px] font-extrabold uppercase px-2 py-0.5 rounded-full shrink-0 border",
-                                                    isBusy
-                                                        ? "bg-rose-500/10 text-rose-600 border-rose-500/10 dark:text-rose-400"
-                                                        : "bg-emerald-500/10 text-emerald-600 border-emerald-500/10 dark:text-emerald-400"
-                                                )}>
-                                                    {user.load_status}
-                                                </span>
                                             </div>
-
-                                            {/* Department Tag */}
-                                            <div className="flex items-center gap-1.5 text-[9px] font-bold text-muted-foreground bg-muted/30 px-2 py-1 rounded-lg w-max max-w-full">
-                                                <span className="truncate">{user.department_name || 'Direksi & Staff Umum'}</span>
-                                            </div>
-
-                                            {/* Load progress */}
-                                            <div className="space-y-1 pt-1">
-                                                <div className="flex items-center justify-between text-[9px] font-bold text-muted-foreground">
-                                                    <span>Kapasitas Kerja</span>
-                                                    <span className={cn(isBusy ? "text-rose-500" : "text-emerald-500", "font-extrabold")}>
-                                                        {activeCount} / 5 Kontrak
-                                                    </span>
+                                            <div className="flex items-center justify-between border-t border-border/10 pt-3 mt-3">
+                                                <div className="flex flex-col text-[9px] font-medium text-muted-foreground">
+                                                    <span>Inisiasi: <strong className="text-foreground">{user.initiated_contracts_count || 0}</strong></span>
+                                                    <span>Pending: <strong className="text-amber-600">{user.pending_tasks_count || 0}</strong></span>
                                                 </div>
-                                                <div className="h-1.5 w-full bg-muted/40 rounded-full overflow-hidden">
-                                                    <div
-                                                        style={{ width: `${capacityPct}%` }}
-                                                        className={cn(
-                                                            "h-full rounded-full transition-all duration-500",
-                                                            isBusy
-                                                                ? "bg-gradient-to-r from-rose-500 to-red-500"
-                                                                : "bg-gradient-to-r from-emerald-400 to-emerald-500"
-                                                        )}
-                                                    />
-                                                </div>
+                                                <Button size="sm" variant="outline" onClick={() => handleOpenChat(user)} className="h-7 px-2 text-[9px] font-bold gap-1">
+                                                    <MessageSquare size={10} /> DISKUSI
+                                                </Button>
                                             </div>
-                                        </div>
-
-                                        {/* Stats and Action Footer */}
-                                        <div className="flex items-center justify-between border-t border-border/20 pt-2.5 mt-3 gap-2 dark:border-slate-800/30">
-                                            <div className="flex flex-col text-[9px] font-medium text-muted-foreground">
-                                                <span>Inisiasi: <strong className="text-foreground font-extrabold">{user.initiated_contracts_count || 0}</strong></span>
-                                                <span>Tugas Pending: <strong className="text-amber-500 font-extrabold">{user.pending_tasks_count || 0}</strong></span>
-                                            </div>
-
-                                            <button
-                                                onClick={() => handleOpenChat(user)}
-                                                className="px-2 py-1 rounded-lg bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/10 transition-all duration-200 flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-wider cursor-pointer"
-                                            >
-                                                <MessageSquare size={10} />
-                                                Diskusi
-                                            </button>
-                                        </div>
-                                    </div>
+                                        </CardContent>
+                                    </Card>
                                 );
                             })
                         )}
@@ -564,74 +441,38 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                 </div>
             </div>
 
-            {/* Embedded Members Per Division at the bottom */}
-            <div className="border border-border/60 bg-card/45 backdrop-blur-md rounded-2xl p-5 shadow-xs transition-all duration-300 dark:border-slate-800/60 dark:bg-slate-900/15">
-                <MembersPerDivision />
-            </div>
-
-            {/* Diskusi Chat Popover */}
             {selectedChatUser && (
-                <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-                    <div className="bg-card border border-border/60 rounded-2xl w-full max-w-md shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 max-h-[500px]">
-                        <div className="bg-muted/40 border-b border-border/40 p-4 flex items-center justify-between">
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+                    <Card className="w-full max-w-md shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 max-h-[500px]">
+                        <CardHeader className="bg-muted/30 p-4 border-b flex flex-row items-center justify-between space-y-0">
                             <div className="flex items-center gap-3">
-                                <div
-                                    style={selectedChatUser.bg_color && selectedChatUser.text_color ? { backgroundColor: selectedChatUser.bg_color, color: selectedChatUser.text_color } : undefined}
-                                    className="h-8 w-8 rounded-full flex items-center justify-center text-[10px] font-bold border border-black/5 dark:border-white/5"
-                                >
+                                <div style={selectedChatUser.bg_color && selectedChatUser.text_color ? { backgroundColor: selectedChatUser.bg_color, color: selectedChatUser.text_color } : undefined} className="h-8 w-8 rounded-full flex items-center justify-center text-[10px] font-bold border border-black/5 dark:border-white/5">
                                     {selectedChatUser.initials ?? selectedChatUser.name.substring(0, 2).toUpperCase()}
                                 </div>
                                 <div>
-                                    <h4 className="text-foreground text-[11px] font-extrabold leading-tight">{selectedChatUser.name}</h4>
-                                    <span className="text-muted-foreground text-[9px] font-semibold">{selectedChatUser.position || selectedChatUser.role}</span>
+                                    <CardTitle className="text-xs font-bold leading-none">{selectedChatUser.name}</CardTitle>
+                                    <p className="text-[9px] font-medium text-muted-foreground mt-1">{selectedChatUser.position || selectedChatUser.role}</p>
                                 </div>
                             </div>
-                            <button
-                                onClick={() => setSelectedChatUser(null)}
-                                className="h-7 w-7 rounded-lg hover:bg-muted/70 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
-                            >
+                            <Button variant="ghost" size="icon" onClick={() => setSelectedChatUser(null)} className="h-8 w-8">
                                 <X size={14} />
-                            </button>
-                        </div>
-
-                        <div className="p-4 flex-1 overflow-y-auto space-y-3 min-h-[220px] bg-slate-50/20 dark:bg-slate-950/10">
+                            </Button>
+                        </CardHeader>
+                        <CardContent className="p-4 flex-1 overflow-y-auto space-y-3 min-h-[220px] bg-muted/5">
                             {chatHistory[selectedChatUser.id]?.map((msg, i) => (
-                                <div
-                                    key={i}
-                                    className={cn(
-                                        "flex flex-col max-w-[80%] rounded-2xl px-3 py-1.5 text-xs leading-normal",
-                                        msg.sender === 'me'
-                                            ? "bg-primary text-primary-foreground ml-auto rounded-tr-none"
-                                            : "bg-muted text-foreground mr-auto rounded-tl-none"
-                                    )}
-                                >
-                                    <p className="font-semibold">{msg.text}</p>
-                                    <span className={cn(
-                                        "text-[8px] mt-1 text-right block",
-                                        msg.sender === 'me' ? "text-primary-foreground/70" : "text-muted-foreground/70"
-                                    )}>
-                                        {msg.time}
-                                    </span>
+                                <div key={i} className={cn("flex flex-col max-w-[80%] rounded-xl px-3 py-2 text-xs", msg.sender === 'me' ? "bg-primary text-primary-foreground ml-auto rounded-tr-none shadow-sm" : "bg-white dark:bg-muted text-foreground mr-auto rounded-tl-none border border-border/10")}>
+                                    <p className="font-medium">{msg.text}</p>
+                                    <span className={cn("text-[8px] mt-1 text-right block opacity-70")}>{msg.time}</span>
                                 </div>
                             ))}
-                        </div>
-
-                        <form onSubmit={handleSendMessage} className="p-3 border-t border-border/40 bg-card flex gap-2">
-                            <input
-                                type="text"
-                                placeholder={`Kirim pesan ke ${selectedChatUser.name.split(' ')[0]}...`}
-                                value={chatMessage}
-                                onChange={(e) => setChatMessage(e.target.value)}
-                                className="flex-1 px-3 py-2 text-xs bg-muted/40 border border-border/20 rounded-xl focus:outline-hidden focus:ring-1 focus:ring-primary focus:border-primary text-foreground font-semibold"
-                            />
-                            <button
-                                type="submit"
-                                className="h-8 w-8 bg-primary text-primary-foreground hover:bg-primary/90 flex items-center justify-center rounded-xl transition-all active:scale-95 cursor-pointer shadow-sm shrink-0"
-                            >
-                                <Send size={12} />
-                            </button>
+                        </CardContent>
+                        <form onSubmit={handleSendMessage} className="p-3 border-t bg-card flex gap-2">
+                            <Input placeholder={`Kirim pesan...`} value={chatMessage} onChange={(e) => setChatMessage(e.target.value)} className="h-9 text-xs" />
+                            <Button type="submit" size="icon" className="h-9 w-9 shrink-0">
+                                <Send size={14} />
+                            </Button>
                         </form>
-                    </div>
+                    </Card>
                 </div>
             )}
         </div>

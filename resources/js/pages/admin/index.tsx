@@ -113,7 +113,6 @@ export default function AdminIndex({
     const rolesArray = Array.isArray(roles) ? roles : roles?.data || [];
     const deptsArray = Array.isArray(departments) ? departments : departments?.data || [];
     const typesArray = Array.isArray(contractTypes || types) ? contractTypes || types : (contractTypes || types)?.data || [];
-    const usersArray = Array.isArray(users) ? users : users?.data || [];
     const navigationsArray = Array.isArray(groups || moduleGroups) ? groups || moduleGroups : (groups || moduleGroups)?.data || [];
 
     const renderView = () => {
