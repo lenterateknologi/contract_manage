@@ -17,9 +17,22 @@ class MasterConfigController extends Controller
 {
     // ─── Contract Types ───────────────────────────────────────────────────────
 
-    public function contractTypes(Request $request)
+    public function contractTypes(Request $request): \Inertia\Response
     {
+        $sortBy = $request->input('sort_by', 'name');
+        $sortDir = $request->input('sort_dir', 'asc');
+
+        // Whitelist columns to ensure query safety
+        $allowedSortColumns = ['name', 'parent_id', 'f1_input_mechanism', 'f2_input_mechanism', 'description'];
+        if (!in_array($sortBy, $allowedSortColumns)) {
+            $sortBy = 'name';
+        }
+        if (!in_array($sortDir, ['asc', 'desc'])) {
+            $sortDir = 'asc';
+        }
+
         $query = ContractType::query()
+            ->with('parent')
             ->when(
                 $request->search,
                 fn ($q, $s) => $q->where('name', 'ilike', "%{$s}%")->orWhere('description', 'ilike', "%{$s}%"),
@@ -27,10 +40,10 @@ class MasterConfigController extends Controller
 
         return Inertia::render('admin/index', [
             'currentView' => 'contract-types',
-            'types' => $query->orderBy('name')->paginate($request->input('per_page', 10))->withQueryString(),
+            'types' => $query->orderBy($sortBy, $sortDir)->paginate($request->input('per_page', 10))->withQueryString(),
             'formTemplates' => \App\Models\FormTemplate::where('is_active', true)->orderBy('name')->get(),
             'contractTemplates' => \App\Models\ContractTemplate::orderBy('name')->get(),
-            'filters' => $request->only(['search']),
+            'filters' => $request->only(['search', 'sort_by', 'sort_dir']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Tipe Kontrak', 'href' => route('admin.contract-types'), 'icon' => 'FileText'],
@@ -43,6 +56,7 @@ class MasterConfigController extends Controller
         return Inertia::render('admin/contract-types/form', [
             'formTemplates' => \App\Models\FormTemplate::where('is_active', true)->orderBy('name')->get(),
             'contractTemplates' => \App\Models\ContractTemplate::orderBy('name')->get(),
+            'parentTypes' => ContractType::orderBy('name')->get(),
         ]);
     }
 
@@ -52,14 +66,17 @@ class MasterConfigController extends Controller
             'contractType' => $type,
             'formTemplates' => \App\Models\FormTemplate::where('is_active', true)->orderBy('name')->get(),
             'contractTemplates' => \App\Models\ContractTemplate::orderBy('name')->get(),
+            'parentTypes' => ContractType::where('id', '!=', $type->id)->orderBy('name')->get(),
         ]);
     }
 
     public function storeContractType(Request $request)
     {
         $data = $request->validate([
+            'code' => 'required|string|max:100|unique:m_contract_types,code',
             'name' => 'required|string|max:255|unique:m_contract_types,name',
             'description' => 'nullable|string',
+            'parent_id' => 'nullable|uuid|exists:m_contract_types,id',
             'f1_input_mechanism' => 'required|string|in:manual,digital,folder',
             'f1_form_template_id' => 'nullable|uuid|exists:m_form_templates,id',
             'f1_contract_template_id' => 'nullable|uuid|exists:m_contract_templates,id',
@@ -75,8 +92,10 @@ class MasterConfigController extends Controller
     public function updateContractType(Request $request, ContractType $type)
     {
         $data = $request->validate([
+            'code' => 'required|string|max:100|unique:m_contract_types,code,' . $type->id,
             'name' => 'required|string|max:255|unique:m_contract_types,name,' . $type->id,
             'description' => 'nullable|string',
+            'parent_id' => 'nullable|uuid|exists:m_contract_types,id|not_in:' . $type->id,
             'f1_input_mechanism' => 'required|string|in:manual,digital,folder',
             'f1_form_template_id' => 'nullable|uuid|exists:m_form_templates,id',
             'f1_contract_template_id' => 'nullable|uuid|exists:m_contract_templates,id',

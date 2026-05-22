@@ -54,6 +54,7 @@ interface Props {
         departments: number;
         contract_statuses: number;
         contract_types: number;
+        workflows: number;
     };
 }
 
@@ -145,6 +146,8 @@ export default function AdminIndex({
                 return <CompanyManagement companies={companies} regions={regions} groups={companyGroups} filters={filters} />;
             case 'members':
                 return <MembersPerDivision />;
+            case 'master-data-sync':
+                return <MasterDataSync counts={counts} />;
             default:
                 return (
                     <div className="flex h-full items-center justify-center text-xs font-black text-slate-400 uppercase">

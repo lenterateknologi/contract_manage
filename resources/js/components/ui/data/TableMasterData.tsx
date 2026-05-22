@@ -13,6 +13,7 @@ export interface Column<T> {
     accessorKey: keyof T | string;
     cell?: (row: T) => React.ReactNode;
     className?: string;
+    sortable?: boolean;
 }
 
 export interface TableMasterDataProps<T> {
@@ -44,6 +45,9 @@ export interface TableMasterDataProps<T> {
     headerActions?: React.ReactNode;
     rowActions?: (row: T) => React.ReactNode;
     borderless?: boolean;
+    sortBy?: string;
+    sortDir?: 'asc' | 'desc';
+    onSortChange?: (sortBy: string, sortDir: 'asc' | 'desc') => void;
 }
 
 export function TableMasterData<T extends Record<string, any>>({
@@ -66,6 +70,9 @@ export function TableMasterData<T extends Record<string, any>>({
     headerActions,
     rowActions,
     borderless = false,
+    sortBy,
+    sortDir,
+    onSortChange,
 }: TableMasterDataProps<T>) {
     const [isFilterOpen, setIsFilterOpen] = React.useState(false);
     const [localPerPage, setLocalPerPage] = React.useState(pagination?.perPage || 10);
@@ -250,17 +257,36 @@ export function TableMasterData<T extends Record<string, any>>({
                                         className="border-border dark:border-slate-700 data-[state=checked]:bg-primary"
                                     />
                                 </th>
-                                {columns.map((col, idx) => (
-                                    <th
-                                        key={idx}
-                                        className={cn(
-                                            "py-3.5 px-4 text-[11px] font-bold uppercase tracking-wider text-muted-foreground dark:text-slate-400 select-none",
-                                            col.className
-                                        )}
-                                    >
-                                        {col.header}
-                                    </th>
-                                ))}
+                                {columns.map((col, idx) => {
+                                    const isSortable = col.sortable;
+                                    const isSorted = sortBy === col.accessorKey;
+                                    return (
+                                        <th
+                                            key={idx}
+                                            className={cn(
+                                                "py-3.5 px-4 text-[11px] font-bold uppercase tracking-wider text-muted-foreground dark:text-slate-400 select-none",
+                                                isSortable && "cursor-pointer hover:text-slate-900 dark:hover:text-slate-100 transition-colors",
+                                                col.className
+                                            )}
+                                            onClick={() => {
+                                                if (isSortable && onSortChange) {
+                                                    const nextDir = isSorted && sortDir === 'asc' ? 'desc' : 'asc';
+                                                    onSortChange(col.accessorKey as string, nextDir);
+                                                }
+                                            }}
+                                        >
+                                            <div className="flex items-center gap-1.5">
+                                                <span>{col.header}</span>
+                                                {isSortable && (
+                                                    <span className="flex flex-col text-[8px] leading-[6px] opacity-60">
+                                                        <span className={cn(isSorted && sortDir === 'asc' ? "text-primary" : "text-muted-foreground")}>▲</span>
+                                                        <span className={cn(isSorted && sortDir === 'desc' ? "text-primary" : "text-muted-foreground")}>▼</span>
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </th>
+                                    );
+                                })}
                                 {rowActions && <th className="py-3.5 px-4 w-24 text-right text-[11px] font-bold uppercase tracking-wider text-muted-foreground dark:text-slate-400 select-none">Aksi</th>}
                             </tr>
                         </thead>

@@ -10,6 +10,14 @@ use App\Models\ContractType;
 use App\Models\Department;
 use App\Models\Region;
 use App\Models\Workflow;
+use App\Models\WorkflowInitiatorDepartment;
+use App\Models\WorkflowInitiatorRole;
+use App\Models\WorkflowInitiatorUser;
+use App\Models\WorkflowStep;
+use App\Models\WorkflowStepAction;
+use App\Models\WorkflowStepDepartment;
+use App\Models\WorkflowStepRole;
+use App\Models\WorkflowStepUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -31,6 +39,7 @@ class MasterDataAdminController extends Controller
                 'departments' => Department::count(),
                 'contract_statuses' => ContractStatus::count(),
                 'contract_types' => ContractType::count(),
+                'workflows' => Workflow::count(),
             ],
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
@@ -102,10 +111,11 @@ class MasterDataAdminController extends Controller
                 ];
             })->toArray();
 
-            $types = ContractType::with(['workflow'])->get()->map(function ($t) {
+            $types = ContractType::with(['workflow', 'parent'])->get()->map(function ($t) {
                 return [
                     'code' => $t->code,
                     'name' => $t->name,
+                    'parent_code' => $t->parent->code ?? null,
                     'workflow_name' => $t->workflow->name ?? null,
                     'features' => $t->features,
                     'description' => $t->description,
@@ -118,6 +128,132 @@ class MasterDataAdminController extends Controller
                 ];
             })->toArray();
 
+            $workflows = Workflow::all()->map(function ($w) {
+                return [
+                    'id' => $w->id,
+                    'contract_type' => $w->contract_type,
+                    'department_id' => $w->department_id,
+                    'name' => $w->name,
+                    'description' => $w->description,
+                    'is_default' => $w->is_default,
+                    'is_template' => $w->is_template,
+                    'is_tax_involved' => $w->is_tax_involved,
+                    'initiator_type' => $w->initiator_type,
+                    'sla_drafting_hours' => $w->sla_drafting_hours,
+                    'sla_total_hours' => $w->sla_total_hours,
+                    'sla_cutoff_hour' => $w->sla_cutoff_hour,
+                    'scope' => $w->scope,
+                    'workflow_category' => $w->workflow_category,
+                    'company_group_ids' => $w->company_group_ids,
+                    'region_ids' => $w->region_ids,
+                    'company_ids' => $w->company_ids,
+                    'approver_roles' => $w->approver_roles,
+                    'approver_departments' => $w->approver_departments,
+                    'approver_users' => $w->approver_users,
+                    'legal_roles' => $w->legal_roles,
+                    'legal_departments' => $w->legal_departments,
+                    'legal_users' => $w->legal_users,
+                    'created_by' => $w->created_by,
+                    'updated_by' => $w->updated_by,
+                ];
+            })->toArray();
+
+            $workflowSteps = WorkflowStep::all()->map(function ($s) {
+                return [
+                    'id' => $s->id,
+                    'workflow_id' => $s->workflow_id,
+                    'approver_type' => $s->approver_type,
+                    'step' => $s->step,
+                    'step_category' => $s->step_category,
+                    'is_optional' => $s->is_optional,
+                    'optional_label' => $s->optional_label,
+                    'condition_expression' => $s->condition_expression,
+                    'description' => $s->description,
+                    'phase' => $s->phase,
+                    'uploader_type' => $s->uploader_type,
+                    'hierarchy_level' => $s->hierarchy_level,
+                    'role_id' => $s->role_id,
+                    'company_group_ids' => $s->company_group_ids,
+                    'region_ids' => $s->region_ids,
+                    'company_ids' => $s->company_ids,
+                    'label' => $s->label,
+                    'allowed_actions' => $s->allowed_actions,
+                    'is_mandatory' => $s->is_mandatory,
+                    'is_active' => $s->is_active,
+                    'meta' => $s->meta,
+                    'created_by' => $s->created_by,
+                    'updated_by' => $s->updated_by,
+                ];
+            })->toArray();
+
+            $workflowStepDepartments = WorkflowStepDepartment::all()->map(function ($d) {
+                return [
+                    'id' => $d->id,
+                    'workflow_step_id' => $d->workflow_step_id,
+                    'department_id' => $d->department_id,
+                ];
+            })->toArray();
+
+            $workflowStepRoles = WorkflowStepRole::all()->map(function ($r) {
+                return [
+                    'id' => $r->id,
+                    'workflow_step_id' => $r->workflow_step_id,
+                    'role_name' => $r->role_name,
+                ];
+            })->toArray();
+
+            $workflowStepUsers = WorkflowStepUser::all()->map(function ($u) {
+                return [
+                    'id' => $u->id,
+                    'workflow_step_id' => $u->workflow_step_id,
+                    'user_id' => $u->user_id,
+                ];
+            })->toArray();
+
+            $workflowInitiatorDepartments = WorkflowInitiatorDepartment::all()->map(function ($d) {
+                return [
+                    'id' => $d->id,
+                    'workflow_id' => $d->workflow_id,
+                    'department_id' => $d->department_id,
+                ];
+            })->toArray();
+
+            $workflowInitiatorRoles = WorkflowInitiatorRole::all()->map(function ($r) {
+                return [
+                    'id' => $r->id,
+                    'workflow_id' => $r->workflow_id,
+                    'role_name' => $r->role_name,
+                ];
+            })->toArray();
+
+            $workflowInitiatorUsers = WorkflowInitiatorUser::all()->map(function ($u) {
+                return [
+                    'id' => $u->id,
+                    'workflow_id' => $u->workflow_id,
+                    'user_id' => $u->user_id,
+                ];
+            })->toArray();
+
+            $workflowStepActions = WorkflowStepAction::all()->map(function ($a) {
+                return [
+                    'id' => $a->id,
+                    'workflow_step_id' => $a->workflow_step_id,
+                    'master_action_id' => $a->master_action_id,
+                    'next_step_id' => $a->next_step_id,
+                    'next_workflow_id' => $a->next_workflow_id,
+                    'next_workflow_step_id' => $a->next_workflow_step_id,
+                    'required_fields' => $a->required_fields,
+                    'autofilled_fields' => $a->autofilled_fields,
+                    'signing_parties' => $a->signing_parties,
+                    'assignee_config' => $a->assignee_config,
+                    'alias' => $a->alias,
+                    'description' => $a->description,
+                    'is_active' => $a->is_active,
+                    'created_by' => $a->created_by,
+                    'updated_by' => $a->updated_by,
+                ];
+            })->toArray();
+
             $exportData = [
                 'company_groups' => $groups,
                 'regions' => $regions,
@@ -125,6 +261,15 @@ class MasterDataAdminController extends Controller
                 'departments' => $departments,
                 'contract_statuses' => $statuses,
                 'contract_types' => $types,
+                'workflows' => $workflows,
+                'workflow_steps' => $workflowSteps,
+                'workflow_step_departments' => $workflowStepDepartments,
+                'workflow_step_roles' => $workflowStepRoles,
+                'workflow_step_users' => $workflowStepUsers,
+                'workflow_initiator_departments' => $workflowInitiatorDepartments,
+                'workflow_initiator_roles' => $workflowInitiatorRoles,
+                'workflow_initiator_users' => $workflowInitiatorUsers,
+                'workflow_step_actions' => $workflowStepActions,
             ];
 
             $fileName = 'master_data_export_' . date('Ymd_His') . '.json';
@@ -147,7 +292,7 @@ class MasterDataAdminController extends Controller
     public function import(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|mimes:json',
+            'file' => 'required|file|extensions:json',
         ]);
 
         try {
@@ -165,6 +310,15 @@ class MasterDataAdminController extends Controller
                 'departments' => 0,
                 'contract_statuses' => 0,
                 'contract_types' => 0,
+                'workflows' => 0,
+                'workflow_steps' => 0,
+                'workflow_step_departments' => 0,
+                'workflow_step_roles' => 0,
+                'workflow_step_users' => 0,
+                'workflow_initiator_departments' => 0,
+                'workflow_initiator_roles' => 0,
+                'workflow_initiator_users' => 0,
+                'workflow_step_actions' => 0,
             ];
 
             DB::transaction(function () use ($data, &$counts) {
@@ -292,10 +446,137 @@ class MasterDataAdminController extends Controller
                     }
                 }
 
+                // 6. Workflows
+                if (! empty($data['workflows']) && is_array($data['workflows'])) {
+                    foreach ($data['workflows'] as $w) {
+                        if (empty($w['id'])) {
+                            continue;
+                        }
+                        Workflow::updateOrCreate(
+                            ['id' => $w['id']],
+                            $w,
+                        );
+                        $counts['workflows']++;
+                    }
+                }
+
+                // 7. Workflow Initiator Departments
+                if (! empty($data['workflow_initiator_departments']) && is_array($data['workflow_initiator_departments'])) {
+                    foreach ($data['workflow_initiator_departments'] as $d) {
+                        if (empty($d['id'])) {
+                            continue;
+                        }
+                        WorkflowInitiatorDepartment::updateOrCreate(
+                            ['id' => $d['id']],
+                            $d,
+                        );
+                        $counts['workflow_initiator_departments']++;
+                    }
+                }
+
+                // 8. Workflow Initiator Roles
+                if (! empty($data['workflow_initiator_roles']) && is_array($data['workflow_initiator_roles'])) {
+                    foreach ($data['workflow_initiator_roles'] as $r) {
+                        if (empty($r['id'])) {
+                            continue;
+                        }
+                        WorkflowInitiatorRole::updateOrCreate(
+                            ['id' => $r['id']],
+                            $r,
+                        );
+                        $counts['workflow_initiator_roles']++;
+                    }
+                }
+
+                // 9. Workflow Initiator Users
+                if (! empty($data['workflow_initiator_users']) && is_array($data['workflow_initiator_users'])) {
+                    foreach ($data['workflow_initiator_users'] as $u) {
+                        if (empty($u['id'])) {
+                            continue;
+                        }
+                        WorkflowInitiatorUser::updateOrCreate(
+                            ['id' => $u['id']],
+                            $u,
+                        );
+                        $counts['workflow_initiator_users']++;
+                    }
+                }
+
+                // 10. Workflow Steps
+                if (! empty($data['workflow_steps']) && is_array($data['workflow_steps'])) {
+                    foreach ($data['workflow_steps'] as $s) {
+                        if (empty($s['id'])) {
+                            continue;
+                        }
+                        WorkflowStep::updateOrCreate(
+                            ['id' => $s['id']],
+                            $s,
+                        );
+                        $counts['workflow_steps']++;
+                    }
+                }
+
+                // 11. Workflow Step Departments
+                if (! empty($data['workflow_step_departments']) && is_array($data['workflow_step_departments'])) {
+                    foreach ($data['workflow_step_departments'] as $d) {
+                        if (empty($d['id'])) {
+                            continue;
+                        }
+                        WorkflowStepDepartment::updateOrCreate(
+                            ['id' => $d['id']],
+                            $d,
+                        );
+                        $counts['workflow_step_departments']++;
+                    }
+                }
+
+                // 12. Workflow Step Roles
+                if (! empty($data['workflow_step_roles']) && is_array($data['workflow_step_roles'])) {
+                    foreach ($data['workflow_step_roles'] as $r) {
+                        if (empty($r['id'])) {
+                            continue;
+                        }
+                        WorkflowStepRole::updateOrCreate(
+                            ['id' => $r['id']],
+                            $r,
+                        );
+                        $counts['workflow_step_roles']++;
+                    }
+                }
+
+                // 13. Workflow Step Users
+                if (! empty($data['workflow_step_users']) && is_array($data['workflow_step_users'])) {
+                    foreach ($data['workflow_step_users'] as $u) {
+                        if (empty($u['id'])) {
+                            continue;
+                        }
+                        WorkflowStepUser::updateOrCreate(
+                            ['id' => $u['id']],
+                            $u,
+                        );
+                        $counts['workflow_step_users']++;
+                    }
+                }
+
+                // 14. Workflow Step Actions
+                if (! empty($data['workflow_step_actions']) && is_array($data['workflow_step_actions'])) {
+                    foreach ($data['workflow_step_actions'] as $a) {
+                        if (empty($a['id'])) {
+                            continue;
+                        }
+                        WorkflowStepAction::updateOrCreate(
+                            ['id' => $a['id']],
+                            $a,
+                        );
+                        $counts['workflow_step_actions']++;
+                    }
+                }
+
                 $workflowMap = Workflow::pluck('id', 'name')->all();
 
-                // 6. Contract Types
+                // 15. Contract Types
                 if (! empty($data['contract_types']) && is_array($data['contract_types'])) {
+                    // First pass: Create or update types without assigning parent_id (avoids foreign key issues)
                     foreach ($data['contract_types'] as $t) {
                         if (empty($t['code'])) {
                             continue;
@@ -319,17 +600,30 @@ class MasterDataAdminController extends Controller
                         );
                         $counts['contract_types']++;
                     }
+
+                    // Second pass: Map and update parent_id relationships using the resolved parent_code
+                    $typeMap = ContractType::pluck('id', 'code')->all();
+                    foreach ($data['contract_types'] as $t) {
+                        if (empty($t['code']) || empty($t['parent_code'])) {
+                            continue;
+                        }
+                        $parentId = $typeMap[$t['parent_code']] ?? null;
+                        if ($parentId) {
+                            ContractType::where('code', $t['code'])->update(['parent_id' => $parentId]);
+                        }
+                    }
                 }
             });
 
             $successMsg = sprintf(
-                'Data master berhasil diimpor: %d Group, %d Region, %d Company, %d Departemen, %d Status, %d Tipe Kontrak.',
+                'Data master berhasil diimpor: %d Group, %d Region, %d Company, %d Departemen, %d Status, %d Tipe Kontrak, %d Workflow.',
                 $counts['company_groups'],
                 $counts['regions'],
                 $counts['companies'],
                 $counts['departments'],
                 $counts['contract_statuses'],
                 $counts['contract_types'],
+                $counts['workflows'],
             );
 
             return redirect()->route('admin.master-data-sync')->with('success', $successMsg);

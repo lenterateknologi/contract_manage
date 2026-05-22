@@ -138,6 +138,15 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
                 ),
             },
             {
+                header: 'Klasifikasi Induk',
+                accessorKey: 'parent.name',
+                cell: (row) => (
+                    <span className="text-primary/60 text-[11px] font-bold tracking-tight uppercase dark:text-white/60">
+                        {row.parent?.name || '—'}
+                    </span>
+                ),
+            },
+            {
                 header: 'Mekanisme F1 (Internal)',
                 accessorKey: 'f1_input_mechanism',
                 cell: (row) => <MechanismCell mechanism={row.f1_input_mechanism} />,
@@ -223,36 +232,41 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
                 bulkActions={
                     canDelete
                         ? [
-                              {
-                                  label: 'Hapus Terpilih',
-                                  icon: Trash2,
-                                  variant: 'destructive',
-                                  onClick: (ids: string[]) => {
-                                      if (confirm(`Apakah Anda yakin ingin menghapus ${ids.length} tipe kontrak terpilih secara permanen?`)) {
-                                          router.post(
-                                              route('admin.contract-types.bulk-destroy'),
-                                              { ids },
-                                              {
-                                                  onSuccess: () => showToast(`${ids.length} tipe kontrak telah dihapus dari registri`, 'success'),
-                                              },
-                                          );
-                                      }
-                                  },
-                              },
-                          ]
+                            {
+                                label: 'Hapus Terpilih',
+                                icon: Trash2,
+                                variant: 'destructive',
+                                onClick: (ids: string[]) => {
+                                    if (confirm(`Apakah Anda yakin ingin menghapus ${ids.length} tipe kontrak terpilih secara permanen?`)) {
+                                        router.post(
+                                            route('admin.contract-types.bulk-destroy'),
+                                            { ids },
+                                            {
+                                                onSuccess: () => showToast(`${ids.length} tipe kontrak telah dihapus dari registri`, 'success'),
+                                            },
+                                        );
+                                    }
+                                },
+                            },
+                        ]
                         : undefined
                 }
-                pagination={
-                    contractTypes?.meta
-                        ? {
-                              currentPage: contractTypes.meta.current_page || 1,
-                              lastPage: contractTypes.meta.last_page || 1,
-                              total: contractTypes.meta.total || 0,
-                              onPageChange: (page: number) =>
-                                  router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
-                          }
-                        : undefined
-                }
+                pagination={{
+                    currentPage: contractTypes.current_page || 1,
+                    lastPage: contractTypes.last_page || 1,
+                    total: contractTypes.total || 0,
+                    from: contractTypes.from || 1,
+                    to: contractTypes.to || 1,
+                    perPage: contractTypes.per_page || 10,
+                    onPageChange: (page: number) =>
+                        router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                    onPerPageChange: (pp: number) =>
+                        router.get(
+                            globalThis.location.pathname,
+                            { ...filters, per_page: pp, page: 1 },
+                            { preserveState: true, preserveScroll: true },
+                        ),
+                }}
             />
         </div>
     );

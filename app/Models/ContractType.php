@@ -15,6 +15,7 @@ class ContractType extends Model
     protected $fillable = [
         'name',
         'code',
+        'parent_id',
         'workflow_id',
         'features',
         'description',
@@ -29,6 +30,16 @@ class ContractType extends Model
     protected $casts = [
         'features' => 'array',
     ];
+
+    public function parent()
+    {
+        return $this->belongsTo(ContractType::class, 'parent_id');
+    }
+
+    public function children()
+    {
+        return $this->hasMany(ContractType::class, 'parent_id');
+    }
 
     public function contracts()
     {

@@ -367,17 +367,22 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                         return actions;
                     }, [canDelete, showToast])
                 }
-                pagination={
-                    workflows.meta
-                        ? {
-                              currentPage: workflows.meta.current_page || 1,
-                              lastPage: workflows.meta.last_page || 1,
-                              total: workflows.meta.total || 0,
-                              onPageChange: (page: number) =>
-                                  router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
-                          }
-                        : undefined
-                }
+                pagination={{
+                    currentPage: workflows.current_page || 1,
+                    lastPage: workflows.last_page || 1,
+                    total: workflows.total || 0,
+                    from: workflows.from || 1,
+                    to: workflows.to || 1,
+                    perPage: workflows.per_page || 10,
+                    onPageChange: (page: number) =>
+                        router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                    onPerPageChange: (pp: number) =>
+                        router.get(
+                            globalThis.location.pathname,
+                            { ...filters, per_page: pp, page: 1 },
+                            { preserveState: true, preserveScroll: true },
+                        ),
+                }}
             />
 
             <ImportWorkflowModal 

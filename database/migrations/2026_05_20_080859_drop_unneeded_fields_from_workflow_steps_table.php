@@ -11,6 +11,10 @@ return new class() extends Migration
      */
     public function up(): void
     {
+        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+            return;
+        }
+
         Schema::table('m_workflow_steps', function (Blueprint $table) {
             $table->dropForeign('m_workflow_steps_status_id_foreign');
             $table->dropColumn(['step_type', 'reject_target', 'actor_type', 'status_id']);
@@ -22,6 +26,10 @@ return new class() extends Migration
      */
     public function down(): void
     {
+        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+            return;
+        }
+
         Schema::table('m_workflow_steps', function (Blueprint $table) {
             $table->string('step_type')->default('approval');
             $table->string('reject_target')->default('initiator')->nullable();

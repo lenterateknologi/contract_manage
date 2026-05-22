@@ -12,6 +12,7 @@ interface Props {
     contractType?: any;
     formTemplates: any[];
     contractTemplates: any[];
+    parentTypes: any[];
 }
 
 const MechanismOptions = ({
@@ -97,14 +98,16 @@ const MechanismOptions = ({
     );
 };
 
-export default function ContractTypeForm({ contractType, formTemplates, contractTemplates }: Props) {
+export default function ContractTypeForm({ contractType, formTemplates, contractTemplates, parentTypes = [] }: Props) {
     const isEdit = !!contractType;
     const { showToast } = useToast();
     const [isConfirmOpen, setIsConfirmOpen] = React.useState(false);
 
     const form = useForm({
+        code: contractType?.code || '',
         name: contractType?.name || '',
         description: contractType?.description || '',
+        parent_id: contractType?.parent_id || 'none',
         f1_input_mechanism: contractType?.f1_input_mechanism || 'digital',
         f1_form_template_id: contractType?.f1_form_template_id || 'none',
         f1_contract_template_id: contractType?.f1_contract_template_id || 'none',
@@ -117,6 +120,7 @@ export default function ContractTypeForm({ contractType, formTemplates, contract
         if (e) e.preventDefault();
         const payload = {
             ...form.data,
+            parent_id: form.data.parent_id === 'none' ? null : form.data.parent_id,
             f1_form_template_id: form.data.f1_form_template_id === 'none' ? null : form.data.f1_form_template_id,
             f1_contract_template_id: form.data.f1_contract_template_id === 'none' ? null : form.data.f1_contract_template_id,
             f2_form_template_id: form.data.f2_form_template_id === 'none' ? null : form.data.f2_form_template_id,
@@ -128,7 +132,7 @@ export default function ContractTypeForm({ contractType, formTemplates, contract
                 showToast(isEdit ? 'Konfigurasi klasifikasi diperbarui' : 'Klasifikasi kontrak baru berhasil didaftarkan', 'success');
             },
             onError: (errors: any) => {
-                showToast(errors.error || 'Gagal menyimpan klasifikasi', 'danger');
+                showToast(errors.error || errors.code || errors.name || 'Gagal menyimpan klasifikasi', 'danger');
             },
         };
 
@@ -183,7 +187,17 @@ export default function ContractTypeForm({ contractType, formTemplates, contract
                     <div className="space-y-12">
                         <FormSection title="Arsitektur Identitas" subtitle="Metadata dasar untuk pengenalan klasifikasi kontrak">
                             <div className="grid grid-cols-1 gap-8 md:grid-cols-12">
-                                <div className="md:col-span-4">
+                                <div className="md:col-span-3">
+                                    <CompactInput
+                                        label="Kode Klasifikasi"
+                                        value={form.data.code}
+                                        onChange={(e) => form.setData('code', e.target.value)}
+                                        required
+                                        placeholder="CONTOH: PERJANJIAN_JASA"
+                                        icon={Settings2}
+                                    />
+                                </div>
+                                <div className="md:col-span-3">
                                     <CompactInput
                                         label="Nama Klasifikasi"
                                         value={form.data.name}
@@ -193,12 +207,37 @@ export default function ContractTypeForm({ contractType, formTemplates, contract
                                         icon={Settings2}
                                     />
                                 </div>
-                                <div className="md:col-span-8">
+                                <div className="md:col-span-3">
+                                    <div className="space-y-2">
+                                        <label className="text-primary/60 flex items-center gap-2 text-[10px] font-bold uppercase dark:text-white/60">
+                                            <Settings2 size={10} /> Klasifikasi Induk
+                                        </label>
+                                        <Select
+                                            value={String(form.data.parent_id)}
+                                            onValueChange={(v: string) => form.setData('parent_id', String(v))}
+                                        >
+                                            <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-10 rounded-xl text-xs font-bold transition-all">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent className="border-primary/10 rounded-xl bg-white shadow-2xl dark:bg-black">
+                                                <SelectItem value="none" className="py-2.5 text-xs font-bold uppercase opacity-40">
+                                                    -- TANPA INDUK (TIPE UTAMA) --
+                                                </SelectItem>
+                                                {parentTypes.map((t: any) => (
+                                                    <SelectItem key={t.id} value={String(t.id)} className="py-2.5 text-xs font-bold uppercase">
+                                                        {t.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+                                <div className="md:col-span-3">
                                     <CompactInput
                                         label="Deskripsi Ruang Lingkup"
                                         value={form.data.description}
                                         onChange={(e) => form.setData('description', e.target.value)}
-                                        placeholder="Jelaskan konteks penggunaan klasifikasi ini secara singkat..."
+                                        placeholder="Konteks penggunaan..."
                                         icon={Info}
                                     />
                                 </div>

@@ -395,20 +395,22 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                         <Plus size={14} className="text-primary" /> Registrasi Status Baru
                     </Button>
                 }
-                pagination={
-                    statuses?.meta
-                        ? {
-                              currentPage: statuses.meta.current_page || 1,
-                              lastPage: statuses.meta.last_page || 1,
-                              total: statuses.meta.total || 0,
-                              from: statuses.meta.from,
-                              to: statuses.meta.to,
-                              perPage: statuses.meta.per_page,
-                              onPageChange: (page: number) =>
-                                  router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
-                          }
-                        : undefined
-                }
+                pagination={{
+                    currentPage: statuses.current_page || 1,
+                    lastPage: statuses.last_page || 1,
+                    total: statuses.total || 0,
+                    from: statuses.from || 1,
+                    to: statuses.to || 1,
+                    perPage: statuses.per_page || 10,
+                    onPageChange: (page: number) =>
+                        router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                    onPerPageChange: (pp: number) =>
+                        router.get(
+                            globalThis.location.pathname,
+                            { ...filters, per_page: pp, page: 1 },
+                            { preserveState: true, preserveScroll: true },
+                        ),
+                }}
             />
         </div>
     );

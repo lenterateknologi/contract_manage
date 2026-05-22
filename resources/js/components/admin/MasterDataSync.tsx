@@ -15,7 +15,8 @@ import {
     CheckSquare,
     FileSpreadsheet,
     Info,
-    CheckCircle2
+    CheckCircle2,
+    GitBranch
 } from 'lucide-react';
 import React, { useRef, useState } from 'react';
 
@@ -26,6 +27,7 @@ interface Counts {
     departments: number;
     contract_statuses: number;
     contract_types: number;
+    workflows: number;
 }
 
 interface Props {
@@ -47,6 +49,7 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
         departments: 0,
         contract_statuses: 0,
         contract_types: 0,
+        workflows: 0,
     };
 
     const handleDrag = (e: React.DragEvent) => {
@@ -150,6 +153,12 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
             desc: 'Templat & alur persetujuan',
             icon: FileSpreadsheet,
         },
+        {
+            label: 'Alur Kerja (Workflows)',
+            count: activeCounts.workflows,
+            desc: 'Definisi tahapan approval',
+            icon: GitBranch,
+        },
     ];
 
     return (
@@ -168,7 +177,7 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
             </div>
 
             {/* Quick Stats Grid */}
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6 mb-8">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 mb-8">
                 {stats.map((item) => (
                     <div
                         key={item.label}

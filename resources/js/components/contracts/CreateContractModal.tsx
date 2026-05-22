@@ -17,6 +17,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
     const { auth } = usePage().props as any;
     const [title, setTitle] = useState('');
     const [desc, setDesc] = useState('');
+    const [parentTypeId, setParentTypeId] = useState('');
     const [typeId, setTypeId] = useState('');
     const [submissionTypeId, setSubmissionTypeId] = useState('');
     const [transactionType, setTransactionType] = useState('Perjanjian Baru');
@@ -57,6 +58,9 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
         fd.append('title', title);
         fd.append('description', desc);
         fd.append('contract_type_id', typeId);
+        if (parentTypeId) {
+            fd.append('contract_type_parent_id', parentTypeId);
+        }
         if (submissionTypeId) {
             fd.append('submission_type_id', submissionTypeId);
         }
@@ -84,6 +88,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
             onClose();
             setTitle('');
             setDesc('');
+            setParentTypeId('');
             setTypeId('');
             setSubmissionTypeId('');
             setTransactionType('Perjanjian Baru');
@@ -177,6 +182,31 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
 
                         <div className="space-y-2">
                             <label className="px-1 text-[11px] font-semibold text-black dark:text-white">
+                                Induk Klasifikasi Kontrak <span className="text-rose-500">*</span>
+                            </label>
+                            <select
+                                value={parentTypeId}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setParentTypeId(val);
+                                    setTypeId('');
+                                }}
+                                className="border-sidebar-border bg-sidebar-accent/20 text-sidebar-foreground focus:ring-sidebar-primary w-full rounded-lg border px-3 py-2.5 text-[12px] transition-all outline-none focus:ring-1"
+                            >
+                                <option value="">Pilih Induk Tipe</option>
+                                {Array.isArray(types) &&
+                                    types
+                                        .filter((t) => !t.parent_id)
+                                        .map((t) => (
+                                            <option key={t.id} value={t.id}>
+                                                {t.name}
+                                            </option>
+                                        ))}
+                            </select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="px-1 text-[11px] font-semibold text-black dark:text-white">
                                 Jenis Kontrak <span className="text-rose-500">*</span>
                             </label>
                             <select
@@ -187,15 +217,18 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                                     const selectedType = Array.isArray(types) ? types.find((t) => String(t.id) === val) : undefined;
                                     if (selectedType) setTitle(selectedType.name);
                                 }}
-                                className="border-sidebar-border bg-sidebar-accent/20 text-sidebar-foreground focus:ring-sidebar-primary w-full rounded-lg border px-3 py-2.5 text-[12px] transition-all outline-none focus:ring-1"
+                                disabled={!parentTypeId}
+                                className="border-sidebar-border bg-sidebar-accent/20 text-sidebar-foreground focus:ring-sidebar-primary w-full rounded-lg border px-3 py-2.5 text-[12px] transition-all outline-none focus:ring-1 disabled:opacity-50"
                             >
-                                <option value="">Pilih Tipe</option>
+                                <option value="">Pilih Jenis</option>
                                 {Array.isArray(types) &&
-                                    types.map((t) => (
-                                        <option key={t.id} value={t.id}>
-                                            {t.name}
-                                        </option>
-                                    ))}
+                                    types
+                                        .filter((t) => String(t.parent_id) === String(parentTypeId))
+                                        .map((t) => (
+                                            <option key={t.id} value={t.id}>
+                                                {t.name}
+                                            </option>
+                                        ))}
                             </select>
                             {errors.contract_type_id && (
                                 <div className="mt-1 px-1 text-[10px] font-medium text-rose-500">{errors.contract_type_id}</div>
@@ -203,112 +236,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                         </div>
                     </div>
 
-                    {category === 'nda' ? (
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <label className="text-foreground px-1 text-xs font-semibold">
-                                    Nama Project <span className="text-rose-500">*</span>
-                                </label>
-                                <input
-                                    value={projectName}
-                                    onChange={(e) => setProjectName(e.target.value)}
-                                    placeholder="Masukkan nama project"
-                                    className="border-border bg-card focus:ring-primary text-foreground w-full rounded-lg border px-4 py-2.5 text-sm font-medium transition-all outline-none focus:ring-1"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-foreground px-1 text-xs font-semibold">
-                                    Pihak Kedua (Vendor) <span className="text-rose-500">*</span>
-                                </label>
-                                <select
-                                    value={vendorId}
-                                    onChange={(e) => setVendorId(e.target.value)}
-                                    className="border-border bg-card text-foreground focus:ring-primary w-full rounded-lg border px-3 py-2.5 text-sm transition-all outline-none focus:ring-1"
-                                >
-                                    <option value="">Pilih Vendor</option>
-                                    {vendors.map((v) => (
-                                        <option key={v.id} value={v.id}>
-                                            {v.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-                    ) : (
-                        <>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-foreground px-1 text-xs font-semibold">
-                                        Tipe Pengajuan <span className="text-rose-500">*</span>
-                                    </label>
-                                    <select
-                                        value={submissionTypeId}
-                                        onChange={(e) => setSubmissionTypeId(e.target.value)}
-                                        className="border-border bg-card text-foreground focus:ring-primary w-full rounded-lg border px-3 py-2.5 text-sm transition-all outline-none focus:ring-1"
-                                    >
-                                        <option value="">Tipe Pengajuan</option>
-                                        {Array.isArray(submissionTypes) &&
-                                            submissionTypes
-                                                .filter((st) => {
-                                                    if (category === 'non-contract') return ['Surat Kuasa', 'Review'].includes(st.name);
-                                                    return ['Perjanjian Baru', 'Addendum/Amendment'].includes(st.name);
-                                                })
-                                                .map((st) => (
-                                                    <option key={st.id} value={st.id}>
-                                                        {st.name}
-                                                    </option>
-                                                ))}
-                                    </select>
-                                    {errors.submission_type_id && (
-                                        <div className="mt-1 px-1 text-xs font-medium text-rose-500">{errors.submission_type_id}</div>
-                                    )}
-                                </div>
 
-                                <div className="space-y-2">
-                                    <label className="text-foreground px-1 text-xs font-semibold">
-                                        Jenis Kontrak <span className="text-rose-500">*</span>
-                                    </label>
-                                    <select
-                                        value={typeId}
-                                        onChange={(e) => {
-                                            const val = e.target.value;
-                                            setTypeId(val);
-                                            const selectedType = Array.isArray(types) ? types.find((t) => String(t.id) === val) : undefined;
-                                            if (selectedType) setTitle(selectedType.name);
-                                        }}
-                                        className="border-border bg-card text-foreground focus:ring-primary w-full rounded-lg border px-3 py-2.5 text-sm transition-all outline-none focus:ring-1"
-                                    >
-                                        <option value="">Pilih Tipe</option>
-                                        {Array.isArray(types) &&
-                                            types.map((t) => (
-                                                <option key={t.id} value={t.id}>
-                                                    {t.name}
-                                                </option>
-                                            ))}
-                                    </select>
-                                    {errors.contract_type_id && (
-                                        <div className="mt-1 px-1 text-xs font-medium text-rose-500">{errors.contract_type_id}</div>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-foreground px-1 text-xs font-semibold">
-                                    Judul Kontrak <span className="text-rose-500">*</span>
-                                </label>
-                                <div className="relative">
-                                    <FileText className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-                                    <input
-                                        value={title}
-                                        onChange={(e) => setTitle(e.target.value)}
-                                        placeholder="Masukkan judul kontrak"
-                                        className="border-border bg-card focus:ring-primary text-foreground placeholder:text-muted-foreground w-full rounded-lg border py-2.5 pr-4 pl-10 text-sm font-medium transition-all outline-none focus:ring-1"
-                                    />
-                                </div>
-                                {errors.title && <div className="mt-1 px-1 text-xs font-medium text-rose-500">{errors.title}</div>}
-                            </div>
-                        </>
-                    )}
 
                     <div className="border-border bg-muted/20 hover:bg-muted/30 space-y-3 rounded-xl border p-4 transition-all">
                         <label className="flex cursor-pointer items-start gap-3">

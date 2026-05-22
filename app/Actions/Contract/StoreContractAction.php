@@ -39,6 +39,7 @@ class StoreContractAction
                 'crown_no' => $validated['crown_no'] ?? null,
                 'description' => $validated['description'] ?? '—',
                 'contract_type_id' => $validated['contract_type_id'],
+                'contract_type_parent_id' => $validated['contract_type_parent_id'] ?? null,
                 'submission_type_id' => $validated['submission_type_id'] ?? null,
                 'transaction_type' => $validated['transaction_type'] ?? 'Perjanjian Baru',
                 'status' => 'draft',

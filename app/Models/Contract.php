@@ -24,6 +24,7 @@ class Contract extends Model
         'end_date',
         'contract_type',
         'contract_type_id',
+        'contract_type_parent_id',
         'submission_type_id',
         'transaction_type',
         'status',
@@ -71,6 +72,11 @@ class Contract extends Model
     public function contractType()
     {
         return $this->belongsTo(ContractType::class, 'contract_type_id');
+    }
+
+    public function contractTypeParent()
+    {
+        return $this->belongsTo(ContractType::class, 'contract_type_parent_id');
     }
 
     public function submissionType()
