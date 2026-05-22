@@ -137,7 +137,7 @@ class ContractController extends Controller
             'filters' => array_merge($request->only([
                 'search', 'status', 'contract_type_id', 'role_id', 'department_id',
                 'created_from', 'created_to', 'region_ids', 'vendor_ids', 'statuses',
-                'contract_type_ids', 'pic_ids', 'department_ids'
+                'contract_type_ids', 'pic_ids', 'department_ids',
             ]), [
                 'per_page' => $request->integer('per_page', 10),
             ]),
@@ -376,6 +376,7 @@ class ContractController extends Controller
             if (is_array($val)) {
                 return $val;
             }
+
             return array_filter(explode(',', $val));
         };
 
@@ -401,12 +402,12 @@ class ContractController extends Controller
                 $q->whereHas('initiator', function ($sq) use ($user) {
                     $sq->where('department_id', $user->department_id);
                 })
-                ->orWhere(function ($sq) use ($user) {
-                    $sq->whereNull('initiated_by_id')
-                        ->whereHas('creator', function ($ssq) use ($user) {
-                            $ssq->where('department_id', $user->department_id);
-                        });
-                });
+                    ->orWhere(function ($sq) use ($user) {
+                        $sq->whereNull('initiated_by_id')
+                            ->whereHas('creator', function ($ssq) use ($user) {
+                                $ssq->where('department_id', $user->department_id);
+                            });
+                    });
             });
         }
 
@@ -442,12 +443,12 @@ class ContractController extends Controller
                 $q->whereHas('initiator', function ($sq) use ($departmentIds) {
                     $sq->whereIn('department_id', $departmentIds);
                 })
-                ->orWhere(function ($sq) use ($departmentIds) {
-                    $sq->whereNull('initiated_by_id')
-                        ->whereHas('creator', function ($ssq) use ($departmentIds) {
-                            $ssq->whereIn('department_id', $departmentIds);
-                        });
-                });
+                    ->orWhere(function ($sq) use ($departmentIds) {
+                        $sq->whereNull('initiated_by_id')
+                            ->whereHas('creator', function ($ssq) use ($departmentIds) {
+                                $ssq->whereIn('department_id', $departmentIds);
+                            });
+                    });
             });
         }
 
@@ -456,18 +457,18 @@ class ContractController extends Controller
                 $q->whereHas('initiator.department.company', function ($sq) use ($regionIds) {
                     $sq->whereIn('region_id', $regionIds);
                 })
-                ->orWhere(function ($sq) use ($regionIds) {
-                    $sq->whereNull('initiated_by_id')
-                        ->whereHas('creator.department.company', function ($ssq) use ($regionIds) {
-                            $ssq->whereIn('region_id', $regionIds);
-                        });
-                });
+                    ->orWhere(function ($sq) use ($regionIds) {
+                        $sq->whereNull('initiated_by_id')
+                            ->whereHas('creator.department.company', function ($ssq) use ($regionIds) {
+                                $ssq->whereIn('region_id', $regionIds);
+                            });
+                    });
             });
         }
 
         // 1. KPI Cards values
         $totalContracts = (clone $baseQuery)->count();
-        $activeContracts = (clone $baseQuery)->where('status', 'approved')->where(fn($q) => $q->whereNull('end_date')->orWhereDate('end_date', '>=', now()->toDateString()))->count();
+        $activeContracts = (clone $baseQuery)->where('status', 'approved')->where(fn ($q) => $q->whereNull('end_date')->orWhereDate('end_date', '>=', now()->toDateString()))->count();
         $expiringContracts = (clone $baseQuery)->where('status', 'approved')->whereNotNull('end_date')->whereDate('end_date', '>=', now()->toDateString())->whereDate('end_date', '<=', now()->addDays(30)->toDateString())->count();
         $expiredContracts = (clone $baseQuery)->where('status', 'approved')->whereNotNull('end_date')->whereDate('end_date', '<', now()->toDateString())->count();
         $pendingContracts = (clone $baseQuery)->whereIn('status', ['in_review', 'locked'])->count();
@@ -477,7 +478,7 @@ class ContractController extends Controller
             ? round(($renewedContractsCount / ($expiredContracts + $renewedContractsCount)) * 100, 1)
             : 0;
 
-        $totalValue = (clone $baseQuery)->select('f2_price')->get()->sum(fn($c) => $this->parsePrice($c->f2_price));
+        $totalValue = (clone $baseQuery)->select('f2_price')->get()->sum(fn ($c) => $this->parsePrice($c->f2_price));
 
         // Average Cycle Time
         $approvedContracts = (clone $baseQuery)
@@ -496,6 +497,7 @@ class ContractController extends Controller
 
             $totalDays = $approvedContracts->sum(function ($c) use ($firstApprovals) {
                 $firstSentAt = $firstApprovals[$c->id] ?? null;
+
                 return $firstSentAt ? Carbon::parse($firstSentAt)->diffInHours($c->updated_at) / 24 : 0;
             });
             $avgDays = round($totalDays / $approvedContracts->count(), 1);
@@ -507,7 +509,7 @@ class ContractController extends Controller
             'under30' => (clone $baseQuery)->where('status', 'approved')->whereNotNull('end_date')->whereDate('end_date', '>=', now()->toDateString())->whereDate('end_date', '<', now()->addDays(30)->toDateString())->count(),
             'under60' => (clone $baseQuery)->where('status', 'approved')->whereNotNull('end_date')->whereDate('end_date', '>=', now()->addDays(30)->toDateString())->whereDate('end_date', '<', now()->addDays(60)->toDateString())->count(),
             'under90' => (clone $baseQuery)->where('status', 'approved')->whereNotNull('end_date')->whereDate('end_date', '>=', now()->addDays(60)->toDateString())->whereDate('end_date', '<', now()->addDays(90)->toDateString())->count(),
-            'above90' => (clone $baseQuery)->where('status', 'approved')->where(fn($q) => $q->whereNull('end_date')->orWhereDate('end_date', '>=', now()->addDays(90)->toDateString()))->count(),
+            'above90' => (clone $baseQuery)->where('status', 'approved')->where(fn ($q) => $q->whereNull('end_date')->orWhereDate('end_date', '>=', now()->addDays(90)->toDateString()))->count(),
         ];
 
         // Approval Status
@@ -593,7 +595,7 @@ class ContractController extends Controller
             $monthlyTrend->push([
                 'month' => $monthStart->translatedFormat('M'),
                 'count' => $contractsInMonth->count(),
-                'value' => $contractsInMonth->sum(fn($c) => $this->parsePrice($c->f2_price)),
+                'value' => $contractsInMonth->sum(fn ($c) => $this->parsePrice($c->f2_price)),
             ]);
         }
 
@@ -634,10 +636,11 @@ class ContractController extends Controller
             ->groupBy('vendor_id')
             ->map(function ($group) {
                 $vendor = $group->first()->vendor;
+
                 return [
                     'name' => $vendor?->name ?? 'Unknown Vendor',
                     'count' => $group->count(),
-                    'value' => $group->sum(fn($c) => $this->parsePrice($c->f2_price)),
+                    'value' => $group->sum(fn ($c) => $this->parsePrice($c->f2_price)),
                 ];
             })
             ->sortByDesc('value')
@@ -664,14 +667,17 @@ class ContractController extends Controller
             ->where('status', 'approved')
             ->with(['initiator.department', 'creator.department'])
             ->get()
-            ->groupBy(function($c) {
+            ->groupBy(function ($c) {
                 return $c->initiator?->department?->name ?? $c->creator?->department?->name ?? 'Tanpa Divisi';
             })
             ->map(function ($group, $deptName) {
-                $highRisk = 0; $medRisk = 0; $lowRisk = 0;
+                $highRisk = 0;
+                $medRisk = 0;
+                $lowRisk = 0;
                 foreach ($group as $c) {
                     if (empty($c->end_date)) {
                         $lowRisk++;
+
                         continue;
                     }
                     $days = Carbon::parse($c->end_date)->diffInDays(now(), false);
@@ -683,6 +689,7 @@ class ContractController extends Controller
                         $lowRisk++;
                     }
                 }
+
                 return [
                     'department' => $deptName,
                     'high' => $highRisk,
@@ -701,9 +708,10 @@ class ContractController extends Controller
             ->whereDate('end_date', '<', now()->toDateString())
             ->with('contractType')
             ->get()
-            ->groupBy(fn($c) => $c->contractType?->name ?? 'Lainnya')
+            ->groupBy(fn ($c) => $c->contractType?->name ?? 'Lainnya')
             ->map(function ($group, $catName) use ($renewedIds) {
-                $renewed = 0; $failed = 0;
+                $renewed = 0;
+                $failed = 0;
                 foreach ($group as $c) {
                     if (in_array($c->id, $renewedIds)) {
                         $renewed++;
@@ -711,6 +719,7 @@ class ContractController extends Controller
                         $failed++;
                     }
                 }
+
                 return ['category' => $catName, 'renewed' => $renewed, 'failed' => $failed];
             })
             ->values();
@@ -724,7 +733,7 @@ class ContractController extends Controller
             ->map(function ($group) use ($renewedIds) {
                 $vendor = $group->first()->vendor;
                 $total = $group->count();
-                $renewed = $group->filter(fn($c) => in_array($c->id, $renewedIds) || $c->parent_id !== null)->count();
+                $renewed = $group->filter(fn ($c) => in_array($c->id, $renewedIds) || $c->parent_id !== null)->count();
 
                 $approvedGroup = $group->where('status', 'approved');
                 $avgDays = 0;
@@ -737,10 +746,12 @@ class ContractController extends Controller
                         ->all();
                     $totalDays = $approvedGroup->sum(function ($c) use ($firstApprovals) {
                         $firstSentAt = $firstApprovals[$c->id] ?? null;
+
                         return $firstSentAt ? Carbon::parse($firstSentAt)->diffInHours($c->updated_at) / 24 : 0;
                     });
                     $avgDays = round($totalDays / $approvedGroup->count(), 1);
                 }
+
                 return [
                     'name' => $vendor?->name ?? 'Unknown',
                     'total' => $total,
@@ -758,7 +769,7 @@ class ContractController extends Controller
             ['range' => 'Rp 50M - 500M', 'count' => 0],
             ['range' => '> Rp 500M', 'count' => 0],
         ];
-        $prices = (clone $baseQuery)->select('f2_price')->get()->map(fn($c) => $this->parsePrice($c->f2_price));
+        $prices = (clone $baseQuery)->select('f2_price')->get()->map(fn ($c) => $this->parsePrice($c->f2_price));
         foreach ($prices as $price) {
             if ($price < 50000000) {
                 $valueDistribution[0]['count']++;
@@ -773,10 +784,10 @@ class ContractController extends Controller
         $budgetAllocation = (clone $baseQuery)
             ->with('contractType')
             ->get()
-            ->groupBy(fn($c) => $c->contractType?->name ?? 'Lainnya')
-            ->map(fn($group, $catName) => [
+            ->groupBy(fn ($c) => $c->contractType?->name ?? 'Lainnya')
+            ->map(fn ($group, $catName) => [
                 'name' => $catName,
-                'value' => $group->sum(fn($c) => $this->parsePrice($c->f2_price)),
+                'value' => $group->sum(fn ($c) => $this->parsePrice($c->f2_price)),
             ])
             ->values();
 
@@ -785,7 +796,7 @@ class ContractController extends Controller
             ->where('status', 'approved')
             ->with(['initiator.department', 'creator.department'])
             ->get()
-            ->groupBy(function($c) {
+            ->groupBy(function ($c) {
                 return $c->initiator?->department?->name ?? $c->creator?->department?->name ?? 'Tanpa Divisi';
             })
             ->map(function ($group, $deptName) {
@@ -797,8 +808,10 @@ class ContractController extends Controller
                     ->all();
                 $totalDays = $group->sum(function ($c) use ($firstApprovals) {
                     $firstSentAt = $firstApprovals[$c->id] ?? null;
+
                     return $firstSentAt ? Carbon::parse($firstSentAt)->diffInHours($c->updated_at) / 24 : 0;
                 });
+
                 return [
                     'department' => $deptName,
                     'avg_days' => $group->count() > 0 ? round($totalDays / $group->count(), 1) : 0,
@@ -818,6 +831,7 @@ class ContractController extends Controller
                         $q->whereNull('initiated_by_id')->where('created_by', $u->id);
                     });
                 })->count();
+
                 return [
                     'id' => $u->id,
                     'name' => $u->name,
@@ -843,10 +857,10 @@ class ContractController extends Controller
             ->whereIn('status', ['in_review', 'revision', 'locked'])
             ->with(['initiator.department', 'creator.department'])
             ->get()
-            ->groupBy(function($c) {
+            ->groupBy(function ($c) {
                 return $c->initiator?->department?->name ?? $c->creator?->department?->name ?? 'Tanpa Divisi';
             })
-            ->map(fn($group, $deptName) => [
+            ->map(fn ($group, $deptName) => [
                 'department' => $deptName,
                 'in_review' => $group->where('status', 'in_review')->count(),
                 'revision' => $group->where('status', 'revision')->count(),
@@ -874,7 +888,7 @@ class ContractController extends Controller
                 'm_users.name as actor_name',
                 't_contracts.id as contract_id',
                 't_contracts.title as contract_title',
-                't_contracts.contract_no'
+                't_contracts.contract_no',
             )
             ->orderByDesc('t_contract_h.created_at')
             ->limit(10)
@@ -897,6 +911,7 @@ class ContractController extends Controller
             ->map(function ($type) use ($baseQuery) {
                 $incoming = (clone $baseQuery)->where('contract_type_id', $type->id)->whereIn('status', ['in_review', 'revision'])->count();
                 $outgoing = (clone $baseQuery)->where('contract_type_id', $type->id)->whereIn('status', ['approved', 'locked', 'archived'])->count();
+
                 return [
                     'category_name' => $type->name,
                     'incoming_count' => $incoming,
@@ -1017,9 +1032,9 @@ class ContractController extends Controller
                 }
             }
         }
+
         return (float) $clean;
     }
-    
 
     public function getTypes(): JsonResponse
     {
