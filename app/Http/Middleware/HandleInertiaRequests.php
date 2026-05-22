@@ -64,6 +64,12 @@ class HandleInertiaRequests extends Middleware
                 'permissions' => $this->getUserPermissions($request),
             ],
             'sidebarNavGroups' => $this->getSidebarNavGroups($request),
+            'flash' => [
+                'success' => $request->session()->get('success'),
+                'error' => $request->session()->get('error') ?? ($request->session()->get('errors') ? collect($request->session()->get('errors')->getBag('default')->get('error'))->first() : null),
+                'danger' => $request->session()->get('danger'),
+                'info' => $request->session()->get('info'),
+            ],
         ]);
     }
 
@@ -147,8 +153,10 @@ class HandleInertiaRequests extends Middleware
             'Hak Akses & Peran' => 14,
             'Data Departemen' => 15,
             'Daftar Vendor' => 16,
-            'Analitik Kontrak' => 17,
-            'Jejak Audit' => 18,
+            'Anggota Divisi' => 17,
+            'Analitik Kontrak' => 18,
+            'Jejak Audit' => 19,
+            'Ekspor Impor Master' => 20,
         ];
 
         $groups = $modules->groupBy(fn ($item) => trim($item->group_title))

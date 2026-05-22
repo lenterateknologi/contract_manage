@@ -63,6 +63,57 @@ class AdminController extends Controller
         ]);
     }
 
+    public function members(Request $request)
+    {
+        $users = User::orderBy('name')->get();
+        $departments = Department::orderBy('name')->get();
+
+        $departmentTraffic = Department::orderBy('name')
+            ->get()
+            ->map(function ($dept) {
+                $incoming = \App\Models\Contract::where(function ($q) use ($dept) {
+                    $q->whereHas('initiator', fn ($sq) => $sq->where('department_id', $dept->id))
+                        ->orWhere(function ($sq) use ($dept) {
+                            $sq->whereNull('initiated_by_id')
+                                ->whereHas('creator', fn ($ssq) => $ssq->where('department_id', $dept->id));
+                        });
+                })
+                    ->whereIn('status', ['in_review', 'revision'])
+                    ->count();
+
+                $outgoing = \App\Models\Contract::where(function ($q) use ($dept) {
+                    $q->whereHas('initiator', fn ($sq) => $sq->where('department_id', $dept->id))
+                        ->orWhere(function ($sq) use ($dept) {
+                            $sq->whereNull('initiated_by_id')
+                                ->whereHas('creator', fn ($ssq) => $ssq->where('department_id', $dept->id));
+                        });
+                })
+                    ->whereIn('status', ['approved', 'locked', 'archived'])
+                    ->count();
+
+                return [
+                    'department_id' => $dept->id,
+                    'department_name' => $dept->name,
+                    'incoming_count' => $incoming,
+                    'outgoing_count' => $outgoing,
+                    'member_count' => User::where('department_id', $dept->id)->count(),
+                ];
+            })
+            ->values()
+            ->all();
+
+        return Inertia::render('admin/index', [
+            'currentView' => 'members',
+            'users' => $users,
+            'departments' => $departments,
+            'departmentTraffic' => $departmentTraffic,
+            'breadcrumbs' => [
+                ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
+                ['title' => 'Anggota Divisi', 'href' => route('admin.members'), 'description' => 'Kelola dan lihat anggota berdasarkan divisi/departemen.', 'icon' => 'Users'],
+            ],
+        ]);
+    }
+
     #[OA\Get(
         path: '/api/admin/roles',
         summary: 'Get list of roles',

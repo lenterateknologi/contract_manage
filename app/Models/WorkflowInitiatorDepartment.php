@@ -12,4 +12,9 @@ class WorkflowInitiatorDepartment extends Model
     protected $table = 'm_workflow_initiator_departments';
 
     protected $fillable = ['workflow_id', 'department_id'];
+
+    public function department(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Department::class, 'department_id');
+    }
 }

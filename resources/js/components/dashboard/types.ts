@@ -44,6 +44,28 @@ export interface ContractItem {
     created_at: string;
 }
 
+export interface UserWorkload {
+    id: string;
+    name: string;
+    email: string;
+    initials?: string;
+    role: string;
+    position?: string;
+    bg_color?: string;
+    text_color?: string;
+    department_name?: string;
+    department_id?: string;
+    active_contracts_count: number;
+    initiated_contracts_count: number;
+    load_status: 'Ready' | 'Sibuk';
+}
+
+export interface CategoryTraffic {
+    category_name: string;
+    incoming_count: number;
+    outgoing_count: number;
+}
+
 export interface DashboardData {
     metrics: DashboardMetrics;
     statusDistribution: StatusItem[];
@@ -51,6 +73,8 @@ export interface DashboardData {
     monthlyTrend: TrendItem[];
     recentActivity: ActivityItem[];
     recentContracts: ContractItem[];
+    userWorkloads: UserWorkload[];
+    categoryTraffic: CategoryTraffic[];
 }
 
 // ─── Shared Constants ─────────────────────────────────────────────────────────

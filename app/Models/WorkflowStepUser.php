@@ -12,4 +12,9 @@ class WorkflowStepUser extends Model
     protected $table = 'm_workflow_step_users';
 
     protected $fillable = ['workflow_step_id', 'user_id'];
+
+    public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 }

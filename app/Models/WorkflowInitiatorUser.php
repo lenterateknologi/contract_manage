@@ -12,4 +12,9 @@ class WorkflowInitiatorUser extends Model
     protected $table = 'm_workflow_initiator_users';
 
     protected $fillable = ['workflow_id', 'user_id'];
+
+    public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 }
