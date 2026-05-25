@@ -91,6 +91,7 @@ class MasterSeeder extends Seeder
 
             // Desain Template
             ['name' => 'Kategori Kontrak', 'identifier' => 'ADMIN_TYPES', 'group' => 'Desain Template', 'route' => '/admin/contract-types', 'icon' => 'FolderClosed'],
+            ['name' => 'Isi Kontrak', 'identifier' => 'ADMIN_TEMPLATES', 'group' => 'Desain Template', 'route' => '/admin/templates', 'icon' => 'FileCode'],
             ['name' => 'Formulir Digital', 'identifier' => 'ADMIN_FORMS', 'group' => 'Desain Template', 'route' => '/admin/form-templates', 'icon' => 'ScanLine'],
 
             // Konfigurasi Alur
@@ -105,10 +106,12 @@ class MasterSeeder extends Seeder
             ['name' => 'Hak Akses & Peran', 'identifier' => 'ADMIN_ROLES', 'group' => 'Data Master', 'route' => '/admin/roles', 'icon' => 'KeyRound'],
             ['name' => 'Data Departemen', 'identifier' => 'ADMIN_DEPTS', 'group' => 'Data Master', 'route' => '/admin/departments', 'icon' => 'Building2'],
             ['name' => 'Daftar Vendor', 'identifier' => 'ADMIN_VENDORS', 'group' => 'Data Master', 'route' => '/admin/vendors', 'icon' => 'Truck'],
+            ['name' => 'Anggota Divisi', 'identifier' => 'ADMIN_MEMBERS', 'group' => 'Data Master', 'route' => '/admin/members', 'icon' => 'Users'],
 
             // Sistem & Laporan
             ['name' => 'Analitik Kontrak', 'identifier' => 'ANLTX', 'group' => 'Sistem & Laporan', 'route' => '/admin/reports/analytics', 'icon' => 'BarChart3'],
             ['name' => 'Jejak Audit', 'identifier' => 'AUDIT', 'group' => 'Sistem & Laporan', 'route' => '/admin/reports/audit', 'icon' => 'History'],
+            ['name' => 'Ekspor Impor Master', 'identifier' => 'ADMIN_MASTER_DATA', 'group' => 'Sistem & Laporan', 'route' => '/admin/master-data-sync', 'icon' => 'RefreshCw'],
         ];
 
         foreach ($mods as $m) {
