@@ -42,8 +42,10 @@ test('admin can access master data sync index with counts', function () {
         ->get(route('admin.master-data-sync'))
         ->assertOk();
 
-    $response->assertHasProp('counts.workflows');
-    expect($response->prop('counts.workflows'))->toBe(2);
+    $response->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+        ->component('admin/index')
+        ->where('counts.workflows', 2)
+    );
 });
 
 test('admin can export master data including workflow tables', function () {
@@ -62,10 +64,17 @@ test('admin can export master data including workflow tables', function () {
         'is_active' => true,
     ]);
 
+    $masterAction = \App\Models\MasterAction::create([
+        'id' => (string) Str::uuid(),
+        'name' => 'Approve',
+        'code' => 'approve',
+        'is_active' => true,
+    ]);
+
     $action = WorkflowStepAction::create([
         'id' => (string) Str::uuid(),
         'workflow_step_id' => $step->id,
-        'action_name' => 'Approve',
+        'master_action_id' => $masterAction->id,
         'is_active' => true,
     ]);
 
@@ -92,6 +101,13 @@ test('admin can import master data using id as key for createorupdate', function
     $uuidWorkflow = (string) Str::uuid();
     $uuidStep = (string) Str::uuid();
     $uuidAction = (string) Str::uuid();
+
+    $masterAction = \App\Models\MasterAction::create([
+        'id' => (string) Str::uuid(),
+        'name' => 'Request Change',
+        'code' => 'request_change',
+        'is_active' => true,
+    ]);
 
     $payload = [
         'company_groups' => [],
@@ -127,7 +143,7 @@ test('admin can import master data using id as key for createorupdate', function
             [
                 'id' => $uuidAction,
                 'workflow_step_id' => $uuidStep,
-                'action_name' => 'Request Change',
+                'master_action_id' => $masterAction->id,
                 'is_active' => true,
             ],
         ],
@@ -159,7 +175,7 @@ test('admin can import master data using id as key for createorupdate', function
     $this->assertDatabaseHas('m_workflow_step_actions', [
         'id' => $uuidAction,
         'workflow_step_id' => $uuidStep,
-        'action_name' => 'Request Change',
+        'master_action_id' => $masterAction->id,
     ]);
 });
 
