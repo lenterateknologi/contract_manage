@@ -22,13 +22,13 @@ class WorkflowAdminController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Workflow::with(['steps.approverRoles', 'steps.approverDepartments', 'steps.approverUsers', 'initiatorRolesData', 'initiatorDepartmentsData', 'initiatorUsersData'])
+        $query = Workflow::with(['contractType', 'steps.approverRoles', 'steps.approverDepartments', 'steps.approverUsers', 'initiatorRolesData', 'initiatorDepartmentsData', 'initiatorUsersData'])
             ->when($request->search, function ($q, $search) {
                 $q->where('name', 'ilike', "%{$search}%")
                     ->orWhere('description', 'ilike', "%{$search}%");
             })
-            ->when($request->contract_type, function ($q, $type) {
-                $q->whereIn('contract_type', (array) $type);
+            ->when($request->contract_type_id, function ($q, $type) {
+                $q->whereIn('contract_type_id', (array) $type);
             })
             ->when($request->company_group_id, function ($q, $id) {
                 $q->whereJsonContains('company_group_ids', $id);
@@ -51,7 +51,7 @@ class WorkflowAdminController extends Controller
             'regions' => Region::all(),
             'companies' => Company::all(),
             'contractStatuses' => ContractStatus::orderBy('label')->get(),
-            'filters' => $request->only(['search', 'contract_type', 'company_group_id', 'region_id', 'company_id']),
+            'filters' => $request->only(['search', 'contract_type_id', 'company_group_id', 'region_id', 'company_id']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Alur Kerja (Workflows)', 'href' => route('admin.workflows'), 'description' => 'Konfigurasi tahapan persetujuan.', 'icon' => 'GitBranch'],
@@ -154,7 +154,7 @@ class WorkflowAdminController extends Controller
 
         $data = $request->validate([
             'name' => 'required|string|max:255',
-            'contract_type' => 'required|string',
+            'contract_type_id' => 'nullable|uuid|exists:m_contract_types,id',
             'description' => 'nullable|string',
             'is_default' => 'boolean',
             'initiator_type' => 'nullable|string|in:all,role,user',
@@ -222,7 +222,7 @@ class WorkflowAdminController extends Controller
 
         $data = $request->validate([
             'name' => 'required|string|max:255',
-            'contract_type' => 'required|string',
+            'contract_type_id' => 'nullable|uuid|exists:m_contract_types,id',
             'description' => 'nullable|string',
             'is_default' => 'boolean',
             'initiator_type' => 'nullable|string|in:all,role,user',
@@ -360,6 +360,35 @@ class WorkflowAdminController extends Controller
         return back()->with('success', count($ids) . ' alur kerja berhasil dihapus.');
     }
 
+    public function storeMasterAction(Request $request): \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+
+        $name = trim($data['name']);
+        $code = strtolower(str_replace(' ', '_', $name));
+
+        $masterAction = MasterAction::firstOrCreate(
+            ['code' => $code],
+            [
+                'id' => (string) \Illuminate\Support\Str::uuid(),
+                'name' => $name,
+                'is_active' => true,
+                'created_by' => \Illuminate\Support\Facades\Auth::id(),
+            ]
+        );
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'master_action' => $masterAction,
+            ]);
+        }
+
+        return back()->with('success', 'Master Aksi berhasil didaftarkan.');
+    }
+
     public function updateMasterAction(Request $request, $id)
     {
         $data = $request->validate([
@@ -407,7 +436,7 @@ class WorkflowAdminController extends Controller
 
         foreach ($workflows as $workflow) {
             $workflowData = collect($workflow->toArray())->only([
-                'contract_type',
+                'contract_type_id',
                 'department_id',
                 'name',
                 'description',

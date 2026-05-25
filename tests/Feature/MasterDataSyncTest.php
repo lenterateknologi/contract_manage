@@ -27,14 +27,12 @@ test('admin can access master data sync index with counts', function () {
     Workflow::create([
         'id' => (string) Str::uuid(),
         'name' => 'Workflow A',
-        'contract_type' => 'test',
         'is_active' => true,
     ]);
 
     Workflow::create([
         'id' => (string) Str::uuid(),
         'name' => 'Workflow B',
-        'contract_type' => 'test',
         'is_active' => true,
     ]);
 
@@ -42,15 +40,17 @@ test('admin can access master data sync index with counts', function () {
         ->get(route('admin.master-data-sync'))
         ->assertOk();
 
-    $response->assertHasProp('counts.workflows');
-    expect($response->prop('counts.workflows'))->toBe(2);
+    $response->assertInertia(
+        fn (Inertia\Testing\AssertableInertia $page) => $page
+            ->has('counts.workflows')
+            ->where('counts.workflows', 2),
+    );
 });
 
 test('admin can export master data including workflow tables', function () {
     $w = Workflow::create([
         'id' => (string) Str::uuid(),
         'name' => 'Test Workflow',
-        'contract_type' => 'test',
         'is_active' => true,
     ]);
 
@@ -62,10 +62,18 @@ test('admin can export master data including workflow tables', function () {
         'is_active' => true,
     ]);
 
+    $masterAction = App\Models\MasterAction::where('code', 'approve')->first()
+        ?: App\Models\MasterAction::create([
+            'id' => (string) Str::uuid(),
+            'name' => 'Approve',
+            'code' => 'approve',
+            'is_active' => true,
+        ]);
+
     $action = WorkflowStepAction::create([
         'id' => (string) Str::uuid(),
         'workflow_step_id' => $step->id,
-        'action_name' => 'Approve',
+        'master_action_id' => $masterAction->id,
         'is_active' => true,
     ]);
 
@@ -93,6 +101,14 @@ test('admin can import master data using id as key for createorupdate', function
     $uuidStep = (string) Str::uuid();
     $uuidAction = (string) Str::uuid();
 
+    $masterAction = App\Models\MasterAction::where('code', 'request_change')->first()
+        ?: App\Models\MasterAction::create([
+            'id' => (string) Str::uuid(),
+            'name' => 'Request Change',
+            'code' => 'request_change',
+            'is_active' => true,
+        ]);
+
     $payload = [
         'company_groups' => [],
         'regions' => [],
@@ -104,7 +120,6 @@ test('admin can import master data using id as key for createorupdate', function
                 'id' => $uuidWorkflow,
                 'name' => 'Imported Workflow',
                 'description' => 'A workflow imported via JSON',
-                'contract_type' => 'test',
                 'is_active' => true,
             ],
         ],
@@ -127,7 +142,7 @@ test('admin can import master data using id as key for createorupdate', function
             [
                 'id' => $uuidAction,
                 'workflow_step_id' => $uuidStep,
-                'action_name' => 'Request Change',
+                'master_action_id' => $masterAction->id,
                 'is_active' => true,
             ],
         ],
@@ -159,7 +174,7 @@ test('admin can import master data using id as key for createorupdate', function
     $this->assertDatabaseHas('m_workflow_step_actions', [
         'id' => $uuidAction,
         'workflow_step_id' => $uuidStep,
-        'action_name' => 'Request Change',
+        'master_action_id' => $masterAction->id,
     ]);
 });
 

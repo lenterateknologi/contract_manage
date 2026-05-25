@@ -4,6 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { router } from '@inertiajs/react';
 import {
     ArrowDown,
     ArrowUp,
@@ -16,6 +17,7 @@ import {
     FileSignature,
     GitBranch,
     Key,
+    Loader2,
     Settings2,
     Shield,
     Trash2,
@@ -225,9 +227,46 @@ export default function SortableStepItem({
         updateLocalStep(idx, { actions: next, allowed_actions: next.map((a: any) => a.master_action?.code || a.master_action_name?.toLowerCase()).filter(Boolean) });
     };
 
-    // Simulation active modal state
     const [activeModal, setActiveModal] = useState<'approve' | 'reject' | 'return' | 'assign_pic' | 'upload' | 'review' | 'sign' | null>(null);
     const [showManageMasterActions, setShowManageMasterActions] = useState(false);
+    const [isSavingAction, setIsSavingAction] = useState<number | null>(null);
+
+    const handleSaveCustomAction = (actIdx: number, customName: string) => {
+        if (!customName || !customName.trim()) {
+            showToast('Nama aksi tidak boleh kosong', 'danger');
+            return;
+        }
+
+        setIsSavingAction(actIdx);
+        router.post(
+            route('admin.workflows.master-actions.store'),
+            { name: customName },
+            {
+                preserveScroll: true,
+                onSuccess: (page: any) => {
+                    showToast('Aksi berhasil didaftarkan ke Master Aksi', 'success');
+                    
+                    const nameLower = customName.trim().toLowerCase();
+                    const code = nameLower.replace(/\s+/g, '_');
+                    
+                    setTimeout(() => {
+                        const matched = masterActions.find((m: any) => m.code === code || m.name.toLowerCase() === nameLower);
+                        if (matched) {
+                            updateAction(actIdx, {
+                                master_action_id: matched.id,
+                                master_action_name: '',
+                                master_action: matched
+                            });
+                        }
+                    }, 100);
+                },
+                onError: (err) => {
+                    showToast(err.name || 'Gagal mendaftarkan aksi', 'danger');
+                },
+                onFinish: () => setIsSavingAction(null),
+            }
+        );
+    };
 
     // Filtered users for select dropdowns
     const userOptions = useMemo(() => {
@@ -536,7 +575,7 @@ export default function SortableStepItem({
                                                 value={step.description || step.label || ''}
                                                 onChange={(e) => updateLocalStep(idx, { description: e.target.value, label: e.target.value })}
                                                 placeholder="Contoh: Review Legal Staff"
-                                                className="h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-[11px] font-bold outline-none focus:border-slate-900 dark:border-slate-800 dark:bg-black/50"
+                                                className="h-9 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-[11px] font-bold outline-none transition-all focus:border-slate-900 focus:bg-white dark:border-slate-800 dark:bg-slate-900/50 dark:focus:bg-slate-900"
                                             />
                                         </div>
 
@@ -669,7 +708,7 @@ export default function SortableStepItem({
                                                                 value={parsedCondition.key}
                                                                 onChange={(e) => handleConditionChange({ key: e.target.value })}
                                                                 placeholder="Contoh: contract.has_tax atau initiator_is_staff"
-                                                                className="h-9 w-full rounded-xl border border-slate-200 bg-white pr-3 pl-9 text-[11px] font-bold outline-none focus:border-slate-900 dark:border-slate-800 dark:bg-black/50"
+                                                                className="h-9 w-full rounded-xl border border-slate-200 bg-slate-50/50 pr-3 pl-9 text-[11px] font-bold outline-none transition-all focus:border-slate-900 focus:bg-white dark:border-slate-800 dark:bg-slate-900/50 dark:focus:bg-slate-900"
                                                             />
                                                         </div>
                                                     </div>
@@ -715,7 +754,7 @@ export default function SortableStepItem({
                                                                 value={parsedCondition.value}
                                                                 onChange={(e) => handleConditionChange({ value: e.target.value })}
                                                                 placeholder="Nilai pembanding"
-                                                                className="h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-[11px] font-bold outline-none focus:border-slate-900 dark:border-slate-800 dark:bg-black/50"
+                                                                className="h-9 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-[11px] font-bold outline-none transition-all focus:border-slate-900 focus:bg-white dark:border-slate-800 dark:bg-slate-900/50 dark:focus:bg-slate-900"
                                                             />
                                                         </div>
                                                     )}
@@ -792,138 +831,63 @@ export default function SortableStepItem({
                                         <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
                                             {step.approver_type === 'role' && (
                                                 <>
-                                                    {/* Role Pool */}
+                                                    {/* Role Pool (multi-select) */}
                                                     <div className="space-y-3 md:col-span-6">
                                                         <div className="flex items-center gap-2 px-1">
                                                             <Shield size={12} className="text-slate-400" />
                                                             <span className="text-[10px] font-black text-slate-500 uppercase">ROLE POOL</span>
                                                         </div>
-                                                        {step.role && step.role.length > 0 && (
-                                                            <div className="flex flex-wrap gap-1 px-1 py-1">
-                                                                {step.role.map((rName: string) => (
-                                                                    <span key={rName} className="inline-flex items-center gap-1 bg-slate-900 text-white dark:bg-white dark:text-black px-2 py-0.5 rounded text-[8px] font-bold uppercase">
-                                                                        {rName}
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => {
-                                                                                const next = (step.role || []).filter((r: string) => r !== rName);
-                                                                                updateLocalStep(idx, { role: next });
-                                                                            }}
-                                                                            className="hover:text-rose-500 font-bold focus:outline-none"
-                                                                        >
-                                                                            ×
-                                                                        </button>
-                                                                    </span>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                        <div className="custom-scrollbar max-h-[160px] space-y-1 overflow-y-auto pr-2">
+                                                        <div className="flex items-center gap-2 px-1">
                                                             <button
                                                                 type="button"
                                                                 onClick={() => updateLocalStep(idx, { role: [] })}
                                                                 className={cn(
-                                                                    'flex w-full items-center justify-between rounded-xl border p-2 text-left transition-all',
+                                                                    'rounded-lg px-2 py-1 text-[10px] font-bold uppercase transition-all',
                                                                     !step.role || step.role.length === 0
                                                                         ? 'border-slate-900 bg-slate-900 text-white shadow-lg'
                                                                         : 'border-transparent text-slate-400 italic hover:bg-slate-100',
                                                                 )}
                                                             >
-                                                                <span className="w-full text-center text-[10px] font-bold uppercase">SEMUA ROLE</span>
+                                                                SEMUA ROLE
                                                             </button>
-                                                            {roles.map((role: any) => {
-                                                                const isSelected = step.role?.includes(role.name);
-                                                                return (
-                                                                    <button
-                                                                        key={role.id}
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            const current = step.role || [];
-                                                                            const next = isSelected
-                                                                                ? current.filter((r: string) => r !== role.name)
-                                                                                : [...current, role.name];
-                                                                            updateLocalStep(idx, { role: next });
-                                                                        }}
-                                                                        className={cn(
-                                                                            'flex w-full items-center justify-between rounded-xl border p-2 text-left transition-all',
-                                                                            isSelected
-                                                                                ? 'border-slate-900 bg-slate-900 text-white'
-                                                                                : 'border-transparent hover:bg-slate-100',
-                                                                        )}
-                                                                    >
-                                                                        <span className="text-[10px] font-bold uppercase">{role.name}</span>
-                                                                        {isSelected && <CheckCircle2 size={10} />}
-                                                                    </button>
-                                                                );
-                                                            })}
+                                                            <div className="flex-1">
+                                                                <SearchableMultiSelect
+                                                                    values={step.role || []}
+                                                                    onValuesChange={(vals: string[]) => updateLocalStep(idx, { role: vals })}
+                                                                    options={roles.map((r: any) => ({ value: r.name, label: r.name }))}
+                                                                    placeholder="Pilih Role..."
+                                                                />
+                                                            </div>
                                                         </div>
                                                     </div>
 
-                                                    {/* Unit Pool */}
+                                                    {/* Unit Pool (multi-select) */}
                                                     <div className="space-y-3 border-l border-slate-100 pl-6 dark:border-slate-800 md:col-span-6">
                                                         <div className="flex items-center gap-2 px-1">
                                                             <Briefcase size={12} className="text-slate-400" />
                                                             <span className="text-[10px] font-black text-slate-500 uppercase">UNIT POOL</span>
                                                         </div>
-                                                        {step.department_ids && step.department_ids.length > 0 && (
-                                                            <div className="flex flex-wrap gap-1 px-1 py-1">
-                                                                {step.department_ids.map((deptId: string) => {
-                                                                    const deptName = departments.find(d => String(d.id) === deptId)?.name || `Unit ID: ${deptId}`;
-                                                                    return (
-                                                                        <span key={deptId} className="inline-flex items-center gap-1 bg-slate-900 text-white dark:bg-white dark:text-black px-2 py-0.5 rounded text-[8px] font-bold uppercase">
-                                                                            {deptName}
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={() => {
-                                                                                    const next = (step.department_ids || []).filter((d: string) => d !== deptId);
-                                                                                    updateLocalStep(idx, { department_ids: next });
-                                                                                }}
-                                                                                className="hover:text-rose-500 font-bold focus:outline-none"
-                                                                            >
-                                                                                ×
-                                                                            </button>
-                                                                        </span>
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                        )}
-                                                        <div className="custom-scrollbar max-h-[160px] space-y-1 overflow-y-auto pr-2">
+                                                        <div className="flex items-center gap-2 px-1">
                                                             <button
                                                                 type="button"
                                                                 onClick={() => updateLocalStep(idx, { department_ids: [] })}
                                                                 className={cn(
-                                                                    'flex w-full items-center justify-between rounded-xl border p-2 text-left transition-all',
+                                                                    'rounded-lg px-2 py-1 text-[10px] font-bold uppercase transition-all',
                                                                     !step.department_ids || step.department_ids.length === 0
                                                                         ? 'border-slate-900 bg-slate-900 text-white shadow-lg'
                                                                         : 'border-transparent text-slate-400 italic hover:bg-slate-100',
                                                                 )}
                                                             >
-                                                                <span className="w-full text-center text-[10px] font-bold uppercase">SEMUA UNIT</span>
+                                                                SEMUA UNIT
                                                             </button>
-                                                            {departments.map((dept: any) => {
-                                                                const isSelected = step.department_ids?.includes(String(dept.id));
-                                                                return (
-                                                                    <button
-                                                                        key={dept.id}
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            const current = step.department_ids || [];
-                                                                            const next = isSelected
-                                                                                ? current.filter((d: string) => d !== String(dept.id))
-                                                                                : [...current, String(dept.id)];
-                                                                            updateLocalStep(idx, { department_ids: next });
-                                                                        }}
-                                                                        className={cn(
-                                                                            'flex w-full items-center justify-between rounded-xl border p-2 text-left transition-all',
-                                                                            isSelected
-                                                                                ? 'border-slate-900 bg-slate-900 text-white'
-                                                                                : 'border-transparent hover:bg-slate-100',
-                                                                        )}
-                                                                    >
-                                                                        <span className="text-[10px] font-bold uppercase">{dept.name}</span>
-                                                                        {isSelected && <CheckCircle2 size={10} />}
-                                                                    </button>
-                                                                );
-                                                            })}
+                                                            <div className="flex-1">
+                                                                <SearchableMultiSelect
+                                                                    values={step.department_ids || []}
+                                                                    onValuesChange={(vals: string[]) => updateLocalStep(idx, { department_ids: vals })}
+                                                                    options={departments.map((d: any) => ({ value: String(d.id), label: d.name }))}
+                                                                    placeholder="Pilih Unit..."
+                                                                />
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </>
@@ -1079,9 +1043,22 @@ export default function SortableStepItem({
                                                                         master_action_id: '',
                                                                         master_action: null
                                                                     })}
-                                                                    className="h-8 w-full rounded-lg border-slate-200 bg-slate-50/50 px-2.5 text-[10px] font-bold uppercase transition-all focus:border-slate-900 focus:bg-white dark:border-slate-800 dark:bg-slate-900"
+                                                                    className="h-8 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-2.5 text-[10px] font-bold uppercase transition-all focus:border-slate-900 focus:bg-white dark:border-slate-800 dark:bg-slate-900"
                                                                     placeholder="Contoh: CONFIRM"
                                                                 />
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleSaveCustomAction(actIdx, act.master_action_name || '')}
+                                                                    disabled={isSavingAction === actIdx}
+                                                                    className="rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[8px] font-black uppercase text-emerald-700 hover:bg-emerald-100 disabled:opacity-50 dark:border-emerald-800 dark:bg-emerald-950/20 dark:text-emerald-400"
+                                                                    title="Daftarkan ke Master Aksi"
+                                                                >
+                                                                    {isSavingAction === actIdx ? (
+                                                                        <Loader2 size={10} className="animate-spin" />
+                                                                    ) : (
+                                                                        'Daftar'
+                                                                    )}
+                                                                </button>
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => updateAction(actIdx, {
@@ -1089,10 +1066,10 @@ export default function SortableStepItem({
                                                                         master_action_id: masterActions[0]?.id || '',
                                                                         master_action: masterActions[0] || null
                                                                     })}
-                                                                    className="rounded-lg border border-slate-200 px-2 py-1.5 text-[8px] font-black uppercase text-slate-500 hover:bg-slate-50 dark:border-slate-800"
-                                                                    title="Pilih dari daftar"
+                                                                    className="rounded-lg border border-slate-200 px-2 py-1.5 text-[8px] font-black uppercase text-slate-500 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-900"
+                                                                    title="Batal dan pilih dari daftar"
                                                                 >
-                                                                    Daftar
+                                                                    Batal
                                                                 </button>
                                                             </div>
                                                         ) : (
@@ -1141,7 +1118,7 @@ export default function SortableStepItem({
                                                             type="text"
                                                             value={act.alias || ''}
                                                             onChange={(e) => updateAction(actIdx, { alias: e.target.value })}
-                                                            className="h-8 w-full rounded-lg border-slate-200 bg-slate-50/50 px-2.5 text-[10px] font-bold transition-all focus:border-slate-900 focus:bg-white dark:border-slate-800 dark:bg-slate-900"
+                                                            className="h-8 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-2.5 text-[10px] font-bold transition-all focus:border-slate-900 focus:bg-white dark:border-slate-800 dark:bg-slate-900"
                                                             placeholder="Contoh: Kirim Review, Kembalikan ke Legal"
                                                         />
                                                     </div>
@@ -1286,7 +1263,7 @@ export default function SortableStepItem({
                                                             type="text"
                                                             value={act.description || ''}
                                                             onChange={(e) => updateAction(actIdx, { description: e.target.value })}
-                                                            className="h-8 w-full rounded-lg border-slate-200 bg-slate-50/50 px-2.5 text-[10px] font-bold transition-all focus:border-slate-900 focus:bg-white dark:border-slate-800 dark:bg-slate-900"
+                                                            className="h-8 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-2.5 text-[10px] font-bold transition-all focus:border-slate-900 focus:bg-white dark:border-slate-800 dark:bg-slate-900"
                                                             placeholder="Deskripsi singkat fungsi tombol ini..."
                                                         />
                                                     </div>

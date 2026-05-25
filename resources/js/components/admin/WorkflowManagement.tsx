@@ -8,7 +8,7 @@ import { Download, FileJson, Loader2, Plus, Shield, Trash2, Upload, UserCheck, U
 import { useMemo, useRef, useState } from 'react';
 
 // --- Cell Components (Compact) ---
-const WorkflowNameCell = ({ row }: { readonly row: any }) => (
+const WorkflowNameCell = ({ row, contractTypes }: { readonly row: any; readonly contractTypes: any[] }) => (
     <div className="group flex flex-col py-1">
         <div className="flex items-center gap-2">
             <span className="text-primary text-[12px] font-semibold tracking-tight uppercase transition-transform group-hover:translate-x-1 dark:text-white">
@@ -20,7 +20,9 @@ const WorkflowNameCell = ({ row }: { readonly row: any }) => (
                 </div>
             )}
         </div>
-        <span className="text-primary/30 mt-0.5 text-[8px] font-bold uppercase italic dark:text-white/30">{row.contract_type || 'GLOBAL'}</span>
+        <span className="text-primary/30 mt-0.5 text-[8px] font-bold uppercase italic dark:text-white/30">
+            {row.contract_type_id ? (contractTypes?.find((t) => t.id === row.contract_type_id)?.name || 'UNKNOWN') : 'GLOBAL'}
+        </span>
     </div>
 );
 
@@ -67,6 +69,7 @@ interface ImportWorkflowModalProps {
     readonly isOpen: boolean;
     readonly onClose: () => void;
     readonly showToast: (message: string, type?: 'success' | 'danger' | 'info') => void;
+    readonly contractTypes: any[];
 }
 
 function ImportWorkflowModal({ isOpen, onClose, showToast }: Readonly<ImportWorkflowModalProps>) {
@@ -231,7 +234,9 @@ function ImportWorkflowModal({ isOpen, onClose, showToast }: Readonly<ImportWork
                                         <p className="text-muted-foreground mt-0.5 line-clamp-1 text-[10px]">{item.description || 'Tidak ada deskripsi'}</p>
                                         <div className="mt-2 flex items-center gap-2">
                                             <span className="border-border/30 bg-muted text-muted-foreground rounded-xs border px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider">
-                                                {item.contract_type || 'GLOBAL'}
+                                                {item.contract_type_id
+                                                    ? (contractTypes?.find((t) => t.id === item.contract_type_id)?.name || 'UNKNOWN')
+                                                    : (item.contract_type || 'GLOBAL')}
                                             </span>
                                             <span className="bg-primary/10 text-primary rounded-xs px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider">
                                                 {item.steps?.length || 0} Tahap
@@ -280,11 +285,11 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
 
     const columns = useMemo<Column<any>[]>(
         () => [
-            { header: 'Identitas Alur', accessorKey: 'name', sortable: true, cell: (row) => <WorkflowNameCell row={row} /> },
+            { header: 'Identitas Alur', accessorKey: 'name', sortable: true, cell: (row) => <WorkflowNameCell row={row} contractTypes={contractTypes} /> },
             { header: 'Otoritas Inisiasi', accessorKey: 'initiator_type', cell: (row) => <InitiatorCell row={row} /> },
             { header: 'Struktur Tahapan', accessorKey: 'steps_count', cell: (row) => <StepsCell row={row} /> },
         ],
-        [],
+        [contractTypes],
     );
 
     const openCreate = () => {
@@ -389,6 +394,7 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                 isOpen={isImportOpen} 
                 onClose={() => setIsImportOpen(false)} 
                 showToast={showToast} 
+                contractTypes={contractTypes}
             />
         </div>
     );

@@ -149,6 +149,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/workflows/visualize', [WorkflowAdminController::class, 'visualize'])->name('admin.workflows.visualize');
         Route::get('/workflows/{workflow}/steps', [WorkflowAdminController::class, 'steps'])->name('admin.workflows.steps');
         Route::post('/workflows/{workflow}/steps', [WorkflowAdminController::class, 'updateSteps'])->name('admin.workflows.steps.update');
+        Route::post('/workflows/master-actions', [WorkflowAdminController::class, 'storeMasterAction'])->name('admin.workflows.master-actions.store');
         Route::put('/workflows/master-actions/{id}', [WorkflowAdminController::class, 'updateMasterAction'])->name('admin.workflows.master-actions.update');
         Route::delete('/workflows/master-actions/{id}', [WorkflowAdminController::class, 'destroyMasterAction'])->name('admin.workflows.master-actions.destroy');
 

@@ -21,7 +21,7 @@ class Workflow extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'contract_type',
+        'contract_type_id',
         'department_id',
         'name',
         'description',
@@ -95,6 +95,11 @@ class Workflow extends Model
         return $this->initiatorUsersData->pluck('user_id')->toArray();
     }
 
+    public function contractType(): BelongsTo
+    {
+        return $this->belongsTo(ContractType::class, 'contract_type_id');
+    }
+
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);
@@ -112,21 +117,32 @@ class Workflow extends Model
 
     public static function getDefaultByContractType(?string $contractType, bool $taxRequired = false): ?self
     {
-        // First try to find a workflow that matches both type and tax requirement
         if ($contractType) {
-            $workflow = self::where('contract_type', $contractType)
-                ->where('is_tax_involved', $taxRequired)
-                ->first();
+            // Check if it's a UUID
+            $isUuid = preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $contractType);
 
+            $query = self::query();
+            if ($isUuid) {
+                $query->where('contract_type_id', $contractType);
+            } else {
+                // If it's a legacy string (code or name), try to resolve it from m_contract_types
+                $typeId = ContractType::where('code', $contractType)
+                    ->orWhere('name', $contractType)
+                    ->value('id');
+                if ($typeId) {
+                    $query->where('contract_type_id', $typeId);
+                } else {
+                    $query->whereNull('contract_type_id'); // Match GLOBAL
+                }
+            }
+
+            $workflow = (clone $query)->where('is_tax_involved', $taxRequired)->first();
             if ($workflow) {
                 return $workflow;
             }
 
             // Fallback to any default for this contract type
-            $default = self::where('contract_type', $contractType)
-                ->where('is_default', true)
-                ->first();
-
+            $default = (clone $query)->where('is_default', true)->first();
             if ($default) {
                 return $default;
             }

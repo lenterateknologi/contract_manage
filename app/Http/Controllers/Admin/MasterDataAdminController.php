@@ -131,7 +131,7 @@ class MasterDataAdminController extends Controller
             $workflows = Workflow::all()->map(function ($w) {
                 return [
                     'id' => $w->id,
-                    'contract_type' => $w->contract_type,
+                    'contract_type_id' => $w->contract_type_id,
                     'department_id' => $w->department_id,
                     'name' => $w->name,
                     'description' => $w->description,
@@ -322,6 +322,7 @@ class MasterDataAdminController extends Controller
             ];
 
             DB::transaction(function () use ($data, &$counts) {
+                \Illuminate\Database\Eloquent\Model::unguard();
                 $admin = \Illuminate\Support\Facades\Auth::id();
 
                 // 1. Company Groups
@@ -452,6 +453,20 @@ class MasterDataAdminController extends Controller
                         if (empty($w['id'])) {
                             continue;
                         }
+
+                        // Map old contract_type string to contract_type_id UUID
+                        if (array_key_exists('contract_type', $w)) {
+                            $contractTypeVal = $w['contract_type'];
+                            unset($w['contract_type']);
+                            if ($contractTypeVal) {
+                                $w['contract_type_id'] = ContractType::where('code', $contractTypeVal)
+                                    ->orWhere('name', $contractTypeVal)
+                                    ->value('id');
+                            } else {
+                                $w['contract_type_id'] = null;
+                            }
+                        }
+
                         Workflow::updateOrCreate(
                             ['id' => $w['id']],
                             $w,
@@ -613,6 +628,7 @@ class MasterDataAdminController extends Controller
                         }
                     }
                 }
+                \Illuminate\Database\Eloquent\Model::reguard();
             });
 
             $successMsg = sprintf(

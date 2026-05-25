@@ -51,7 +51,7 @@ export default function WorkflowEditor({
 
     const form = useForm({
         name: workflow?.name || '',
-        contract_type: workflow?.contract_type || '',
+        contract_type_id: workflow?.contract_type_id || '',
         description: workflow?.description || '',
         is_default: !!workflow?.is_default,
         initiator_type: workflow?.initiator_type || 'all',
@@ -192,9 +192,10 @@ export default function WorkflowEditor({
                                             </label>
                                             <input
                                                 type="text"
+                                                autoFocus
                                                 value={form.data.name}
                                                 onChange={(e) => form.setData('name', e.target.value)}
-                                                className="h-10 w-full rounded-xl border-slate-200 bg-slate-50/50 px-4 text-xs font-bold transition-all focus:border-slate-900 focus:bg-white focus:ring-0 dark:border-slate-800 dark:bg-slate-900/50 dark:focus:border-white dark:focus:bg-slate-900"
+                                                className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 text-xs font-bold transition-all focus:border-slate-900 focus:bg-white focus:ring-0 dark:border-slate-800 dark:bg-slate-900/50 dark:focus:border-white dark:focus:bg-slate-900"
                                                 placeholder="Contoh: ALUR PERSETUJUAN KONTRAK LOGISTIK"
                                             />
                                         </div>
@@ -205,8 +206,8 @@ export default function WorkflowEditor({
                                                 <LayoutTemplate size={10} /> Jenis Kontrak
                                             </label>
                                             <Select
-                                                value={form.data.contract_type || 'all'}
-                                                onValueChange={(v) => form.setData('contract_type', v === 'all' ? '' : String(v))}
+                                                value={form.data.contract_type_id || 'all'}
+                                                onValueChange={(v) => form.setData('contract_type_id', v === 'all' ? '' : String(v))}
                                             >
                                                 <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-black tracking-tight uppercase transition-all focus:border-slate-900 dark:border-slate-800 dark:bg-slate-900/50 dark:focus:border-white">
                                                     <SelectValue placeholder="SEMUA JENIS" />
@@ -216,7 +217,7 @@ export default function WorkflowEditor({
                                                         SEMUA JENIS
                                                     </SelectItem>
                                                     {contractTypes.map((t: any) => (
-                                                        <SelectItem key={t.id} value={t.name} className="py-2.5 text-[10px] font-black uppercase">
+                                                        <SelectItem key={t.id} value={t.id} className="py-2.5 text-[10px] font-black uppercase">
                                                             {t.name}
                                                         </SelectItem>
                                                     ))}

@@ -39,7 +39,7 @@ class ContractWorkflowService
 
         if (! $workflow) {
             $taxRequired = $metadata['tax_required'] ?? ($contract->metadata['tax_required'] ?? false);
-            $typeStr = $contract->contract_type ?: ($contract->contractType ? $contract->contractType->code : 'General');
+            $typeStr = $contract->contract_type_id ?: ($contract->contract_type ?: ($contract->contractType ? $contract->contractType->code : 'General'));
             $workflow = Workflow::getDefaultByContractType($typeStr, (bool) $taxRequired);
         }
 

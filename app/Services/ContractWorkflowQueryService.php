@@ -44,10 +44,22 @@ class ContractWorkflowQueryService
         $query = Workflow::where('is_active', true);
 
         if ($contractType) {
-            // Case-insensitive search for contract type
-            $query->where(function ($q) use ($contractType) {
-                $q->where('contract_type', 'ilike', $contractType)
-                    ->orWhere('is_default', true); // Show global defaults as fallback
+            $isUuid = preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $contractType);
+            $query->where(function ($q) use ($contractType, $isUuid) {
+                if ($isUuid) {
+                    $q->where('contract_type_id', $contractType)
+                        ->orWhere('is_default', true);
+                } else {
+                    $typeId = \App\Models\ContractType::where('code', $contractType)
+                        ->orWhere('name', $contractType)
+                        ->value('id');
+                    if ($typeId) {
+                        $q->where('contract_type_id', $typeId);
+                    } else {
+                        $q->whereNull('contract_type_id');
+                    }
+                    $q->orWhere('is_default', true);
+                }
             });
         }
 
