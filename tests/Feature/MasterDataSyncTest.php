@@ -42,9 +42,10 @@ test('admin can access master data sync index with counts', function () {
         ->get(route('admin.master-data-sync'))
         ->assertOk();
 
-    $response->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
-        ->component('admin/index')
-        ->where('counts.workflows', 2)
+    $response->assertInertia(
+        fn (Inertia\Testing\AssertableInertia $page) => $page
+            ->component('admin/index')
+            ->where('counts.workflows', 2),
     );
 });
 
@@ -64,12 +65,14 @@ test('admin can export master data including workflow tables', function () {
         'is_active' => true,
     ]);
 
-    $masterAction = \App\Models\MasterAction::create([
-        'id' => (string) Str::uuid(),
-        'name' => 'Approve',
-        'code' => 'approve',
-        'is_active' => true,
-    ]);
+    $masterAction = App\Models\MasterAction::firstOrCreate(
+        ['code' => 'approve'],
+        [
+            'id' => (string) Str::uuid(),
+            'name' => 'Approve',
+            'is_active' => true,
+        ],
+    );
 
     $action = WorkflowStepAction::create([
         'id' => (string) Str::uuid(),
@@ -84,7 +87,11 @@ test('admin can export master data including workflow tables', function () {
 
     $response->assertHeader('Content-Type', 'application/json');
 
-    $data = json_decode($response->getContent(), true);
+    ob_start();
+    $response->sendContent();
+    $content = ob_get_clean();
+
+    $data = json_decode($content, true);
 
     expect($data)->toBeArray()
         ->toHaveKey('workflows')
@@ -102,7 +109,7 @@ test('admin can import master data using id as key for createorupdate', function
     $uuidStep = (string) Str::uuid();
     $uuidAction = (string) Str::uuid();
 
-    $masterAction = \App\Models\MasterAction::create([
+    $masterAction = App\Models\MasterAction::create([
         'id' => (string) Str::uuid(),
         'name' => 'Request Change',
         'code' => 'request_change',
@@ -202,7 +209,11 @@ test('admin can export and import contract types hierarchy correctly', function 
         ->get(route('admin.master-data-sync.export'))
         ->assertOk();
 
-    $data = json_decode($response->getContent(), true);
+    ob_start();
+    $response->sendContent();
+    $content = ob_get_clean();
+
+    $data = json_decode($content, true);
     expect($data)->toHaveKey('contract_types');
 
     $parentExport = collect($data['contract_types'])->firstWhere('code', 'CT-PARENT');
@@ -212,7 +223,7 @@ test('admin can export and import contract types hierarchy correctly', function 
     expect($childExport['parent_code'])->toBe('CT-PARENT');
 
     // Clean DB types to test import
-    App\Models\ContractType::query()->delete();
+    App\Models\ContractType::query()->forceDelete();
 
     // Prepare import payload
     $payload = [

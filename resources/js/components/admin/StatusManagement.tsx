@@ -7,7 +7,7 @@ import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { usePermissions } from '@/hooks/use-permissions';
 import { cn } from '@/lib/utils';
 import { router, useForm } from '@inertiajs/react';
-import { AlertCircle, FileText, LayoutTemplate, Link2, Lock, Plus, ShieldCheck, Tags, Unlock } from 'lucide-react';
+import { AlertCircle, FileText, LayoutTemplate, Link2, Lock, Plus, ShieldCheck, Tags, Trash2, Unlock } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 
 interface StatusManagementProps {
@@ -61,7 +61,7 @@ const ConfigBadge = ({
 
 export function StatusManagement({ statuses, filters }: StatusManagementProps) {
     const { showToast } = useToast();
-    const { canUpdate } = usePermissions('ADMIN_STATUS');
+    const { canUpdate, canDelete } = usePermissions('ADMIN_STATUS');
     const [isEditorOpen, setIsEditorOpen] = useState(false);
     const [editingStatus, setEditingStatus] = useState<any>(null);
 
@@ -394,6 +394,28 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                     >
                         <Plus size={14} className="text-primary" /> Registrasi Status Baru
                     </Button>
+                }
+                bulkActions={
+                    canDelete
+                        ? [
+                              {
+                                  label: 'Hapus Terpilih',
+                                  icon: Trash2,
+                                  variant: 'destructive',
+                                  onClick: (ids: string[] | number[]) => {
+                                      if (confirm(`Apakah Anda yakin ingin menghapus ${ids.length} status terpilih?`)) {
+                                          router.post(
+                                              '/admin/contract-statuses/bulk-delete',
+                                              { ids },
+                                              {
+                                                  onSuccess: () => showToast(`${ids.length} status telah dihapus`, 'success'),
+                                              },
+                                          );
+                                      }
+                                  },
+                              },
+                          ]
+                        : undefined
                 }
                 pagination={{
                     currentPage: statuses.current_page || 1,

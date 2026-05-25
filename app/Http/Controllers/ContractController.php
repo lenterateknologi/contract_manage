@@ -513,7 +513,7 @@ class ContractController extends Controller
         $renewalRate = ($expiredContracts + $renewedContractsCount) > 0
             ? round(($renewedContractsCount / ($expiredContracts + $renewedContractsCount)) * 100, 1)
             : 0;
-        $totalValue = (clone $baseQuery)->select('f2_price')->get()->sum(fn ($c) => $this->parsePrice($c->f2_price));
+        $totalValue = (clone $baseQuery)->select('id')->get()->sum(fn ($c) => $this->parsePrice($c->f2_price));
 
         $approvedContracts = (clone $baseQuery)->where('status', 'approved')->orderByDesc('updated_at')->limit(50)->get();
         $avgDays = 0;
@@ -846,7 +846,7 @@ class ContractController extends Controller
             ['range' => 'Rp 50M - 500M', 'count' => 0],
             ['range' => '> Rp 500M', 'count' => 0],
         ];
-        $prices = (clone $baseQuery)->select('f2_price')->get()->map(fn ($c) => $this->parsePrice($c->f2_price));
+        $prices = (clone $baseQuery)->select('id')->get()->map(fn ($c) => $this->parsePrice($c->f2_price));
         foreach ($prices as $price) {
             if ($price < 50000000) {
                 $valueDistribution[0]['count']++;

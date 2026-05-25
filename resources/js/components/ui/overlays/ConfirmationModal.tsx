@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { Trash2, AlertTriangle, Info, Loader2 } from 'lucide-react';
 
 interface ConfirmationModalProps {
     open: boolean;
@@ -17,7 +18,7 @@ interface ConfirmationModalProps {
 /**
  * Standard Professional Confirmation Modal
  * Used for critical actions like Deletion or Important Changes.
- * Style: Clean, Professional, Centered Icon, Wide Actions.
+ * Style: Modern, Clean White, Circular Icons, Soft Rounded Buttons.
  */
 export function ConfirmationModal({
     open,
@@ -34,38 +35,39 @@ export function ConfirmationModal({
     if (!open) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-black scale-in-center w-full max-w-sm overflow-hidden rounded-none border border-black dark:border-white shadow-2xl">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 dark:bg-black/80 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="relative mx-auto my-auto bg-white dark:bg-slate-900 w-full max-w-sm overflow-hidden rounded-3xl border border-slate-100 dark:border-slate-800/80 shadow-2xl animate-in zoom-in-95 duration-200">
                 {/* Content Section */}
-                <div className="p-8 text-center">
+                <div className="p-6 text-center">
                     <div className={cn(
-                        "mx-auto mb-6 flex h-20 w-20 items-center justify-center transition-all duration-300 border-2",
-                        variant === 'danger' ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white' :
-                        variant === 'warning' ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white' : 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white'
+                        "mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl transition-all duration-300",
+                        variant === 'danger' ? 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400' :
+                        variant === 'warning' ? 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400' :
+                        'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400'
                     )}>
                         {icon || (
                             variant === 'danger' ?
-                            <i className="fa-solid fa-trash-can text-2xl" /> :
+                            <Trash2 size={24} /> :
                             variant === 'warning' ?
-                            <i className="fa-solid fa-circle-exclamation text-2xl" /> :
-                            <i className="fa-solid fa-circle-info text-2xl" />
+                            <AlertTriangle size={24} /> :
+                            <Info size={24} />
                         )}
                     </div>
 
-                    <h3 className="text-black dark:text-white mb-3 text-xl font-black uppercase tracking-tight">
+                    <h3 className="text-slate-900 dark:text-slate-100 mb-1.5 text-base font-bold tracking-tight">
                         {title}
                     </h3>
-                    <p className="text-black/60 dark:text-white/60 text-[11px] leading-relaxed font-bold uppercase tracking-wider">
+                    <p className="text-slate-500 dark:text-slate-400 text-xs font-medium leading-relaxed">
                         {description}
                     </p>
                 </div>
 
                 {/* Actions Section */}
-                <div className="flex border-t border-black dark:border-white">
+                <div className="flex items-center justify-end gap-3 px-6 pb-6 pt-2">
                     <button
                         onClick={onClose}
                         disabled={processing}
-                        className="text-black/40 dark:text-white/40 hover:bg-black/5 dark:hover:bg-white/5 flex-1 border-r border-black dark:border-white py-5 text-[11px] font-black uppercase  transition-all active:bg-black/10 dark:active:bg-white/10"
+                        className="flex-1 rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all active:scale-[0.98] disabled:opacity-50"
                     >
                         {cancelText}
                     </button>
@@ -73,11 +75,13 @@ export function ConfirmationModal({
                         onClick={onConfirm}
                         disabled={processing}
                         className={cn(
-                            "flex-1 py-5 text-[11px] font-black uppercase  transition-all active:opacity-80 disabled:opacity-50",
-                            "text-black dark:text-white hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black"
+                            "flex-1 rounded-xl px-4 py-2.5 text-xs font-bold text-white transition-all active:scale-[0.98] disabled:opacity-50 shadow-md flex items-center justify-center gap-1.5",
+                            variant === 'danger' ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/10' :
+                            variant === 'warning' ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/10' :
+                            'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/10'
                         )}
                     >
-                        {processing ? <i className="fa-solid fa-spinner fa-spin mr-2" /> : null}
+                        {processing && <Loader2 size={12} className="animate-spin" />}
                         {confirmText}
                     </button>
                 </div>
@@ -85,3 +89,4 @@ export function ConfirmationModal({
         </div>
     );
 }
+

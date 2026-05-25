@@ -7,6 +7,7 @@ import { SearchInput } from '@/components/ui/forms/SearchInput';
 import { FilterSheet } from './FilterSheet';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
 import { router } from '@inertiajs/react';
+import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 
 export interface Column<T> {
     header: string;
@@ -78,6 +79,11 @@ export function TableMasterData<T extends Record<string, any>>({
     const [localPerPage, setLocalPerPage] = React.useState(pagination?.perPage || 10);
     const [localSearch, setLocalSearch] = React.useState(searchValue);
     const [internalSelectedRows, setInternalSelectedRows] = React.useState<T[]>([]);
+    const [confirmAction, setConfirmAction] = React.useState<{
+        label: string;
+        onClick: () => void;
+        count: number;
+    } | null>(null);
 
     const hasSelectionFromProps = typeof onSelectionChange === 'function' && Array.isArray(selectedRows);
     const activeSelectedRows = hasSelectionFromProps ? selectedRows : internalSelectedRows;
@@ -229,7 +235,18 @@ export function TableMasterData<T extends Record<string, any>>({
                                     key={actionIdx}
                                     variant={action.variant || 'default'}
                                     size="sm"
-                                    onClick={() => action.onClick?.(activeSelectedRows.map(r => r.id))}
+                                    onClick={() => {
+                                        const ids = activeSelectedRows.map(r => r.id);
+                                        if (action.variant === 'destructive') {
+                                            setConfirmAction({
+                                                label: action.label,
+                                                onClick: () => action.onClick?.(ids),
+                                                count: ids.length
+                                            });
+                                        } else {
+                                            action.onClick?.(ids);
+                                        }
+                                    }}
                                     className="h-8 px-3 text-xs font-bold uppercase tracking-wide bg-primary-foreground text-primary hover:bg-primary-foreground/90 rounded-xl"
                                 >
                                     {Icon && <Icon className="mr-1.5 h-3.5 w-3.5" />}
@@ -427,6 +444,31 @@ export function TableMasterData<T extends Record<string, any>>({
                     }}
                     onReset={() => onFilterChange?.(Object.keys(activeFilters).reduce((acc, key) => ({ ...acc, [key]: [] }), {}))}
                     totalResults={pagination?.total}
+                />
+            )}
+
+            {confirmAction && (
+                <ConfirmationModal
+                    open={confirmAction !== null}
+                    onClose={() => setConfirmAction(null)}
+                    onConfirm={() => {
+                        const originalConfirm = globalThis.confirm;
+                        const originalWindowConfirm = window.confirm;
+                        globalThis.confirm = () => true;
+                        window.confirm = () => true;
+                        try {
+                            confirmAction.onClick();
+                        } finally {
+                            globalThis.confirm = originalConfirm;
+                            window.confirm = originalWindowConfirm;
+                        }
+                        setConfirmAction(null);
+                    }}
+                    title="Konfirmasi Hapus Massal"
+                    description={`Apakah Anda yakin ingin menghapus ${confirmAction.count} data terpilih secara permanen?`}
+                    confirmText="Hapus Terpilih"
+                    cancelText="Batal"
+                    variant="danger"
                 />
             )}
         </div>

@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "positions": {
+    "table-t_contracts": {
+      "x": 548.6626493920468,
+      "y": 1256.025967908925
+    },
+    "table-t_contract_meta": {
+      "x": 557.1626493920468,
+      "y": 2434.025967908925
+    },
+    "table-t_approvals": {
+      "x": 64.66264939204677,
+      "y": 588.025967908925
+    },
+    "table-t_contract_attachments": {
+      "x": 324.6626493920468,
+      "y": 678.025967908925
+    },
+    "table-t_contract_versions": {
+      "x": 574.6626493920468,
+      "y": 648.025967908925
+    },
+    "table-t_contract_messages": {
+      "x": 831.6626493920468,
+      "y": 723.025967908925
+    },
+    "table-t_contract_form_submissions": {
+      "x": 1081.6626493920467,
+      "y": 708.025967908925
+    },
+    "table-t_forgot_password": {
+      "x": 1371.6626493920467,
+      "y": 723.025967908925
+    }
+  }
+}

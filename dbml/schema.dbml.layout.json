@@ -1,0 +1,129 @@
+{
+  "version": 1,
+  "positions": {
+    "table-t_contracts": {
+      "x": 3100,
+      "y": 1100
+    },
+    "table-t_contract_meta": {
+      "x": 3600,
+      "y": 1100
+    },
+    "table-m_users": {
+      "x": 600,
+      "y": 1100
+    },
+    "table-m_departments": {
+      "x": 600,
+      "y": 600
+    },
+    "table-m_roles": {
+      "x": 100,
+      "y": 1100
+    },
+    "table-m_companies": {
+      "x": 100,
+      "y": 600
+    },
+    "table-m_company_groups": {
+      "x": 78.11678359392647,
+      "y": 62.48591473244538
+    },
+    "table-m_regions": {
+      "x": 600,
+      "y": 100
+    },
+    "table-m_contract_types": {
+      "x": 2100,
+      "y": 1100
+    },
+    "table-m_contract_statuses": {
+      "x": 100,
+      "y": 2100
+    },
+    "table-m_vendors": {
+      "x": 100,
+      "y": 1600
+    },
+    "table-m_workflows": {
+      "x": 1100,
+      "y": 1100
+    },
+    "table-m_workflow_steps": {
+      "x": 1600,
+      "y": 1100
+    },
+    "table-m_workflow_step_actions": {
+      "x": 1100,
+      "y": 1600
+    },
+    "table-m_master_actions": {
+      "x": 1600,
+      "y": 1600
+    },
+    "table-t_approvals": {
+      "x": 3100,
+      "y": 100
+    },
+    "table-t_contract_attachments": {
+      "x": 3600,
+      "y": 100
+    },
+    "table-t_contract_versions": {
+      "x": 3100,
+      "y": 600
+    },
+    "table-t_contract_messages": {
+      "x": 3600,
+      "y": 600
+    },
+    "table-t_contract_form_submissions": {
+      "x": 3100,
+      "y": 1600
+    },
+    "table-m_form_templates": {
+      "x": 2100,
+      "y": 600
+    },
+    "table-m_form_fields": {
+      "x": 2600,
+      "y": 600
+    },
+    "table-m_submission_types": {
+      "x": 600,
+      "y": 1600
+    },
+    "table-m_template_folders": {
+      "x": 2100,
+      "y": 100
+    },
+    "table-m_contract_templates": {
+      "x": 2600,
+      "y": 100
+    },
+    "table-m_access_modules": {
+      "x": 1100,
+      "y": 600
+    },
+    "table-m_modules": {
+      "x": 1600,
+      "y": 100
+    },
+    "table-m_module_groups": {
+      "x": 1100,
+      "y": 100
+    },
+    "table-m_role_module_groups": {
+      "x": 1600,
+      "y": 600
+    },
+    "table-m_numbering_formats": {
+      "x": 600,
+      "y": 2100
+    },
+    "table-t_forgot_password": {
+      "x": 3600,
+      "y": 1600
+    }
+  }
+}

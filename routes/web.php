@@ -223,6 +223,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/form-templates', [FormTemplateController::class, 'index'])->name('admin.form-templates.index');
         Route::get('/form-templates/builder/{template?}', [FormTemplateController::class, 'builder'])->name('admin.form-templates.builder');
         Route::post('/form-templates/save/{template?}', [FormTemplateController::class, 'save'])->name('admin.form-templates.save');
+        Route::get('/form-templates/{template}/export', [FormTemplateController::class, 'export'])->name('admin.form-templates.export');
+        Route::post('/form-templates/import', [FormTemplateController::class, 'import'])->name('admin.form-templates.import');
         Route::post('/form-templates/export-adhoc', [FormTemplateController::class, 'exportAdhoc'])->name('admin.form-templates.export-adhoc');
         Route::post('/form-templates/export-queue', [FormTemplateController::class, 'exportAdhocQueue'])->name('admin.form-templates.export-queue');
         Route::get('/form-templates/pdf-status/{jobId}', [FormTemplateController::class, 'checkPdfStatus'])->name('admin.form-templates.pdf-status');
