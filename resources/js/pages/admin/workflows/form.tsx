@@ -138,6 +138,10 @@ export default function WorkflowEditor({
                 role: [],
                 department_ids: [],
                 user_ids: [],
+                filter_department: false,
+                filter_company_group: false,
+                filter_region: false,
+                filter_company: false,
                 step: form.data.steps.length + 1,
             },
         ]);

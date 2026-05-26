@@ -18,6 +18,9 @@ class WorkflowAction
     {
         return DB::transaction(function () use ($data) {
             $workflowData = collect($data)->except(['initiator_roles', 'initiator_users', 'initiator_departments', 'steps'])->toArray();
+            if (empty($workflowData['contract_type_id'])) {
+                $workflowData['contract_type_id'] = null;
+            }
             $workflow = Workflow::create($workflowData);
 
             if ($workflow->is_default) {
@@ -73,6 +76,10 @@ class WorkflowAction
                         'region_ids' => $stepData['region_ids'] ?? null,
                         'company_ids' => $stepData['company_ids'] ?? null,
                         'meta' => $stepData['meta'] ?? null,
+                        'filter_department' => $stepData['filter_department'] ?? false,
+                        'filter_company_group' => $stepData['filter_company_group'] ?? false,
+                        'filter_region' => $stepData['filter_region'] ?? false,
+                        'filter_company' => $stepData['filter_company'] ?? false,
                     ]);
 
                     $stepIdMap[$stepClientId] = $step->id;
@@ -123,8 +130,10 @@ class WorkflowAction
     public function update(Workflow $workflow, array $data): Workflow
     {
         return DB::transaction(function () use ($data, $workflow) {
-            // Update basic info
             $workflowData = collect($data)->except(['initiator_roles', 'initiator_users', 'initiator_departments', 'steps'])->toArray();
+            if (empty($workflowData['contract_type_id'])) {
+                $workflowData['contract_type_id'] = null;
+            }
             $workflow->update($workflowData);
 
             if ($workflow->is_default) {
@@ -201,6 +210,10 @@ class WorkflowAction
                         'company_ids' => $stepData['company_ids'] ?? null,
                         'meta' => $stepData['meta'] ?? null,
                         'approver_type' => $stepData['approver_type'] ?? 'role',
+                        'filter_department' => $stepData['filter_department'] ?? false,
+                        'filter_company_group' => $stepData['filter_company_group'] ?? false,
+                        'filter_region' => $stepData['filter_region'] ?? false,
+                        'filter_company' => $stepData['filter_company'] ?? false,
                     ];
 
                     if ($isNew) {
@@ -304,6 +317,13 @@ class WorkflowAction
                         'hierarchy_level' => isset($stepData['hierarchy_level']) ? (int) $stepData['hierarchy_level'] : null,
                         'role_id' => $stepData['role_id'] ?? null,
                         'meta' => $stepData['meta'] ?? null,
+                        'company_group_ids' => $stepData['company_group_ids'] ?? null,
+                        'region_ids' => $stepData['region_ids'] ?? null,
+                        'company_ids' => $stepData['company_ids'] ?? null,
+                        'filter_department' => $stepData['filter_department'] ?? false,
+                        'filter_company_group' => $stepData['filter_company_group'] ?? false,
+                        'filter_region' => $stepData['filter_region'] ?? false,
+                        'filter_company' => $stepData['filter_company'] ?? false,
                     ]);
 
                     $stepClientId = $stepData['id'] ?? $index;

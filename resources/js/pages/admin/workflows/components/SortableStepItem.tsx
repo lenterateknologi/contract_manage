@@ -1,5 +1,6 @@
 import { useToast } from '@/components/contracts/Toast';
 import { Button } from '@/components/ui/base/Button';
+import { Checkbox } from '@/components/ui/base/Checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
 import { cn } from '@/lib/utils';
 import { useSortable } from '@dnd-kit/sortable';
@@ -245,10 +246,10 @@ export default function SortableStepItem({
                 preserveScroll: true,
                 onSuccess: (page: any) => {
                     showToast('Aksi berhasil didaftarkan ke Master Aksi', 'success');
-                    
+
                     const nameLower = customName.trim().toLowerCase();
                     const code = nameLower.replace(/\s+/g, '_');
-                    
+
                     setTimeout(() => {
                         const matched = masterActions.find((m: any) => m.code === code || m.name.toLowerCase() === nameLower);
                         if (matched) {
@@ -580,7 +581,7 @@ export default function SortableStepItem({
                                         </div>
 
                                         {/* Status Kontrak saat Langkah Aktif */}
-                                        <div className="col-span-2 space-y-1.5 sm:col-span-1">
+                                        <div className="col-span-2 space-y-1.5">
                                             <label className="text-[10px] font-bold text-slate-400 uppercase">Status Kontrak Target</label>
                                             <Select
                                                 value={step.meta?.target_status || 'default'}
@@ -609,41 +610,6 @@ export default function SortableStepItem({
                                             </Select>
                                             <p className="text-[9px] text-slate-400 leading-tight">
                                                 Status kontrak yang akan diterapkan secara otomatis saat langkah ini mulai aktif.
-                                            </p>
-                                        </div>
-
-                                        {/* Pihak Penanggung Jawab */}
-                                        <div className="col-span-2 space-y-1.5 sm:col-span-1">
-                                            <label className="text-[10px] font-bold text-slate-400 uppercase">Penanggung Jawab Langkah</label>
-                                            <div className="flex h-9 items-center justify-between rounded-xl border border-slate-200 bg-white px-3 dark:border-slate-800 dark:bg-black/50">
-                                                <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                                                    {step.meta?.is_host ? 'INTERNAL (HOST)' : 'EKSTERNAL (MITRA)'}
-                                                </span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        updateLocalStep(idx, {
-                                                            meta: {
-                                                                ...(step.meta || {}),
-                                                                is_host: !step.meta?.is_host
-                                                            }
-                                                        });
-                                                    }}
-                                                    className={cn(
-                                                        'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
-                                                        step.meta?.is_host ? 'bg-slate-900 dark:bg-white' : 'bg-slate-200 dark:bg-slate-800'
-                                                    )}
-                                                >
-                                                    <span
-                                                        className={cn(
-                                                            'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out dark:bg-black',
-                                                            step.meta?.is_host ? 'translate-x-4' : 'translate-x-0'
-                                                        )}
-                                                    />
-                                                </button>
-                                            </div>
-                                            <p className="text-[9px] text-slate-400 leading-tight">
-                                                Aktifkan jika langkah ini dilakukan oleh pihak internal (Host). Nonaktifkan jika dilakukan pihak eksternal.
                                             </p>
                                         </div>
                                     </div>
@@ -795,6 +761,10 @@ export default function SortableStepItem({
                                             if (approverType !== 'role') {
                                                 updates.role = [];
                                                 updates.department_ids = [];
+                                                updates.filter_department = false;
+                                                updates.filter_company_group = false;
+                                                updates.filter_region = false;
+                                                updates.filter_company = false;
                                             }
                                             if (approverType !== 'user') {
                                                 updates.user_ids = [];
@@ -888,6 +858,50 @@ export default function SortableStepItem({
                                                                     placeholder="Pilih Unit..."
                                                                 />
                                                             </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Initiator Organizational Filters */}
+                                                    <div className="md:col-span-12 mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 border-t border-slate-100 pt-4 dark:border-slate-800 animate-in fade-in duration-200">
+                                                        <div className="flex items-center gap-2 px-1">
+                                                            <Checkbox
+                                                                id={`filter_department_${step.id}`}
+                                                                checked={!!step.filter_department}
+                                                                onCheckedChange={(checked) => updateLocalStep(idx, { filter_department: !!checked })}
+                                                            />
+                                                            <label htmlFor={`filter_department_${step.id}`} className="text-[10px] font-bold uppercase cursor-pointer text-slate-500 hover:text-slate-900 transition-colors dark:text-slate-400 dark:hover:text-white">
+                                                                Filter Sesuai Departemen Inisiator
+                                                            </label>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 px-1">
+                                                            <Checkbox
+                                                                id={`filter_company_group_${step.id}`}
+                                                                checked={!!step.filter_company_group}
+                                                                onCheckedChange={(checked) => updateLocalStep(idx, { filter_company_group: !!checked })}
+                                                            />
+                                                            <label htmlFor={`filter_company_group_${step.id}`} className="text-[10px] font-bold uppercase cursor-pointer text-slate-500 hover:text-slate-900 transition-colors dark:text-slate-400 dark:hover:text-white">
+                                                                Filter Sesuai Grup Perusahaan
+                                                            </label>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 px-1">
+                                                            <Checkbox
+                                                                id={`filter_region_${step.id}`}
+                                                                checked={!!step.filter_region}
+                                                                onCheckedChange={(checked) => updateLocalStep(idx, { filter_region: !!checked })}
+                                                            />
+                                                            <label htmlFor={`filter_region_${step.id}`} className="text-[10px] font-bold uppercase cursor-pointer text-slate-500 hover:text-slate-900 transition-colors dark:text-slate-400 dark:hover:text-white">
+                                                                Filter Sesuai Wilayah Inisiator
+                                                            </label>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 px-1">
+                                                            <Checkbox
+                                                                id={`filter_company_${step.id}`}
+                                                                checked={!!step.filter_company}
+                                                                onCheckedChange={(checked) => updateLocalStep(idx, { filter_company: !!checked })}
+                                                            />
+                                                            <label htmlFor={`filter_company_${step.id}`} className="text-[10px] font-bold uppercase cursor-pointer text-slate-500 hover:text-slate-900 transition-colors dark:text-slate-400 dark:hover:text-white">
+                                                                Filter Sesuai Perusahaan Inisiator
+                                                            </label>
                                                         </div>
                                                     </div>
                                                 </>
@@ -1151,7 +1165,15 @@ export default function SortableStepItem({
                                                                             next_workflow_id: null,
                                                                             next_workflow_step_id: null
                                                                         });
-                                                                    } else if (val === 'jump_step') {
+                                                                    }
+                                                                    else if (val === 'initial') {
+                                                                        updateAction(actIdx, {
+                                                                            next_step_id: null,
+                                                                            next_workflow_id: null,
+                                                                            next_workflow_step_id: null
+                                                                        });
+                                                                    }
+                                                                    else if (val === 'jump_step') {
                                                                         updateAction(actIdx, {
                                                                             next_step_id: allWorkflowSteps.find((s: any) => s.id !== step.id)?.id || null,
                                                                             next_workflow_id: null,
@@ -1176,6 +1198,9 @@ export default function SortableStepItem({
                                                                     </SelectItem>
                                                                     <SelectItem value="back" className="text-[9px] font-bold uppercase">
                                                                         LANGKAH SEBELUMNYA (BACK)
+                                                                    </SelectItem>
+                                                                    <SelectItem value="initial" className="text-[9px] font-bold uppercase">
+                                                                        LANGKAH AWAL (INTIAL STEP)
                                                                     </SelectItem>
                                                                     <SelectItem value="jump_step" className="text-[9px] font-bold uppercase">
                                                                         LOMPAT LANGKAH (INTERNAL)

@@ -44,6 +44,10 @@ class WorkflowStep extends Model
         'updated_by',
         'is_active',
         'meta',
+        'filter_department',
+        'filter_company_group',
+        'filter_region',
+        'filter_company',
     ];
 
     protected $casts = [
@@ -55,6 +59,10 @@ class WorkflowStep extends Model
         'company_ids' => 'array',
         'allowed_actions' => 'array',
         'is_mandatory' => 'boolean',
+        'filter_department' => 'boolean',
+        'filter_company_group' => 'boolean',
+        'filter_region' => 'boolean',
+        'filter_company' => 'boolean',
     ];
 
     protected $with = ['approverRoles', 'approverDepartments', 'approverUsers', 'actions.masterAction'];

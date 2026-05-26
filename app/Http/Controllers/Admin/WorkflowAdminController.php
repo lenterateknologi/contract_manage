@@ -187,6 +187,10 @@ class WorkflowAdminController extends Controller
             'steps.*.company_group_ids' => 'nullable|array',
             'steps.*.region_ids' => 'nullable|array',
             'steps.*.company_ids' => 'nullable|array',
+            'steps.*.filter_department' => 'nullable|boolean',
+            'steps.*.filter_company_group' => 'nullable|boolean',
+            'steps.*.filter_region' => 'nullable|boolean',
+            'steps.*.filter_company' => 'nullable|boolean',
             'steps.*.actions' => 'nullable|array',
             'steps.*.actions.*.id' => 'nullable|string',
             'steps.*.actions.*.master_action_id' => 'nullable|string',
@@ -256,6 +260,10 @@ class WorkflowAdminController extends Controller
             'steps.*.company_group_ids' => 'nullable|array',
             'steps.*.region_ids' => 'nullable|array',
             'steps.*.company_ids' => 'nullable|array',
+            'steps.*.filter_department' => 'nullable|boolean',
+            'steps.*.filter_company_group' => 'nullable|boolean',
+            'steps.*.filter_region' => 'nullable|boolean',
+            'steps.*.filter_company' => 'nullable|boolean',
             'steps.*.actions' => 'nullable|array',
             'steps.*.actions.*.id' => 'nullable|string',
             'steps.*.actions.*.master_action_id' => 'nullable|string',
@@ -327,6 +335,10 @@ class WorkflowAdminController extends Controller
             'steps.*.company_group_ids' => 'nullable|array',
             'steps.*.region_ids' => 'nullable|array',
             'steps.*.company_ids' => 'nullable|array',
+            'steps.*.filter_department' => 'nullable|boolean',
+            'steps.*.filter_company_group' => 'nullable|boolean',
+            'steps.*.filter_region' => 'nullable|boolean',
+            'steps.*.filter_company' => 'nullable|boolean',
             'steps.*.actions' => 'nullable|array',
             'steps.*.actions.*.id' => 'nullable|string',
             'steps.*.actions.*.master_action_id' => 'nullable|string',
@@ -376,7 +388,7 @@ class WorkflowAdminController extends Controller
                 'name' => $name,
                 'is_active' => true,
                 'created_by' => \Illuminate\Support\Facades\Auth::id(),
-            ]
+            ],
         );
 
         if ($request->wantsJson()) {
@@ -492,6 +504,10 @@ class WorkflowAdminController extends Controller
                     'allowed_actions',
                     'is_mandatory',
                     'meta',
+                    'filter_department',
+                    'filter_company_group',
+                    'filter_region',
+                    'filter_company',
                 ])->toArray();
 
                 $stepData['id'] = $stepIdMap[$step->id];

@@ -43,16 +43,11 @@ export default function OrgScopeSelector({
         label: r.name,
     }));
 
-    // 3. Company options - dependent on selected regions (if any selected)
+    // 3. Company options - dependent on selected regions and groups
     const filteredCompanies = companies.filter((c: any) => {
-        if (!form.data.region_ids || form.data.region_ids.length === 0) {
-            // also filter by selected groups if no regions selected
-            if (!form.data.company_group_ids || form.data.company_group_ids.length === 0) {
-                return true;
-            }
-            return form.data.company_group_ids.includes(String(c.company_group_id));
-        }
-        return form.data.region_ids.includes(String(c.region_id));
+        const matchesGroup = !form.data.company_group_ids || form.data.company_group_ids.length === 0 || form.data.company_group_ids.includes(String(c.company_group_id));
+        const matchesRegion = !form.data.region_ids || form.data.region_ids.length === 0 || form.data.region_ids.includes(String(c.region_id));
+        return matchesGroup && matchesRegion;
     });
 
     const companyOptions = filteredCompanies.map((c: any) => ({
