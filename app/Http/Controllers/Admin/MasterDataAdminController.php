@@ -453,7 +453,6 @@ class MasterDataAdminController extends Controller
                         if (empty($w['id'])) {
                             continue;
                         }
-<<<<<<< HEAD
 
                         // Map old contract_type string to contract_type_id UUID
                         if (array_key_exists('contract_type', $w)) {
@@ -472,10 +471,6 @@ class MasterDataAdminController extends Controller
                             ['id' => $w['id']],
                             $w,
                         );
-=======
-                        $model = Workflow::firstOrNew(['id' => $w['id']]);
-                        $model->forceFill($w)->save();
->>>>>>> af25084ea6a224113ab3e1a895c9061e4ce6fed4
                         $counts['workflows']++;
                     }
                 }
