@@ -1,3 +1,4 @@
+import { formatDate } from '@/lib/utils';
 import { DashboardMetrics } from './types';
 
 interface WelcomeStripProps {
@@ -10,7 +11,7 @@ export function WelcomeStrip({ metrics: m }: WelcomeStripProps) {
             <div>
                 <h2 className="text-foreground text-base font-bold tracking-tight">Dashboard Kontrak</h2>
                 <p className="text-muted-foreground text-[11px] font-medium mt-0.5">
-                    {new Date().toLocaleDateString('id-ID', {
+                    {formatDate(new Date(), {
                         weekday: 'long',
                         year: 'numeric',
                         month: 'long',

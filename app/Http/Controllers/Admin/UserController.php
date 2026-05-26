@@ -26,10 +26,11 @@ class UserController extends Controller
     {
         $query = User::with('department')
             ->when($request->search, function ($q, $search) {
+                $search = strtolower($search);
                 $q->where(function ($qq) use ($search) {
-                    $qq->where('name', 'ilike', "%{$search}%")
-                        ->orWhere('email', 'ilike', "%{$search}%")
-                        ->orWhere('username', 'ilike', "%{$search}%");
+                    $qq->where(\Illuminate\Support\Facades\DB::raw('LOWER(name)'), 'like', "%{$search}%")
+                        ->orWhere(\Illuminate\Support\Facades\DB::raw('LOWER(email)'), 'like', "%{$search}%")
+                        ->orWhere(\Illuminate\Support\Facades\DB::raw('LOWER(username)'), 'like', "%{$search}%");
                 });
             })
             ->when($request->role, function ($q, $role) {

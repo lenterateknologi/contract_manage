@@ -19,10 +19,10 @@ interface CompanyManagementProps {
 }
 
 const COMPANY_COLORS = [
-    'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
-    'bg-cyan-100 text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-400',
-    'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400',
-    'bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400',
+    'bg-primary-muted text-primary',
+    'bg-info/10 text-info',
+    'bg-primary/10 text-primary',
+    'bg-primary/20 text-primary',
 ];
 
 function companyColor(name: string) {
@@ -42,7 +42,7 @@ const CompanyCell = ({ name }: Readonly<{ name: string }>) => (
             <Building2 size={18} />
         </div>
         <div className="flex min-w-0 flex-col">
-            <span className="mb-0.5 truncate text-sm leading-tight font-bold tracking-wide text-slate-900 dark:text-slate-100">{name}</span>
+            <span className="mb-0.5 truncate text-sm leading-tight font-bold tracking-wide text-text-main">{name}</span>
         </div>
     </div>
 );
@@ -89,15 +89,15 @@ export function CompanyManagement({ companies, regions, groups, filters }: Reado
             {
                 header: 'Kode',
                 accessorKey: 'code',
-                cell: (row) => <span className="text-muted-foreground text-sm font-medium tracking-wide dark:text-slate-300/80">{row.code}</span>,
+                cell: (row) => <span className="text-text-desc text-sm font-medium tracking-wide">{row.code}</span>,
             },
             {
                 header: 'Region / Group',
                 accessorKey: 'region.name',
                 cell: (row) => (
                     <div className="flex flex-col gap-0.5">
-                        <span className="text-sm font-semibold tracking-wide text-slate-700 dark:text-slate-300">{row.region?.name || '—'}</span>
-                        <span className="text-muted-foreground/60 text-[10px] font-bold uppercase dark:text-slate-500">{row.group?.name || '—'}</span>
+                        <span className="text-sm font-semibold tracking-wide text-text-main">{row.region?.name || '—'}</span>
+                        <span className="text-text-desc/60 text-[10px] font-bold uppercase">{row.group?.name || '—'}</span>
                     </div>
                 ),
             },
@@ -167,7 +167,7 @@ export function CompanyManagement({ companies, regions, groups, filters }: Reado
                             type="button"
                             variant="ghost"
                             onClick={() => setIsConfirmOpen(true)}
-                            className="h-10 rounded-xl border border-rose-500/20 px-4 text-xs font-bold text-rose-500 transition-all duration-200 select-none hover:bg-rose-500 hover:text-white active:scale-95 dark:hover:bg-rose-500/20"
+                            className="border-danger/20 px-4 text-xs text-danger transition-all duration-200 hover:bg-danger hover:text-white"
                         >
                             <Trash2 size={15} className="mr-2" /> Hapus
                         </Button>
@@ -195,14 +195,14 @@ export function CompanyManagement({ companies, regions, groups, filters }: Reado
                         <FormSection title="Informasi Company" subtitle="Nama dan pemetaan wilayah operasional perusahaan">
                             <div className="grid grid-cols-1 gap-6">
                                 <div className="space-y-2">
-                                    <label className="text-primary/60 flex items-center gap-2 text-[10px] font-bold uppercase dark:text-white/60">
+                                    <label className="text-text-desc flex items-center gap-2 text-[10px] font-bold uppercase">
                                         Grup Perusahaan / Group
                                     </label>
                                     <Select value={form.data.company_group_id} onValueChange={(v: string) => form.setData('company_group_id', v)}>
-                                        <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-10 rounded-xl text-xs font-bold transition-all">
+                                        <SelectTrigger className="border-surface-border bg-surface-muted focus:border-primary h-10 rounded-xl text-xs font-bold transition-all">
                                             <SelectValue placeholder="PILIH GRUP..." />
                                         </SelectTrigger>
-                                        <SelectContent className="border-primary/10 rounded-xl bg-white shadow-2xl dark:bg-black">
+                                        <SelectContent className="border-surface-border rounded-xl bg-surface-base shadow-2xl">
                                             {(groups || []).map((g: any) => (
                                                 <SelectItem key={g.id} value={g.id.toString()} className="py-2.5 text-xs font-bold uppercase">
                                                     {g.name}
@@ -211,34 +211,34 @@ export function CompanyManagement({ companies, regions, groups, filters }: Reado
                                         </SelectContent>
                                     </Select>
                                     {form.errors.company_group_id && (
-                                        <p className="mt-1 text-[10px] font-bold tracking-tight text-rose-500 uppercase">
+                                        <p className="mt-1 text-[10px] font-bold tracking-tight text-danger uppercase">
                                             {form.errors.company_group_id}
                                         </p>
                                     )}
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-primary/60 flex items-center gap-2 text-[10px] font-bold uppercase dark:text-white/60">
+                                    <label className="text-text-desc flex items-center gap-2 text-[10px] font-bold uppercase">
                                         Wilayah / Region
                                     </label>
                                     <Select value={form.data.region_id} onValueChange={(v: string) => form.setData('region_id', v)}>
-                                        <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-10 rounded-xl text-xs font-bold transition-all">
+                                        <SelectTrigger className="border-surface-border bg-surface-muted focus:border-primary h-10 rounded-xl text-xs font-bold transition-all">
                                             <SelectValue placeholder="PILIH REGION..." />
                                         </SelectTrigger>
-                                        <SelectContent className="border-primary/10 rounded-xl bg-white shadow-2xl dark:bg-black">
+                                        <SelectContent className="border-surface-border rounded-xl bg-surface-base shadow-2xl">
                                             {(regions || []).map((r: any) => (
                                                 <SelectItem key={r.id} value={r.id.toString()} className="py-2.5 text-xs font-bold uppercase">
                                                     {r.name}
                                                 </SelectItem>
                                             ))}
                                             {(regions || []).length === 0 && (
-                                                <div className="text-muted-foreground p-4 text-center text-[10px] font-bold uppercase">
+                                                <div className="text-text-desc p-4 text-center text-[10px] font-bold uppercase">
                                                     TIDAK ADA DATA REGION
                                                 </div>
                                             )}
                                         </SelectContent>
                                     </Select>
                                     {form.errors.region_id && (
-                                        <p className="mt-1 text-[10px] font-bold tracking-tight text-rose-500 uppercase">{form.errors.region_id}</p>
+                                        <p className="mt-1 text-[10px] font-bold tracking-tight text-danger uppercase">{form.errors.region_id}</p>
                                     )}
                                 </div>
                                 <CompactInput
@@ -274,16 +274,16 @@ export function CompanyManagement({ companies, regions, groups, filters }: Reado
                     </div>
 
                     <div className="flex flex-col gap-8 md:col-span-4">
-                        <div className="border-border/80 bg-muted/20 group relative overflow-hidden rounded-2xl border p-6 shadow-sm backdrop-blur-sm transition-all duration-200 select-none dark:border-slate-800/80 dark:bg-slate-900/40">
+                        <div className="border-surface-border bg-surface-muted/40 group relative overflow-hidden rounded-2xl border p-6 shadow-sm backdrop-blur-sm transition-all duration-200 select-none">
                             <div className="absolute top-0 right-0 p-4 opacity-5 transition-opacity duration-200 group-hover:opacity-10">
                                 <Building2 size={80} strokeWidth={1} />
                             </div>
                             <div className="relative z-10 mb-4 flex items-center gap-3">
-                                <span className="text-xs font-bold tracking-wider text-slate-900 uppercase dark:text-slate-100">
+                                <span className="text-xs font-bold tracking-wider text-text-main uppercase">
                                     Master Hierarchy
                                 </span>
                             </div>
-                            <p className="text-muted-foreground relative z-10 text-xs leading-relaxed font-medium dark:text-slate-400">
+                            <p className="text-text-desc relative z-10 text-xs leading-relaxed font-medium">
                                 Company adalah level unit bisnis operasional. Ini adalah level paling granular dalam hirarki Master Data yang akan
                                 digunakan untuk penentuan otoritas penyetuju.
                             </p>
@@ -295,7 +295,7 @@ export function CompanyManagement({ companies, regions, groups, filters }: Reado
     }
 
     return (
-        <div className="bg-card/40 border-border/60 animate-in fade-in m-5 rounded-2xl border p-6 shadow-sm backdrop-blur-sm duration-200 select-none dark:border-slate-800/60 dark:bg-slate-900/20">
+        <div className="bg-surface-base/40 border-surface-border animate-in fade-in m-5 rounded-2xl border p-6 shadow-sm backdrop-blur-sm duration-200 select-none">
             <TableMasterData
                 title="Database Entitas Perusahaan"
                 columns={columns}
@@ -311,7 +311,7 @@ export function CompanyManagement({ companies, regions, groups, filters }: Reado
                         <Button
                             variant="white"
                             onClick={openCreate}
-                            className="border-border bg-card text-foreground hover:bg-muted/60 hover:border-border h-10 gap-2 rounded-xl border px-5 text-xs font-bold tracking-wide shadow-sm transition-all duration-200 select-none hover:shadow-md dark:bg-slate-900/60 dark:hover:bg-slate-800/60"
+                            className="border-surface-border bg-surface-base text-text-main hover:bg-surface-muted hover:border-surface-border gap-2 border px-5 text-xs tracking-wide transition-all duration-200 hover:shadow-md"
                         >
                             <Plus size={15} className="text-primary" /> Tambah Company
                         </Button>

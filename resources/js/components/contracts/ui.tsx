@@ -1,5 +1,8 @@
 import { cn } from '@/lib/utils';
 import { UserProfile } from '@/types/contracts';
+import { UserAvatar } from '../user/UserAvatar';
+
+export { UserAvatar as Avatar };
 
 // ─── Status config ─────────────────────────────────────────────────
 const STATUS_LABEL: Record<string, string> = {
@@ -36,27 +39,6 @@ export function StatusBadge({ status, label }: { status: string; label?: string 
             )}
         >
             {label ?? STATUS_LABEL[status] ?? status}
-        </span>
-    );
-}
-
-// ─── Avatar ─────────────────────────────────────────────────────────
-export function Avatar({
-    user,
-    size = 'sm',
-    className = '',
-}: {
-    user: UserProfile | null | undefined;
-    size?: 'sm' | 'md' | 'lg';
-    className?: string;
-}) {
-    const sizeMap = { sm: 'w-5 h-5 text-xs', md: 'w-7 h-7 text-xs', lg: 'w-8 h-8 text-xs' };
-    if (!user) return null;
-    return (
-        <span
-            className={`inline-flex flex-shrink-0 items-center justify-center rounded-full bg-black font-bold text-white shadow-sm dark:bg-white dark:text-black ${sizeMap[size]} ${className}`}
-        >
-            {user.initials}
         </span>
     );
 }

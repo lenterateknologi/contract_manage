@@ -13,7 +13,7 @@ interface VendorManagementProps {
 
 const VENDOR_COLORS = [
     'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400',
-    'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
+    'bg-info/10 text-info dark:bg-info/20 dark:text-info',
     'bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400',
     'bg-teal-100 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400',
     'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400',
@@ -26,11 +26,11 @@ function vendorColor(name: string) {
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
-    'GENERAL SUPPLIER': 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-500/20',
-    'SERVICE PROVIDER': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-500/20',
-    CONSULTANT: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400 border border-violet-500/20',
-    'IT SERVICES': 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400 border border-cyan-500/20',
-    LOGISTICS: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-500/20',
+    'GENERAL SUPPLIER': 'bg-vendor-supplier-bg text-vendor-supplier-text border border-vendor-supplier-text/20',
+    'SERVICE PROVIDER': 'bg-vendor-service-bg text-vendor-service-text border border-vendor-service-text/20',
+    CONSULTANT: 'bg-role-admin-bg text-role-admin-text border border-role-admin-text/20',
+    'IT SERVICES': 'bg-primary-muted text-primary border border-primary/20',
+    LOGISTICS: 'bg-role-reviewer-bg text-role-reviewer-text border border-role-reviewer-text/20',
 };
 
 const VendorCell = ({ name, companyType, code, isActive }: Readonly<{ name: string; companyType?: string; code: string; isActive: boolean }>) => (
@@ -45,18 +45,18 @@ const VendorCell = ({ name, companyType, code, isActive }: Readonly<{ name: stri
         </div>
         <div className="flex min-w-0 flex-col">
             <div className="mb-0.5 flex items-center gap-2">
-                <span className="truncate text-sm leading-tight font-bold tracking-wide text-slate-900 dark:text-slate-100">{name}</span>
-                <span className="text-muted-foreground/80 border-border border-l pl-2 text-[10px] font-bold tracking-wider uppercase select-none dark:border-slate-800 dark:text-slate-400">
+                <span className="truncate text-sm leading-tight font-bold tracking-wide text-text-main">{name}</span>
+                <span className="text-text-soft border-surface-border border-l pl-2 text-[10px] font-bold tracking-wider uppercase select-none">
                     {companyType || 'CV'}
                 </span>
             </div>
-            <div className="text-muted-foreground/80 flex items-center gap-2 font-mono text-xs leading-none font-semibold dark:text-slate-400">
+            <div className="text-text-desc flex items-center gap-2 font-mono text-xs leading-none font-semibold">
                 {code}
-                <div className={cn('h-1.5 w-1.5 rounded-full', isActive ? 'animate-pulse bg-emerald-500' : 'bg-rose-400')} />
+                <div className={cn('h-1.5 w-1.5 rounded-full', isActive ? 'animate-pulse bg-success' : 'bg-danger/40')} />
                 <span
                     className={cn(
                         'text-xs font-bold tracking-wide transition-colors duration-200 select-none',
-                        isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400',
+                        isActive ? 'text-success' : 'text-danger',
                     )}
                 >
                     {isActive ? 'Terverifikasi' : 'Belum Verifikasi'}
@@ -71,19 +71,19 @@ const CategoryCell = ({ category, email, phone }: Readonly<{ category?: string; 
         <span
             className={cn(
                 'inline-block w-fit rounded-xl px-3 py-1 text-xs font-bold tracking-wide shadow-sm backdrop-blur-sm',
-                CATEGORY_COLORS[category ?? ''] ?? 'border border-slate-500/20 bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
+                CATEGORY_COLORS[category ?? ''] ?? 'border border-surface-border bg-secondary text-text-desc',
             )}
         >
             {category || 'General Supplier'}
         </span>
         <div className="flex flex-col pl-0.5">
             {email && (
-                <div className="text-muted-foreground/80 flex items-center gap-1.5 text-xs font-medium lowercase dark:text-slate-400">
+                <div className="text-text-desc flex items-center gap-1.5 text-xs font-medium lowercase">
                     <Mail size={12} className="text-primary shrink-0 opacity-60" /> {email}
                 </div>
             )}
             {phone && (
-                <div className="text-muted-foreground/80 flex items-center gap-1.5 text-xs font-medium dark:text-slate-400">
+                <div className="text-text-desc flex items-center gap-1.5 text-xs font-medium">
                     <Phone size={12} className="text-primary shrink-0 opacity-60" /> {phone}
                 </div>
             )}
@@ -93,8 +93,8 @@ const CategoryCell = ({ category, email, phone }: Readonly<{ category?: string; 
 
 const PicCell = ({ picName, directorName, picPosition }: Readonly<{ picName?: string; directorName?: string; picPosition?: string }>) => (
     <div className="flex flex-col select-none">
-        <span className="truncate text-sm font-bold tracking-wide text-slate-900 dark:text-slate-100">{picName || directorName || '—'}</span>
-        <span className="text-muted-foreground/80 mt-0.5 text-[11px] leading-none font-bold tracking-wider uppercase dark:text-slate-400">
+        <span className="truncate text-sm font-bold tracking-wide text-text-main">{picName || directorName || '—'}</span>
+        <span className="text-text-desc mt-0.5 text-[11px] leading-none font-bold tracking-wider uppercase">
             {picPosition || 'DIREKTUR UTAMA'}
         </span>
     </div>
@@ -105,25 +105,25 @@ const ComplianceCell = ({ docCount }: Readonly<{ docCount?: number }>) => {
     const status = score >= 80 ? 'SANGAT BAIK' : score >= 50 ? 'CUKUP' : 'KRITIS';
     const colorClass =
         score >= 80
-            ? 'text-emerald-500 bg-emerald-500/10 dark:bg-emerald-500/20'
+            ? 'text-success bg-success/10'
             : score >= 50
-              ? 'text-amber-500 bg-amber-500/10 dark:bg-amber-500/20'
-              : 'text-rose-500 bg-rose-500/10 dark:bg-rose-500/20';
+              ? 'text-warning bg-warning/10'
+              : 'text-danger bg-danger/10';
 
     return (
         <div className="flex flex-col items-end gap-1.5 select-none">
             <div className={cn('rounded-xl px-3 py-1 text-xs font-bold tracking-wider shadow-sm backdrop-blur-sm', colorClass)}>{status}</div>
             <div className="flex items-center gap-2">
-                <div className="bg-muted border-border/40 h-1.5 w-20 overflow-hidden rounded-full border dark:bg-slate-800">
+                <div className="bg-muted border-surface-border h-1.5 w-20 overflow-hidden rounded-full border">
                     <div
                         className={cn(
                             'h-full transition-all duration-300',
-                            score >= 80 ? 'bg-emerald-500' : score >= 50 ? 'bg-amber-500' : 'bg-rose-500',
+                            score >= 80 ? 'bg-success' : score >= 50 ? 'bg-warning' : 'bg-danger',
                         )}
                         style={{ width: `${score}%` }}
                     />
                 </div>
-                <span className="text-xs font-bold text-slate-900 dark:text-slate-100">{score}%</span>
+                <span className="text-xs font-bold text-text-main">{score}%</span>
             </div>
         </div>
     );
@@ -201,7 +201,7 @@ export function VendorManagement({ vendors, filters }: Readonly<VendorManagement
     );
 
     return (
-        <div className="bg-card/40 border-border/60 animate-in fade-in m-5 rounded-2xl border p-6 shadow-sm backdrop-blur-sm duration-200 select-none dark:border-slate-800/60 dark:bg-slate-900/20">
+        <div className="bg-surface-base/40 border-surface-border animate-in fade-in m-5 rounded-2xl border p-6 shadow-sm backdrop-blur-sm duration-200 select-none">
             <TableMasterData
                 title="Database Rekanan / Vendor"
                 data={vendors?.data || []}

@@ -19,27 +19,27 @@ interface NavigationManagementProps {
 
 const GroupNameCell = ({ name }: Readonly<{ name: string }>) => (
     <div className="group flex items-center gap-4">
-        <div className="bg-primary/[0.03] border-primary/10 text-primary/40 group-hover:bg-primary flex h-10 w-10 items-center justify-center rounded-xl border transition-all group-hover:text-white dark:border-white/10 dark:bg-white/[0.03] dark:text-white/40 dark:group-hover:bg-white dark:group-hover:text-black">
+        <div className="bg-surface-muted border-surface-border text-text-main/40 group-hover:bg-primary flex h-10 w-10 items-center justify-center rounded-xl border transition-all group-hover:text-white">
             <Folder size={16} />
         </div>
-        <span className="text-primary text-[13px] font-black tracking-tight uppercase dark:text-white">{name}</span>
+        <span className="text-text-main text-[13px] font-black tracking-tight uppercase">{name}</span>
     </div>
 );
 
 const ModulesCountCell = ({ count }: Readonly<{ count: number }>) => (
     <div className="flex items-center gap-2">
-        <div className="bg-primary/20 h-1.5 w-1.5 rounded-full dark:bg-white/20" />
-        <span className="text-primary/60 text-[10px] font-black uppercase dark:text-white/60">{count || 0} MODULS</span>
+        <div className="bg-primary/20 h-1.5 w-1.5 rounded-full" />
+        <span className="text-text-desc text-[10px] font-black uppercase">{count || 0} MODULS</span>
     </div>
 );
 
 const ModuleNameCell = ({ name, identifier }: Readonly<{ name: string; identifier: string }>) => (
     <div className="group flex flex-col">
         <div className="flex items-center gap-3">
-            <span className="text-primary text-[13px] font-black tracking-tight uppercase transition-transform group-hover:translate-x-1 dark:text-white">
+            <span className="text-text-main text-[13px] font-black tracking-tight uppercase transition-transform group-hover:translate-x-1">
                 {name}
             </span>
-            <div className="bg-primary/[0.05] border-primary/10 text-primary/40 rounded border px-2 py-0.5 text-[8px] font-black uppercase dark:border-white/10 dark:bg-white/[0.05] dark:text-white/40">
+            <div className="bg-primary/[0.05] border-surface-border text-text-main/40 rounded border px-2 py-0.5 text-[8px] font-black uppercase">
                 {identifier}
             </div>
         </div>
@@ -51,13 +51,13 @@ const ModuleGroupCell = ({ groupId, groups, route }: Readonly<{ groupId: any; gr
     const group = Array.isArray(grps) ? grps.find((g: any) => g.id === groupId) : null;
     return (
         <div className="flex items-center gap-4">
-            <div className="bg-primary/[0.03] border-primary/10 flex items-center gap-2 rounded-xl border px-3 py-1.5 dark:border-white/10 dark:bg-white/[0.03]">
-                <Folder size={10} className="text-primary/40 dark:text-white/40" />
-                <span className="text-primary/60 text-[9px] font-black uppercase dark:text-white/60">{group?.name || 'GENERAL'}</span>
+            <div className="bg-surface-muted border-surface-border flex items-center gap-2 rounded-xl border px-3 py-1.5">
+                <Folder size={10} className="text-text-main/40" />
+                <span className="text-text-desc text-[9px] font-black uppercase">{group?.name || 'GENERAL'}</span>
             </div>
             <div className="flex items-center gap-2">
-                <LinkIcon size={10} className="text-primary/20 dark:text-white/20" />
-                <span className="text-primary/30 font-mono text-[9px] font-bold tracking-tight dark:text-white/30">{route || '#'}</span>
+                <LinkIcon size={10} className="text-text-main/20" />
+                <span className="text-text-main/30 font-mono text-[9px] font-bold tracking-tight">{route || '#'}</span>
             </div>
         </div>
     );
@@ -122,7 +122,11 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
 
     const openCreate = () => {
         setEditingItem(null);
-        form.reset();
+        if (isModuleView) {
+            moduleForm.reset();
+        } else {
+            groupForm.reset();
+        }
         setIsModalOpen(true);
     };
 
@@ -164,7 +168,7 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
     };
 
     return (
-        <div className="animate-in fade-in flex h-full flex-col bg-white antialiased duration-500 dark:bg-black">
+        <div className="bg-surface-base/40 border-surface-border animate-in fade-in m-5 rounded-2xl border p-5 shadow-sm backdrop-blur-sm duration-500">
             <TableMasterData
                 title={isModuleView ? 'Master Modul Navigasi' : 'Struktur Grup Menu'}
                 columns={isModuleView ? moduleColumns : groupColumns}
@@ -228,7 +232,7 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => openEdit(row)}
-                                className="text-primary/20 hover:text-primary hover:bg-primary/[0.05] h-9 w-9 rounded-xl transition-all dark:text-white/20 dark:hover:bg-white/[0.05] dark:hover:text-white"
+                                className="text-text-main/20 hover:text-text-main hover:bg-primary/[0.05] h-9 w-9 rounded-xl transition-all"
                             >
                                 <Pencil size={14} />
                             </Button>
@@ -238,7 +242,7 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => setConfirmDelete({ id: row.id, name: row.name })}
-                                className="text-primary/20 h-9 w-9 rounded-xl transition-all hover:bg-rose-500/5 hover:text-rose-500 dark:text-white/20"
+                                className="text-text-main/20 hover:bg-danger/5 hover:text-danger h-9 w-9 rounded-xl transition-all"
                             >
                                 <Trash2 size={14} />
                             </Button>
@@ -266,15 +270,15 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
             />
 
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent className="border-primary/10 max-w-[480px] overflow-hidden rounded-[2.5rem] border bg-white p-0 shadow-2xl dark:border-white/10 dark:bg-black">
-                    <div className="bg-primary relative overflow-hidden p-10 text-white dark:bg-white dark:text-black">
+                <DialogContent className="border-surface-border max-w-[480px] overflow-hidden rounded-[2.5rem] border bg-card p-0 shadow-2xl">
+                    <div className="bg-primary relative overflow-hidden p-10 text-white">
                         <div className="absolute top-0 right-0 rotate-12 p-8 opacity-10">
                             <LayoutGrid size={120} strokeWidth={1} />
                         </div>
                         <DialogTitle className="relative z-10 flex items-center gap-3 text-2xl font-black tracking-tight uppercase">
                             {editingItem ? 'Edit' : 'Registrasi'} {isModuleView ? 'Modul' : 'Grup'}
                         </DialogTitle>
-                        <DialogDescription className="relative z-10 mt-2 text-[10px] leading-relaxed font-bold tracking-[0.2em] text-white/50 uppercase dark:text-black/50">
+                        <DialogDescription className="relative z-10 mt-2 text-[10px] leading-relaxed font-bold tracking-wider text-white/50 uppercase">
                             Konfigurasi struktur hierarki navigasi dan endpoint sistem administrasi
                         </DialogDescription>
                     </div>
@@ -301,17 +305,17 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
                                             icon={Shield}
                                         />
                                         <div className="space-y-2">
-                                            <label className="text-primary/60 flex items-center gap-2 text-[10px] font-bold uppercase dark:text-white/60">
+                                            <label className="text-text-desc flex items-center gap-2 text-[10px] font-bold uppercase">
                                                 Grup Menu Utama
                                             </label>
                                             <Select
                                                 value={String(moduleForm.data.module_group_id)}
                                                 onValueChange={(v: string) => moduleForm.setData('module_group_id', String(v))}
                                             >
-                                                <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-10 rounded-xl text-xs font-bold transition-all">
+                                                <SelectTrigger className="border-surface-border bg-primary/5 focus:border-primary h-10 rounded-xl text-xs font-bold transition-all">
                                                     <SelectValue />
                                                 </SelectTrigger>
-                                                <SelectContent className="border-primary/10 rounded-xl bg-white shadow-2xl dark:bg-black">
+                                                <SelectContent className="border-surface-border rounded-xl bg-card shadow-2xl">
                                                     {(groups.data || groups || []).map((g: any) => (
                                                         <SelectItem key={g.id} value={String(g.id)} className="py-2.5 text-xs font-bold uppercase">
                                                             {g.name}
@@ -341,12 +345,12 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
                             )}
                         </div>
 
-                        <div className="border-primary/5 mt-10 flex gap-4 border-t pt-6 dark:border-white/5">
+                        <div className="border-surface-border mt-10 flex gap-4 border-t pt-6">
                             <Button
                                 variant="ghost"
                                 type="button"
                                 onClick={() => setIsModalOpen(false)}
-                                className="text-primary/30 hover:text-primary h-12 flex-1 rounded-2xl text-[11px] font-black uppercase transition-all"
+                                className="text-text-main/30 hover:text-text-main h-12 flex-1 rounded-2xl text-[11px] font-black uppercase transition-all"
                             >
                                 Batal
                             </Button>

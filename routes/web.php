@@ -180,6 +180,8 @@ Route::middleware(['auth'])->group(function () {
 
         // Roles & Access
         Route::get('/roles', [AdminController::class, 'roles'])->name('admin.roles');
+        Route::get('/access-mapping/{role?}', [AdminController::class, 'accessMapping'])->name('admin.access-mapping');
+        Route::get('/navigation-mapping/{role?}', [AdminController::class, 'navigationMapping'])->name('admin.navigation-mapping');
         Route::post('/roles', [AdminController::class, 'storeRole'])->name('admin.roles.store');
         Route::put('/roles/{role}', [AdminController::class, 'updateRole'])->name('admin.roles.update');
         Route::delete('/roles/{role}', [AdminController::class, 'destroyRole'])->name('admin.roles.destroy');

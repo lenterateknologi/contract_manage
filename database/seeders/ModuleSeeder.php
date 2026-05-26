@@ -43,7 +43,9 @@ class ModuleSeeder extends Seeder
             ['identifier' => 'ADMIN_COMPANIES', 'name' => 'Data Company',    'route' => '/admin/companies',      'icon' => 'Building2',    'group' => 'Data Master', 'sequence' => 3],
             ['identifier' => 'ADMIN_USERS',   'name' => 'Manajemen Pengguna', 'route' => '/admin/users',       'icon' => 'UserCog',  'group' => 'Data Master', 'sequence' => 4],
             ['identifier' => 'ADMIN_ROLES',   'name' => 'Hak Akses & Peran', 'route' => '/admin/roles',        'icon' => 'KeyRound', 'group' => 'Data Master', 'sequence' => 5],
-            ['identifier' => 'ADMIN_DEPTS',   'name' => 'Data Departemen',    'route' => '/admin/departments', 'icon' => 'Building2', 'group' => 'Data Master', 'sequence' => 6],
+            ['identifier' => 'ADMIN_ACCESS_MAPPING', 'name' => 'Pemetaan Hak Akses', 'route' => '/admin/access-mapping', 'icon' => 'ShieldCheck', 'group' => 'Data Master', 'sequence' => 6],
+            ['identifier' => 'ADMIN_NAV_MAPPING',    'name' => 'Pemetaan Navigasi',  'route' => '/admin/navigation-mapping', 'icon' => 'LayoutGrid', 'group' => 'Data Master', 'sequence' => 7],
+            ['identifier' => 'ADMIN_DEPTS',   'name' => 'Data Departemen',    'route' => '/admin/departments', 'icon' => 'Building2', 'group' => 'Data Master', 'sequence' => 8],
             ['identifier' => 'ADMIN_VENDORS', 'name' => 'Daftar Vendor',      'route' => '/admin/vendors',     'icon' => 'Truck',    'group' => 'Data Master', 'sequence' => 7],
             ['identifier' => 'ADMIN_MEMBERS', 'name' => 'Anggota Divisi',    'route' => '/admin/members',     'icon' => 'Users',    'group' => 'Data Master', 'sequence' => 8],
 

@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/base/Button';
 import { Checkbox } from '@/components/ui/base/Checkbox';
 import { SearchInput } from '@/components/ui/forms/SearchInput';
+import { useDebounce } from '@/hooks/use-debounce';
 import { FilterSheet } from './FilterSheet';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
 import { router } from '@inertiajs/react';
@@ -78,6 +79,7 @@ export function TableMasterData<T extends Record<string, any>>({
     const [isFilterOpen, setIsFilterOpen] = React.useState(false);
     const [localPerPage, setLocalPerPage] = React.useState(pagination?.perPage || 10);
     const [localSearch, setLocalSearch] = React.useState(searchValue);
+    const debouncedSearch = useDebounce(localSearch, 500);
     const [internalSelectedRows, setInternalSelectedRows] = React.useState<T[]>([]);
     const [confirmAction, setConfirmAction] = React.useState<{
         label: string;
@@ -120,6 +122,13 @@ export function TableMasterData<T extends Record<string, any>>({
     React.useEffect(() => {
         setLocalSearch(searchValue);
     }, [searchValue]);
+
+    // Trigger onSearchChange when debounced value changes
+    React.useEffect(() => {
+        if (debouncedSearch !== (searchValue || '')) {
+            onSearchChange?.(debouncedSearch);
+        }
+    }, [debouncedSearch, onSearchChange, searchValue]);
 
     const handleSelectAll = (checked: boolean) => {
         if (checked) {
@@ -178,7 +187,7 @@ export function TableMasterData<T extends Record<string, any>>({
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 px-1 mb-1">
                     {title && (
                         <div className="space-y-0.5">
-                            <h2 className="text-base font-bold tracking-tight text-slate-900 dark:text-slate-100">{title}</h2>
+                            <h2 className="text-base font-semibold tracking-tight text-text-main uppercase">{title}</h2>
                         </div>
                     )}
 
@@ -188,12 +197,7 @@ export function TableMasterData<T extends Record<string, any>>({
                                 <SearchInput
                                     placeholder={searchPlaceholder}
                                     value={localSearch}
-                                    onChange={(e) => {
-                                        const v = e.target.value;
-                                        setLocalSearch(v);
-                                        onSearchChange?.(v);
-                                    }}
-                                    className="h-10 bg-card/60 dark:bg-slate-900/60 backdrop-blur-md border border-border/80 dark:border-slate-800/80 text-xs text-foreground placeholder:text-muted-foreground/60 transition-all rounded-xl focus-within:border-primary/50"
+                                    onChange={(e) => setLocalSearch(e.target.value)}
                                 />
                             </div>
                         )}
@@ -202,14 +206,17 @@ export function TableMasterData<T extends Record<string, any>>({
                             <Button
                                 variant={activeCount > 0 ? "primary" : "white"}
                                 onClick={() => setIsFilterOpen(true)}
-                                className={cn(
-                                    "h-10 px-4 rounded-xl gap-2 text-xs font-bold tracking-wide transition-all duration-200 border border-border/80 dark:border-slate-800/80 bg-card dark:bg-slate-900/60 text-foreground shadow-sm hover:bg-muted/60 dark:hover:bg-slate-800/60 hover:border-border hover:shadow-md",
-                                    activeCount > 0 && "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/20 border-0"
-                                )}
+                                className="relative"
                             >
                                 <SlidersHorizontal size={14} />
                                 Filter
-                                {activeCount > 0 && <span className="ml-1 h-4 min-w-[16px] px-1 flex items-center justify-center bg-background text-primary rounded-full text-[10px] font-bold">{activeCount}</span>}
+                                {activeCount > 0 && (
+                                    <span className={cn(
+                                        "ml-1 flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[9px] font-semibold bg-primary-foreground text-primary",
+                                    )}>
+                                        {activeCount}
+                                    </span>
+                                )}
                             </Button>
                         )}
 
@@ -223,7 +230,7 @@ export function TableMasterData<T extends Record<string, any>>({
                 <div className="flex items-center justify-between p-3 bg-primary rounded-2xl shadow-lg border border-primary/20 animate-in slide-in-from-top-2 duration-300 mx-1">
                     <div className="flex items-center gap-3 pl-2">
                         <div className="h-2 w-2 rounded-full bg-primary-foreground animate-pulse" />
-                        <span className="text-xs font-bold text-primary-foreground uppercase tracking-wide">
+                        <span className="text-xs font-black text-primary-foreground uppercase tracking-wide">
                             {activeSelectedRows.length} Terpilih
                         </span>
                     </div>
@@ -247,7 +254,7 @@ export function TableMasterData<T extends Record<string, any>>({
                                             action.onClick?.(ids);
                                         }
                                     }}
-                                    className="h-8 px-3 text-xs font-bold uppercase tracking-wide bg-primary-foreground text-primary hover:bg-primary-foreground/90 rounded-xl"
+                                    className="h-8 px-3 text-xs font-semibold uppercase tracking-wide bg-primary-foreground text-primary hover:bg-primary-foreground/90 rounded-xl"
                                 >
                                     {Icon && <Icon className="mr-1.5 h-3.5 w-3.5" />}
                                     {action.label}
@@ -260,18 +267,18 @@ export function TableMasterData<T extends Record<string, any>>({
 
             {/* Table Container */}
             <div className={cn(
-                "overflow-hidden bg-card/40 dark:bg-slate-900/20 backdrop-blur-sm",
-                borderless ? "rounded-none border-0 shadow-none" : "rounded-2xl border border-border/60 dark:border-slate-800/60 shadow-sm"
+                "overflow-hidden bg-surface-base/40 backdrop-blur-sm",
+                borderless ? "rounded-none border-0 shadow-none" : "rounded-2xl border border-surface-border/60 shadow-sm"
             )}>
                 <div className="overflow-x-auto custom-scrollbar">
                     <table className="w-full text-left border-collapse min-w-[800px]">
                         <thead>
-                            <tr className="border-b border-border/60 dark:border-slate-800/60 bg-muted/40 dark:bg-slate-800/40 backdrop-blur-md select-none">
+                            <tr className="border-b border-surface-border/60 bg-surface-muted/40 backdrop-blur-md select-none">
                                 <th className="py-3.5 px-4 w-10">
                                     <Checkbox
                                         checked={isAllSelected}
                                         onCheckedChange={handleSelectAll}
-                                        className="border-border dark:border-slate-700 data-[state=checked]:bg-primary"
+                                        className="border-surface-border data-[state=checked]:bg-primary"
                                     />
                                 </th>
                                 {columns.map((col, idx) => {
@@ -281,8 +288,8 @@ export function TableMasterData<T extends Record<string, any>>({
                                         <th
                                             key={idx}
                                             className={cn(
-                                                "py-3.5 px-4 text-[11px] font-bold uppercase tracking-wider text-muted-foreground dark:text-slate-400 select-none",
-                                                isSortable && "cursor-pointer hover:text-slate-900 dark:hover:text-slate-100 transition-colors",
+                                                "py-3.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-text-desc select-none",
+                                                isSortable && "cursor-pointer hover:text-text-main transition-colors",
                                                 col.className
                                             )}
                                             onClick={() => {
@@ -296,24 +303,24 @@ export function TableMasterData<T extends Record<string, any>>({
                                                 <span>{col.header}</span>
                                                 {isSortable && (
                                                     <span className="flex flex-col text-[8px] leading-[6px] opacity-60">
-                                                        <span className={cn(isSorted && sortDir === 'asc' ? "text-primary" : "text-muted-foreground")}>▲</span>
-                                                        <span className={cn(isSorted && sortDir === 'desc' ? "text-primary" : "text-muted-foreground")}>▼</span>
+                                                        <span className={cn(isSorted && sortDir === 'asc' ? "text-primary" : "text-text-soft")}>▲</span>
+                                                        <span className={cn(isSorted && sortDir === 'desc' ? "text-primary" : "text-text-soft")}>▼</span>
                                                     </span>
                                                 )}
                                             </div>
                                         </th>
                                     );
                                 })}
-                                {rowActions && <th className="py-3.5 px-4 w-24 text-right text-[11px] font-bold uppercase tracking-wider text-muted-foreground dark:text-slate-400 select-none">Aksi</th>}
+                                {rowActions && <th className="py-3.5 px-4 w-24 text-right text-[11px] font-semibold uppercase tracking-wider text-text-desc select-none">Aksi</th>}
                             </tr>
                         </thead>
                         <tbody className="relative">
                             {loading && (
                                 <tr>
                                     <td colSpan={columns.length + 1 + (rowActions ? 1 : 0)} className="p-0">
-                                        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm py-10 gap-3">
+                                        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-surface-base/80 backdrop-blur-sm py-10 gap-3">
                                             <LoadingLottie width={80} height={80} />
-                                            <p className="text-xs font-bold uppercase tracking-wide text-primary animate-pulse">Memuat data...</p>
+                                            <p className="text-xs font-black uppercase tracking-wide text-primary animate-pulse">Memuat data...</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -322,9 +329,9 @@ export function TableMasterData<T extends Record<string, any>>({
                             {filteredData.length === 0 && !loading ? (
                                 <tr>
                                     <td colSpan={columns.length + 1 + (rowActions ? 1 : 0)} className="p-16 text-center">
-                                        <div className="flex flex-col items-center gap-3 opacity-40 dark:opacity-30 select-none">
-                                            <Search size={40} strokeWidth={1} className="text-muted-foreground" />
-                                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-slate-500">Tidak ada data ditemukan</p>
+                                        <div className="flex flex-col items-center gap-3 opacity-40 select-none">
+                                            <Search size={40} strokeWidth={1} className="text-text-desc" />
+                                            <p className="text-xs font-bold uppercase tracking-wider text-text-desc">Tidak ada data ditemukan</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -334,19 +341,19 @@ export function TableMasterData<T extends Record<string, any>>({
                                         key={row.id || rowIdx}
                                         onClick={() => onRowClick?.(row)}
                                         className={cn(
-                                            "border-b border-border/30 dark:border-slate-800/30 transition-all hover:bg-muted/30 dark:hover:bg-slate-800/30 cursor-pointer group select-none",
-                                            activeSelectedRows.some(r => r.id === row.id) ? "bg-muted/50 dark:bg-slate-800/50" : ""
+                                            "border-b border-surface-border/30 transition-all hover:bg-surface-muted/30 cursor-pointer group select-none",
+                                            activeSelectedRows.some(r => r.id === row.id) ? "bg-surface-muted/50" : ""
                                         )}
                                     >
                                         <td className="py-3.5 px-4 w-10" onClick={(e) => e.stopPropagation()}>
                                             <Checkbox
                                                 checked={activeSelectedRows.some(r => r.id === row.id)}
                                                 onCheckedChange={(checked) => handleSelectRow(row, !!checked)}
-                                                className="border-border dark:border-slate-700"
+                                                className="border-surface-border"
                                             />
                                         </td>
                                         {columns.map((col, colIdx) => (
-                                            <td key={colIdx} className={cn("py-3.5 px-4 align-middle text-sm font-medium text-slate-800 dark:text-slate-200", col.className)}>
+                                            <td key={colIdx} className={cn("py-3.5 px-4 align-middle text-sm font-medium text-text-main", col.className)}>
                                                 {col.cell ? col.cell(row) : (row[col.accessorKey as keyof T] as React.ReactNode)}
                                             </td>
                                         ))}
@@ -365,18 +372,17 @@ export function TableMasterData<T extends Record<string, any>>({
 
             {/* Pagination */}
             {pagination && (
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-1 py-2 select-none animate-in fade-in duration-200">
+                <div className="flex flex-col sm:flex-row ml-8 mr-8 items-center justify-between gap-4 px-1 py-2 select-none animate-in fade-in duration-200">
                     <div className="flex items-center gap-3 order-2 sm:order-1">
-                        <span className="text-xs font-medium text-muted-foreground dark:text-slate-400">
-                            Menampilkan <span className="font-bold text-foreground dark:text-slate-200">{filteredData.length}</span> dari <span className="font-bold text-foreground dark:text-slate-200">{pagination.total}</span> baris
+                        <span className="text-xs font-medium text-text-desc uppercase">
+                            Menampilkan <span className="font-semibold text-text-main">{filteredData.length}</span> dari <span className="font-semibold text-text-main">{pagination.total}</span> baris
                         </span>
                     </div>
 
                     <div className="flex items-center gap-4 order-1 sm:order-2">
                         <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-muted-foreground dark:text-slate-400 tracking-wide uppercase">Baris:</span>
                             <select
-                                className="bg-card dark:bg-slate-900/60 border border-border/80 dark:border-slate-800/80 rounded-xl text-xs font-bold text-foreground px-3 py-1.5 outline-none focus:border-primary transition-all cursor-pointer shadow-sm select-none"
+                                className="bg-surface-base/60 border border-surface-border/80 rounded-xl text-xs font-semibold text-text-main px-3 py-1.5 outline-none focus:border-primary transition-all cursor-pointer shadow-sm select-none"
                                 value={localPerPage}
                                 onChange={(e) => {
                                     const val = Number(e.target.value);
@@ -403,15 +409,15 @@ export function TableMasterData<T extends Record<string, any>>({
                                 size="sm"
                                 disabled={pagination.currentPage === 1}
                                 onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
-                                className="h-9 px-3.5 flex items-center gap-1.5 disabled:opacity-30 text-xs font-bold border-border/80 dark:border-slate-800/80 hover:bg-muted/60 dark:hover:bg-slate-800/60"
+                                className="h-9 px-3.5 flex items-center gap-1.5 disabled:opacity-30 text-xs font-semibold border-surface-border/80 hover:bg-surface-muted"
                             >
-                                <ChevronLeft className="h-4 w-4 text-slate-700 dark:text-slate-300" />
+                                <ChevronLeft className="h-4 w-4 text-text-main" />
                             </Button>
 
-                            <div className="flex items-center gap-2 px-3 h-9 bg-muted/40 dark:bg-slate-800/40 rounded-xl border border-border/60 dark:border-slate-800/60">
-                                <span className="text-xs font-bold text-primary">{pagination.currentPage}</span>
-                                <span className="text-xs font-bold text-muted-foreground/30 dark:text-slate-600">/</span>
-                                <span className="text-xs font-bold text-primary">{pagination.lastPage || 1}</span>
+                            <div className="flex items-center gap-2 px-3 h-9 bg-surface-muted/40 rounded-xl border border-surface-border/60">
+                                <span className="text-xs font-semibold text-primary">{pagination.currentPage}</span>
+                                <span className="text-xs font-semibold text-text-soft">/</span>
+                                <span className="text-xs font-semibold text-primary">{pagination.lastPage || 1}</span>
                             </div>
 
                             <Button
@@ -419,9 +425,9 @@ export function TableMasterData<T extends Record<string, any>>({
                                 size="sm"
                                 disabled={pagination.currentPage === pagination.lastPage || pagination.lastPage === 0}
                                 onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
-                                className="h-9 px-3.5 flex items-center gap-1.5 disabled:opacity-30 text-xs font-bold border-border/80 dark:border-slate-800/80 hover:bg-muted/60 dark:hover:bg-slate-800/60"
+                                className="h-9 px-3.5 flex items-center gap-1.5 disabled:opacity-30 text-xs font-semibold border-surface-border/80 hover:bg-surface-muted"
                             >
-                                <ChevronRight className="h-4 w-4 text-slate-700 dark:text-slate-300" />
+                                <ChevronRight className="h-4 w-4 text-text-main" />
                             </Button>
                         </div>
                     </div>

@@ -1,4 +1,5 @@
 import { SearchInput } from '@/components/ui/forms/SearchInput';
+import { useDebounce } from '@/hooks/use-debounce';
 import { contractApi } from '@/lib/contract-api';
 import { Contract } from '@/types/contracts';
 import { X } from 'lucide-react';
@@ -83,7 +84,9 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
     const [activeId, setActiveId] = useState<string | null>(null);
     const [input, setInput] = useState('');
     const [searchList, setSearchList] = useState('');
+    const debouncedSearchList = useDebounce(searchList, 500);
     const [searchThread, setSearchThread] = useState('');
+    const debouncedSearchThread = useDebounce(searchThread, 500);
     const [showSearchThread, setShowSearchThread] = useState(false);
     const [sending, setSending] = useState(false);
     const endRef = useRef<HTMLDivElement>(null);
@@ -121,13 +124,20 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
 
     const totalUnread = contracts.reduce((sum, c) => sum + (c.messages ?? []).filter((m) => !m.read_by.includes(meId)).length, 0);
 
-    const filteredContracts = contracts.filter(
-        (c) => c.contract_no.toLowerCase().includes(searchList.toLowerCase()) || c.title?.toLowerCase().includes(searchList.toLowerCase()),
-    );
+    const filteredContracts = React.useMemo(() => {
+        return contracts.filter(
+            (c) =>
+                c.contract_no.toLowerCase().includes(debouncedSearchList.toLowerCase()) ||
+                c.title?.toLowerCase().includes(debouncedSearchList.toLowerCase()),
+        );
+    }, [contracts, debouncedSearchList]);
 
     const active = activeId ? contracts.find((c) => c.id === activeId) : null;
     const msgs = active?.messages ?? [];
-    const filteredMsgs = searchThread.trim() ? msgs.filter((m) => m.message.toLowerCase().includes(searchThread.toLowerCase())) : msgs;
+    
+    const filteredMsgs = React.useMemo(() => {
+        return debouncedSearchThread.trim() ? msgs.filter((m) => m.message.toLowerCase().includes(debouncedSearchThread.toLowerCase())) : msgs;
+    }, [msgs, debouncedSearchThread]);
 
     useEffect(() => {
         !showSearchThread && endRef.current?.scrollIntoView({ behavior: 'smooth' });

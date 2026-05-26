@@ -43,7 +43,7 @@ export function ConfirmationModal({
                         "mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl transition-all duration-300",
                         variant === 'danger' ? 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400' :
                         variant === 'warning' ? 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400' :
-                        'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400'
+                        'bg-primary/10 text-primary border border-primary/20'
                     )}>
                         {icon || (
                             variant === 'danger' ?

@@ -247,7 +247,7 @@ function ActionBadge({ action }: { action: string }) {
 
     if (act.includes('create') || act.includes('submit')) {
         return (
-            <span className="flex w-fit items-center gap-1.5 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold tracking-wider text-blue-700 uppercase dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-400">
+            <span className="flex w-fit items-center gap-1.5 rounded-full border border-primary/10 bg-primary/5 px-3 py-1 text-xs font-semibold tracking-wider text-primary uppercase">
                 <ArrowRight className="h-3.5 w-3.5" />
                 {action}
             </span>

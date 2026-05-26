@@ -164,11 +164,10 @@ function ImportFormTemplateModal({ isOpen, onClose, showToast }: Readonly<Import
                     onDragLeave={handleDrag}
                     onDrop={handleDrop}
                     onClick={() => fileInputRef.current?.click()}
-                    className={`relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-8 text-center transition-all duration-200 cursor-pointer ${
-                        dragActive
-                            ? 'border-primary bg-primary/[0.02]'
-                            : 'border-border hover:border-primary/50 hover:bg-muted/30'
-                    }`}
+                    className={`relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-8 text-center transition-all duration-200 cursor-pointer ${dragActive
+                        ? 'border-primary bg-primary/[0.02]'
+                        : 'border-border hover:border-primary/50 hover:bg-muted/30'
+                        }`}
                 >
                     <input
                         ref={fileInputRef}
@@ -451,10 +450,6 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                         <Button
                             variant="outline"
                             onClick={() => setIsFilterOpen(true)}
-                            className={cn(
-                                'text-foreground hover:bg-muted border-border relative h-10 px-4 transition-all active:scale-95',
-                                hasActiveFilters && 'bg-primary text-primary-foreground border-primary',
-                            )}
                         >
                             <Filter size={14} />
                             Filter
@@ -469,15 +464,11 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                                 </span>
                             )}
                         </Button>
-                        <Button
-                            variant="outline"
-                            onClick={() => setIsImportModalOpen(true)}
-                            className="border-border/40 bg-card text-foreground hover:bg-muted/60 hover:border-border/60 h-10 gap-2 rounded-xl border px-5 text-xs font-bold shadow-sm transition-all duration-200 hover:shadow-md active:scale-95"
-                        >
+                        <Button variant="outline" onClick={() => setIsImportModalOpen(true)}>
                             <Upload size={14} />
                             Impor Template
                         </Button>
-                        <Button variant="primary" onClick={() => setIsCreateModalOpen(true)} className="h-10 px-6 shadow-xl active:scale-95">
+                        <Button variant="outline" onClick={() => setIsCreateModalOpen(true)} >
                             <Plus size={14} />
                             Initialize Form
                         </Button>

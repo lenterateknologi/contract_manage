@@ -52,9 +52,7 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
         value: item.count,
     }));
 
-    const COLORS = ['#10b981', '#f59e0b', '#f43f5e', '#64748b', '#ef4444', '#8b5cf6', '#0ea5e9'];
-
-
+    const COLORS = ['var(--success)', 'var(--warning)', 'var(--danger)', 'var(--text-desc)', 'var(--info)', 'var(--primary)'];
 
     return (
         <div className="space-y-6">
@@ -62,59 +60,59 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4 select-none">
                 <Card
                     onClick={() => onNavigate('contracts')}
-                    className="cursor-pointer hover:bg-muted/50 transition-all active:scale-[0.99]"
+                    className="cursor-pointer hover:bg-surface-muted/50 transition-all active:scale-[0.99]"
                 >
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
-                        <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Volume Kontrak</CardTitle>
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-600 border border-indigo-500/10">
+                        <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-text-desc">Volume Kontrak</CardTitle>
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/10">
                             <FileText className="h-4 w-4" />
                         </div>
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
-                        <div className="text-2xl font-bold">{m.total}</div>
-                        <p className="text-[9px] font-medium text-muted-foreground uppercase mt-1">Total Kontrak</p>
+                        <div className="text-2xl font-black">{m.total}</div>
+                        <p className="text-[9px] font-bold text-text-desc uppercase tracking-wider mt-1">Total Kontrak</p>
                     </CardContent>
                 </Card>
 
                 <Card
                     onClick={() => onNavigate('pending')}
-                    className="cursor-pointer hover:bg-muted/50 transition-all active:scale-[0.99]"
+                    className="cursor-pointer hover:bg-surface-muted/50 transition-all active:scale-[0.99]"
                 >
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
-                        <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Workflow Pending</CardTitle>
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/10 text-orange-600 border border-orange-500/10">
+                        <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-text-desc">Workflow Pending</CardTitle>
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-info/10 text-info border border-info/10">
                             <Clock className="h-4 w-4" />
                         </div>
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
-                        <div className="text-2xl font-bold">{m.in_process}</div>
-                        <p className="text-[9px] font-medium text-muted-foreground uppercase mt-1">Sedang Diproses</p>
+                        <div className="text-2xl font-black">{m.in_process}</div>
+                        <p className="text-[9px] font-bold text-text-desc uppercase tracking-wider mt-1">Sedang Diproses</p>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
-                        <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Approved & Valid</CardTitle>
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 border border-emerald-500/10">
+                        <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-text-desc">Approved & Valid</CardTitle>
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-success/10 text-success border border-success/10">
                             <ShieldCheck className="h-4 w-4" />
                         </div>
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
-                        <div className="text-2xl font-bold">{m.active}</div>
-                        <p className="text-[9px] font-medium text-muted-foreground uppercase mt-1">Kontrak Aktif</p>
+                        <div className="text-2xl font-black">{m.active}</div>
+                        <p className="text-[9px] font-bold text-text-desc uppercase tracking-wider mt-1">Kontrak Aktif</p>
                     </CardContent>
                 </Card>
 
-                <Card className="border-amber-200/50 dark:border-amber-900/50">
+                <Card className="border-warning/50">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
-                        <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Kurang dari 30 Hari</CardTitle>
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 border border-amber-500/10 animate-pulse">
+                        <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-text-desc">Kurang dari 30 Hari</CardTitle>
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-warning/10 text-warning border border-warning/10 animate-pulse">
                             <Clock className="h-4 w-4" />
                         </div>
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
-                        <div className="text-2xl font-bold">{m.expiring_soon}</div>
-                        <p className="text-[9px] font-medium text-muted-foreground uppercase mt-1">Segera Berakhir</p>
+                        <div className="text-2xl font-black">{m.expiring_soon}</div>
+                        <p className="text-[9px] font-bold text-text-desc uppercase tracking-wider mt-1">Segera Berakhir</p>
                     </CardContent>
                 </Card>
             </div>
@@ -124,7 +122,7 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
                 <Card className="lg:col-span-3">
                     <CardHeader className="p-5 pb-0">
                         <CardTitle className="text-xs font-bold uppercase tracking-wider">Distribusi Submission</CardTitle>
-                        <p className="text-[9px] font-medium text-muted-foreground mt-0.5">Proporsi kontrak berdasarkan tipe submission (F1, F2, dsb).</p>
+                        <p className="text-[9px] font-semibold text-text-desc mt-0.5">Proporsi kontrak berdasarkan tipe submission (F1, F2, dsb).</p>
                     </CardHeader>
                     <CardContent className="p-5">
                         <div className="h-[350px] w-full flex items-center justify-center relative select-none">
@@ -146,8 +144,8 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
                                             ))}
                                         </Pie>
                                         <Tooltip
-                                            contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: 'none', borderRadius: '8px', padding: '8px' }}
-                                            itemStyle={{ fontSize: '10px', color: '#fff', fontWeight: 'bold' }}
+                                            contentStyle={{ backgroundColor: 'var(--surface-base)', border: '1px solid var(--surface-border)', borderRadius: '8px', padding: '8px' }}
+                                            itemStyle={{ fontSize: '10px', color: 'var(--text-main)', fontWeight: 'bold' }}
                                         />
                                         <Legend
                                             verticalAlign="bottom"
@@ -171,17 +169,17 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
                 <Card className="lg:col-span-7">
                     <CardHeader className="p-5 pb-0">
                         <CardTitle className="text-xs font-bold uppercase tracking-wider">Distribusi Tipe Kontrak</CardTitle>
-                        <p className="text-[9px] font-medium text-muted-foreground mt-0.5">Analisis proporsi volume berdasarkan klasifikasi kontrak.</p>
+                        <p className="text-[9px] font-semibold text-text-desc mt-0.5">Analisis proporsi volume berdasarkan klasifikasi kontrak.</p>
                     </CardHeader>
                     <CardContent className="p-5">
                         <div className="h-[350px] w-full flex items-center justify-center relative select-none">
                             {isMounted && contractTypeData.length > 0 ? (
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={contractTypeData} margin={{ top: 10, right: 5, left: -20, bottom: 90 }}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0, 0, 0, 0.05)" />
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--surface-border)" />
                                         <XAxis
                                             dataKey="name"
-                                            stroke="rgba(120, 120, 120, 0.6)"
+                                            stroke="var(--text-desc)"
                                             tickLine={false}
                                             axisLine={false}
                                             interval={0}
@@ -197,14 +195,14 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
                                         />
                                         <YAxis
                                             fontSize={8}
-                                            stroke="rgba(120, 120, 120, 0.6)"
+                                            stroke="var(--text-desc)"
                                             tickLine={false}
                                             axisLine={false}
                                         />
                                         <Tooltip
-                                            cursor={{ fill: 'rgba(0,0,0,0.02)' }}
-                                            contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', border: 'none', borderRadius: '8px', padding: '8px' }}
-                                            itemStyle={{ fontSize: '10px', color: '#fff', fontWeight: 'bold' }}
+                                            cursor={{ fill: 'var(--surface-muted)', opacity: 0.1 }}
+                                            contentStyle={{ backgroundColor: 'var(--surface-base)', border: '1px solid var(--surface-border)', borderRadius: '8px', padding: '8px' }}
+                                            itemStyle={{ fontSize: '10px', color: 'var(--text-main)', fontWeight: 'bold' }}
                                         />
                                         <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={24}>
                                             {contractTypeData.map((entry: any, index: number) => (

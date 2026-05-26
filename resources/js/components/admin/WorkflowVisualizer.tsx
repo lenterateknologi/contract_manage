@@ -61,13 +61,13 @@ const WorkflowNode = ({ data }: NodeProps<Node<WorkflowNodeData>>) => {
             className={cn(
                 'group relative min-w-[220px] rounded-xl border px-4 py-3 transition-all duration-200 select-none',
                 data.isFinal
-                    ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-500/20 dark:bg-emerald-500/10'
-                    : 'border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900',
+                    ? 'border-success/20 bg-success/5'
+                    : 'border-surface-border bg-surface-base shadow-sm',
             )}
         >
             {/* Main Flow Handles (Vertical) */}
             {!data.isInitial && (
-                <Handle type="target" position={Position.Top} className="hover:!bg-primary h-2 w-2 border-none !bg-slate-300 transition-colors" />
+                <Handle type="target" position={Position.Top} className="hover:!bg-primary h-2 w-2 border-none !bg-text-soft transition-colors" />
             )}
 
             {/* Rejection Handles: Single Source (Bottom) and Single Target (Right) */}
@@ -76,7 +76,7 @@ const WorkflowNode = ({ data }: NodeProps<Node<WorkflowNodeData>>) => {
                     type="target"
                     position={Position.Right}
                     id="reject-in"
-                    className="h-1.5 w-1.5 border-none !bg-rose-300 transition-colors hover:!bg-rose-500"
+                    className="h-1.5 w-1.5 border-none !bg-danger/30 transition-colors hover:!bg-danger"
                 />
             )}
 
@@ -85,35 +85,35 @@ const WorkflowNode = ({ data }: NodeProps<Node<WorkflowNodeData>>) => {
                 position={Position.Bottom}
                 id="reject-out"
                 style={{ left: '40%' }}
-                className="h-1.5 w-1.5 border-none !bg-rose-300 transition-colors hover:!bg-rose-500"
+                className="h-1.5 w-1.5 border-none !bg-danger/30 transition-colors hover:!bg-danger"
             />
 
             <div className="flex items-center gap-3">
                 <div
                     className={cn(
                         'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors',
-                        data.isFinal ? 'bg-emerald-500 text-white' : 'bg-slate-50 text-slate-400 dark:bg-white/5',
+                        data.isFinal ? 'bg-success text-white' : 'bg-surface-muted text-text-desc',
                     )}
                 >
                     <Icon size={14} />
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col text-left">
-                    <span className="mb-0.5 text-[9px] leading-none font-bold tracking-wider text-slate-400 uppercase">{data.type || 'STEP'}</span>
-                    <span className="truncate text-xs font-medium text-slate-700 dark:text-slate-200">{data.label}</span>
+                    <span className="mb-0.5 text-[9px] leading-none font-bold tracking-wider text-text-soft uppercase">{data.type || 'STEP'}</span>
+                    <span className="truncate text-xs font-bold text-text-main">{data.label}</span>
                     {data.organization && (data.organization.group || data.organization.region || data.organization.company) && (
                         <div className="mt-1.5 flex flex-wrap gap-1">
                             {data.organization.group && (
-                                <span className="rounded bg-blue-50 px-1.5 py-0.5 text-[8px] font-black tracking-tighter text-blue-600 uppercase dark:bg-blue-500/10 dark:text-blue-400">
+                                <span className="rounded bg-role-manager-bg px-1.5 py-0.5 text-[8px] font-black tracking-tighter text-role-manager-text uppercase">
                                     {data.organization.group}
                                 </span>
                             )}
                             {data.organization.region && (
-                                <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-[8px] font-black tracking-tighter text-indigo-600 uppercase dark:bg-indigo-500/10 dark:text-indigo-400">
+                                <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[8px] font-black tracking-tighter text-primary uppercase">
                                     {data.organization.region}
                                 </span>
                             )}
                             {data.organization.company && (
-                                <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[8px] font-black tracking-tighter text-slate-600 uppercase dark:bg-slate-800 dark:text-slate-400">
+                                <span className="rounded bg-role-staff-bg px-1.5 py-0.5 text-[8px] font-black tracking-tighter text-role-staff-text uppercase">
                                     {data.organization.company}
                                 </span>
                             )}
@@ -128,7 +128,7 @@ const WorkflowNode = ({ data }: NodeProps<Node<WorkflowNodeData>>) => {
                             e.stopPropagation();
                             data.onDelete?.();
                         }}
-                        className="rounded-lg p-1.5 text-slate-300 opacity-0 transition-all group-hover:opacity-100 hover:bg-rose-50 hover:text-rose-500"
+                        className="rounded-lg p-1.5 text-text-soft opacity-0 transition-all group-hover:opacity-100 hover:bg-danger/5 hover:text-danger"
                     >
                         <Trash2 size={14} />
                     </button>
@@ -136,7 +136,7 @@ const WorkflowNode = ({ data }: NodeProps<Node<WorkflowNodeData>>) => {
             </div>
 
             {!data.isFinal && (
-                <Handle type="source" position={Position.Bottom} className="hover:!bg-primary h-2 w-2 border-none !bg-slate-300 transition-colors" />
+                <Handle type="source" position={Position.Bottom} className="hover:!bg-primary h-2 w-2 border-none !bg-text-soft transition-colors" />
             )}
         </div>
     );
@@ -400,7 +400,7 @@ export function WorkflowVisualizer({
     return (
         <div
             className={cn(
-                'h-full w-full overflow-hidden border border-slate-100 bg-slate-50/30 dark:border-slate-800 dark:bg-slate-950/20',
+                'h-full w-full overflow-hidden border border-surface-border bg-surface-muted/30',
                 className,
             )}
         >
@@ -421,8 +421,8 @@ export function WorkflowVisualizer({
                 fitViewOptions={{ padding: 0.5 }}
                 colorMode="system"
             >
-                <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#cbd5e1" />
-                <Controls showInteractive={false} className="border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900" />
+                <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="var(--border)" />
+                <Controls showInteractive={false} className="border-surface-border bg-surface-base" />
             </ReactFlow>
 
             {/* Add Step Overlay */}

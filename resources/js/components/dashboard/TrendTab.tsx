@@ -16,6 +16,8 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/base/Card';
 
+import { formatCurrency } from '@/lib/utils';
+
 interface TrendTabProps {
     data: any;
 }
@@ -38,12 +40,9 @@ export function TrendTab({ data }: TrendTabProps) {
         if (value >= 1_000_000) {
             return `Rp ${(value / 1_000_000).toFixed(2)} Jt`;
         }
-        return new Intl.NumberFormat('id-ID', {
-            style: 'currency',
-            currency: 'IDR',
-            maximumFractionDigits: 0
-        }).format(value);
+        return formatCurrency(value);
     };
+
 
     const monthlyTrendData = data?.monthlyTrend || [];
     const renewalVsExpiredData = data?.renewalVsExpiredTrend || [];
@@ -55,8 +54,8 @@ export function TrendTab({ data }: TrendTabProps) {
                 {/* 1. Monthly Volume Growth */}
                 <Card>
                     <CardHeader className="p-5 pb-0">
-                        <CardTitle className="text-xs font-bold uppercase tracking-wider">Pertumbuhan Kontrak Bulanan</CardTitle>
-                        <p className="text-muted-foreground text-[9px] font-semibold mt-0.5">Tren penambahan volume kontrak baru selama 6 bulan terakhir.</p>
+                        <CardTitle className="text-xs font-black uppercase tracking-wider text-text-main">Pertumbuhan Kontrak Bulanan</CardTitle>
+                        <p className="text-text-desc text-[9px] font-semibold mt-0.5">Tren penambahan volume kontrak baru selama 6 bulan terakhir.</p>
                     </CardHeader>
                     <CardContent className="p-5">
                         <div className="h-[220px] w-full select-none">
@@ -66,17 +65,18 @@ export function TrendTab({ data }: TrendTabProps) {
                                         data={monthlyTrendData}
                                         margin={{ top: 5, right: 10, left: -20, bottom: 5 }}
                                     >
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0, 0, 0, 0.05)" />
-                                        <XAxis dataKey="month" fontSize={9} stroke="rgba(120, 120, 120, 0.5)" tickLine={false} axisLine={false} />
-                                        <YAxis fontSize={9} stroke="rgba(120, 120, 120, 0.5)" tickLine={false} axisLine={false} />
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--surface-border)" />
+                                        <XAxis dataKey="month" fontSize={9} stroke="var(--text-desc)" tickLine={false} axisLine={false} />
+                                        <YAxis fontSize={9} stroke="var(--text-desc)" tickLine={false} axisLine={false} />
                                         <Tooltip
                                             contentStyle={{
-                                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                                border: 'none',
+                                                backgroundColor: 'var(--surface-base)',
+                                                border: '1px solid var(--surface-border)',
                                                 borderRadius: '8px',
                                                 fontSize: '10px',
-                                                color: '#fff'
+                                                color: 'var(--text-main)'
                                             }}
+                                            itemStyle={{ color: 'var(--text-main)' }}
                                         />
                                         <Legend
                                             verticalAlign="top"
@@ -89,7 +89,7 @@ export function TrendTab({ data }: TrendTabProps) {
                                             type="monotone"
                                             dataKey="count"
                                             name="Jumlah Kontrak"
-                                            stroke="#6366f1"
+                                            stroke="var(--primary)"
                                             strokeWidth={2}
                                             dot={{ r: 4, strokeWidth: 1 }}
                                             activeDot={{ r: 6 }}
@@ -109,8 +109,8 @@ export function TrendTab({ data }: TrendTabProps) {
                 {/* 2. Monthly Value Trend */}
                 <Card>
                     <CardHeader className="p-5 pb-0">
-                        <CardTitle className="text-xs font-bold uppercase tracking-wider">Tren Nilai Kontrak Bulanan</CardTitle>
-                        <p className="text-muted-foreground text-[9px] font-semibold mt-0.5">Akumulasi finansial dari kontrak-kontrak baru yang masuk per bulan.</p>
+                        <CardTitle className="text-xs font-black uppercase tracking-wider text-text-main">Tren Nilai Kontrak Bulanan</CardTitle>
+                        <p className="text-text-desc text-[9px] font-semibold mt-0.5">Akumulasi finansial dari kontrak-kontrak baru yang masuk per bulan.</p>
                     </CardHeader>
                     <CardContent className="p-5">
                         <div className="h-[220px] w-full select-none">
@@ -126,23 +126,24 @@ export function TrendTab({ data }: TrendTabProps) {
                                                 <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                                             </linearGradient>
                                         </defs>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0, 0, 0, 0.05)" />
-                                        <XAxis dataKey="month" fontSize={9} stroke="rgba(120, 120, 120, 0.5)" tickLine={false} axisLine={false} />
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--surface-border)" />
+                                        <XAxis dataKey="month" fontSize={9} stroke="var(--text-desc)" tickLine={false} axisLine={false} />
                                         <YAxis
                                             fontSize={9}
-                                            stroke="rgba(120, 120, 120, 0.5)"
+                                            stroke="var(--text-desc)"
                                             tickLine={false}
                                             axisLine={false}
                                             tickFormatter={(v) => formatIDR(v)}
                                         />
                                         <Tooltip
                                             contentStyle={{
-                                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                                border: 'none',
+                                                backgroundColor: 'var(--surface-base)',
+                                                border: '1px solid var(--surface-border)',
                                                 borderRadius: '8px',
                                                 fontSize: '10px',
-                                                color: '#fff'
+                                                color: 'var(--text-main)'
                                             }}
+                                            itemStyle={{ color: 'var(--text-main)' }}
                                             formatter={(v: any) => [formatIDR(v), "Nilai"]}
                                         />
                                         <Legend
@@ -178,8 +179,8 @@ export function TrendTab({ data }: TrendTabProps) {
                 {/* 3. Renewal vs Expired Trend */}
                 <Card>
                     <CardHeader className="p-5 pb-0">
-                        <CardTitle className="text-xs font-bold uppercase tracking-wider">Perbandingan Renewal vs Kadaluarsa</CardTitle>
-                        <p className="text-muted-foreground text-[9px] font-semibold mt-0.5">Analisis laju perpanjangan kontrak dibanding jumlah kontrak yang berakhir.</p>
+                        <CardTitle className="text-xs font-black uppercase tracking-wider text-text-main">Perbandingan Renewal vs Kadaluarsa</CardTitle>
+                        <p className="text-text-desc text-[9px] font-semibold mt-0.5">Analisis laju perpanjangan kontrak dibanding jumlah kontrak yang berakhir.</p>
                     </CardHeader>
                     <CardContent className="p-5">
                         <div className="h-[220px] w-full select-none">
@@ -189,17 +190,18 @@ export function TrendTab({ data }: TrendTabProps) {
                                         data={renewalVsExpiredData}
                                         margin={{ top: 5, right: 10, left: -20, bottom: 5 }}
                                     >
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0, 0, 0, 0.05)" />
-                                        <XAxis dataKey="month" fontSize={9} stroke="rgba(120, 120, 120, 0.5)" tickLine={false} axisLine={false} />
-                                        <YAxis fontSize={9} stroke="rgba(120, 120, 120, 0.5)" tickLine={false} axisLine={false} />
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--surface-border)" />
+                                        <XAxis dataKey="month" fontSize={9} stroke="var(--text-desc)" tickLine={false} axisLine={false} />
+                                        <YAxis fontSize={9} stroke="var(--text-desc)" tickLine={false} axisLine={false} />
                                         <Tooltip
                                             contentStyle={{
-                                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                                border: 'none',
+                                                backgroundColor: 'var(--surface-base)',
+                                                border: '1px solid var(--surface-border)',
                                                 borderRadius: '8px',
                                                 fontSize: '10px',
-                                                color: '#fff'
+                                                color: 'var(--text-main)'
                                             }}
+                                            itemStyle={{ color: 'var(--text-main)' }}
                                         />
                                         <Legend
                                             verticalAlign="top"
@@ -225,8 +227,8 @@ export function TrendTab({ data }: TrendTabProps) {
                 {/* 4. Approval Outcomes (Stacked Area) */}
                 <Card>
                     <CardHeader className="p-5 pb-0">
-                        <CardTitle className="text-xs font-bold uppercase tracking-wider">Output Hasil Kelayakan Kontrak</CardTitle>
-                        <p className="text-muted-foreground text-[9px] font-semibold mt-0.5">Distribusi penyelesaian status persetujuan kontrak bulanan.</p>
+                        <CardTitle className="text-xs font-black uppercase tracking-wider text-text-main">Output Hasil Kelayakan Kontrak</CardTitle>
+                        <p className="text-text-desc text-[9px] font-semibold mt-0.5">Distribusi penyelesaian status persetujuan kontrak bulanan.</p>
                     </CardHeader>
                     <CardContent className="p-5">
                         <div className="h-[220px] w-full select-none">
@@ -236,17 +238,18 @@ export function TrendTab({ data }: TrendTabProps) {
                                         data={monthlyApprovalData}
                                         margin={{ top: 5, right: 10, left: -20, bottom: 5 }}
                                     >
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0, 0, 0, 0.05)" />
-                                        <XAxis dataKey="month" fontSize={9} stroke="rgba(120, 120, 120, 0.5)" tickLine={false} axisLine={false} />
-                                        <YAxis fontSize={9} stroke="rgba(120, 120, 120, 0.5)" tickLine={false} axisLine={false} />
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--surface-border)" />
+                                        <XAxis dataKey="month" fontSize={9} stroke="var(--text-desc)" tickLine={false} axisLine={false} />
+                                        <YAxis fontSize={9} stroke="var(--text-desc)" tickLine={false} axisLine={false} />
                                         <Tooltip
                                             contentStyle={{
-                                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                                border: 'none',
+                                                backgroundColor: 'var(--surface-base)',
+                                                border: '1px solid var(--surface-border)',
                                                 borderRadius: '8px',
                                                 fontSize: '10px',
-                                                color: '#fff'
+                                                color: 'var(--text-main)'
                                             }}
+                                            itemStyle={{ color: 'var(--text-main)' }}
                                         />
                                         <Legend
                                             verticalAlign="top"
@@ -257,7 +260,7 @@ export function TrendTab({ data }: TrendTabProps) {
                                         />
                                         <Area type="monotone" dataKey="approved" stackId="1" name="Disetujui" stroke="#10b981" fill="#10b981" fillOpacity={0.15} />
                                         <Area type="monotone" dataKey="pending" stackId="1" name="Pending" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.15} />
-                                        <Area type="monotone" dataKey="revision" stackId="1" name="Revisi" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.15} />
+                                        <Area type="monotone" dataKey="revision" stackId="1" name="Revisi" stroke="var(--info)" fill="var(--info)" fillOpacity={0.15} />
                                         <Area type="monotone" dataKey="rejected" stackId="1" name="Ditolak" stroke="#f43f5e" fill="#f43f5e" fillOpacity={0.15} />
                                     </AreaChart>
                                 </ResponsiveContainer>

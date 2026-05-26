@@ -46,7 +46,7 @@ function MsgBubble({
             const parts = text.split(new RegExp(`(${term})`, 'gi'));
             content = parts.map((part, i) =>
                 part.toLowerCase() === term.toLowerCase() ? (
-                    <span key={i} className="text-primary bg-primary/10 rounded px-0.5 font-bold dark:text-white">
+                    <span key={i} className="text-primary bg-primary/10 rounded px-0.5 font-bold">
                         {part}
                     </span>
                 ) : (
@@ -64,7 +64,7 @@ function MsgBubble({
                             key={i}
                             className={cn(
                                 'font-bold tracking-tight underline underline-offset-2',
-                                isMe ? 'text-amber-200 dark:text-amber-200' : 'text-primary dark:text-amber-300',
+                                isMe ? 'text-primary-foreground' : 'text-primary',
                             )}
                         >
                             {part}
@@ -84,7 +84,7 @@ function MsgBubble({
                                     key={`${idx}-${i}`}
                                     className={cn(
                                         'font-bold tracking-tight underline underline-offset-2',
-                                        isMe ? 'text-amber-200 dark:text-amber-200' : 'text-primary dark:text-amber-300',
+                                        isMe ? 'text-primary-foreground' : 'text-primary',
                                     )}
                                 >
                                     {sp}
@@ -104,15 +104,15 @@ function MsgBubble({
     return (
         <div className={cn('animate-in slide-in-from-bottom-1 mb-4 flex flex-col gap-1.5 duration-300', isMe ? 'items-end' : 'items-start')}>
             <div className={cn('flex items-center gap-2 px-1', isMe ? 'flex-row-reverse' : 'flex-row')}>
-                <span className={cn('text-[11px] font-bold', isMe ? 'text-foreground dark:text-white' : 'text-foreground/80 dark:text-white/80')}>
+                <span className={cn('text-text-main text-[11px] font-bold', isMe ? '' : 'opacity-80')}>
                     {isMe ? 'Anda' : name}
                 </span>
                 {role && (
-                    <span className="bg-muted/60 text-muted-foreground rounded-full px-2.5 py-0.5 text-[9px] font-bold tracking-tight uppercase dark:bg-white/5 dark:text-white/50">
+                    <span className="bg-surface-muted text-text-desc rounded-full px-2.5 py-0.5 text-[9px] font-bold tracking-tight uppercase">
                         {role}
                     </span>
                 )}
-                <span className="text-muted-foreground/60 text-[10px] tabular-nums dark:text-white/30">{time}</span>
+                <span className="text-text-soft/60 text-[10px] tabular-nums">{time}</span>
             </div>
 
             <div className={cn('group relative max-w-[82%] min-w-[65px]', isMe ? 'text-right' : 'text-left')}>
@@ -120,8 +120,8 @@ function MsgBubble({
                     className={cn(
                         'rounded-2xl shadow-sm transition-all duration-300',
                         isMe
-                            ? 'bg-primary dark:bg-primary text-white dark:text-white'
-                            : 'bg-muted/80 text-foreground dark:bg-slate-800/80 dark:text-white',
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-surface-muted text-text-main',
                     )}
                 >
                     {attachmentUrl && isImage && (
@@ -131,7 +131,7 @@ function MsgBubble({
                                 e.preventDefault();
                                 onPreview(attachmentUrl, attachmentName);
                             }}
-                            className="group/img relative cursor-pointer overflow-hidden rounded-t-2xl border-b border-inherit bg-black/5 dark:bg-white/5"
+                            className="group/img bg-surface-muted relative cursor-pointer overflow-hidden rounded-t-2xl border-b border-inherit"
                         >
                             <img
                                 src={attachmentUrl}
@@ -169,7 +169,7 @@ function MsgBubble({
                                     'group/file flex cursor-pointer items-center gap-2.5 rounded-xl border p-2 transition-all',
                                     isMe
                                         ? 'border-white/10 bg-white/5 text-white hover:bg-white/10'
-                                        : 'border-black/5 bg-black/[0.03] text-black hover:bg-black/[0.06] dark:border-white/5 dark:bg-white/[0.03] dark:text-white dark:hover:bg-white/[0.06]',
+                                        : 'border-surface-border bg-surface-base/50 text-text-main hover:bg-surface-base',
                                 )}
                             >
                                 <div
@@ -177,7 +177,7 @@ function MsgBubble({
                                         'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border shadow-sm transition-transform group-hover/file:scale-110',
                                         isMe
                                             ? 'border-white/10 bg-white/10 text-white'
-                                            : 'dark:bg-sidebar border-black/10 bg-white text-black/40 dark:border-white/10 dark:text-white/40',
+                                            : 'border-surface-border bg-surface-base text-text-soft',
                                     )}
                                 >
                                     <FileIcon size={14} />
@@ -333,7 +333,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
 
     return (
         <div className="animate-in fade-in relative flex h-[680px] min-h-[620px] flex-col p-5 duration-500">
-            <div className="mb-1 flex items-center justify-between border-b border-black/5 pb-3 dark:border-white/5">
+            <div className="border-surface-border mb-1 flex items-center justify-between border-b pb-3">
                 <div className="flex-1">
                     <SearchInput
                         placeholder="CARI NAMA / ROLE..."
@@ -344,16 +344,16 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <div className="hidden h-7 items-center border-r border-black/10 px-3 sm:flex dark:border-white/10">
-                        <span className="text-[8px] font-black tracking-[0.2em] text-black/40 uppercase tabular-nums dark:text-white/40">
+                    <div className="border-surface-border hidden h-7 items-center border-r px-3 sm:flex">
+                        <span className="text-text-soft text-[8px] font-black tracking-[0.2em] uppercase tabular-nums">
                             {msgs.length} LOGS
                         </span>
                     </div>
                     <button
                         onClick={handleRefresh}
                         className={cn(
-                            'flex h-7 w-7 items-center justify-center rounded-lg border border-black/10 text-black/40 shadow-sm transition-all hover:bg-black/5 hover:text-black active:scale-90 dark:border-white/10 dark:text-white/40 dark:hover:bg-white/5 dark:hover:text-white',
-                            refreshing && 'animate-spin border-black text-black shadow-lg dark:border-white dark:text-white',
+                            'border-surface-border text-text-soft flex h-7 w-7 items-center justify-center rounded-lg border shadow-sm transition-all hover:bg-surface-muted hover:text-text-main active:scale-90',
+                            refreshing && 'animate-spin border-primary text-primary shadow-lg',
                         )}
                     >
                         <RefreshCw size={12} strokeWidth={2.5} />
@@ -373,13 +373,13 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                     {msgs.length === 0 ? (
                         <div className="flex flex-col items-center justify-center gap-2 pt-20 text-center opacity-40">
                             <MessageSquare size={24} strokeWidth={1.5} />
-                            <p className="text-[13px]">No discussion yet</p>
+                            <p className="text-text-main text-[13px]">No discussion yet</p>
                         </div>
                     ) : (
                         Object.entries(groupedMessages).map(([day, dayMessages]) => (
                             <div key={day} className="flex flex-col">
-                                <div className="my-2 h-px flex-1 bg-black/5 dark:bg-white/5" />
-                                <span className="px-2 text-[10px] text-black/40 dark:text-white/40">{day}</span>
+                                <div className="bg-surface-border my-2 h-px flex-1" />
+                                <span className="text-text-soft px-2 text-[10px]">{day}</span>
                                 {dayMessages.map((m) => (
                                     <MsgBubble
                                         key={m.id}
@@ -405,21 +405,21 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                 </button>
             )}
 
-            <div className="border-t border-black/5 pt-3 dark:border-white/5">
+            <div className="border-surface-border border-t pt-3">
                 {selectedFile && (
-                    <div className="animate-in slide-in-from-bottom-1 mb-3 flex items-center justify-between rounded-lg bg-zinc-100 p-2.5 duration-300 dark:bg-zinc-800">
+                    <div className="bg-surface-muted animate-in slide-in-from-bottom-1 mb-3 flex items-center justify-between rounded-lg p-2.5 duration-300">
                         <div className="flex items-center gap-2.5">
                             <FileIcon size={14} strokeWidth={2.5} />
                             <div className="flex flex-col">
-                                <span className="mb-1 text-[9px] leading-none font-black tracking-tight uppercase">{selectedFile?.name}</span>
-                                <span className="text-[7.5px] font-black uppercase tabular-nums opacity-40">
+                                <span className="text-text-main mb-1 text-[9px] leading-none font-black tracking-tight uppercase">{selectedFile?.name}</span>
+                                <span className="text-text-soft text-[7.5px] font-black uppercase tabular-nums opacity-40">
                                     {((selectedFile?.size || 0) / 1024).toFixed(1)} KB
                                 </span>
                             </div>
                         </div>
                         <button
                             onClick={() => setSelectedFile(null)}
-                            className="flex h-7 w-7 items-center justify-center rounded-lg transition-all hover:bg-black/5 active:scale-90 dark:hover:bg-white/5"
+                            className="hover:bg-surface-muted flex h-7 w-7 items-center justify-center rounded-lg transition-all active:scale-90"
                         >
                             <X size={14} strokeWidth={2.5} />
                         </button>
@@ -435,11 +435,11 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                         insertMention={insertMention}
                     />
 
-                    <div className="relative flex flex-1 items-end rounded-2xl border border-black/5 bg-black/[0.02] transition-all duration-300 focus-within:border-black/10 focus-within:bg-black/[0.04] dark:border-white/5 dark:bg-white/5 dark:focus-within:border-white/10 dark:focus-within:bg-white/10">
+                    <div className="border-surface-border bg-surface-muted/30 focus-within:border-primary/30 focus-within:bg-surface-muted relative flex flex-1 items-end rounded-2xl border transition-all duration-300">
                         <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileSelect} />
                         <button
                             onClick={() => fileInputRef.current?.click()}
-                            className="flex h-10 w-10 shrink-0 items-center justify-center text-black/40 transition-colors hover:text-black dark:text-white/40 dark:hover:text-white"
+                            className="text-text-soft hover:text-text-main flex h-10 w-10 shrink-0 items-center justify-center transition-colors"
                         >
                             <Paperclip size={16} />
                         </button>
@@ -450,7 +450,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                             onKeyDown={handleKeyDown}
                             placeholder="Ketik pesan..."
                             rows={1}
-                            className="max-h-[120px] min-h-[40px] flex-1 resize-none bg-transparent py-2.5 pr-4 text-[13px] leading-relaxed font-medium tracking-tight text-black transition-all outline-none placeholder:text-black/30 dark:text-white dark:placeholder:text-white/30"
+                            className="text-text-main placeholder:text-text-soft/30 max-h-[120px] min-h-[40px] flex-1 resize-none bg-transparent py-2.5 pr-4 text-[13px] leading-relaxed font-medium tracking-tight transition-all outline-none"
                         />
                     </div>
                     <button
@@ -458,7 +458,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                             'flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl transition-all',
                             input.trim() || selectedFile
                                 ? 'bg-primary hover:bg-primary/90 text-white shadow-lg active:scale-95'
-                                : 'bg-muted text-muted-foreground/40 dark:bg-white/5 dark:text-white/20',
+                                : 'bg-surface-muted text-text-soft/40',
                         )}
                         onClick={send}
                         disabled={(!input.trim() && !selectedFile) || sending}

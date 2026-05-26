@@ -62,7 +62,7 @@ export function ProfileView({ meUser, showToast }: { meUser: any; showToast: any
                                 <input
                                     value={pData.name}
                                     onChange={(e) => setPData('name', e.target.value)}
-                                    className="bg-muted/50 border-border focus:bg-card w-full rounded-lg border py-2.5 pr-3 pl-9 text-sm transition-all outline-none focus:border-blue-500"
+                                    className="bg-muted/50 border-border focus:bg-card w-full rounded-lg border py-2.5 pr-3 pl-9 text-sm transition-all outline-none focus:border-primary"
                                 />
                             </div>
                         </div>
@@ -81,7 +81,7 @@ export function ProfileView({ meUser, showToast }: { meUser: any; showToast: any
                         <button
                             type="submit"
                             disabled={pProcessing}
-                            className="mt-4 w-full rounded-lg bg-blue-600 py-3 text-sm font-bold text-white shadow-lg shadow-blue-100 transition-all hover:bg-blue-700 hover:shadow-blue-200 active:scale-[0.98] disabled:opacity-50"
+                            className="bg-primary text-primary-foreground shadow-primary/10 hover:bg-primary-hover hover:shadow-primary/20 mt-4 w-full rounded-lg py-3 text-sm font-bold shadow-lg transition-all active:scale-[0.98] disabled:opacity-50"
                         >
                             {pProcessing ? <i className="fa-solid fa-spinner fa-spin mr-2" /> : <i className="fa-solid fa-check mr-2" />}
                             {pProcessing ? 'Menyimpan...' : 'Simpan Perubahan'}
@@ -100,7 +100,7 @@ export function ProfileView({ meUser, showToast }: { meUser: any; showToast: any
                                     type="password"
                                     value={qData.current_password}
                                     onChange={(e) => setQData('current_password', e.target.value)}
-                                    className="bg-muted/50 border-border focus:bg-card w-full rounded-lg border py-2.5 pr-3 pl-9 text-sm transition-all outline-none focus:border-blue-500"
+                                    className="bg-muted/50 border-border focus:bg-card w-full rounded-lg border py-2.5 pr-3 pl-9 text-sm transition-all outline-none focus:border-primary"
                                 />
                             </div>
                         </div>
@@ -112,7 +112,7 @@ export function ProfileView({ meUser, showToast }: { meUser: any; showToast: any
                                     type="password"
                                     value={qData.password}
                                     onChange={(e) => setQData('password', e.target.value)}
-                                    className="bg-muted/50 border-border focus:bg-card w-full rounded-lg border py-2.5 pr-3 pl-9 text-sm transition-all outline-none focus:border-blue-500"
+                                    className="bg-muted/50 border-border focus:bg-card w-full rounded-lg border py-2.5 pr-3 pl-9 text-sm transition-all outline-none focus:border-primary"
                                 />
                             </div>
                         </div>
@@ -124,7 +124,7 @@ export function ProfileView({ meUser, showToast }: { meUser: any; showToast: any
                                     type="password"
                                     value={qData.password_confirmation}
                                     onChange={(e) => setQData('password_confirmation', e.target.value)}
-                                    className="bg-muted/50 border-border focus:bg-card w-full rounded-lg border py-2.5 pr-3 pl-9 text-sm transition-all outline-none focus:border-blue-500"
+                                    className="bg-muted/50 border-border focus:bg-card w-full rounded-lg border py-2.5 pr-3 pl-9 text-sm transition-all outline-none focus:border-primary"
                                 />
                             </div>
                         </div>

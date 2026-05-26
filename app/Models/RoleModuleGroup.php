@@ -11,15 +11,10 @@ class RoleModuleGroup extends Model
 
     protected $table = 'm_role_module_groups';
 
-    public $incrementing = false;
-
-    protected $primaryKey = null;
-
-    protected $keyType = 'string';
-
     protected $fillable = [
         'role_id',
         'module_group_id',
+        'sequence',
     ];
 
     public function role()

@@ -46,7 +46,7 @@ class ContractWorkflowQueryService
         if ($contractType) {
             // Case-insensitive search for contract type
             $query->where(function ($q) use ($contractType) {
-                $q->where('contract_type', 'ilike', $contractType)
+                $q->where(DB::raw('LOWER(contract_type)'), 'like', strtolower($contractType))
                     ->orWhere('is_default', true); // Show global defaults as fallback
             });
         }

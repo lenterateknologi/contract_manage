@@ -1,0 +1,163 @@
+/**
+ * CMS Contract - Centralized Theme Configuration
+ * This file defines all CSS variables for the application.
+ */
+
+:root {
+    /* --- Base Colors (Light Mode) --- */
+    --background: #f8fafc;
+    --foreground: #1a2332;
+
+    /* Primary (Professional Navy/Deep Blue) */
+    --primary: #172554;
+    --primary-foreground: #ffffff;
+    --primary-hover: #1e1b4b;
+    --primary-active: #0f172a;
+    --primary-muted: #e0e7ff;
+
+    /* Secondary (Soft Gray/Blue) */
+    --secondary: #f1f5f9;
+    --secondary-foreground: #1e293b;
+
+    /* Surfaces (Card, Popover, etc.) */
+    --card: #ffffff;
+    --card-foreground: #1a2332;
+    --popover: #ffffff;
+    --popover-foreground: #1a2332;
+    --muted: #f1f5f9;
+    --muted-foreground: #64748b;
+
+    /* Accents & Status */
+    --accent: #f1f5f9;
+    --accent-foreground: #1e293b;
+
+    --success: #10b981;
+    --success-foreground: #ffffff;
+    --warning: #f59e0b;
+    --warning-foreground: #ffffff;
+    --danger: #f43f5e;
+    --danger-foreground: #ffffff;
+    --info: #0284c7;
+    --info-foreground: #ffffff;
+
+    /* Border & Inputs */
+    --border: #e2e8f0;
+    --input: #ffffff;
+    --ring: #172554;
+
+    /* Sidebar - Light (Clean White) */
+    --sidebar-background: #ffffff;
+    --sidebar-foreground: #0f2a4a;
+    --sidebar-primary: #0f2a4a;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #f1f5f9;
+    --sidebar-accent-foreground: #0f2a4a;
+    --sidebar-border: #e2e8f0;
+    --sidebar-ring: #0f2a4a;
+
+    /* Semantic Surface Colors for Cards/Groups */
+    --surface-base: #ffffff;
+    --surface-muted: #f8fafc;
+    --surface-border: #e2e8f0;
+    
+    /* Text Semantic */
+    --text-main: #1a2332;
+    --text-desc: #64748b;
+    --text-soft: #94a3b8;
+
+    /* Role & Status Palette (Semantic) */
+    --role-admin-bg: #f5f3ff;
+    --role-admin-text: #6d28d9;
+    --role-manager-bg: #eff6ff;
+    --role-manager-text: #1d4ed8;
+    --role-staff-bg: #f1f5f9;
+    --role-staff-text: #475569;
+    --role-reviewer-bg: #fffbeb;
+    --role-reviewer-text: #b45309;
+    --role-approver-bg: #ecfdf5;
+    --role-approver-text: #047857;
+
+    /* Vendor & Category Palette */
+    --vendor-service-bg: #eff6ff;
+    --vendor-service-text: #1d4ed8;
+    --vendor-supplier-bg: #f1f5f9;
+    --vendor-supplier-text: #475569;
+}
+
+/* --- Dark Mode Configuration --- */
+.dark {
+    /* Base Colors (Deep Midnight) */
+    --background: #020617; /* Slate 950 - More deep than before */
+    --foreground: #f8fafc;
+
+    /* Primary (Professional Indigo-Blue) */
+    --primary: #4f46e5;
+    --primary-foreground: #ffffff;
+    --primary-hover: #6366f1;
+    --primary-active: #4338ca;
+    --primary-muted: #1e1b4b;
+
+    /* Secondary (Darker Surfaces) */
+    --secondary: #0f172a; /* Slate 900 */
+    --secondary-foreground: #f8fafc;
+
+    /* Surfaces */
+    --card: #0f172a;
+    --card-foreground: #f8fafc;
+    --popover: #0f172a;
+    --popover-foreground: #f8fafc;
+    --muted: #1e293b; /* Slate 800 */
+    --muted-foreground: #94a3b8;
+
+    /* Accents & Status */
+    --accent: #1e293b;
+    --accent-foreground: #f8fafc;
+
+    --success: #059669;
+    --warning: #d97706;
+    --danger: #e11d48;
+    --info: #38bdf8;
+
+    /* Border & Inputs */
+    --border: #1e293b;
+    --input: #0f172a;
+    --ring: #4f46e5;
+
+    /* Sidebar - Dark (Deep Navy) */
+    --sidebar-background: #020617;
+    --sidebar-foreground: #f1f5f9;
+    --sidebar-primary: #4f46e5;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #0f172a;
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: #1e293b;
+    --sidebar-ring: #4f46e5;
+
+    /* Semantic Surface Colors for Dark Mode */
+    --surface-base: #0f172a;
+    --surface-muted: #020617;
+    --surface-border: #1e293b;
+
+    /* Text Semantic */
+    --text-main: #f8fafc;
+    --text-desc: #94a3b8;
+    --text-soft: #64748b;
+
+    /* Role & Status Palette (Dark Semantic) */
+    --role-admin-bg: rgba(139, 92, 246, 0.2);
+    --role-admin-text: #a78bfa;
+    --role-manager-bg: rgba(59, 130, 246, 0.2);
+    --role-manager-text: #60a5fa;
+    --role-staff-bg: rgba(148, 163, 184, 0.2);
+    --role-staff-text: #cbd5e1;
+    --role-reviewer-bg: rgba(245, 158, 11, 0.2);
+    --role-reviewer-text: #fbbf24;
+    --role-approver-bg: rgba(16, 185, 129, 0.2);
+    --role-approver-text: #34d399;
+
+    /* Vendor & Category Palette (Dark) */
+    --vendor-service-bg: rgba(59, 130, 246, 0.2);
+    --vendor-service-text: #60a5fa;
+    --vendor-supplier-bg: rgba(148, 163, 184, 0.2);
+    --vendor-supplier-text: #cbd5e1;
+}

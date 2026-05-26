@@ -17,11 +17,11 @@ interface DepartmentManagementProps {
 }
 
 const DEPT_COLORS = [
-    'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400',
-    'bg-teal-100 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400',
-    'bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400',
-    'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
-    'bg-cyan-100 text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-400',
+    'bg-primary-muted text-primary',
+    'bg-success/10 text-success',
+    'bg-info/10 text-info',
+    'bg-primary/10 text-primary',
+    'bg-warning/10 text-warning',
 ];
 
 function deptColor(name: string) {
@@ -41,8 +41,8 @@ const DeptCell = ({ name, code }: Readonly<{ name: string; code: string }>) => (
             <Building2 size={18} />
         </div>
         <div className="flex min-w-0 flex-col">
-            <span className="mb-0.5 truncate text-sm leading-tight font-bold tracking-wide text-slate-900 dark:text-slate-100">{name}</span>
-            <div className="text-muted-foreground/80 flex items-center gap-1.5 font-mono text-xs leading-none font-semibold dark:text-slate-400">
+            <span className="mb-0.5 truncate text-sm leading-tight font-bold tracking-wide text-text-main">{name}</span>
+            <div className="text-text-desc flex items-center gap-1.5 font-mono text-xs leading-none font-semibold">
                 {code}
             </div>
         </div>
@@ -50,18 +50,18 @@ const DeptCell = ({ name, code }: Readonly<{ name: string; code: string }>) => (
 );
 
 const DescriptionCell = ({ description }: Readonly<{ description?: string }>) => (
-    <span className="text-muted-foreground line-clamp-1 max-w-[300px] text-sm font-medium tracking-wide dark:text-slate-300/80">
+    <span className="text-text-desc line-clamp-1 max-w-[300px] text-sm font-medium tracking-wide">
         {description || '—'}
     </span>
 );
 
 const VisibilityCell = ({ isActive }: Readonly<{ isActive: boolean }>) => (
     <div className="flex items-center gap-2 select-none">
-        <div className={cn('h-2 w-2 shrink-0 rounded-full', isActive ? 'animate-pulse bg-emerald-500' : 'bg-rose-400')} />
+        <div className={cn('h-2 w-2 shrink-0 rounded-full', isActive ? 'animate-pulse bg-success' : 'bg-danger/40')} />
         <span
             className={cn(
                 'text-xs font-bold tracking-wide',
-                isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400',
+                isActive ? 'text-success' : 'text-danger',
             )}
         >
             {isActive ? 'Aktif' : 'Nonaktif'}
@@ -121,11 +121,7 @@ export function DepartmentManagement({ departments, filters }: Readonly<Departme
                 accessorKey: 'description',
                 cell: (row) => <DescriptionCell description={row.description} />,
             },
-            {
-                header: 'Visibilitas',
-                accessorKey: 'is_active',
-                cell: (row) => <VisibilityCell isActive={row.is_active} />,
-            },
+
         ],
         [],
     );
@@ -182,7 +178,7 @@ export function DepartmentManagement({ departments, filters }: Readonly<Departme
                             type="button"
                             variant="ghost"
                             onClick={() => setIsConfirmOpen(true)}
-                            className="h-10 rounded-xl border border-rose-500/20 px-4 text-xs font-bold text-rose-500 transition-all duration-200 select-none hover:bg-rose-500 hover:text-white active:scale-95 dark:hover:bg-rose-500/20"
+                            className="border-danger/20 text-danger hover:bg-danger hover:text-white"
                         >
                             <Trash2 size={15} className="mr-2" /> Hapus
                         </Button>
@@ -248,16 +244,16 @@ export function DepartmentManagement({ departments, filters }: Readonly<Departme
                             />
                         </FormSection>
 
-                        <div className="border-border/80 bg-muted/20 group relative overflow-hidden rounded-2xl border p-6 shadow-sm backdrop-blur-sm transition-all duration-200 select-none dark:border-slate-800/80 dark:bg-slate-900/40">
+                        <div className="border-surface-border bg-surface-muted/40 group relative overflow-hidden rounded-2xl border p-6 shadow-sm backdrop-blur-sm transition-all duration-200 select-none">
                             <div className="absolute top-0 right-0 p-4 opacity-5 transition-opacity duration-200 group-hover:opacity-10">
                                 <Building2 size={80} strokeWidth={1} />
                             </div>
 
                             <div className="relative z-10 mb-4 flex items-center gap-3">
-                                <span className="text-xs font-bold tracking-wider text-slate-900 uppercase dark:text-slate-100">Arsitektur Unit</span>
+                                <span className="text-xs font-bold tracking-wider text-text-main uppercase">Arsitektur Unit</span>
                             </div>
 
-                            <p className="text-muted-foreground relative z-10 text-xs leading-relaxed font-medium dark:text-slate-400">
+                            <p className="text-text-desc relative z-10 text-xs leading-relaxed font-medium">
                                 Departemen digunakan untuk mengelompokkan pengguna dan menentukan keterlibatan dalam alur persetujuan (Workflow)
                                 secara otomatis.
                             </p>
@@ -269,7 +265,7 @@ export function DepartmentManagement({ departments, filters }: Readonly<Departme
     }
 
     return (
-        <div className="bg-card/40 border-border/60 animate-in fade-in m-5 rounded-2xl border p-6 shadow-sm backdrop-blur-sm duration-200 select-none dark:border-slate-800/60 dark:bg-slate-900/20">
+        <div className="bg-surface-base/40 border-surface-border animate-in fade-in m-5 rounded-2xl border p-6 shadow-sm backdrop-blur-sm duration-200 select-none">
             <TableMasterData
                 title="Database Unit / Departemen"
                 columns={columns}
@@ -288,7 +284,6 @@ export function DepartmentManagement({ departments, filters }: Readonly<Departme
                         <Button
                             variant="white"
                             onClick={openCreate}
-                            className="border-border bg-card text-foreground hover:bg-muted/60 hover:border-border h-10 gap-2 rounded-xl border px-5 text-xs font-bold tracking-wide shadow-sm transition-all duration-200 select-none hover:shadow-md dark:bg-slate-900/60 dark:hover:bg-slate-800/60"
                         >
                             <Plus size={15} className="text-primary" /> Tambah Unit
                         </Button>
@@ -298,23 +293,23 @@ export function DepartmentManagement({ departments, filters }: Readonly<Departme
                 bulkActions={
                     canUpdate
                         ? [
-                              {
-                                  label: 'Hapus Terpilih',
-                                  icon: Trash2,
-                                  variant: 'destructive',
-                                  onClick: (ids: string[] | number[]) => {
-                                      if (confirm(`Hapus ${ids.length} departemen terpilih?`)) {
-                                          router.post(
-                                              '/admin/departments/bulk-delete',
-                                              { ids },
-                                              {
-                                                  onSuccess: () => showToast(`${ids.length} departemen telah dihapus`, 'success'),
-                                              },
-                                          );
-                                      }
-                                  },
-                              },
-                          ]
+                            {
+                                label: 'Hapus Terpilih',
+                                icon: Trash2,
+                                variant: 'destructive',
+                                onClick: (ids: string[] | number[]) => {
+                                    if (confirm(`Hapus ${ids.length} departemen terpilih?`)) {
+                                        router.post(
+                                            '/admin/departments/bulk-delete',
+                                            { ids },
+                                            {
+                                                onSuccess: () => showToast(`${ids.length} departemen telah dihapus`, 'success'),
+                                            },
+                                        );
+                                    }
+                                },
+                            },
+                        ]
                         : undefined
                 }
                 pagination={{

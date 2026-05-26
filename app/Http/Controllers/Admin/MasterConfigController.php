@@ -24,10 +24,10 @@ class MasterConfigController extends Controller
 
         // Whitelist columns to ensure query safety
         $allowedSortColumns = ['name', 'parent_id', 'f1_input_mechanism', 'f2_input_mechanism', 'description'];
-        if (!in_array($sortBy, $allowedSortColumns)) {
+        if (! in_array($sortBy, $allowedSortColumns)) {
             $sortBy = 'name';
         }
-        if (!in_array($sortDir, ['asc', 'desc'])) {
+        if (! in_array($sortDir, ['asc', 'desc'])) {
             $sortDir = 'asc';
         }
 
@@ -35,7 +35,12 @@ class MasterConfigController extends Controller
             ->with('parent')
             ->when(
                 $request->search,
-                fn ($q, $s) => $q->where('name', 'ilike', "%{$s}%")->orWhere('description', 'ilike', "%{$s}%"),
+                function ($q, $s) {
+                    $s = strtolower($s);
+
+                    return $q->where(\Illuminate\Support\Facades\DB::raw('LOWER(name)'), 'like', "%{$s}%")
+                        ->orWhere(\Illuminate\Support\Facades\DB::raw('LOWER(description)'), 'like', "%{$s}%");
+                },
             );
 
         return Inertia::render('admin/index', [
@@ -133,7 +138,12 @@ class MasterConfigController extends Controller
         $query = ContractStatus::query()
             ->when(
                 $request->search,
-                fn ($q, $s) => $q->where('label', 'ilike', "%{$s}%")->orWhere('code', 'ilike', "%{$s}%"),
+                function ($q, $s) {
+                    $s = strtolower($s);
+
+                    return $q->where(\Illuminate\Support\Facades\DB::raw('LOWER(label)'), 'like', "%{$s}%")
+                        ->orWhere(\Illuminate\Support\Facades\DB::raw('LOWER(code)'), 'like', "%{$s}%");
+                },
             );
 
         return Inertia::render('admin/index', [
@@ -210,7 +220,12 @@ class MasterConfigController extends Controller
         $query = Department::query()
             ->when(
                 $request->search,
-                fn ($q, $s) => $q->where('name', 'ilike', "%{$s}%")->orWhere('code', 'ilike', "%{$s}%"),
+                function ($q, $s) {
+                    $s = strtolower($s);
+
+                    return $q->where(\Illuminate\Support\Facades\DB::raw('LOWER(name)'), 'like', "%{$s}%")
+                        ->orWhere(\Illuminate\Support\Facades\DB::raw('LOWER(code)'), 'like', "%{$s}%");
+                },
             )
             ->when($request->is_active, function ($q, $active) {
                 $bools = collect((array) $active)->map(fn ($v) => filter_var($v, FILTER_VALIDATE_BOOLEAN))->toArray();
@@ -289,7 +304,11 @@ class MasterConfigController extends Controller
 
     public function moduleGroups(Request $request)
     {
-        $query = ModuleGroup::query()->when($request->search, fn ($q, $s) => $q->where('name', 'ilike', "%{$s}%"));
+        $query = ModuleGroup::query()->when($request->search, function ($q, $s) {
+            $s = strtolower($s);
+
+            return $q->where(\Illuminate\Support\Facades\DB::raw('LOWER(name)'), 'like', "%{$s}%");
+        });
 
         return Inertia::render('admin/index', [
             'currentView' => 'module-groups',
@@ -302,7 +321,12 @@ class MasterConfigController extends Controller
     public function modules(Request $request)
     {
         $query = Module::with('moduleGroup')
-            ->when($request->search, fn ($q, $s) => $q->where('name', 'ilike', "%{$s}%")->orWhere('description', 'ilike', "%{$s}%"))
+            ->when($request->search, function ($q, $s) {
+                $s = strtolower($s);
+
+                return $q->where(\Illuminate\Support\Facades\DB::raw('LOWER(name)'), 'like', "%{$s}%")
+                    ->orWhere(\Illuminate\Support\Facades\DB::raw('LOWER(description)'), 'like', "%{$s}%");
+            })
             ->when($request->module_group_id, fn ($q, $id) => $q->whereIn('module_group_id', (array) $id));
 
         return Inertia::render('admin/index', [

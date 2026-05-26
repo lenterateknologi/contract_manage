@@ -13,6 +13,7 @@ export interface UserProfile {
     };
     bg_color: string;
     text_color: string;
+    avatar_url?: string;
 }
 
 export interface ContractVersion {

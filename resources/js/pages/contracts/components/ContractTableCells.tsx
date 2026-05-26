@@ -13,25 +13,25 @@ export function ExpiryBadge({ endDate }: Readonly<{ endDate: string | null }>) {
     const diffTime = end.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    let color = 'bg-black text-white border-black/10 dark:bg-white dark:text-black';
-    let icon = 'fa-circle-check';
+    let color = 'bg-text-main text-surface-base border-surface-border';
+    let Icon = CheckCircle2;
     let label = `${diffDays} Hari Lagi`;
 
     if (diffDays < 0) {
-        color = 'bg-black/10 text-black border-black/10 dark:bg-white/10 dark:text-white';
-        icon = 'fa-circle-exclamation';
+        color = 'bg-danger/10 text-danger border-danger/20';
+        Icon = AlertCircle;
         label = `Expired ${Math.abs(diffDays)} Hari`;
     } else if (diffDays <= 30) {
-        color = 'bg-black text-white border-black/10 dark:bg-white dark:text-black';
-        icon = 'fa-triangle-exclamation';
+        color = 'bg-warning text-white border-warning/20';
+        Icon = AlertTriangle;
     } else if (diffDays <= 90) {
-        color = 'text-black dark:text-white border border-black/10';
-        icon = 'fa-clock';
+        color = 'text-text-main border border-surface-border bg-surface-muted/50';
+        Icon = Clock;
     }
 
     return (
-        <div className={cn('inline-flex items-center gap-1.5 text-[11px] font-semibold', color)}>
-            <i className={cn('fa-solid text-[10px]', icon)} />
+        <div className={cn('inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-bold uppercase tracking-wider', color)}>
+            <Icon size={12} strokeWidth={3} />
             {label}
         </div>
     );
@@ -39,21 +39,21 @@ export function ExpiryBadge({ endDate }: Readonly<{ endDate: string | null }>) {
 
 export const StatusBadge = ({ status }: { status: string }) => {
     const config: Record<string, { bg: string; dot: string; text: string; label: string }> = {
-        draft: { bg: 'bg-slate-100', dot: 'bg-slate-400', text: 'text-slate-600', label: 'Draft' },
-        in_review: { bg: 'bg-amber-100', dot: 'bg-amber-500', text: 'text-amber-700', label: 'Review' },
-        revision: { bg: 'bg-rose-100', dot: 'bg-rose-500', text: 'text-rose-700', label: 'Revisi' },
-        pending: { bg: 'bg-orange-100', dot: 'bg-orange-500', text: 'text-orange-700', label: 'Pending' },
-        approved: { bg: 'bg-emerald-100', dot: 'bg-emerald-500', text: 'text-emerald-700', label: 'Disetujui' },
-        active: { bg: 'bg-blue-100', dot: 'bg-blue-500', text: 'text-blue-700', label: 'Aktif' },
-        expired: { bg: 'bg-red-100', dot: 'bg-red-500', text: 'text-red-700', label: 'Expired' },
-        archived: { bg: 'bg-zinc-100', dot: 'bg-zinc-400', text: 'text-zinc-500', label: 'Arsip' },
-        rejected: { bg: 'bg-red-100', dot: 'bg-red-500', text: 'text-red-700', label: 'Ditolak' },
+        draft: { bg: 'bg-surface-muted', dot: 'bg-text-soft', text: 'text-text-desc', label: 'Draft' },
+        in_review: { bg: 'bg-warning/10', dot: 'bg-warning', text: 'text-warning', label: 'Review' },
+        revision: { bg: 'bg-danger/10', dot: 'bg-danger', text: 'text-danger', label: 'Revisi' },
+        pending: { bg: 'bg-warning/10', dot: 'bg-warning', text: 'text-warning', label: 'Pending' },
+        approved: { bg: 'bg-success/10', dot: 'bg-success', text: 'text-success', label: 'Disetujui' },
+        active: { bg: 'bg-primary/10', dot: 'bg-primary', text: 'text-primary', label: 'Aktif' },
+        expired: { bg: 'bg-danger/10', dot: 'bg-danger', text: 'text-danger', label: 'Expired' },
+        archived: { bg: 'bg-surface-muted', dot: 'bg-text-soft', text: 'text-text-soft', label: 'Arsip' },
+        rejected: { bg: 'bg-danger/10', dot: 'bg-danger', text: 'text-danger', label: 'Ditolak' },
     };
 
     const s = config[status as keyof typeof config] || config.draft;
 
     return (
-        <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-semibold', s.bg, s.text)}>
+        <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-tight', s.bg, s.text)}>
             <span className={cn('h-1.5 w-1.5 rounded-full', s.dot)} />
             {s.label}
         </span>
@@ -99,20 +99,20 @@ export const SLACountdown = ({ deadline, status }: Readonly<{ deadline: string |
         return () => clearInterval(timer);
     }, [deadline, status]);
 
-    if (!deadline || status === 'archived' || status === 'approved') return <span className="text-[10px] text-black/40 dark:text-white/40">—</span>;
+    if (!deadline || status === 'archived' || status === 'approved') return <span className="text-[10px] text-text-soft">—</span>;
 
     const getUrgencyStyles = () => {
         if (urgency === 'danger') {
-            return 'bg-rose-500 text-white ring-rose-400/40';
+            return 'bg-danger text-surface-base ring-danger/40';
         }
         if (urgency === 'warning') {
-            return 'bg-amber-100 text-amber-700 ring-amber-300/40';
+            return 'bg-warning/10 text-warning ring-warning/40';
         }
-        return 'bg-sidebar-accent text-sidebar-foreground/60 ring-sidebar-border/40';
+        return 'bg-surface-muted text-text-desc ring-surface-border';
     };
 
     return (
-        <div className={cn('flex w-fit items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-bold ring-1', getUrgencyStyles())}>
+        <div className={cn('flex w-fit items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-bold ring-1 uppercase tracking-tight', getUrgencyStyles())}>
             <Clock size={10} className={urgency === 'danger' ? 'animate-pulse' : ''} />
             {timeLeft}
         </div>
@@ -120,77 +120,76 @@ export const SLACountdown = ({ deadline, status }: Readonly<{ deadline: string |
 };
 
 export const ContractInfoCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <div className="flex flex-col">
+    <div className="flex flex-col gap-1 py-0.5">
         <div className="flex items-center gap-2">
-            <span className="text-sidebar-foreground text-sm leading-tight font-bold">{c.title}</span>
+            <span className="text-text-main text-[13px] leading-tight font-semibold uppercase tracking-tight">{c.title}</span>
             {!!c.current_version && (
-                <div className="bg-sidebar-primary flex-shrink-0 rounded px-1.5 py-0.5">
-                    <span className="text-xs font-bold text-white uppercase">V{c.current_version}</span>
+                <div className="bg-primary flex-shrink-0 rounded px-1.5 py-0.5">
+                    <span className="text-[9px] font-bold text-primary-foreground uppercase">V{c.current_version}</span>
                 </div>
             )}
         </div>
-        <div className="mt-1.5 flex items-center gap-2">
-            <span className="text-sidebar-foreground/40 text-xs font-semibold tracking-wide uppercase">{c.contract_type}</span>
-            <span className="bg-sidebar-foreground/20 h-1 w-1 rounded-full" />
-            <span className="text-sidebar-foreground/40 text-xs font-semibold tracking-wide uppercase">{c.vendor?.name || 'No Vendor'}</span>
+        <div className="mt-0.5 flex items-center gap-2">
+            <span className="text-text-soft text-[10px] font-medium tracking-wider uppercase">{c.contract_type}</span>
+            <span className="bg-surface-border h-1 w-1 rounded-full" />
+            <span className="text-text-soft text-[10px] font-medium tracking-wider uppercase">{c.vendor?.name || 'No Vendor'}</span>
         </div>
     </div>
 );
 
 export const DepartmentCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <span className="text-sidebar-foreground/50 text-xs font-semibold tracking-wide uppercase">{c.initiator?.department_name || 'UMUM'}</span>
+    <span className="text-text-desc text-[10px] font-medium tracking-wider uppercase">{c.initiator?.department_name || 'UMUM'}</span>
 );
 
 export const ProgressCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <span className="text-sidebar-foreground/90 text-xs font-bold tracking-tight">
+    <span className="text-primary text-xs font-semibold tracking-tight bg-primary/5 px-2 py-1 rounded-lg">
         {c.progress.done}/{c.progress.total}
     </span>
 );
 
 export const CreatedAtCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <span className="text-sidebar-foreground/40 text-xs font-medium">{c.created_at}</span>
+    <span className="text-text-soft text-[11px] font-medium uppercase">{c.created_at}</span>
 );
 
 export const ContractNoCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <span className="text-sidebar-primary/70 font-mono text-xs font-bold">{c.contract_no || 'N/A'}</span>
+    <span className="text-primary font-mono text-xs font-medium">{c.contract_no || 'N/A'}</span>
 );
 
 export const TitleCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <span className="text-sidebar-foreground line-clamp-1 text-xs font-bold">{c.title}</span>
+    <span className="text-text-main line-clamp-1 text-xs font-semibold uppercase">{c.title}</span>
 );
 
 export const TypeAndVendorCell = ({ c, types }: Readonly<{ c: Contract; types: ContractType[] }>) => {
     const TYPE_COLORS = [
-        'bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300',
-        'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300',
-        'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300',
-        'bg-teal-100 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300',
-        'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300',
-        'bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300',
+        'bg-role-admin-bg text-role-admin-text border border-role-admin-text/20',
+        'bg-role-manager-bg text-role-manager-text border border-role-manager-text/20',
+        'bg-role-reviewer-bg text-role-reviewer-text border border-role-reviewer-text/20',
+        'bg-role-approver-bg text-role-approver-text border border-role-approver-text/20',
+        'bg-primary-muted text-primary border border-primary/20',
     ];
     const type = types.find((t) => t.id === c.contract_type_id);
     const colorIdx = type ? type.name.charCodeAt(0) % TYPE_COLORS.length : 0;
     const vendorName = c.vendor?.name || '-';
 
     return (
-        <div className="flex flex-col gap-1 py-0.5">
+        <div className="flex flex-col gap-1.5 py-0.5">
             <span
                 className={cn(
-                    'inline-block w-fit rounded-full px-2.5 py-0.5 text-xs leading-none font-bold tracking-wide uppercase',
+                    'inline-block w-fit rounded-xl px-2.5 py-0.5 text-[10px] leading-none font-bold tracking-wide uppercase',
                     TYPE_COLORS[colorIdx],
                 )}
             >
                 {(type?.name || 'N/A').replace('Perjanjian ', '').replace('Addendum / ', '')}
             </span>
-            <span className="text-sidebar-foreground/70 truncate text-xs font-medium">{vendorName}</span>
+            <span className="text-text-soft truncate text-[11px] font-medium uppercase">{vendorName}</span>
         </div>
     );
 };
 
 export const ContractNoAndTitleCell = ({ c }: Readonly<{ c: Contract }>) => (
     <div className="flex flex-col gap-0.5 py-0.5">
-        <span className="text-sidebar-primary/70 font-mono text-xs leading-none font-bold">{c.contract_no || 'N/A'}</span>
-        <span className="text-sidebar-foreground mt-1 line-clamp-1 text-sm leading-tight font-semibold">{c.title}</span>
+        <span className="text-primary font-mono text-[10px] leading-none font-semibold">{c.contract_no || 'N/A'}</span>
+        <span className="text-text-main mt-1.5 line-clamp-1 text-[13px] leading-tight font-semibold uppercase tracking-tight">{c.title}</span>
     </div>
 );
 
@@ -201,8 +200,8 @@ export const InitiatorCell = ({ c }: Readonly<{ c: Contract }>) => {
 
     return (
         <div className="flex flex-col gap-0.5 py-0.5">
-            <span className="text-sidebar-foreground/60 text-xs leading-none font-semibold">{roleDept || 'Staff UMUM'}</span>
-            <span className="text-sidebar-foreground mt-1 truncate text-sm leading-tight font-semibold">{c.initiator?.name || '—'}</span>
+            <span className="text-text-soft text-[10px] leading-none font-medium uppercase tracking-wider">{roleDept || 'Staff UMUM'}</span>
+            <span className="text-text-main mt-1.5 truncate text-[13px] leading-tight font-semibold uppercase tracking-tight">{c.initiator?.name || '—'}</span>
         </div>
     );
 };
@@ -213,24 +212,24 @@ export const StatusAndStepCell = ({ c }: Readonly<{ c: Contract }>) => {
         stepDesc = c.initiator?.role || '';
     }
     return (
-        <div className="flex flex-col gap-1 py-0.5">
+        <div className="flex flex-col gap-1.5 py-0.5">
             <div className="flex items-center">
                 <StatusBadge status={c.status} />
             </div>
-            {!!stepDesc && <span className="text-sidebar-foreground/60 truncate text-xs leading-tight font-semibold capitalize">{stepDesc}</span>}
+            {!!stepDesc && <span className="text-text-desc truncate text-[10px] leading-tight font-medium uppercase tracking-wide">{stepDesc}</span>}
         </div>
     );
 };
 
 export const AssignedByCell = ({ c }: Readonly<{ c: Contract }>) => (
     <div className="flex flex-col py-0.5">
-        <span className="text-sidebar-foreground truncate text-sm font-semibold">{c.assigned_by?.name || '—'}</span>
+        <span className="text-text-main truncate text-[13px] font-semibold uppercase tracking-tight">{c.assigned_by?.name || '—'}</span>
     </div>
 );
 
 export const AssignedPicCell = ({ c }: Readonly<{ c: Contract }>) => (
     <div className="flex flex-col py-0.5">
-        <span className="text-sidebar-foreground truncate text-sm font-semibold">{c.assigned_pic?.name || '—'}</span>
+        <span className="text-text-main truncate text-[13px] font-semibold uppercase tracking-tight">{c.assigned_pic?.name || '—'}</span>
     </div>
 );
 
@@ -257,9 +256,9 @@ export const BulkActions = ({
     <div className="flex items-center gap-2">
         {canBulkApprove && (
             <Button
-                variant="outline"
+                variant="white"
                 size="sm"
-                className="h-8 border-black/10 px-3 dark:border-white/10"
+                className="h-8 border-surface-border/40 bg-surface-base text-primary font-bold uppercase text-[10px] px-4 shadow-sm"
                 onClick={() => handleBulkApprove(selectedRows)}
             >
                 <Check className="mr-1.5 h-3 w-3" /> Approve
@@ -267,9 +266,9 @@ export const BulkActions = ({
         )}
         {canBulkDelete && (
             <Button
-                variant="outline"
+                variant="white"
                 size="sm"
-                className="h-8 border-rose-500/20 px-3 text-rose-600 hover:bg-rose-600 hover:text-white"
+                className="h-8 border-surface-border/40 bg-surface-base text-danger font-bold uppercase text-[10px] px-4 shadow-sm"
                 onClick={() => handleBulkDelete(selectedRows)}
             >
                 <Trash2 className="mr-1.5 h-3 w-3" /> Hapus
@@ -295,18 +294,18 @@ export const RowActions = ({
         <DropdownMenuTrigger asChild>
             <Button
                 variant="ghost"
-                className="border-sidebar-border dark:bg-sidebar-accent/50 hover:bg-sidebar-accent group h-8 w-8 rounded-lg border bg-white p-0 transition-all"
+                className="border-surface-border bg-surface-base/50 hover:bg-surface-muted group h-8 w-8 rounded-lg border p-0 transition-all shadow-sm"
             >
-                <MoreVertical size={14} className="text-sidebar-foreground/40 group-hover:text-sidebar-primary" />
+                <MoreVertical size={14} className="text-text-soft group-hover:text-primary" />
             </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
             align="end"
-            className="border-sidebar-border dark:bg-sidebar-accent/90 w-52 rounded-xl bg-white p-1.5 shadow-2xl backdrop-blur-md"
+            className="border-surface-border w-52 rounded-2xl bg-surface-base p-1.5 shadow-2xl backdrop-blur-xl"
         >
             <DropdownMenuItem
                 onClick={() => openDetail(c)}
-                className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-bold tracking-tight text-slate-600 uppercase"
+                className="flex cursor-pointer items-center gap-2 rounded-xl text-[11px] font-semibold tracking-tight text-text-main uppercase"
             >
                 <Eye size={14} /> Lihat Detail
             </DropdownMenuItem>
@@ -315,17 +314,17 @@ export const RowActions = ({
                     setSelected(c);
                     setEditOpen(true);
                 }}
-                className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-bold tracking-tight text-slate-600 uppercase"
+                className="flex cursor-pointer items-center gap-2 rounded-xl text-[11px] font-semibold tracking-tight text-text-main uppercase"
             >
                 <FileEdit size={14} /> Perbarui
             </DropdownMenuItem>
-            <div className="my-1 h-px bg-slate-50" />
+            <div className="my-1 h-px bg-surface-border/40" />
             <DropdownMenuItem
                 onClick={() => {
                     setSelected(c);
                     setDeleteOpen(true);
                 }}
-                className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-bold tracking-tight text-rose-600 uppercase focus:bg-rose-50 focus:text-rose-600"
+                className="flex cursor-pointer items-center gap-2 rounded-xl text-[11px] font-semibold tracking-tight text-danger uppercase focus:bg-danger/5 focus:text-danger"
             >
                 <Trash2 size={14} /> Hapus Data
             </DropdownMenuItem>

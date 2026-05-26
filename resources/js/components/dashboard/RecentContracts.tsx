@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn, formatDateShort } from '@/lib/utils';
 import { router } from '@inertiajs/react';
 import { SectionTitle } from './SectionTitle';
 import { ContractItem } from './types';
@@ -22,7 +22,7 @@ const STATUS_BADGE_CONFIG: Record<string, { label: string; color: string; bg: st
 // Sleek palette for contract type badges
 const TYPE_COLORS = [
     'bg-violet-500/10 text-violet-600 border-violet-500/20 dark:text-violet-400',
-    'bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400',
+    'bg-info/10 text-info border-info/20',
     'bg-cyan-500/10 text-cyan-600 border-cyan-500/20 dark:text-cyan-400',
     'bg-teal-500/10 text-teal-600 border-teal-500/20 dark:text-teal-400',
     'bg-indigo-500/10 text-indigo-600 border-indigo-500/20 dark:text-indigo-400',
@@ -128,7 +128,7 @@ export function RecentContracts({ items, onViewAll }: RecentContractsProps) {
 
                                         {/* Tanggal */}
                                         <td className="text-muted-foreground hidden px-5 py-3.5 text-right text-[10px] font-medium whitespace-nowrap lg:table-cell">
-                                            {new Date(c.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: '2-digit' })}
+                                            {formatDateShort(c.created_at)}
                                         </td>
                                     </tr>
                                 );

@@ -28,7 +28,26 @@ class LogHttpRequest
             $url = $request->fullUrl();
             $parsedUrl = parse_url($url);
 
-            $body = $request->isMethod('get') ? null : json_encode($request->all());
+            // Mask sensitive data before logging
+            $sensitiveFields = [
+                'password',
+                'password_confirmation',
+                'current_password',
+                'token',
+                'access_token',
+                'refresh_token',
+                'otp',
+                'pin',
+            ];
+
+            $allData = $request->all();
+            foreach ($sensitiveFields as $field) {
+                if (isset($allData[$field])) {
+                    $allData[$field] = '********';
+                }
+            }
+
+            $body = $request->isMethod('get') ? null : json_encode($allData);
             if ($body && strlen($body) > 60000) {
                 $body = substr($body, 0, 60000) . '... [TRUNCATED]';
             }

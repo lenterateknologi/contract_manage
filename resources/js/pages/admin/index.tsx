@@ -55,6 +55,8 @@ interface Props {
         contract_statuses: number;
         contract_types: number;
         workflows: number;
+        roles: number;
+        access_mappings: number;
     };
 }
 

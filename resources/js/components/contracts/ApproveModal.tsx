@@ -1,9 +1,11 @@
 import { Button } from '@/components/ui/base/Button';
 import { SearchableSelect } from '@/components/ui/forms/SearchableSelect';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/overlays/Dialog';
+import { Modal } from '@/components/ui/overlays/Modal';
+import { FormTextarea } from '@/components/ui/forms/FormTextarea';
 import { contractApi } from '@/lib/contract-api';
-import { Paperclip, Send, UserCheck, X } from 'lucide-react';
+import { Paperclip, Send, UserCheck, X, CheckCircle2, PenTool, Gavel, UserPen, Loader2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { cn } from '@/lib/utils';
 
 interface Props {
     open: boolean;
@@ -136,208 +138,208 @@ export default function ApproveModal({ open, onClose, onSubmit, isAssign, contra
         }
     };
 
+    const renderTitle = () => {
+        if (isAssign) return <><UserCheck size={18} className="text-primary" /> Tugaskan & Setujui</>;
+        if (contract?.workflow_step?.step === 1) return <><Send size={18} className="text-primary" /> Kirim Persetujuan</>;
+        if (contract?.next_step?.step_type === 'SIGNING' && (contract?.metadata?.signing_state?.phase === 'SETUP' || !contract?.metadata?.signing_state)) {
+            return <><PenTool size={18} className="text-primary" /> Setup Penandatanganan</>;
+        }
+        return <><CheckCircle2 size={18} className="text-success" /> Setujui Kontrak</>;
+    };
+
     return (
-        <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-            <DialogContent className="max-w-md">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                        {isAssign ? (
-                            <>
-                                <UserCheck className="text-blue-500" /> Tugaskan & Setujui
-                            </>
-                        ) : contract?.workflow_step?.step === 1 ? (
-                            <>
-                                <Send className="text-blue-500" /> Kirim Persetujuan
-                            </>
-                        ) : contract?.next_step?.step_type === 'SIGNING' &&
-                          (contract?.metadata?.signing_state?.phase === 'SETUP' || !contract?.metadata?.signing_state) ? (
-                            <>
-                                <i className="fa-solid fa-pen-nib text-blue-500" /> Setup Penandatanganan
-                            </>
-                        ) : (
-                            <>
-                                <i className="fa-solid fa-circle-check text-emerald-500" /> Setujui Kontrak
-                            </>
-                        )}
-                    </DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                    <p className="text-muted-foreground text-sm">
-                        {isAssign
-                            ? 'Harap pilih PIC Staff Legal yang akan mengerjakan drafting agreement ini.'
-                            : contract?.workflow_step?.step === 1
-                              ? 'Konfirmasi untuk mengirim draft kontrak ini ke tahap persetujuan berikutnya. Pastikan dokumen sudah lengkap.'
-                              : contract?.next_step?.step_type === 'SIGNING' &&
-                                  (contract?.metadata?.signing_state?.phase === 'SETUP' || !contract?.metadata?.signing_state)
-                                ? 'Tentukan siapa yang akan menandatangani dokumen ini (Pihak 1 & Pihak 2).'
-                                : 'Apakah Anda yakin ingin menyetujui kontrak ini? Anda dapat memberikan catatan approval dan lampiran (opsional).'}
-                    </p>
-
-                    {isAssign && (
-                        <div className="space-y-1">
-                            <label className="text-muted-foreground text-xs font-bold uppercase">
-                                Pilih PIC Staff Legal <span className="text-rose-500">*</span>
-                            </label>
-                            {fetchingUsers ? (
-                                <p className="text-muted-foreground animate-pulse text-[10px]">Memuat daftar staff...</p>
-                            ) : users.length === 0 ? (
-                                <p className="text-[10px] font-medium text-rose-500">Tidak ada staff legal ditemukan.</p>
-                            ) : (
-                                <SearchableSelect
-                                    value={assignedPicId}
-                                    onValueChange={setAssignedPicId}
-                                    options={users.map((u) => ({
-                                        value: u.id,
-                                        label: `${u.name} (${u.email})`,
-                                    }))}
-                                    placeholder="-- Pilih Staff Legal --"
-                                />
-                            )}
-                        </div>
-                    )}
-
-                    {contract?.next_step?.step_type === 'SIGNING' &&
-                        (contract?.metadata?.signing_state?.phase === 'SETUP' || !contract?.metadata?.signing_state) && (
-                            <div className="space-y-4 rounded-xl border border-blue-100 bg-blue-50/30 p-4">
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-bold text-blue-600 uppercase">
-                                        Pihak 1 (Download & Upload Awal) <span className="text-rose-500">*</span>
-                                    </label>
-                                    <SearchableSelect
-                                        value={p1UserId}
-                                        onValueChange={setP1UserId}
-                                        options={users.map((u) => ({
-                                            value: u.id,
-                                            label: `${u.name} (${u.email})`,
-                                        }))}
-                                        placeholder="-- Pilih Pihak 1 --"
-                                    />
-                                    <p className="text-muted-foreground text-[9px] italic">Biasanya Inisiator atau Vendor (PIC Request).</p>
-                                </div>
-
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-bold text-blue-600 uppercase">
-                                        Pihak 2 (Download TTD P1 & Finalisasi) <span className="text-rose-500">*</span>
-                                    </label>
-                                    <SearchableSelect
-                                        value={p2UserId}
-                                        onValueChange={setP2UserId}
-                                        options={users.map((u) => ({
-                                            value: u.id,
-                                            label: `${u.name} (${u.email})`,
-                                        }))}
-                                        placeholder="-- Pilih Pihak 2 --"
-                                    />
-                                    <p className="text-muted-foreground text-[9px] italic">Biasanya Direksi atau Management.</p>
-                                </div>
-                            </div>
-                        )}
-
-                    {contract?.next_step?.step_category === 'joint_upload' && !contract?.metadata?.step_12_order && (
-                        <div className="space-y-2 pb-2">
-                            <label className="text-muted-foreground text-xs font-bold uppercase">
-                                Urutan Penyelesaian <span className="text-rose-500">*</span>
-                            </label>
-                            <div className="grid grid-cols-2 gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setExecutionOrder('legal_first')}
-                                    className={`flex flex-col items-center justify-center gap-1.5 rounded-xl border p-4 transition-all duration-200 ${
-                                        executionOrder === 'legal_first'
-                                            ? 'border-primary bg-primary/10 text-primary ring-primary/20 shadow-primary/5 shadow-lg ring-2'
-                                            : 'border-border bg-muted/30 text-muted-foreground hover:bg-muted/50 hover:border-muted-foreground/30'
-                                    }`}
-                                >
-                                    <div
-                                        className={`flex h-8 w-8 items-center justify-center rounded-lg ${executionOrder === 'legal_first' ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'}`}
-                                    >
-                                        <i className="fa-solid fa-gavel text-xs" />
-                                    </div>
-                                    <span className="text-xs font-bold tracking-tight uppercase">Legal Dulu</span>
-                                    <span className="text-center text-[10px] leading-tight opacity-60">Legal upload, lalu Inisiator</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setExecutionOrder('initiator_first')}
-                                    className={`flex flex-col items-center justify-center gap-1.5 rounded-xl border p-4 transition-all duration-200 ${
-                                        executionOrder === 'initiator_first'
-                                            ? 'border-primary bg-primary/10 text-primary ring-primary/20 shadow-primary/5 shadow-lg ring-2'
-                                            : 'border-border bg-muted/30 text-muted-foreground hover:bg-muted/50 hover:border-muted-foreground/30'
-                                    }`}
-                                >
-                                    <div
-                                        className={`flex h-8 w-8 items-center justify-center rounded-lg ${executionOrder === 'initiator_first' ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'}`}
-                                    >
-                                        <i className="fa-solid fa-user-pen text-xs" />
-                                    </div>
-                                    <span className="text-xs font-bold tracking-tight uppercase">Inisiator Dulu</span>
-                                    <span className="text-center text-[10px] leading-tight opacity-60">Inisiator upload, lalu Legal</span>
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    <div className="space-y-1">
-                        <label className="text-muted-foreground text-xs font-bold uppercase">Catatan Approval {isAssign && '(Optional)'}</label>
-                        <textarea
-                            value={note}
-                            onChange={(e) => setNote(e.target.value)}
-                            rows={3}
-                            placeholder={isAssign ? 'Tambahkan instruksi penugasan (opsional)...' : 'Tambahkan catatan approval...'}
-                            className="border-border bg-muted/30 text-foreground focus:border-primary w-full resize-none rounded-lg border px-3 py-2 text-sm transition-all outline-none"
-                        />
-                    </div>
-
-                    <div className="space-y-1">
-                        <label className="text-muted-foreground text-xs font-bold uppercase">Lampiran Pendukung (Optional)</label>
-                        <div className="mt-1">
-                            {!attachment ? (
-                                <button
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="border-border text-muted-foreground hover:border-primary hover:text-primary flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed py-4 transition-all"
-                                >
-                                    <Paperclip size={16} />
-                                    <span className="text-xs font-medium">Klik untuk lampirkan file</span>
-                                </button>
-                            ) : (
-                                <div className="border-border bg-muted/30 flex items-center justify-between rounded-lg border p-3">
-                                    <div className="flex items-center gap-2 overflow-hidden">
-                                        <Paperclip size={14} className="text-primary shrink-0" />
-                                        <span className="truncate text-xs font-medium">{attachment.name}</span>
-                                    </div>
-                                    <button
-                                        onClick={() => setAttachment(null)}
-                                        className="text-muted-foreground transition-colors hover:text-rose-500"
-                                    >
-                                        <X size={14} />
-                                    </button>
-                                </div>
-                            )}
-                            <input type="file" ref={fileInputRef} className="hidden" onChange={(e) => setAttachment(e.target.files?.[0] || null)} />
-                        </div>
-                    </div>
-                </div>
-                <DialogFooter className="flex gap-2">
+        <Modal
+            isOpen={open}
+            onClose={onClose}
+            title={renderTitle()}
+            footer={
+                <div className="flex w-full gap-3">
                     <Button variant="outline" onClick={onClose} disabled={loading} className="flex-1">
                         Batal
                     </Button>
                     <Button
-                        variant={isAssign ? 'primary' : 'primary'}
                         onClick={handleSubmit}
                         disabled={loading || (isAssign && !assignedPicId)}
                         className="flex-1"
                     >
                         {loading ? (
-                            <i className="fa-solid fa-spinner fa-spin mr-2" />
+                            <Loader2 size={16} className="mr-2 animate-spin" />
                         ) : (
-                            <i
-                                className={`fa-solid ${isAssign ? 'fa-user-check' : contract?.workflow_step?.step === 1 ? 'fa-paper-plane' : 'fa-check'} mr-2`}
-                            />
+                            <>
+                                {isAssign ? <UserCheck size={16} className="mr-2" /> : contract?.workflow_step?.step === 1 ? <Send size={16} className="mr-2" /> : <CheckCircle2 size={16} className="mr-2" />}
+                            </>
                         )}
                         {isAssign ? 'Tugaskan & Setujui' : contract?.workflow_step?.step === 1 ? 'Kirim Sekarang' : 'Konfirmasi Setuju'}
                     </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                </div>
+            }
+        >
+            <div className="space-y-6">
+                <p className="text-text-desc text-sm font-medium leading-relaxed">
+                    {isAssign
+                        ? 'Harap pilih PIC Staff Legal yang akan mengerjakan drafting agreement ini.'
+                        : contract?.workflow_step?.step === 1
+                          ? 'Konfirmasi untuk mengirim draft kontrak ini ke tahap persetujuan berikutnya. Pastikan dokumen sudah lengkap.'
+                          : contract?.next_step?.step_type === 'SIGNING' &&
+                              (contract?.metadata?.signing_state?.phase === 'SETUP' || !contract?.metadata?.signing_state)
+                            ? 'Tentukan siapa yang akan menandatangani dokumen ini (Pihak 1 & Pihak 2).'
+                            : 'Apakah Anda yakin ingin menyetujui kontrak ini? Anda dapat memberikan catatan approval dan lampiran (opsional).'}
+                </p>
+
+                {isAssign && (
+                    <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-text-desc">
+                            Pilih PIC Staff Legal <span className="text-danger">*</span>
+                        </label>
+                        {fetchingUsers ? (
+                            <div className="flex items-center gap-2 text-text-desc animate-pulse text-[10px]">
+                                <Loader2 size={10} className="animate-spin" /> Memuat daftar staff...
+                            </div>
+                        ) : users.length === 0 ? (
+                            <p className="text-[10px] font-medium text-danger">Tidak ada staff legal ditemukan.</p>
+                        ) : (
+                            <SearchableSelect
+                                value={assignedPicId}
+                                onValueChange={setAssignedPicId}
+                                options={users.map((u) => ({
+                                    value: u.id,
+                                    label: `${u.name} (${u.email})`,
+                                }))}
+                                placeholder="-- Pilih Staff Legal --"
+                            />
+                        )}
+                    </div>
+                )}
+
+                {contract?.next_step?.step_type === 'SIGNING' &&
+                    (contract?.metadata?.signing_state?.phase === 'SETUP' || !contract?.metadata?.signing_state) && (
+                        <div className="space-y-5 rounded-2xl border border-primary/10 bg-primary/5 p-5">
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-bold text-primary uppercase tracking-wide">
+                                    Pihak 1 (Download & Upload Awal) <span className="text-danger">*</span>
+                                </label>
+                                <SearchableSelect
+                                    value={p1UserId}
+                                    onValueChange={setP1UserId}
+                                    options={users.map((u) => ({
+                                        value: u.id,
+                                        label: `${u.name} (${u.email})`,
+                                    }))}
+                                    placeholder="-- Pilih Pihak 1 --"
+                                />
+                                <p className="text-text-desc text-[9px] italic font-medium">Biasanya Inisiator atau Vendor (PIC Request).</p>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-bold text-primary uppercase tracking-wide">
+                                    Pihak 2 (Download TTD P1 & Finalisasi) <span className="text-danger">*</span>
+                                </label>
+                                <SearchableSelect
+                                    value={p2UserId}
+                                    onValueChange={setP2UserId}
+                                    options={users.map((u) => ({
+                                        value: u.id,
+                                        label: `${u.name} (${u.email})`,
+                                    }))}
+                                    placeholder="-- Pilih Pihak 2 --"
+                                />
+                                <p className="text-text-desc text-[9px] italic font-medium">Biasanya Direksi atau Management.</p>
+                            </div>
+                        </div>
+                    )}
+
+                {contract?.next_step?.step_category === 'joint_upload' && !contract?.metadata?.step_12_order && (
+                    <div className="space-y-3">
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-text-desc">
+                            Urutan Penyelesaian <span className="text-danger">*</span>
+                        </label>
+                        <div className="grid grid-cols-2 gap-3">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setExecutionOrder('legal_first')}
+                                className={cn(
+                                    'flex h-auto flex-col items-center justify-center gap-2 border p-4 transition-all duration-300',
+                                    executionOrder === 'legal_first'
+                                        ? 'border-primary bg-primary/[0.03] ring-1 ring-primary/20 shadow-lg shadow-primary/5'
+                                        : 'border-surface-border bg-surface-muted/50 hover:bg-surface-muted'
+                                )}
+                            >
+                                <div className={cn(
+                                    'flex h-10 w-10 items-center justify-center rounded-xl transition-colors',
+                                    executionOrder === 'legal_first' ? 'bg-primary text-primary-foreground' : 'bg-surface-muted text-text-desc'
+                                )}>
+                                    <Gavel size={18} />
+                                </div>
+                                <span className={cn('text-xs font-bold uppercase tracking-tight', executionOrder === 'legal_first' ? 'text-primary' : 'text-text-desc')}>Legal Dulu</span>
+                                <span className="text-center text-[9px] font-medium leading-tight opacity-50">Legal upload, lalu Inisiator</span>
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setExecutionOrder('initiator_first')}
+                                className={cn(
+                                    'flex h-auto flex-col items-center justify-center gap-2 border p-4 transition-all duration-300',
+                                    executionOrder === 'initiator_first'
+                                        ? 'border-primary bg-primary/[0.03] ring-1 ring-primary/20 shadow-lg shadow-primary/5'
+                                        : 'border-surface-border bg-surface-muted/50 hover:bg-surface-muted'
+                                )}
+                            >
+                                <div className={cn(
+                                    'flex h-10 w-10 items-center justify-center rounded-xl transition-colors',
+                                    executionOrder === 'initiator_first' ? 'bg-primary text-primary-foreground' : 'bg-surface-muted text-text-desc'
+                                )}>
+                                    <UserPen size={18} />
+                                </div>
+                                <span className={cn('text-xs font-bold uppercase tracking-tight', executionOrder === 'initiator_first' ? 'text-primary' : 'text-text-desc')}>Inisiator Dulu</span>
+                                <span className="text-center text-[9px] font-medium leading-tight opacity-50">Inisiator upload, lalu Legal</span>
+                            </Button>
+                        </div>
+                    </div>
+                )}
+
+                <FormTextarea
+                    label={`Catatan Approval ${isAssign ? '(Optional)' : ''}`}
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    rows={3}
+                    placeholder={isAssign ? 'Tambahkan instruksi penugasan (opsional)...' : 'Tambahkan catatan approval...'}
+                />
+
+                <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-text-desc">Lampiran Pendukung (Optional)</label>
+                    <div className="mt-1">
+                        {!attachment ? (
+                            <Button
+                                variant="outline"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="border-surface-border text-text-desc hover:border-primary hover:text-primary flex h-auto w-full items-center justify-center gap-2 border-2 border-dashed py-6 transition-all hover:bg-surface-muted"
+                            >
+                                <Paperclip size={18} className="opacity-40" />
+                                <span className="text-xs font-bold uppercase tracking-wide">Lampirkan File</span>
+                            </Button>
+                        ) : (
+                            <div className="border-surface-border bg-surface-muted flex items-center justify-between rounded-xl border p-4">
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                    <div className="bg-primary/10 rounded-lg p-2">
+                                        <Paperclip size={16} className="text-primary" />
+                                    </div>
+                                    <span className="truncate text-xs font-bold text-text-main">{attachment.name}</span>
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setAttachment(null)}
+                                    className="h-8 w-8 text-text-desc hover:text-danger hover:bg-danger/10"
+                                >
+                                    <X size={16} />
+                                </Button>
+                            </div>
+                        )}
+                        <input type="file" ref={fileInputRef} className="hidden" onChange={(e) => setAttachment(e.target.files?.[0] || null)} />
+                    </div>
+                </div>
+            </div>
+        </Modal>
     );
 }

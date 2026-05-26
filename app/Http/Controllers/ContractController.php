@@ -259,10 +259,24 @@ class ContractController extends Controller
     private function getFilteredContractsQuery(Request $request, string $view = 'contracts')
     {
         $query = Contract::with([
-            'creator.department', 'contractType', 'submissionType', 'approvals.approver.department', 'approvals.workflowStep',
-            'workflow.steps', 'versions.uploader', 'histories.actor', 'messages.user',
-            'attachments.uploader', 'formSubmissions', 'vendor.documents', 'initiator.department', 'parent',
-            'assignedPic', 'assignedBy',
+            'creator.department',
+            'contractType',
+            'contractTypeParent',
+            'submissionType',
+            'statusDetail',
+            'approvals.approver.department',
+            'approvals.workflowStep',
+            'workflow.steps',
+            'versions.uploader',
+            'histories.actor',
+            'messages.user',
+            'attachments.uploader',
+            'formSubmissions',
+            'vendor.documents',
+            'initiator.department',
+            'parent',
+            'assignedPic.department',
+            'assignedBy.department',
         ])->latest();
 
         // Apply View Filter
@@ -303,12 +317,12 @@ class ContractController extends Controller
 
         // Apply Search Filter
         if ($request->filled('search')) {
-            $search = $request->search;
+            $search = strtolower($request->search);
             $query->where(function ($q) use ($search) {
-                $q->where('title', 'ilike', "%{$search}%")
-                    ->orWhere('contract_no', 'ilike', "%{$search}%")
-                    ->orWhere('crown_no', 'ilike', "%{$search}%")
-                    ->orWhereHas('creator', fn ($uq) => $uq->where('name', 'ilike', "%{$search}%"));
+                $q->where(DB::raw('LOWER(title)'), 'like', "%{$search}%")
+                    ->orWhere(DB::raw('LOWER(contract_no)'), 'like', "%{$search}%")
+                    ->orWhere(DB::raw('LOWER(crown_no)'), 'like', "%{$search}%")
+                    ->orWhereHas('creator', fn ($uq) => $uq->where(DB::raw('LOWER(name)'), 'like', "%{$search}%"));
             });
         }
 
@@ -513,7 +527,13 @@ class ContractController extends Controller
         $renewalRate = ($expiredContracts + $renewedContractsCount) > 0
             ? round(($renewedContractsCount / ($expiredContracts + $renewedContractsCount)) * 100, 1)
             : 0;
-        $totalValue = (clone $baseQuery)->select('id')->get()->sum(fn ($c) => $this->parsePrice($c->f2_price));
+        $totalValue = 0;
+        $prices = (clone $baseQuery)
+            ->join('t_contract_meta', 't_contracts.id', '=', 't_contract_meta.contract_id')
+            ->pluck('t_contract_meta.f2_price');
+        foreach ($prices as $price) {
+            $totalValue += $this->parsePrice($price);
+        }
 
         $approvedContracts = (clone $baseQuery)->where('status', 'approved')->orderByDesc('updated_at')->limit(50)->get();
         $avgDays = 0;
@@ -846,7 +866,10 @@ class ContractController extends Controller
             ['range' => 'Rp 50M - 500M', 'count' => 0],
             ['range' => '> Rp 500M', 'count' => 0],
         ];
-        $prices = (clone $baseQuery)->select('id')->get()->map(fn ($c) => $this->parsePrice($c->f2_price));
+        $prices = (clone $baseQuery)
+            ->join('t_contract_meta', 't_contracts.id', '=', 't_contract_meta.contract_id')
+            ->pluck('t_contract_meta.f2_price')
+            ->map(fn ($price) => $this->parsePrice($price));
         foreach ($prices as $price) {
             if ($price < 50000000) {
                 $valueDistribution[0]['count']++;

@@ -15,11 +15,12 @@ class VendorAdminController extends Controller
     {
         $query = Vendor::query()
             ->when($request->search, function ($q, $search) {
+                $search = strtolower($search);
                 $q->where(function ($qq) use ($search) {
-                    $qq->where('name', 'ilike', "%{$search}%")
-                        ->orWhere('code', 'ilike', "%{$search}%")
-                        ->orWhere('category', 'ilike', "%{$search}%")
-                        ->orWhere('email', 'ilike', "%{$search}%");
+                    $qq->where(\Illuminate\Support\Facades\DB::raw('LOWER(name)'), 'like', "%{$search}%")
+                        ->orWhere(\Illuminate\Support\Facades\DB::raw('LOWER(code)'), 'like', "%{$search}%")
+                        ->orWhere(\Illuminate\Support\Facades\DB::raw('LOWER(category)'), 'like', "%{$search}%")
+                        ->orWhere(\Illuminate\Support\Facades\DB::raw('LOWER(email)'), 'like', "%{$search}%");
                 });
             })
             ->when($request->category, function ($q, $category) {

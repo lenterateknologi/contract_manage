@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/base/Button';
+import { Checkbox } from '@/components/ui/base/Checkbox';
 import { useToast } from '@/components/contracts/Toast';
 import { router } from '@inertiajs/react';
 import {
@@ -16,9 +17,12 @@ import {
     FileSpreadsheet,
     Info,
     CheckCircle2,
-    GitBranch
+    GitBranch,
+    ShieldCheck,
+    LayoutGrid
 } from 'lucide-react';
 import React, { useRef, useState } from 'react';
+import { cn } from '@/lib/utils';
 
 interface Counts {
     company_groups: number;
@@ -28,6 +32,8 @@ interface Counts {
     contract_statuses: number;
     contract_types: number;
     workflows: number;
+    roles: number;
+    access_mappings: number;
 }
 
 interface Props {
@@ -50,6 +56,50 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
         contract_statuses: 0,
         contract_types: 0,
         workflows: 0,
+        roles: 0,
+        access_mappings: 0,
+    };
+
+    const [selectedEntities, setSelectedEntities] = useState<string[]>([]);
+
+    const entities = [
+        { id: 'company_groups', label: 'Holding / Group', count: activeCounts.company_groups, icon: Layers, desc: 'Struktur korporasi utama' },
+        { id: 'regions', label: 'Regional', count: activeCounts.regions, icon: MapPin, desc: 'Wilayah administrasi operasional' },
+        { id: 'companies', label: 'Perusahaan PT', count: activeCounts.companies, icon: Building2, desc: 'Entitas hukum terdaftar' },
+        { id: 'departments', label: 'Unit / Departemen', count: activeCounts.departments, icon: Network, desc: 'Divisi operasional internal' },
+        { id: 'contract_statuses', label: 'Status Alur', count: activeCounts.contract_statuses, icon: CheckSquare, desc: 'Status siklus hidup kontrak' },
+        { id: 'contract_types', label: 'Tipe Kategori', count: activeCounts.contract_types, icon: FileSpreadsheet, desc: 'Templat & alur persetujuan' },
+        { id: 'workflows', label: 'Alur Kerja (Workflows)', count: activeCounts.workflows, icon: GitBranch, desc: 'Definisi tahapan approval' },
+        { id: 'roles', label: 'Peran (Roles)', count: activeCounts.roles, icon: ShieldCheck, desc: 'Jabatan & otoritas sistem' },
+        { id: 'access_mappings', label: 'Pemetaan Hak Akses', count: activeCounts.access_mappings, icon: ShieldCheck, desc: 'Konfigurasi hak akses modul per role' },
+        { id: 'navigation_mappings', label: 'Pemetaan Navigasi', count: activeCounts.roles, icon: LayoutGrid, desc: 'Urutan dan grup menu navigasi per role' },
+    ];
+
+    const toggleEntity = (id: string) => {
+        setSelectedEntities(prev =>
+            prev.includes(id) ? prev.filter(e => e !== id) : [...prev, id]
+        );
+    };
+
+    const toggleAll = () => {
+        if (selectedEntities.length === entities.length) {
+            setSelectedEntities([]);
+        } else {
+            setSelectedEntities(entities.map(e => e.id));
+        }
+    };
+
+    const handleExport = () => {
+        if (selectedEntities.length === 0) {
+            showToast('Pilih setidaknya satu entitas untuk diekspor', 'danger');
+            return;
+        }
+        const queryParams = new URLSearchParams({
+            entities: selectedEntities.join(',')
+        }).toString();
+
+        window.location.href = `${route('admin.master-data-sync.export')}?${queryParams}`;
+        showToast(`Mengekspor ${selectedEntities.length} entitas master`, 'success');
     };
 
     const handleDrag = (e: React.DragEvent) => {
@@ -68,7 +118,6 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
             setFile(null);
             return;
         }
-
         setError(null);
         setFile(selectedFile);
     };
@@ -89,16 +138,10 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
         }
     };
 
-    const handleExport = () => {
-        window.location.href = route('admin.master-data-sync.export');
-        showToast('Berkas ekspor sedang diunduh', 'success');
-    };
-
     const handleImport = () => {
         if (!file) return;
         setLoading(true);
         setError(null);
-
         const formData = new FormData();
         formData.append('file', file);
 
@@ -110,234 +153,154 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                 setLoading(false);
             },
             onError: (errors: any) => {
-                setError(errors.error ?? 'Gagal mengimpor data master. Silakan periksa format berkas JSON Anda.');
+                setError(errors.error ?? 'Gagal mengimpor data master. Periksa format berkas JSON Anda.');
                 setLoading(false);
             },
         });
     };
 
-    const stats = [
-        {
-            label: 'Holding / Group',
-            count: activeCounts.company_groups,
-            desc: 'Grup korporasi utama',
-            icon: Layers,
-        },
-        {
-            label: 'Regional',
-            count: activeCounts.regions,
-            desc: 'Wilayah administrasi',
-            icon: MapPin,
-        },
-        {
-            label: 'Perusahaan PT',
-            count: activeCounts.companies,
-            desc: 'Entitas hukum terdaftar',
-            icon: Building2,
-        },
-        {
-            label: 'Unit / Departemen',
-            count: activeCounts.departments,
-            desc: 'Divisi operasional internal',
-            icon: Network,
-        },
-        {
-            label: 'Status Alur',
-            count: activeCounts.contract_statuses,
-            desc: 'Status siklus hidup kontrak',
-            icon: CheckSquare,
-        },
-        {
-            label: 'Tipe Kategori',
-            count: activeCounts.contract_types,
-            desc: 'Templat & alur persetujuan',
-            icon: FileSpreadsheet,
-        },
-        {
-            label: 'Alur Kerja (Workflows)',
-            count: activeCounts.workflows,
-            desc: 'Definisi tahapan approval',
-            icon: GitBranch,
-        },
-    ];
-
     return (
-        <div className="bg-card/40 border-border/60 animate-in fade-in m-5 rounded-2xl border p-6 shadow-sm backdrop-blur-sm duration-200 select-none dark:border-slate-800/60 dark:bg-slate-900/20">
+        <div className="bg-card/40 border-surface-border animate-in fade-in m-5 flex flex-col gap-6 rounded-2xl border p-6 shadow-sm backdrop-blur-sm duration-200 select-none">
             {/* Header */}
-            <div className="border-border/60 mb-6 flex items-center justify-between border-b pb-4 dark:border-slate-800/60">
+            <div className="border-surface-border flex items-center justify-between border-b pb-4">
                 <div className="flex items-center gap-3">
-                    <div className="bg-primary/10 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-xl font-bold shadow-sm backdrop-blur-sm dark:bg-slate-800 dark:text-slate-200">
+                    <div className="bg-primary/10 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-xl font-bold shadow-sm backdrop-blur-sm">
                         <Database size={18} />
                     </div>
                     <div className="flex flex-col">
-                        <h1 className="text-foreground text-base font-bold tracking-tight">Ekspor Impor Database Master</h1>
-                        <p className="text-muted-foreground text-xs font-medium">Sinkronisasi data master antar lingkungan (staging, dev, production)</p>
+                        <h1 className="text-text-main text-base font-black tracking-tight">Sync & Control Center</h1>
+                        <p className="text-text-desc text-xs font-medium">Manajemen migrasi dan granular export-import data master</p>
                     </div>
                 </div>
             </div>
 
-            {/* Quick Stats Grid */}
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 mb-8">
-                {stats.map((item) => (
-                    <div
-                        key={item.label}
-                        className="border border-border/60 bg-muted/20 rounded-xl p-4 flex flex-col justify-between transition-all duration-200 hover:shadow-xs dark:border-slate-800/60 dark:bg-slate-900/40"
-                    >
-                        <div className="flex items-start justify-between">
-                            <span className="text-[10px] font-bold tracking-wider uppercase text-muted-foreground">{item.label}</span>
-                            <item.icon size={16} className="text-muted-foreground/60" />
-                        </div>
-                        <div className="mt-3">
-                            <span className="text-2xl font-bold tracking-tight text-foreground tabular-nums">{item.count}</span>
-                            <span className="mt-0.5 block text-[9px] font-medium text-muted-foreground uppercase leading-tight">
-                                {item.desc}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+                {/* Left: Entity Table */}
+                <div className="lg:col-span-8">
+                    <div className="border-surface-border bg-muted/5 overflow-hidden rounded-xl border">
+                        <table className="w-full text-left">
+                            <thead>
+                                <tr className="bg-muted/40 border-surface-border border-b">
+                                    <th className="w-12 px-4 py-3 text-center">
+                                        <Checkbox
+                                            className="h-4 w-4 rounded"
+                                            checked={selectedEntities.length === entities.length}
+                                            onCheckedChange={toggleAll}
+                                        />
+                                    </th>
+                                    <th className="text-text-desc px-4 py-3 text-[10px] font-bold tracking-wider uppercase">Entitas Data</th>
+                                    <th className="text-text-desc px-4 py-3 text-center text-[10px] font-bold tracking-wider uppercase">Volume</th>
+                                    <th className="text-text-desc px-4 py-3 text-[10px] font-bold tracking-wider uppercase">Deskripsi</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-surface-border/40 divide-y">
+                                {entities.map((item) => (
+                                    <tr
+                                        key={item.id}
+                                        onClick={() => toggleEntity(item.id)}
+                                        className={cn(
+                                            "hover:bg-muted/30 cursor-pointer transition-colors",
+                                            selectedEntities.includes(item.id) && "bg-primary/[0.03]"
+                                        )}
+                                    >
+                                        <td className="px-4 py-2.5 text-center" onClick={(e) => e.stopPropagation()}>
+                                            <Checkbox
+                                                className="h-4 w-4 rounded"
+                                                checked={selectedEntities.includes(item.id)}
+                                                onCheckedChange={() => toggleEntity(item.id)}
+                                            />
+                                        </td>
+                                        <td className="px-4 py-2.5">
+                                            <div className="flex items-center gap-3">
+                                                <item.icon size={14} className="text-primary opacity-60" />
+                                                <span className="text-text-main text-[12px] font-semibold">{item.label}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-2.5 text-center">
+                                            <span className="bg-muted text-text-main rounded-lg px-2 py-0.5 font-mono text-[10px] font-bold">{item.count}</span>
+                                        </td>
+                                        <td className="text-text-desc px-4 py-2.5 text-[11px] font-medium italic">
+                                            {item.desc}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {/* Right: Actions */}
+                <div className="flex flex-col gap-6 lg:col-span-4">
+                    {/* Export Card */}
+                    <div className="border-surface-border bg-muted/10 rounded-xl border p-5">
+                        <div className="mb-4 flex items-center justify-between">
+                            <h3 className="text-text-main text-[11px] font-bold tracking-wider uppercase">Export Configuration</h3>
+                            <span className="bg-primary/10 text-primary rounded-lg px-2 py-0.5 text-[10px] font-bold">
+                                {selectedEntities.length} Selected
                             </span>
                         </div>
-                    </div>
-                ))}
-            </div>
-
-            {/* Actions Grid */}
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-                {/* Export Column */}
-                <div className="border-border/60 bg-muted/10 flex flex-col justify-between rounded-xl border p-6 dark:border-slate-800/60 dark:bg-slate-900/30 lg:col-span-5">
-                    <div>
-                        <div className="mb-4 flex items-center gap-3">
-                            <div className="bg-muted/60 text-foreground flex h-9 w-9 items-center justify-center rounded-lg border border-border/60 dark:bg-slate-800 dark:text-slate-200">
-                                <Download size={15} />
-                            </div>
-                            <h3 className="text-foreground text-sm font-bold uppercase tracking-wide">
-                                Ekspor Master Data
-                            </h3>
-                        </div>
-
-                        <p className="text-muted-foreground mb-4 text-xs leading-relaxed font-medium">
-                            Unduh seluruh konfigurasi data master aktif ke dalam satu berkas JSON terstruktur.
-                            Berkas ekspor ini mencakup semua relasi di antara entitas (PT, Departemen, Status Kontrak)
-                            sehingga dapat disinkronkan langsung ke lingkungan lain.
+                        <p className="text-text-desc mb-5 text-[11px] leading-relaxed font-medium">
+                            Pilih entitas di tabel samping untuk disertakan dalam berkas ekspor JSON.
                         </p>
-
-                        <div className="bg-muted/40 border-border/60 flex items-start gap-2.5 rounded-xl border p-3.5 text-[10px] font-medium text-muted-foreground dark:border-slate-800/60">
-                            <Info size={14} className="shrink-0 text-primary mt-0.5" />
-                            <p className="leading-normal">
-                                Format ekspor data ini menggunakan Kunci Alami (Natural Keys) yang fleksibel sehingga aman
-                                digunakan tanpa memedulikan perbedaan ID UUID antar sistem database.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="mt-6">
                         <Button
                             onClick={handleExport}
-                            className="w-full h-10 rounded-xl font-semibold shadow-sm text-xs"
+                            disabled={selectedEntities.length === 0}
+                            className="w-full h-10 rounded-xl font-bold text-[11px] shadow-sm"
                             variant="primary"
                         >
                             <Download size={14} className="mr-2" />
-                            Unduh Berkas JSON Master
+                            EXPORT SELECTED DATA
                         </Button>
                     </div>
-                </div>
 
-                {/* Import Column */}
-                <div className="border-border/60 bg-muted/10 rounded-xl border p-6 dark:border-slate-800/60 dark:bg-slate-900/30 lg:col-span-7">
-                    <div className="mb-4 flex items-center gap-3">
-                        <div className="bg-muted/60 text-foreground flex h-9 w-9 items-center justify-center rounded-lg border border-border/60 dark:bg-slate-800 dark:text-slate-200">
-                            <Upload size={15} />
-                        </div>
-                        <h3 className="text-foreground text-sm font-bold uppercase tracking-wide">
-                            Impor & Sinkronisasi Data
-                        </h3>
-                    </div>
-
-                    {/* Drag and Drop Zone */}
-                    <div
-                        onDragEnter={handleDrag}
-                        onDragOver={handleDrag}
-                        onDragLeave={handleDrag}
-                        onDrop={handleDrop}
-                        onClick={() => fileInputRef.current?.click()}
-                        className={`relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 text-center transition-all duration-200 cursor-pointer ${
-                            dragActive
-                                ? 'border-primary bg-primary/5'
-                                : 'border-border hover:border-muted-foreground/50 hover:bg-muted/10 dark:border-slate-800'
-                        }`}
-                    >
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept=".json"
-                            onChange={handleChange}
-                            className="hidden"
-                            disabled={loading}
-                        />
-
-                        <div className="bg-muted/60 text-foreground mb-3 rounded-lg p-2.5 border border-border/60 dark:bg-slate-800 dark:text-slate-200">
-                            {file ? <FileJson size={18} /> : <Upload size={18} />}
-                        </div>
-
-                        <p className="text-foreground mb-0.5 text-xs font-bold uppercase tracking-wide">
-                            {file ? file.name : 'Seret & letakkan berkas JSON master data di sini'}
-                        </p>
-                        <p className="text-muted-foreground text-[10px] font-medium uppercase tracking-wider">
-                            {file ? `Ukuran: ${(file.size / 1024).toFixed(2)} KB` : 'atau klik untuk memilih berkas'}
-                        </p>
-                    </div>
-
-                    {error && (
-                        <div className="bg-rose-500/5 border-rose-500/25 text-rose-600 dark:text-rose-400 mt-4 flex items-start gap-2.5 rounded-xl border p-3.5 text-[10px] font-medium">
-                            <AlertTriangle size={14} className="shrink-0 mt-0.5 text-rose-500" />
-                            <p className="leading-normal">{error}</p>
-                        </div>
-                    )}
-
-                    {!file && !error && (
-                        <div className="bg-amber-500/5 border-amber-500/25 text-amber-600 dark:text-amber-400 mt-4 flex items-start gap-2.5 rounded-xl border p-3.5 text-[10px] font-medium">
-                            <AlertTriangle size={14} className="shrink-0 mt-0.5 text-amber-500" />
-                            <p className="leading-normal">
-                                PERINGATAN: Sinkronisasi akan menimpa data yang memiliki kode unik sama. Pastikan data relasi
-                                departemen dan PT pada file ekspor Anda sudah lengkap.
-                            </p>
-                        </div>
-                    )}
-
-                    {file && !error && (
-                        <div className="bg-emerald-500/5 border-emerald-500/25 text-emerald-600 dark:text-emerald-400 mt-4 flex items-start gap-2.5 rounded-xl border p-3.5 text-[10px] font-medium">
-                            <CheckCircle2 size={14} className="shrink-0 mt-0.5 text-emerald-500" />
-                            <p className="leading-normal">
-                                Berkas siap diimpor. Silakan klik tombol di bawah ini untuk memulai pemrosesan database.
-                            </p>
-                        </div>
-                    )}
-
-                    <div className="mt-6 flex justify-end gap-3">
-                        {file && (
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                onClick={() => {
-                                    setFile(null);
-                                    setError(null);
-                                }}
-                                disabled={loading}
-                                className="h-10 rounded-xl px-5 text-xs font-semibold"
-                            >
-                                Batalkan
-                            </Button>
-                        )}
-                        <Button
-                            type="button"
-                            onClick={handleImport}
-                            disabled={!file || loading}
-                            className="h-10 rounded-xl px-6 text-xs font-semibold shadow-sm"
-                            variant="primary"
-                        >
-                            {loading ? (
-                                <RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                                <RefreshCw size={13} className="mr-1.5" />
+                    {/* Import Card */}
+                    <div className="border-surface-border bg-muted/10 rounded-xl border p-5">
+                        <h3 className="text-text-main mb-4 text-[11px] font-bold tracking-wider uppercase">Quick Import</h3>
+                        <div
+                            onDragEnter={handleDrag}
+                            onDragOver={handleDrag}
+                            onDragLeave={handleDrag}
+                            onDrop={handleDrop}
+                            onClick={() => fileInputRef.current?.click()}
+                            className={cn(
+                                "relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 transition-all duration-200 cursor-pointer",
+                                dragActive ? "border-primary bg-primary/5" : "border-surface-border/60 hover:bg-muted/20"
                             )}
-                            Sinkronkan Data Master
-                        </Button>
+                        >
+                            <input ref={fileInputRef} type="file" accept=".json" onChange={handleChange} className="hidden" disabled={loading} />
+                            <div className="bg-muted/60 mb-2 rounded-lg p-2 border border-surface-border/60">
+                                {file ? <FileJson size={16} className="text-primary" /> : <Upload size={16} />}
+                            </div>
+                            <p className="text-text-main text-[11px] font-bold line-clamp-1">
+                                {file ? file.name : 'Drop JSON file here'}
+                            </p>
+                        </div>
+
+                        {file && (
+                            <div className="mt-4 flex flex-col gap-3">
+                                <div className="bg-success/5 border-success/20 text-success flex items-center gap-2 rounded-lg border p-2.5 text-[10px] font-bold">
+                                    <CheckCircle2 size={12} /> Ready to sync
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="ghost"
+                                        onClick={() => setFile(null)}
+                                        className="flex-1 h-9 rounded-lg text-[10px] font-bold"
+                                    >
+                                        RESET
+                                    </Button>
+                                    <Button
+                                        onClick={handleImport}
+                                        disabled={loading}
+                                        className="flex-[2] h-9 rounded-lg text-[10px] font-bold"
+                                        variant="primary"
+                                    >
+                                        {loading ? <RefreshCw className="animate-spin" size={12} /> : <RefreshCw size={12} className="mr-1.5" />}
+                                        SYNC NOW
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

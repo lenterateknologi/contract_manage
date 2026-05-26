@@ -87,14 +87,14 @@ export function MembersPerDivision({
         <div className="space-y-5 m-5 select-none animate-in fade-in duration-500">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-foreground text-sm font-extrabold tracking-tight">Anggota per Divisi</h2>
-                    <p className="text-muted-foreground text-xs font-semibold mt-0.5">
+                    <h2 className="text-text-main text-sm font-black tracking-tight uppercase">Anggota per Divisi</h2>
+                    <p className="text-text-desc text-xs font-semibold mt-0.5">
                         Daftar pengguna terdaftar dikelompokkan berdasarkan divisi/departemen mereka.
                     </p>
                 </div>
-                <div className="bg-muted/40 border border-border/40 px-3 py-1 rounded-full flex items-center gap-1.5 text-xs font-bold text-foreground">
+                <div className="bg-surface-muted/40 border border-surface-border/40 px-3 py-1 rounded-full flex items-center gap-1.5 text-xs font-bold text-text-main">
                     <Users size={13} className="text-primary" />
-                    <span className="text-xs">Total {users.length} Pengguna</span>
+                    <span className="text-xs font-black uppercase">Total {users.length} Pengguna</span>
                 </div>
             </div>
 
@@ -109,22 +109,22 @@ export function MembersPerDivision({
                     return (
                         <div
                             key={deptId}
-                            className="group border border-border/60 bg-card/40 hover:bg-card/65 relative flex flex-col overflow-hidden rounded-xl p-4 shadow-sm transition-all duration-300 backdrop-blur-sm dark:border-slate-800/60 dark:bg-slate-900/20 hover:shadow-md hover:-translate-y-0.5"
+                            className="group border border-surface-border/60 bg-surface-base/40 hover:bg-surface-base/65 relative flex flex-col overflow-hidden rounded-xl p-4 shadow-sm transition-all duration-300 backdrop-blur-sm hover:shadow-md hover:-translate-y-0.5"
                         >
                             {/* Department Header */}
-                            <div className="flex items-start justify-between border-b border-border/20 pb-2 mb-3 dark:border-slate-800/30">
+                            <div className="flex items-start justify-between border-b border-surface-border/20 pb-2 mb-3">
                                 <div className="flex items-center gap-2 min-w-0">
                                     <div className="bg-primary/10 text-primary border border-primary/10 rounded-md p-1.5 shrink-0">
                                         <Building2 size={14} />
                                     </div>
                                     <div className="min-w-0">
-                                        <h3 className="text-foreground truncate text-xs font-extrabold tracking-tight" title={deptName}>
+                                        <h3 className="text-text-main truncate text-xs font-black tracking-tight uppercase" title={deptName}>
                                             {deptName}
                                         </h3>
-                                        <span className="text-muted-foreground text-[10px] font-semibold block leading-none mt-1">{deptCode || 'Management'}</span>
+                                        <span className="text-text-desc text-[10px] font-bold block leading-none mt-1 uppercase">{deptCode || 'Management'}</span>
                                     </div>
                                 </div>
-                                <span className="bg-primary/10 text-primary/80 border border-primary/10 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full shrink-0">
+                                <span className="bg-primary/10 text-primary/80 border border-primary/10 text-[10px] font-black uppercase px-2 py-0.5 rounded-full shrink-0">
                                     {deptMembers.length}
                                 </span>
                             </div>
@@ -142,8 +142,8 @@ export function MembersPerDivision({
                                             <div
                                                 style={customStyle}
                                                 className={cn(
-                                                    "h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-extrabold shrink-0 border border-black/5 dark:border-white/5",
-                                                    !customStyle && "bg-muted text-muted-foreground"
+                                                    "h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 border border-surface-border/10",
+                                                    !customStyle && "bg-surface-muted text-text-desc"
                                                 )}
                                             >
                                                 {u.initials || getInitials(u.name)}
@@ -151,17 +151,17 @@ export function MembersPerDivision({
 
                                             {/* User Details */}
                                             <div className="min-w-0 flex-1">
-                                                <span className="text-foreground text-xs font-bold block truncate leading-tight group-hover/user:text-primary transition-colors">
+                                                <span className="text-text-main text-xs font-bold block truncate leading-tight group-hover/user:text-primary transition-colors">
                                                     {u.name}
                                                 </span>
                                                 <div className="flex items-center gap-1.5 mt-0.5">
-                                                    <span className="text-muted-foreground text-[10px] font-semibold truncate leading-none">
+                                                    <span className="text-text-desc text-[10px] font-semibold truncate leading-none uppercase">
                                                         {u.role}
                                                     </span>
-                                                    <span className="text-muted-foreground/30 text-[10px] leading-none">·</span>
+                                                    <span className="text-text-desc/30 text-[10px] leading-none">·</span>
                                                     <a
                                                         href={`mailto:${u.email}`}
-                                                        className="text-muted-foreground/50 hover:text-primary text-[9px] transition-colors shrink-0 leading-none"
+                                                        className="text-text-desc/50 hover:text-primary text-[9px] transition-colors shrink-0 leading-none"
                                                         title={u.email}
                                                     >
                                                         <Mail size={11} />

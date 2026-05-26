@@ -113,7 +113,7 @@ export function DashboardMetrics({ metrics }: { metrics: any }) {
         ];
 
         if (isAdmin) {
-            cats.splice( cats.length - 1, 0, {
+            cats.splice(cats.length - 1, 0, {
                 label: 'Departemen / Divisi',
                 key: 'department_ids',
                 type: 'searchable',
@@ -140,7 +140,7 @@ export function DashboardMetrics({ metrics }: { metrics: any }) {
 
     const handleFilterChange = (key: string, value: any) => {
         const newParams: any = { ...filters, view: 'dashboard' };
-        
+
         if (key === 'created_from' || key === 'created_to') {
             newParams[key] = value;
             if (value) newParams.period = 'all';
@@ -162,34 +162,6 @@ export function DashboardMetrics({ metrics }: { metrics: any }) {
 
     return (
         <div className="animate-in fade-in slide-in-from-top-4 space-y-6 duration-500 select-none">
-            
-            {/* Dashboard Header with Filter Trigger */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/10">
-                        <LayoutDashboard size={20} />
-                    </div>
-                    <div>
-                        <h1 className="text-xl font-bold tracking-tight">Dashboard Kontrak</h1>
-                        <p className="text-muted-foreground text-xs">Sentralisasi Pemantauan Aset Hukum & Pengadaan</p>
-                    </div>
-                </div>
-
-                <Button
-                    variant={activeCount > 0 ? "primary" : "outline"}
-                    size="lg"
-                    onClick={() => setIsFilterOpen(true)}
-                    className="gap-2.5 font-bold"
-                >
-                    <SlidersHorizontal size={16} />
-                    Filter Data
-                    {activeCount > 0 && (
-                        <Badge variant="secondary" className="ml-1 h-5 min-w-[20px] rounded-full px-1.5 bg-white text-primary">
-                            {activeCount}
-                        </Badge>
-                    )}
-                </Button>
-            </div>
 
             <FilterSheet
                 isOpen={isFilterOpen}
@@ -203,68 +175,87 @@ export function DashboardMetrics({ metrics }: { metrics: any }) {
                 applyText="Terapkan"
             />
 
-            {/* Premium Tab Switcher */}
-            <div className="flex border-b border-border/40 gap-6">
-                <button
-                    onClick={() => setActiveTab('overview')}
-                    className={cn(
-                        'relative pb-3 text-xs font-bold uppercase tracking-wider transition-all duration-300 flex items-center gap-2 cursor-pointer',
-                        activeTab === 'overview'
-                            ? 'text-foreground font-extrabold'
-                            : 'text-muted-foreground hover:text-foreground',
-                    )}
-                >
-                    <LayoutDashboard size={14} />
-                    Ringkasan
-                    {activeTab === 'overview' && (
-                        <div className="absolute right-0 bottom-0 left-0 h-0.5 bg-primary rounded-full animate-in fade-in zoom-in-95 duration-300" />
-                    )}
-                </button>
-                <button
-                    onClick={() => setActiveTab('trend')}
-                    className={cn(
-                        'relative pb-3 text-xs font-bold uppercase tracking-wider transition-all duration-300 flex items-center gap-2 cursor-pointer',
-                        activeTab === 'trend'
-                            ? 'text-foreground font-extrabold'
-                            : 'text-muted-foreground hover:text-foreground',
-                    )}
-                >
-                    <TrendingUp size={14} />
-                    Tren
-                    {activeTab === 'trend' && (
-                        <div className="absolute right-0 bottom-0 left-0 h-0.5 bg-primary rounded-full animate-in fade-in zoom-in-95 duration-300" />
-                    )}
-                </button>
-                <button
-                    onClick={() => setActiveTab('analysis')}
-                    className={cn(
-                        'relative pb-3 text-xs font-bold uppercase tracking-wider transition-all duration-300 flex items-center gap-2 cursor-pointer',
-                        activeTab === 'analysis'
-                            ? 'text-foreground font-extrabold'
-                            : 'text-muted-foreground hover:text-foreground',
-                    )}
-                >
-                    <BarChart3 size={14} />
-                    Analisis
-                    {activeTab === 'analysis' && (
-                        <div className="absolute right-0 bottom-0 left-0 h-0.5 bg-primary rounded-full animate-in fade-in zoom-in-95 duration-300" />
-                    )}
-                </button>
-                <button
-                    onClick={() => setActiveTab('workload')}
-                    className={cn(
-                        'relative pb-3 text-xs font-bold uppercase tracking-wider transition-all duration-300 flex items-center gap-2 cursor-pointer',
-                        activeTab === 'workload'
-                            ? 'text-foreground font-extrabold'
-                            : 'text-muted-foreground hover:text-foreground',
-                    )}
-                >
-                    <Briefcase size={14} />
-                    Beban Kerja
-                    {activeTab === 'workload' && (
-                        <div className="absolute right-0 bottom-0 left-0 h-0.5 bg-primary rounded-full animate-in fade-in zoom-in-95 duration-300" />
-                    )}
-                </button>
+            {/* Premium Tab Switcher & Filter */}
+            <div className="flex items-center justify-between border-b border-surface-border/40">
+                <div className="flex gap-6">
+                    <button
+                        onClick={() => setActiveTab('overview')}
+                        className={cn(
+                            'relative pb-3 text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-2 cursor-pointer',
+                            activeTab === 'overview'
+                                ? 'text-text-main'
+                                : 'text-text-soft hover:text-text-main',
+                        )}
+                    >
+                        <LayoutDashboard size={14} strokeWidth={activeTab === 'overview' ? 3 : 2} />
+                        Ringkasan
+                        {activeTab === 'overview' && (
+                            <div className="absolute right-0 bottom-0 left-0 h-0.5 bg-primary rounded-full animate-in fade-in zoom-in-95 duration-300" />
+                        )}
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('trend')}
+                        className={cn(
+                            'relative pb-3 text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-2 cursor-pointer',
+                            activeTab === 'trend'
+                                ? 'text-text-main'
+                                : 'text-text-soft hover:text-text-main',
+                        )}
+                    >
+                        <TrendingUp size={14} strokeWidth={activeTab === 'trend' ? 3 : 2} />
+                        Tren
+                        {activeTab === 'trend' && (
+                            <div className="absolute right-0 bottom-0 left-0 h-0.5 bg-primary rounded-full animate-in fade-in zoom-in-95 duration-300" />
+                        )}
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('analysis')}
+                        className={cn(
+                            'relative pb-3 text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-2 cursor-pointer',
+                            activeTab === 'analysis'
+                                ? 'text-text-main'
+                                : 'text-text-soft hover:text-text-main',
+                        )}
+                    >
+                        <BarChart3 size={14} strokeWidth={activeTab === 'analysis' ? 3 : 2} />
+                        Analisis
+                        {activeTab === 'analysis' && (
+                            <div className="absolute right-0 bottom-0 left-0 h-0.5 bg-primary rounded-full animate-in fade-in zoom-in-95 duration-300" />
+                        )}
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('workload')}
+                        className={cn(
+                            'relative pb-3 text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-2 cursor-pointer',
+                            activeTab === 'workload'
+                                ? 'text-text-main'
+                                : 'text-text-soft hover:text-text-main',
+                        )}
+                    >
+                        <Briefcase size={14} strokeWidth={activeTab === 'workload' ? 3 : 2} />
+                        Beban Kerja
+                        {activeTab === 'workload' && (
+                            <div className="absolute right-0 bottom-0 left-0 h-0.5 bg-primary rounded-full animate-in fade-in zoom-in-95 duration-300" />
+                        )}
+                    </button>
+                </div>
+
+                <div className="pb-3">
+                    <Button
+                        variant={activeCount > 0 ? "primary" : "white"}
+                        size="sm"
+                        onClick={() => setIsFilterOpen(true)}
+                        className="relative gap-2"
+                    >
+                        <SlidersHorizontal size={14} />
+                        Filter Data
+                        {activeCount > 0 && (
+                            <span className="ml-1 flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[9px] font-black bg-primary-foreground text-primary">
+                                {activeCount}
+                            </span>
+                        )}
+                    </Button>
+                </div>
             </div>
 
             {/* Tab Contents with Transition Animations */}

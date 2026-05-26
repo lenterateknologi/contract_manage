@@ -11,16 +11,16 @@ import { useMemo, useRef, useState } from 'react';
 const WorkflowNameCell = ({ row }: { readonly row: any }) => (
     <div className="group flex flex-col py-1">
         <div className="flex items-center gap-2">
-            <span className="text-primary text-[12px] font-semibold tracking-tight uppercase transition-transform group-hover:translate-x-1 dark:text-white">
+            <span className="text-text-main text-[12px] font-black tracking-tight uppercase transition-transform group-hover:translate-x-1">
                 {row.name}
             </span>
             {(row.is_default === true || row.is_default === 1 || row.is_default === '1') && (
-                <div className="bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-lg border px-1.5 py-0.5 text-[7px] font-black uppercase tracking-wider">
+                <div className="bg-success/10 border-success/20 text-success rounded-lg border px-1.5 py-0.5 text-[7px] font-black uppercase tracking-wider">
                     DEFAULT
                 </div>
             )}
         </div>
-        <span className="text-primary/30 mt-0.5 text-[8px] font-bold uppercase italic dark:text-white/30">{row.contract_type || 'GLOBAL'}</span>
+        <span className="text-text-soft mt-0.5 text-[8px] font-bold uppercase italic">{row.contract_type || 'GLOBAL'}</span>
     </div>
 );
 
@@ -34,10 +34,10 @@ const InitiatorCell = ({ row }: { readonly row: any }) => {
     const Icon = row.initiator_type === 'all' ? UsersIcon : row.initiator_type === 'role' ? Shield : UserCheck;
     return (
         <div className="flex items-center gap-2">
-            <div className="bg-primary/[0.03] text-primary/40 rounded-md p-1 dark:bg-white/[0.03] dark:text-white/40">
+            <div className="bg-primary/5 text-primary/40 rounded-md p-1">
                 <Icon size={10} />
             </div>
-            <span className="text-primary/60 text-[9px] font-semibold uppercase dark:text-white/60">{text}</span>
+            <span className="text-text-desc text-[9px] font-bold uppercase">{text}</span>
         </div>
     );
 };
@@ -48,18 +48,18 @@ const StepsCell = ({ row }: { readonly row: any }) => (
             {row.steps?.slice(0, 3).map((s: any, i: number) => (
                 <div
                     key={s.id || i}
-                    className="bg-primary flex h-7 w-7 items-center justify-center rounded-lg border border-white text-[9px] font-semibold text-white shadow-md"
+                    className="bg-primary flex h-7 w-7 items-center justify-center rounded-lg border border-surface-base text-[9px] font-bold text-primary-foreground shadow-md"
                 >
                     {i + 1}
                 </div>
             ))}
             {row.steps?.length > 3 && (
-                <div className="bg-primary/10 text-primary flex h-7 w-7 items-center justify-center rounded-lg border border-white text-[8px] font-semibold dark:bg-white/10 dark:text-white">
+                <div className="bg-primary/10 text-primary flex h-7 w-7 items-center justify-center rounded-lg border border-surface-base text-[8px] font-bold">
                     +{row.steps.length - 3}
                 </div>
             )}
         </div>
-        <span className="text-primary/30 text-[9px] font-semibold uppercase dark:text-white/30">{row.steps?.length || 0} TAHAP</span>
+        <span className="text-text-soft text-[9px] font-bold uppercase">{row.steps?.length || 0} TAHAP</span>
     </div>
 );
 
@@ -296,7 +296,7 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
     };
 
     return (
-        <div className="border-border bg-card m-5 rounded-2xl border p-5 shadow-sm">
+        <div className="bg-surface-base/40 border-surface-border m-5 rounded-2xl border p-5 shadow-sm backdrop-blur-sm">
             <TableMasterData
                 title="Manajemen Alur Kerja"
                 borderless={true}

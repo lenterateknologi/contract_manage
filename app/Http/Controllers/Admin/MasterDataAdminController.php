@@ -40,6 +40,9 @@ class MasterDataAdminController extends Controller
                 'contract_statuses' => ContractStatus::count(),
                 'contract_types' => ContractType::count(),
                 'workflows' => Workflow::count(),
+                'roles' => \App\Models\Role::count(),
+                'modules' => \App\Models\Module::count(),
+                'access_mappings' => \App\Models\AccessModule::count(),
             ],
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
@@ -51,226 +54,214 @@ class MasterDataAdminController extends Controller
     /**
      * Export all master data to JSON format.
      */
-    public function export()
+    public function export(Request $request)
     {
         try {
-            $groups = CompanyGroup::all()->map(function ($g) {
-                return [
-                    'code' => $g->code,
-                    'name' => $g->name,
-                    'description' => $g->description,
-                    'is_active' => $g->is_active,
-                ];
-            })->toArray();
+            $requestedEntities = $request->query('entities') ? explode(',', $request->query('entities')) : null;
 
-            $regions = Region::all()->map(function ($r) {
-                return [
-                    'code' => $r->code,
-                    'name' => $r->name,
-                    'alias' => $r->alias,
-                    'description' => $r->description,
-                    'is_active' => $r->is_active,
-                    'id_portal_master' => $r->id_portal_master,
-                ];
-            })->toArray();
+            $exportData = [];
 
-            $companies = Company::with(['group', 'region'])->get()->map(function ($c) {
-                return [
-                    'code' => $c->code,
-                    'name' => $c->name,
-                    'alias' => $c->alias,
-                    'address' => $c->address,
-                    'company_group_code' => $c->group->code ?? null,
-                    'region_code' => $c->region->code ?? null,
-                    'is_active' => $c->is_active,
-                ];
-            })->toArray();
+            // 1. Company Groups
+            if (! $requestedEntities || in_array('company_groups', $requestedEntities)) {
+                $exportData['company_groups'] = CompanyGroup::all()->map(function ($g) {
+                    return [
+                        'code' => $g->code,
+                        'name' => $g->name,
+                        'description' => $g->description,
+                        'is_active' => $g->is_active,
+                    ];
+                })->toArray();
+            }
 
-            $departments = Department::with(['company'])->get()->map(function ($d) {
-                return [
-                    'code' => $d->code,
-                    'name' => $d->name,
-                    'description' => $d->description,
-                    'company_code' => $d->company->code ?? null,
-                    'is_active' => $d->is_active,
-                ];
-            })->toArray();
+            // 2. Regions
+            if (! $requestedEntities || in_array('regions', $requestedEntities)) {
+                $exportData['regions'] = Region::all()->map(function ($r) {
+                    return [
+                        'code' => $r->code,
+                        'name' => $r->name,
+                        'alias' => $r->alias,
+                        'description' => $r->description,
+                        'is_active' => $r->is_active,
+                        'id_portal_master' => $r->id_portal_master,
+                    ];
+                })->toArray();
+            }
 
-            $statuses = ContractStatus::all()->map(function ($s) {
-                return [
-                    'code' => $s->code,
-                    'label' => $s->label,
-                    'color' => $s->color,
-                    'bg_color' => $s->bg_color,
-                    'icon' => $s->icon,
-                    'description' => $s->description,
-                    'is_active' => $s->is_active,
-                    'display_mode' => $s->display_mode,
-                    'allow_info_edit' => $s->allow_info_edit,
-                    'allow_reference' => $s->allow_reference,
-                ];
-            })->toArray();
+            // 3. Companies
+            if (! $requestedEntities || in_array('companies', $requestedEntities)) {
+                $exportData['companies'] = Company::with(['group', 'region'])->get()->map(function ($c) {
+                    return [
+                        'code' => $c->code,
+                        'name' => $c->name,
+                        'alias' => $c->alias,
+                        'address' => $c->address,
+                        'company_group_code' => $c->group->code ?? null,
+                        'region_code' => $c->region->code ?? null,
+                        'is_active' => $c->is_active,
+                    ];
+                })->toArray();
+            }
 
-            $types = ContractType::with(['workflow', 'parent'])->get()->map(function ($t) {
-                return [
-                    'code' => $t->code,
-                    'name' => $t->name,
-                    'parent_code' => $t->parent->code ?? null,
-                    'workflow_name' => $t->workflow->name ?? null,
-                    'features' => $t->features,
-                    'description' => $t->description,
-                    'f1_input_mechanism' => $t->f1_input_mechanism,
-                    'f1_form_template_id' => $t->f1_form_template_id,
-                    'f1_contract_template_id' => $t->f1_contract_template_id,
-                    'f2_input_mechanism' => $t->f2_input_mechanism,
-                    'f2_form_template_id' => $t->f2_form_template_id,
-                    'f2_contract_template_id' => $t->f2_contract_template_id,
-                ];
-            })->toArray();
+            // 4. Departments
+            if (! $requestedEntities || in_array('departments', $requestedEntities)) {
+                $exportData['departments'] = Department::with(['company'])->get()->map(function ($d) {
+                    return [
+                        'code' => $d->code,
+                        'name' => $d->name,
+                        'description' => $d->description,
+                        'company_code' => $d->company->code ?? null,
+                        'is_active' => $d->is_active,
+                    ];
+                })->toArray();
+            }
 
-            $workflows = Workflow::all()->map(function ($w) {
-                return [
-                    'id' => $w->id,
-                    'contract_type' => $w->contract_type,
-                    'department_id' => $w->department_id,
-                    'name' => $w->name,
-                    'description' => $w->description,
-                    'is_default' => $w->is_default,
-                    'is_template' => $w->is_template,
-                    'is_tax_involved' => $w->is_tax_involved,
-                    'initiator_type' => $w->initiator_type,
-                    'sla_drafting_hours' => $w->sla_drafting_hours,
-                    'sla_total_hours' => $w->sla_total_hours,
-                    'sla_cutoff_hour' => $w->sla_cutoff_hour,
-                    'scope' => $w->scope,
-                    'workflow_category' => $w->workflow_category,
-                    'company_group_ids' => $w->company_group_ids,
-                    'region_ids' => $w->region_ids,
-                    'company_ids' => $w->company_ids,
-                    'approver_roles' => $w->approver_roles,
-                    'approver_departments' => $w->approver_departments,
-                    'approver_users' => $w->approver_users,
-                    'legal_roles' => $w->legal_roles,
-                    'legal_departments' => $w->legal_departments,
-                    'legal_users' => $w->legal_users,
-                    'created_by' => $w->created_by,
-                    'updated_by' => $w->updated_by,
-                ];
-            })->toArray();
+            // 5. Contract Statuses
+            if (! $requestedEntities || in_array('contract_statuses', $requestedEntities)) {
+                $exportData['contract_statuses'] = ContractStatus::all()->map(function ($s) {
+                    return [
+                        'code' => $s->code,
+                        'label' => $s->label,
+                        'color' => $s->color,
+                        'bg_color' => $s->bg_color,
+                        'icon' => $s->icon,
+                        'description' => $s->description,
+                        'is_active' => $s->is_active,
+                        'display_mode' => $s->display_mode,
+                        'allow_info_edit' => $s->allow_info_edit,
+                        'allow_reference' => $s->allow_reference,
+                    ];
+                })->toArray();
+            }
 
-            $workflowSteps = WorkflowStep::all()->map(function ($s) {
-                return [
-                    'id' => $s->id,
-                    'workflow_id' => $s->workflow_id,
-                    'approver_type' => $s->approver_type,
-                    'step' => $s->step,
-                    'step_category' => $s->step_category,
-                    'is_optional' => $s->is_optional,
-                    'optional_label' => $s->optional_label,
-                    'condition_expression' => $s->condition_expression,
-                    'description' => $s->description,
-                    'phase' => $s->phase,
-                    'uploader_type' => $s->uploader_type,
-                    'hierarchy_level' => $s->hierarchy_level,
-                    'role_id' => $s->role_id,
-                    'company_group_ids' => $s->company_group_ids,
-                    'region_ids' => $s->region_ids,
-                    'company_ids' => $s->company_ids,
-                    'label' => $s->label,
-                    'allowed_actions' => $s->allowed_actions,
-                    'is_mandatory' => $s->is_mandatory,
-                    'is_active' => $s->is_active,
-                    'meta' => $s->meta,
-                    'created_by' => $s->created_by,
-                    'updated_by' => $s->updated_by,
-                ];
-            })->toArray();
+            // 6. Workflows & Steps
+            if (! $requestedEntities || in_array('workflows', $requestedEntities)) {
+                $exportData['workflows'] = Workflow::all()->map(function ($w) {
+                    return [
+                        'id' => $w->id,
+                        'contract_type' => $w->contract_type,
+                        'department_id' => $w->department_id,
+                        'name' => $w->name,
+                        'description' => $w->description,
+                        'is_default' => $w->is_default,
+                        'is_template' => $w->is_template,
+                        'is_tax_involved' => $w->is_tax_involved,
+                        'initiator_type' => $w->initiator_type,
+                        'sla_drafting_hours' => $w->sla_drafting_hours,
+                        'sla_total_hours' => $w->sla_total_hours,
+                        'sla_cutoff_hour' => $w->sla_cutoff_hour,
+                        'scope' => $w->scope,
+                        'workflow_category' => $w->workflow_category,
+                        'company_group_ids' => $w->company_group_ids,
+                        'region_ids' => $w->region_ids,
+                        'company_ids' => $w->company_ids,
+                        'approver_roles' => $w->approver_roles,
+                        'approver_departments' => $w->approver_departments,
+                        'approver_users' => $w->approver_users,
+                        'legal_roles' => $w->legal_roles,
+                        'legal_departments' => $w->legal_departments,
+                        'legal_users' => $w->legal_users,
+                        'created_by' => $w->created_by,
+                        'updated_by' => $w->updated_by,
+                    ];
+                })->toArray();
 
-            $workflowStepDepartments = WorkflowStepDepartment::all()->map(function ($d) {
-                return [
-                    'id' => $d->id,
-                    'workflow_step_id' => $d->workflow_step_id,
-                    'department_id' => $d->department_id,
-                ];
-            })->toArray();
+                $exportData['workflow_steps'] = WorkflowStep::all()->map(function ($s) {
+                    return [
+                        'id' => $s->id,
+                        'workflow_id' => $s->workflow_id,
+                        'approver_type' => $s->approver_type,
+                        'step' => $s->step,
+                        'step_category' => $s->step_category,
+                        'is_optional' => $s->is_optional,
+                        'optional_label' => $s->optional_label,
+                        'condition_expression' => $s->condition_expression,
+                        'description' => $s->description,
+                        'phase' => $s->phase,
+                        'uploader_type' => $s->uploader_type,
+                        'hierarchy_level' => $s->hierarchy_level,
+                        'role_id' => $s->role_id,
+                        'company_group_ids' => $s->company_group_ids,
+                        'region_ids' => $s->region_ids,
+                        'company_ids' => $s->company_ids,
+                        'label' => $s->label,
+                        'allowed_actions' => $s->allowed_actions,
+                        'is_mandatory' => $s->is_mandatory,
+                        'is_active' => $s->is_active,
+                        'meta' => $s->meta,
+                        'created_by' => $s->created_by,
+                        'updated_by' => $s->updated_by,
+                    ];
+                })->toArray();
 
-            $workflowStepRoles = WorkflowStepRole::all()->map(function ($r) {
-                return [
-                    'id' => $r->id,
-                    'workflow_step_id' => $r->workflow_step_id,
-                    'role_name' => $r->role_name,
-                ];
-            })->toArray();
+                $exportData['workflow_step_departments'] = WorkflowStepDepartment::all()->map(function ($d) {
+                    return ['id' => $d->id, 'workflow_step_id' => $d->workflow_step_id, 'department_id' => $d->department_id];
+                })->toArray();
 
-            $workflowStepUsers = WorkflowStepUser::all()->map(function ($u) {
-                return [
-                    'id' => $u->id,
-                    'workflow_step_id' => $u->workflow_step_id,
-                    'user_id' => $u->user_id,
-                ];
-            })->toArray();
+                $exportData['workflow_step_roles'] = WorkflowStepRole::all()->map(function ($r) {
+                    return ['id' => $r->id, 'workflow_step_id' => $r->workflow_step_id, 'role_name' => $r->role_name];
+                })->toArray();
 
-            $workflowInitiatorDepartments = WorkflowInitiatorDepartment::all()->map(function ($d) {
-                return [
-                    'id' => $d->id,
-                    'workflow_id' => $d->workflow_id,
-                    'department_id' => $d->department_id,
-                ];
-            })->toArray();
+                $exportData['workflow_step_users'] = WorkflowStepUser::all()->map(function ($u) {
+                    return ['id' => $u->id, 'workflow_step_id' => $u->workflow_step_id, 'user_id' => $u->user_id];
+                })->toArray();
 
-            $workflowInitiatorRoles = WorkflowInitiatorRole::all()->map(function ($r) {
-                return [
-                    'id' => $r->id,
-                    'workflow_id' => $r->workflow_id,
-                    'role_name' => $r->role_name,
-                ];
-            })->toArray();
+                $exportData['workflow_initiator_departments'] = WorkflowInitiatorDepartment::all()->map(function ($d) {
+                    return ['id' => $d->id, 'workflow_id' => $d->workflow_id, 'department_id' => $d->department_id];
+                })->toArray();
 
-            $workflowInitiatorUsers = WorkflowInitiatorUser::all()->map(function ($u) {
-                return [
-                    'id' => $u->id,
-                    'workflow_id' => $u->workflow_id,
-                    'user_id' => $u->user_id,
-                ];
-            })->toArray();
+                $exportData['workflow_initiator_roles'] = WorkflowInitiatorRole::all()->map(function ($r) {
+                    return ['id' => $r->id, 'workflow_id' => $r->workflow_id, 'role_name' => $r->role_name];
+                })->toArray();
 
-            $workflowStepActions = WorkflowStepAction::all()->map(function ($a) {
-                return [
-                    'id' => $a->id,
-                    'workflow_step_id' => $a->workflow_step_id,
-                    'master_action_id' => $a->master_action_id,
-                    'next_step_id' => $a->next_step_id,
-                    'next_workflow_id' => $a->next_workflow_id,
-                    'next_workflow_step_id' => $a->next_workflow_step_id,
-                    'required_fields' => $a->required_fields,
-                    'autofilled_fields' => $a->autofilled_fields,
-                    'signing_parties' => $a->signing_parties,
-                    'assignee_config' => $a->assignee_config,
-                    'alias' => $a->alias,
-                    'description' => $a->description,
-                    'is_active' => $a->is_active,
-                    'created_by' => $a->created_by,
-                    'updated_by' => $a->updated_by,
-                ];
-            })->toArray();
+                $exportData['workflow_initiator_users'] = WorkflowInitiatorUser::all()->map(function ($u) {
+                    return ['id' => $u->id, 'workflow_id' => $u->workflow_id, 'user_id' => $u->user_id];
+                })->toArray();
 
-            $exportData = [
-                'company_groups' => $groups,
-                'regions' => $regions,
-                'companies' => $companies,
-                'departments' => $departments,
-                'contract_statuses' => $statuses,
-                'contract_types' => $types,
-                'workflows' => $workflows,
-                'workflow_steps' => $workflowSteps,
-                'workflow_step_departments' => $workflowStepDepartments,
-                'workflow_step_roles' => $workflowStepRoles,
-                'workflow_step_users' => $workflowStepUsers,
-                'workflow_initiator_departments' => $workflowInitiatorDepartments,
-                'workflow_initiator_roles' => $workflowInitiatorRoles,
-                'workflow_initiator_users' => $workflowInitiatorUsers,
-                'workflow_step_actions' => $workflowStepActions,
-            ];
+                $exportData['workflow_step_actions'] = WorkflowStepAction::all()->map(function ($a) {
+                    return [
+                        'id' => $a->id, 'workflow_step_id' => $a->workflow_step_id, 'master_action_id' => $a->master_action_id,
+                        'next_step_id' => $a->next_step_id, 'next_workflow_id' => $a->next_workflow_id, 'next_workflow_step_id' => $a->next_workflow_step_id,
+                        'required_fields' => $a->required_fields, 'autofilled_fields' => $a->autofilled_fields, 'signing_parties' => $a->signing_parties,
+                        'assignee_config' => $a->assignee_config, 'alias' => $a->alias, 'description' => $a->description, 'is_active' => $a->is_active,
+                        'created_by' => $a->created_by, 'updated_by' => $a->updated_by,
+                    ];
+                })->toArray();
+            }
+
+            // 7. Roles
+            if (! $requestedEntities || in_array('roles', $requestedEntities)) {
+                $exportData['roles'] = \App\Models\Role::all()->map(function ($r) {
+                    return ['id' => $r->id, 'name' => $r->name, 'description' => $r->description];
+                })->toArray();
+            }
+
+            // 8. Access Mappings
+            if (! $requestedEntities || in_array('access_mappings', $requestedEntities)) {
+                $exportData['access_mappings'] = \App\Models\AccessModule::with(['role', 'module'])->get()->map(function ($am) {
+                    return [
+                        'role_name' => $am->role->name ?? null, 'module_identifier' => $am->module->identifier ?? null,
+                        'can_read' => $am->can_read, 'can_create' => $am->can_create, 'can_update' => $am->can_update,
+                        'can_delete' => $am->can_delete, 'can_approve' => $am->can_approve, 'can_bulk_approve' => $am->can_bulk_approve,
+                        'can_bulk_delete' => $am->can_bulk_delete, 'module_group_id' => $am->module_group_id,
+                    ];
+                })->toArray();
+
+                $exportData['role_navigation_mappings'] = \App\Models\RoleModuleGroup::with(['role', 'moduleGroup'])->get()->map(function ($rmg) {
+                    return ['role_name' => $rmg->role->name ?? null, 'module_group_name' => $rmg->moduleGroup->name ?? null];
+                })->toArray();
+            }
+
+            // 9. Contract Types (Dependent on Workflows)
+            if (! $requestedEntities || in_array('contract_types', $requestedEntities)) {
+                $exportData['contract_types'] = ContractType::with(['workflow', 'parent'])->get()->map(function ($t) {
+                    return [
+                        'code' => $t->code, 'name' => $t->name, 'parent_code' => $t->parent->code ?? null, 'workflow_name' => $t->workflow->name ?? null,
+                        'features' => $t->features, 'description' => $t->description, 'f1_input_mechanism' => $t->f1_input_mechanism,
+                        'f1_form_template_id' => $t->f1_form_template_id, 'f1_contract_template_id' => $t->f1_contract_template_id,
+                        'f2_input_mechanism' => $t->f2_input_mechanism, 'f2_form_template_id' => $t->f2_form_template_id, 'f2_contract_template_id' => $t->f2_contract_template_id,
+                    ];
+                })->toArray();
+            }
 
             $fileName = 'master_data_export_' . date('Ymd_His') . '.json';
 
@@ -319,10 +310,31 @@ class MasterDataAdminController extends Controller
                 'workflow_initiator_roles' => 0,
                 'workflow_initiator_users' => 0,
                 'workflow_step_actions' => 0,
+                'roles' => 0,
+                'access_mappings' => 0,
+                'role_navigation_mappings' => 0,
             ];
 
             DB::transaction(function () use ($data, &$counts) {
                 $admin = \Illuminate\Support\Facades\Auth::id();
+
+                // 0. Roles
+                if (! empty($data['roles']) && is_array($data['roles'])) {
+                    foreach ($data['roles'] as $r) {
+                        if (empty($r['name'])) {
+                            continue;
+                        }
+                        \App\Models\Role::updateOrCreate(
+                            ['name' => $r['name']],
+                            ['description' => $r['description'] ?? null],
+                        );
+                        $counts['roles']++;
+                    }
+                }
+
+                $roleMap = \App\Models\Role::pluck('id', 'name')->all();
+                $moduleMap = \App\Models\Module::pluck('id', 'identifier')->all();
+                $moduleGroupMap = \App\Models\ModuleGroup::pluck('id', 'name')->all();
 
                 // 1. Company Groups
                 if (! empty($data['company_groups']) && is_array($data['company_groups'])) {
@@ -558,7 +570,6 @@ class MasterDataAdminController extends Controller
 
                 // 15. Contract Types
                 if (! empty($data['contract_types']) && is_array($data['contract_types'])) {
-                    // First pass: Create or update types without assigning parent_id (avoids foreign key issues)
                     foreach ($data['contract_types'] as $t) {
                         if (empty($t['code'])) {
                             continue;
@@ -583,7 +594,6 @@ class MasterDataAdminController extends Controller
                         $counts['contract_types']++;
                     }
 
-                    // Second pass: Map and update parent_id relationships using the resolved parent_code
                     $typeMap = ContractType::pluck('id', 'code')->all();
                     foreach ($data['contract_types'] as $t) {
                         if (empty($t['code']) || empty($t['parent_code'])) {
@@ -595,10 +605,51 @@ class MasterDataAdminController extends Controller
                         }
                     }
                 }
+
+                // 16. Access Mappings
+                if (! empty($data['access_mappings']) && is_array($data['access_mappings'])) {
+                    foreach ($data['access_mappings'] as $am) {
+                        $roleId = $roleMap[$am['role_name']] ?? null;
+                        $moduleId = $moduleMap[$am['module_identifier']] ?? null;
+
+                        if ($roleId && $moduleId) {
+                            \App\Models\AccessModule::updateOrCreate(
+                                ['role_id' => $roleId, 'module_id' => $moduleId],
+                                [
+                                    'can_read' => $am['can_read'] ?? false,
+                                    'can_create' => $am['can_create'] ?? false,
+                                    'can_update' => $am['can_update'] ?? false,
+                                    'can_delete' => $am['can_delete'] ?? false,
+                                    'can_approve' => $am['can_approve'] ?? false,
+                                    'can_bulk_approve' => $am['can_bulk_approve'] ?? false,
+                                    'can_bulk_delete' => $am['can_bulk_delete'] ?? false,
+                                    'module_group_id' => $am['module_group_id'] ?? null,
+                                ],
+                            );
+                            $counts['access_mappings']++;
+                        }
+                    }
+                }
+
+                // 17. Role Navigation Mappings
+                if (! empty($data['role_navigation_mappings']) && is_array($data['role_navigation_mappings'])) {
+                    foreach ($data['role_navigation_mappings'] as $rmg) {
+                        $roleId = $roleMap[$rmg['role_name']] ?? null;
+                        $groupId = $moduleGroupMap[$rmg['module_group_name']] ?? null;
+
+                        if ($roleId && $groupId) {
+                            \App\Models\RoleModuleGroup::firstOrCreate([
+                                'role_id' => $roleId,
+                                'module_group_id' => $groupId,
+                            ]);
+                            $counts['role_navigation_mappings']++;
+                        }
+                    }
+                }
             });
 
             $successMsg = sprintf(
-                'Data master berhasil diimpor: %d Group, %d Region, %d Company, %d Departemen, %d Status, %d Tipe Kontrak, %d Workflow.',
+                'Data master berhasil diimpor: %d Group, %d Region, %d Company, %d Departemen, %d Status, %d Tipe Kontrak, %d Workflow, %d Role, %d Mapping Akses, %d Mapping Navigasi.',
                 $counts['company_groups'],
                 $counts['regions'],
                 $counts['companies'],
@@ -606,6 +657,9 @@ class MasterDataAdminController extends Controller
                 $counts['contract_statuses'],
                 $counts['contract_types'],
                 $counts['workflows'],
+                $counts['roles'],
+                $counts['access_mappings'],
+                $counts['role_navigation_mappings'],
             );
 
             return redirect()->route('admin.master-data-sync')->with('success', $successMsg);

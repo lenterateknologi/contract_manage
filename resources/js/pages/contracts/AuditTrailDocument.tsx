@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn, formatDate, formatDateTime } from '@/lib/utils';
 import { Contract } from '@/types/contracts';
 import { Head } from '@inertiajs/react';
 import React from 'react';
@@ -15,7 +15,7 @@ export default function AuditTrailDocument({ contract, histories, filters }: Pro
     };
 
     return (
-        <div className="flex min-h-screen flex-col items-center bg-slate-200/50 p-4 sm:p-8">
+        <div className="custom-scrollbar flex min-h-screen flex-col items-center bg-slate-200/50 p-4 sm:p-8 print:bg-white print:p-0">
             <Head title={`Audit Trail - ${contract.contract_no}`} />
 
             {/* Control Bar - Hidden on print */}
@@ -54,13 +54,13 @@ export default function AuditTrailDocument({ contract, histories, filters }: Pro
                             <div>
                                 <div className="mb-1.5 text-[9px] font-black tracking-[0.2em] text-slate-400 uppercase">Masa Berlaku</div>
                                 <div className="text-[10px] font-bold text-slate-900">
-                                    {contract.contract_date ? new Date(contract.contract_date).toLocaleDateString('id-ID') : '-'}
-                                    {contract.end_date && ` — ${new Date(contract.end_date).toLocaleDateString('id-ID')}`}
+                                    {formatDate(contract.contract_date)}
+                                    {contract.end_date && ` — ${formatDate(contract.end_date)}`}
                                 </div>
                             </div>
                             <div>
                                 <div className="mb-1.5 text-[9px] font-black tracking-[0.2em] text-slate-400 uppercase">Dicetak Pada</div>
-                                <div className="text-[10px] font-bold text-slate-900">{new Date().toLocaleString('id-ID')}</div>
+                                <div className="text-[10px] font-bold text-slate-900">{formatDateTime(new Date())}</div>
                             </div>
                         </div>
                     </div>
@@ -99,14 +99,7 @@ export default function AuditTrailDocument({ contract, histories, filters }: Pro
                             {histories.map((h, i) => (
                                 <tr key={h.id} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
                                     <td className="border-b border-slate-100 px-4 py-4 font-mono text-[10px] font-bold text-slate-700">
-                                        {new Date(h.created_at).toLocaleString('id-ID', {
-                                            day: '2-digit',
-                                            month: '2-digit',
-                                            year: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit',
-                                            second: '2-digit',
-                                        })}
+                                        {formatDateTime(h.created_at)}
                                     </td>
                                     <td className="border-b border-slate-100 px-4 py-4">
                                         <div className="flex flex-col">
@@ -166,38 +159,6 @@ export default function AuditTrailDocument({ contract, histories, filters }: Pro
             <p className="mt-8 text-[10px] font-bold text-slate-400 uppercase print:hidden">
                 Gunakan Ctrl+P atau tombol di atas untuk mencetak dokumen ini.
             </p>
-
-            <style
-                dangerouslySetInnerHTML={{
-                    __html: `
-                @media print {
-                    body {
-                        background: white !important;
-                        margin: 0 !important;
-                        padding: 0 !important;
-                    }
-                    .min-h-screen {
-                        background: white !important;
-                        padding: 0 !important;
-                        min-height: auto !important;
-                    }
-                    .shadow-2xl, .ring-1 {
-                        box-shadow: none !important;
-                        ring: none !important;
-                        border: none !important;
-                    }
-                    div[class*="max-w-[210mm]"] {
-                        width: 100% !important;
-                        max-width: none !important;
-                        margin: 0 !important;
-                        padding: 20mm !important;
-                        min-height: auto !important;
-                        box-shadow: none !important;
-                    }
-                }
-            `,
-                }}
-            />
         </div>
     );
 }

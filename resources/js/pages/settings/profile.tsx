@@ -154,7 +154,7 @@ export default function Profile({ status, department, recentContracts = [], user
                                 <div className="flex flex-col items-center gap-6 text-center md:flex-row md:items-end md:text-left">
                                     <div
                                         className="border-background ring-foreground/5 flex h-32 w-32 rotate-2 items-center justify-center rounded-3xl border-4 text-4xl font-black shadow-2xl ring-4 transition-transform duration-500 hover:rotate-0 sm:h-40 sm:w-40 sm:text-5xl"
-                                        style={{ backgroundColor: user.bg_color || '#3b82f6', color: user.text_color || '#ffffff' }}
+                                        style={{ backgroundColor: user.bg_color || 'var(--primary)', color: user.text_color || '#ffffff' }}
                                     >
                                         {user.initials || user.name.substring(0, 2).toUpperCase()}
                                     </div>

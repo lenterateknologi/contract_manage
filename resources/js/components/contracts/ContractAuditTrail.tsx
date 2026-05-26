@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/base/Button';
 import { FilterCategory, FilterSheet } from '@/components/ui/data/FilterSheet';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
 import { SearchInput } from '@/components/ui/forms/SearchInput';
+import { useDebounce } from '@/hooks/use-debounce';
 import { contractApi } from '@/lib/contract-api';
 import { cn } from '@/lib/utils';
 import { Contract } from '@/types/contracts';
@@ -25,15 +26,19 @@ export default function ContractAuditTrail({ contract }: Props) {
         date_to: '',
         search: '',
     });
+    const debouncedSearch = useDebounce(filters.search, 500);
 
     const [users, setUsers] = useState<any[]>([]);
 
     useEffect(() => {
         contractApi.getUsers().then(setUsers);
-        fetchHistories();
     }, [contract.id]);
 
-    const fetchHistories = async (currentFilters = filters) => {
+    useEffect(() => {
+        fetchHistories();
+    }, [debouncedSearch, filters.action, filters.actor_id, filters.date_from, filters.date_to]);
+
+    const fetchHistories = async (currentFilters = { ...filters, search: debouncedSearch }) => {
         setLoading(true);
         try {
             const data = await contractApi.auditTrail.list(contract.id, currentFilters);
@@ -92,9 +97,7 @@ export default function ContractAuditTrail({ contract }: Props) {
                         placeholder="CARI AKTIVITAS..."
                         value={filters.search}
                         onChange={(e) => {
-                            const newFilters = { ...filters, search: e.target.value };
-                            setFilters(newFilters);
-                            fetchHistories(newFilters);
+                            setFilters({ ...filters, search: e.target.value });
                         }}
                         className="h-10 text-[10px] uppercase"
                     />

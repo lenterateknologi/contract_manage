@@ -17,15 +17,15 @@ interface ContractTypeManagementProps {
 
 const MechanismCell = ({ mechanism }: Readonly<{ mechanism: string }>) => (
     <div className="flex items-center gap-2">
-        <div className="bg-primary/20 h-1.5 w-1.5 rounded-full dark:bg-white/20" />
-        <span className="text-primary/60 text-[10px] font-semibold uppercase dark:text-white/60">
+        <div className="bg-primary/20 h-1.5 w-1.5 rounded-full" />
+        <span className="text-text-desc text-[10px] font-bold uppercase">
             {mechanism === 'digital' ? 'Formulir Digital' : mechanism === 'folder' ? 'Folder Kontrak' : 'Unggah Manual'}
         </span>
     </div>
 );
 
 const TypeDescriptionCell = ({ description }: Readonly<{ description?: string }>) => (
-    <span className="text-primary/40 max-w-[200px] truncate text-[10px] font-bold tracking-tight uppercase dark:text-white/40">
+    <span className="text-text-soft max-w-[200px] truncate text-[10px] font-bold tracking-tight uppercase">
         {description || '—'}
     </span>
 );
@@ -211,7 +211,9 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
                                     </span>
                                 )}
                                 {isParent ? (
-                                    <button
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             const isCurrentlyExpanded = expanded[row.id] !== false;
@@ -220,7 +222,7 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
                                                 [row.id]: !isCurrentlyExpanded,
                                             }));
                                         }}
-                                        className="p-1 hover:bg-muted/80 rounded-md transition-colors text-muted-foreground shrink-0"
+                                        className="text-muted-foreground h-6 w-6 shrink-0"
                                     >
                                         <ChevronDown
                                             size={12}
@@ -229,20 +231,20 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
                                                 expanded[row.id] === false && "-rotate-90"
                                             )}
                                         />
-                                    </button>
+                                    </Button>
                                 ) : (
                                     <div className="w-5 h-5 shrink-0" />
                                 )}
                                 <span className={cn(
-                                    "text-[13px] font-bold tracking-tight uppercase transition-transform group-hover:translate-x-1",
-                                    depth > 0 ? "text-foreground/80 dark:text-white/80" : "text-primary dark:text-white"
+                                    "text-[13px] font-black tracking-tight uppercase transition-transform group-hover:translate-x-1",
+                                    depth > 0 ? "text-text-desc" : "text-text-main"
                                 )}>
                                     {row.name}
                                 </span>
                             </div>
                             <div className="mt-1 flex items-center gap-2" style={{ paddingLeft: hasDepth ? '20px' : '20px' }}>
-                                <ShieldCheck size={10} className="text-primary/20 dark:text-white/20" />
-                                <span className="text-primary/30 text-[9px] font-bold uppercase italic dark:text-white/30">
+                                <ShieldCheck size={10} className="text-primary/20" />
+                                <span className="text-text-soft text-[9px] font-bold uppercase italic">
                                     Aset Administratif Terpantau
                                 </span>
                             </div>
@@ -288,7 +290,7 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
     };
 
     return (
-        <div className="border-border bg-card m-5 rounded-2xl border p-5 shadow-sm">
+        <div className="bg-surface-base/40 border-surface-border animate-in fade-in m-5 rounded-2xl border p-5 shadow-sm backdrop-blur-sm">
             <TableMasterData
                 title="Registri Klasifikasi Kontrak"
                 borderless={true}
@@ -336,7 +338,7 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
                             <Button
                                 variant="white"
                                 onClick={toggleAll}
-                                className="border-border/40 bg-card text-foreground hover:bg-muted/60 hover:border-border/60 h-10 gap-2 rounded-xl border px-4 text-xs font-bold shadow-sm transition-all duration-200 active:scale-95"
+                                className="border-surface-border/40 bg-surface-base text-text-main hover:bg-surface-muted hover:border-surface-border gap-2 border px-4 text-xs tracking-wide transition-all duration-200"
                             >
                                 <ChevronDown size={14} className={cn("transition-transform duration-200", isAllCollapsed && "-rotate-90")} />
                                 {isAllCollapsed ? 'Expand Semua' : 'Minimize Semua'}
@@ -346,9 +348,9 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
                             <Button
                                 variant="white"
                                 onClick={openCreate}
-                                className="border-border/40 bg-card text-foreground hover:bg-muted/60 hover:border-border/60 h-10 gap-2 rounded-xl border px-6 text-xs font-bold shadow-sm transition-all duration-200 hover:shadow-md active:scale-95"
+                                className="border-surface-border/40 bg-surface-base text-text-main hover:bg-surface-muted hover:border-surface-border gap-2 border px-6 text-xs tracking-wide transition-all duration-200 hover:shadow-md"
                             >
-                                <Plus size={14} className="mr-2" /> Registrasi Klasifikasi
+                                <Plus size={14} className="mr-2 text-primary" /> Registrasi Klasifikasi
                             </Button>
                         )}
                     </div>

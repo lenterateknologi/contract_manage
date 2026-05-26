@@ -29,7 +29,6 @@ class AccessModuleSeeder extends Seeder
                 DB::table('m_role_module_groups')->insert([
                     'role_id' => $role->id,
                     'module_group_id' => $group->id,
-                    'sequence' => $idx + 1,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
@@ -57,7 +56,6 @@ class AccessModuleSeeder extends Seeder
                         'can_delete' => $role->name === 'Admin',
                         'can_approve' => $role->name === 'Admin' || $role->name === 'Manager' || $role->name === 'Director',
                         'module_group_id' => $module->module_group_id,
-                        'sequence' => $mIdx + 1,
                     ],
                 );
             }

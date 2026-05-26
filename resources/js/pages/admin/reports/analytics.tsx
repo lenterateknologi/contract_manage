@@ -255,9 +255,12 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
                                     Volume kontrak bulan ini meningkat sebesar <span className="font-bold text-emerald-300">12%</span> dibandingkan
                                     bulan lalu.
                                 </p>
-                                <button className="border-primary-foreground/30 hover:border-primary-foreground border-b pb-0.5 text-xs font-bold tracking-wider uppercase transition-all">
+                                <Button 
+                                    variant="link" 
+                                    className="h-auto p-0 border-primary-foreground/30 hover:border-primary-foreground border-b pb-0.5 text-xs font-bold tracking-wider uppercase transition-all text-primary-foreground hover:no-underline"
+                                >
                                     Lihat Detail Tren
-                                </button>
+                                </Button>
                             </div>
                             <div className="absolute top-0 right-0 p-8 opacity-10">
                                 <BarChart3 size={120} strokeWidth={1} />
