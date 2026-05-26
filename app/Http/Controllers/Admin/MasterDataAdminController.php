@@ -453,6 +453,7 @@ class MasterDataAdminController extends Controller
                         if (empty($w['id'])) {
                             continue;
                         }
+<<<<<<< HEAD
 
                         // Map old contract_type string to contract_type_id UUID
                         if (array_key_exists('contract_type', $w)) {
@@ -471,6 +472,10 @@ class MasterDataAdminController extends Controller
                             ['id' => $w['id']],
                             $w,
                         );
+=======
+                        $model = Workflow::firstOrNew(['id' => $w['id']]);
+                        $model->forceFill($w)->save();
+>>>>>>> af25084ea6a224113ab3e1a895c9061e4ce6fed4
                         $counts['workflows']++;
                     }
                 }
@@ -481,10 +486,8 @@ class MasterDataAdminController extends Controller
                         if (empty($d['id'])) {
                             continue;
                         }
-                        WorkflowInitiatorDepartment::updateOrCreate(
-                            ['id' => $d['id']],
-                            $d,
-                        );
+                        $model = WorkflowInitiatorDepartment::firstOrNew(['id' => $d['id']]);
+                        $model->forceFill($d)->save();
                         $counts['workflow_initiator_departments']++;
                     }
                 }
@@ -495,10 +498,8 @@ class MasterDataAdminController extends Controller
                         if (empty($r['id'])) {
                             continue;
                         }
-                        WorkflowInitiatorRole::updateOrCreate(
-                            ['id' => $r['id']],
-                            $r,
-                        );
+                        $model = WorkflowInitiatorRole::firstOrNew(['id' => $r['id']]);
+                        $model->forceFill($r)->save();
                         $counts['workflow_initiator_roles']++;
                     }
                 }
@@ -509,10 +510,8 @@ class MasterDataAdminController extends Controller
                         if (empty($u['id'])) {
                             continue;
                         }
-                        WorkflowInitiatorUser::updateOrCreate(
-                            ['id' => $u['id']],
-                            $u,
-                        );
+                        $model = WorkflowInitiatorUser::firstOrNew(['id' => $u['id']]);
+                        $model->forceFill($u)->save();
                         $counts['workflow_initiator_users']++;
                     }
                 }
@@ -523,10 +522,8 @@ class MasterDataAdminController extends Controller
                         if (empty($s['id'])) {
                             continue;
                         }
-                        WorkflowStep::updateOrCreate(
-                            ['id' => $s['id']],
-                            $s,
-                        );
+                        $model = WorkflowStep::firstOrNew(['id' => $s['id']]);
+                        $model->forceFill($s)->save();
                         $counts['workflow_steps']++;
                     }
                 }
@@ -537,10 +534,8 @@ class MasterDataAdminController extends Controller
                         if (empty($d['id'])) {
                             continue;
                         }
-                        WorkflowStepDepartment::updateOrCreate(
-                            ['id' => $d['id']],
-                            $d,
-                        );
+                        $model = WorkflowStepDepartment::firstOrNew(['id' => $d['id']]);
+                        $model->forceFill($d)->save();
                         $counts['workflow_step_departments']++;
                     }
                 }
@@ -551,10 +546,8 @@ class MasterDataAdminController extends Controller
                         if (empty($r['id'])) {
                             continue;
                         }
-                        WorkflowStepRole::updateOrCreate(
-                            ['id' => $r['id']],
-                            $r,
-                        );
+                        $model = WorkflowStepRole::firstOrNew(['id' => $r['id']]);
+                        $model->forceFill($r)->save();
                         $counts['workflow_step_roles']++;
                     }
                 }
@@ -565,10 +558,8 @@ class MasterDataAdminController extends Controller
                         if (empty($u['id'])) {
                             continue;
                         }
-                        WorkflowStepUser::updateOrCreate(
-                            ['id' => $u['id']],
-                            $u,
-                        );
+                        $model = WorkflowStepUser::firstOrNew(['id' => $u['id']]);
+                        $model->forceFill($u)->save();
                         $counts['workflow_step_users']++;
                     }
                 }
@@ -579,10 +570,8 @@ class MasterDataAdminController extends Controller
                         if (empty($a['id'])) {
                             continue;
                         }
-                        WorkflowStepAction::updateOrCreate(
-                            ['id' => $a['id']],
-                            $a,
-                        );
+                        $model = WorkflowStepAction::firstOrNew(['id' => $a['id']]);
+                        $model->forceFill($a)->save();
                         $counts['workflow_step_actions']++;
                     }
                 }

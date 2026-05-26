@@ -74,6 +74,7 @@ test('admin can export master data including workflow tables', function () {
         'id' => (string) Str::uuid(),
         'workflow_step_id' => $step->id,
         'master_action_id' => $masterAction->id,
+        'master_action_id' => $masterAction->id,
         'is_active' => true,
     ]);
 
@@ -143,6 +144,7 @@ test('admin can import master data using id as key for createorupdate', function
                 'id' => $uuidAction,
                 'workflow_step_id' => $uuidStep,
                 'master_action_id' => $masterAction->id,
+                'master_action_id' => $masterAction->id,
                 'is_active' => true,
             ],
         ],
@@ -174,6 +176,7 @@ test('admin can import master data using id as key for createorupdate', function
     $this->assertDatabaseHas('m_workflow_step_actions', [
         'id' => $uuidAction,
         'workflow_step_id' => $uuidStep,
+        'master_action_id' => $masterAction->id,
         'master_action_id' => $masterAction->id,
     ]);
 });
