@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/base/Button';
-import { FilterCategory, FilterSheet } from '@/components/ui/data/FilterSheet';
+import { FilterCategory, FilterPopover } from '@/components/ui/data/FilterPopover';
 import { SearchInput } from '@/components/ui/forms/SearchInput';
 import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
@@ -21,7 +21,7 @@ interface Props {
 
 export default function ApprovalSteps({ contract, approvals, creator, submittedAt, meId, onApprove }: Props) {
     const { showToast, showProgress, hideProgress } = useToast();
-    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    // Filter open state is handled internally by FilterPopover
     const [statusFilter, setStatusFilter] = useState<string>('');
     const [roleFilter, setRoleFilter] = useState<string>('');
     const [deptFilter, setDeptFilter] = useState<string>('');
@@ -457,23 +457,43 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setIsFilterOpen(true)}
-                        className={cn(
-                            'border-surface-border text-text-main hover:bg-surface-muted h-10 gap-2 px-4 transition-all',
-                            activeCount > 0 && 'border-primary bg-primary text-primary-foreground',
-                        )}
+                    <FilterPopover
+                        categories={filterCategories}
+                        activeFilters={{
+                            status: statusFilter ? [statusFilter] : [],
+                            role: roleFilter ? [roleFilter] : [],
+                            department: deptFilter ? [deptFilter] : [],
+                        }}
+                        onFilterChange={(key, val) => {
+                            const firstVal = Array.isArray(val) ? (val[0] || '') : val;
+                            if (key === 'status') setStatusFilter(statusFilter === firstVal ? '' : firstVal);
+                            if (key === 'role') setRoleFilter(roleFilter === firstVal ? '' : firstVal);
+                            if (key === 'department') setDeptFilter(deptFilter === firstVal ? '' : firstVal);
+                        }}
+                        onReset={() => {
+                            setStatusFilter('');
+                            setRoleFilter('');
+                            setDeptFilter('');
+                        }}
+                        totalResults={filteredSteps.length}
                     >
-                        <ListFilter size={14} strokeWidth={3} />
-                        <span className="text-[10px] uppercase">Filter</span>
-                        {activeCount > 0 && (
-                            <span className="text-primary ml-1 flex h-4 w-4 items-center justify-center rounded-md bg-white text-[8px] font-bold">
-                                {activeCount}
-                            </span>
-                        )}
-                    </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className={cn(
+                                'border-surface-border text-text-main hover:bg-surface-muted h-10 gap-2 px-4 transition-all',
+                                activeCount > 0 && 'border-primary bg-primary text-primary-foreground',
+                            )}
+                        >
+                            <ListFilter size={14} strokeWidth={3} />
+                            <span className="text-[10px] uppercase">Filter</span>
+                            {activeCount > 0 && (
+                                <span className="text-primary ml-1 flex h-4 w-4 items-center justify-center rounded-md bg-white text-[8px] font-bold">
+                                    {activeCount}
+                                </span>
+                            )}
+                        </Button>
+                    </FilterPopover>
 
                     <Button
                         variant="outline"
@@ -487,29 +507,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                 </div>
             </div>
 
-            <FilterSheet
-                isOpen={isFilterOpen}
-                onOpenChange={setIsFilterOpen}
-                title="FILTER ALUR"
-                description="Saring tahapan persetujuan berdasarkan kriteria"
-                categories={filterCategories}
-                activeFilters={{
-                    status: statusFilter ? [statusFilter] : [],
-                    role: roleFilter ? [roleFilter] : [],
-                    department: deptFilter ? [deptFilter] : [],
-                }}
-                onFilterChange={(key, val) => {
-                    if (key === 'status') setStatusFilter(statusFilter === val ? '' : val);
-                    if (key === 'role') setRoleFilter(roleFilter === val ? '' : val);
-                    if (key === 'department') setDeptFilter(deptFilter === val ? '' : val);
-                }}
-                onReset={() => {
-                    setStatusFilter('');
-                    setRoleFilter('');
-                    setDeptFilter('');
-                }}
-                totalResults={filteredSteps.length}
-            />
+            {/* FilterPopover trigger wraps the button above */}
 
             <div className="relative px-2">
                 {!activeCount &&

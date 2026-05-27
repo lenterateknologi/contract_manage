@@ -5,8 +5,11 @@ import {
     Clock,
     Activity,
     Calendar,
+    ArrowUpRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Link } from '@inertiajs/react';
+import { MetricItem } from './MetricItem';
 import {
     ResponsiveContainer,
     PieChart,
@@ -24,7 +27,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/base/C
 
 interface OverviewTabProps {
     data: any;
-    onNavigate: (view: string) => void;
+    onNavigate: (view: string, params?: any) => void;
 }
 
 export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
@@ -37,7 +40,6 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
     const m = data?.summary || {
         total: 0,
         in_process: 0,
-
         active: 0,
         expiring_soon: 0,
     };
@@ -52,175 +54,168 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
         value: item.count,
     }));
 
-    const COLORS = ['var(--success)', 'var(--warning)', 'var(--danger)', 'var(--text-desc)', 'var(--info)', 'var(--primary)'];
+    const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#f43f5e', '#0ea5e9', '#8b5cf6'];
 
     return (
-        <div className="space-y-6">
-            {/* 4 KPI Cards Grid */}
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4 select-none">
-                <Card
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            {/* 4 KPI Metric Rows */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 select-none">
+                <MetricItem
+                    label="Total Kontrak"
+                    value={m.total}
+                    icon={FileText}
+                    color="text-primary"
                     onClick={() => onNavigate('contracts')}
-                    className="cursor-pointer hover:bg-surface-muted/50 transition-all active:scale-[0.99]"
-                >
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
-                        <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-text-desc">Volume Kontrak</CardTitle>
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/10">
-                            <FileText className="h-4 w-4" />
-                        </div>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                        <div className="text-2xl font-black">{m.total}</div>
-                        <p className="text-[9px] font-bold text-text-desc uppercase tracking-wider mt-1">Total Kontrak</p>
-                    </CardContent>
-                </Card>
-
-                <Card
+                />
+                <MetricItem
+                    label="Perlu Persetujuan"
+                    value={m.in_process}
+                    icon={Clock}
+                    color="text-amber-500"
                     onClick={() => onNavigate('pending')}
-                    className="cursor-pointer hover:bg-surface-muted/50 transition-all active:scale-[0.99]"
-                >
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
-                        <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-text-desc">Workflow Pending</CardTitle>
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-info/10 text-info border border-info/10">
-                            <Clock className="h-4 w-4" />
-                        </div>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                        <div className="text-2xl font-black">{m.in_process}</div>
-                        <p className="text-[9px] font-bold text-text-desc uppercase tracking-wider mt-1">Sedang Diproses</p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
-                        <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-text-desc">Approved & Valid</CardTitle>
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-success/10 text-success border border-success/10">
-                            <ShieldCheck className="h-4 w-4" />
-                        </div>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                        <div className="text-2xl font-black">{m.active}</div>
-                        <p className="text-[9px] font-bold text-text-desc uppercase tracking-wider mt-1">Kontrak Aktif</p>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-warning/50">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
-                        <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-text-desc">Kurang dari 30 Hari</CardTitle>
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-warning/10 text-warning border border-warning/10 animate-pulse">
-                            <Clock className="h-4 w-4" />
-                        </div>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                        <div className="text-2xl font-black">{m.expiring_soon}</div>
-                        <p className="text-[9px] font-bold text-text-desc uppercase tracking-wider mt-1">Segera Berakhir</p>
-                    </CardContent>
-                </Card>
+                />
+                <MetricItem
+                    label="Kontrak Aktif"
+                    value={m.active}
+                    icon={ShieldCheck}
+                    color="text-emerald-500"
+                    onClick={() => onNavigate('contracts', { status: 'approved' })}
+                />
+                <MetricItem
+                    label="Segera Berakhir"
+                    value={m.expiring_soon}
+                    icon={Activity}
+                    color="text-rose-500"
+                    onClick={() => onNavigate('expiry')}
+                    isAlert
+                />
             </div>
 
-            {/* Charts Section - Side by Side (Horizontal Layout) */}
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-10">
-                <Card className="lg:col-span-3">
-                    <CardHeader className="p-5 pb-0">
-                        <CardTitle className="text-xs font-bold uppercase tracking-wider">Distribusi Submission</CardTitle>
-                        <p className="text-[9px] font-semibold text-text-desc mt-0.5">Proporsi kontrak berdasarkan tipe submission (F1, F2, dsb).</p>
-                    </CardHeader>
-                    <CardContent className="p-5">
-                        <div className="h-[350px] w-full flex items-center justify-center relative select-none">
+            {/* Visual Analytics Sections */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                {/* Distribution Pie */}
+                <div className="lg:col-span-4">
+                    <div className="bg-white dark:bg-surface-base border border-surface-border/60 rounded-2xl p-6 shadow-sm transition-all hover:shadow-xl hover:border-primary/20 group h-full flex flex-col">
+                        <div className="space-y-1 pb-6">
+                            <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-text-main">Proporsi Dokumen</h3>
+                            <p className="text-[10px] font-medium text-text-soft uppercase tracking-wider">Berdasarkan Tipe Submission</p>
+                        </div>
+
+                        <div className="h-[300px] w-full relative">
                             {isMounted && submissionTypeData.length > 0 ? (
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
+                                    <PieChart style={{ outline: 'none' }}>
                                         <Pie
                                             data={submissionTypeData}
                                             cx="50%"
                                             cy="50%"
-                                            innerRadius={65}
-                                            outerRadius={90}
-                                            paddingAngle={4}
+                                            innerRadius={70}
+                                            outerRadius={95}
+                                            paddingAngle={8}
                                             dataKey="value"
                                             stroke="none"
                                         >
                                             {submissionTypeData.map((entry: any, index: number) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} className="opacity-80 hover:opacity-100 transition-opacity cursor-pointer" />
                                             ))}
                                         </Pie>
                                         <Tooltip
-                                            contentStyle={{ backgroundColor: 'var(--surface-base)', border: '1px solid var(--surface-border)', borderRadius: '8px', padding: '8px' }}
-                                            itemStyle={{ fontSize: '10px', color: 'var(--text-main)', fontWeight: 'bold' }}
-                                        />
-                                        <Legend
-                                            verticalAlign="bottom"
-                                            align="center"
-                                            iconType="circle"
-                                            iconSize={8}
-                                            wrapperStyle={{ fontSize: '9px', fontWeight: 'bold', paddingTop: '20px' }}
+                                            contentStyle={{ backgroundColor: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: '16px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', padding: '12px' }}
+                                            itemStyle={{ fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase' }}
                                         />
                                     </PieChart>
                                 </ResponsiveContainer>
                             ) : (
-                                <div className="flex flex-col items-center gap-2 opacity-30 text-center">
-                                    <Activity size={32} />
-                                    <p className="text-[10px] font-bold uppercase">Data tidak tersedia</p>
+                                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-20 gap-3">
+                                    <Activity size={40} strokeWidth={1} />
+                                    <p className="text-[10px] font-medium uppercase tracking-widest">Data Kosong</p>
                                 </div>
                             )}
                         </div>
-                    </CardContent>
-                </Card>
 
-                <Card className="lg:col-span-7">
-                    <CardHeader className="p-5 pb-0">
-                        <CardTitle className="text-xs font-bold uppercase tracking-wider">Distribusi Tipe Kontrak</CardTitle>
-                        <p className="text-[9px] font-semibold text-text-desc mt-0.5">Analisis proporsi volume berdasarkan klasifikasi kontrak.</p>
-                    </CardHeader>
-                    <CardContent className="p-5">
-                        <div className="h-[350px] w-full flex items-center justify-center relative select-none">
+                        <div className="mt-6 grid grid-cols-2 gap-3">
+                            {submissionTypeData.map((entry: any, index: number) => (
+                                <div key={index} className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-surface-muted/30 border border-surface-border/40">
+                                    <div className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="text-[9px] font-medium text-text-desc uppercase truncate">{entry.name}</span>
+                                        <span className="text-xs font-medium text-text-main leading-none">{entry.value}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Distribution Bar */}
+                <div className="lg:col-span-8">
+                    <div className="bg-white dark:bg-surface-base border border-surface-border/60 rounded-2xl p-6 shadow-sm transition-all hover:shadow-xl hover:border-primary/20 group h-full flex flex-col">
+                        <div className="flex items-start justify-between pb-2">
+                            <div className="space-y-1">
+                                <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-text-main">Analisis Klasifikasi</h3>
+                                <p className="text-[10px] font-medium text-text-soft uppercase tracking-wider">Volume Per Kategori Kontrak</p>
+                            </div>
+
+                        </div>
+
+                        <div className="h-[400px] w-full">
                             {isMounted && contractTypeData.length > 0 ? (
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={contractTypeData} margin={{ top: 10, right: 5, left: -20, bottom: 90 }}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--surface-border)" />
+                                    <BarChart data={contractTypeData} margin={{ top: 10, right: 10, left: 40, bottom: 10 }}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
                                         <XAxis
                                             dataKey="name"
-                                            stroke="var(--text-desc)"
+                                            stroke="#64748b"
                                             tickLine={false}
                                             axisLine={false}
-                                            interval={0}
-                                            height={55}
-                                            tick={{
-                                                angle: -45,
-                                                textAnchor: 'end',
-                                                fontSize: 8,
-                                                fontWeight: 'bold',
-                                                fill: 'currentColor',
-                                                opacity: 0.7
-                                            }}
+                                            fontSize={10}
+                                            fontWeight={500}
+                                            angle={-45}
+                                            textAnchor="end"
+                                            height={110}
+                                            tickFormatter={(val) => val.length > 40 ? val.substring(0, 37) + '...' : val}
                                         />
                                         <YAxis
-                                            fontSize={8}
-                                            stroke="var(--text-desc)"
+                                            fontSize={10}
+                                            fontWeight={500}
+                                            stroke="#64748b"
                                             tickLine={false}
                                             axisLine={false}
                                         />
                                         <Tooltip
-                                            cursor={{ fill: 'var(--surface-muted)', opacity: 0.1 }}
-                                            contentStyle={{ backgroundColor: 'var(--surface-base)', border: '1px solid var(--surface-border)', borderRadius: '8px', padding: '8px' }}
-                                            itemStyle={{ fontSize: '10px', color: 'var(--text-main)', fontWeight: 'bold' }}
+                                            cursor={{ fill: 'rgba(79,70,229,0.03)' }}
+                                            content={({ active, payload, label }: any) => {
+                                                if (active && payload && payload.length) {
+                                                    return (
+                                                        <div className="bg-white/90 dark:bg-surface-base/90 border border-surface-border/40 rounded-2xl shadow-xl p-3 backdrop-blur-sm flex flex-col gap-1">
+                                                            <p className="text-[10px] font-semibold text-text-soft uppercase tracking-wider leading-none">{label}</p>
+                                                            <p className="text-xs font-bold text-primary leading-none">{payload[0].value}</p>
+                                                        </div>
+                                                    );
+                                                }
+                                                return null;
+                                            }}
                                         />
-                                        <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={24}>
+                                        <Bar dataKey="value" radius={[10, 10, 10, 10]} barSize={32}>
                                             {contractTypeData.map((entry: any, index: number) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[(index + 3) % COLORS.length]} />
+                                                <Cell key={`cell-${index}`} fill={COLORS[(index + 1) % COLORS.length]} className="opacity-80 hover:opacity-100 transition-all cursor-pointer" />
                                             ))}
                                         </Bar>
                                     </BarChart>
                                 </ResponsiveContainer>
                             ) : (
-                                <div className="flex flex-col items-center gap-2 opacity-30 text-center">
-                                    <Activity size={32} />
-                                    <p className="text-[10px] font-bold uppercase">Data tidak tersedia</p>
+                                <div className="h-full flex flex-col items-center justify-center opacity-20 gap-4">
+                                    <Activity size={48} strokeWidth={1} />
+                                    <p className="text-xs font-medium uppercase tracking-[0.2em]">Analisis tidak tersedia</p>
                                 </div>
                             )}
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </div>
         </div>
     );
 }
+
+

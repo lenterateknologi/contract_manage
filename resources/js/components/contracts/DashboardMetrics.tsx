@@ -1,26 +1,145 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import {
     LayoutDashboard,
-    TrendingUp,
-    BarChart3,
     Briefcase,
-    SlidersHorizontal
+    Search,
+    ChevronDown,
+    Check,
+    X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { FilterSheet, FilterCategory } from '@/components/ui/data/FilterSheet';
 import { OverviewTab } from '@/components/dashboard/OverviewTab';
-import { TrendTab } from '@/components/dashboard/TrendTab';
-import { AnalysisTab } from '@/components/dashboard/AnalysisTab';
 import { WorkloadTab } from '@/components/dashboard/WorkloadTab';
-import { Button } from '@/components/ui/base/Button';
-import { Badge } from '@/components/ui/base/Badge';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/overlays/Popover';
+import { Input } from '@/components/ui/base/Input';
+import { ScrollArea } from '@/components/ui/base/ScrollArea';
 
 const ensureArrayFilter = (val: any): string[] => {
     if (!val) return [];
     if (Array.isArray(val)) return val.map(String);
     return String(val).split(',').filter(Boolean);
 };
+
+interface DropdownSearchFilterProps {
+    label: string;
+    options: Array<{ value: string; label: string }>;
+    selectedValues: string[];
+    onChange: (values: string[]) => void;
+    placeholder?: string;
+}
+
+function DropdownSearchFilter({
+    label,
+    options,
+    selectedValues,
+    onChange,
+    placeholder = "Cari...",
+}: DropdownSearchFilterProps) {
+    const [search, setSearch] = useState('');
+    const filteredOptions = useMemo(() => {
+        return options.filter(opt => opt.label.toLowerCase().includes(search.toLowerCase()));
+    }, [options, search]);
+
+    const handleToggle = (value: string) => {
+        const next = selectedValues.includes(value)
+            ? selectedValues.filter(v => v !== value)
+            : [...selectedValues, value];
+        onChange(next);
+    };
+
+    const handleClear = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        onChange([]);
+    };
+
+    const selectedLabels = useMemo(() => {
+        return options.filter(opt => selectedValues.includes(opt.value)).map(opt => opt.label);
+    }, [options, selectedValues]);
+
+    return (
+        <Popover className="relative">
+            <PopoverTrigger
+                className={cn(
+                    "h-10 px-4 rounded-xl border text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-sm hover:bg-muted/10 outline-none select-none",
+                    selectedValues.length > 0
+                        ? "bg-primary/5 text-primary border-primary/50"
+                        : "bg-white dark:bg-surface-base border-surface-border text-text-soft hover:text-text-main"
+                )}
+            >
+                <span className="max-w-[120px] truncate">
+                    {selectedValues.length > 0 ? `${label}: ${selectedLabels.join(', ')}` : label}
+                </span>
+                {selectedValues.length > 0 && (
+                    <span className="flex items-center justify-center bg-primary text-white text-[8px] h-3.5 min-w-[14px] px-0.5 rounded-full font-bold">
+                        {selectedValues.length}
+                    </span>
+                )}
+                {selectedValues.length > 0 ? (
+                    <span onClick={handleClear} className="hover:text-rose-500 transition-colors p-0.5 rounded">
+                        <X size={10} strokeWidth={2.5} />
+                    </span>
+                ) : (
+                    <ChevronDown size={12} className="opacity-60" />
+                )}
+            </PopoverTrigger>
+
+            <PopoverContent
+                align="start"
+                className="absolute top-full mt-2 w-[240px] p-0 border border-surface-border bg-white dark:bg-surface-base shadow-xl rounded-xl overflow-hidden z-[999]"
+            >
+                <div className="p-2 border-b border-surface-border bg-muted/10">
+                    <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-soft" size={12} />
+                        <Input
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            placeholder={placeholder}
+                            className="h-8 pl-8 text-xs bg-surface-muted/30 border-surface-border rounded-lg"
+                        />
+                    </div>
+                </div>
+
+                <ScrollArea className="max-h-[200px]">
+                    <div className="p-1 space-y-0.5">
+                        {filteredOptions.length === 0 ? (
+                            <div className="py-6 text-center">
+                                <p className="text-[10px] text-text-soft font-bold uppercase">Tidak ditemukan</p>
+                            </div>
+                        ) : (
+                            filteredOptions.map(opt => {
+                                const isSelected = selectedValues.includes(opt.value);
+                                return (
+                                    <button
+                                        key={opt.value}
+                                        type="button"
+                                        onClick={() => handleToggle(opt.value)}
+                                        className={cn(
+                                            "w-full flex items-center justify-between p-2 rounded-md text-left transition-all text-xs font-semibold select-none",
+                                            isSelected
+                                                ? "bg-primary-muted text-primary"
+                                                : "text-text-main hover:bg-surface-muted"
+                                        )}
+                                    >
+                                        <span className="truncate pr-2">{opt.label}</span>
+                                        <div className={cn(
+                                            "h-3.5 w-3.5 rounded border flex items-center justify-center transition-all shrink-0",
+                                            isSelected
+                                                ? "border-primary bg-primary text-white"
+                                                : "border-surface-border bg-white dark:bg-surface-base"
+                                        )}>
+                                            {isSelected && <Check size={10} strokeWidth={3} />}
+                                        </div>
+                                    </button>
+                                );
+                            })
+                        )}
+                    </div>
+                </ScrollArea>
+            </PopoverContent>
+        </Popover>
+    );
+}
 
 export function DashboardMetrics({ metrics }: { metrics: any }) {
     if (!metrics) return null;
@@ -32,119 +151,30 @@ export function DashboardMetrics({ metrics }: { metrics: any }) {
         departments = [],
         types = [],
         users = [],
+        companyGroups = [],
+        companies = [],
         auth
     } = usePage<any>().props;
 
-    const isAdmin = auth?.user?.role === 'Admin';
+    const roleName = auth?.user?.role || 'Staff';
+    const hasFullAccess = ['Admin', 'Super Admin', 'Director', 'CEO', 'VP'].includes(roleName);
+    const isManager = roleName === 'Manager';
+    const hasDepartmentAccess = !hasFullAccess && !isManager;
 
-    // Filter Sheet State
-    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const isAdmin = hasFullAccess;
 
     // Filter values mapped from Inertia props
     const activeFilters = useMemo(() => ({
-        period: filters.period || 'all',
-        created: {
-            from: filters.created_from || '',
-            to: filters.created_to || ''
-        },
         region_ids: ensureArrayFilter(filters.region_ids),
-        vendor_ids: ensureArrayFilter(filters.vendor_ids),
-        contract_type_ids: ensureArrayFilter(filters.contract_type_ids),
-        pic_ids: ensureArrayFilter(filters.pic_ids),
+        company_group_ids: ensureArrayFilter(filters.company_group_ids),
+        company_ids: ensureArrayFilter(filters.company_ids),
         department_ids: ensureArrayFilter(filters.department_ids),
-        statuses: ensureArrayFilter(filters.statuses),
     }), [filters]);
-
-    const filterCategories = useMemo<FilterCategory[]>(() => {
-        const cats: FilterCategory[] = [
-            {
-                label: 'Periode Laporan',
-                key: 'period',
-                type: 'grid',
-                options: [
-                    { value: 'all', label: 'Semua Waktu' },
-                    { value: 'last_30_days', label: '30 Hari Terakhir' },
-                    { value: 'last_6_months', label: '6 Bulan Terakhir' },
-                    { value: 'last_year', label: '1 Tahun Terakhir' },
-                    { value: 'current_year', label: 'Tahun Berjalan' },
-                ]
-            },
-            {
-                label: 'Rentang Kustom',
-                key: 'created',
-                type: 'date-range'
-            },
-            {
-                label: 'Wilayah (Region)',
-                key: 'region_ids',
-                type: 'searchable',
-                options: regions.map((r: any) => ({ value: String(r.id), label: r.name }))
-            },
-            {
-                label: 'Vendor / Partner',
-                key: 'vendor_ids',
-                type: 'searchable',
-                options: vendors.map((v: any) => ({ value: String(v.id), label: v.name }))
-            },
-            {
-                label: 'Tipe Kontrak',
-                key: 'contract_type_ids',
-                type: 'searchable',
-                options: types.map((t: any) => ({ value: String(t.id), label: t.name }))
-            },
-            {
-                label: 'PIC / Person In Charge',
-                key: 'pic_ids',
-                type: 'searchable',
-                options: users.map((u: any) => ({ value: String(u.id), label: u.name }))
-            },
-            {
-                label: 'Status Progres',
-                key: 'statuses',
-                type: 'grid',
-                options: [
-                    { value: 'in_review', label: 'Review' },
-                    { value: 'revision', label: 'Revisi' },
-                    { value: 'pending', label: 'Pending Approval' },
-                    { value: 'approved', label: 'Disetujui' },
-                    { value: 'locked', label: 'Terkunci' },
-                ]
-            }
-        ];
-
-        if (isAdmin) {
-            cats.splice(cats.length - 1, 0, {
-                label: 'Departemen / Divisi',
-                key: 'department_ids',
-                type: 'searchable',
-                options: departments.map((d: any) => ({ value: String(d.id), label: d.name }))
-            });
-        }
-
-        return cats;
-    }, [regions, vendors, types, users, departments, isAdmin]);
-
-    const activeCount = useMemo(() => {
-        let count = 0;
-        if (filters.period && filters.period !== 'all') count++;
-        if (filters.created_from) count++;
-        if (filters.created_to) count++;
-        if (filters.region_ids) count++;
-        if (filters.vendor_ids) count++;
-        if (filters.contract_type_ids) count++;
-        if (filters.pic_ids) count++;
-        if (filters.department_ids) count++;
-        if (filters.statuses) count++;
-        return count;
-    }, [filters]);
 
     const handleFilterChange = (key: string, value: any) => {
         const newParams: any = { ...filters, view: 'dashboard' };
 
-        if (key === 'created_from' || key === 'created_to') {
-            newParams[key] = value;
-            if (value) newParams.period = 'all';
-        } else if (Array.isArray(value)) {
+        if (Array.isArray(value)) {
             newParams[key] = value.join(',');
         } else {
             newParams[key] = value;
@@ -153,133 +183,94 @@ export function DashboardMetrics({ metrics }: { metrics: any }) {
         router.get('/contracts', newParams, { preserveState: true, preserveScroll: true });
     };
 
-    const handleReset = () => {
-        router.get('/contracts', { view: 'dashboard', period: 'all' }, { replace: true });
+    const [activeTab, setActiveTab] = useState<'overview' | 'workload'>('overview');
+    const handleNavigate = (targetView: string, params?: any) => {
+        if (targetView === 'pending') {
+            router.get('/contracts/pending', params);
+        } else if (targetView === 'expiry') {
+            router.get('/contracts/expiry', params);
+        } else if (targetView === 'mine') {
+            router.get('/contracts/mine', params);
+        } else {
+            router.get('/contracts', params);
+        }
     };
 
-    const [activeTab, setActiveTab] = useState<'overview' | 'trend' | 'analysis' | 'workload'>('overview');
-    const handleNavigate = (targetView: string) => router.get('/contracts', { view: targetView });
-
     return (
-        <div className="animate-in fade-in slide-in-from-top-4 space-y-6 duration-500 select-none">
+        <div className="animate-in fade-in slide-in-from-top-4 space-y-8 duration-500 select-none">
 
-            <FilterSheet
-                isOpen={isFilterOpen}
-                onOpenChange={setIsFilterOpen}
-                title="Parameter Analitik"
-                description="Gunakan filter di bawah untuk menyesuaikan cakupan data pada seluruh laporan dashboard."
-                categories={filterCategories}
-                activeFilters={activeFilters}
-                onFilterChange={handleFilterChange}
-                onReset={handleReset}
-                applyText="Terapkan"
-            />
-
-            {/* Premium Tab Switcher & Filter */}
-            <div className="flex items-center justify-between border-b border-surface-border/40">
-                <div className="flex gap-6">
-                    <button
-                        onClick={() => setActiveTab('overview')}
-                        className={cn(
-                            'relative pb-3 text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-2 cursor-pointer',
-                            activeTab === 'overview'
-                                ? 'text-text-main'
-                                : 'text-text-soft hover:text-text-main',
-                        )}
-                    >
-                        <LayoutDashboard size={14} strokeWidth={activeTab === 'overview' ? 3 : 2} />
-                        Ringkasan
-                        {activeTab === 'overview' && (
-                            <div className="absolute right-0 bottom-0 left-0 h-0.5 bg-primary rounded-full animate-in fade-in zoom-in-95 duration-300" />
-                        )}
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('trend')}
-                        className={cn(
-                            'relative pb-3 text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-2 cursor-pointer',
-                            activeTab === 'trend'
-                                ? 'text-text-main'
-                                : 'text-text-soft hover:text-text-main',
-                        )}
-                    >
-                        <TrendingUp size={14} strokeWidth={activeTab === 'trend' ? 3 : 2} />
-                        Tren
-                        {activeTab === 'trend' && (
-                            <div className="absolute right-0 bottom-0 left-0 h-0.5 bg-primary rounded-full animate-in fade-in zoom-in-95 duration-300" />
-                        )}
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('analysis')}
-                        className={cn(
-                            'relative pb-3 text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-2 cursor-pointer',
-                            activeTab === 'analysis'
-                                ? 'text-text-main'
-                                : 'text-text-soft hover:text-text-main',
-                        )}
-                    >
-                        <BarChart3 size={14} strokeWidth={activeTab === 'analysis' ? 3 : 2} />
-                        Analisis
-                        {activeTab === 'analysis' && (
-                            <div className="absolute right-0 bottom-0 left-0 h-0.5 bg-primary rounded-full animate-in fade-in zoom-in-95 duration-300" />
-                        )}
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('workload')}
-                        className={cn(
-                            'relative pb-3 text-xs font-black uppercase tracking-wider transition-all duration-300 flex items-center gap-2 cursor-pointer',
-                            activeTab === 'workload'
-                                ? 'text-text-main'
-                                : 'text-text-soft hover:text-text-main',
-                        )}
-                    >
-                        <Briefcase size={14} strokeWidth={activeTab === 'workload' ? 3 : 2} />
-                        Beban Kerja
-                        {activeTab === 'workload' && (
-                            <div className="absolute right-0 bottom-0 left-0 h-0.5 bg-primary rounded-full animate-in fade-in zoom-in-95 duration-300" />
-                        )}
-                    </button>
+            {/* Premium Chip Navigation */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2">
+                <div className="flex items-center gap-3 overflow-x-auto scrollbar-none pb-2 md:pb-0">
+                    <DashboardTab active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} label="Ringkasan" icon={LayoutDashboard} />
+                    <DashboardTab active={activeTab === 'workload'} onClick={() => setActiveTab('workload')} label="Beban Kerja" icon={Briefcase} />
                 </div>
 
-                <div className="pb-3">
-                    <Button
-                        variant={activeCount > 0 ? "primary" : "white"}
-                        size="sm"
-                        onClick={() => setIsFilterOpen(true)}
-                        className="relative gap-2"
-                    >
-                        <SlidersHorizontal size={14} />
-                        Filter Data
-                        {activeCount > 0 && (
-                            <span className="ml-1 flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[9px] font-black bg-primary-foreground text-primary">
-                                {activeCount}
-                            </span>
-                        )}
-                    </Button>
+                <div className="flex flex-wrap items-center gap-3">
+                    {hasFullAccess && (
+                        <>
+                            <DropdownSearchFilter
+                                label="Wilayah"
+                                options={regions.map((r: any) => ({ value: String(r.id), label: r.name }))}
+                                selectedValues={activeFilters.region_ids}
+                                onChange={(vals) => handleFilterChange('region_ids', vals)}
+                                placeholder="Cari wilayah..."
+                            />
+                            <DropdownSearchFilter
+                                label="Grup"
+                                options={companyGroups.map((g: any) => ({ value: String(g.id), label: g.name }))}
+                                selectedValues={activeFilters.company_group_ids}
+                                onChange={(vals) => handleFilterChange('company_group_ids', vals)}
+                                placeholder="Cari grup..."
+                            />
+                            <DropdownSearchFilter
+                                label="Perusahaan"
+                                options={companies.map((c: any) => ({ value: String(c.id), label: c.name }))}
+                                selectedValues={activeFilters.company_ids}
+                                onChange={(vals) => handleFilterChange('company_ids', vals)}
+                                placeholder="Cari perusahaan..."
+                            />
+                            <DropdownSearchFilter
+                                label="Divisi"
+                                options={departments.map((d: any) => ({ value: String(d.id), label: d.name }))}
+                                selectedValues={activeFilters.department_ids}
+                                onChange={(vals) => handleFilterChange('department_ids', vals)}
+                                placeholder="Cari divisi..."
+                            />
+                        </>
+                    )}
+
+                    {isManager && (
+                        <>
+                            <DropdownSearchFilter
+                                label="Perusahaan"
+                                options={companies.map((c: any) => ({ value: String(c.id), label: c.name }))}
+                                selectedValues={activeFilters.company_ids}
+                                onChange={(vals) => handleFilterChange('company_ids', vals)}
+                                placeholder="Cari perusahaan..."
+                            />
+                            <DropdownSearchFilter
+                                label="Divisi"
+                                options={departments.map((d: any) => ({ value: String(d.id), label: d.name }))}
+                                selectedValues={activeFilters.department_ids}
+                                onChange={(vals) => handleFilterChange('department_ids', vals)}
+                                placeholder="Cari divisi..."
+                            />
+                        </>
+                    )}
                 </div>
             </div>
 
-            {/* Tab Contents with Transition Animations */}
+            {/* Tab Contents with Premium Transitions */}
             <div className="transition-all duration-300">
                 {activeTab === 'overview' && (
-                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
                         <OverviewTab data={metrics} onNavigate={handleNavigate} />
                     </div>
                 )}
 
-                {activeTab === 'trend' && (
-                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                        <TrendTab data={metrics} />
-                    </div>
-                )}
-
-                {activeTab === 'analysis' && (
-                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                        <AnalysisTab data={metrics} />
-                    </div>
-                )}
-
                 {activeTab === 'workload' && (
-                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
                         <WorkloadTab data={metrics} />
                     </div>
                 )}
@@ -288,3 +279,19 @@ export function DashboardMetrics({ metrics }: { metrics: any }) {
     );
 }
 
+function DashboardTab({ active, onClick, label, icon: Icon }: { active: boolean; onClick: () => void; label: string; icon: any }) {
+    return (
+        <button
+            onClick={onClick}
+            className={cn(
+                'relative px-5 py-2.5 rounded-2xl text-[11px] font-semibold uppercase tracking-[0.15em] transition-all duration-300 flex items-center gap-2.5 cursor-pointer outline-none group whitespace-nowrap border',
+                active
+                    ? 'bg-primary text-primary-foreground border-primary shadow-[0_8px_20px_-8px_rgba(79,70,229,0.5)]'
+                    : 'bg-surface-muted/30 text-text-soft border-surface-border/60 hover:bg-surface-muted/60 hover:text-text-main',
+            )}
+        >
+            <Icon size={14} className={cn("transition-colors", active ? "text-primary-foreground" : "text-text-soft group-hover:text-primary opacity-60")} />
+            {label}
+        </button>
+    );
+}

@@ -20,10 +20,10 @@ export function TypeDistribution({ items }: TypeDistributionProps) {
                         return (
                             <div key={t.name}>
                                 <div className="mb-1.5 flex items-center justify-between gap-2">
-                                    <span className="text-text-main/80 truncate text-[11px] font-bold" title={t.name}>
+                                    <span className="text-text-main/80 truncate text-[11px] font-medium" title={t.name}>
                                         {t.name.replace('Perjanjian ', '').replace(' (PKS)', '')}
                                     </span>
-                                    <span className="text-text-main shrink-0 text-[11px] font-black">{t.count}</span>
+                                    <span className="text-text-main shrink-0 text-[11px] font-semibold">{t.count}</span>
                                 </div>
                                 <div className="bg-surface-muted/40 h-1 w-full overflow-hidden rounded-full border border-surface-border/10">
                                     <div

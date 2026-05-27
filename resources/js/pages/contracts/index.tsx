@@ -9,7 +9,7 @@ import SendApprovalModal from '@/components/contracts/SendApprovalModal';
 import { ToastProvider, useToast } from '@/components/contracts/Toast';
 import { Button } from '@/components/ui/base/Button';
 import { StatusBadge } from '@/components/ui/data/StatusBadge';
-import { FilterSheet } from '@/components/ui/data/FilterSheet';
+import { FilterPopover } from '@/components/ui/data/FilterPopover';
 import { Column, DataTable as TableContract } from '@/components/ui/data/DataTable';
 import { ContractTableSkeleton, ContractCardSkeleton } from '@/components/ui/feedback/ContractSkeleton';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
@@ -286,7 +286,7 @@ function ContractPage({
         }
     }, [debouncedSearch, handleFilterChange, filters?.search]);
 
-    const [filterOpen, setFilterOpen] = useState(false);
+    // Filter open state is handled internally by FilterPopover
     const [createOpen, setCreateOpen] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
     const [deleteOpen, setDeleteOpen] = useState(false);
@@ -543,28 +543,80 @@ function ContractPage({
                             {view === 'profile' && <ProfileView meUser={meUser} showToast={showToast} />}
                             {view !== 'profile' && view !== 'dashboard' && (
                                 <div className="bg-surface-base/20 border-surface-border flex min-h-0 flex-1 flex-col gap-0 overflow-hidden">
-                                    <div className="border-surface-border bg-surface-base/80 backdrop-blur-md sticky top-0 z-20 flex items-center gap-6 border-b px-5 py-4">
-                                        <SearchInput
-                                            containerClassName="max-w-sm flex-1"
-                                            placeholder="Cari kontrak..."
-                                            value={search}
-                                            onChange={(e) => setSearch(e.target.value)}
-                                        />
+                                    <div className="border-surface-border bg-surface-base/80 backdrop-blur-md sticky top-0 z-[50] flex items-center gap-6 border-b px-5 py-4">
+                                        <div className="flex items-center gap-2 max-w-sm flex-1">
+                                            <SearchInput
+                                                containerClassName="flex-1"
+                                                placeholder="Cari kontrak..."
+                                                value={search}
+                                                onChange={(e) => setSearch(e.target.value)}
+                                            />
+                                            <FilterPopover
+                                                totalResults={contractsPaged.total}
+                                                activeFilters={{
+                                                    status: ensureArray(filters.status),
+                                                    contract_type_id: ensureArray(filters.contract_type_id),
+                                                    department_id: ensureArray(filters.department_id),
+                                                    created_from: filters.created_from || '',
+                                                    created_to: filters.created_to || '',
+                                                }}
+                                                onFilterChange={handleSingleFilterToggle}
+                                                onReset={handleClearAllFilters}
+                                                categories={[
+                                                    {
+                                                        label: 'Status Dokumen',
+                                                        key: 'status',
+                                                        type: 'searchable',
+                                                        options: [
+                                                            { label: 'Draft', value: 'draft', icon: Layers, color: 'bg-surface-muted text-text-soft' },
+                                                            { label: 'Pending', value: 'pending', icon: Clock, color: 'bg-warning/10 text-warning' },
+                                                            { label: 'In Review', value: 'in_review', icon: Zap, color: 'bg-warning/10 text-warning' },
+                                                            { label: 'Revision', value: 'revision', icon: AlertTriangle, color: 'bg-danger/10 text-danger' },
+                                                            { label: 'Approved', value: 'approved', icon: CheckCircle2, color: 'bg-primary text-primary-foreground' },
+                                                            { label: 'Rejected', value: 'rejected', icon: AlertCircle, color: 'bg-danger/10 text-danger' },
+                                                        ],
+                                                    },
+                                                    {
+                                                        label: 'Departemen',
+                                                        key: 'department_id',
+                                                        type: 'searchable',
+                                                        options: departments.map((d) => ({
+                                                            label: d.name,
+                                                            value: d.id,
+                                                        })),
+                                                    },
+                                                    {
+                                                        label: 'Kategori Kontrak',
+                                                        key: 'contract_type_id',
+                                                        type: 'searchable',
+                                                        options: types.map((t) => ({
+                                                            label: t.name,
+                                                            value: t.id,
+                                                            icon: FileType,
+                                                        })),
+                                                    },
+                                                    {
+                                                        label: 'Rentang Tanggal Dibuat',
+                                                        key: 'created',
+                                                        type: 'date-range',
+                                                    },
+                                                ]}
+                                            >
+                                                <Button
+                                                    variant={activeFiltersCount > 0 ? "primary" : "white"}
+                                                    className="relative h-10 w-10 p-0 flex items-center justify-center shrink-0 rounded-xl"
+                                                >
+                                                    <Filter size={14} strokeWidth={2.5} />
+                                                    {activeFiltersCount > 0 && (
+                                                        <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[9px] font-semibold bg-primary text-white shadow-sm border border-white dark:border-black">
+                                                            {activeFiltersCount}
+                                                        </span>
+                                                    )}
+                                                </Button>
+                                            </FilterPopover>
+                                        </div>
                                         <div className="ml-auto flex items-center gap-2">
                                             <LayoutToggle value={layout as LayoutType} onChange={(val) => setLayout(val)} />
-                                            <Button
-                                                variant={activeFiltersCount > 0 ? "primary" : "white"}
-                                                onClick={() => setFilterOpen(true)}
-                                                className="relative"
-                                            >
-                                                <Filter size={14} strokeWidth={2.5} />
-                                                Filter
-                                                {activeFiltersCount > 0 && (
-                                                    <span className="ml-1 flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[9px] font-semibold bg-primary-foreground text-primary">
-                                                        {activeFiltersCount}
-                                                    </span>
-                                                )}
-                                            </Button>
                                             <Button variant="white" onClick={() => setCreateOpen(true)}>
                                                 <PlusCircle size={16} strokeWidth={2.5} /> Kontrak Baru
                                             </Button>
@@ -739,61 +791,7 @@ function ContractPage({
                 vendors={vendors}
                 processing={processing}
             />
-            <FilterSheet
-                isOpen={filterOpen}
-                onOpenChange={setFilterOpen}
-                title="Filter Kontrak"
-                description="Saring data kontrak berdasarkan status dan tipe dokumen"
-                totalResults={contractsPaged.total}
-                activeFilters={{
-                    status: ensureArray(filters.status),
-                    contract_type_id: ensureArray(filters.contract_type_id),
-                    department_id: ensureArray(filters.department_id),
-                    created_from: filters.created_from || '',
-                    created_to: filters.created_to || '',
-                }}
-                onFilterChange={handleSingleFilterToggle}
-                onReset={handleClearAllFilters}
-                categories={[
-                    {
-                        label: 'Status Dokumen',
-                        key: 'status',
-                        type: 'searchable',
-                        options: [
-                            { label: 'Draft', value: 'draft', icon: Layers, color: 'bg-surface-muted text-text-soft' },
-                            { label: 'Pending', value: 'pending', icon: Clock, color: 'bg-warning/10 text-warning' },
-                            { label: 'In Review', value: 'in_review', icon: Zap, color: 'bg-warning/10 text-warning' },
-                            { label: 'Revision', value: 'revision', icon: AlertTriangle, color: 'bg-danger/10 text-danger' },
-                            { label: 'Approved', value: 'approved', icon: CheckCircle2, color: 'bg-primary text-primary-foreground' },
-                            { label: 'Rejected', value: 'rejected', icon: AlertCircle, color: 'bg-danger/10 text-danger' },
-                        ],
-                    },
-                    {
-                        label: 'Departemen',
-                        key: 'department_id',
-                        type: 'searchable',
-                        options: departments.map((d) => ({
-                            label: d.name,
-                            value: d.id,
-                        })),
-                    },
-                    {
-                        label: 'Kategori Kontrak',
-                        key: 'contract_type_id',
-                        type: 'searchable',
-                        options: types.map((t) => ({
-                            label: t.name,
-                            value: t.id,
-                            icon: FileType,
-                        })),
-                    },
-                    {
-                        label: 'Rentang Tanggal Dibuat',
-                        key: 'created',
-                        type: 'date-range',
-                    },
-                ]}
-            />
+            {/* FilterSheet is removed and replaced by FilterPopover trigger above */}
             <ConfirmationModal
                 open={deleteOpen}
                 onClose={() => setDeleteOpen(false)}

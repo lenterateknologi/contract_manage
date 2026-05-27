@@ -17,7 +17,7 @@ export function MonthlyTrend({ items }: MonthlyTrendProps) {
                         const h = Math.max((t.total / max) * 100, 4);
                         return (
                             <div key={t.month} className="group flex flex-1 flex-col items-center gap-1.5">
-                                <span className="text-text-desc/0 group-hover:text-text-desc/80 text-[9px] font-bold transition-all duration-200 translate-y-1 group-hover:translate-y-0">
+                                <span className="text-text-desc/0 group-hover:text-text-desc/80 text-[9px] font-medium transition-all duration-200 translate-y-1 group-hover:translate-y-0">
                                     {t.total}
                                 </span>
                                 <div
@@ -25,7 +25,7 @@ export function MonthlyTrend({ items }: MonthlyTrendProps) {
                                     style={{ height: `${h}%` }}
                                     title={`${t.month}: ${t.total} kontrak`}
                                 />
-                                <span className="text-text-desc/50 text-[10px] font-bold mt-1">{t.month}</span>
+                                <span className="text-text-desc/50 text-[10px] font-medium mt-1">{t.month}</span>
                             </div>
                         );
                     })}

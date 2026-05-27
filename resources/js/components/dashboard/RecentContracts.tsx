@@ -40,7 +40,7 @@ export function RecentContracts({ items, onViewAll }: RecentContractsProps) {
                 <SectionTitle>Kontrak Terbaru</SectionTitle>
                 <button
                     onClick={onViewAll}
-                    className="text-primary/70 hover:text-primary text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                    className="text-primary/70 hover:text-primary text-[11px] font-medium uppercase tracking-wider transition-colors cursor-pointer"
                 >
                     Lihat Semua →
                 </button>
@@ -49,15 +49,15 @@ export function RecentContracts({ items, onViewAll }: RecentContractsProps) {
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="border-border/40 bg-muted/20 border-b dark:border-slate-800/40 dark:bg-slate-900/35">
-                            <th className="text-muted-foreground px-5 py-3 text-[9px] font-bold tracking-wider uppercase">No. Kontrak</th>
-                            <th className="text-muted-foreground px-5 py-3 text-[9px] font-bold tracking-wider uppercase">
+                            <th className="text-muted-foreground px-5 py-3 text-[9px] font-medium tracking-wider uppercase">No. Kontrak</th>
+                            <th className="text-muted-foreground px-5 py-3 text-[9px] font-medium tracking-wider uppercase">
                                 Judul & Pembuat
                             </th>
-                            <th className="text-muted-foreground hidden px-5 py-3 text-[9px] font-bold tracking-wider uppercase md:table-cell">
+                            <th className="text-muted-foreground hidden px-5 py-3 text-[9px] font-medium tracking-wider uppercase md:table-cell">
                                 Tipe
                             </th>
-                            <th className="text-muted-foreground px-5 py-3 text-[9px] font-bold tracking-wider uppercase">Status</th>
-                            <th className="text-muted-foreground hidden px-5 py-3 text-right text-[9px] font-bold tracking-wider uppercase lg:table-cell">
+                            <th className="text-muted-foreground px-5 py-3 text-[9px] font-medium tracking-wider uppercase">Status</th>
+                            <th className="text-muted-foreground hidden px-5 py-3 text-right text-[9px] font-medium tracking-wider uppercase lg:table-cell">
                                 Tanggal
                             </th>
                         </tr>
@@ -86,14 +86,14 @@ export function RecentContracts({ items, onViewAll }: RecentContractsProps) {
                                     >
                                         {/* No. Kontrak */}
                                         <td className="px-5 py-3.5">
-                                            <span className="text-primary/80 group-hover:text-primary font-mono text-[10px] font-bold whitespace-nowrap transition-colors">
+                                            <span className="text-primary/80 group-hover:text-primary font-mono text-[10px] font-medium whitespace-nowrap transition-colors">
                                                 {c.contract_no}
                                             </span>
                                         </td>
 
                                         {/* Judul + Pembuat */}
                                         <td className="px-5 py-3.5">
-                                            <span className="text-foreground group-hover:text-primary block max-w-[240px] truncate text-[12px] font-bold transition-colors">
+                                            <span className="text-foreground group-hover:text-primary block max-w-[240px] truncate text-[12px] font-medium transition-colors">
                                                 {c.title}
                                             </span>
                                             <span className="text-muted-foreground text-[10px] font-medium block mt-0.5">{c.creator}</span>
@@ -103,7 +103,7 @@ export function RecentContracts({ items, onViewAll }: RecentContractsProps) {
                                         <td className="hidden px-5 py-3.5 md:table-cell">
                                             <span
                                                 className={cn(
-                                                    'inline-block rounded-full border px-2.5 py-0.5 text-[9px] font-bold tracking-wide whitespace-nowrap uppercase',
+                                                    'inline-block rounded-full border px-2.5 py-0.5 text-[9px] font-medium tracking-wide whitespace-nowrap uppercase',
                                                     typeColor,
                                                 )}
                                                 title={c.type ?? ''}
@@ -116,7 +116,7 @@ export function RecentContracts({ items, onViewAll }: RecentContractsProps) {
                                         <td className="px-5 py-3.5">
                                             <span
                                                 className={cn(
-                                                    'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold',
+                                                    'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-medium',
                                                     statusCfg.bg,
                                                     statusCfg.color,
                                                 )}

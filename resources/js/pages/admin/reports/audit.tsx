@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/base/Button';
-import { FilterCategory, FilterSheet } from '@/components/ui/data/FilterSheet';
+import { FilterCategory, FilterPopover } from '@/components/ui/data/FilterPopover';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import axios from 'axios';
@@ -23,7 +23,7 @@ interface AuditData {
 export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem[] }) {
     const [data, setData] = useState<AuditData | null>(null);
     const [loading, setLoading] = useState(true);
-    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    // Filter open state is handled internally by FilterPopover
     const [filters, setFilters] = useState({
         date_from: '',
         date_to: '',
@@ -83,14 +83,28 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <Button
-                            variant="outline"
-                            onClick={() => setIsFilterOpen(true)}
-                            className="bg-card border-border text-foreground hover:bg-muted font-bold shadow-sm"
+                        <FilterPopover
+                            categories={filterCategories}
+                            activeFilters={filters}
+                            onFilterChange={(key, val) => {
+                                const nextFilters = { ...filters, [key]: val };
+                                setFilters(nextFilters);
+                                fetchData(nextFilters);
+                            }}
+                            onReset={() => {
+                                const clear = { date_from: '', date_to: '', creator_ids: [] };
+                                setFilters(clear);
+                                fetchData(clear);
+                            }}
                         >
-                            <Filter className="mr-2 h-4 w-4" />
-                            Filter Log
-                        </Button>
+                            <Button
+                                variant="outline"
+                                className="bg-card border-border text-foreground hover:bg-muted font-bold shadow-sm"
+                            >
+                                <Filter className="mr-2 h-4 w-4" />
+                                Filter Log
+                            </Button>
+                        </FilterPopover>
                         <Button onClick={handleExport} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-sm">
                             <Download className="mr-2 h-4 w-4" />
                             Ekspor Audit Trail
@@ -209,17 +223,7 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
                 </div>
             </div>
 
-            <FilterSheet
-                isOpen={isFilterOpen}
-                onOpenChange={setIsFilterOpen}
-                title="Filter Jejak Audit"
-                description="Tentukan kriteria log yang ingin Anda tampilkan."
-                categories={filterCategories}
-                activeFilters={filters}
-                onFilterChange={(key, val) => setFilters((p) => ({ ...p, [key]: val }))}
-                onReset={() => setFilters({ date_from: '', date_to: '', creator_ids: [] })}
-                applyText="Tampilkan Log"
-            />
+            {/* FilterPopover trigger wraps the button above */}
         </>
     );
 }

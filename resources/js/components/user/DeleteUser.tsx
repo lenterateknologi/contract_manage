@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/base/Label';
 
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogTitle, DialogTrigger } from '@/components/ui/overlays/Dialog';
 
-export default function DeleteUser() {
+export default function DeleteUser({ className }: { className?: string }) {
     const passwordInput = useRef<HTMLInputElement>(null);
     const { data, setData, delete: destroy, processing, reset, errors, clearErrors } = useForm({ password: '' });
 
@@ -34,7 +34,7 @@ export default function DeleteUser() {
             <DialogTrigger asChild>
                 <button
                     type="button"
-                    className="text-xs font-semibold text-text-soft hover:text-danger underline cursor-pointer transition-colors"
+                    className={className || "text-xs font-semibold text-text-soft hover:text-danger underline cursor-pointer transition-colors"}
                 >
                     Close Account
                 </button>

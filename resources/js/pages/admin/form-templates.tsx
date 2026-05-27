@@ -3,8 +3,8 @@ import { Button } from '@/components/ui/base/Button';
 import { Input } from '@/components/ui/base/Input';
 import { Label } from '@/components/ui/base/Label';
 import { Textarea } from '@/components/ui/base/Textarea';
-import { FilterCategory, FilterSheet } from '@/components/ui/data/FilterSheet';
-import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
+import { FilterCategory, FilterPopover } from '@/components/ui/data/FilterPopover';
+import { Column, DataTable as TableMasterData } from '@/components/ui/data/DataTable';
 import { SearchInput } from '@/components/ui/forms/SearchInput';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
 import { LayoutToggle } from '@/components/ui/navigation/LayoutToggle';
@@ -254,7 +254,6 @@ export default function FormTemplates({ templates, contract_types }: Props) {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [selectedTemplate, setSelectedTemplate] = useState<FormTemplate | null>(null);
 
@@ -352,6 +351,9 @@ export default function FormTemplates({ templates, contract_types }: Props) {
 
     const handleFilterChange = (key: string, value: any) => {
         setActiveFilters((prev) => {
+            if (Array.isArray(value)) {
+                return { ...prev, [key]: value };
+            }
             const current = [...(prev[key] || [])];
             const valStr = String(value);
             const idx = current.indexOf(valStr);
@@ -447,23 +449,30 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                     <div className="ml-auto flex items-center gap-2">
                         <LayoutToggle value={layout} onChange={setLayout} className="mr-2" />
 
-                        <Button
-                            variant="outline"
-                            onClick={() => setIsFilterOpen(true)}
+                        <FilterPopover
+                            categories={filterCategories}
+                            activeFilters={activeFilters}
+                            onFilterChange={handleFilterChange}
+                            onReset={handleResetFilters}
+                            totalResults={filteredTemplates.length}
                         >
-                            <Filter size={14} />
-                            Filter
-                            {hasActiveFilters && (
-                                <span
-                                    className={cn(
-                                        'ml-1 flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[9px] font-bold',
-                                        hasActiveFilters ? 'text-primary bg-white' : 'bg-primary text-white',
-                                    )}
-                                >
-                                    {Object.values(activeFilters).flat().length}
-                                </span>
-                            )}
-                        </Button>
+                            <Button
+                                variant="outline"
+                            >
+                                <Filter size={14} />
+                                Filter
+                                {hasActiveFilters && (
+                                    <span
+                                        className={cn(
+                                            'ml-1 flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[9px] font-bold',
+                                            hasActiveFilters ? 'text-primary bg-white' : 'bg-primary text-white',
+                                        )}
+                                    >
+                                        {Object.values(activeFilters).flat().length}
+                                    </span>
+                                )}
+                            </Button>
+                        </FilterPopover>
                         <Button variant="outline" onClick={() => setIsImportModalOpen(true)}>
                             <Upload size={14} />
                             Impor Template
@@ -640,18 +649,7 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                 </div>
             </div>
 
-            {/* Global UI Filter Component */}
-            <FilterSheet
-                isOpen={isFilterOpen}
-                onOpenChange={setIsFilterOpen}
-                title="Library Filter"
-                description="Manage your template collection visibility."
-                categories={filterCategories}
-                activeFilters={activeFilters}
-                onFilterChange={handleFilterChange}
-                onReset={handleResetFilters}
-                totalResults={filteredTemplates.length}
-            />
+            {/* FilterPopover is now used as a wrapper for the filter button above */}
 
             {/* Modals - High Density */}
             {/* Create Template Modal */}

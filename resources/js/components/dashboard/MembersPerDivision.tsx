@@ -87,14 +87,14 @@ export function MembersPerDivision({
         <div className="space-y-5 m-5 select-none animate-in fade-in duration-500">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-text-main text-sm font-black tracking-tight uppercase">Anggota per Divisi</h2>
+                    <h2 className="text-text-main text-sm font-semibold tracking-tight uppercase">Anggota per Divisi</h2>
                     <p className="text-text-desc text-xs font-semibold mt-0.5">
                         Daftar pengguna terdaftar dikelompokkan berdasarkan divisi/departemen mereka.
                     </p>
                 </div>
-                <div className="bg-surface-muted/40 border border-surface-border/40 px-3 py-1 rounded-full flex items-center gap-1.5 text-xs font-bold text-text-main">
+                <div className="bg-surface-muted/40 border border-surface-border/40 px-3 py-1 rounded-full flex items-center gap-1.5 text-xs font-medium text-text-main">
                     <Users size={13} className="text-primary" />
-                    <span className="text-xs font-black uppercase">Total {users.length} Pengguna</span>
+                    <span className="text-xs font-semibold uppercase">Total {users.length} Pengguna</span>
                 </div>
             </div>
 
@@ -118,13 +118,13 @@ export function MembersPerDivision({
                                         <Building2 size={14} />
                                     </div>
                                     <div className="min-w-0">
-                                        <h3 className="text-text-main truncate text-xs font-black tracking-tight uppercase" title={deptName}>
+                                        <h3 className="text-text-main truncate text-xs font-semibold tracking-tight uppercase" title={deptName}>
                                             {deptName}
                                         </h3>
-                                        <span className="text-text-desc text-[10px] font-bold block leading-none mt-1 uppercase">{deptCode || 'Management'}</span>
+                                        <span className="text-text-desc text-[10px] font-medium block leading-none mt-1 uppercase">{deptCode || 'Management'}</span>
                                     </div>
                                 </div>
-                                <span className="bg-primary/10 text-primary/80 border border-primary/10 text-[10px] font-black uppercase px-2 py-0.5 rounded-full shrink-0">
+                                <span className="bg-primary/10 text-primary/80 border border-primary/10 text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full shrink-0">
                                     {deptMembers.length}
                                 </span>
                             </div>
@@ -142,7 +142,7 @@ export function MembersPerDivision({
                                             <div
                                                 style={customStyle}
                                                 className={cn(
-                                                    "h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 border border-surface-border/10",
+                                                    "h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0 border border-surface-border/10",
                                                     !customStyle && "bg-surface-muted text-text-desc"
                                                 )}
                                             >
@@ -151,7 +151,7 @@ export function MembersPerDivision({
 
                                             {/* User Details */}
                                             <div className="min-w-0 flex-1">
-                                                <span className="text-text-main text-xs font-bold block truncate leading-tight group-hover/user:text-primary transition-colors">
+                                                <span className="text-text-main text-xs font-medium block truncate leading-tight group-hover/user:text-primary transition-colors">
                                                     {u.name}
                                                 </span>
                                                 <div className="flex items-center gap-1.5 mt-0.5">

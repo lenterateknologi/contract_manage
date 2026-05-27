@@ -264,9 +264,9 @@ const ContractDetailView = ({
                             <div className="flex items-center gap-2">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
                                             className="h-7 w-7 text-primary-foreground/40 hover:bg-white/10 hover:text-white active:scale-95"
                                         >
                                             <MoreVertical size={14} />
@@ -292,6 +292,21 @@ const ContractDetailView = ({
                                             Audit Trail
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
+                                            onClick={() => setDetailTab('timeline')}
+                                            className={cn(
+                                                'flex cursor-pointer items-center gap-2 rounded-lg text-xs font-semibold tracking-tight uppercase transition-all',
+                                                detailTab === 'timeline'
+                                                    ? 'bg-primary text-primary-foreground'
+                                                    : 'text-text-main hover:bg-surface-muted',
+                                            )}
+                                        >
+                                            <CheckCircle2
+                                                size={14}
+                                                className={cn(detailTab === 'timeline' ? 'text-primary-foreground' : 'text-text-soft')}
+                                            />{' '}
+                                            Alur Persetujuan
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
                                             onClick={() => setDetailTab('members')}
                                             className={cn(
                                                 'flex cursor-pointer items-center gap-2 rounded-lg text-xs font-semibold tracking-tight uppercase transition-all',
@@ -313,8 +328,6 @@ const ContractDetailView = ({
                                 { id: 'f2', label: 'F2 (Ringkasan)' },
                                 { id: 'agreement', label: 'Draft Perjanjian' },
                                 { id: 'attachments', label: 'Lampiran' },
-                                { id: 'timeline', label: 'Alur Persetujuan' },
-                                { id: 'members', label: 'Daftar Member' },
                                 { id: 'chat', label: 'Chat' },
                                 { id: 'references', label: 'Kontrak Referensi' },
                             ].map((tab) => (
@@ -407,10 +420,10 @@ const ContractDetailView = ({
                                     {contract.workflow_step?.step === 1
                                         ? 'Kirim Persetujuan'
                                         : contract.requires_pic_assignment
-                                          ? 'Tugaskan PIC'
-                                          : contract.workflow_step?.step_type === 'UPLOAD'
-                                            ? 'Upload Dokumen TTD'
-                                            : 'Setujui Kontrak'}
+                                            ? 'Tugaskan PIC'
+                                            : contract.workflow_step?.step_type === 'UPLOAD'
+                                                ? 'Upload Dokumen TTD'
+                                                : 'Setujui Kontrak'}
                                 </Button>
                                 <Button
                                     variant="outline"

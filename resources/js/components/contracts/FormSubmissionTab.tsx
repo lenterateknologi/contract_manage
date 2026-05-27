@@ -733,7 +733,7 @@ function GenericFormTab({
                         </div>
                     )}
                     <div className="relative">
-                        <Button variant={showVersions ? 'primary' : 'white'} onClick={() => setShowVersions(!showVersions)}>
+                        <Button variant={showVersions ? 'primary' : 'white'} onClick={() => { setShowVersions(!showVersions); setShowMoreActions(false); }}>
                             <History
                                 size={14}
                                 className={cn(
@@ -800,7 +800,7 @@ function GenericFormTab({
                     </div>
 
                     <div className="relative">
-                        <Button variant={showMoreActions ? 'primary' : 'white'} size="icon" onClick={() => setShowMoreActions(!showMoreActions)}>
+                        <Button variant={showMoreActions ? 'primary' : 'white'} size="icon" onClick={() => { setShowMoreActions(!showMoreActions); setShowVersions(false); }}>
                             <MoreVertical size={14} />
                         </Button>
 

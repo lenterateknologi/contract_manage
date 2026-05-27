@@ -12,11 +12,13 @@ import {
     Layers,
     ArrowDownLeft,
     ArrowUpRight,
-    Activity
+    Activity,
+    Calendar
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SearchInput } from '@/components/ui/forms/SearchInput';
 import { useDebounce } from '@/hooks/use-debounce';
+import { MetricItem } from './MetricItem';
 import {
     ResponsiveContainer,
     BarChart,
@@ -47,6 +49,11 @@ interface UserWorkload {
     pending_tasks_count: number;
     initiated_contracts_count: number;
     load_status: 'Ready' | 'Sibuk';
+    stats_this_month?: {
+        pending: number;
+        active: number;
+        completed: number;
+    };
 }
 
 interface CategoryTraffic {
@@ -112,17 +119,21 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
         });
     }, [userWorkloads, selectedDeptId, debouncedSearch, statusFilter]);
 
-    const totalPendingTasks = useMemo(() => {
-        return userWorkloads.reduce((sum, u) => sum + (u.pending_tasks_count || 0), 0);
+    const totalPendingThisMonth = useMemo(() => {
+        return userWorkloads.reduce((sum, u) => sum + (u.stats_this_month?.pending || 0), 0);
     }, [userWorkloads]);
 
-    const totalActiveReviews = useMemo(() => {
-        return userWorkloads.reduce((sum, u) => sum + (u.active_contracts_count || 0), 0);
+    const totalActiveThisMonth = useMemo(() => {
+        return userWorkloads.reduce((sum, u) => sum + (u.stats_this_month?.active || 0), 0);
     }, [userWorkloads]);
 
-    const busyPicsCount = useMemo(() => {
-        return userWorkloads.filter(u => u.load_status === 'Sibuk').length;
+    const totalCompletedThisMonth = useMemo(() => {
+        return userWorkloads.reduce((sum, u) => sum + (u.stats_this_month?.completed || 0), 0);
     }, [userWorkloads]);
+
+    const totalInProcessThisMonth = useMemo(() => {
+        return totalPendingThisMonth + totalActiveThisMonth;
+    }, [totalPendingThisMonth, totalActiveThisMonth]);
 
     const handleOpenChat = (user: UserWorkload) => {
         setSelectedChatUser(user);
@@ -171,58 +182,31 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
             {/* KPI Cards */}
-            <div className="grid grid-cols-3 gap-4 md:grid-cols-4 select-none">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
-                        <CardTitle className="text-[10px] font-black uppercase tracking-wider text-text-desc">Penyelesaian Renewal</CardTitle>
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-success/10 text-success border border-success/10">
-                            <UserCheck className="h-4 w-4" />
-                        </div>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                        <div className="text-2xl font-bold text-text-main">{renewalCompletionRate}%</div>
-                        <p className="text-[9px] font-semibold text-text-desc uppercase mt-1">Laju Penyelesaian</p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
-                        <CardTitle className="text-[10px] font-black uppercase tracking-wider text-text-desc">Tugas Pending</CardTitle>
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-warning/10 text-warning border border-warning/10">
-                            <Clock className="h-4 w-4" />
-                        </div>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                        <div className="text-2xl font-bold text-text-main">{totalPendingTasks}</div>
-                        <p className="text-[9px] font-semibold text-text-desc uppercase mt-1">Dokumen Menunggu</p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
-                        <CardTitle className="text-[10px] font-black uppercase tracking-wider text-text-desc">Direview & Revisi</CardTitle>
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/10">
-                            <Layers className="h-4 w-4" />
-                        </div>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                        <div className="text-2xl font-bold text-text-main">{totalActiveReviews}</div>
-                        <p className="text-[9px] font-semibold text-text-desc uppercase mt-1">Proses Aktif</p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
-                        <CardTitle className="text-[10px] font-black uppercase tracking-wider text-text-desc">PIC Legal Sibuk</CardTitle>
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-danger/10 text-danger border border-danger/10">
-                            <Briefcase className="h-4 w-4" />
-                        </div>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                        <div className="text-2xl font-bold text-text-main">{busyPicsCount}</div>
-                        <p className="text-[9px] font-semibold text-text-desc uppercase mt-1">Beban Tinggi</p>
-                    </CardContent>
-                </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 select-none">
+                <MetricItem
+                    label="Total Kontrak Diproses"
+                    value={totalInProcessThisMonth}
+                    icon={Layers}
+                    color="text-primary"
+                />
+                <MetricItem
+                    label="Kontrak Pending"
+                    value={totalPendingThisMonth}
+                    icon={Clock}
+                    color="text-warning"
+                />
+                <MetricItem
+                    label="Kontrak Dikerjakan"
+                    value={totalActiveThisMonth}
+                    icon={Briefcase}
+                    color="text-indigo-500"
+                />
+                <MetricItem
+                    label="Total Kontrak Selesai"
+                    value={totalCompletedThisMonth}
+                    icon={UserCheck}
+                    color="text-success"
+                />
             </div>
 
             <div className="lg:col-span-1 space-y-4">
@@ -241,7 +225,7 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                                 value={selectedDeptId}
                                 onChange={(e) => setSelectedDeptId(e.target.value)}
                                 disabled={!isAdmin}
-                                className="h-9 w-full md:w-auto pl-3 pr-8 text-xs bg-background border border-input rounded-lg font-bold cursor-pointer disabled:opacity-75 appearance-none focus:ring-1 focus:ring-primary outline-none"
+                                className="h-9 w-full md:w-auto pl-3 pr-8 text-xs bg-background border border-input rounded-lg font-medium cursor-pointer disabled:opacity-75 appearance-none focus:ring-1 focus:ring-primary outline-none"
                             >
                                 {isAdmin && <option value="all">Semua Divisi</option>}
                                 {departments.map((dept: any) => (
@@ -252,42 +236,12 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                             <Filter size={10} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                         </div>
                     </div>
-
-                    <div className="flex items-center gap-1.5">
-                        <Button
-                            variant={statusFilter === 'all' ? 'primary' : 'outline'}
-                            size="sm"
-                            onClick={() => setStatusFilter('all')}
-                            className="h-8 px-3 font-bold"
-                        >
-                            Semua
-                        </Button>
-                        <Button
-                            variant={statusFilter === 'ready' ? 'primary' : 'outline'}
-                            size="sm"
-                            onClick={() => setStatusFilter('ready')}
-                            className={cn("h-8 px-3 font-bold gap-1.5", statusFilter === 'ready' ? "bg-success hover:bg-success/90 border-none" : "text-success border-success/20 hover:bg-success/10")}
-                        >
-                            <span className={cn("h-1.5 w-1.5 rounded-full", statusFilter === 'ready' ? "bg-white" : "bg-success")} />
-                            Ready
-                        </Button>
-                        <Button
-                            variant={statusFilter === 'sibuk' ? 'primary' : 'outline'}
-                            size="sm"
-                            onClick={() => setStatusFilter('sibuk')}
-                            className={cn("h-8 px-3 font-bold gap-1.5", statusFilter === 'sibuk' ? "bg-danger hover:bg-danger/90 border-none" : "text-danger border-danger/20 hover:bg-danger/10")}
-                        >
-                            <span className={cn("h-1.5 w-1.5 rounded-full animate-pulse", statusFilter === 'sibuk' ? "bg-white" : "bg-danger")} />
-                            Sibuk
-                        </Button>
-                    </div>
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[580px] overflow-y-auto pr-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[580px] overflow-y-auto pr-1">
                     {filteredWorkloads.length === 0 ? (
-                        <Card className="col-span-2 border-dashed flex flex-col items-center justify-center py-10 opacity-60">
+                        <Card className="col-span-full border-dashed flex flex-col items-center justify-center py-10 opacity-60">
                             <Briefcase className="h-8 w-8 mb-2 opacity-20" />
-                            <p className="text-xs font-bold uppercase tracking-wider text-text-desc">PIC tidak ditemukan</p>
+                            <p className="text-xs font-medium uppercase tracking-wider text-text-desc">PIC tidak ditemukan</p>
                         </Card>
                     ) : (
                         filteredWorkloads.map((user) => {
@@ -301,40 +255,44 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                                         <div className="space-y-3">
                                             <div className="flex items-start justify-between gap-2">
                                                 <div className="flex items-center gap-2.5 min-w-0">
-                                                    <div style={customAvatarStyle} className={cn("h-8 w-8 rounded-full flex items-center justify-center text-[10px] font-bold border border-black/5 dark:border-white/5 shrink-0", !customAvatarStyle && "bg-surface-muted text-text-desc")}>
+                                                    <div style={customAvatarStyle} className={cn("h-8 w-8 rounded-full flex items-center justify-center text-[10px] font-medium border border-black/5 dark:border-white/5 shrink-0", !customAvatarStyle && "bg-surface-muted text-text-desc")}>
                                                         {user.initials ?? user.name.substring(0, 2).toUpperCase()}
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <span className="text-[11px] font-bold block truncate leading-tight text-text-main">{user.name}</span>
+                                                        <span className="text-[11px] font-medium block truncate leading-tight text-text-main">{user.name}</span>
                                                         <span className="text-text-desc text-[9px] font-semibold truncate block mt-0.5">{user.position || user.role}</span>
                                                     </div>
                                                 </div>
-                                                <Badge variant={isBusy ? "destructive" : "secondary"} className={cn("text-[8px] font-bold uppercase px-2 shrink-0 h-4", !isBusy && "bg-success/10 text-success border-success/10 hover:bg-success/10")}>
-                                                    {user.load_status}
-                                                </Badge>
+                                                <Button size="sm" variant="outline" onClick={() => handleOpenChat(user)} className="h-7 px-3 text-[9px] font-semibold gap-1.5 shadow-sm border-surface-border/60">
+                                                    <MessageSquare size={10} /> DISKUSI
+                                                </Button>
                                             </div>
-                                            <div className="text-[9px] font-bold text-text-desc bg-surface-muted/50 px-2 py-1 rounded-lg w-max max-w-full truncate">
+                                            <div className="text-[9px] font-medium text-text-desc bg-surface-muted/50 px-2 py-1 rounded-lg w-max max-w-full truncate">
                                                 {user.department_name || 'Direksi & Staff Umum'}
                                             </div>
-                                            <div className="space-y-1">
-                                                <div className="flex items-center justify-between text-[9px] font-bold text-text-desc">
-                                                    <span>Kapasitas Kerja</span>
-                                                    <span className={cn(isBusy ? "text-danger" : "text-success")}>{activeCount} / 5 Kontrak</span>
+
+                                            <div className="bg-surface-muted/30 border border-surface-border/40 rounded-xl p-3">
+                                                <div className="flex items-center gap-1.5 mb-3 border-b border-surface-border/40 pb-2">
+                                                    <Calendar size={10} className="text-primary opacity-60" />
+                                                    <span className="text-[9px] font-semibold uppercase tracking-widest text-text-desc">Aktivitas Bulan Ini</span>
                                                 </div>
-                                                <div className="h-1.5 w-full bg-surface-muted/40 rounded-full overflow-hidden border border-surface-border/5">
-                                                    <div style={{ width: `${capacityPct}%` }} className={cn("h-full transition-all duration-500", isBusy ? "bg-danger" : "bg-success")} />
+                                                <div className="grid grid-cols-3 gap-2 text-center divide-x divide-surface-border/40">
+                                                    <div className="flex flex-col gap-1">
+                                                        <span className="text-[9px] font-semibold text-text-soft uppercase tracking-wider">Menunggu</span>
+                                                        <span className="text-sm font-semibold text-warning">{user.stats_this_month?.pending || 0}</span>
+                                                    </div>
+                                                    <div className="flex flex-col gap-1">
+                                                        <span className="text-[9px] font-semibold text-text-soft uppercase tracking-wider leading-tight">Dikerjakan</span>
+                                                        <span className="text-sm font-semibold text-primary">{user.stats_this_month?.active || 0}</span>
+                                                    </div>
+                                                    <div className="flex flex-col gap-1">
+                                                        <span className="text-[9px] font-semibold text-text-soft uppercase tracking-wider">Selesai</span>
+                                                        <span className="text-sm font-semibold text-success">{user.stats_this_month?.completed || 0}</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="flex items-center justify-between border-t border-surface-border/10 pt-3 mt-3">
-                                            <div className="flex flex-col text-[9px] font-semibold text-text-desc">
-                                                <span>Inisiasi: <strong className="text-text-main">{user.initiated_contracts_count || 0}</strong></span>
-                                                <span>Pending: <strong className="text-warning">{user.pending_tasks_count || 0}</strong></span>
-                                            </div>
-                                            <Button size="sm" variant="outline" onClick={() => handleOpenChat(user)} className="h-7 px-2 text-[9px] font-bold gap-1">
-                                                <MessageSquare size={10} /> DISKUSI
-                                            </Button>
-                                        </div>
+
                                     </CardContent>
                                 </Card>
                             );
@@ -348,11 +306,11 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                     <Card className="w-full max-w-md shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 max-h-[500px]">
                         <CardHeader className="bg-muted/30 p-4 border-b flex flex-row items-center justify-between space-y-0">
                             <div className="flex items-center gap-3">
-                                <div style={selectedChatUser.bg_color && selectedChatUser.text_color ? { backgroundColor: selectedChatUser.bg_color, color: selectedChatUser.text_color } : undefined} className="h-8 w-8 rounded-full flex items-center justify-center text-[10px] font-bold border border-black/5 dark:border-white/5">
+                                <div style={selectedChatUser.bg_color && selectedChatUser.text_color ? { backgroundColor: selectedChatUser.bg_color, color: selectedChatUser.text_color } : undefined} className="h-8 w-8 rounded-full flex items-center justify-center text-[10px] font-medium border border-black/5 dark:border-white/5">
                                     {selectedChatUser.initials ?? selectedChatUser.name.substring(0, 2).toUpperCase()}
                                 </div>
                                 <div>
-                                    <CardTitle className="text-xs font-bold leading-none">{selectedChatUser.name}</CardTitle>
+                                    <CardTitle className="text-xs font-medium leading-none">{selectedChatUser.name}</CardTitle>
                                     <p className="text-[9px] font-medium text-muted-foreground mt-1">{selectedChatUser.position || selectedChatUser.role}</p>
                                 </div>
                             </div>

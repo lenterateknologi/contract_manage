@@ -1,5 +1,5 @@
+import { FilterCategory, FilterPopover } from '@/components/ui/data/FilterPopover';
 import { Button } from '@/components/ui/base/Button';
-import { FilterCategory, FilterSheet } from '@/components/ui/data/FilterSheet';
 import { cn } from '@/lib/utils';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
@@ -38,7 +38,7 @@ interface AnalyticsData {
 export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem[] }) {
     const [data, setData] = useState<AnalyticsData | null>(null);
     const [loading, setLoading] = useState(true);
-    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    // Filter open state is handled internally by FilterPopover
     const [filters, setFilters] = useState({
         date_from: '',
         date_to: '',
@@ -121,14 +121,28 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <Button
-                            variant="outline"
-                            onClick={() => setIsFilterOpen(true)}
-                            className="bg-card border-border text-foreground hover:bg-muted font-bold"
+                        <FilterPopover
+                            categories={filterCategories}
+                            activeFilters={filters}
+                            onFilterChange={(key, val) => {
+                                const nextFilters = { ...filters, [key]: val };
+                                setFilters(nextFilters);
+                                fetchData(nextFilters);
+                            }}
+                            onReset={() => {
+                                const clear = { date_from: '', date_to: '', contract_type_ids: [], creator_ids: [] };
+                                setFilters(clear);
+                                fetchData(clear);
+                            }}
                         >
-                            <Filter className="mr-2 h-4 w-4" />
-                            Saring Data
-                        </Button>
+                            <Button
+                                variant="outline"
+                                className="bg-card border-border text-foreground hover:bg-muted font-bold"
+                            >
+                                <Filter className="mr-2 h-4 w-4" />
+                                Saring Data
+                            </Button>
+                        </FilterPopover>
                         <Button onClick={handleExport} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
                             <Download className="mr-2 h-4 w-4" />
                             Ekspor Laporan
@@ -296,17 +310,7 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
                 </div>
             </div>
 
-            <FilterSheet
-                isOpen={isFilterOpen}
-                onOpenChange={setIsFilterOpen}
-                title="Penyaringan Data"
-                description="Sesuaikan kriteria untuk melihat data spesifik."
-                categories={filterCategories}
-                activeFilters={filters}
-                onFilterChange={(key, val) => setFilters((p) => ({ ...p, [key]: val }))}
-                onReset={() => setFilters({ date_from: '', date_to: '', contract_type_ids: [], creator_ids: [] })}
-                applyText="Terapkan Filter"
-            />
+            {/* FilterPopover trigger wraps the button above */}
         </>
     );
 }

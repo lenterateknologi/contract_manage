@@ -1,4 +1,10 @@
 import React, { useState, useMemo, Fragment } from 'react';
+import {
+    Combobox,
+    ComboboxInput,
+    ComboboxOption,
+    ComboboxOptions,
+} from '@headlessui/react';
 import { 
     Search,
     RotateCcw,
@@ -10,10 +16,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/base/Button';
 import { Label } from '@/components/ui/base/Label';
-import { ScrollArea } from '@/components/ui/base/ScrollArea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/overlays/Popover';
-import { Input } from '@/components/ui/base/Input';
-import { Checkbox } from '@/components/ui/base/Checkbox';
 
 export interface FilterOption {
     label: string;
@@ -38,85 +41,133 @@ export interface FilterPopoverProps {
     children: React.ReactNode;
 }
 
-function SearchableCategoryOptions({ 
-    category, 
-    activeValues = [], 
-    onToggle 
-}: { 
-    category: FilterCategory; 
-    activeValues: string[]; 
-    onToggle: (val: any) => void 
+function SearchableCategoryOptions({
+    category,
+    activeValues = [],
+    onToggle,
+}: {
+    category: FilterCategory;
+    activeValues: string[];
+    onToggle: (val: any) => void;
 }) {
-    const [searchTerm, setSearchTerm] = useState('');
+    const [query, setQuery] = useState('');
     const options = category.options || [];
 
     const filteredOptions = useMemo(() => {
-        if (!searchTerm) return options;
-        return options.filter(opt => 
-            opt.label.toLowerCase().includes(searchTerm.toLowerCase())
+        if (!query) return options;
+        return options.filter((opt) =>
+            opt.label.toLowerCase().includes(query.toLowerCase())
         );
-    }, [options, searchTerm]);
+    }, [options, query]);
 
     return (
-        <div className="space-y-2">
-            <div className="flex items-center justify-between">
-                <Label className="text-[10px] font-bold text-text-desc uppercase tracking-wider">
-                    {category.label}
-                </Label>
-                {activeValues.length > 0 && (
-                    <span className="text-[9px] font-bold text-primary bg-primary-muted px-1.5 py-0.5 rounded-md">
-                        {activeValues.length} Terpilih
-                    </span>
-                )}
-            </div>
-
-            <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-soft" size={13} />
-                <Input 
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder={`Cari ${category.label.toLowerCase()}...`}
-                    className="h-8 pl-8 text-xs bg-surface-muted/50 border-surface-border rounded-lg focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary transition-all"
-                />
-            </div>
-            
-            <ScrollArea className="h-28 border border-surface-border/40 rounded-lg p-1.5 bg-surface-muted/10">
-                <div className="space-y-1">
-                    {filteredOptions.length === 0 ? (
-                        <div className="py-6 text-center">
-                            <p className="text-[10px] text-text-soft font-bold uppercase">Tidak ditemukan</p>
-                        </div>
-                    ) : (
-                        filteredOptions.map((opt) => {
-                            const isSelected = activeValues.includes(String(opt.value));
-                            return (
-                                <button 
-                                    key={String(opt.value)}
-                                    type="button"
-                                    onClick={() => onToggle(opt.value)}
-                                    className={cn(
-                                        "w-full flex items-center justify-between p-1.5 rounded-md text-left transition-all text-xs font-semibold uppercase tracking-wide",
-                                        isSelected 
-                                            ? "bg-primary-muted text-primary" 
-                                            : "text-text-main hover:bg-surface-muted"
-                                    )}
-                                >
-                                    <span className="truncate">{opt.label}</span>
-                                    <div className={cn(
-                                        "h-3.5 w-3.5 rounded border flex items-center justify-center transition-all shrink-0",
-                                        isSelected 
-                                            ? "border-primary bg-primary text-white" 
-                                            : "border-surface-border bg-white"
-                                    )}>
-                                        {isSelected && <Check size={10} strokeWidth={3} />}
-                                    </div>
-                                </button>
-                            );
-                        })
+        <Combobox
+            multiple
+            value={activeValues}
+            onChange={(newValues: string[]) => onToggle(newValues)}
+            onClose={() => setQuery('')}
+        >
+            <div className="space-y-2">
+                {/* Label + count */}
+                <div className="flex items-center justify-between">
+                    <Label className="text-[10px] font-bold text-text-desc uppercase tracking-wider">
+                        {category.label}
+                    </Label>
+                    {activeValues.length > 0 && (
+                        <span className="text-[9px] font-bold text-primary bg-primary-muted px-1.5 py-0.5 rounded-md">
+                            {activeValues.length} Terpilih
+                        </span>
                     )}
                 </div>
-            </ScrollArea>
-        </div>
+
+                {/* Selected chips — always visible */}
+                {activeValues.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                        {activeValues.map((val) => {
+                            const opt = options.find((o) => String(o.value) === val);
+                            return (
+                                <button
+                                    key={val}
+                                    type="button"
+                                    onClick={() =>
+                                        onToggle(activeValues.filter((v) => v !== val))
+                                    }
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary text-white text-[10px] font-semibold hover:bg-primary/80 transition-colors"
+                                >
+                                    {opt?.label ?? val}
+                                    <X size={9} strokeWidth={3} />
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
+
+                {/* Search input — Headless UI opens options automatically on focus */}
+                <div className="relative">
+                    <Search
+                        className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-soft pointer-events-none"
+                        size={13}
+                    />
+                    <ComboboxInput
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        placeholder={`Cari & pilih ${category.label.toLowerCase()}...`}
+                        className="w-full h-8 pl-8 pr-3 text-xs bg-surface-muted/50 border border-surface-border rounded-lg focus:ring-1 focus:ring-primary focus:border-primary transition-all outline-none"
+                    />
+                </div>
+
+                {/* Dropdown — shown automatically by Headless UI when input is focused */}
+                <ComboboxOptions
+                    anchor={{ to: 'bottom start', gap: 4 }}
+                    className={cn(
+                        'z-[99999] w-[var(--input-width)] min-w-[14rem]',
+                        'border border-surface-border/60 rounded-lg bg-surface-base shadow-xl overflow-hidden empty:hidden',
+                        'transition data-[leave]:data-[closed]:opacity-0 data-[leave]:duration-100'
+                    )}
+                >
+                    <div className="p-1 space-y-0.5 max-h-52 overflow-auto">
+                        {filteredOptions.length === 0 && (
+                            <div className="py-5 text-center">
+                                <p className="text-[10px] text-text-soft font-bold uppercase">
+                                    Tidak ditemukan
+                                </p>
+                            </div>
+                        )}
+                        {filteredOptions.map((opt) => (
+                            <ComboboxOption
+                                key={String(opt.value)}
+                                value={String(opt.value)}
+                                className={({ focus, selected }) =>
+                                    cn(
+                                        'flex items-center justify-between p-1.5 rounded-md cursor-pointer transition-all text-xs font-semibold uppercase tracking-wide',
+                                        selected
+                                            ? 'bg-primary-muted text-primary'
+                                            : 'text-text-main',
+                                        focus && !selected && 'bg-surface-muted'
+                                    )
+                                }
+                            >
+                                {({ selected }) => (
+                                    <>
+                                        <span className="truncate">{opt.label}</span>
+                                        <div
+                                            className={cn(
+                                                'h-3.5 w-3.5 rounded border flex items-center justify-center transition-all shrink-0',
+                                                selected
+                                                    ? 'border-primary bg-primary text-white'
+                                                    : 'border-surface-border bg-white'
+                                            )}
+                                        >
+                                            {selected && <Check size={10} strokeWidth={3} />}
+                                        </div>
+                                    </>
+                                )}
+                            </ComboboxOption>
+                        ))}
+                    </div>
+                </ComboboxOptions>
+            </div>
+        </Combobox>
     );
 }
 
@@ -187,7 +238,7 @@ export function FilterPopover({
     const hasActiveFilters = activeCount > 0;
 
     return (
-        <Popover className="relative">
+        <Popover>
             {({ open, close }) => (
                 <>
                     <PopoverTrigger as={Fragment}>
@@ -196,7 +247,7 @@ export function FilterPopover({
                     
                     <PopoverContent 
                         align="start" 
-                        className="absolute top-full mt-2 left-0 w-80 sm:w-96 p-0 border border-surface-border/80 bg-surface-base/95 backdrop-blur-md shadow-2xl rounded-2xl overflow-hidden z-[999]"
+                        className="w-80 sm:w-96 p-0 border border-surface-border/80 bg-surface-base/95 backdrop-blur-md shadow-2xl rounded-2xl overflow-hidden z-[9999]"
                     >
                         {/* Header */}
                         <div className="p-4 border-b border-surface-border bg-surface-muted/30 flex items-center justify-between">
@@ -223,7 +274,7 @@ export function FilterPopover({
                         </div>
 
                         {/* Body - Filter Categories */}
-                        <div className="p-4 space-y-4 max-h-[360px] overflow-y-auto custom-scrollbar">
+                        <div className="p-4 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar">
                             {categories.map((category) => {
                                 const currentVals = Array.isArray(activeFilters[category.key]) 
                                     ? activeFilters[category.key] 

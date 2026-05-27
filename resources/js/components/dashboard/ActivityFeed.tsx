@@ -46,21 +46,21 @@ export function ActivityFeed({ items }: ActivityFeedProps) {
                                     {cfg.icon}
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                    <p className="text-text-main text-[12px] font-bold tracking-tight">{act.description}</p>
+                                    <p className="text-text-main text-[12px] font-medium tracking-tight">{act.description}</p>
                                     <div className="mt-1 flex flex-wrap items-center gap-1.5">
                                         {act.contract_no && (
                                             <span
                                                 onClick={() => act.contract_id && router.get(`/contracts/${act.contract_id}`)}
-                                                className="text-primary hover:text-primary/80 cursor-pointer font-mono text-[10px] font-bold transition-colors"
+                                                className="text-primary hover:text-primary/80 cursor-pointer font-mono text-[10px] font-medium transition-colors"
                                             >
                                                 {act.contract_no}
                                             </span>
                                         )}
                                         <span className="text-text-desc/30 text-[10px]">·</span>
-                                        <span className="text-text-desc/60 text-[10px] font-bold uppercase">{act.actor}</span>
+                                        <span className="text-text-desc/60 text-[10px] font-medium uppercase">{act.actor}</span>
                                     </div>
                                 </div>
-                                <span className="text-text-desc/40 shrink-0 text-[10px] font-black uppercase whitespace-nowrap">
+                                <span className="text-text-desc/40 shrink-0 text-[10px] font-semibold uppercase whitespace-nowrap">
                                     {relativeTime(act.created_at)}
                                 </span>
                             </div>

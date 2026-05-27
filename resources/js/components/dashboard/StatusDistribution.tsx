@@ -29,10 +29,10 @@ export function StatusDistribution({ items }: StatusDistributionProps) {
                                 <div className="mb-1.5 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         <span className={cn('h-1.5 w-1.5 rounded-full', cfg.dot)} />
-                                        <span className={cn('text-[12px] font-bold uppercase', cfg.color)}>{cfg.label}</span>
+                                        <span className={cn('text-[12px] font-medium uppercase', cfg.color)}>{cfg.label}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-text-main text-[11px] font-black">{s.count}</span>
+                                        <span className="text-text-main text-[11px] font-semibold">{s.count}</span>
                                         <span className="text-text-desc/50 text-[10px] font-semibold">{pct}%</span>
                                     </div>
                                 </div>

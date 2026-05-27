@@ -54,14 +54,14 @@ export function TrendTab({ data }: TrendTabProps) {
                 {/* 1. Monthly Volume Growth */}
                 <Card>
                     <CardHeader className="p-5 pb-0">
-                        <CardTitle className="text-xs font-black uppercase tracking-wider text-text-main">Pertumbuhan Kontrak Bulanan</CardTitle>
+                        <CardTitle className="text-xs font-semibold uppercase tracking-wider text-text-main">Pertumbuhan Kontrak Bulanan</CardTitle>
                         <p className="text-text-desc text-[9px] font-semibold mt-0.5">Tren penambahan volume kontrak baru selama 6 bulan terakhir.</p>
                     </CardHeader>
                     <CardContent className="p-5">
                         <div className="h-[220px] w-full select-none">
                             {isMounted ? (
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <LineChart
+                                    <LineChart style={{ outline: 'none' }}
                                         data={monthlyTrendData}
                                         margin={{ top: 5, right: 10, left: -20, bottom: 5 }}
                                     >
@@ -99,7 +99,7 @@ export function TrendTab({ data }: TrendTabProps) {
                             ) : (
                                 <div className="flex flex-col items-center gap-2 opacity-30 text-center justify-center h-full">
                                     <Activity size={32} />
-                                    <p className="text-[10px] font-bold uppercase">Memuat...</p>
+                                    <p className="text-[10px] font-semibold uppercase">Memuat...</p>
                                 </div>
                             )}
                         </div>
@@ -109,7 +109,7 @@ export function TrendTab({ data }: TrendTabProps) {
                 {/* 2. Monthly Value Trend */}
                 <Card>
                     <CardHeader className="p-5 pb-0">
-                        <CardTitle className="text-xs font-black uppercase tracking-wider text-text-main">Tren Nilai Kontrak Bulanan</CardTitle>
+                        <CardTitle className="text-xs font-semibold uppercase tracking-wider text-text-main">Tren Nilai Kontrak Bulanan</CardTitle>
                         <p className="text-text-desc text-[9px] font-semibold mt-0.5">Akumulasi finansial dari kontrak-kontrak baru yang masuk per bulan.</p>
                     </CardHeader>
                     <CardContent className="p-5">
@@ -129,8 +129,9 @@ export function TrendTab({ data }: TrendTabProps) {
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--surface-border)" />
                                         <XAxis dataKey="month" fontSize={9} stroke="var(--text-desc)" tickLine={false} axisLine={false} />
                                         <YAxis
-                                            fontSize={9}
-                                            stroke="var(--text-desc)"
+                                            fontSize={10}
+                                            fontWeight={500}
+                                            stroke="#64748b"
                                             tickLine={false}
                                             axisLine={false}
                                             tickFormatter={(v) => formatIDR(v)}
@@ -167,7 +168,7 @@ export function TrendTab({ data }: TrendTabProps) {
                             ) : (
                                 <div className="flex flex-col items-center gap-2 opacity-30 text-center justify-center h-full">
                                     <Activity size={32} />
-                                    <p className="text-[10px] font-bold uppercase">Memuat...</p>
+                                    <p className="text-[10px] font-semibold uppercase">Memuat...</p>
                                 </div>
                             )}
                         </div>
@@ -179,14 +180,14 @@ export function TrendTab({ data }: TrendTabProps) {
                 {/* 3. Renewal vs Expired Trend */}
                 <Card>
                     <CardHeader className="p-5 pb-0">
-                        <CardTitle className="text-xs font-black uppercase tracking-wider text-text-main">Perbandingan Renewal vs Kadaluarsa</CardTitle>
+                        <CardTitle className="text-xs font-semibold uppercase tracking-wider text-text-main">Perbandingan Renewal vs Kadaluarsa</CardTitle>
                         <p className="text-text-desc text-[9px] font-semibold mt-0.5">Analisis laju perpanjangan kontrak dibanding jumlah kontrak yang berakhir.</p>
                     </CardHeader>
                     <CardContent className="p-5">
                         <div className="h-[220px] w-full select-none">
                             {isMounted ? (
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <LineChart
+                                    <LineChart style={{ outline: 'none' }}
                                         data={renewalVsExpiredData}
                                         margin={{ top: 5, right: 10, left: -20, bottom: 5 }}
                                     >
@@ -217,7 +218,7 @@ export function TrendTab({ data }: TrendTabProps) {
                             ) : (
                                 <div className="flex flex-col items-center gap-2 opacity-30 text-center justify-center h-full">
                                     <Activity size={32} />
-                                    <p className="text-[10px] font-bold uppercase">Memuat...</p>
+                                    <p className="text-[10px] font-semibold uppercase">Memuat...</p>
                                 </div>
                             )}
                         </div>
@@ -227,7 +228,7 @@ export function TrendTab({ data }: TrendTabProps) {
                 {/* 4. Approval Outcomes (Stacked Area) */}
                 <Card>
                     <CardHeader className="p-5 pb-0">
-                        <CardTitle className="text-xs font-black uppercase tracking-wider text-text-main">Output Hasil Kelayakan Kontrak</CardTitle>
+                        <CardTitle className="text-xs font-semibold uppercase tracking-wider text-text-main">Output Hasil Kelayakan Kontrak</CardTitle>
                         <p className="text-text-desc text-[9px] font-semibold mt-0.5">Distribusi penyelesaian status persetujuan kontrak bulanan.</p>
                     </CardHeader>
                     <CardContent className="p-5">
@@ -259,7 +260,7 @@ export function TrendTab({ data }: TrendTabProps) {
                                             wrapperStyle={{ fontSize: '9px', fontWeight: 'bold' }}
                                         />
                                         <Area type="monotone" dataKey="approved" stackId="1" name="Disetujui" stroke="#10b981" fill="#10b981" fillOpacity={0.15} />
-                                        <Area type="monotone" dataKey="pending" stackId="1" name="Pending" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.15} />
+                                        <Area type="monotone" dataKey="pending" stackId="1" name="Tertunda" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.15} />
                                         <Area type="monotone" dataKey="revision" stackId="1" name="Revisi" stroke="var(--info)" fill="var(--info)" fillOpacity={0.15} />
                                         <Area type="monotone" dataKey="rejected" stackId="1" name="Ditolak" stroke="#f43f5e" fill="#f43f5e" fillOpacity={0.15} />
                                     </AreaChart>
@@ -267,7 +268,7 @@ export function TrendTab({ data }: TrendTabProps) {
                             ) : (
                                 <div className="flex flex-col items-center gap-2 opacity-30 text-center justify-center h-full">
                                     <Activity size={32} />
-                                    <p className="text-[10px] font-bold uppercase">Memuat...</p>
+                                    <p className="text-[10px] font-semibold uppercase">Memuat...</p>
                                 </div>
                             )}
                         </div>

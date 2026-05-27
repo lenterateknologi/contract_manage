@@ -40,7 +40,7 @@ export function AnalysisTab({ data }: AnalysisTabProps) {
                 {/* 1. Expiry Risk Heatmap */}
                 <Card className="lg:col-span-6">
                     <CardHeader className="p-5 pb-0">
-                        <CardTitle className="text-xs font-black uppercase tracking-wider flex items-center gap-2 text-text-main">
+                        <CardTitle className="text-xs font-semibold uppercase tracking-wider flex items-center gap-2 text-text-main">
                             <ShieldAlert className="h-4 w-4 text-danger" />
                             Matriks Risiko Masa Berlaku per Divisi
                         </CardTitle>
@@ -51,22 +51,22 @@ export function AnalysisTab({ data }: AnalysisTabProps) {
                             <table className="w-full text-left border-collapse">
                                 <thead>
                                     <tr className="border-b border-surface-border/10">
-                                        <th className="py-2 text-[8.5px] font-bold uppercase text-text-desc tracking-wider">Divisi / Departemen</th>
-                                        <th className="py-2 text-[8.5px] font-bold uppercase text-text-desc tracking-wider text-center">Risiko Tinggi</th>
-                                        <th className="py-2 text-[8.5px] font-bold uppercase text-text-desc tracking-wider text-center">Risiko Sedang</th>
-                                        <th className="py-2 text-[8.5px] font-bold uppercase text-text-desc tracking-wider text-center">Risiko Rendah</th>
+                                        <th className="py-2 text-[8.5px] font-medium uppercase text-text-desc tracking-wider">Divisi / Departemen</th>
+                                        <th className="py-2 text-[8.5px] font-medium uppercase text-text-desc tracking-wider text-center">Risiko Tinggi</th>
+                                        <th className="py-2 text-[8.5px] font-medium uppercase text-text-desc tracking-wider text-center">Risiko Sedang</th>
+                                        <th className="py-2 text-[8.5px] font-medium uppercase text-text-desc tracking-wider text-center">Risiko Rendah</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {expiryRiskHeatmap.map((item: any, idx: number) => (
                                         <tr key={idx} className="border-b border-surface-border/5 hover:bg-surface-muted/30 transition-colors">
-                                            <td className="py-2.5 text-[10px] font-bold text-text-main flex items-center gap-2">
+                                            <td className="py-2.5 text-[10px] font-medium text-text-main flex items-center gap-2">
                                                 <Building2 size={11} className="text-text-desc" />
                                                 {item.department}
                                             </td>
                                             <td className="py-2.5 text-center">
                                                 <span className={cn(
-                                                    "inline-flex justify-center items-center h-5 w-8 rounded-md text-[10px] font-bold tabular-nums",
+                                                    "inline-flex justify-center items-center h-5 w-8 rounded-md text-[10px] font-medium tabular-nums",
                                                     item.high > 0
                                                         ? "bg-danger/15 text-danger border border-danger/10 animate-pulse"
                                                         : "bg-surface-muted text-text-desc"
@@ -76,7 +76,7 @@ export function AnalysisTab({ data }: AnalysisTabProps) {
                                             </td>
                                             <td className="py-2.5 text-center">
                                                 <span className={cn(
-                                                    "inline-flex justify-center items-center h-5 w-8 rounded-md text-[10px] font-bold tabular-nums",
+                                                    "inline-flex justify-center items-center h-5 w-8 rounded-md text-[10px] font-medium tabular-nums",
                                                     item.medium > 0
                                                         ? "bg-warning/15 text-warning border border-warning/10"
                                                         : "bg-surface-muted text-text-desc"
@@ -86,7 +86,7 @@ export function AnalysisTab({ data }: AnalysisTabProps) {
                                             </td>
                                             <td className="py-2.5 text-center">
                                                 <span className={cn(
-                                                    "inline-flex justify-center items-center h-5 w-8 rounded-md text-[10px] font-bold tabular-nums",
+                                                    "inline-flex justify-center items-center h-5 w-8 rounded-md text-[10px] font-medium tabular-nums",
                                                     item.low > 0
                                                         ? "bg-success/15 text-success border border-success/10"
                                                         : "bg-surface-muted text-text-desc"
@@ -98,7 +98,7 @@ export function AnalysisTab({ data }: AnalysisTabProps) {
                                     ))}
                                     {expiryRiskHeatmap.length === 0 && (
                                         <tr>
-                                            <td colSpan={4} className="py-8 text-center text-[10px] font-bold uppercase tracking-wider text-text-desc italic">Tidak ada data risiko</td>
+                                            <td colSpan={4} className="py-8 text-center text-[10px] font-medium uppercase tracking-wider text-text-desc">Tidak ada data risiko</td>
                                         </tr>
                                     )}
                                 </tbody>
@@ -110,7 +110,7 @@ export function AnalysisTab({ data }: AnalysisTabProps) {
                 {/* 2. Renewal Success vs Failure by Category */}
                 <Card className="lg:col-span-6">
                     <CardHeader className="p-5 pb-0">
-                        <CardTitle className="text-xs font-black uppercase tracking-wider text-text-main">Laju Kegagalan Perpanjangan per Kategori</CardTitle>
+                        <CardTitle className="text-xs font-semibold uppercase tracking-wider text-text-main">Laju Kegagalan Perpanjangan per Kategori</CardTitle>
                         <p className="text-text-desc text-[9px] font-semibold mt-0.5">Analisis jumlah kontrak jatuh tempo yang diperpanjang (sukses) vs dibiarkan berakhir (gagal) per kategori.</p>
                     </CardHeader>
                     <CardContent className="p-5">
@@ -123,7 +123,7 @@ export function AnalysisTab({ data }: AnalysisTabProps) {
                                     >
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--surface-border)" />
                                         <XAxis dataKey="category" fontSize={9} stroke="var(--text-desc)" tickLine={false} axisLine={false} opacity={0.5} />
-                                        <YAxis fontSize={9} stroke="var(--text-desc)" tickLine={false} axisLine={false} opacity={0.5} />
+                                        <YAxis fontSize={10} fontWeight={500} stroke="#64748b" tickLine={false} axisLine={false} />
                                         <Tooltip
                                             contentStyle={{
                                                 backgroundColor: 'var(--surface-base)',
@@ -148,7 +148,7 @@ export function AnalysisTab({ data }: AnalysisTabProps) {
                             ) : (
                                 <div className="flex flex-col items-center gap-2 opacity-30 text-center justify-center h-full">
                                     <Activity size={32} />
-                                    <p className="text-[10px] font-bold uppercase">Memuat...</p>
+                                    <p className="text-[10px] font-medium uppercase">Memuat...</p>
                                 </div>
                             )}
                         </div>
@@ -160,7 +160,7 @@ export function AnalysisTab({ data }: AnalysisTabProps) {
                 {/* 3. Vendor Performance Matriks */}
                 <Card className="lg:col-span-7">
                     <CardHeader className="p-5 pb-0">
-                        <CardTitle className="text-xs font-black uppercase tracking-wider flex items-center gap-2 text-text-main">
+                        <CardTitle className="text-xs font-semibold uppercase tracking-wider flex items-center gap-2 text-text-main">
                             <Award className="h-4 w-4 text-primary" />
                             Matriks Kinerja Kerja Sama Vendor
                         </CardTitle>
@@ -171,20 +171,20 @@ export function AnalysisTab({ data }: AnalysisTabProps) {
                             <table className="w-full text-left border-collapse">
                                 <thead>
                                     <tr className="border-b border-surface-border/10">
-                                        <th className="py-2 text-[8.5px] font-bold uppercase text-text-desc tracking-wider">Mitra / Vendor</th>
-                                        <th className="py-2 text-[8.5px] font-bold uppercase text-text-desc tracking-wider text-center">Total Kontrak</th>
-                                        <th className="py-2 text-[8.5px] font-bold uppercase text-text-desc tracking-wider text-center">Rasio Renewal</th>
-                                        <th className="py-2 text-[8.5px] font-bold uppercase text-text-desc tracking-wider text-center">Waktu Siklus Avg</th>
+                                        <th className="py-2 text-[8.5px] font-medium uppercase text-text-desc tracking-wider">Mitra / Vendor</th>
+                                        <th className="py-2 text-[8.5px] font-medium uppercase text-text-desc tracking-wider text-center">Total Kontrak</th>
+                                        <th className="py-2 text-[8.5px] font-medium uppercase text-text-desc tracking-wider text-center">Rasio Renewal</th>
+                                        <th className="py-2 text-[8.5px] font-medium uppercase text-text-desc tracking-wider text-center">Waktu Siklus Avg</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {vendorPerformance.map((v: any, idx: number) => (
                                         <tr key={idx} className="border-b border-surface-border/5 hover:bg-surface-muted/30 transition-colors">
-                                            <td className="py-2.5 text-[10px] font-bold text-text-main truncate max-w-[150px]">{v.name}</td>
-                                            <td className="py-2.5 text-center text-[10px] font-bold text-text-main tabular-nums">{v.total}</td>
+                                            <td className="py-2.5 text-[10px] font-medium text-text-main truncate max-w-[150px]">{v.name}</td>
+                                            <td className="py-2.5 text-center text-[10px] font-medium text-text-main tabular-nums">{v.total}</td>
                                             <td className="py-2.5 text-center">
                                                 <span className={cn(
-                                                    "inline-flex px-1.5 py-0.5 rounded text-[8.5px] font-bold uppercase",
+                                                    "inline-flex px-1.5 py-0.5 rounded text-[8.5px] font-medium uppercase",
                                                     v.renewal_rate >= 80
                                                         ? 'bg-success/10 text-success border border-success/10'
                                                         : v.renewal_rate >= 40
@@ -194,12 +194,12 @@ export function AnalysisTab({ data }: AnalysisTabProps) {
                                                     {v.renewal_rate}%
                                                 </span>
                                             </td>
-                                            <td className="py-2.5 text-center text-[10px] font-bold text-text-desc tabular-nums">{v.avg_cycle_time} Hari</td>
+                                            <td className="py-2.5 text-center text-[10px] font-medium text-text-desc tabular-nums">{v.avg_cycle_time} Hari</td>
                                         </tr>
                                     ))}
                                     {vendorPerformance.length === 0 && (
                                         <tr>
-                                            <td colSpan={4} className="py-8 text-center text-[10px] font-bold uppercase tracking-wider text-text-desc italic font-semibold">Tidak ada data vendor</td>
+                                            <td colSpan={4} className="py-8 text-center text-[10px] font-medium uppercase tracking-wider text-text-desc font-semibold">Tidak ada data vendor</td>
                                         </tr>
                                     )}
                                 </tbody>
@@ -211,7 +211,7 @@ export function AnalysisTab({ data }: AnalysisTabProps) {
                 {/* 4. Value Distribution Histogram */}
                 <Card className="lg:col-span-5">
                     <CardHeader className="p-5 pb-0">
-                        <CardTitle className="text-xs font-black uppercase tracking-wider text-text-main">Distribusi Rentang Nilai Kontrak</CardTitle>
+                        <CardTitle className="text-xs font-semibold uppercase tracking-wider text-text-main">Distribusi Rentang Nilai Kontrak</CardTitle>
                         <p className="text-text-desc text-[9px] font-semibold mt-0.5">Pengelompokkan kontrak berdasarkan nilai finansialnya.</p>
                     </CardHeader>
                     <CardContent className="p-5">
@@ -224,7 +224,7 @@ export function AnalysisTab({ data }: AnalysisTabProps) {
                                     >
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--surface-border)" />
                                         <XAxis dataKey="range" fontSize={9} stroke="var(--text-desc)" tickLine={false} axisLine={false} opacity={0.5} />
-                                        <YAxis fontSize={9} stroke="var(--text-desc)" tickLine={false} axisLine={false} opacity={0.5} />
+                                        <YAxis fontSize={10} fontWeight={500} stroke="#64748b" tickLine={false} axisLine={false} />
                                         <Tooltip
                                             contentStyle={{
                                                 backgroundColor: 'var(--surface-base)',
@@ -241,7 +241,7 @@ export function AnalysisTab({ data }: AnalysisTabProps) {
                             ) : (
                                 <div className="flex flex-col items-center gap-2 opacity-30 text-center justify-center h-full">
                                     <Activity size={32} />
-                                    <p className="text-[10px] font-bold uppercase">Memuat...</p>
+                                    <p className="text-[10px] font-medium uppercase">Memuat...</p>
                                 </div>
                             )}
                         </div>
