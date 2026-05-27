@@ -1,14 +1,18 @@
 import * as React from 'react';
-import { ChevronLeft, ChevronRight, Search, SlidersHorizontal } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, SlidersHorizontal, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/base/Button';
 import { Checkbox } from '@/components/ui/base/Checkbox';
 import { SearchInput } from '@/components/ui/forms/SearchInput';
 import { useDebounce } from '@/hooks/use-debounce';
-import { FilterSheet } from './FilterSheet';
+import { FilterPopover } from './FilterPopover';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
 import { router } from '@inertiajs/react';
+import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 
+/**
+ * Unified Column Configuration
+ */
 export interface Column<T> {
     header: string;
     accessorKey: keyof T | string;
@@ -17,6 +21,9 @@ export interface Column<T> {
     sortable?: boolean;
 }
 
+/**
+ * Unified Table Props satisfying all modules
+ */
 export interface DataTableProps<T> {
     title?: string;
     columns: Column<T>[];
@@ -35,26 +42,38 @@ export interface DataTableProps<T> {
     onRowClick?: (row: T) => void;
     onSelectionChange?: (selectedRows: T[]) => void;
     selectedRows?: T[];
-    bulkActions?: any;
+    bulkActions?: any; // Component or Array of action objects
     searchKey?: string;
     searchPlaceholder?: string;
     searchValue?: string;
     onSearchChange?: (value: string) => void;
+
+    // Filtering integration
     filters?: any[];
     activeFilters?: Record<string, any>;
     onFilterChange?: (filters: Record<string, any>) => void;
+
+    // Layout & Extras
     headerActions?: React.ReactNode;
     rowActions?: (row: T) => React.ReactNode;
     borderless?: boolean;
+    skeleton?: React.ReactNode;
+
+    // Sorting (Server-side)
     sortBy?: string;
     sortDir?: 'asc' | 'desc';
     onSortChange?: (sortBy: string, sortDir: 'asc' | 'desc') => void;
 }
 
+/**
+ * Unified Data Table Scaffold
+ * Primary structural reference: TableContract style
+ * Premium aesthetics, lightened typography, centralized logic.
+ */
 export function DataTable<T extends Record<string, any>>({
     title,
     columns,
-    data,
+    data = [],
     loading = false,
     pagination,
     onRowClick,
@@ -71,26 +90,36 @@ export function DataTable<T extends Record<string, any>>({
     headerActions,
     rowActions,
     borderless = false,
+    skeleton,
     sortBy,
     sortDir,
     onSortChange,
 }: DataTableProps<T>) {
-    const [isFilterOpen, setIsFilterOpen] = React.useState(false);
+
     const [localPerPage, setLocalPerPage] = React.useState(pagination?.perPage || 10);
     const [localSearch, setLocalSearch] = React.useState(searchValue);
     const debouncedSearch = useDebounce(localSearch, 500);
+    const [internalSelectedRows, setInternalSelectedRows] = React.useState<T[]>([]);
+    const [confirmAction, setConfirmAction] = React.useState<{
+        label: string;
+        onClick: () => void;
+        count: number;
+    } | null>(null);
 
+    const hasSelectionFromProps = typeof onSelectionChange === 'function';
+    const activeSelectedRows = hasSelectionFromProps ? selectedRows : internalSelectedRows;
+
+    // Sync local per page when prop changes
     React.useEffect(() => {
-        if (pagination?.perPage) {
-            setLocalPerPage(pagination.perPage);
-        }
+        if (pagination?.perPage) setLocalPerPage(pagination.perPage);
     }, [pagination?.perPage]);
 
+    // Sync local search when prop changes
     React.useEffect(() => {
         setLocalSearch(searchValue);
     }, [searchValue]);
 
-    // Trigger onSearchChange when debounced value changes
+    // Trigger debounced search callback
     React.useEffect(() => {
         if (debouncedSearch !== (searchValue || '')) {
             onSearchChange?.(debouncedSearch);
@@ -98,52 +127,58 @@ export function DataTable<T extends Record<string, any>>({
     }, [debouncedSearch, onSearchChange, searchValue]);
 
     const handleSelectAll = (checked: boolean) => {
-        if (checked) {
-            onSelectionChange?.(data);
-        } else {
-            onSelectionChange?.([]);
-        }
+        const value = checked ? data : [];
+        if (hasSelectionFromProps) onSelectionChange?.(value);
+        else setInternalSelectedRows(value);
     };
 
     const handleSelectRow = (row: T, checked: boolean) => {
+        let updated;
         if (checked) {
-            onSelectionChange?.([...selectedRows, row]);
+            updated = [...activeSelectedRows, row];
         } else {
-            onSelectionChange?.(selectedRows.filter((r) => r.id !== row.id));
+            updated = activeSelectedRows.filter((r) => r.id !== row.id);
         }
+
+        if (hasSelectionFromProps) onSelectionChange?.(updated);
+        else setInternalSelectedRows(updated);
     };
 
-    const isAllSelected = data.length > 0 && selectedRows.length === data.length;
+    const isAllSelected = data.length > 0 && activeSelectedRows.length === data.length;
+    const filterKeys = React.useMemo(() => filters.map(f => f.key), [filters]);
+    const activeCount = React.useMemo(() => {
+        let count = 0;
+        filterKeys.forEach(key => {
+            const val = activeFilters[key];
+            if (Array.isArray(val)) {
+                count += val.filter(v => v !== '' && v !== null).length;
+            } else if (val !== undefined && val !== '' && val !== null) {
+                count += 1;
+            }
+        });
+        return count;
+    }, [activeFilters, filterKeys]);
 
-    const activeCount = Object.values(activeFilters).flat().filter(v => v !== '' && v !== null).length;
-
-    // Filter logic for client-side fallback if onSearchChange is not provided
-    const filteredData = React.useMemo(() => {
+    // Fallback client-side filter
+    const displayData = React.useMemo(() => {
         if (onSearchChange || !localSearch) return data;
         const query = localSearch.toLowerCase();
         return data.filter((row) => {
             const val = row[searchKey];
-            if (typeof val === 'string') {
-                return val.toLowerCase().includes(query);
-            }
+            if (typeof val === 'string') return val.toLowerCase().includes(query);
             return false;
         });
     }, [data, localSearch, searchKey, onSearchChange]);
 
     return (
         <div className="flex flex-col gap-4 antialiased text-foreground select-none animate-in fade-in duration-200">
-            {/* Premium Header Section */}
+            {/* --- TOP HEADER SECTION --- */}
             {(title || onSearchChange || localSearch !== undefined || headerActions || filters.length > 0) && (
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 px-1 mb-1">
-                    {title && (
-                        <div className="space-y-0.5">
-                            <h2 className="text-base font-semibold tracking-tight text-text-main uppercase">{title}</h2>
-                        </div>
-                    )}
-
-                    <div className="flex items-center gap-2 ml-auto">
-                        {(onSearchChange || !onSearchChange) && (
-                            <div className="w-full md:w-64">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 px-1 pt-2 mb-1 ml-8 mr-8">
+                    {/* Left side: Search input & Filter */}
+                    <div className="flex items-center gap-3">
+                        {onSearchChange !== undefined && (
+                            <div className="w-full md:w-96">
                                 <SearchInput
                                     placeholder={searchPlaceholder}
                                     value={localSearch}
@@ -153,47 +188,64 @@ export function DataTable<T extends Record<string, any>>({
                         )}
 
                         {filters.length > 0 && (
-                            <Button
-                                variant={activeCount > 0 ? "primary" : "white"}
-                                onClick={() => setIsFilterOpen(true)}
-                                className="relative"
+                            <FilterPopover
+                                categories={filters}
+                                activeFilters={activeFilters}
+                                onFilterChange={(key, value) => {
+                                    if (onFilterChange) {
+                                        onFilterChange({ ...activeFilters, [key]: value });
+                                    }
+                                }}
+                                onReset={() => onFilterChange?.(Object.keys(activeFilters).reduce((acc, key) => ({ ...acc, [key]: [] }), {}))}
+                                totalResults={pagination?.total}
                             >
-                                <SlidersHorizontal size={14} />
-                                Filter
-                                {activeCount > 0 && (
-                                    <span className="ml-1 flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[9px] font-semibold bg-primary-foreground text-primary">
-                                        {activeCount}
-                                    </span>
-                                )}
-                            </Button>
+                                <Button
+                                    variant={activeCount > 0 ? "primary" : "white"}
+                                    size="icon"
+                                    className="relative h-9 w-9 rounded-xl animate-all duration-200"
+                                    title="Filter Data"
+                                >
+                                    <SlidersHorizontal size={14} />
+                                    {activeCount > 0 && (
+                                        <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[8px] font-bold bg-primary text-primary-foreground ring-2 ring-surface-base">
+                                            {activeCount}
+                                        </span>
+                                    )}
+                                </Button>
+                            </FilterPopover>
                         )}
-
-                        {headerActions}
                     </div>
+
+                    {/* Right side: other actions */}
+                    {headerActions && (
+                        <div className="flex items-center gap-2 ml-auto">
+                            {headerActions}
+                        </div>
+                    )}
                 </div>
             )}
 
-            {/* Bulk Actions Bar */}
-            {selectedRows.length > 0 && bulkActions && (
+            {/* --- BULK ACTIONS HUD --- */}
+            {activeSelectedRows.length > 0 && bulkActions && (
                 <div className="flex items-center justify-between p-3 bg-primary rounded-2xl shadow-lg border border-primary/20 animate-in slide-in-from-top-2 duration-300 mx-1">
                     <div className="flex items-center gap-3 pl-2">
                         <div className="h-2 w-2 rounded-full bg-primary-foreground animate-pulse" />
                         <span className="text-xs font-semibold text-primary-foreground uppercase tracking-wide">
-                            {selectedRows.length} Terpilih
+                            {activeSelectedRows.length} Terpilih
                         </span>
                     </div>
                     <div className="flex items-center gap-2">
-                        {bulkActions}
+                        {typeof bulkActions === 'function' ? bulkActions(activeSelectedRows) : bulkActions}
                     </div>
                 </div>
             )}
 
-            {/* Table Container */}
+            {/* --- TABLE CONTENT AREA --- */}
             <div className={cn(
                 "overflow-hidden bg-surface-base/40 backdrop-blur-sm",
-                borderless ? "rounded-none border-0 shadow-none" : "rounded-2xl border border-surface-border/60 shadow-sm"
+
             )}>
-                <div className="overflow-x-auto custom-scrollbar">
+                <div className="overflow-x-auto custom-scrollbar ml-8 mr-8">
                     <table className="w-full text-left border-collapse min-w-[800px]">
                         <thead>
                             <tr className="border-b border-surface-border/60 bg-surface-muted/40 backdrop-blur-md select-none">
@@ -213,7 +265,7 @@ export function DataTable<T extends Record<string, any>>({
                                         <th
                                             key={idx}
                                             className={cn(
-                                                "py-3.5 px-4 text-[11px] font-semibold uppercase tracking-wider text-text-desc select-none",
+                                                "py-3.5 px-4 text-[11px] font-medium uppercase tracking-wider text-text-desc select-none",
                                                 isSortable && "cursor-pointer hover:text-text-main transition-colors",
                                                 col.className
                                             )}
@@ -243,15 +295,19 @@ export function DataTable<T extends Record<string, any>>({
                             {loading && (
                                 <tr>
                                     <td colSpan={columns.length + (onSelectionChange ? 1 : 0) + (rowActions ? 1 : 0)} className="p-0">
-                                        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-surface-base/80 backdrop-blur-sm py-10 gap-3">
-                                            <LoadingLottie width={80} height={80} />
-                                            <p className="text-xs font-semibold uppercase tracking-wide text-primary animate-pulse">Memuat data...</p>
-                                        </div>
+                                        {skeleton ? (
+                                            <div className="animate-in fade-in duration-500">{skeleton}</div>
+                                        ) : (
+                                            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-surface-base/80 backdrop-blur-sm py-10 gap-3">
+                                                <LoadingLottie width={80} height={80} />
+                                                <p className="text-xs font-semibold uppercase tracking-wide text-primary animate-pulse">Memuat data...</p>
+                                            </div>
+                                        )}
                                     </td>
                                 </tr>
                             )}
 
-                            {filteredData.length === 0 && !loading ? (
+                            {displayData.length === 0 && !loading ? (
                                 <tr>
                                     <td colSpan={columns.length + (onSelectionChange ? 1 : 0) + (rowActions ? 1 : 0)} className="p-16 text-center">
                                         <div className="flex flex-col items-center gap-3 opacity-40 select-none">
@@ -261,26 +317,26 @@ export function DataTable<T extends Record<string, any>>({
                                     </td>
                                 </tr>
                             ) : (
-                                filteredData.map((row, rowIdx) => (
+                                displayData.map((row, rowIdx) => (
                                     <tr
                                         key={row.id || rowIdx}
                                         onClick={() => onRowClick?.(row)}
                                         className={cn(
                                             "border-b border-surface-border/30 transition-all hover:bg-surface-muted/30 cursor-pointer group select-none",
-                                            selectedRows.some(r => r.id === row.id) ? "bg-surface-muted/50" : ""
+                                            activeSelectedRows.some(r => r.id === row.id) ? "bg-surface-muted/50" : ""
                                         )}
                                     >
                                         {onSelectionChange && (
                                             <td className="py-3.5 px-4 w-10" onClick={(e) => e.stopPropagation()}>
                                                 <Checkbox
-                                                    checked={selectedRows.some(r => r.id === row.id)}
+                                                    checked={activeSelectedRows.some(r => r.id === row.id)}
                                                     onCheckedChange={(checked) => handleSelectRow(row, !!checked)}
                                                     className="border-surface-border"
                                                 />
                                             </td>
                                         )}
                                         {columns.map((col, colIdx) => (
-                                            <td key={colIdx} className={cn("py-3.5 px-4 align-middle text-sm font-medium text-text-main", col.className)}>
+                                            <td key={colIdx} className={cn("py-3.5 px-4 align-middle text-sm font-normal text-text-main", col.className)}>
                                                 {col.cell ? col.cell(row) : (row[col.accessorKey as keyof T] as React.ReactNode)}
                                             </td>
                                         ))}
@@ -297,31 +353,24 @@ export function DataTable<T extends Record<string, any>>({
                 </div>
             </div>
 
-            {/* Pagination */}
+            {/* --- PAGINATION FOOTER --- */}
             {pagination && (
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-1 py-2 select-none animate-in fade-in duration-200">
+                <div className="flex flex-col sm:flex-row ml-8 mr-8 items-center justify-between gap-4 px-1 py-2 select-none animate-in fade-in duration-200">
                     <div className="flex items-center gap-3 order-2 sm:order-1">
                         <span className="text-xs font-medium text-text-desc uppercase">
-                            Menampilkan <span className="font-semibold text-text-main">{filteredData.length}</span> dari <span className="font-semibold text-text-main">{pagination.total}</span> data
+                            Menampilkan <span className="font-medium text-text-main">{displayData.length}</span> dari <span className="font-medium text-text-main">{pagination.total}</span> data
                         </span>
                     </div>
 
                     <div className="flex items-center gap-4 order-1 sm:order-2">
                         <div className="flex items-center gap-2">
                             <select
-                                className="bg-surface-base/60 border border-surface-border/80 rounded-xl text-xs font-semibold text-text-main px-3 py-1.5 outline-none focus:border-primary transition-all cursor-pointer shadow-sm select-none"
+                                className="bg-surface-base/60 border border-surface-border/80 rounded-xl text-xs font-medium text-text-main px-3 py-1.5 outline-none focus:border-primary transition-all cursor-pointer shadow-sm select-none"
                                 value={localPerPage}
                                 onChange={(e) => {
                                     const val = Number(e.target.value);
                                     setLocalPerPage(val);
-                                    if (pagination.onPerPageChange) {
-                                        pagination.onPerPageChange(val);
-                                    } else {
-                                        const url = new URL(globalThis.location.href);
-                                        url.searchParams.set('per_page', String(val));
-                                        url.searchParams.set('page', '1');
-                                        router.get(url.pathname + url.search, {}, { preserveState: true, preserveScroll: true });
-                                    }
+                                    pagination.onPerPageChange?.(val);
                                 }}
                             >
                                 {[10, 25, 50, 100].map(n => (
@@ -332,27 +381,27 @@ export function DataTable<T extends Record<string, any>>({
 
                         <div className="flex items-center gap-1.5">
                             <Button
-                                variant="outline"
-                                size="sm"
+                                variant="white"
+                                size="icon"
                                 disabled={pagination.currentPage === 1}
                                 onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
-                                className="h-9 px-3.5 flex items-center gap-1.5 disabled:opacity-30 text-xs font-semibold border-surface-border/80 hover:bg-surface-muted"
+                                className="h-9 w-9 rounded-xl border border-surface-border/80 hover:bg-surface-muted"
                             >
                                 <ChevronLeft className="h-4 w-4 text-text-main" />
                             </Button>
 
-                            <div className="flex items-center gap-2 px-3 h-9 bg-surface-muted/40 rounded-xl border border-surface-border/60">
-                                <span className="text-xs font-semibold text-primary">{pagination.currentPage}</span>
-                                <span className="text-xs font-semibold text-text-soft">/</span>
-                                <span className="text-xs font-semibold text-primary">{pagination.lastPage || 1}</span>
+                            <div className="flex items-center gap-2 px-3 h-9 bg-surface-muted/60 rounded-xl border border-surface-border/40">
+                                <span className="text-xs font-medium text-primary">{pagination.currentPage}</span>
+                                <span className="text-xs font-medium text-text-soft">/</span>
+                                <span className="text-xs font-medium text-primary">{pagination.lastPage || 1}</span>
                             </div>
 
                             <Button
-                                variant="outline"
-                                size="sm"
+                                variant="white"
+                                size="icon"
                                 disabled={pagination.currentPage === pagination.lastPage || pagination.lastPage === 0}
                                 onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
-                                className="h-9 px-3.5 flex items-center gap-1.5 disabled:opacity-30 text-xs font-semibold border-surface-border/80 hover:bg-surface-muted"
+                                className="h-9 w-9 rounded-xl border border-surface-border/80 hover:bg-surface-muted"
                             >
                                 <ChevronRight className="h-4 w-4 text-text-main" />
                             </Button>
@@ -361,24 +410,7 @@ export function DataTable<T extends Record<string, any>>({
                 </div>
             )}
 
-            {/* Filter Sheet Integration */}
-            {filters.length > 0 && (
-                <FilterSheet
-                    isOpen={isFilterOpen}
-                    onOpenChange={setIsFilterOpen}
-                    title="Filter Data"
-                    description="Persempit hasil pencarian data."
-                    categories={filters}
-                    activeFilters={activeFilters}
-                    onFilterChange={(key, value) => {
-                        if (onFilterChange) {
-                            onFilterChange({ ...activeFilters, [key]: value });
-                        }
-                    }}
-                    onReset={() => onFilterChange?.(Object.keys(activeFilters).reduce((acc, key) => ({ ...acc, [key]: [] }), {}))}
-                    totalResults={pagination?.total}
-                />
-            )}
+
         </div>
     );
 }

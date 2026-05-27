@@ -1,6 +1,7 @@
 import { Avatar } from '@/components/contracts/ui';
 import { Contract, UserProfile } from '@/types/contracts';
-import { Building2, Mail, User } from 'lucide-react';
+import { Building2, Mail, User, ShieldCheck } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import React from 'react';
 
 interface ContractMembersTabProps {
@@ -32,9 +33,6 @@ export const ContractMembersTab: React.FC<ContractMembersTabProps> = ({ contract
     // 3. Approvers (from timeline)
     contract.approvals?.forEach((a) => {
         if (a.approver) {
-            // Only show if:
-            // 1. They have actually acted (approved/rejected)
-            // 2. OR it's the current active step (so we know who to wait for)
             const isCurrentStep = contract.workflow_step?.step === a.sequence;
             const hasActed = a.status !== 'pending';
 
@@ -57,62 +55,75 @@ export const ContractMembersTab: React.FC<ContractMembersTabProps> = ({ contract
     const membersList = Array.from(members.values());
 
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-4 p-8 duration-500">
-            <div className="mb-8 flex flex-col gap-1.5">
-                <h3 className="text-text-main text-lg font-black uppercase tracking-tight">Daftar Member Kontrak</h3>
-                <p className="text-text-desc text-xs font-semibold">Seluruh personil yang terlibat dalam siklus hidup kontrak ini</p>
+        <div className="animate-in fade-in slide-in-from-bottom-4 flex flex-1 flex-col p-6 duration-500">
+            <div className="mb-6 flex flex-col gap-1 px-1">
+                <h3 className="text-text-main text-base font-semibold uppercase tracking-tight italic">Personil Terlibat</h3>
+                <p className="text-text-desc text-[10px] font-medium uppercase tracking-wider">
+                    Daftar pemangku kepentingan dalam siklus hidup kontrak
+                </p>
             </div>
 
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-                {membersList.map(({ user, roles }) => (
-                    <div
-                        key={user.id}
-                        className="group bg-surface-base border-surface-border relative flex flex-col gap-4 rounded-2xl border p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl"
-                    >
-                        <div className="flex items-start justify-between gap-4">
-                            <div className="flex items-center gap-3">
-                                <div className="relative">
-                                    <Avatar user={user} size="lg" className="ring-surface-muted ring-4" />
-                                    <div className="bg-text-main text-surface-base absolute -right-1 -bottom-1 flex h-5 w-5 items-center justify-center rounded-full shadow-lg">
-                                        <User size={10} />
+            <div className="overflow-hidden rounded-2xl border border-surface-border bg-surface-base/40 backdrop-blur-sm shadow-sm">
+                <table className="w-full text-left border-collapse">
+                    <thead>
+                        <tr className="border-b border-surface-border/60 bg-surface-muted/40 select-none">
+                            <th className="py-3 px-4 text-[11px] font-semibold uppercase tracking-wider text-text-desc">Identitas Personil</th>
+                            <th className="py-3 px-4 text-[11px] font-semibold uppercase tracking-wider text-text-desc">Kontak & Departemen</th>
+                            <th className="py-3 px-4 text-[11px] font-semibold uppercase tracking-wider text-text-desc text-right">Peran dalam Kontrak</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-surface-border/30">
+                        {membersList.map(({ user, roles }) => (
+                            <tr key={user.id} className="group transition-colors hover:bg-surface-muted/30">
+                                <td className="py-4 px-4 align-middle">
+                                    <div className="flex items-center gap-3">
+                                        <div className="relative">
+                                            <Avatar user={user} size="sm" className="ring-2 ring-surface-border/40" />
+                                            <div className="bg-primary absolute -right-0.5 -bottom-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full shadow-sm">
+                                                <User size={8} className="text-primary-foreground" />
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-text-main text-sm font-semibold leading-none tracking-tight">{user.name}</span>
+                                            <span className="text-text-soft mt-1 text-[10px] font-medium uppercase tracking-wider">{user.role}</span>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="flex flex-col">
-                                    <span className="text-text-main mb-1 text-sm font-bold leading-none">{user.name}</span>
-                                    <span className="text-text-soft text-[10px] font-bold uppercase">{user.role}</span>
-                                </div>
-                            </div>
-                        </div>
+                                </td>
+                                <td className="py-4 px-4 align-middle">
+                                    <div className="flex flex-col gap-1">
+                                        <div className="text-text-desc flex items-center gap-2 text-[11px] font-medium">
+                                            <Mail size={12} className="text-primary/40" />
+                                            {user.email}
+                                        </div>
+                                        {user.department_name && (
+                                            <div className="text-text-desc flex items-center gap-2 text-[11px] font-medium">
+                                                <Building2 size={12} className="text-primary/40" />
+                                                {user.department_name}
+                                            </div>
+                                        )}
+                                    </div>
+                                </td>
+                                <td className="py-4 px-4 align-middle text-right">
+                                    <div className="flex flex-wrap justify-end gap-1.5">
+                                        {roles.map((role) => (
+                                            <div
+                                                key={role}
+                                                className="inline-flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/[0.03] px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-primary"
+                                            >
+                                                <ShieldCheck size={10} />
+                                                {role}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
 
-                        <div className="border-surface-border flex flex-col gap-2 border-t pt-4">
-                            <div className="text-text-desc flex items-center gap-2 text-[11px] font-semibold">
-                                <Mail size={12} className="opacity-40" />
-                                {user.email}
-                            </div>
-                            {user.department_name && (
-                                <div className="text-text-desc flex items-center gap-2 text-[11px] font-semibold">
-                                    <Building2 size={12} className="opacity-40" />
-                                    {user.department_name}
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="mt-auto flex flex-wrap gap-1.5 pt-2">
-                            {roles.map((role) => (
-                                <span
-                                    key={role}
-                                    className="border-surface-border bg-surface-muted text-text-soft rounded-md border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"
-                                >
-                                    {role}
-                                </span>
-                            ))}
-                        </div>
-
-                        <div className="absolute top-4 right-4 opacity-0 transition-opacity group-hover:opacity-100">
-                            <div className="bg-success h-2 w-2 animate-pulse rounded-full" />
-                        </div>
-                    </div>
-                ))}
+            <div className="mt-6 rounded-xl border border-surface-border/60 bg-surface-muted/20 p-4 text-[10px] font-medium leading-relaxed text-text-soft uppercase">
+                Note: Daftar ini hanya mencakup personil yang memiliki interaksi langsung atau otoritas formal terhadap dokumen ini.
             </div>
         </div>
     );

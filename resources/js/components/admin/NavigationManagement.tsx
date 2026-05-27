@@ -1,6 +1,6 @@
 import { useToast } from '@/components/contracts/Toast';
 import { Button } from '@/components/ui/base/Button';
-import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
+import { Column, DataTable } from '@/components/ui/data/DataTable';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
@@ -22,24 +22,24 @@ const GroupNameCell = ({ name }: Readonly<{ name: string }>) => (
         <div className="bg-surface-muted border-surface-border text-text-main/40 group-hover:bg-primary flex h-10 w-10 items-center justify-center rounded-xl border transition-all group-hover:text-white">
             <Folder size={16} />
         </div>
-        <span className="text-text-main text-[13px] font-black tracking-tight uppercase">{name}</span>
+        <span className="text-text-main text-[13px] font-semibold tracking-tight uppercase">{name}</span>
     </div>
 );
 
 const ModulesCountCell = ({ count }: Readonly<{ count: number }>) => (
     <div className="flex items-center gap-2">
         <div className="bg-primary/20 h-1.5 w-1.5 rounded-full" />
-        <span className="text-text-desc text-[10px] font-black uppercase">{count || 0} MODULS</span>
+        <span className="text-text-desc text-[10px] font-semibold uppercase">{count || 0} MODULS</span>
     </div>
 );
 
 const ModuleNameCell = ({ name, identifier }: Readonly<{ name: string; identifier: string }>) => (
     <div className="group flex flex-col">
         <div className="flex items-center gap-3">
-            <span className="text-text-main text-[13px] font-black tracking-tight uppercase transition-transform group-hover:translate-x-1">
+            <span className="text-text-main text-[13px] font-semibold tracking-tight uppercase transition-transform group-hover:translate-x-1">
                 {name}
             </span>
-            <div className="bg-primary/[0.05] border-surface-border text-text-main/40 rounded border px-2 py-0.5 text-[8px] font-black uppercase">
+            <div className="bg-primary/[0.05] border-surface-border text-text-main/40 rounded border px-2 py-0.5 text-[8px] font-semibold uppercase">
                 {identifier}
             </div>
         </div>
@@ -53,11 +53,11 @@ const ModuleGroupCell = ({ groupId, groups, route }: Readonly<{ groupId: any; gr
         <div className="flex items-center gap-4">
             <div className="bg-surface-muted border-surface-border flex items-center gap-2 rounded-xl border px-3 py-1.5">
                 <Folder size={10} className="text-text-main/40" />
-                <span className="text-text-desc text-[9px] font-black uppercase">{group?.name || 'GENERAL'}</span>
+                <span className="text-text-desc text-[9px] font-semibold uppercase">{group?.name || 'GENERAL'}</span>
             </div>
             <div className="flex items-center gap-2">
                 <LinkIcon size={10} className="text-text-main/20" />
-                <span className="text-text-main/30 font-mono text-[9px] font-bold tracking-tight">{route || '#'}</span>
+                <span className="text-text-main/30 font-mono text-[9px] font-medium tracking-tight">{route || '#'}</span>
             </div>
         </div>
     );
@@ -168,8 +168,8 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
     };
 
     return (
-        <div className="bg-surface-base/40 border-surface-border animate-in fade-in m-5 rounded-2xl border p-5 shadow-sm backdrop-blur-sm duration-500">
-            <TableMasterData
+        <>
+            <DataTable
                 title={isModuleView ? 'Master Modul Navigasi' : 'Struktur Grup Menu'}
                 columns={isModuleView ? moduleColumns : groupColumns}
                 data={isModuleView ? modules?.data || modules || [] : groups?.data || groups || []}
@@ -275,10 +275,10 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
                         <div className="absolute top-0 right-0 rotate-12 p-8 opacity-10">
                             <LayoutGrid size={120} strokeWidth={1} />
                         </div>
-                        <DialogTitle className="relative z-10 flex items-center gap-3 text-2xl font-black tracking-tight uppercase">
+                        <DialogTitle className="relative z-10 flex items-center gap-3 text-2xl font-semibold tracking-tight uppercase">
                             {editingItem ? 'Edit' : 'Registrasi'} {isModuleView ? 'Modul' : 'Grup'}
                         </DialogTitle>
-                        <DialogDescription className="relative z-10 mt-2 text-[10px] leading-relaxed font-bold tracking-wider text-white/50 uppercase">
+                        <DialogDescription className="relative z-10 mt-2 text-[10px] leading-relaxed font-medium tracking-wider text-white/50 uppercase">
                             Konfigurasi struktur hierarki navigasi dan endpoint sistem administrasi
                         </DialogDescription>
                     </div>
@@ -305,19 +305,19 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
                                             icon={Shield}
                                         />
                                         <div className="space-y-2">
-                                            <label className="text-text-desc flex items-center gap-2 text-[10px] font-bold uppercase">
+                                            <label className="text-text-desc flex items-center gap-2 text-[10px] font-medium uppercase">
                                                 Grup Menu Utama
                                             </label>
                                             <Select
                                                 value={String(moduleForm.data.module_group_id)}
                                                 onValueChange={(v: string) => moduleForm.setData('module_group_id', String(v))}
                                             >
-                                                <SelectTrigger className="border-surface-border bg-primary/5 focus:border-primary h-10 rounded-xl text-xs font-bold transition-all">
+                                                <SelectTrigger className="border-surface-border bg-primary/5 focus:border-primary h-10 rounded-xl text-xs font-medium transition-all">
                                                     <SelectValue />
                                                 </SelectTrigger>
                                                 <SelectContent className="border-surface-border rounded-xl bg-card shadow-2xl">
                                                     {(groups.data || groups || []).map((g: any) => (
-                                                        <SelectItem key={g.id} value={String(g.id)} className="py-2.5 text-xs font-bold uppercase">
+                                                        <SelectItem key={g.id} value={String(g.id)} className="py-2.5 text-xs font-medium uppercase">
                                                             {g.name}
                                                         </SelectItem>
                                                     ))}
@@ -350,14 +350,14 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
                                 variant="ghost"
                                 type="button"
                                 onClick={() => setIsModalOpen(false)}
-                                className="text-text-main/30 hover:text-text-main h-12 flex-1 rounded-2xl text-[11px] font-black uppercase transition-all"
+                                className="text-text-main/30 hover:text-text-main h-12 flex-1 rounded-2xl text-[11px] font-semibold uppercase transition-all"
                             >
                                 Batal
                             </Button>
                             <Button
                                 type="submit"
                                 disabled={form.processing}
-                                className="h-12 flex-1 rounded-2xl text-[11px] font-black uppercase shadow-2xl transition-all disabled:opacity-50"
+                                className="h-12 flex-1 rounded-2xl text-[11px] font-semibold uppercase shadow-2xl transition-all disabled:opacity-50"
                             >
                                 {form.processing ? 'Memproses...' : 'Simpan Perubahan'}
                             </Button>
@@ -365,6 +365,6 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
                     </form>
                 </DialogContent>
             </Dialog>
-        </div>
+        </>
     );
 }

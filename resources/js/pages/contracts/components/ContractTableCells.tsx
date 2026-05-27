@@ -1,8 +1,9 @@
 import { Button } from '@/components/ui/base/Button';
+import { StatusBadge } from '@/components/ui/data/StatusBadge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/overlays/DropdownMenu';
 import { cn } from '@/lib/utils';
 import { Contract, ContractType } from '@/types/contracts';
-import { Check, Clock, Eye, FileEdit, MoreVertical, Trash2 } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Check, CheckCircle2, Clock, Eye, FileEdit, MoreVertical, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export function ExpiryBadge({ endDate }: Readonly<{ endDate: string | null }>) {
@@ -30,35 +31,12 @@ export function ExpiryBadge({ endDate }: Readonly<{ endDate: string | null }>) {
     }
 
     return (
-        <div className={cn('inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-bold uppercase tracking-wider', color)}>
+        <div className={cn('inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-semibold tracking-wider uppercase', color)}>
             <Icon size={12} strokeWidth={3} />
             {label}
         </div>
     );
 }
-
-export const StatusBadge = ({ status }: { status: string }) => {
-    const config: Record<string, { bg: string; dot: string; text: string; label: string }> = {
-        draft: { bg: 'bg-surface-muted', dot: 'bg-text-soft', text: 'text-text-desc', label: 'Draft' },
-        in_review: { bg: 'bg-warning/10', dot: 'bg-warning', text: 'text-warning', label: 'Review' },
-        revision: { bg: 'bg-danger/10', dot: 'bg-danger', text: 'text-danger', label: 'Revisi' },
-        pending: { bg: 'bg-warning/10', dot: 'bg-warning', text: 'text-warning', label: 'Pending' },
-        approved: { bg: 'bg-success/10', dot: 'bg-success', text: 'text-success', label: 'Disetujui' },
-        active: { bg: 'bg-primary/10', dot: 'bg-primary', text: 'text-primary', label: 'Aktif' },
-        expired: { bg: 'bg-danger/10', dot: 'bg-danger', text: 'text-danger', label: 'Expired' },
-        archived: { bg: 'bg-surface-muted', dot: 'bg-text-soft', text: 'text-text-soft', label: 'Arsip' },
-        rejected: { bg: 'bg-danger/10', dot: 'bg-danger', text: 'text-danger', label: 'Ditolak' },
-    };
-
-    const s = config[status as keyof typeof config] || config.draft;
-
-    return (
-        <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-tight', s.bg, s.text)}>
-            <span className={cn('h-1.5 w-1.5 rounded-full', s.dot)} />
-            {s.label}
-        </span>
-    );
-};
 
 export const SLACountdown = ({ deadline, status }: Readonly<{ deadline: string | null; status: string }>) => {
     const [timeLeft, setTimeLeft] = useState<string>('');
@@ -99,7 +77,7 @@ export const SLACountdown = ({ deadline, status }: Readonly<{ deadline: string |
         return () => clearInterval(timer);
     }, [deadline, status]);
 
-    if (!deadline || status === 'archived' || status === 'approved') return <span className="text-[10px] text-text-soft">—</span>;
+    if (!deadline || status === 'archived' || status === 'approved') return <span className="text-text-soft text-[10px]">—</span>;
 
     const getUrgencyStyles = () => {
         if (urgency === 'danger') {
@@ -112,7 +90,12 @@ export const SLACountdown = ({ deadline, status }: Readonly<{ deadline: string |
     };
 
     return (
-        <div className={cn('flex w-fit items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-bold ring-1 uppercase tracking-tight', getUrgencyStyles())}>
+        <div
+            className={cn(
+                'flex w-fit items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold tracking-tight uppercase ring-1',
+                getUrgencyStyles(),
+            )}
+        >
             <Clock size={10} className={urgency === 'danger' ? 'animate-pulse' : ''} />
             {timeLeft}
         </div>
@@ -122,10 +105,10 @@ export const SLACountdown = ({ deadline, status }: Readonly<{ deadline: string |
 export const ContractInfoCell = ({ c }: Readonly<{ c: Contract }>) => (
     <div className="flex flex-col gap-1 py-0.5">
         <div className="flex items-center gap-2">
-            <span className="text-text-main text-[13px] leading-tight font-semibold uppercase tracking-tight">{c.title}</span>
+            <span className="text-text-main text-[13px] leading-tight font-semibold tracking-tight uppercase">{c.title}</span>
             {!!c.current_version && (
                 <div className="bg-primary flex-shrink-0 rounded px-1.5 py-0.5">
-                    <span className="text-[9px] font-bold text-primary-foreground uppercase">V{c.current_version}</span>
+                    <span className="text-primary-foreground text-[9px] font-semibold uppercase">V{c.current_version}</span>
                 </div>
             )}
         </div>
@@ -142,7 +125,7 @@ export const DepartmentCell = ({ c }: Readonly<{ c: Contract }>) => (
 );
 
 export const ProgressCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <span className="text-primary text-xs font-semibold tracking-tight bg-primary/5 px-2 py-1 rounded-lg">
+    <span className="text-primary bg-primary/5 rounded-lg px-2 py-1 text-xs font-semibold tracking-tight">
         {c.progress.done}/{c.progress.total}
     </span>
 );
@@ -175,7 +158,7 @@ export const TypeAndVendorCell = ({ c, types }: Readonly<{ c: Contract; types: C
         <div className="flex flex-col gap-1.5 py-0.5">
             <span
                 className={cn(
-                    'inline-block w-fit rounded-xl px-2.5 py-0.5 text-[10px] leading-none font-bold tracking-wide uppercase',
+                    'inline-block w-fit rounded-xl px-2.5 py-0.5 text-[10px] leading-none font-semibold tracking-wide uppercase',
                     TYPE_COLORS[colorIdx],
                 )}
             >
@@ -189,7 +172,7 @@ export const TypeAndVendorCell = ({ c, types }: Readonly<{ c: Contract; types: C
 export const ContractNoAndTitleCell = ({ c }: Readonly<{ c: Contract }>) => (
     <div className="flex flex-col gap-0.5 py-0.5">
         <span className="text-primary font-mono text-[10px] leading-none font-semibold">{c.contract_no || 'N/A'}</span>
-        <span className="text-text-main mt-1.5 line-clamp-1 text-[13px] leading-tight font-semibold uppercase tracking-tight">{c.title}</span>
+        <span className="text-text-main mt-1.5 line-clamp-1 text-[13px] leading-tight font-semibold tracking-tight uppercase">{c.title}</span>
     </div>
 );
 
@@ -200,8 +183,10 @@ export const InitiatorCell = ({ c }: Readonly<{ c: Contract }>) => {
 
     return (
         <div className="flex flex-col gap-0.5 py-0.5">
-            <span className="text-text-soft text-[10px] leading-none font-medium uppercase tracking-wider">{roleDept || 'Staff UMUM'}</span>
-            <span className="text-text-main mt-1.5 truncate text-[13px] leading-tight font-semibold uppercase tracking-tight">{c.initiator?.name || '—'}</span>
+            <span className="text-text-soft text-[10px] leading-none font-medium tracking-wider uppercase">{roleDept || 'Staff UMUM'}</span>
+            <span className="text-text-main mt-1.5 truncate text-[13px] leading-tight font-semibold tracking-tight uppercase">
+                {c.initiator?.name || '—'}
+            </span>
         </div>
     );
 };
@@ -216,20 +201,20 @@ export const StatusAndStepCell = ({ c }: Readonly<{ c: Contract }>) => {
             <div className="flex items-center">
                 <StatusBadge status={c.status} />
             </div>
-            {!!stepDesc && <span className="text-text-desc truncate text-[10px] leading-tight font-medium uppercase tracking-wide">{stepDesc}</span>}
+            {!!stepDesc && <span className="text-text-desc truncate text-[10px] leading-tight font-medium tracking-wide uppercase">{stepDesc}</span>}
         </div>
     );
 };
 
 export const AssignedByCell = ({ c }: Readonly<{ c: Contract }>) => (
     <div className="flex flex-col py-0.5">
-        <span className="text-text-main truncate text-[13px] font-semibold uppercase tracking-tight">{c.assigned_by?.name || '—'}</span>
+        <span className="text-text-main truncate text-[13px] font-semibold tracking-tight uppercase">{c.assigned_by?.name || '—'}</span>
     </div>
 );
 
 export const AssignedPicCell = ({ c }: Readonly<{ c: Contract }>) => (
     <div className="flex flex-col py-0.5">
-        <span className="text-text-main truncate text-[13px] font-semibold uppercase tracking-tight">{c.assigned_pic?.name || '—'}</span>
+        <span className="text-text-main truncate text-[13px] font-semibold tracking-tight uppercase">{c.assigned_pic?.name || '—'}</span>
     </div>
 );
 
@@ -258,7 +243,7 @@ export const BulkActions = ({
             <Button
                 variant="white"
                 size="sm"
-                className="h-8 border-surface-border/40 bg-surface-base text-primary font-bold uppercase text-[10px] px-4 shadow-sm"
+                className="border-surface-border/40 bg-surface-base text-primary h-8 px-4 text-[10px] font-semibold uppercase shadow-sm"
                 onClick={() => handleBulkApprove(selectedRows)}
             >
                 <Check className="mr-1.5 h-3 w-3" /> Approve
@@ -268,7 +253,7 @@ export const BulkActions = ({
             <Button
                 variant="white"
                 size="sm"
-                className="h-8 border-surface-border/40 bg-surface-base text-danger font-bold uppercase text-[10px] px-4 shadow-sm"
+                className="border-surface-border/40 bg-surface-base text-danger h-8 px-4 text-[10px] font-semibold uppercase shadow-sm"
                 onClick={() => handleBulkDelete(selectedRows)}
             >
                 <Trash2 className="mr-1.5 h-3 w-3" /> Hapus
@@ -294,18 +279,15 @@ export const RowActions = ({
         <DropdownMenuTrigger asChild>
             <Button
                 variant="ghost"
-                className="border-surface-border bg-surface-base/50 hover:bg-surface-muted group h-8 w-8 rounded-lg border p-0 transition-all shadow-sm"
+                className="border-surface-border bg-surface-base/50 hover:bg-surface-muted group h-8 w-8 rounded-lg border p-0 shadow-sm transition-all"
             >
                 <MoreVertical size={14} className="text-text-soft group-hover:text-primary" />
             </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent
-            align="end"
-            className="border-surface-border w-52 rounded-2xl bg-surface-base p-1.5 shadow-2xl backdrop-blur-xl"
-        >
+        <DropdownMenuContent align="end" className="border-surface-border bg-surface-base w-52 rounded-2xl p-1.5 shadow-2xl backdrop-blur-xl">
             <DropdownMenuItem
                 onClick={() => openDetail(c)}
-                className="flex cursor-pointer items-center gap-2 rounded-xl text-[11px] font-semibold tracking-tight text-text-main uppercase"
+                className="text-text-main flex cursor-pointer items-center gap-2 rounded-xl text-[11px] font-semibold tracking-tight uppercase"
             >
                 <Eye size={14} /> Lihat Detail
             </DropdownMenuItem>
@@ -314,17 +296,17 @@ export const RowActions = ({
                     setSelected(c);
                     setEditOpen(true);
                 }}
-                className="flex cursor-pointer items-center gap-2 rounded-xl text-[11px] font-semibold tracking-tight text-text-main uppercase"
+                className="text-text-main flex cursor-pointer items-center gap-2 rounded-xl text-[11px] font-semibold tracking-tight uppercase"
             >
                 <FileEdit size={14} /> Perbarui
             </DropdownMenuItem>
-            <div className="my-1 h-px bg-surface-border/40" />
+            <div className="bg-surface-border/40 my-1 h-px" />
             <DropdownMenuItem
                 onClick={() => {
                     setSelected(c);
                     setDeleteOpen(true);
                 }}
-                className="flex cursor-pointer items-center gap-2 rounded-xl text-[11px] font-semibold tracking-tight text-danger uppercase focus:bg-danger/5 focus:text-danger"
+                className="text-danger focus:bg-danger/5 focus:text-danger flex cursor-pointer items-center gap-2 rounded-xl text-[11px] font-semibold tracking-tight uppercase"
             >
                 <Trash2 size={14} /> Hapus Data
             </DropdownMenuItem>

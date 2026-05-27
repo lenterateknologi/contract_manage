@@ -473,4 +473,27 @@ class MasterConfigController extends Controller
 
         return back()->with('success', 'Numbering format berhasil diperbarui.');
     }
+
+    // ─── Department Export / Import ───────────────────────────────────────────
+
+    public function exportDepartments()
+    {
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\DepartmentsWorkbookExport(),
+            'data_departemen_' . date('Ymd') . '.xlsx',
+        );
+    }
+
+    public function importDepartments(Request $request)
+    {
+        $request->validate(['file' => 'required|file|mimes:xlsx,xls']);
+
+        try {
+            \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\DepartmentsImport(), $request->file('file'));
+
+            return back()->with('success', 'Data departemen berhasil diimpor.');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Gagal mengimpor data: ' . $e->getMessage()]);
+        }
+    }
 }

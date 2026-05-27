@@ -1,6 +1,7 @@
 import { useToast } from '@/components/contracts/Toast';
 import { Button } from '@/components/ui/base/Button';
-import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
+import { Column, DataTable } from '@/components/ui/data/DataTable';
+import { ExcelActions } from '@/components/ui/data/ExcelActions';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -12,6 +13,7 @@ import { FormSection, ManagementForm } from './ManagementForm';
 
 interface CompanyGroupManagementProps {
     groups: any;
+    regions: any;
     filters: any;
 }
 
@@ -40,12 +42,12 @@ const GroupCell = ({ name }: Readonly<{ name: string }>) => (
             <Users size={18} />
         </div>
         <div className="flex min-w-0 flex-col">
-            <span className="mb-0.5 truncate text-sm leading-tight font-bold tracking-wide text-text-main">{name}</span>
+            <span className="mb-0.5 truncate text-sm leading-tight font-semibold tracking-wide text-text-main">{name}</span>
         </div>
     </div>
 );
 
-export function CompanyGroupManagement({ groups, filters }: Readonly<CompanyGroupManagementProps>) {
+export function CompanyGroupManagement({ groups, regions, filters }: Readonly<CompanyGroupManagementProps>) {
     const { showToast } = useToast();
     const { canCreate, canUpdate, canDelete } = usePermissions('ADMIN_GROUPS');
     const [isFormView, setIsFormView] = React.useState(false);
@@ -67,6 +69,30 @@ export function CompanyGroupManagement({ groups, filters }: Readonly<CompanyGrou
             if (group) openEdit(group);
         }
     }, [filters.action, filters.id]);
+
+    const filterConfig = useMemo(
+        () => [
+            {
+                label: 'Wilayah / Region',
+                key: 'region_id',
+                type: 'searchable',
+                options: (regions || []).map((r: any) => ({ label: r.name, value: r.id })),
+            },
+        ],
+        [regions],
+    );
+
+    const handleFilterChange = (newFilters: Record<string, any>) => {
+        router.get(
+            globalThis.location.pathname,
+            {
+                ...filters,
+                ...newFilters,
+                page: 1,
+            },
+            { preserveState: true, replace: true },
+        );
+    };
 
     const columns = useMemo<Column<any>[]>(
         () => [
@@ -284,52 +310,71 @@ export function CompanyGroupManagement({ groups, filters }: Readonly<CompanyGrou
     }
 
     return (
-        <div className="bg-surface-base/40 border-surface-border animate-in fade-in m-5 rounded-2xl border p-6 shadow-sm backdrop-blur-sm duration-200 select-none">
-            <TableMasterData
-                title="Database Group Perusahaan"
-                columns={columns}
-                borderless={true}
-                data={Array.isArray(groups) ? groups : groups?.data || []}
-                searchPlaceholder="Cari group..."
-                searchValue={filters.search || ''}
-                onSearchChange={(v: string) =>
-                    router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })
-                }
-                headerActions={
-                    canCreate && (
+        <DataTable
+            title="Database Group Perusahaan"
+            columns={columns}
+            borderless={true}
+            data={Array.isArray(groups) ? groups : groups?.data || []}
+            searchPlaceholder="Cari group..."
+            searchValue={filters.search || ''}
+            onSearchChange={(v: string) =>
+                router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })
+            }
+            filters={filterConfig as any}
+            activeFilters={filters}
+            onFilterChange={handleFilterChange}
+            headerActions={
+                <div className="flex items-center gap-2">
+                    <ExcelActions
+                        exportRoute="admin.company-groups.export"
+                        importRoute="admin.company-groups.import"
+                        label="Group"
+                    />
+                    {canCreate && (
                         <Button
                             variant="white"
                             onClick={openCreate}
-                            className="border-surface-border bg-surface-base text-text-main hover:bg-surface-muted hover:border-surface-border gap-2 border px-5 text-xs tracking-wide transition-all duration-200 hover:shadow-md"
                         >
                             <Plus size={15} className="text-primary" /> Tambah Group
                         </Button>
-                    )
-                }
-                onRowClick={openEdit}
-                bulkActions={
-                    canDelete
-                        ? [
-                              {
-                                  label: 'Hapus Terpilih',
-                                  icon: Trash2,
-                                  variant: 'destructive',
-                                  onClick: (ids: string[] | number[]) => {
-                                      if (confirm(`Hapus ${ids.length} group terpilih?`)) {
-                                          router.post(
-                                              '/admin/company-groups/bulk-delete',
-                                              { ids },
-                                              {
-                                                  onSuccess: () => showToast(`${ids.length} group telah dihapus`, 'success'),
-                                              },
-                                          );
-                                      }
-                                  },
+                    )}
+                </div>
+            }
+            onRowClick={openEdit}
+            bulkActions={
+                canDelete
+                    ? [
+                          {
+                              label: 'Hapus Terpilih',
+                              icon: Trash2,
+                              variant: 'destructive',
+                              onClick: (ids: string[] | number[]) => {
+                                  if (confirm(`Hapus ${ids.length} group terpilih?`)) {
+                                      router.post(
+                                          '/admin/company-groups/bulk-delete',
+                                          { ids },
+                                          {
+                                              onSuccess: () => showToast(`${ids.length} group telah dihapus`, 'success'),
+                                          },
+                                      );
+                                  }
                               },
-                          ]
-                        : undefined
-                }
-            />
-        </div>
+                          },
+                      ]
+                    : undefined
+            }
+            pagination={{
+                currentPage: groups.current_page || 1,
+                lastPage: groups.last_page || 1,
+                total: groups.total || 0,
+                from: groups.from || 1,
+                to: groups.to || 1,
+                perPage: groups.per_page || 10,
+                onPageChange: (page: number) =>
+                    router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                onPerPageChange: (pp: number) =>
+                    router.get(globalThis.location.pathname, { ...filters, per_page: pp, page: 1 }, { preserveState: true, preserveScroll: true }),
+            }}
+        />
     );
 }

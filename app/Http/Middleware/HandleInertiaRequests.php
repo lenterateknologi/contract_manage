@@ -60,6 +60,16 @@ class HandleInertiaRequests extends Middleware
                     'role' => $request->user()->role,
                     'bg_color' => $request->user()->bg_color,
                     'text_color' => $request->user()->text_color,
+                    'stats' => [
+                        'total_created' => \App\Models\Contract::where('created_by', $request->user()->id)->count(),
+                        'pending_approvals' => \App\Models\Approval::where('user_id', $request->user()->id)
+                            ->where('status', 'pending')
+                            ->whereHas('contract', fn($q) => $q->whereNull('deleted_at'))
+                            ->count(),
+                        'assigned_active' => \App\Models\Contract::where('assigned_pic_id', $request->user()->id)
+                            ->where('status', 'active')
+                            ->count(),
+                    ]
                 ]) : null,
                 'permissions' => $this->getUserPermissions($request),
             ],

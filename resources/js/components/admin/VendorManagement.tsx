@@ -1,9 +1,11 @@
 import { useToast } from '@/components/contracts/Toast';
-import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
+import { Button } from '@/components/ui/base/Button';
+import { Column, DataTable } from '@/components/ui/data/DataTable';
+import { ExcelActions } from '@/components/ui/data/ExcelActions';
 import { usePermissions } from '@/hooks/use-permissions';
 import { cn } from '@/lib/utils';
 import { router } from '@inertiajs/react';
-import { Mail, Phone, Trash2, Truck } from 'lucide-react';
+import { Mail, Phone, Trash2, Truck, Plus } from 'lucide-react';
 import React, { useMemo } from 'react';
 
 interface VendorManagementProps {
@@ -45,8 +47,8 @@ const VendorCell = ({ name, companyType, code, isActive }: Readonly<{ name: stri
         </div>
         <div className="flex min-w-0 flex-col">
             <div className="mb-0.5 flex items-center gap-2">
-                <span className="truncate text-sm leading-tight font-bold tracking-wide text-text-main">{name}</span>
-                <span className="text-text-soft border-surface-border border-l pl-2 text-[10px] font-bold tracking-wider uppercase select-none">
+                <span className="truncate text-sm leading-tight font-semibold tracking-wide text-text-main">{name}</span>
+                <span className="text-text-soft border-surface-border border-l pl-2 text-[10px] font-semibold tracking-wider uppercase select-none">
                     {companyType || 'CV'}
                 </span>
             </div>
@@ -55,7 +57,7 @@ const VendorCell = ({ name, companyType, code, isActive }: Readonly<{ name: stri
                 <div className={cn('h-1.5 w-1.5 rounded-full', isActive ? 'animate-pulse bg-success' : 'bg-danger/40')} />
                 <span
                     className={cn(
-                        'text-xs font-bold tracking-wide transition-colors duration-200 select-none',
+                        'text-xs font-semibold tracking-wide transition-colors duration-200 select-none',
                         isActive ? 'text-success' : 'text-danger',
                     )}
                 >
@@ -70,7 +72,7 @@ const CategoryCell = ({ category, email, phone }: Readonly<{ category?: string; 
     <div className="flex flex-col gap-1.5 select-none">
         <span
             className={cn(
-                'inline-block w-fit rounded-xl px-3 py-1 text-xs font-bold tracking-wide shadow-sm backdrop-blur-sm',
+                'inline-block w-fit rounded-xl px-3 py-1 text-xs font-semibold tracking-wide shadow-sm backdrop-blur-sm',
                 CATEGORY_COLORS[category ?? ''] ?? 'border border-surface-border bg-secondary text-text-desc',
             )}
         >
@@ -93,8 +95,8 @@ const CategoryCell = ({ category, email, phone }: Readonly<{ category?: string; 
 
 const PicCell = ({ picName, directorName, picPosition }: Readonly<{ picName?: string; directorName?: string; picPosition?: string }>) => (
     <div className="flex flex-col select-none">
-        <span className="truncate text-sm font-bold tracking-wide text-text-main">{picName || directorName || '—'}</span>
-        <span className="text-text-desc mt-0.5 text-[11px] leading-none font-bold tracking-wider uppercase">
+        <span className="truncate text-sm font-semibold tracking-wide text-text-main">{picName || directorName || '—'}</span>
+        <span className="text-text-desc mt-0.5 text-[11px] leading-none font-semibold tracking-wider uppercase">
             {picPosition || 'DIREKTUR UTAMA'}
         </span>
     </div>
@@ -107,12 +109,12 @@ const ComplianceCell = ({ docCount }: Readonly<{ docCount?: number }>) => {
         score >= 80
             ? 'text-success bg-success/10'
             : score >= 50
-              ? 'text-warning bg-warning/10'
-              : 'text-danger bg-danger/10';
+                ? 'text-warning bg-warning/10'
+                : 'text-danger bg-danger/10';
 
     return (
         <div className="flex flex-col items-end gap-1.5 select-none">
-            <div className={cn('rounded-xl px-3 py-1 text-xs font-bold tracking-wider shadow-sm backdrop-blur-sm', colorClass)}>{status}</div>
+            <div className={cn('rounded-xl px-3 py-1 text-xs font-semibold tracking-wider shadow-sm backdrop-blur-sm', colorClass)}>{status}</div>
             <div className="flex items-center gap-2">
                 <div className="bg-muted border-surface-border h-1.5 w-20 overflow-hidden rounded-full border">
                     <div
@@ -123,7 +125,7 @@ const ComplianceCell = ({ docCount }: Readonly<{ docCount?: number }>) => {
                         style={{ width: `${score}%` }}
                     />
                 </div>
-                <span className="text-xs font-bold text-text-main">{score}%</span>
+                <span className="text-xs font-semibold text-text-main">{score}%</span>
             </div>
         </div>
     );
@@ -201,66 +203,81 @@ export function VendorManagement({ vendors, filters }: Readonly<VendorManagement
     );
 
     return (
-        <div className="bg-surface-base/40 border-surface-border animate-in fade-in m-5 rounded-2xl border p-6 shadow-sm backdrop-blur-sm duration-200 select-none">
-            <TableMasterData
-                title="Database Rekanan / Vendor"
-                data={vendors?.data || []}
-                columns={columns}
-                borderless={true}
-                selectedRows={selectedRows}
-                onSelectionChange={setSelectedRows}
-                searchPlaceholder="Cari vendor, kode, atau email..."
-                searchValue={filters?.search || ''}
-                onSearchChange={(v: string) =>
-                    router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })
-                }
-                onRowClick={(row: any) => router.get(`/admin/vendors/${row.id}/edit`)}
-                filters={filterConfig as any}
-                activeFilters={filters}
-                onFilterChange={handleFilterChange}
-                bulkActions={
-                    canDelete
-                        ? [
-                              {
-                                  label: 'Hapus Terpilih',
-                                  icon: Trash2,
-                                  variant: 'destructive',
-                                  onClick: (ids: string[] | number[]) => {
-                                      if (confirm(`Hapus ${ids.length} vendor terpilih?`)) {
-                                          router.post(
-                                              '/admin/vendors/bulk-delete',
-                                              { ids },
-                                              {
-                                                  onSuccess: () => showToast(`${ids.length} vendor telah dihapus`, 'success'),
-                                              },
-                                          );
-                                      }
-                                  },
-                              },
-                          ]
-                        : undefined
-                }
-                pagination={
-                    vendors
-                        ? {
-                              currentPage: vendors.current_page || 1,
-                              lastPage: vendors.last_page || 1,
-                              total: vendors.total || 0,
-                              from: vendors.from || 1,
-                              to: vendors.to || 1,
-                              perPage: vendors.per_page || 10,
-                              onPageChange: (page: number) =>
-                                  router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
-                              onPerPageChange: (pp: number) =>
-                                  router.get(
-                                      globalThis.location.pathname,
-                                      { ...filters, per_page: pp, page: 1 },
-                                      { preserveState: true, preserveScroll: true },
-                                  ),
-                          }
-                        : undefined
-                }
-            />
-        </div>
+        <DataTable
+            title="Database Rekanan / Vendor"
+            data={vendors?.data || []}
+            columns={columns}
+            borderless={true}
+            selectedRows={selectedRows}
+            onSelectionChange={setSelectedRows}
+            searchPlaceholder="Cari vendor, kode, atau email..."
+            searchValue={filters?.search || ''}
+            onSearchChange={(v: string) =>
+                router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })
+            }
+            onRowClick={(row: any) => router.get(`/admin/vendors/${row.id}/edit`)}
+            filters={filterConfig as any}
+            activeFilters={filters}
+            onFilterChange={handleFilterChange}
+            headerActions={
+                <div className="flex items-center gap-2">
+                    <ExcelActions
+                        exportRoute="admin.vendors.export"
+                        importRoute="admin.vendors.import"
+                        label="Vendor"
+                    />
+                    {canCreate ? (
+                        <Button
+                            variant="white"
+                            onClick={() => router.visit(route('admin.vendors.create'))}
+                        >
+                            <Plus size={15} className="text-primary" /> Tambah Vendor
+                        </Button>
+                    ) : undefined}
+                </div>
+            }
+            bulkActions={
+                canDelete
+                    ? [
+                        {
+                            label: 'Hapus Terpilih',
+                            icon: Trash2,
+                            variant: 'destructive',
+                            onClick: (ids: string[] | number[]) => {
+                                if (confirm(`Hapus ${ids.length} vendor terpilih?`)) {
+                                    router.post(
+                                        '/admin/vendors/bulk-delete',
+                                        { ids },
+                                        {
+                                            onSuccess: () => showToast(`${ids.length} vendor telah dihapus`, 'success'),
+                                        },
+                                    );
+                                }
+                            },
+                        },
+                    ]
+                    : undefined
+            }
+            pagination={
+                vendors
+                    ? {
+                        currentPage: vendors.current_page || 1,
+                        lastPage: vendors.last_page || 1,
+                        total: vendors.total || 0,
+                        from: vendors.from || 1,
+                        to: vendors.to || 1,
+                        perPage: vendors.per_page || 10,
+                        onPageChange: (page: number) =>
+                            router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                        onPerPageChange: (pp: number) =>
+                            router.get(
+                                globalThis.location.pathname,
+                                { ...filters, per_page: pp, page: 1 },
+                                { preserveState: true, preserveScroll: true },
+                            ),
+                    }
+                    : undefined
+            }
+        />
     );
 }

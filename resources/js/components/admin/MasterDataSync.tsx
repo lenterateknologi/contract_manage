@@ -19,7 +19,8 @@ import {
     CheckCircle2,
     GitBranch,
     ShieldCheck,
-    LayoutGrid
+    LayoutGrid,
+    Loader2
 } from 'lucide-react';
 import React, { useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -160,66 +161,66 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
     };
 
     return (
-        <div className="bg-card/40 border-surface-border animate-in fade-in m-5 flex flex-col gap-6 rounded-2xl border p-6 shadow-sm backdrop-blur-sm duration-200 select-none">
+        <>
             {/* Header */}
-            <div className="border-surface-border flex items-center justify-between border-b pb-4">
+            <div className="flex items-center justify-between pb-6 px-5 pt-5 select-none">
                 <div className="flex items-center gap-3">
-                    <div className="bg-primary/10 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-xl font-bold shadow-sm backdrop-blur-sm">
+                    <div className="bg-primary/10 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-sm backdrop-blur-sm">
                         <Database size={18} />
                     </div>
                     <div className="flex flex-col">
-                        <h1 className="text-text-main text-base font-black tracking-tight">Sync & Control Center</h1>
-                        <p className="text-text-desc text-xs font-medium">Manajemen migrasi dan granular export-import data master</p>
+                        <h1 className="text-text-main text-base font-semibold tracking-tight uppercase italic">Sync & Control Center</h1>
+                        <p className="text-text-desc text-[10px] font-medium uppercase tracking-wider">Manajemen migrasi dan granular export-import data master</p>
                     </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 px-5 select-none">
                 {/* Left: Entity Table */}
                 <div className="lg:col-span-8">
-                    <div className="border-surface-border bg-muted/5 overflow-hidden rounded-xl border">
+                    <div className="border-surface-border bg-surface-base/40 backdrop-blur-sm overflow-hidden rounded-2xl border shadow-sm">
                         <table className="w-full text-left">
                             <thead>
-                                <tr className="bg-muted/40 border-surface-border border-b">
-                                    <th className="w-12 px-4 py-3 text-center">
+                                <tr className="bg-surface-muted/40 border-surface-border border-b">
+                                    <th className="w-12 px-4 py-3.5 text-center">
                                         <Checkbox
-                                            className="h-4 w-4 rounded"
+                                            className="h-4 w-4 rounded border-surface-border"
                                             checked={selectedEntities.length === entities.length}
                                             onCheckedChange={toggleAll}
                                         />
                                     </th>
-                                    <th className="text-text-desc px-4 py-3 text-[10px] font-bold tracking-wider uppercase">Entitas Data</th>
-                                    <th className="text-text-desc px-4 py-3 text-center text-[10px] font-bold tracking-wider uppercase">Volume</th>
-                                    <th className="text-text-desc px-4 py-3 text-[10px] font-bold tracking-wider uppercase">Deskripsi</th>
+                                    <th className="text-text-desc px-4 py-3.5 text-[11px] font-medium tracking-wider uppercase">Entitas Data</th>
+                                    <th className="text-text-desc px-4 py-3.5 text-center text-[11px] font-medium tracking-wider uppercase">Volume</th>
+                                    <th className="text-text-desc px-4 py-3.5 text-[11px] font-medium tracking-wider uppercase">Deskripsi</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-surface-border/40 divide-y">
+                            <tbody className="divide-surface-border/30 divide-y">
                                 {entities.map((item) => (
                                     <tr
                                         key={item.id}
                                         onClick={() => toggleEntity(item.id)}
                                         className={cn(
-                                            "hover:bg-muted/30 cursor-pointer transition-colors",
+                                            "hover:bg-surface-muted/30 cursor-pointer transition-colors",
                                             selectedEntities.includes(item.id) && "bg-primary/[0.03]"
                                         )}
                                     >
-                                        <td className="px-4 py-2.5 text-center" onClick={(e) => e.stopPropagation()}>
+                                        <td className="px-4 py-3.5 text-center" onClick={(e) => e.stopPropagation()}>
                                             <Checkbox
-                                                className="h-4 w-4 rounded"
+                                                className="h-4 w-4 rounded border-surface-border"
                                                 checked={selectedEntities.includes(item.id)}
                                                 onCheckedChange={() => toggleEntity(item.id)}
                                             />
                                         </td>
-                                        <td className="px-4 py-2.5">
+                                        <td className="px-4 py-3.5">
                                             <div className="flex items-center gap-3">
                                                 <item.icon size={14} className="text-primary opacity-60" />
-                                                <span className="text-text-main text-[12px] font-semibold">{item.label}</span>
+                                                <span className="text-text-main text-sm font-medium">{item.label}</span>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-2.5 text-center">
-                                            <span className="bg-muted text-text-main rounded-lg px-2 py-0.5 font-mono text-[10px] font-bold">{item.count}</span>
+                                        <td className="px-4 py-3.5 text-center">
+                                            <span className="bg-surface-muted text-text-main rounded-lg px-2.5 py-1 font-mono text-[10px] font-semibold">{item.count}</span>
                                         </td>
-                                        <td className="text-text-desc px-4 py-2.5 text-[11px] font-medium italic">
+                                        <td className="text-text-desc px-4 py-3.5 text-xs font-medium italic">
                                             {item.desc}
                                         </td>
                                     </tr>
@@ -232,30 +233,30 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                 {/* Right: Actions */}
                 <div className="flex flex-col gap-6 lg:col-span-4">
                     {/* Export Card */}
-                    <div className="border-surface-border bg-muted/10 rounded-xl border p-5">
+                    <div className="border-surface-border bg-surface-base/40 backdrop-blur-sm rounded-2xl border p-6 shadow-sm">
                         <div className="mb-4 flex items-center justify-between">
-                            <h3 className="text-text-main text-[11px] font-bold tracking-wider uppercase">Export Configuration</h3>
-                            <span className="bg-primary/10 text-primary rounded-lg px-2 py-0.5 text-[10px] font-bold">
-                                {selectedEntities.length} Selected
+                            <h3 className="text-text-main text-[11px] font-semibold tracking-wider uppercase">Export Configuration</h3>
+                            <span className="bg-primary/10 text-primary rounded-lg px-2 py-0.5 text-[10px] font-semibold">
+                                {selectedEntities.length} Terpilih
                             </span>
                         </div>
-                        <p className="text-text-desc mb-5 text-[11px] leading-relaxed font-medium">
+                        <p className="text-text-desc mb-6 text-[11px] leading-relaxed font-medium">
                             Pilih entitas di tabel samping untuk disertakan dalam berkas ekspor JSON.
                         </p>
                         <Button
                             onClick={handleExport}
                             disabled={selectedEntities.length === 0}
-                            className="w-full h-10 rounded-xl font-bold text-[11px] shadow-sm"
+                            className="w-full shadow-primary/20"
                             variant="primary"
                         >
                             <Download size={14} className="mr-2" />
-                            EXPORT SELECTED DATA
+                            EXPORT DATA TERPILIH
                         </Button>
                     </div>
 
                     {/* Import Card */}
-                    <div className="border-surface-border bg-muted/10 rounded-xl border p-5">
-                        <h3 className="text-text-main mb-4 text-[11px] font-bold tracking-wider uppercase">Quick Import</h3>
+                    <div className="border-surface-border bg-surface-base/40 backdrop-blur-sm rounded-2xl border p-6 shadow-sm">
+                        <h3 className="text-text-main mb-4 text-[11px] font-semibold tracking-wider uppercase">Quick Import</h3>
                         <div
                             onDragEnter={handleDrag}
                             onDragOver={handleDrag}
@@ -263,39 +264,39 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                             onDrop={handleDrop}
                             onClick={() => fileInputRef.current?.click()}
                             className={cn(
-                                "relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 transition-all duration-200 cursor-pointer",
-                                dragActive ? "border-primary bg-primary/5" : "border-surface-border/60 hover:bg-muted/20"
+                                "relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-8 transition-all duration-200 cursor-pointer",
+                                dragActive ? "border-primary bg-primary/5" : "border-surface-border hover:bg-surface-muted/20"
                             )}
                         >
                             <input ref={fileInputRef} type="file" accept=".json" onChange={handleChange} className="hidden" disabled={loading} />
-                            <div className="bg-muted/60 mb-2 rounded-lg p-2 border border-surface-border/60">
-                                {file ? <FileJson size={16} className="text-primary" /> : <Upload size={16} />}
+                            <div className="bg-surface-muted/60 mb-2 rounded-xl p-2.5 border border-surface-border">
+                                {file ? <FileJson size={20} className="text-primary" /> : <Upload size={20} className="text-text-soft" />}
                             </div>
-                            <p className="text-text-main text-[11px] font-bold line-clamp-1">
-                                {file ? file.name : 'Drop JSON file here'}
+                            <p className="text-text-main text-[11px] font-semibold line-clamp-1">
+                                {file ? file.name : 'Drop file JSON di sini'}
                             </p>
                         </div>
 
                         {file && (
                             <div className="mt-4 flex flex-col gap-3">
-                                <div className="bg-success/5 border-success/20 text-success flex items-center gap-2 rounded-lg border p-2.5 text-[10px] font-bold">
-                                    <CheckCircle2 size={12} /> Ready to sync
+                                <div className="bg-success/5 border-success/20 text-success flex items-center gap-2 rounded-xl border p-3 text-[10px] font-semibold">
+                                    <CheckCircle2 size={12} /> Berkas siap disinkronkan
                                 </div>
                                 <div className="flex gap-2">
                                     <Button
-                                        variant="ghost"
+                                        variant="white"
                                         onClick={() => setFile(null)}
-                                        className="flex-1 h-9 rounded-lg text-[10px] font-bold"
+                                        className="flex-1"
                                     >
                                         RESET
                                     </Button>
                                     <Button
                                         onClick={handleImport}
                                         disabled={loading}
-                                        className="flex-[2] h-9 rounded-lg text-[10px] font-bold"
+                                        className="flex-[2] shadow-primary/20"
                                         variant="primary"
                                     >
-                                        {loading ? <RefreshCw className="animate-spin" size={12} /> : <RefreshCw size={12} className="mr-1.5" />}
+                                        {loading ? <Loader2 className="animate-spin" size={14} /> : <RefreshCw size={14} className="mr-2" />}
                                         SYNC NOW
                                     </Button>
                                 </div>
@@ -304,7 +305,7 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                     </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 }
 

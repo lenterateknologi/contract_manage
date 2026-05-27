@@ -1,6 +1,7 @@
 import { useToast } from '@/components/contracts/Toast';
 import { Button } from '@/components/ui/base/Button';
-import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
+import { Column, DataTable } from '@/components/ui/data/DataTable';
+import { ExcelActions } from '@/components/ui/data/ExcelActions';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { CompactSwitch } from '@/components/ui/forms/CompactSwitch';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
@@ -41,8 +42,8 @@ const DeptCell = ({ name, code }: Readonly<{ name: string; code: string }>) => (
             <Building2 size={18} />
         </div>
         <div className="flex min-w-0 flex-col">
-            <span className="mb-0.5 truncate text-sm leading-tight font-bold tracking-wide text-text-main">{name}</span>
-            <div className="text-text-desc flex items-center gap-1.5 font-mono text-xs leading-none font-semibold">
+            <span className="mb-0.5 truncate text-sm leading-tight font-semibold tracking-wide text-text-main">{name}</span>
+            <div className="text-text-desc flex items-center gap-1.5 font-mono text-xs leading-none font-medium">
                 {code}
             </div>
         </div>
@@ -60,7 +61,7 @@ const VisibilityCell = ({ isActive }: Readonly<{ isActive: boolean }>) => (
         <div className={cn('h-2 w-2 shrink-0 rounded-full', isActive ? 'animate-pulse bg-success' : 'bg-danger/40')} />
         <span
             className={cn(
-                'text-xs font-bold tracking-wide',
+                'text-xs font-semibold tracking-wide',
                 isActive ? 'text-success' : 'text-danger',
             )}
         >
@@ -265,9 +266,8 @@ export function DepartmentManagement({ departments, filters }: Readonly<Departme
     }
 
     return (
-        <div className="bg-surface-base/40 border-surface-border animate-in fade-in m-5 rounded-2xl border p-6 shadow-sm backdrop-blur-sm duration-200 select-none">
-            <TableMasterData
-                title="Database Unit / Departemen"
+        <DataTable
+            title="Database Unit / Departemen"
                 columns={columns}
                 borderless={true}
                 data={departments.data || []}
@@ -280,14 +280,21 @@ export function DepartmentManagement({ departments, filters }: Readonly<Departme
                 activeFilters={filters}
                 onFilterChange={handleFilterChange}
                 headerActions={
-                    canUpdate && (
-                        <Button
-                            variant="white"
-                            onClick={openCreate}
-                        >
-                            <Plus size={15} className="text-primary" /> Tambah Unit
-                        </Button>
-                    )
+                    <div className="flex items-center gap-2">
+                        <ExcelActions
+                            exportRoute="admin.departments.export"
+                            importRoute="admin.departments.import"
+                            label="Departemen"
+                        />
+                        {canUpdate && (
+                            <Button
+                                variant="white"
+                                onClick={openCreate}
+                            >
+                                <Plus size={15} className="text-primary" /> Tambah Unit
+                            </Button>
+                        )}
+                    </div>
                 }
                 onRowClick={openEdit}
                 bulkActions={
@@ -329,6 +336,5 @@ export function DepartmentManagement({ departments, filters }: Readonly<Departme
                         ),
                 }}
             />
-        </div>
     );
 }

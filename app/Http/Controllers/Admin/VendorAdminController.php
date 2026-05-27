@@ -183,4 +183,25 @@ class VendorAdminController extends Controller
 
         return back()->with('success', count($ids) . ' vendor berhasil dihapus.');
     }
+
+    public function export()
+    {
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\VendorsExport(),
+            'data_vendor_' . date('Ymd') . '.xlsx',
+        );
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate(['file' => 'required|file|mimes:xlsx,xls']);
+
+        try {
+            \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\VendorsImport(), $request->file('file'));
+
+            return back()->with('success', 'Data vendor berhasil diimpor.');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Gagal mengimpor data: ' . $e->getMessage()]);
+        }
+    }
 }

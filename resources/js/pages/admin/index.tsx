@@ -140,7 +140,7 @@ export default function AdminIndex({
             case 'numbering-formats':
                 return <NumberingFormatManagement formats={formats} />;
             case 'company-groups':
-                return <CompanyGroupManagement groups={companyGroups} filters={filters} />;
+                return <CompanyGroupManagement groups={companyGroups} regions={regions} filters={filters} />;
             case 'regions':
                 return <RegionManagement regions={regions} filters={filters} />;
             case 'companies':

@@ -2,7 +2,7 @@ import { FormSection, ManagementForm } from '@/components/admin/ManagementForm';
 import { useToast } from '@/components/contracts/Toast';
 import { Button } from '@/components/ui/base/Button';
 import { Checkbox } from '@/components/ui/base/Checkbox';
-import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
+import { Column, DataTable } from '@/components/ui/data/DataTable';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { usePermissions } from '@/hooks/use-permissions';
 import { cn } from '@/lib/utils';
@@ -113,7 +113,7 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                         />
                         <span
                             className={cn(
-                                'text-xs font-bold tracking-wide transition-colors duration-200 select-none',
+                                'text-xs font-semibold tracking-wide transition-colors duration-200 select-none',
                                 row.is_active ? 'text-text-main' : 'text-text-desc',
                             )}
                         >
@@ -374,65 +374,63 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
     }
 
     return (
-        <div className="bg-surface-base/40 border-surface-border animate-in fade-in m-5 rounded-2xl border p-6 shadow-sm backdrop-blur-sm duration-200 select-none">
-            <TableMasterData
-                title="Manajemen Parameter Status"
-                borderless={true}
-                data={statuses?.data || []}
-                columns={columns}
-                onRowClick={openEdit}
-                searchPlaceholder="Cari status, kode, atau deskripsi..."
-                searchValue={filters?.search || ''}
-                onSearchChange={(v: string) =>
-                    router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })
-                }
-                headerActions={
-                    <Button
-                        variant="white"
-                        onClick={openCreate}
-                    >
-                        <Plus size={14} className="text-primary" /> Registrasi Status Baru
-                    </Button>
-                }
-                bulkActions={
-                    canDelete
-                        ? [
-                              {
-                                  label: 'Hapus Terpilih',
-                                  icon: Trash2,
-                                  variant: 'destructive',
-                                  onClick: (ids: string[] | number[]) => {
-                                      if (confirm(`Apakah Anda yakin ingin menghapus ${ids.length} status terpilih?`)) {
-                                          router.post(
-                                              '/admin/contract-statuses/bulk-delete',
-                                              { ids },
-                                              {
-                                                  onSuccess: () => showToast(`${ids.length} status telah dihapus`, 'success'),
-                                              },
-                                          );
-                                      }
-                                  },
+        <DataTable
+            title="Manajemen Parameter Status"
+            borderless={true}
+            data={statuses?.data || []}
+            columns={columns}
+            onRowClick={openEdit}
+            searchPlaceholder="Cari status, kode, atau deskripsi..."
+            searchValue={filters?.search || ''}
+            onSearchChange={(v: string) =>
+                router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })
+            }
+            headerActions={
+                <Button
+                    variant="white"
+                    onClick={openCreate}
+                >
+                    <Plus size={14} className="text-primary" /> Registrasi Status Baru
+                </Button>
+            }
+            bulkActions={
+                canDelete
+                    ? [
+                          {
+                              label: 'Hapus Terpilih',
+                              icon: Trash2,
+                              variant: 'destructive',
+                              onClick: (ids: string[] | number[]) => {
+                                  if (confirm(`Apakah Anda yakin ingin menghapus ${ids.length} status terpilih?`)) {
+                                      router.post(
+                                          '/admin/contract-statuses/bulk-delete',
+                                          { ids },
+                                          {
+                                              onSuccess: () => showToast(`${ids.length} status telah dihapus`, 'success'),
+                                          },
+                                      );
+                                  }
                               },
-                          ]
-                        : undefined
-                }
-                pagination={{
-                    currentPage: statuses.current_page || 1,
-                    lastPage: statuses.last_page || 1,
-                    total: statuses.total || 0,
-                    from: statuses.from || 1,
-                    to: statuses.to || 1,
-                    perPage: statuses.per_page || 10,
-                    onPageChange: (page: number) =>
-                        router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
-                    onPerPageChange: (pp: number) =>
-                        router.get(
-                            globalThis.location.pathname,
-                            { ...filters, per_page: pp, page: 1 },
-                            { preserveState: true, preserveScroll: true },
-                        ),
-                }}
-            />
-        </div>
+                          },
+                      ]
+                    : undefined
+            }
+            pagination={{
+                currentPage: statuses.current_page || 1,
+                lastPage: statuses.last_page || 1,
+                total: statuses.total || 0,
+                from: statuses.from || 1,
+                to: statuses.to || 1,
+                perPage: statuses.per_page || 10,
+                onPageChange: (page: number) =>
+                    router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                onPerPageChange: (pp: number) =>
+                    router.get(
+                        globalThis.location.pathname,
+                        { ...filters, per_page: pp, page: 1 },
+                        { preserveState: true, preserveScroll: true },
+                    ),
+            }}
+        />
     );
 }

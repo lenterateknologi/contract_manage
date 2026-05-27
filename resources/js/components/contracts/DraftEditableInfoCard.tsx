@@ -189,14 +189,14 @@ export function DraftEditableInfoCard({
                 <div className="grid grid-cols-1 gap-4 p-4">
                     <div>
                         <div className="text-text-desc mb-1 text-xs font-semibold">No. Pengajuan</div>
-                        <span className="bg-surface-muted text-text-main inline-block rounded px-3 py-1.5 font-mono text-sm font-bold shadow-sm">
+                        <span className="bg-surface-muted text-text-main inline-block rounded px-3 py-1.5 font-mono text-sm font-medium shadow-sm">
                             {selected.contract_no}
                         </span>
                     </div>
 
                     <div>
                         <div className="text-text-desc mb-1 text-xs font-semibold">No. Kontrak (F2)</div>
-                        <div className="bg-primary/5 border-primary/10 text-primary flex h-9 items-center rounded-lg border px-3 text-sm font-black">
+                        <div className="bg-primary/5 border-primary/10 text-primary flex h-9 items-center rounded-lg border px-3 text-sm font-semibold">
                             {(selected as any).crown_no || 'Belum diisi di F2'}
                         </div>
                     </div>
@@ -319,14 +319,14 @@ export function DraftEditableInfoCard({
                                     <Info size={16} strokeWidth={2.5} />
                                 </div>
                                 <div className="flex flex-col gap-0.5">
-                                    <span className="text-primary text-xs font-bold">
+                                    <span className="text-primary text-xs font-medium">
                                         Sedang Di: {selected.workflow_step.description}
                                     </span>
                                     <span className="text-primary/70 text-xs font-semibold">
                                         Peran: {selected.workflow_step.role}
                                     </span>
                                     {selected.workflow_step.target_approvers && (
-                                        <span className="text-primary/60 mt-1 text-[10px] font-bold tracking-tight uppercase">
+                                        <span className="text-primary/60 mt-1 text-[10px] font-semibold tracking-tight uppercase">
                                             Target Penyetuju: {selected.workflow_step.target_approvers}
                                         </span>
                                     )}
@@ -375,7 +375,7 @@ export function DraftEditableInfoCard({
                                         <div className="flex flex-col">
                                             <span
                                                 className={cn(
-                                                    'text-[11px] font-black tracking-wider uppercase',
+                                                    'text-[11px] font-semibold tracking-wider uppercase',
                                                     taxRequired ? 'text-primary' : 'text-text-soft/40',
                                                 )}
                                             >

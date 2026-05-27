@@ -1,6 +1,7 @@
 import { useToast } from '@/components/contracts/Toast';
 import { Button } from '@/components/ui/base/Button';
-import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
+import { Column, DataTable } from '@/components/ui/data/DataTable';
+import { ExcelActions } from '@/components/ui/data/ExcelActions';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -28,7 +29,7 @@ function regionColor(name: string) {
     return REGION_COLORS[Math.abs(h) % REGION_COLORS.length];
 }
 
-const RegionCell = ({ name }: Readonly<{ name: string }>) => (
+const RegionCell = ({ name, description }: Readonly<{ name: string; description?: string }>) => (
     <div className="flex items-center gap-3 select-none">
         <div
             className={cn(
@@ -38,8 +39,13 @@ const RegionCell = ({ name }: Readonly<{ name: string }>) => (
         >
             <GitBranch size={18} />
         </div>
-        <div className="flex min-w-0 flex-col">
-            <span className="mb-0.5 truncate text-sm leading-tight font-bold tracking-wide text-text-main">{name}</span>
+        <div className="flex min-w-0 flex-col gap-0.5">
+            <span className="text-sm font-semibold tracking-wide text-text-main leading-tight">{name}</span>
+            {description && (
+                <span className="text-text-desc text-[11px] font-medium leading-normal">
+                    {description}
+                </span>
+            )}
         </div>
     </div>
 );
@@ -74,7 +80,7 @@ export function RegionManagement({ regions, filters }: Readonly<RegionManagement
             {
                 header: 'Nama Region',
                 accessorKey: 'name',
-                cell: (row) => <RegionCell name={row.name} />,
+                cell: (row) => <RegionCell name={row.name} description={row.description} />,
             },
             {
                 header: 'Kode',
@@ -301,52 +307,56 @@ export function RegionManagement({ regions, filters }: Readonly<RegionManagement
     }
 
     return (
-        <div className="bg-surface-base/40 border-surface-border animate-in fade-in m-5 rounded-2xl border p-6 shadow-sm backdrop-blur-sm duration-200 select-none">
-            <TableMasterData
-                title="Database Region Operasional"
-                columns={columns}
-                borderless={true}
-                data={Array.isArray(regions) ? regions : regions?.data || []}
-                searchPlaceholder="Cari region..."
-                searchValue={filters.search || ''}
-                onSearchChange={(v: string) =>
-                    router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })
-                }
-                headerActions={
-                    canCreate && (
+        <DataTable
+            title="Database Region Operasional"
+            columns={columns}
+            borderless={true}
+            data={Array.isArray(regions) ? regions : regions?.data || []}
+            searchPlaceholder="Cari region..."
+            searchValue={filters.search || ''}
+            onSearchChange={(v: string) =>
+                router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })
+            }
+            headerActions={
+                <div className="flex items-center gap-2">
+                    <ExcelActions
+                        exportRoute="admin.regions.export"
+                        importRoute="admin.regions.import"
+                        label="Region"
+                    />
+                    {canCreate && (
                         <Button
                             variant="white"
                             onClick={openCreate}
-                            className="border-surface-border bg-surface-base text-text-main hover:bg-surface-muted hover:border-surface-border h-10 gap-2 rounded-xl border px-5 text-xs font-bold tracking-wide shadow-sm transition-all duration-200 select-none hover:shadow-md"
                         >
                             <Plus size={15} className="text-primary" /> Tambah Region
                         </Button>
-                    )
-                }
-                onRowClick={openEdit}
-                bulkActions={
-                    canDelete
-                        ? [
-                              {
-                                  label: 'Hapus Terpilih',
-                                  icon: Trash2,
-                                  variant: 'destructive',
-                                  onClick: (ids: string[] | number[]) => {
-                                      if (confirm(`Hapus ${ids.length} region terpilih?`)) {
-                                          router.post(
-                                              '/admin/regions/bulk-delete',
-                                              { ids },
-                                              {
-                                                  onSuccess: () => showToast(`${ids.length} region telah dihapus`, 'success'),
-                                              },
-                                          );
-                                      }
-                                  },
+                    )}
+                </div>
+            }
+            onRowClick={openEdit}
+            bulkActions={
+                canDelete
+                    ? [
+                          {
+                              label: 'Hapus Terpilih',
+                              icon: Trash2,
+                              variant: 'destructive',
+                              onClick: (ids: string[] | number[]) => {
+                                  if (confirm(`Hapus ${ids.length} region terpilih?`)) {
+                                      router.post(
+                                          '/admin/regions/bulk-delete',
+                                          { ids },
+                                          {
+                                              onSuccess: () => showToast(`${ids.length} region telah dihapus`, 'success'),
+                                          },
+                                      );
+                                  }
                               },
-                          ]
-                        : undefined
-                }
-            />
-        </div>
+                          },
+                      ]
+                    : undefined
+            }
+        />
     );
 }

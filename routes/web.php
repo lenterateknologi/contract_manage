@@ -100,6 +100,8 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/company-groups/{group}', [OrganizationController::class, 'updateCompanyGroup'])->name('admin.company-groups.update');
         Route::delete('/company-groups/{group}', [OrganizationController::class, 'destroyCompanyGroup'])->name('admin.company-groups.destroy');
         Route::post('/company-groups/bulk-delete', [OrganizationController::class, 'bulkDestroyCompanyGroup'])->name('admin.company-groups.bulk-destroy');
+        Route::get('/company-groups/export', [OrganizationController::class, 'exportCompanyGroups'])->name('admin.company-groups.export');
+        Route::post('/company-groups/import', [OrganizationController::class, 'importCompanyGroups'])->name('admin.company-groups.import');
 
         // Master Region
         Route::get('/regions', [OrganizationController::class, 'regions'])->name('admin.regions');
@@ -107,6 +109,8 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/regions/{region}', [OrganizationController::class, 'updateRegion'])->name('admin.regions.update');
         Route::delete('/regions/{region}', [OrganizationController::class, 'destroyRegion'])->name('admin.regions.destroy');
         Route::post('/regions/bulk-delete', [OrganizationController::class, 'bulkDestroyRegion'])->name('admin.regions.bulk-destroy');
+        Route::get('/regions/export', [OrganizationController::class, 'exportRegions'])->name('admin.regions.export');
+        Route::post('/regions/import', [OrganizationController::class, 'importRegions'])->name('admin.regions.import');
 
         // Master Company
         Route::get('/companies', [OrganizationController::class, 'companies'])->name('admin.companies');
@@ -114,6 +118,8 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/companies/{company}', [OrganizationController::class, 'updateCompany'])->name('admin.companies.update');
         Route::delete('/companies/{company}', [OrganizationController::class, 'destroyCompany'])->name('admin.companies.destroy');
         Route::post('/companies/bulk-delete', [OrganizationController::class, 'bulkDestroyCompany'])->name('admin.companies.bulk-destroy');
+        Route::get('/companies/export', [OrganizationController::class, 'exportCompanies'])->name('admin.companies.export');
+        Route::post('/companies/import', [OrganizationController::class, 'importCompanies'])->name('admin.companies.import');
 
         Route::get('/numbering-formats', [MasterConfigController::class, 'numberingFormats'])->name('admin.numbering-formats');
         Route::put('/numbering-formats/{format}', [MasterConfigController::class, 'updateNumberingFormat'])->name('admin.numbering-formats.update');
@@ -124,11 +130,15 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/departments/{department}', [MasterConfigController::class, 'updateDepartment'])->name('admin.departments.update');
         Route::delete('/departments/{department}', [MasterConfigController::class, 'destroyDepartment'])->name('admin.departments.destroy');
         Route::post('/departments/bulk-delete', [MasterConfigController::class, 'bulkDestroyDepartment'])->name('admin.departments.bulk-destroy');
+        Route::get('/departments/export', [MasterConfigController::class, 'exportDepartments'])->name('admin.departments.export');
+        Route::post('/departments/import', [MasterConfigController::class, 'importDepartments'])->name('admin.departments.import');
 
         // Master Vendor
         Route::get('/vendors', [VendorAdminController::class, 'index'])->name('admin.vendors');
         Route::get('/vendors/create', [VendorAdminController::class, 'create'])->name('admin.vendors.create');
         Route::post('/vendors', [VendorAdminController::class, 'store'])->name('admin.vendors.store');
+        Route::get('/vendors/export', [VendorAdminController::class, 'export'])->name('admin.vendors.export');
+        Route::post('/vendors/import', [VendorAdminController::class, 'import'])->name('admin.vendors.import');
         Route::get('/vendors/{vendor}/edit', [VendorAdminController::class, 'edit'])->name('admin.vendors.edit');
         Route::put('/vendors/{vendor}', [VendorAdminController::class, 'update'])->name('admin.vendors.update');
         Route::delete('/vendors/{vendor}', [VendorAdminController::class, 'destroy'])->name('admin.vendors.destroy');

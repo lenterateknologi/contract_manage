@@ -1,6 +1,6 @@
 import { useToast } from '@/components/contracts/Toast';
 import { Button } from '@/components/ui/base/Button';
-import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
+import { Column, DataTable } from '@/components/ui/data/DataTable';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
 import { usePermissions } from '@/hooks/use-permissions';
 import { router } from '@inertiajs/react';
@@ -18,14 +18,14 @@ interface ContractTypeManagementProps {
 const MechanismCell = ({ mechanism }: Readonly<{ mechanism: string }>) => (
     <div className="flex items-center gap-2">
         <div className="bg-primary/20 h-1.5 w-1.5 rounded-full" />
-        <span className="text-text-desc text-[10px] font-bold uppercase">
+        <span className="text-text-desc text-[10px] font-medium uppercase">
             {mechanism === 'digital' ? 'Formulir Digital' : mechanism === 'folder' ? 'Folder Kontrak' : 'Unggah Manual'}
         </span>
     </div>
 );
 
 const TypeDescriptionCell = ({ description }: Readonly<{ description?: string }>) => (
-    <span className="text-text-soft max-w-[200px] truncate text-[10px] font-bold tracking-tight uppercase">
+    <span className="text-text-soft max-w-[200px] truncate text-[10px] font-medium tracking-tight uppercase">
         {description || '—'}
     </span>
 );
@@ -54,19 +54,19 @@ const MechanismOptions = ({
             <div className="animate-in fade-in slide-in-from-top-2">
                 <div className="animate-in fade-in slide-in-from-top-2">
                     <div className="space-y-2">
-                        <label className="text-primary/60 flex items-center gap-2 text-[10px] font-bold uppercase dark:text-white/60">
+                        <label className="text-primary/60 flex items-center gap-2 text-[10px] font-medium uppercase dark:text-white/60">
                             Tautan Templat Digital {type}
                         </label>
                         <Select value={String(formTemplateId)} onValueChange={(v: string) => setFormTemplateId(String(v))}>
-                            <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-10 rounded-xl text-xs font-bold transition-all">
+                            <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-10 rounded-xl text-xs font-medium transition-all">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="border-primary/10 rounded-xl bg-white shadow-2xl dark:bg-black">
-                                <SelectItem value="none" className="py-2.5 text-xs font-bold uppercase">
+                                <SelectItem value="none" className="py-2.5 text-xs font-medium uppercase">
                                     -- TANPA TEMPLAT TERPAUT --
                                 </SelectItem>
                                 {templates.map((t: any) => (
-                                    <SelectItem key={t.id} value={String(t.id)} className="py-2.5 text-xs font-bold uppercase">
+                                    <SelectItem key={t.id} value={String(t.id)} className="py-2.5 text-xs font-medium uppercase">
                                         {t.name} ({t.document_type || 'ADHOC'})
                                     </SelectItem>
                                 ))}
@@ -82,19 +82,19 @@ const MechanismOptions = ({
             <div className="animate-in fade-in slide-in-from-top-2">
                 <div className="animate-in fade-in slide-in-from-top-2">
                     <div className="space-y-2">
-                        <label className="text-primary/60 flex items-center gap-2 text-[10px] font-bold uppercase dark:text-white/60">
+                        <label className="text-primary/60 flex items-center gap-2 text-[10px] font-medium uppercase dark:text-white/60">
                             Tautan Templat Folder ({type})
                         </label>
                         <Select value={String(contractTemplateId)} onValueChange={(v: string) => setContractTemplateId(String(v))}>
-                            <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-10 rounded-xl text-xs font-bold transition-all">
+                            <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-10 rounded-xl text-xs font-medium transition-all">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="border-primary/10 rounded-xl bg-white shadow-2xl dark:bg-black">
-                                <SelectItem value="none" className="py-2.5 text-xs font-bold uppercase">
+                                <SelectItem value="none" className="py-2.5 text-xs font-medium uppercase">
                                     -- TIDAK ADA TEMPLAT TERPILIH --
                                 </SelectItem>
                                 {physTemplates.map((t: any) => (
-                                    <SelectItem key={t.id} value={String(t.id)} className="py-2.5 text-xs font-bold uppercase">
+                                    <SelectItem key={t.id} value={String(t.id)} className="py-2.5 text-xs font-medium uppercase">
                                         {t.name} ({t.file_type || 'PDF'})
                                     </SelectItem>
                                 ))}
@@ -107,7 +107,7 @@ const MechanismOptions = ({
     }
     return (
         <div className="animate-in fade-in border-primary/10 bg-primary/[0.01] rounded-2xl border border-dashed p-6 text-center dark:border-white/10 dark:bg-white/[0.01]">
-            <p className="text-primary/30 text-[10px] font-bold tracking-[0.2em] uppercase italic dark:text-white/30">
+            <p className="text-primary/30 text-[10px] font-medium tracking-[0.2em] uppercase italic dark:text-white/30">
                 {type === 'F1' ? 'PENGGUNA INTERNAL' : 'VENDOR'} AKAN MENGUNGGAH PDF MANUAL UNTUK {type}
             </p>
         </div>
@@ -206,7 +206,7 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
                         >
                             <div className="flex items-center gap-1.5">
                                 {hasDepth && (
-                                    <span className="text-muted-foreground/30 font-bold select-none mr-0.5">
+                                    <span className="text-muted-foreground/30 font-medium select-none mr-0.5">
                                         ↳
                                     </span>
                                 )}
@@ -236,7 +236,7 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
                                     <div className="w-5 h-5 shrink-0" />
                                 )}
                                 <span className={cn(
-                                    "text-[13px] font-black tracking-tight uppercase transition-transform group-hover:translate-x-1",
+                                    "text-[13px] font-semibold tracking-tight uppercase transition-transform group-hover:translate-x-1",
                                     depth > 0 ? "text-text-desc" : "text-text-main"
                                 )}>
                                     {row.name}
@@ -244,7 +244,7 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
                             </div>
                             <div className="mt-1 flex items-center gap-2" style={{ paddingLeft: hasDepth ? '20px' : '20px' }}>
                                 <ShieldCheck size={10} className="text-primary/20" />
-                                <span className="text-text-soft text-[9px] font-bold uppercase italic">
+                                <span className="text-text-soft text-[9px] font-medium uppercase italic">
                                     Aset Administratif Terpantau
                                 </span>
                             </div>
@@ -256,7 +256,7 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
                 header: 'Klasifikasi Induk',
                 accessorKey: 'parent.name',
                 cell: (row) => (
-                    <span className="text-primary/60 text-[11px] font-bold tracking-tight uppercase dark:text-white/60">
+                    <span className="text-primary/60 text-[11px] font-medium tracking-tight uppercase dark:text-white/60">
                         {row.parent?.name || '—'}
                     </span>
                 ),
@@ -290,111 +290,107 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
     };
 
     return (
-        <div className="bg-surface-base/40 border-surface-border animate-in fade-in m-5 rounded-2xl border p-5 shadow-sm backdrop-blur-sm">
-            <TableMasterData
-                title="Registri Klasifikasi Kontrak"
-                borderless={true}
-                columns={columns}
-                data={flattenedData}
-                searchPlaceholder="Filter jenis klasifikasi..."
-                searchValue={filters.search || ''}
-                onSearchChange={(v: string) =>
-                    router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })
-                }
-                filters={[
-                    {
-                        label: 'Mekanisme F1',
-                        key: 'f1_input_mechanism',
-                        options: [
-                            { label: 'Formulir Digital', value: 'digital' },
-                            { label: 'Folder Kontrak', value: 'folder' },
-                            { label: 'Manual', value: 'manual' },
-                        ],
-                    },
-                    {
-                        label: 'Mekanisme F2',
-                        key: 'f2_input_mechanism',
-                        options: [
-                            { label: 'Formulir Digital', value: 'digital' },
-                            { label: 'Folder Kontrak', value: 'folder' },
-                            { label: 'Manual', value: 'manual' },
-                        ],
-                    },
-                ]}
-                activeFilters={{
-                    f1_input_mechanism: filters.f1_input_mechanism ? [filters.f1_input_mechanism] : [],
-                    f2_input_mechanism: filters.f2_input_mechanism ? [filters.f2_input_mechanism] : [],
-                }}
-                onFilterChange={(updatedFilters: any) => {
-                    const newFilters: Record<string, any> = { ...filters, page: 1 };
-                    Object.keys(updatedFilters).forEach((key) => {
-                        newFilters[key] = updatedFilters[key].length > 0 ? updatedFilters[key][0] : null;
-                    });
-                    router.get(globalThis.location.pathname, newFilters, { preserveState: true, replace: true });
-                }}
-                headerActions={
-                    <div className="flex items-center gap-2">
-                        {allParentIds.length > 0 && (
-                            <Button
-                                variant="white"
-                                onClick={toggleAll}
-                                className="border-surface-border/40 bg-surface-base text-text-main hover:bg-surface-muted hover:border-surface-border gap-2 border px-4 text-xs tracking-wide transition-all duration-200"
-                            >
-                                <ChevronDown size={14} className={cn("transition-transform duration-200", isAllCollapsed && "-rotate-90")} />
-                                {isAllCollapsed ? 'Expand Semua' : 'Minimize Semua'}
-                            </Button>
-                        )}
-                        {canCreate && (
-                            <Button
-                                variant="white"
-                                onClick={openCreate}
-                                className="border-surface-border/40 bg-surface-base text-text-main hover:bg-surface-muted hover:border-surface-border gap-2 border px-6 text-xs tracking-wide transition-all duration-200 hover:shadow-md"
-                            >
-                                <Plus size={14} className="mr-2 text-primary" /> Registrasi Klasifikasi
-                            </Button>
-                        )}
-                    </div>
-                }
-                onRowClick={openEdit}
-                bulkActions={
-                    canDelete
-                        ? [
-                            {
-                                label: 'Hapus Terpilih',
-                                icon: Trash2,
-                                variant: 'destructive',
-                                onClick: (ids: string[]) => {
-                                    if (confirm(`Apakah Anda yakin ingin menghapus ${ids.length} tipe kontrak terpilih secara permanen?`)) {
-                                        router.post(
-                                            route('admin.contract-types.bulk-destroy'),
-                                            { ids },
-                                            {
-                                                onSuccess: () => showToast(`${ids.length} tipe kontrak telah dihapus dari registri`, 'success'),
-                                            },
-                                        );
-                                    }
-                                },
-                            },
-                        ]
-                        : undefined
-                }
-                pagination={{
-                    currentPage: contractTypes.current_page || 1,
-                    lastPage: contractTypes.last_page || 1,
-                    total: contractTypes.total || 0,
-                    from: contractTypes.from || 1,
-                    to: contractTypes.to || 1,
-                    perPage: contractTypes.per_page || 10,
-                    onPageChange: (page: number) =>
-                        router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
-                    onPerPageChange: (pp: number) =>
-                        router.get(
-                            globalThis.location.pathname,
-                            { ...filters, per_page: pp, page: 1 },
-                            { preserveState: true, preserveScroll: true },
-                        ),
-                }}
-            />
-        </div>
+        <DataTable
+            title="Registri Klasifikasi Kontrak"
+            borderless={true}
+            columns={columns}
+            data={flattenedData}
+            searchPlaceholder="Filter jenis klasifikasi..."
+            searchValue={filters.search || ''}
+            onSearchChange={(v: string) =>
+                router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })
+            }
+            filters={[
+                {
+                    label: 'Mekanisme F1',
+                    key: 'f1_input_mechanism',
+                    options: [
+                        { label: 'Formulir Digital', value: 'digital' },
+                        { label: 'Folder Kontrak', value: 'folder' },
+                        { label: 'Manual', value: 'manual' },
+                    ],
+                },
+                {
+                    label: 'Mekanisme F2',
+                    key: 'f2_input_mechanism',
+                    options: [
+                        { label: 'Formulir Digital', value: 'digital' },
+                        { label: 'Folder Kontrak', value: 'folder' },
+                        { label: 'Manual', value: 'manual' },
+                    ],
+                },
+            ]}
+            activeFilters={{
+                f1_input_mechanism: filters.f1_input_mechanism ? [filters.f1_input_mechanism] : [],
+                f2_input_mechanism: filters.f2_input_mechanism ? [filters.f2_input_mechanism] : [],
+            }}
+            onFilterChange={(updatedFilters: any) => {
+                const newFilters: Record<string, any> = { ...filters, page: 1 };
+                Object.keys(updatedFilters).forEach((key) => {
+                    newFilters[key] = updatedFilters[key].length > 0 ? updatedFilters[key][0] : null;
+                });
+                router.get(globalThis.location.pathname, newFilters, { preserveState: true, replace: true });
+            }}
+            headerActions={
+                <div className="flex items-center gap-2">
+                    {allParentIds.length > 0 && (
+                        <Button
+                            variant="white"
+                            onClick={toggleAll}
+                        >
+                            <ChevronDown size={14} className={cn("transition-transform duration-200", isAllCollapsed && "-rotate-90")} />
+                            {isAllCollapsed ? 'Expand Semua' : 'Minimize Semua'}
+                        </Button>
+                    )}
+                    {canCreate && (
+                        <Button
+                            variant="white"
+                            onClick={openCreate}
+                        >
+                            <Plus size={14} className="mr-2 text-primary" /> Registrasi Klasifikasi
+                        </Button>
+                    )}
+                </div>
+            }
+            onRowClick={openEdit}
+            bulkActions={
+                canDelete
+                    ? [
+                          {
+                              label: 'Hapus Terpilih',
+                              icon: Trash2,
+                              variant: 'destructive',
+                              onClick: (ids: string[]) => {
+                                  if (confirm(`Apakah Anda yakin ingin menghapus ${ids.length} tipe kontrak terpilih secara permanen?`)) {
+                                      router.post(
+                                          route('admin.contract-types.bulk-destroy'),
+                                          { ids },
+                                          {
+                                              onSuccess: () => showToast(`${ids.length} tipe kontrak telah dihapus dari registri`, 'success'),
+                                          },
+                                      );
+                                  }
+                              },
+                          },
+                      ]
+                    : undefined
+            }
+            pagination={{
+                currentPage: contractTypes.current_page || 1,
+                lastPage: contractTypes.last_page || 1,
+                total: contractTypes.total || 0,
+                from: contractTypes.from || 1,
+                to: contractTypes.to || 1,
+                perPage: contractTypes.per_page || 10,
+                onPageChange: (page: number) =>
+                    router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                onPerPageChange: (pp: number) =>
+                    router.get(
+                        globalThis.location.pathname,
+                        { ...filters, per_page: pp, page: 1 },
+                        { preserveState: true, preserveScroll: true },
+                    ),
+            }}
+        />
     );
 }

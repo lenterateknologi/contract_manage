@@ -104,12 +104,12 @@ class ContractController extends Controller
             'contracts' => $contracts,
             'types' => ContractType::all(),
             'submissionTypes' => SubmissionType::where('is_active', true)->get(),
-            'users' => User::with('department')
+            'users' => Inertia::defer(fn () => User::with('department')
                 ->when(Auth::user()->role === 'Manager', function ($q) {
                     return $q->where('department_id', Auth::user()->department_id);
                 })
-                ->orderBy('name')->get()->map(fn ($u) => ContractFormatter::formatUser($u)),
-            'vendors' => Vendor::with('documents')->where('is_active', true)->orderBy('name')->get()->map(fn ($v) => [
+                ->orderBy('name')->get()->map(fn ($u) => ContractFormatter::formatUser($u))),
+            'vendors' => Inertia::defer(fn () => Vendor::with('documents')->where('is_active', true)->orderBy('name')->get()->map(fn ($v) => [
                 'id' => $v->id,
                 'name' => $v->name,
                 'pic_name' => $v->pic_name,
@@ -120,8 +120,8 @@ class ContractController extends Controller
                     'name' => $d->document_name,
                     'type' => $d->document_type,
                 ]),
-            ]),
-            'formTemplates' => FormTemplate::where('is_active', true)->with('contractType')->withCount('fields')->get()->map(fn ($ft) => [
+            ])),
+            'formTemplates' => Inertia::defer(fn () => FormTemplate::where('is_active', true)->with('contractType')->withCount('fields')->get()->map(fn ($ft) => [
                 'id' => $ft->id,
                 'name' => $ft->name,
                 'description' => $ft->description,
@@ -129,11 +129,11 @@ class ContractController extends Controller
                 'contract_type_id' => $ft->contract_type_id,
                 'contract_type_name' => $ft->contractType?->name,
                 'fields_count' => $ft->fields_count,
-            ]),
-            'departments' => \App\Models\Department::orderBy('name')->get(),
-            'roles' => Role::orderBy('name')->get(),
-            'regions' => \App\Models\Region::orderBy('name')->get(),
-            'contractStatuses' => \App\Models\ContractStatus::all(),
+            ])),
+            'departments' => Inertia::defer(fn () => \App\Models\Department::orderBy('name')->get()),
+            'roles' => Inertia::defer(fn () => Role::orderBy('name')->get()),
+            'regions' => Inertia::defer(fn () => \App\Models\Region::orderBy('name')->get()),
+            'contractStatuses' => Inertia::defer(fn () => \App\Models\ContractStatus::all()),
             'filters' => array_merge($request->only([
                 'search', 'status', 'contract_type_id', 'role_id', 'department_id',
                 'created_from', 'created_to', 'region_ids', 'vendor_ids', 'statuses',
@@ -188,7 +188,7 @@ class ContractController extends Controller
         }
 
         if ($view === 'dashboard') {
-            $data['metrics'] = $this->getDashboardMetrics($request);
+            $data['metrics'] = Inertia::defer(fn () => $this->getDashboardMetrics($request));
         }
 
         $data['breadcrumbs'] = [
@@ -201,10 +201,27 @@ class ContractController extends Controller
 
     public function showView(Request $request, string $id): Response
     {
-        $contract = Contract::with([
-            'creator', 'contractType', 'approvals.approver', 'approvals.workflowStep',
-            'workflow.steps', 'versions.uploader', 'histories.actor', 'messages.user',
-            'attachments.uploader', 'formSubmissions', 'vendor.documents',
+        $contract = Contract::query()->select([
+            'id', 'contract_no', 'title', 'description', 'contract_date', 'end_date',
+            'contract_type_id', 'transaction_type', 'status', 'current_version',
+            'workflow_id', 'workflow_step_id', 'created_by', 'submitted_at',
+            'created_at', 'initiated_by_id', 'vendor_id', 'parent_id',
+            'submission_type_id', 'crown_no', 'assigned_pic_id', 'assigned_by_id',
+            'contract_type_parent_id', 'metadata',
+        ])->with([
+            'creator:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'contractType:id,name',
+            'approvals.approver:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'approvals.workflowStep:id,step,role,description,step_category',
+            'workflow.steps:id,workflow_id,step,description,approver_type,department_id,role,step_category,meta',
+            'workflowStep:id,step,role,description,step_category',
+            'versions.uploader:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'histories.actor:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'messages.user:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'attachments.uploader:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'formSubmissions:id,contract_id,document_type,form_template_id,current_version,submitted_by,updated_at',
+            'vendor.documents:id,vendor_id,document_name,document_type',
+            'meta:contract_id,kop_topik,kop_sub_topik,p1_entity,p1_signer,p1_signer_position,p1_address,p2_entity,p2_signer,p2_signer_position,p2_address,f2_scope,f2_price,f2_payment,f2_tenure,f2_location',
         ])->findOrFail($id);
 
         // Authorization: Only Admin or Creator can view drafts
@@ -223,19 +240,19 @@ class ContractController extends Controller
             'initialSelected' => ContractFormatter::formatContract($contract),
             'types' => ContractType::all(),
             'submissionTypes' => SubmissionType::where('is_active', true)->get(),
-            'users' => User::with('department')
+            'users' => Inertia::defer(fn () => User::with('department')
                 ->when(Auth::user()->role === 'Manager', function ($q) {
                     return $q->where('department_id', Auth::user()->department_id);
                 })
-                ->orderBy('name')->get()->map(fn ($u) => ContractFormatter::formatUser($u)),
-            'vendors' => Vendor::where('is_active', true)->orderBy('name')->get()->map(fn ($v) => [
+                ->orderBy('name')->get()->map(fn ($u) => ContractFormatter::formatUser($u))),
+            'vendors' => Inertia::defer(fn () => Vendor::where('is_active', true)->orderBy('name')->get()->map(fn ($v) => [
                 'id' => $v->id,
                 'name' => $v->name,
                 'pic_name' => $v->pic_name,
                 'pic_position' => $v->pic_position,
                 'address' => $v->address,
-            ]),
-            'formTemplates' => FormTemplate::where('is_active', true)->with('contractType')->withCount('fields')->get()->map(fn ($ft) => [
+            ])),
+            'formTemplates' => Inertia::defer(fn () => FormTemplate::where('is_active', true)->with('contractType')->withCount('fields')->get()->map(fn ($ft) => [
                 'id' => $ft->id,
                 'name' => $ft->name,
                 'description' => $ft->description,
@@ -243,7 +260,7 @@ class ContractController extends Controller
                 'contract_type_id' => $ft->contract_type_id,
                 'contract_type_name' => $ft->contractType?->name,
                 'fields_count' => $ft->fields_count,
-            ]),
+            ])),
             'filters' => array_merge($request->only(['search', 'status', 'contract_type_id']), [
                 'per_page' => $request->integer('per_page', 10),
             ]),
@@ -258,25 +275,40 @@ class ContractController extends Controller
 
     private function getFilteredContractsQuery(Request $request, string $view = 'contracts')
     {
-        $query = Contract::with([
-            'creator.department',
-            'contractType',
-            'contractTypeParent',
-            'submissionType',
-            'statusDetail',
-            'approvals.approver.department',
-            'approvals.workflowStep',
-            'workflow.steps',
-            'versions.uploader',
-            'histories.actor',
-            'messages.user',
-            'attachments.uploader',
-            'formSubmissions',
-            'vendor.documents',
-            'initiator.department',
-            'parent',
-            'assignedPic.department',
-            'assignedBy.department',
+        $query = Contract::query()->select([
+            'id', 'contract_no', 'title', 'contract_date', 'end_date',
+            'contract_type_id', 'transaction_type', 'status', 'current_version',
+            'workflow_id', 'workflow_step_id', 'created_by', 'submitted_at',
+            'created_at', 'initiated_by_id', 'vendor_id', 'parent_id',
+            'submission_type_id', 'crown_no', 'assigned_pic_id', 'assigned_by_id',
+            'contract_type_parent_id',
+        ])->with([
+            'creator:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'creator.department:id,name',
+            'contractType:id,name',
+            'contractTypeParent:id,name',
+            'submissionType:id,name',
+            'statusDetail:code,label,display_mode',
+            'approvals.approver:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'approvals.approver.department:id,name',
+            'approvals.workflowStep:id,step,role,description,step_category',
+            'workflow.steps:id,workflow_id,step,description,approver_type,department_id,role,step_category,meta',
+            'workflowStep:id,step,role,description,step_category',
+            'versions.uploader:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'histories.actor:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'messages.user:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'attachments.uploader:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'formSubmissions:id,contract_id,document_type,form_template_id,current_version,submitted_by,updated_at',
+            'vendor:id,name,pic_name,pic_position,address',
+            'vendor.documents:id,vendor_id,document_name,document_type',
+            'initiator:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'initiator.department:id,name',
+            'parent:id,contract_no,title',
+            'assignedPic:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'assignedPic.department:id,name',
+            'assignedBy:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'assignedBy.department:id,name',
+            'meta:contract_id,kop_topik,kop_sub_topik,p1_entity,p1_signer,p1_signer_position,p1_address,p2_entity,p2_signer,p2_signer_position,p2_address,f2_scope,f2_price,f2_payment,f2_tenure,f2_location',
         ])->latest();
 
         // Apply View Filter
@@ -1174,22 +1206,31 @@ class ContractController extends Controller
     )]
     public function show(string $id): JsonResponse
     {
-        $contract = Contract::with([
-            'creator',
-            'initiator.department',
-            'versions.uploader',
-            'approvals.approver',
-            'approvals.workflowStep',
-            'workflow.steps',
-            'histories.actor',
-            'messages.user',
-            'attachments.uploader',
-            'contractType',
-            'submissionType',
-            'formSubmissions',
-            'vendor.documents',
-            'assignedPic',
-            'assignedBy',
+        $contract = Contract::query()->select([
+            'id', 'contract_no', 'title', 'description', 'contract_date', 'end_date',
+            'contract_type_id', 'transaction_type', 'status', 'current_version',
+            'workflow_id', 'workflow_step_id', 'created_by', 'submitted_at',
+            'created_at', 'initiated_by_id', 'vendor_id', 'parent_id',
+            'submission_type_id', 'crown_no', 'assigned_pic_id', 'assigned_by_id',
+            'contract_type_parent_id', 'metadata',
+        ])->with([
+            'creator:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'initiator.department:id,name',
+            'versions.uploader:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'approvals.approver:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'approvals.workflowStep:id,step,role,description,step_category',
+            'workflow.steps:id,workflow_id,step,description,approver_type,department_id,role,step_category,meta',
+            'workflowStep:id,step,role,description,step_category',
+            'histories.actor:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'messages.user:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'attachments.uploader:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'contractType:id,name',
+            'submissionType:id,name',
+            'formSubmissions:id,contract_id,document_type,form_template_id,current_version,submitted_by,updated_at',
+            'vendor.documents:id,vendor_id,document_name,document_type',
+            'assignedPic:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'assignedBy:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'meta:contract_id,kop_topik,kop_sub_topik,p1_entity,p1_signer,p1_signer_position,p1_address,p2_entity,p2_signer,p2_signer_position,p2_address,f2_scope,f2_price,f2_payment,f2_tenure,f2_location',
         ])->findOrFail($id);
 
         // Authorization: Only Admin or Creator can view drafts

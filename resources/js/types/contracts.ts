@@ -149,6 +149,7 @@ export interface Contract {
         tax_required?: boolean;
         [key: string]: any;
     };
+    meta?: Record<string, any>;
     progress: {
         done: number;
         total: number;

@@ -6,6 +6,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/overlays/Dialog';
+import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { FormSection, ManagementForm } from '@/components/admin/ManagementForm';
 import { useToast } from '@/components/contracts/Toast';
 import { Button } from '@/components/ui/base/Button';
@@ -88,6 +89,7 @@ interface Module {
     module_group_id: string | null;
     sequence: number;
     access?: any;
+    showed_as_menu?: boolean;
     module_group?: {
         id: string;
         name: string;
@@ -135,16 +137,16 @@ const ModuleRow = React.memo(
         return (
             <tr
                 className={cn(
-                    'border-border hover:bg-muted/40 group border-b transition-colors last:border-b-0',
+                    'border-b border-surface-border/40 hover:bg-surface-muted/30 group transition-colors last:border-b-0',
                     'content-visibility-auto contain-intrinsic-size-[auto_48px]',
                 )}
             >
-                <td className="border-border bg-card sticky left-0 z-10 border-r px-4 py-2.5 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.05)] transition-colors group-hover:bg-muted/40">
+                <td className="border-r border-surface-border/40 bg-surface-base sticky left-0 z-10 px-4 py-2.5 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.05)] transition-colors group-hover:bg-surface-muted/30">
                     <div className="flex flex-col leading-tight">
-                        <span className="text-foreground text-[12px] font-semibold tracking-tight group-hover:text-primary">
+                        <span className="text-text-main text-xs font-semibold tracking-wide group-hover:text-primary">
                             {module.name}
                         </span>
-                        <span className="text-muted-foreground/40 font-mono text-[9px] tracking-wider uppercase">
+                        <span className="text-text-desc/50 font-mono text-[9px] tracking-wider uppercase">
                             {module.identifier}
                         </span>
                     </div>
@@ -153,23 +155,23 @@ const ModuleRow = React.memo(
                     <td
                         key={p}
                         className={cn(
-                            'border-border border-r px-1 py-2.5 text-center last:border-r-0 transition-colors',
-                            access[p] ? 'bg-primary/[0.02]' : 'bg-transparent',
+                            'border-r border-surface-border/40 px-1 py-2.5 text-center last:border-r-0 transition-colors',
+                            access[p] ? 'bg-primary/5' : 'bg-transparent',
                         )}
                     >
                         <div className="flex justify-center">
                             <Checkbox
-                                className="border-border/50 h-4 w-4 rounded transition-all active:scale-90 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                className="border-surface-border/60 h-4 w-4 rounded transition-all active:scale-90 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                                 checked={access[p] || false}
                                 onCheckedChange={(checked) => onToggle(module.id, p, !!checked)}
                             />
                         </div>
                     </td>
                 ))}
-                <td className="bg-muted/10 group-hover:bg-muted/30 border-border border-l px-1 py-2.5 text-center transition-all">
+                <td className="bg-surface-muted/30 group-hover:bg-surface-muted/50 border-l border-surface-border/40 px-1 py-2.5 text-center transition-all">
                     <div className="flex justify-center">
                         <Checkbox
-                            className="border-border/50 h-4 w-4 rounded transition-all active:scale-90 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                            className="border-surface-border/60 h-4 w-4 rounded transition-all active:scale-90 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                             checked={!!isRowAllChecked}
                             onCheckedChange={(checked) => onSetRow(module.id, !!checked)}
                         />
@@ -189,6 +191,7 @@ const SortableModuleItem = ({
     total,
     onMoveUp,
     onMoveDown,
+    onEditModule,
 }: {
     module: Module;
     onRemove: (id: string) => void;
@@ -196,6 +199,7 @@ const SortableModuleItem = ({
     total: number;
     onMoveUp: () => void;
     onMoveDown: () => void;
+    onEditModule: (m: Module) => void;
 }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: module.id,
@@ -207,7 +211,7 @@ const SortableModuleItem = ({
             ref={setNodeRef}
             style={style}
             className={cn(
-                'group border-border bg-card flex items-center gap-3 rounded-xl border p-3 shadow-sm transition-all',
+                'group border-surface-border/60 bg-card flex items-center gap-3 rounded-lg border p-3 transition-all',
                 isDragging && 'border-primary ring-primary/10 z-50 scale-[1.02] opacity-50 shadow-2xl ring-2',
             )}
         >
@@ -247,6 +251,13 @@ const SortableModuleItem = ({
                 </p>
             </div>
             <button
+                onClick={() => onEditModule(module)}
+                className="text-muted-foreground/40 rounded-lg p-1.5 opacity-0 transition-all group-hover:opacity-100 hover:bg-primary/10 hover:text-primary active:scale-90"
+                title="Edit Nama/Path Modul"
+            >
+                <Edit2 size={13} />
+            </button>
+            <button
                 onClick={() => onRemove(module.id)}
                 className="text-muted-foreground/40 rounded-lg p-1.5 opacity-0 transition-all group-hover:opacity-100 hover:bg-rose-500/10 hover:text-rose-500 active:scale-90"
             >
@@ -266,6 +277,7 @@ const SortableGroupItem = ({
     onMoveGroupUp,
     onMoveGroupDown,
     onMoveModule,
+    onEditModule,
 }: {
     group: Group;
     onRemoveModule: (id: string) => void;
@@ -276,6 +288,7 @@ const SortableGroupItem = ({
     onMoveGroupUp: () => void;
     onMoveGroupDown: () => void;
     onMoveModule: (groupId: string, moduleIndex: number, direction: 'up' | 'down') => void;
+    onEditModule: (m: Module) => void;
 }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: group.id,
@@ -287,7 +300,7 @@ const SortableGroupItem = ({
             ref={setNodeRef}
             style={style}
             className={cn(
-                'border-border bg-card/40 overflow-hidden rounded-2xl border shadow-sm transition-all',
+                'border-surface-border/60 bg-card/40 overflow-hidden rounded-xl border transition-all',
                 isDragging && 'border-primary ring-primary/5 z-40 opacity-50 shadow-2xl ring-2',
             )}
         >
@@ -358,6 +371,7 @@ const SortableGroupItem = ({
                             total={group.modules.length}
                             onMoveUp={() => onMoveModule(group.id, mIdx, 'up')}
                             onMoveDown={() => onMoveModule(group.id, mIdx, 'down')}
+                            onEditModule={onEditModule}
                         />
                     ))}
                 </SortableContext>
@@ -371,22 +385,49 @@ const SortableGroupItem = ({
     );
 };
 
-const AvailableListContainer = ({ modules, onQuickAdd }: { modules: Module[]; onQuickAdd: (m: Module) => void }) => {
+const AvailableListContainer = ({
+    modules,
+    onQuickAdd,
+    onEditModule,
+    onAddModule,
+    onDeleteModule,
+}: {
+    modules: Module[];
+    onQuickAdd: (m: Module) => void;
+    onEditModule: (m: Module) => void;
+    onAddModule: () => void;
+    onDeleteModule: (id: string) => void;
+}) => {
     const { setNodeRef } = useDroppable({ id: 'available-list' });
     return (
-        <div ref={setNodeRef} className="border-border bg-card flex flex-col overflow-hidden rounded-2xl border shadow-sm">
+        <div ref={setNodeRef} className="border-surface-border/60 bg-card flex flex-col overflow-hidden rounded-xl border">
             <div className="border-border bg-muted/10 flex shrink-0 items-center justify-between border-b px-4 py-3">
                 <div className="flex items-center gap-2">
                     <h2 className="text-foreground text-[10px] font-black tracking-widest uppercase opacity-70">Repository</h2>
                 </div>
-                <span className="bg-primary/5 text-primary rounded-lg px-2 py-0.5 text-[10px] font-bold shadow-xs">
-                    {modules.length} UNITS
-                </span>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={onAddModule}
+                        className="text-primary hover:bg-primary/10 flex h-6 w-6 items-center justify-center rounded-lg border border-primary/20 text-xs font-bold transition-all active:scale-95"
+                        title="Tambah Modul Baru"
+                    >
+                        <Plus size={12} />
+                    </button>
+                    <span className="bg-primary/5 text-primary rounded-lg px-2 py-0.5 text-[10px] font-bold shadow-xs">
+                        {modules.length} UNITS
+                    </span>
+                </div>
             </div>
             <div className="scrollbar-hide flex-1 space-y-2 p-3">
                 <SortableContext id="available-context" items={modules.map((m) => m.id)} strategy={verticalListSortingStrategy}>
                     {modules.map((module) => (
-                        <AvailableModuleItem key={module.id} module={module} onQuickAdd={onQuickAdd} />
+                        <AvailableModuleItem
+                            key={module.id}
+                            module={module}
+                            onQuickAdd={onQuickAdd}
+                            onEditModule={onEditModule}
+                            onDeleteModule={onDeleteModule}
+                        />
                     ))}
                 </SortableContext>
                 {modules.length === 0 && (
@@ -400,7 +441,17 @@ const AvailableListContainer = ({ modules, onQuickAdd }: { modules: Module[]; on
     );
 };
 
-const AvailableModuleItem = ({ module, onQuickAdd }: { module: Module; onQuickAdd: (m: Module) => void }) => {
+const AvailableModuleItem = ({
+    module,
+    onQuickAdd,
+    onEditModule,
+    onDeleteModule,
+}: {
+    module: Module;
+    onQuickAdd: (m: Module) => void;
+    onEditModule: (m: Module) => void;
+    onDeleteModule: (id: string) => void;
+}) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: module.id,
         data: { type: 'available-module', module },
@@ -411,7 +462,7 @@ const AvailableModuleItem = ({ module, onQuickAdd }: { module: Module; onQuickAd
             ref={setNodeRef}
             style={style}
             className={cn(
-                'group border-border bg-card hover:border-border/80 flex items-center justify-between rounded-xl border p-4 transition-all hover:shadow-sm',
+                'group border-surface-border/60 bg-card hover:border-surface-border flex items-center justify-between rounded-lg border p-4 transition-all',
                 isDragging && 'border-primary ring-primary/10 z-50 scale-[1.02] opacity-50 shadow-2xl ring-2',
             )}
         >
@@ -430,12 +481,29 @@ const AvailableModuleItem = ({ module, onQuickAdd }: { module: Module; onQuickAd
                     </span>
                 </div>
             </div>
-            <button
-                onClick={() => onQuickAdd(module)}
-                className="text-muted-foreground/40 hover:text-primary hover:bg-primary/10 ml-2 rounded-lg p-2 opacity-0 transition-all group-hover:opacity-100 active:scale-90"
-            >
-                <Plus size={18} />
-            </button>
+            <div className="flex items-center gap-1 opacity-0 transition-all group-hover:opacity-100 ml-2 shrink-0">
+                <button
+                    onClick={() => onEditModule(module)}
+                    className="text-muted-foreground/40 hover:text-primary hover:bg-primary/10 rounded-lg p-1.5 active:scale-90"
+                    title="Edit Nama/Path Modul"
+                >
+                    <Edit2 size={13} />
+                </button>
+                <button
+                    onClick={() => onDeleteModule(module.id)}
+                    className="text-muted-foreground/40 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg p-1.5 active:scale-90"
+                    title="Hapus Modul Permanen"
+                >
+                    <Trash2 size={14} />
+                </button>
+                <button
+                    onClick={() => onQuickAdd(module)}
+                    className="text-muted-foreground/40 hover:text-primary hover:bg-primary/10 rounded-lg p-1.5 active:scale-90"
+                    title="Tambahkan ke Grup Pertama"
+                >
+                    <Plus size={14} />
+                </button>
+            </div>
         </div>
     );
 };
@@ -503,9 +571,23 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
         }
     };
 
-    const handleDeleteGroup = (groupId: string) => {
-        if (!confirm('Hapus grup navigasi ini? Modul di dalamnya akan dipindahkan ke repository.')) return;
+    // Delete Group Confirmation States
+    const [isDeleteGroupModalOpen, setIsDeleteGroupModalOpen] = useState(false);
+    const [deletingGroupId, setDeletingGroupId] = useState<string | null>(null);
 
+    // Delete Module Confirmation States
+    const [isDeleteModuleModalOpen, setIsDeleteModuleModalOpen] = useState(false);
+    const [deletingModuleId, setDeletingModuleId] = useState<string | null>(null);
+
+    const handleDeleteGroup = (groupId: string) => {
+        setDeletingGroupId(groupId);
+        setIsDeleteGroupModalOpen(true);
+    };
+
+    const confirmDeleteGroup = () => {
+        if (!deletingGroupId) return;
+
+        const groupId = deletingGroupId;
         const group = navItems.find((g) => g.id === groupId);
         if (group) {
             setAvailableModules((prev) => [...prev, ...group.modules]);
@@ -514,6 +596,102 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
 
         router.delete(`/admin/module-groups/${groupId}`, {
             onSuccess: () => showToast('Grup navigasi berhasil dihapus', 'success'),
+            onFinish: () => {
+                setIsDeleteGroupModalOpen(false);
+                setDeletingGroupId(null);
+            }
+        });
+    };
+
+    // Module CRUD States & Handlers
+    const [isModuleModalOpen, setIsModuleModalOpen] = useState(false);
+    const [editingModuleItem, setEditingModuleItem] = useState<Module | null>(null);
+    const [moduleName, setModuleName] = useState('');
+    const [moduleIdentifier, setModuleIdentifier] = useState('');
+    const [moduleRoute, setModuleRoute] = useState('');
+    const [moduleGroupId, setModuleGroupId] = useState('');
+    const [isProcessingModule, setIsModuleProcessing] = useState(false);
+
+    const openModuleModal = (module: Module | null = null) => {
+        setEditingModuleItem(module);
+        setModuleName(module ? module.name : '');
+        setModuleIdentifier(module ? module.identifier || '' : '');
+        setModuleRoute(module ? module.route || '' : '');
+        setModuleGroupId(module ? module.module_group_id || '' : navItems[0]?.id || '');
+        setIsModuleModalOpen(true);
+    };
+
+    const handleSaveModule = async () => {
+        if (!moduleName.trim()) return;
+        setIsModuleProcessing(true);
+
+        try {
+            if (editingModuleItem) {
+                // Update existing module
+                router.put(
+                    `/admin/modules/${editingModuleItem.id}`,
+                    {
+                        name: moduleName,
+                        identifier: editingModuleItem.identifier,
+                        module_group_id: editingModuleItem.module_group_id || navItems[0]?.id,
+                        route: moduleRoute,
+                        icon: editingModuleItem.icon || 'LayoutGrid',
+                        showed_as_menu: editingModuleItem.showed_as_menu !== undefined ? editingModuleItem.showed_as_menu : true,
+                    },
+                    {
+                        onSuccess: () => {
+                            showToast('Modul berhasil diperbarui', 'success');
+                            setIsModuleModalOpen(false);
+                            setEditingModuleItem(null);
+                        },
+                        onFinish: () => setIsModuleProcessing(false),
+                    }
+                );
+            } else {
+                // Store new module
+                router.post(
+                    `/admin/modules`,
+                    {
+                        name: moduleName,
+                        identifier: moduleIdentifier,
+                        module_group_id: moduleGroupId || navItems[0]?.id,
+                        route: moduleRoute,
+                        icon: 'LayoutGrid',
+                        showed_as_menu: true,
+                    },
+                    {
+                        onSuccess: () => {
+                            showToast('Modul baru berhasil ditambahkan', 'success');
+                            setIsModuleModalOpen(false);
+                        },
+                        onFinish: () => setIsModuleProcessing(false),
+                    }
+                );
+            }
+        } catch (error) {
+            showToast('Gagal memproses modul', 'danger');
+            setIsModuleProcessing(false);
+        }
+    };
+
+    const handleDeleteModule = (moduleId: string) => {
+        setDeletingModuleId(moduleId);
+        setIsDeleteModuleModalOpen(true);
+    };
+
+    const confirmDeleteModule = () => {
+        if (!deletingModuleId) return;
+
+        const moduleId = deletingModuleId;
+        setAvailableModules((prev) => prev.filter((m) => m.id !== moduleId));
+
+        router.delete(`/admin/modules/${moduleId}`, {
+            onSuccess: () => showToast('Modul berhasil dihapus secara permanen', 'success'),
+            onError: () => showToast('Gagal menghapus modul', 'danger'),
+            onFinish: () => {
+                setIsDeleteModuleModalOpen(false);
+                setDeletingModuleId(null);
+            }
         });
     };
 
@@ -826,7 +1004,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="bg-muted/50 hover:bg-muted border-border/60 h-9 rounded-xl px-4 text-xs font-bold transition-all"
+                                    className="bg-muted/50 hover:bg-muted border-border/60 h-9 rounded-lg px-4 text-xs font-bold transition-all"
                                 >
                                     <ShieldAlert className="text-primary mr-2 h-4 w-4 opacity-70" />
                                     <span className="text-muted-foreground mr-1.5 font-medium">Role:</span>
@@ -834,7 +1012,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                     <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-[240px] rounded-2xl p-1.5 shadow-xl">
+                            <DropdownMenuContent align="end" className="w-[240px] rounded-xl p-1.5 shadow-xl">
                                 <div className="text-muted-foreground px-3 py-2 text-[10px] font-bold tracking-widest uppercase">
                                     Pilih Role Otoritas
                                 </div>
@@ -843,7 +1021,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                         <DropdownMenuItem
                                             key={r.id}
                                             className={cn(
-                                                'mb-1 cursor-pointer rounded-xl px-3 py-2.5 text-xs font-bold transition-all last:mb-0',
+                                                'mb-1 cursor-pointer rounded-lg px-3 py-2.5 text-xs font-bold transition-all last:mb-0',
                                                 r.id === role.id
                                                     ? 'bg-primary text-primary-foreground focus:bg-primary focus:text-primary-foreground'
                                                     : 'hover:bg-muted focus:bg-muted',
@@ -875,7 +1053,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                     {/* Mapping Type Switcher - Hidden if Independent */}
                     {!isIndependent && (
                         <div className="mr-4 flex items-center border-l border-dashed border-border/60 pl-4 transition-all">
-                            <div className="bg-muted flex rounded-xl p-1">
+                            <div className="bg-muted flex rounded-lg p-1">
                                 <button
                                     onClick={() => setActiveTab('access')}
                                     type="button"
@@ -907,7 +1085,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                     {/* Utility Buttons Container (Conditional for Access Tab) */}
                     {activeTab === 'access' && (
                         <div className="mr-4 flex items-center border-l border-dashed border-border/60 pl-4 transition-all">
-                            <div className="bg-muted flex rounded-xl p-1">
+                            <div className="bg-muted flex rounded-lg p-1">
                                 <Button
                                     variant="ghost"
                                     size="sm"
@@ -935,12 +1113,12 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
             {activeTab === 'access' ? (
                 <div className="grid grid-cols-1 gap-8">
                     <FormSection title="Matriks Hak Akses" subtitle="Tentukan izin spesifik untuk setiap modul operasional">
-                        <div className="border-border bg-card relative overflow-hidden rounded-2xl border shadow-sm transition-all duration-300">
+                        <div className="overflow-hidden bg-surface-base/40 backdrop-blur-sm rounded-xl border border-surface-border/60 mx-1">
                             <div className="scrollbar-hide overflow-x-auto">
-                                <table className="w-full border-collapse">
+                                <table className="w-full text-left border-collapse min-w-[800px]">
                                     <thead>
-                                        <tr className="bg-muted/50 text-muted-foreground backdrop-blur-sm">
-                                            <th className="border-border bg-muted/50 text-foreground sticky left-0 z-30 min-w-[220px] border-r px-4 py-3 text-left text-[10px] font-black tracking-widest uppercase shadow-[2px_0_4px_-2px_rgba(0,0,0,0.05)]">
+                                        <tr className="border-b border-surface-border/60 bg-surface-muted/40 backdrop-blur-md select-none">
+                                            <th className="border-r border-surface-border/60 bg-surface-muted/50 text-text-desc sticky left-0 z-30 min-w-[220px] px-4 py-3.5 text-left text-[11px] font-medium uppercase tracking-wider shadow-[2px_0_4px_-2px_rgba(0,0,0,0.05)]">
                                                 Scope Modul
                                             </th>
                                             {PERMISSIONS.map((p) => {
@@ -948,14 +1126,12 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                                 return (
                                                     <th
                                                         key={p}
-                                                        className="border-border min-w-[100px] border-r px-1 py-3 text-center last:border-r-0"
+                                                        className="border-r border-surface-border/60 min-w-[100px] px-1 py-3.5 text-center last:border-r-0 text-[11px] font-medium uppercase tracking-wider text-text-desc"
                                                     >
                                                         <div className="flex flex-col items-center gap-1.5">
-                                                            <span className="text-[9px] font-black tracking-widest uppercase">
-                                                                {permissionLabels[p]}
-                                                            </span>
+                                                            <span>{permissionLabels[p]}</span>
                                                             <Checkbox
-                                                                className="h-3.5 w-3.5 rounded-md border transition-all active:scale-90 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                                                className="border-surface-border/60 h-3.5 w-3.5 rounded-md transition-all active:scale-90 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                                                                 checked={isAllChecked}
                                                                 onCheckedChange={(checked) => setColumn(p, !!checked)}
                                                             />
@@ -963,12 +1139,12 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                                     </th>
                                                 );
                                             })}
-                                            <th className="border-border bg-muted/30 min-w-[60px] border-l px-1 py-3 text-center">
-                                                <span className="text-[9px] font-black tracking-widest uppercase">Full</span>
+                                            <th className="border-l border-surface-border/60 bg-surface-muted/30 min-w-[60px] px-1 py-3.5 text-center text-[11px] font-medium uppercase tracking-wider text-text-desc">
+                                                Full
                                             </th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-border divide-y">
+                                    <tbody className="divide-y divide-surface-border/40">
                                         {Object.entries(groupedModules).map(([groupId, group]) => {
                                             const groupModuleIds = group.modules.map((m) => m.id);
                                             const groupAccesses = accessForm.data.accesses.filter((a) =>
@@ -987,13 +1163,13 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
 
                                             return (
                                                 <React.Fragment key={groupId}>
-                                                    <tr className="bg-muted/5 border-border border-y transition-colors hover:bg-muted/10">
-                                                        <td className="sticky left-0 z-10 bg-muted/5 px-4 py-2.5 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.05)]">
+                                                    <tr className="border-y border-surface-border/60 bg-surface-muted/30 transition-colors hover:bg-surface-muted/50">
+                                                        <td className="sticky left-0 z-10 bg-surface-muted px-4 py-2.5 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.05)] border-r border-surface-border/60">
                                                             <div className="flex items-center gap-2">
                                                                 <div className="bg-primary/5 text-primary rounded-lg p-1 ring-1 ring-primary/10">
                                                                     <LayoutGrid className="h-3 w-3" />
-                                                                </div>
-                                                                <span className="text-[11px] font-black tracking-wide text-slate-800 uppercase dark:text-slate-200">
+                                                                 </div>
+                                                                <span className="text-text-main text-[11px] font-black tracking-wide uppercase">
                                                                     {group.name}
                                                                 </span>
                                                             </div>
@@ -1003,11 +1179,11 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                                             return (
                                                                 <td
                                                                     key={p}
-                                                                    className="border-border border-l px-1 py-2.5 text-center transition-colors"
+                                                                    className="border-r border-surface-border/60 px-1 py-2.5 text-center transition-colors"
                                                                 >
                                                                     <div className="flex justify-center">
                                                                         <Checkbox
-                                                                            className="h-3.5 w-3.5 rounded-md border transition-all active:scale-90 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                                                            className="border-surface-border/60 h-3.5 w-3.5 rounded-md border transition-all active:scale-90 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                                                                             checked={isGroupColumnChecked}
                                                                             onCheckedChange={(checked) =>
                                                                                 setGroupColumn(groupId, p, !!checked)
@@ -1017,10 +1193,10 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                                                 </td>
                                                             );
                                                         })}
-                                                        <td className="bg-muted/20 border-border border-l px-1 py-2.5 text-center">
+                                                        <td className="bg-surface-muted/30 border-l border-surface-border/60 px-1 py-2.5 text-center">
                                                             <div className="flex justify-center">
                                                                 <Checkbox
-                                                                    className="h-3.5 w-3.5 rounded-md border transition-all active:scale-90 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                                                    className="border-surface-border/60 h-3.5 w-3.5 rounded-md border transition-all active:scale-90 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                                                                     checked={isGroupFullControlChecked}
                                                                     onCheckedChange={(checked) => {
                                                                         accessForm.setData(
@@ -1063,7 +1239,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                         </div>
                     </FormSection>
 
-                    <div className="group border-border bg-card relative max-w-4xl overflow-hidden rounded-3xl border p-8 shadow-sm transition-all duration-300 hover:shadow-md dark:bg-slate-900/40">
+                    <div className="group relative max-w-4xl overflow-hidden rounded-xl border border-amber-200/50 bg-amber-50/10 p-5 dark:bg-amber-950/5">
                         <div className="pointer-events-none absolute -top-4 -right-4 p-6 opacity-[0.03] transition-opacity duration-500 group-hover:opacity-[0.07]">
                             <ShieldAlert size={200} strokeWidth={1} />
                         </div>
@@ -1126,6 +1302,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                                     onMoveGroupUp={() => handleMoveGroup(gIdx, 'up')}
                                                     onMoveGroupDown={() => handleMoveGroup(gIdx, 'down')}
                                                     onMoveModule={handleMoveModuleIndex}
+                                                    onEditModule={openModuleModal}
                                                 />
                                             </div>
                                         ))}
@@ -1135,7 +1312,13 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
 
                             {/* Repository (Independent Height) */}
                             <div className="col-span-12 lg:col-span-4 lg:sticky lg:top-6">
-                                <AvailableListContainer modules={availableModules} onQuickAdd={handleQuickAdd} />
+                                <AvailableListContainer
+                                    modules={availableModules}
+                                    onQuickAdd={handleQuickAdd}
+                                    onEditModule={openModuleModal}
+                                    onAddModule={() => openModuleModal(null)}
+                                    onDeleteModule={handleDeleteModule}
+                                />
                             </div>
                         </div>
                     </div>
@@ -1168,7 +1351,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
 
             {/* Group CRUD Modal */}
             <Dialog open={isGroupModalOpen} onOpenChange={setIsGroupModalOpen}>
-                <DialogContent className="rounded-3xl sm:max-w-[425px]">
+                <DialogContent className="rounded-2xl sm:max-w-[425px]">
                     <DialogHeader>
                         <DialogTitle className="text-foreground text-base font-black tracking-tight uppercase">
                             {editingGroup ? 'Ubah Grup Navigasi' : 'Tambah Grup Navigasi'}
@@ -1186,18 +1369,18 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                 value={groupName}
                                 onChange={(e) => setGroupName(e.target.value)}
                                 placeholder="Contoh: Manajemen Aset"
-                                className="border-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-2xl border px-4 text-sm font-bold transition-all focus:ring-2 outline-hidden"
+                                className="border-surface-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-xl border px-4 text-sm font-bold transition-all focus:ring-2 outline-hidden"
                             />
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="ghost" onClick={() => setIsGroupModalOpen(false)} className="rounded-xl font-bold">
+                        <Button variant="ghost" onClick={() => setIsGroupModalOpen(false)} className="rounded-lg font-bold">
                             BATAL
                         </Button>
                         <Button
                             onClick={handleSaveGroup}
                             disabled={isProcessingGroup || !groupName.trim()}
-                            className="rounded-xl font-bold shadow-sm"
+                            className="rounded-lg font-bold"
                             variant="primary"
                         >
                             {isProcessingGroup ? (
@@ -1210,6 +1393,120 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* Module CRUD Modal */}
+            <Dialog open={isModuleModalOpen} onOpenChange={setIsModuleModalOpen}>
+                <DialogContent className="rounded-2xl sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle className="text-foreground text-base font-black tracking-tight uppercase">
+                            {editingModuleItem ? 'Ubah Modul' : 'Tambah Modul Baru'}
+                        </DialogTitle>
+                        <DialogDescription className="text-muted-foreground text-xs font-medium">
+                            {editingModuleItem
+                                ? 'Sesuaikan nama dan path rute untuk modul ini.'
+                                : 'Daftarkan modul baru ke dalam repository sistem.'}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4 space-y-4">
+                        <div className="flex flex-col gap-2">
+                            <label className="text-muted-foreground text-[10px] font-black tracking-widest uppercase">Nama Modul</label>
+                            <input
+                                value={moduleName}
+                                onChange={(e) => setModuleName(e.target.value)}
+                                placeholder="Contoh: Daftar Kontrak"
+                                className="border-surface-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-xl border px-4 text-sm font-bold transition-all focus:ring-2 outline-hidden"
+                            />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <label className="text-muted-foreground text-[10px] font-black tracking-widest uppercase">Identifier</label>
+                            <input
+                                value={moduleIdentifier}
+                                onChange={(e) => setModuleIdentifier(e.target.value)}
+                                placeholder="Contoh: contract.index"
+                                disabled={!!editingModuleItem}
+                                className={cn(
+                                    "border-surface-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-xl border px-4 text-sm font-bold transition-all focus:ring-2 outline-hidden",
+                                    editingModuleItem && "opacity-60 cursor-not-allowed"
+                                )}
+                            />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <label className="text-muted-foreground text-[10px] font-black tracking-widest uppercase">Path Rute / URL</label>
+                            <input
+                                value={moduleRoute}
+                                onChange={(e) => setModuleRoute(e.target.value)}
+                                placeholder="Contoh: /admin/contracts"
+                                className="border-surface-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-xl border px-4 text-sm font-bold transition-all focus:ring-2 outline-hidden"
+                            />
+                        </div>
+                        {!editingModuleItem && (
+                            <div className="flex flex-col gap-2">
+                                <label className="text-muted-foreground text-[10px] font-black tracking-widest uppercase">Grup Navigasi</label>
+                                <select
+                                    value={moduleGroupId}
+                                    onChange={(e) => setModuleGroupId(e.target.value)}
+                                    className="border-surface-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-xl border px-4 text-sm font-bold transition-all focus:ring-2 outline-hidden text-foreground"
+                                >
+                                    <option value="" disabled>Pilih Grup Menu</option>
+                                    {navItems.map((g) => (
+                                        <option key={g.id} value={g.id} className="text-foreground bg-card">
+                                            {g.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+                    </div>
+                    <DialogFooter>
+                        <Button variant="ghost" onClick={() => setIsModuleModalOpen(false)} className="rounded-lg font-bold">
+                            BATAL
+                        </Button>
+                        <Button
+                            onClick={handleSaveModule}
+                            disabled={isProcessingModule || !moduleName.trim() || (!editingModuleItem && !moduleIdentifier.trim())}
+                            className="rounded-lg font-bold"
+                            variant="primary"
+                        >
+                            {isProcessingModule ? (
+                                <RefreshCw className="mr-1.5 h-4 w-4 animate-spin" />
+                            ) : (
+                                <Save className="mr-1.5 h-4 w-4" />
+                            )}
+                            SIMPAN
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Group Confirmation Modal */}
+            <ConfirmationModal
+                open={isDeleteGroupModalOpen}
+                onClose={() => {
+                    setIsDeleteGroupModalOpen(false);
+                    setDeletingGroupId(null);
+                }}
+                onConfirm={confirmDeleteGroup}
+                title="Hapus Grup Navigasi?"
+                description="Modul di dalam grup ini akan dipindahkan kembali ke repository."
+                confirmText="Ya, Hapus"
+                cancelText="Batal"
+                variant="danger"
+            />
+
+            {/* Delete Module Confirmation Modal */}
+            <ConfirmationModal
+                open={isDeleteModuleModalOpen}
+                onClose={() => {
+                    setIsDeleteModuleModalOpen(false);
+                    setDeletingModuleId(null);
+                }}
+                onConfirm={confirmDeleteModule}
+                title="Hapus Modul Secara Permanen?"
+                description="Tindakan ini akan menghapus modul secara permanen dari sistem dan tidak dapat dibatalkan."
+                confirmText="Ya, Hapus Permanen"
+                cancelText="Batal"
+                variant="danger"
+            />
 
             <style
                 dangerouslySetInnerHTML={{

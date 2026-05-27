@@ -1,6 +1,7 @@
 import { useToast } from '@/components/contracts/Toast';
 import { Button } from '@/components/ui/base/Button';
-import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
+import { Column, DataTable } from '@/components/ui/data/DataTable';
+import { ExcelActions } from '@/components/ui/data/ExcelActions';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
@@ -42,7 +43,7 @@ const CompanyCell = ({ name }: Readonly<{ name: string }>) => (
             <Building2 size={18} />
         </div>
         <div className="flex min-w-0 flex-col">
-            <span className="mb-0.5 truncate text-sm leading-tight font-bold tracking-wide text-text-main">{name}</span>
+            <span className="mb-0.5 truncate text-sm leading-tight font-semibold tracking-wide text-text-main">{name}</span>
         </div>
     </div>
 );
@@ -79,6 +80,36 @@ export function CompanyManagement({ companies, regions, groups, filters }: Reado
         }
     }, [filters.action, filters.id, filters.region_id, filters.company_group_id]);
 
+    const filterConfig = useMemo(
+        () => [
+            {
+                label: 'Wilayah / Region',
+                key: 'region_id',
+                type: 'searchable',
+                options: (regions || []).map((r: any) => ({ label: r.name, value: r.id })),
+            },
+            {
+                label: 'Grup Perusahaan / Group',
+                key: 'company_group_id',
+                type: 'searchable',
+                options: (groups || []).map((g: any) => ({ label: g.name, value: g.id })),
+            },
+        ],
+        [regions, groups],
+    );
+
+    const handleFilterChange = (newFilters: Record<string, any>) => {
+        router.get(
+            globalThis.location.pathname,
+            {
+                ...filters,
+                ...newFilters,
+                page: 1,
+            },
+            { preserveState: true, replace: true },
+        );
+    };
+
     const columns = useMemo<Column<any>[]>(
         () => [
             {
@@ -92,12 +123,22 @@ export function CompanyManagement({ companies, regions, groups, filters }: Reado
                 cell: (row) => <span className="text-text-desc text-sm font-medium tracking-wide">{row.code}</span>,
             },
             {
-                header: 'Region / Group',
+                header: 'Region',
                 accessorKey: 'region.name',
                 cell: (row) => (
                     <div className="flex flex-col gap-0.5">
                         <span className="text-sm font-semibold tracking-wide text-text-main">{row.region?.name || '—'}</span>
-                        <span className="text-text-desc/60 text-[10px] font-bold uppercase">{row.group?.name || '—'}</span>
+                        <span className="text-text-desc/60 text-[10px] font-medium uppercase">{row.region?.code || '—'}</span>
+                    </div>
+                ),
+            },
+            {
+                header: 'Group Perusahaan',
+                accessorKey: 'group.name',
+                cell: (row) => (
+                    <div className="flex flex-col gap-0.5">
+                        <span className="text-sm font-semibold tracking-wide text-text-main">{row.group?.name || '—'}</span>
+                        <span className="text-text-desc/60 text-[10px] font-medium uppercase">{row.group?.code || '—'}</span>
                     </div>
                 ),
             },
@@ -295,52 +336,71 @@ export function CompanyManagement({ companies, regions, groups, filters }: Reado
     }
 
     return (
-        <div className="bg-surface-base/40 border-surface-border animate-in fade-in m-5 rounded-2xl border p-6 shadow-sm backdrop-blur-sm duration-200 select-none">
-            <TableMasterData
-                title="Database Entitas Perusahaan"
-                columns={columns}
-                borderless={true}
-                data={Array.isArray(companies) ? companies : companies?.data || []}
-                searchPlaceholder="Cari company..."
-                searchValue={filters.search || ''}
-                onSearchChange={(v: string) =>
-                    router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })
-                }
-                headerActions={
-                    canCreate && (
+        <DataTable
+            title="Database Entitas Perusahaan"
+            columns={columns}
+            borderless={true}
+            data={Array.isArray(companies) ? companies : companies?.data || []}
+            searchPlaceholder="Cari company..."
+            searchValue={filters.search || ''}
+            onSearchChange={(v: string) =>
+                router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })
+            }
+            filters={filterConfig as any}
+            activeFilters={filters}
+            onFilterChange={handleFilterChange}
+            headerActions={
+                <div className="flex items-center gap-2">
+                    <ExcelActions
+                        exportRoute="admin.companies.export"
+                        importRoute="admin.companies.import"
+                        label="Perusahaan"
+                    />
+                    {canCreate && (
                         <Button
                             variant="white"
                             onClick={openCreate}
-                            className="border-surface-border bg-surface-base text-text-main hover:bg-surface-muted hover:border-surface-border gap-2 border px-5 text-xs tracking-wide transition-all duration-200 hover:shadow-md"
                         >
                             <Plus size={15} className="text-primary" /> Tambah Company
                         </Button>
-                    )
-                }
-                onRowClick={openEdit}
-                bulkActions={
-                    canDelete
-                        ? [
-                              {
-                                  label: 'Hapus Terpilih',
-                                  icon: Trash2,
-                                  variant: 'destructive',
-                                  onClick: (ids: string[] | number[]) => {
-                                      if (confirm(`Hapus ${ids.length} company terpilih?`)) {
-                                          router.post(
-                                              '/admin/companies/bulk-delete',
-                                              { ids },
-                                              {
-                                                  onSuccess: () => showToast(`${ids.length} company telah dihapus`, 'success'),
-                                              },
-                                          );
-                                      }
-                                  },
+                    )}
+                </div>
+            }
+            onRowClick={openEdit}
+            bulkActions={
+                canDelete
+                    ? [
+                          {
+                              label: 'Hapus Terpilih',
+                              icon: Trash2,
+                              variant: 'destructive',
+                              onClick: (ids: string[] | number[]) => {
+                                  if (confirm(`Hapus ${ids.length} company terpilih?`)) {
+                                      router.post(
+                                          '/admin/companies/bulk-delete',
+                                          { ids },
+                                          {
+                                              onSuccess: () => showToast(`${ids.length} company telah dihapus`, 'success'),
+                                          },
+                                      );
+                                  }
                               },
-                          ]
-                        : undefined
-                }
-            />
-        </div>
+                          },
+                      ]
+                    : undefined
+            }
+            pagination={{
+                currentPage: companies.current_page || 1,
+                lastPage: companies.last_page || 1,
+                total: companies.total || 0,
+                from: companies.from || 1,
+                to: companies.to || 1,
+                perPage: companies.per_page || 10,
+                onPageChange: (page: number) =>
+                    router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                onPerPageChange: (pp: number) =>
+                    router.get(globalThis.location.pathname, { ...filters, per_page: pp, page: 1 }, { preserveState: true, preserveScroll: true }),
+            }}
+        />
     );
 }

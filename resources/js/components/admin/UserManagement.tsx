@@ -1,6 +1,6 @@
 import { useToast } from '@/components/contracts/Toast';
 import { Button } from '@/components/ui/base/Button';
-import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
+import { Column, DataTable } from '@/components/ui/data/DataTable';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { CompactSwitch } from '@/components/ui/forms/CompactSwitch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
@@ -49,14 +49,14 @@ const UserCell = ({ name, email }: Readonly<{ name: string; email: string }>) =>
     <div className="flex items-center gap-3 select-none">
         <div
             className={cn(
-                'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold shadow-sm backdrop-blur-sm transition-all duration-200',
+                'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-semibold shadow-sm backdrop-blur-sm transition-all duration-200',
                 avatarColor(name),
             )}
         >
             {name.charAt(0).toUpperCase()}
         </div>
         <div className="flex min-w-0 flex-col">
-            <span className="truncate text-sm leading-tight font-bold tracking-wide text-text-main">{name}</span>
+            <span className="truncate text-sm leading-tight font-semibold tracking-wide text-text-main">{name}</span>
             <span className="text-text-desc mt-0.5 truncate text-xs leading-none font-medium">{email}</span>
         </div>
     </div>
@@ -64,7 +64,7 @@ const UserCell = ({ name, email }: Readonly<{ name: string; email: string }>) =>
 
 const IdentityCell = ({ username, phone }: Readonly<{ username: string; phone?: string }>) => (
     <div className="flex flex-col gap-1 select-none">
-        <div className="text-text-desc flex items-center gap-1.5 text-xs font-bold tracking-wide">
+        <div className="text-text-desc flex items-center gap-1.5 text-xs font-semibold tracking-wide">
             <Fingerprint size={12} className="text-primary opacity-60" />
             {username}
         </div>
@@ -79,7 +79,7 @@ const IdentityCell = ({ username, phone }: Readonly<{ username: string; phone?: 
 
 const PlacementCell = ({ departmentName, position }: Readonly<{ departmentName?: string; position?: string }>) => (
     <div className="flex flex-col gap-1 select-none">
-        <span className="inline-block w-fit rounded-xl border border-primary/20 bg-primary-muted px-3 py-1 text-xs font-bold text-primary shadow-sm backdrop-blur-md">
+        <span className="inline-block w-fit rounded-xl border border-primary/20 bg-primary-muted px-3 py-1 text-xs font-semibold text-primary shadow-sm backdrop-blur-md">
             {departmentName || 'Global'}
         </span>
         <span className="text-text-desc mt-0.5 pl-1 text-xs font-medium">{position || 'Staf'}</span>
@@ -89,7 +89,7 @@ const PlacementCell = ({ departmentName, position }: Readonly<{ departmentName?:
 const AuthorityCell = ({ role }: Readonly<{ role: string }>) => (
     <span
         className={cn(
-            'inline-flex items-center rounded-xl px-3 py-1 text-xs font-bold tracking-wide shadow-sm backdrop-blur-sm select-none',
+            'inline-flex items-center rounded-xl px-3 py-1 text-xs font-semibold tracking-wide shadow-sm backdrop-blur-sm select-none',
             ROLE_COLORS[role] ?? 'border border-text-soft/20 bg-secondary text-text-desc',
         )}
     >
@@ -102,7 +102,7 @@ const AccessCell = ({ isActive }: Readonly<{ isActive: boolean }>) => (
         <div className={cn('h-2 w-2 shrink-0 rounded-full', isActive ? 'animate-pulse bg-success' : 'bg-danger')} />
         <span
             className={cn(
-                'text-xs font-bold tracking-wide',
+                'text-xs font-semibold tracking-wide',
                 isActive ? 'text-success' : 'text-danger',
             )}
         >
@@ -502,9 +502,9 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
     }
 
     return (
-        <div className="bg-surface-base/40 border-surface-border/60 animate-in fade-in m-5 rounded-2xl border p-6 shadow-sm backdrop-blur-sm duration-200 select-none">
-            <TableMasterData
-                title="Database Pengguna"
+        <>
+        <DataTable
+            title="Database Pengguna"
                 columns={columns}
                 borderless={true}
                 data={users.data || []}
@@ -629,7 +629,7 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                                     type="button"
                                     variant="white"
                                     onClick={handleExportExcel}
-                                    className="mt-3 h-8 gap-2 rounded-xl border border-surface-border bg-surface-base px-3 text-[10px] font-bold uppercase transition-all select-none hover:bg-surface-muted"
+                                    className="mt-3"
                                 >
                                     <Download size={12} className="text-success" /> Unduh Template Database
                                 </Button>
@@ -745,6 +745,6 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                     </form>
                 </Modal>
             )}
-        </div>
+        </>
     );
 }

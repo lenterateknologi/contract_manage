@@ -1,12 +1,13 @@
 import { useToast } from '@/components/contracts/Toast';
 import { Button } from '@/components/ui/base/Button';
+import { StatusBadge } from '@/components/ui/data/StatusBadge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/overlays/DropdownMenu';
 import { contractApi } from '@/lib/contract-api';
 import { cn } from '@/lib/utils';
 import { Contract, ContractType } from '@/types/contracts';
 import axios from 'axios';
 import { AlertCircle, Archive, CheckCircle2, ChevronLeft, Clock, FileText, MoreVertical, Save, Trash2, UserPlus, Zap } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
 import AgreementView from '@/components/contracts/AgreementView';
 import ApprovalSteps from '@/components/contracts/ApprovalSteps';
@@ -19,29 +20,6 @@ import { ContractReferenceCard } from '@/components/contracts/ContractReferenceC
 import { DraftEditableInfoCard } from '@/components/contracts/DraftEditableInfoCard';
 import { FormSubmissionTab } from '@/components/contracts/FormSubmissionTab';
 import RejectModal from '@/components/contracts/RejectModal';
-
-const StatusBadge = ({ status }: { status: string }) => {
-    const config: Record<string, { bg: string; dot: string; text: string; label: string }> = {
-        draft: { bg: 'bg-surface-muted', dot: 'bg-text-soft', text: 'text-text-desc', label: 'Draft' },
-        in_review: { bg: 'bg-warning/10', dot: 'bg-warning', text: 'text-warning', label: 'Review' },
-        revision: { bg: 'bg-danger/10', dot: 'bg-danger', text: 'text-danger', label: 'Revisi' },
-        pending: { bg: 'bg-warning/10', dot: 'bg-warning', text: 'text-warning', label: 'Pending' },
-        approved: { bg: 'bg-success/10', dot: 'bg-success', text: 'text-success', label: 'Disetujui' },
-        active: { bg: 'bg-primary/10', dot: 'bg-primary', text: 'text-primary', label: 'Aktif' },
-        expired: { bg: 'bg-danger/10', dot: 'bg-danger', text: 'text-danger', label: 'Expired' },
-        archived: { bg: 'bg-surface-muted', dot: 'bg-text-soft', text: 'text-text-soft', label: 'Arsip' },
-        rejected: { bg: 'bg-danger/10', dot: 'bg-danger', text: 'text-danger', label: 'Ditolak' },
-    };
-
-    const s = config[status as keyof typeof config] || config.draft;
-
-    return (
-        <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-tight', s.bg, s.text)}>
-            <span className={cn('h-1.5 w-1.5 rounded-full', s.dot)} />
-            {s.label}
-        </span>
-    );
-};
 
 const ContractDetailView = ({
     contract,
@@ -96,7 +74,6 @@ const ContractDetailView = ({
     const handleExportTimelinePdf = async () => {
         setIsExportingTimeline(true);
 
-        // Open window immediately to avoid pop-up blocker
         const win = globalThis.window.open('about:blank', '_blank');
         if (win) {
             win.document.writeln(`
@@ -108,7 +85,7 @@ const ContractDetailView = ({
                             .card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); text-align: center; border: 1px solid #e2e8f0; max-width: 400px; }
                             .loader { width: 48px; height: 48px; border: 5px solid #f1f5f9; border-top: 5px solid #0f172a; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 24px; }
                             @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-                            h2 { font-size: 14px; font-weight: 900; letter-spacing: 0.15em; text-transform: uppercase; margin: 0 0 12px; }
+                            h2 { font-size: 14px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin: 0 0 12px; }
                             p { font-size: 11px; color: #64748b; font-weight: 500; line-height: 1.6; }
                         </style>
                     </head>
@@ -216,7 +193,6 @@ const ContractDetailView = ({
     };
 
     const canApprove = !!contract.can_approve;
-    const pendingApprovalForMe = contract.pending_approval_id;
 
     return (
         <div className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-6 p-4">
@@ -228,16 +204,16 @@ const ContractDetailView = ({
                         className="flex h-auto items-center gap-2 px-0 text-text-main transition-all hover:bg-transparent hover:opacity-70 active:scale-95"
                     >
                         <ChevronLeft size={20} strokeWidth={2.5} />
-                        <span className="text-[10px] font-black uppercase">Kembali</span>
+                        <span className="text-[10px] font-semibold uppercase">Kembali</span>
                     </Button>
                     <div className="h-10 w-px bg-surface-border" />
                     <div className="flex flex-col">
                         <div className="flex items-center gap-3">
-                            <h2 className="text-lg leading-none font-black tracking-tight text-text-main uppercase italic">{contract.title}</h2>
+                            <h2 className="text-lg leading-none font-semibold tracking-tight text-text-main uppercase italic">{contract.title}</h2>
                             <StatusBadge status={contract.status} />
                         </div>
                         <div className="mt-1.5 flex flex-wrap items-center gap-3">
-                            <span className="text-[10px] font-black tracking-[0.2em] text-text-soft uppercase">
+                            <span className="text-[10px] font-semibold tracking-[0.2em] text-text-soft uppercase">
                                 #{contract.contract_no || 'NO-REQ'}
                             </span>
                         </div>
@@ -252,24 +228,24 @@ const ContractDetailView = ({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent
                             align="end"
-                            className="border-surface-border w-56 rounded-2xl bg-surface-base p-1.5 shadow-2xl backdrop-blur-xl"
+                            className="border-surface-border w-56 rounded-xl bg-surface-base p-1.5 shadow-2xl backdrop-blur-xl"
                         >
                             <div className="mb-1 px-2 py-1.5">
-                                <p className="text-[10px] font-black text-text-soft uppercase tracking-wider">Opsi Kontrak</p>
+                                <p className="text-[10px] font-semibold text-text-soft uppercase tracking-wider">Opsi Kontrak</p>
                             </div>
                             <DropdownMenuItem
                                 onClick={() => handleUpdate({}, true)}
-                                className="flex cursor-pointer items-center gap-2 rounded-xl text-[11px] font-black tracking-tight text-text-main uppercase transition-all"
+                                className="flex cursor-pointer items-center gap-2 rounded-xl text-[11px] font-semibold tracking-tight text-text-main uppercase transition-all"
                             >
                                 <Save size={14} className="text-primary" /> Paksa Simpan (Force Sync)
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="flex cursor-pointer items-center gap-2 rounded-xl text-[11px] font-black tracking-tight text-text-main uppercase transition-all">
+                            <DropdownMenuItem className="flex cursor-pointer items-center gap-2 rounded-xl text-[11px] font-semibold tracking-tight text-text-main uppercase transition-all">
                                 <Archive size={14} className="text-text-soft" /> Arsipkan Kontrak
                             </DropdownMenuItem>
                             <div className="my-1.5 h-px bg-surface-border/40" />
                             <DropdownMenuItem
                                 onClick={() => setDeleteOpen(true)}
-                                className="flex cursor-pointer items-center gap-2 rounded-xl text-[11px] font-black tracking-tight text-danger uppercase transition-all focus:bg-danger/5 focus:text-danger"
+                                className="flex cursor-pointer items-center gap-2 rounded-xl text-[11px] font-semibold tracking-tight text-danger uppercase transition-all focus:bg-danger/5 focus:text-danger"
                             >
                                 <Trash2 size={14} /> Hapus Kontrak
                             </DropdownMenuItem>
@@ -277,11 +253,12 @@ const ContractDetailView = ({
                     </DropdownMenu>
                 </div>
             </div>
+
             <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[1fr_400px]">
                 <div className="flex flex-col gap-6">
                     <div className="overflow-hidden rounded-2xl bg-surface-base border border-surface-border shadow-sm">
                         <div className="bg-primary flex h-12 items-center justify-between border-b border-surface-border px-4">
-                            <div className="flex items-center gap-2 text-sm font-black uppercase tracking-wider text-primary-foreground">
+                            <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-primary-foreground">
                                 <FileText size={16} className="text-primary-foreground/70" /> Detail Dokumen & Alur Kerja
                             </div>
                             <div className="flex items-center gap-2">
@@ -296,13 +273,13 @@ const ContractDetailView = ({
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end" className="border-surface-border w-56 rounded-xl bg-surface-base p-1.5 shadow-2xl backdrop-blur-xl">
-                                        <div className="mb-1 px-2 py-1.5 text-[10px] font-black tracking-wider text-text-soft uppercase">
+                                        <div className="mb-1 px-2 py-1.5 text-[10px] font-semibold tracking-wider text-text-soft uppercase">
                                             Menu Tambahan
                                         </div>
                                         <DropdownMenuItem
                                             onClick={() => setDetailTab('audit')}
                                             className={cn(
-                                                'flex cursor-pointer items-center gap-2 rounded-lg text-xs font-black tracking-tight uppercase transition-all',
+                                                'flex cursor-pointer items-center gap-2 rounded-lg text-xs font-semibold tracking-tight uppercase transition-all',
                                                 detailTab === 'audit'
                                                     ? 'bg-primary text-primary-foreground'
                                                     : 'text-text-main hover:bg-surface-muted',
@@ -317,7 +294,7 @@ const ContractDetailView = ({
                                         <DropdownMenuItem
                                             onClick={() => setDetailTab('members')}
                                             className={cn(
-                                                'flex cursor-pointer items-center gap-2 rounded-lg text-xs font-black tracking-tight uppercase transition-all',
+                                                'flex cursor-pointer items-center gap-2 rounded-lg text-xs font-semibold tracking-tight uppercase transition-all',
                                                 detailTab === 'members'
                                                     ? 'bg-primary text-primary-foreground'
                                                     : 'text-text-main hover:bg-surface-muted',
@@ -346,7 +323,7 @@ const ContractDetailView = ({
                                     variant={detailTab === tab.id ? 'primary' : 'ghost'}
                                     onClick={() => setDetailTab(tab.id as any)}
                                     className={cn(
-                                        'h-8 px-3 text-[11px] font-black uppercase transition-all',
+                                        'h-8 px-3 text-[11px] font-semibold uppercase transition-all',
                                         detailTab === tab.id
                                             ? 'bg-primary text-primary-foreground shadow-sm'
                                             : 'text-text-soft hover:bg-primary/5 hover:text-text-main',
@@ -405,6 +382,7 @@ const ContractDetailView = ({
                         </div>
                     </div>
                 </div>
+
                 <div className="sticky top-6 flex flex-col gap-4 self-start">
                     {canApprove && (
                         <div className="flex flex-col gap-4 overflow-hidden rounded-2xl border border-primary/20 bg-surface-base p-6 shadow-xl ring-1 ring-primary/5">
@@ -413,8 +391,8 @@ const ContractDetailView = ({
                                     <Zap size={20} />
                                 </div>
                                 <div className="flex flex-col gap-0.5">
-                                    <h3 className="text-sm font-black text-text-main uppercase tracking-tight">Approval Dibutuhkan</h3>
-                                    <p className="text-[10px] font-bold text-text-soft uppercase tracking-wide">
+                                    <h3 className="text-sm font-semibold text-text-main uppercase tracking-tight">Approval Dibutuhkan</h3>
+                                    <p className="text-[10px] font-medium text-text-soft uppercase tracking-wide">
                                         Anda terdaftar sebagai salah satu reviewer
                                     </p>
                                 </div>
@@ -423,7 +401,7 @@ const ContractDetailView = ({
                                 <Button
                                     variant="primary"
                                     onClick={() => setApproveOpen(true)}
-                                    className="h-11 w-full font-black uppercase text-xs tracking-wider shadow-lg shadow-primary/20"
+                                    className="w-full uppercase text-xs tracking-wider shadow-lg shadow-primary/20"
                                 >
                                     <CheckCircle2 size={16} />{' '}
                                     {contract.workflow_step?.step === 1
@@ -437,7 +415,7 @@ const ContractDetailView = ({
                                 <Button
                                     variant="outline"
                                     onClick={() => setRejectOpen(true)}
-                                    className="h-11 w-full border-danger/20 font-black uppercase text-xs tracking-wider hover:bg-danger hover:text-white transition-all shadow-sm"
+                                    className="w-full border-danger/20 uppercase text-xs tracking-wider hover:bg-danger hover:text-white transition-all shadow-sm"
                                 >
                                     <AlertCircle size={16} /> Tolak Kontrak
                                 </Button>

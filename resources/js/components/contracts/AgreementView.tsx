@@ -131,9 +131,9 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
                 <div className="flex items-center gap-4">
                     <div className="flex flex-col">
                         <div className="flex items-center gap-2">
-                            <h4 className="text-xs font-bold tracking-tight text-black uppercase dark:text-white">Preview Persetujuan</h4>
+                            <h4 className="text-xs font-medium tracking-tight text-black uppercase dark:text-white">Preview Persetujuan</h4>
                             {selectedVno && (
-                                <span className="rounded bg-black/5 px-1.5 py-0.5 text-[9px] font-bold text-black/60 dark:bg-white/10 dark:text-white/60">
+                                <span className="rounded bg-black/5 px-1.5 py-0.5 text-[9px] font-medium text-black/60 dark:bg-white/10 dark:text-white/60">
                                     V{selectedVno}
                                 </span>
                             )}
@@ -190,15 +190,15 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
                                                     <div className="flex items-center gap-2">
                                                         <span
                                                             className={cn(
-                                                                'flex h-6 w-6 items-center justify-center rounded bg-black text-[10px] font-bold text-white shadow-sm transition-colors dark:bg-white dark:text-black',
+                                                                'flex h-6 w-6 items-center justify-center rounded bg-black text-[10px] font-medium text-white shadow-sm transition-colors dark:bg-white dark:text-black',
                                                                 selectedVno !== v.version_no && 'bg-black/10 dark:bg-white/10',
                                                             )}
                                                         >
                                                             {v.version_no}
                                                         </span>
-                                                        <span className="text-xs font-bold text-black dark:text-white">{v.file_name}</span>
+                                                        <span className="text-xs font-medium text-black dark:text-white">{v.file_name}</span>
                                                     </div>
-                                                    <span className="mt-1 text-[10px] font-bold text-black/30 dark:text-white/30">
+                                                    <span className="mt-1 text-[10px] font-medium text-black/30 dark:text-white/30">
                                                         {v.created_at} &bull; {v.uploader?.name || 'System'}
                                                     </span>
                                                 </div>
@@ -283,15 +283,15 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
                 {loading ? (
                     <div className="flex h-full flex-col items-center justify-center gap-4">
                         <LoadingLottie width={120} height={120} />
-                        <span className="text-[10px] font-black tracking-[0.2em] text-[#172554] uppercase dark:text-white">Memuat Dokumen...</span>
+                        <span className="text-[10px] font-semibold tracking-[0.2em] text-[#172554] uppercase dark:text-white">Memuat Dokumen...</span>
                     </div>
                 ) : versions.length === 0 ? (
                     <div className="flex flex-1 flex-col items-center justify-center p-20 text-center">
                         <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-dashed border-black/20 dark:border-white/20">
                             <FileText size={40} className="text-black/40 dark:text-white/40" />
                         </div>
-                        <h4 className="mb-2 text-xs font-bold text-black dark:text-white">Dokumen Tidak Tersedia</h4>
-                        <p className="max-w-sm text-[11px] font-bold text-black/40 dark:text-white/40">
+                        <h4 className="mb-2 text-xs font-medium text-black dark:text-white">Dokumen Tidak Tersedia</h4>
+                        <p className="max-w-sm text-[11px] font-medium text-black/40 dark:text-white/40">
                             Upload draf final persetujuan Anda (.docx) untuk mulai melacak versi dan melakukan audit per poin.
                         </p>
                     </div>

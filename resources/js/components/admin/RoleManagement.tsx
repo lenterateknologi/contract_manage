@@ -1,6 +1,6 @@
 import { useToast } from '@/components/contracts/Toast';
 import { Button } from '@/components/ui/base/Button';
-import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
+import { Column, DataTable } from '@/components/ui/data/DataTable';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -83,9 +83,7 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                             <ShieldCheck size={18} />
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-sm leading-tight font-bold tracking-wide text-text-main select-none">
-                                {row.name}
-                            </span>
+                            <span className="text-text-main text-sm leading-tight font-semibold tracking-wide select-none">{row.name}</span>
                             <span className="text-text-desc/80 mt-0.5 text-xs font-medium">
                                 Terdaftar: {new Date(row.created_at).toLocaleDateString('id-ID')}
                             </span>
@@ -98,14 +96,11 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                 accessorKey: 'description',
                 cell: (row) =>
                     row.description ? (
-                        <span className="text-text-desc block max-w-sm truncate text-sm leading-tight font-medium">
-                            {row.description}
-                        </span>
+                        <span className="text-text-desc block max-w-sm truncate text-sm leading-tight font-medium">{row.description}</span>
                     ) : (
                         <span className="text-text-soft/30 text-sm leading-none font-medium italic">—</span>
                     ),
             },
-
         ],
         [],
     );
@@ -160,7 +155,7 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                             type="button"
                             variant="ghost"
                             onClick={() => setIsConfirmOpen(true)}
-                            className="h-10 rounded-xl border border-danger/20 px-4 text-xs font-bold text-danger transition-all duration-200 select-none hover:bg-danger hover:text-white active:scale-95"
+                            className="border-danger/20 text-danger hover:bg-danger h-10 rounded-xl border px-4 text-xs font-bold transition-all duration-200 select-none hover:text-white active:scale-95"
                         >
                             <Trash2 size={15} className="mr-2" /> Hapus
                         </Button>
@@ -216,11 +211,11 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                             </div>
 
                             <div className="relative z-10 mb-4 flex items-center gap-3">
-                                <span className="text-xs font-bold tracking-wider text-text-main uppercase">Pusat Otoritas</span>
+                                <span className="text-text-main text-xs font-bold tracking-wider uppercase">Pusat Otoritas</span>
                             </div>
 
                             <div className="border-surface-border/60 relative z-10 mb-4 space-y-3 border-y border-dashed py-4">
-                                <span className="block text-sm leading-tight font-bold tracking-tight text-text-main">
+                                <span className="text-text-main block text-sm leading-tight font-bold tracking-tight">
                                     {form.data.name || 'Nama Role'}
                                 </span>
                                 <p className="text-text-desc text-xs leading-relaxed font-medium tracking-wide">
@@ -229,7 +224,8 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                             </div>
 
                             <p className="text-text-desc/60 relative z-10 text-[11px] leading-normal font-medium tracking-tight">
-                                Role menentukan hak akses pengguna terhadap modul-modul sistem. Gunakan menu Pemetaan Hak Akses dan Pemetaan Navigasi di menu Data Master untuk mengatur konfigurasi hak akses per modul secara spesifik.
+                                Role menentukan hak akses pengguna terhadap modul-modul sistem. Gunakan menu Pemetaan Hak Akses dan Pemetaan Navigasi
+                                di menu Data Master untuk mengatur konfigurasi hak akses per modul secara spesifik.
                             </p>
                         </div>
                     </div>
@@ -239,71 +235,65 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
     }
 
     return (
-        <div className="bg-surface-base/40 border-surface-border/60 animate-in fade-in m-5 rounded-2xl border p-6 shadow-sm backdrop-blur-sm duration-200 select-none">
-            <TableMasterData
-                title="Database Role & Otoritas"
-                columns={columns}
-                borderless={true}
-                data={roles.data || []}
-                searchPlaceholder="Cari role..."
-                searchValue={filters.search || ''}
-                onSearchChange={(v: string) =>
-                    router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })
-                }
-                filters={filterConfig as any}
-                activeFilters={filters}
-                onFilterChange={handleFilterChange}
-                headerActions={
-                    canCreate && (
-                        <Button
-                            variant="white"
-                            onClick={openCreate}
-                            className="border-surface-border bg-surface-base text-text-main hover:bg-surface-muted/60 hover:border-surface-border h-10 gap-2 rounded-xl border px-5 text-xs font-bold tracking-wide shadow-sm transition-all duration-200 select-none hover:shadow-md"
-                        >
-                            <Plus size={15} className="text-primary" /> Tambah Role
-                        </Button>
-                    )
-                }
-                onRowClick={openEdit}
-                bulkActions={
-                    canDelete
-                        ? [
-                              {
-                                  label: 'Hapus Terpilih',
-                                  icon: Trash2,
-                                  variant: 'destructive',
-                                  onClick: (ids: string[] | number[]) => {
-                                      if (confirm(`Hapus ${ids.length} role terpilih?`)) {
-                                          router.post(
-                                              '/admin/roles/bulk-delete',
-                                              { ids },
-                                              {
-                                                  onSuccess: () => showToast(`${ids.length} role telah dihapus`, 'success'),
-                                              },
-                                          );
-                                      }
-                                  },
+        <DataTable
+            title="Database Role & Otoritas"
+            columns={columns}
+            borderless={true}
+            data={roles.data || []}
+            searchPlaceholder="Cari role..."
+            searchValue={filters.search || ''}
+            onSearchChange={(v: string) =>
+                router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })
+            }
+            filters={filterConfig as any}
+            activeFilters={filters}
+            onFilterChange={handleFilterChange}
+            headerActions={
+                canCreate && (
+                    <Button
+                        variant="white"
+                        onClick={openCreate}
+                        className="border-surface-border bg-surface-base text-text-main hover:bg-surface-muted/60 hover:border-surface-border h-10 gap-2 rounded-xl border px-5 text-xs font-bold tracking-wide shadow-sm transition-all duration-200 select-none hover:shadow-md"
+                    >
+                        <Plus size={15} className="text-primary" /> Tambah Role
+                    </Button>
+                )
+            }
+            onRowClick={openEdit}
+            bulkActions={
+                canDelete
+                    ? [
+                          {
+                              label: 'Hapus Terpilih',
+                              icon: Trash2,
+                              variant: 'destructive',
+                              onClick: (ids: string[] | number[]) => {
+                                  if (confirm(`Hapus ${ids.length} role terpilih?`)) {
+                                      router.post(
+                                          '/admin/roles/bulk-delete',
+                                          { ids },
+                                          {
+                                              onSuccess: () => showToast(`${ids.length} role telah dihapus`, 'success'),
+                                          },
+                                      );
+                                  }
                               },
-                          ]
-                        : undefined
-                }
-                pagination={{
-                    currentPage: roles.current_page || 1,
-                    lastPage: roles.last_page || 1,
-                    total: roles.total || 0,
-                    from: roles.from || 1,
-                    to: roles.to || 1,
-                    perPage: roles.per_page || 10,
-                    onPageChange: (page: number) =>
-                        router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
-                    onPerPageChange: (pp: number) =>
-                        router.get(
-                            globalThis.location.pathname,
-                            { ...filters, per_page: pp, page: 1 },
-                            { preserveState: true, preserveScroll: true },
-                        ),
-                }}
-            />
-        </div>
+                          },
+                      ]
+                    : undefined
+            }
+            pagination={{
+                currentPage: roles.current_page || 1,
+                lastPage: roles.last_page || 1,
+                total: roles.total || 0,
+                from: roles.from || 1,
+                to: roles.to || 1,
+                perPage: roles.per_page || 10,
+                onPageChange: (page: number) =>
+                    router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                onPerPageChange: (pp: number) =>
+                    router.get(globalThis.location.pathname, { ...filters, per_page: pp, page: 1 }, { preserveState: true, preserveScroll: true }),
+            }}
+        />
     );
 }

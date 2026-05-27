@@ -1,6 +1,7 @@
-import { Contract } from '@/types/contracts';
 import { Button } from '@/components/ui/base/Button';
-import { X, Columns, List, ArrowRight, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Contract } from '@/types/contracts';
+import { ArrowRight, Columns, List, Loader2, X } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 declare const mammoth: any;
@@ -115,12 +116,7 @@ export default function CompareModal({ open, onClose, contract, initialVersion, 
                             <div className="text-[10px] text-gray-400">{contract.contract_no}</div>
                         </div>
                     </div>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={onClose}
-                        className="h-8 w-8 p-0"
-                    >
+                    <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0">
                         <X size={16} />
                     </Button>
                 </div>
@@ -164,7 +160,7 @@ export default function CompareModal({ open, onClose, contract, initialVersion, 
                                 onClick={() => setMode(m)}
                                 className={cn(
                                     'h-7 px-3 text-[11px] transition-all',
-                                    mode === m ? 'bg-black text-white dark:bg-white dark:text-black' : 'text-gray-400'
+                                    mode === m ? 'bg-black text-white dark:bg-white dark:text-black' : 'text-gray-400',
                                 )}
                             >
                                 {m === 'side' ? (
@@ -194,7 +190,7 @@ export default function CompareModal({ open, onClose, contract, initialVersion, 
                 <div className="flex flex-1 overflow-hidden" style={{ minHeight: 0 }}>
                     {loading ? (
                         <div className="flex flex-1 flex-col items-center justify-center gap-3 text-gray-400">
-                            <Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" />
+                            <Loader2 className="text-primary h-10 w-10 animate-spin opacity-20" />
                             <span className="text-[13px]">Memuat file...</span>
                         </div>
                     ) : mode === 'side' ? (

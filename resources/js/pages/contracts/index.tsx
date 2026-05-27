@@ -8,8 +8,10 @@ import { ProfileView } from '@/components/contracts/ProfileView';
 import SendApprovalModal from '@/components/contracts/SendApprovalModal';
 import { ToastProvider, useToast } from '@/components/contracts/Toast';
 import { Button } from '@/components/ui/base/Button';
+import { StatusBadge } from '@/components/ui/data/StatusBadge';
 import { FilterSheet } from '@/components/ui/data/FilterSheet';
-import { Column, TableContract } from '@/components/ui/data/TableContract';
+import { Column, DataTable as TableContract } from '@/components/ui/data/DataTable';
+import { ContractTableSkeleton, ContractCardSkeleton } from '@/components/ui/feedback/ContractSkeleton';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
 import { SearchInput } from '@/components/ui/forms/SearchInput';
 import { LayoutToggle, LayoutType } from '@/components/ui/navigation/LayoutToggle';
@@ -61,60 +63,6 @@ import {
     renderStatusAndStep,
     TypeAndVendorCell,
 } from './components/ContractTableCells';
-function ExpiryBadge({ endDate }: Readonly<{ endDate: string | null }>) {
-    if (!endDate) return null;
-    const end = new Date(endDate);
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    const diffTime = end.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    let color = 'bg-text-main text-surface-base border-surface-border';
-    let Icon = CheckCircle2;
-    let label = `${diffDays} Hari Lagi`;
-
-    if (diffDays < 0) {
-        color = 'bg-danger/10 text-danger border-danger/20';
-        Icon = AlertCircle;
-        label = `Expired ${Math.abs(diffDays)} Hari`;
-    } else if (diffDays <= 30) {
-        color = 'bg-warning text-white border-warning/20';
-        Icon = AlertTriangle;
-    } else if (diffDays <= 90) {
-        color = 'text-text-main border border-surface-border bg-surface-muted/50';
-        Icon = Clock;
-    }
-
-    return (
-        <div className={cn('inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-bold uppercase tracking-wider', color)}>
-            <Icon size={12} strokeWidth={3} />
-            {label}
-        </div>
-    );
-}
-
-const StatusBadge = ({ status }: { status: string }) => {
-    const config: Record<string, { bg: string; dot: string; text: string; label: string }> = {
-        draft: { bg: 'bg-surface-muted', dot: 'bg-text-soft', text: 'text-text-desc', label: 'Draft' },
-        in_review: { bg: 'bg-warning/10', dot: 'bg-warning', text: 'text-warning', label: 'Review' },
-        revision: { bg: 'bg-danger/10', dot: 'bg-danger', text: 'text-danger', label: 'Revisi' },
-        pending: { bg: 'bg-warning/10', dot: 'bg-warning', text: 'text-warning', label: 'Pending' },
-        approved: { bg: 'bg-success/10', dot: 'bg-success', text: 'text-success', label: 'Disetujui' },
-        active: { bg: 'bg-primary/10', dot: 'bg-primary', text: 'text-primary', label: 'Aktif' },
-        expired: { bg: 'bg-danger/10', dot: 'bg-danger', text: 'text-danger', label: 'Expired' },
-        archived: { bg: 'bg-surface-muted', dot: 'bg-text-soft', text: 'text-text-soft', label: 'Arsip' },
-        rejected: { bg: 'bg-danger/10', dot: 'bg-danger', text: 'text-danger', label: 'Ditolak' },
-    };
-
-    const s = config[status as keyof typeof config] || config.draft;
-
-    return (
-        <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-tight', s.bg, s.text)}>
-            <span className={cn('h-1.5 w-1.5 rounded-full', s.dot)} />
-            {s.label}
-        </span>
-    );
-};
 
 const SLACountdown = ({ deadline, status }: Readonly<{ deadline: string | null; status: string }>) => {
     const [timeLeft, setTimeLeft] = useState<string>('');
@@ -174,66 +122,11 @@ const SLACountdown = ({ deadline, status }: Readonly<{ deadline: string | null; 
         </div>
     );
 };
-const ContractInfoCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <div className="flex flex-col">
-        <div className="flex items-center gap-2">
-            <span className="text-sidebar-foreground text-[13px] leading-tight font-semibold">{c.title}</span>
-            {!!c.current_version && (
-                <div className="bg-sidebar-primary flex-shrink-0 rounded px-1.5 py-0.5">
-                    <span className="text-[9px] font-bold text-white uppercase">V{c.current_version}</span>
-                </div>
-            )}
-        </div>
-        <div className="mt-1.5 flex items-center gap-2">
-            <span className="text-sidebar-foreground/40 text-[10px] font-medium tracking-wide uppercase">{c.contract_type}</span>
-            <span className="bg-sidebar-foreground/20 h-1 w-1 rounded-full" />
-            <span className="text-sidebar-foreground/40 text-[10px] font-medium tracking-wide uppercase">{c.vendor?.name || 'No Vendor'}</span>
-        </div>
-    </div>
-);
-
-const DepartmentCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <span className="text-sidebar-foreground/50 text-[11px] font-medium tracking-wide uppercase">{c.initiator?.department_name || 'UMUM'}</span>
-);
-
-const ProgressCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <span className="text-sidebar-foreground/90 text-[10px] font-semibold tracking-tight">
-        {c.progress.done}/{c.progress.total}
-    </span>
-);
 
 const CreatedAtCell = ({ c }: Readonly<{ c: Contract }>) => (
     <span className="text-sidebar-foreground/40 text-[11px] font-medium">{c.created_at}</span>
 );
 
-const ContractNoCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <span className="text-sidebar-primary/70 font-mono text-[10px] font-semibold">{c.contract_no || 'N/A'}</span>
-);
-
-const TitleCell = ({ c }: Readonly<{ c: Contract }>) => <span className="text-sidebar-foreground line-clamp-1 text-[11px] font-semibold">{c.title}</span>;
-
-const TypeCell = ({ c, types }: Readonly<{ c: Contract; types: ContractType[] }>) => {
-    const TYPE_COLORS = [
-        'bg-violet-100 text-violet-700',
-        'bg-primary/10 text-primary border border-primary/20',
-        'bg-cyan-100 text-cyan-700',
-        'bg-teal-100 text-teal-700',
-        'bg-indigo-100 text-indigo-700',
-        'bg-purple-100 text-purple-700',
-    ];
-    const type = types.find((t) => t.id === c.contract_type_id);
-    const colorIdx = type ? type.name.charCodeAt(0) % TYPE_COLORS.length : 0;
-    return (
-        <span className={cn('inline-block rounded-full px-2.5 py-0.5 text-[9px] font-semibold tracking-wide uppercase', TYPE_COLORS[colorIdx])}>
-            {(type?.name || 'N/A').replace('Perjanjian ', '').replace('Addendum / ', '')}
-        </span>
-    );
-};
-
-// Stable cell renderers to satisfy linting
-const renderContractNo = (c: Contract) => <ContractNoCell c={c} />;
-const renderTitle = (c: Contract) => <TitleCell c={c} />;
-const renderStatus = (c: Contract) => <StatusBadge status={c.status} />;
 const renderCreatedAt = (c: Contract) => <CreatedAtCell c={c} />;
 
 const BulkActions = ({
@@ -326,6 +219,7 @@ const RowActions = ({
         </DropdownMenuContent>
     </DropdownMenu>
 );
+
 function ContractPage({
     contracts: contractsPaged,
     meId,
@@ -505,8 +399,8 @@ function ContractPage({
         }
     };
 
-    const canBulkApprove = !!meUser?.is_admin;
-    const canBulkDelete = !!meUser?.is_admin;
+    const canBulkApprove = meUser?.role === 'Admin' || meUser?.role === 'Super Admin' || !!meUser?.is_admin;
+    const canBulkDelete = meUser?.role === 'Admin' || meUser?.role === 'Super Admin' || !!meUser?.is_admin;
 
     const handleBulkApprove = async (rows: Contract[]) => {
         if (!confirm(`Setujui ${rows.length} kontrak terpilih?`)) return;
@@ -566,13 +460,6 @@ function ContractPage({
             />
         ),
         [canBulkApprove, handleBulkApprove, canBulkDelete, handleBulkDelete],
-    );
-
-    const renderRowActions = useCallback(
-        (row: Contract) => (
-            <RowActions c={row} openDetail={openDetail} setSelected={setSelected} setEditOpen={setEditOpen} setDeleteOpen={setDeleteOpen} />
-        ),
-        [openDetail, setSelected, setEditOpen, setDeleteOpen],
     );
 
     const renderTypeAndVendor = useCallback((c: Contract) => <TypeAndVendorCell c={c} types={types} />, [types]);
@@ -656,7 +543,6 @@ function ContractPage({
                             {view === 'profile' && <ProfileView meUser={meUser} showToast={showToast} />}
                             {view !== 'profile' && view !== 'dashboard' && (
                                 <div className="bg-surface-base/20 border-surface-border flex min-h-0 flex-1 flex-col gap-0 overflow-hidden">
-                                    {/* Unified Toolbar — Identical for both modes */}
                                     <div className="border-surface-border bg-surface-base/80 backdrop-blur-md sticky top-0 z-20 flex items-center gap-6 border-b px-5 py-4">
                                         <SearchInput
                                             containerClassName="max-w-sm flex-1"
@@ -664,10 +550,8 @@ function ContractPage({
                                             value={search}
                                             onChange={(e) => setSearch(e.target.value)}
                                         />
-
                                         <div className="ml-auto flex items-center gap-2">
                                             <LayoutToggle value={layout as LayoutType} onChange={(val) => setLayout(val)} />
-
                                             <Button
                                                 variant={activeFiltersCount > 0 ? "primary" : "white"}
                                                 onClick={() => setFilterOpen(true)}
@@ -676,22 +560,17 @@ function ContractPage({
                                                 <Filter size={14} strokeWidth={2.5} />
                                                 Filter
                                                 {activeFiltersCount > 0 && (
-                                                    <span
-                                                        className={cn(
-                                                            'ml-1 flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[9px] font-bold bg-primary-foreground text-primary',
-                                                        )}
-                                                    >
+                                                    <span className="ml-1 flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[9px] font-semibold bg-primary-foreground text-primary">
                                                         {activeFiltersCount}
                                                     </span>
                                                 )}
                                             </Button>
-                                            <Button variant="white" onClick={() => setCreateOpen(true)} className="">
+                                            <Button variant="white" onClick={() => setCreateOpen(true)}>
                                                 <PlusCircle size={16} strokeWidth={2.5} /> Kontrak Baru
                                             </Button>
                                         </div>
                                     </div>
 
-                                    {/* Submission Type Tabs Filter */}
                                     <div className="border-surface-border bg-surface-base/40 border-b px-5 py-2 flex items-center gap-1.5 overflow-x-auto scrollbar-none backdrop-blur-md sticky top-[73px] z-10">
                                         <Button
                                             onClick={() => handleFilterChange({ submission_type_id: undefined, page: 1 })}
@@ -720,6 +599,7 @@ function ContractPage({
                                                 columns={columns}
                                                 data={contractsPaged.data}
                                                 loading={processing}
+                                                skeleton={<ContractTableSkeleton />}
                                                 onRowClick={openDetail}
                                                 onSelectionChange={setSelectedRows}
                                                 selectedRows={selectedRows}
@@ -733,115 +613,97 @@ function ContractPage({
                                                 }}
                                             />
                                         ) : (
-                                            <div className="flex flex-col gap-8">
-                                                <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                                                    {contractsPaged.data.map((c) => (
-                                                        <button
-                                                            key={c.id}
-                                                            onClick={() => openDetail(c)}
-                                                            className="group border-surface-border bg-surface-base/60 backdrop-blur-sm hover:border-primary hover:shadow-primary/5 relative flex cursor-pointer flex-col gap-4 rounded-2xl border p-6 text-left transition-all hover:shadow-2xl focus:ring-2 focus:ring-primary focus:outline-none"
-                                                        >
-                                                            <div className="flex items-start justify-between gap-3">
-                                                                <div className="flex min-w-0 flex-col gap-1">
-                                                                    <span className="group-hover:text-primary text-[10px] font-bold uppercase tracking-wider text-text-soft transition-all">
-                                                                        {c.contract_no || 'No Req'}
-                                                                    </span>
-                                                                    <h3 className="group-hover:text-primary line-clamp-2 text-sm leading-tight font-semibold uppercase tracking-tight text-text-main transition-colors">
-                                                                        {c.title}
-                                                                    </h3>
-                                                                    <span className="mt-0.5 text-[10px] font-medium text-text-desc uppercase italic">
-                                                                        {c.contract_type}
-                                                                    </span>
-                                                                </div>
-                                                                <div className="flex-shrink-0 origin-top-right scale-90">
-                                                                    <StatusBadge status={c.status} />
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="border-surface-border/40 bg-surface-muted/30 group-hover:border-primary/20 flex flex-col gap-3 rounded-xl border p-4 transition-all">
-                                                                <div className="flex items-center justify-between">
-                                                                    <span className="text-[10px] font-semibold uppercase text-text-soft">
-                                                                        Departemen
-                                                                    </span>
-                                                                    <span className="truncate text-[11px] font-semibold uppercase text-text-main">
-                                                                        {c.initiator?.department_name || 'Umum'}
-                                                                    </span>
-                                                                </div>
-                                                                {c.assigned_pic && (
-                                                                    <div className="flex items-center justify-between">
-                                                                        <span className="text-[10px] font-semibold uppercase text-text-soft">
-                                                                            PJ Legal
+                                            processing ? (
+                                                <ContractCardSkeleton />
+                                            ) : (
+                                                <div className="flex flex-col gap-8">
+                                                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                                                        {contractsPaged.data.map((c) => (
+                                                            <button
+                                                                key={c.id}
+                                                                onClick={() => openDetail(c)}
+                                                                className="group border-surface-border bg-surface-base/60 backdrop-blur-sm hover:border-primary hover:shadow-primary/5 relative flex cursor-pointer flex-col gap-4 rounded-2xl border p-6 text-left transition-all hover:shadow-2xl focus:ring-2 focus:ring-primary focus:outline-none"
+                                                            >
+                                                                <div className="flex items-start justify-between gap-3">
+                                                                    <div className="flex min-w-0 flex-col gap-1">
+                                                                        <span className="group-hover:text-primary text-[10px] font-semibold uppercase tracking-wider text-text-soft transition-all">
+                                                                            {c.contract_no || 'No Req'}
                                                                         </span>
-                                                                        <span className="truncate text-[11px] font-semibold uppercase text-text-main">
-                                                                            {c.assigned_pic.name}
+                                                                        <h3 className="group-hover:text-primary line-clamp-2 text-sm leading-tight font-semibold uppercase tracking-tight text-text-main transition-colors">
+                                                                            {c.title}
+                                                                        </h3>
+                                                                        <span className="mt-0.5 text-[10px] font-medium text-text-desc uppercase italic">
+                                                                            {c.contract_type}
                                                                         </span>
                                                                     </div>
-                                                                )}
-                                                                <div className="flex items-center justify-between pt-1 text-[10px] font-semibold uppercase">
-                                                                    <span className="text-text-soft">Progress</span>
-                                                                    <span className="font-semibold text-primary bg-primary/5 px-2 py-0.5 rounded-lg">
-                                                                        {c.progress.done}/{c.progress.total}
-                                                                    </span>
+                                                                    <div className="flex-shrink-0 origin-top-right scale-90">
+                                                                        <StatusBadge status={c.status} />
+                                                                    </div>
                                                                 </div>
-                                                            </div>
 
-                                                            <div className="border-surface-border/50 mt-auto flex items-center justify-end border-t pt-4">
-                                                                <div className="origin-right scale-75">
-                                                                    <SLACountdown deadline={c.sla_deadline ?? null} status={c.status} />
+                                                                <div className="border-surface-border/40 bg-surface-muted/30 group-hover:border-primary/20 flex flex-col gap-3 rounded-xl border p-4 transition-all">
+                                                                    <div className="flex items-center justify-between">
+                                                                        <span className="text-[10px] font-semibold uppercase text-text-soft">Departemen</span>
+                                                                        <span className="truncate text-[11px] font-semibold uppercase text-text-main">{c.initiator?.department_name || 'Umum'}</span>
+                                                                    </div>
+                                                                    {c.assigned_pic && (
+                                                                        <div className="flex items-center justify-between">
+                                                                            <span className="text-[10px] font-semibold uppercase text-text-soft">PJ Legal</span>
+                                                                            <span className="truncate text-[11px] font-semibold uppercase text-text-main">{c.assigned_pic.name}</span>
+                                                                        </div>
+                                                                    )}
+                                                                    <div className="flex items-center justify-between pt-1 text-[10px] font-semibold uppercase">
+                                                                        <span className="text-text-soft">Progress</span>
+                                                                        <span className="font-semibold text-primary bg-primary/5 px-2 py-0.5 rounded-lg">
+                                                                            {c.progress.done}/{c.progress.total}
+                                                                        </span>
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                        </button>
-                                                    ))}
-                                                </div>
 
-                                                <div className="mt-8 mb-10 flex w-full items-center justify-between px-1">
-                                                    <div className="flex items-center gap-4 rounded-xl border border-surface-border bg-surface-muted/40 px-6 py-2 shadow-sm backdrop-blur-sm transition-all duration-500">
-                                                        <div className="text-xs font-bold whitespace-nowrap text-text-desc uppercase tracking-wider">
-                                                            Menampilkan <span className="font-bold text-text-main">{contractsPaged.from} - {contractsPaged.to}</span> dari <span className="font-bold text-text-main">{contractsPaged.total}</span> data
-                                                        </div>
+                                                                <div className="border-surface-border/50 mt-auto flex items-center justify-end border-t pt-4">
+                                                                    <div className="origin-right scale-75">
+                                                                        <SLACountdown deadline={c.sla_deadline ?? null} status={c.status} />
+                                                                    </div>
+                                                                </div>
+                                                            </button>
+                                                        ))}
                                                     </div>
 
-                                                    <div className="flex items-center gap-1.5 rounded-2xl border border-surface-border bg-surface-base/40 p-1.5 shadow-sm backdrop-blur-sm transition-all duration-500">
-                                                        <Button
-                                                            variant="white"
-                                                            size="icon"
-                                                            disabled={contractsPaged.current_page === 1}
-                                                            onClick={() =>
-                                                                router.get(
-                                                                    globalThis.location.pathname,
-                                                                    { ...filters, page: contractsPaged.current_page - 1 },
-                                                                    { preserveState: true },
-                                                                )
-                                                            }
-                                                            className="h-9 w-9 rounded-xl"
-                                                        >
-                                                            <ChevronLeft className="h-4 w-4 text-text-main" />
-                                                        </Button>
-
-                                                        <div className="mx-2 flex items-center gap-2 px-4 h-9 bg-surface-muted/60 rounded-xl border border-surface-border/40">
-                                                            <span className="text-xs font-bold text-primary">{contractsPaged.current_page}</span>
-                                                            <span className="text-xs font-bold text-text-soft">/</span>
-                                                            <span className="text-xs font-bold text-primary">{contractsPaged.last_page || 1}</span>
+                                                    <div className="mt-8 mb-10 flex w-full items-center justify-between px-1">
+                                                        <div className="flex items-center gap-4 rounded-xl border border-surface-border bg-surface-muted/40 px-6 py-2 shadow-sm backdrop-blur-sm transition-all duration-500">
+                                                            <div className="text-xs font-semibold whitespace-nowrap text-text-desc uppercase tracking-wider">
+                                                                Menampilkan <span className="font-semibold text-text-main">{contractsPaged.from} - {contractsPaged.to}</span> dari <span className="font-semibold text-text-main">{contractsPaged.total}</span> data
+                                                            </div>
                                                         </div>
 
-                                                        <Button
-                                                            variant="white"
-                                                            size="icon"
-                                                            disabled={contractsPaged.current_page === contractsPaged.last_page}
-                                                            onClick={() =>
-                                                                router.get(
-                                                                    globalThis.location.pathname,
-                                                                    { ...filters, page: contractsPaged.current_page + 1 },
-                                                                    { preserveState: true },
-                                                                )
-                                                            }
-                                                            className="h-9 w-9 rounded-xl"
-                                                        >
-                                                            <ChevronRight className="h-4 w-4 text-text-main" />
-                                                        </Button>
+                                                        <div className="flex items-center gap-1.5 rounded-2xl border border-surface-border bg-surface-base/40 p-1.5 shadow-sm backdrop-blur-sm transition-all duration-500">
+                                                            <Button
+                                                                variant="white"
+                                                                size="icon"
+                                                                disabled={contractsPaged.current_page === 1}
+                                                                onClick={() => router.get(globalThis.location.pathname, { ...filters, page: contractsPaged.current_page - 1 }, { preserveState: true })}
+                                                                className="h-9 w-9 rounded-xl"
+                                                            >
+                                                                <ChevronLeft className="h-4 w-4 text-text-main" />
+                                                            </Button>
+                                                            <div className="mx-2 flex items-center gap-2 px-4 h-9 bg-surface-muted/60 rounded-xl border border-surface-border/40">
+                                                                <span className="text-xs font-semibold text-primary">{contractsPaged.current_page}</span>
+                                                                <span className="text-xs font-semibold text-text-soft">/</span>
+                                                                <span className="text-xs font-semibold text-primary">{contractsPaged.last_page || 1}</span>
+                                                            </div>
+                                                            <Button
+                                                                variant="white"
+                                                                size="icon"
+                                                                disabled={contractsPaged.current_page === contractsPaged.last_page}
+                                                                onClick={() => router.get(globalThis.location.pathname, { ...filters, page: contractsPaged.current_page + 1 }, { preserveState: true })}
+                                                                className="h-9 w-9 rounded-xl"
+                                                            >
+                                                                <ChevronRight className="h-4 w-4 text-text-main" />
+                                                            </Button>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
+                                            )
                                         )}
                                     </div>
                                 </div>
@@ -860,7 +722,6 @@ function ContractPage({
                 users={users}
                 vendors={vendors}
             />
-            {/* RejectModal was here */}
             <SendApprovalModal
                 open={sendOpen}
                 onClose={() => setSendOpen(false)}
@@ -938,7 +799,7 @@ function ContractPage({
                 onClose={() => setDeleteOpen(false)}
                 onConfirm={handleDelete}
                 title="Hapus Kontrak?"
-                description="Seluruh data dokumen, riwayat, dan chat terkait kontrak ini akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan."
+                description="Seluruh data dokumen, riwayat, dan chat terkait kontrak ini akan dihapus secara permanen."
                 processing={processing}
             />
             <PreviewModal open={previewOpen} onClose={() => setPreviewOpen(false)} title={previewTitle} url={previewUrl} hasFile={previewHasFile} />
@@ -946,36 +807,23 @@ function ContractPage({
                 <div className="bg-surface-base/90 animate-in fade-in zoom-in-95 fixed inset-0 z-[100] flex flex-col backdrop-blur-xl duration-300">
                     <div className="flex h-16 items-center justify-between border-b border-surface-border bg-surface-muted px-6">
                         <div className="flex flex-col">
-                            <h3 className="text-text-main flex items-center gap-2 text-sm font-black uppercase tracking-wider">
+                            <h3 className="text-text-main flex items-center gap-2 text-sm font-semibold uppercase tracking-wider">
                                 <FileText className="size-4 text-primary" /> Export Alur Approval
                             </h3>
-                            <span className="text-text-soft text-[10px] font-bold uppercase tracking-wider">{selected?.contract_no} — Generation Complete</span>
+                            <span className="text-text-soft text-[10px] font-semibold uppercase tracking-wider">{selected?.contract_no} — Generation Complete</span>
                         </div>
                         <div className="flex items-center gap-3">
                             <Button asChild variant="primary" className="h-9">
-                                <a
-                                    href={timelinePdfPreviewUrl}
-                                    download={`Alur_Approval_${selected?.id}.pdf`}
-                                >
+                                <a href={timelinePdfPreviewUrl} download={`Alur_Approval_${selected?.id}.pdf`}>
                                     <Download size={14} /> Download PDF
                                 </a>
                             </Button>
-                            <Button
-                                variant="outline"
-                                className="h-9"
-                                onClick={() => setTimelinePdfPreviewUrl(null)}
-                            >
-                                Tutup
-                            </Button>
+                            <Button variant="outline" className="h-9" onClick={() => setTimelinePdfPreviewUrl(null)}>Tutup</Button>
                         </div>
                     </div>
                     <div className="flex flex-1 justify-center overflow-hidden p-8">
                         <div className="ring-surface-border animate-in slide-in-from-bottom-5 fill-mode-both h-full w-full max-w-[210mm] overflow-hidden rounded-xl bg-white shadow-2xl ring-1 delay-150 duration-500">
-                            <iframe
-                                src={`${timelinePdfPreviewUrl}#toolbar=0&navpanes=0`}
-                                className="h-full w-full border-none"
-                                title="Approval Timeline Preview"
-                            />
+                            <iframe src={`${timelinePdfPreviewUrl}#toolbar=0&navpanes=0`} className="h-full w-full border-none" title="Approval Timeline Preview" />
                         </div>
                     </div>
                 </div>
@@ -1015,70 +863,40 @@ export default function ContractsIndex({
     const meId = auth?.user?.id ?? '';
     const meUser = auth?.user ?? null;
 
-    // Use state to manage current data, but sync with props from Inertia
     const [contractsPaged, setContractsPaged] = useState<PaginatedData<Contract>>(initialContractsPaged);
     const [types, setTypes] = useState<ContractType[]>(initialTypes);
     const [submissionTypes, setSubmissionTypes] = useState<any[]>(initialSubmissionTypes);
     const [metrics, setMetrics] = useState<any>(initialMetrics);
 
-    // Boot loading state: only true if we have NO data AND we are not already showing a specific contract
     const [bootLoading, setBootLoading] = useState(
         initialContractsPaged.data.length === 0 && !initialMetrics && !initialSelectedProp && initialTypes.length === 0,
     );
 
-    // Sync props to state when they change (Inertia partial reloads or navigation)
-    useEffect(() => {
-        setContractsPaged(initialContractsPaged);
-    }, [initialContractsPaged]);
+    useEffect(() => { setContractsPaged(initialContractsPaged); }, [initialContractsPaged]);
+    useEffect(() => { if (initialTypes.length > 0) setTypes(initialTypes); }, [initialTypes]);
+    useEffect(() => { if (initialSubmissionTypes.length > 0) setSubmissionTypes(initialSubmissionTypes); }, [initialSubmissionTypes]);
+    useEffect(() => { if (initialMetrics) setMetrics(initialMetrics); }, [initialMetrics]);
 
-    useEffect(() => {
-        if (initialTypes.length > 0) setTypes(initialTypes);
-    }, [initialTypes]);
-
-    useEffect(() => {
-        if (initialSubmissionTypes.length > 0) setSubmissionTypes(initialSubmissionTypes);
-    }, [initialSubmissionTypes]);
-
-    useEffect(() => {
-        if (initialMetrics) setMetrics(initialMetrics);
-    }, [initialMetrics]);
-
-    // Initial data fetch ONLY if props are truly missing and we are on a list view
     useEffect(() => {
         const hasCriticalData = initialContractsPaged.data.length > 0 || initialSelectedProp || initialMetrics;
-
-        if (hasCriticalData && initialTypes.length > 0) {
-            setBootLoading(false);
-            return;
-        }
-
-        // If we really need to fetch (e.g. direct URL visit with partial props)
-        if (hasCriticalData) {
-            setBootLoading(false);
-        } else {
+        if (hasCriticalData && initialTypes.length > 0) { setBootLoading(false); return; }
+        if (hasCriticalData) { setBootLoading(false); }
+        else {
             setBootLoading(true);
             Promise.all([
                 contractApi.list({ view: currentView }),
                 contractApi.getTypes(),
-                axios
-                    .get('/api/contracts/submission-types')
-                    .then((res) => res.data)
-                    .catch(() => []),
-                axios
-                    .post('/admin/api/reports/data', {})
-                    .then((res) => res.data)
-                    .catch(() => null),
-            ])
-                .then(([cData, tData, sData, mData]) => {
-                    setContractsPaged(cData as any);
-                    setTypes(tData);
-                    setSubmissionTypes(sData);
-                    setMetrics(mData);
-                    setBootLoading(false);
-                })
-                .catch(() => setBootLoading(false));
+                axios.get('/api/contracts/submission-types').then((res) => res.data).catch(() => []),
+                axios.post('/admin/api/reports/data', {}).then((res) => res.data).catch(() => null),
+            ]).then(([cData, tData, sData, mData]) => {
+                setContractsPaged(cData as any);
+                setTypes(tData);
+                setSubmissionTypes(sData);
+                setMetrics(mData);
+                setBootLoading(false);
+            }).catch(() => setBootLoading(false));
         }
-    }, [currentView]); // Only re-run if view changes drastically
+    }, [currentView]);
 
     return (
         <>
@@ -1093,9 +911,7 @@ export default function ContractsIndex({
                             </div>
                         </div>
                         <div className="flex flex-col items-center gap-2">
-                            <span className="animate-pulse text-xs font-black tracking-wider text-text-desc uppercase">
-                                Memuat Sistem Kontrak
-                            </span>
+                            <span className="animate-pulse text-xs font-semibold tracking-wider text-text-desc uppercase">Memuat Sistem Kontrak</span>
                             <div className="h-0.5 w-48 overflow-hidden rounded-full bg-surface-muted">
                                 <div className="animate-progress h-full w-full origin-left bg-primary" />
                             </div>
