@@ -29,10 +29,11 @@ class AdminController extends Controller
     {
         $query = User::with('department')
             ->when($request->search, function ($q, $search) {
+                $search = strtolower($search);
                 $q->where(function ($qq) use ($search) {
-                    $qq->where('name', 'ilike', "%{$search}%")
-                        ->orWhere('email', 'ilike', "%{$search}%")
-                        ->orWhere('username', 'ilike', "%{$search}%");
+                    $qq->where(\Illuminate\Support\Facades\DB::raw('LOWER(name)'), 'like', "%{$search}%")
+                        ->orWhere(\Illuminate\Support\Facades\DB::raw('LOWER(email)'), 'like', "%{$search}%")
+                        ->orWhere(\Illuminate\Support\Facades\DB::raw('LOWER(username)'), 'like', "%{$search}%");
                 });
             })
             ->when($request->role, function ($q, $role) {
@@ -127,9 +128,10 @@ class AdminController extends Controller
     {
         $query = Role::query()
             ->when($request->search, function ($q, $search) {
+                $search = strtolower($search);
                 $q->where(function ($qq) use ($search) {
-                    $qq->where('name', 'ilike', "%{$search}%")
-                        ->orWhere('description', 'ilike', "%{$search}%");
+                    $qq->where(\Illuminate\Support\Facades\DB::raw('LOWER(name)'), 'like', "%{$search}%")
+                        ->orWhere(\Illuminate\Support\Facades\DB::raw('LOWER(description)'), 'like', "%{$search}%");
                 });
             })
             ->when($request->created_from, function ($q, $from) {
@@ -210,7 +212,27 @@ class AdminController extends Controller
         return back()->with('success', count($ids) . ' role berhasil dihapus.');
     }
 
-    public function roleConfig(Role $role, Request $request)
+    public function accessMapping(Request $request, ?Role $role = null)
+    {
+        $role = $role ?? Role::orderBy('name')->first();
+        if (! $role) {
+            return redirect()->route('admin.roles');
+        }
+
+        return $this->roleConfig($role, $request, 'access');
+    }
+
+    public function navigationMapping(Request $request, ?Role $role = null)
+    {
+        $role = $role ?? Role::orderBy('name')->first();
+        if (! $role) {
+            return redirect()->route('admin.roles');
+        }
+
+        return $this->roleConfig($role, $request, 'navigation');
+    }
+
+    public function roleConfig(Role $role, Request $request, ?string $forcedTab = null)
     {
         // 1. Get Modules with Access for the Matrix Tab
         $modules = Module::with(['moduleGroup', 'accessModules' => function ($query) use ($role) {
@@ -225,24 +247,39 @@ class AdminController extends Controller
         });
 
         // 2. Get Navigation Structure for the Drag & Drop Tab
-        $groups = ModuleGroup::orderBy('name')->get()->map(function ($group) use ($role) {
-            $group->modules = Module::whereHas('accessModules', function ($q) use ($role, $group) {
-                $q->where('role_id', $role->id)
-                    ->where('module_group_id', $group->id)
-                    ->where('can_read', true);
-            })->orderBy('name')->get();
+        $groups = ModuleGroup::select('m_module_groups.*')
+            ->leftJoin('m_role_module_groups', function ($join) use ($role) {
+                $join->on('m_module_groups.id', '=', 'm_role_module_groups.module_group_id')
+                    ->where('m_role_module_groups.role_id', '=', $role->id);
+            })
+            ->orderByRaw('COALESCE(m_role_module_groups.sequence, 9999) ASC')
+            ->orderBy('m_module_groups.name')
+            ->get()
+            ->map(function ($group) use ($role) {
+                $group->modules = Module::select('m_modules.*')
+                    ->join('m_access_modules', 'm_modules.id', '=', 'm_access_modules.module_id')
+                    ->where('m_access_modules.role_id', $role->id)
+                    ->where('m_access_modules.module_group_id', $group->id)
+                    ->where('m_access_modules.can_read', true)
+                    ->orderByRaw('COALESCE(m_access_modules.sequence, 9999) ASC')
+                    ->orderBy('m_modules.name')
+                    ->get();
 
-            return $group;
-        })->values();
+                return $group;
+            })->values();
 
         $allModules = Module::orderBy('name')->get();
 
+        $allRoles = Role::orderBy('name')->get();
+
         return Inertia::render('admin/role-config', [
             'role' => $role,
+            'roles' => $allRoles,
             'modules' => $modules,
             'navigation' => $groups,
             'allModules' => $allModules,
-            'defaultTab' => $request->query('tab', 'access'),
+            'defaultTab' => $forcedTab ?? $request->query('tab', 'access'),
+            'isIndependent' => ! is_null($forcedTab),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Manajemen Role', 'href' => route('admin.roles'), 'icon' => 'ShieldCheck'],

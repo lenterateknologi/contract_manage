@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/base/Label';
 
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogTitle, DialogTrigger } from '@/components/ui/overlays/Dialog';
 
-export default function DeleteUser() {
+export default function DeleteUser({ className }: { className?: string }) {
     const passwordInput = useRef<HTMLInputElement>(null);
     const { data, setData, delete: destroy, processing, reset, errors, clearErrors } = useForm({ password: '' });
 
@@ -30,67 +30,56 @@ export default function DeleteUser() {
     };
 
     return (
-        <div className="max-w-xl space-y-4">
-            <div className="space-y-1">
-                <h3 className="text-sm font-black tracking-tighter text-slate-900 uppercase">Delete account</h3>
-                <p className="text-[10px] font-medium text-slate-400 italic">Delete your account and all of its resources permanently.</p>
-            </div>
+        <Dialog>
+            <DialogTrigger asChild>
+                <button
+                    type="button"
+                    className={className || "text-xs font-semibold text-text-soft hover:text-danger underline cursor-pointer transition-colors"}
+                >
+                    Close Account
+                </button>
+            </DialogTrigger>
+            <DialogContent className="bg-card border border-surface-border rounded-xl shadow-xl max-w-md p-6">
+                <DialogTitle className="text-lg font-bold text-text-main">
+                    Apakah Anda yakin ingin menghapus akun?
+                </DialogTitle>
+                <DialogDescription className="text-xs text-text-soft mt-2 leading-relaxed">
+                    Setelah akun Anda dihapus, semua data dan sumber daya di dalamnya akan terhapus secara permanen. Silakan masukkan password Anda untuk mengonfirmasi penghapusan akun secara permanen.
+                </DialogDescription>
+                <form className="space-y-4 mt-4" onSubmit={deleteUser}>
+                    <div className="grid gap-2">
+                        <Label htmlFor="password" className="sr-only">
+                            Password
+                        </Label>
 
-            <div className="rounded-xl border border-red-200 bg-red-50/50 p-4 transition-all hover:bg-red-50">
-                <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-                    <div className="space-y-0.5">
-                        <p className="text-[11px] font-black text-red-600 uppercase">Warning Zone</p>
-                        <p className="text-[10px] font-medium text-red-500">Please proceed with caution, this cannot be undone.</p>
+                        <Input
+                            id="password"
+                            type="password"
+                            name="password"
+                            ref={passwordInput}
+                            value={data.password}
+                            onChange={(e) => setData('password', e.target.value)}
+                            placeholder="Masukkan Password Anda"
+                            autoComplete="current-password"
+                            className="h-10 rounded-lg border-surface-border"
+                        />
+
+                        <InputError message={errors.password} />
                     </div>
 
-                    <Dialog>
-                        <DialogTrigger asChild>
-                            <Button variant="destructive" className="h-9 rounded-lg px-4 text-xs font-black uppercase">
-                                Delete account
+                    <DialogFooter className="mt-6 flex justify-end gap-2">
+                        <DialogClose asChild>
+                            <Button variant="secondary" onClick={closeModal} className="h-10 rounded-lg text-xs font-bold px-4">
+                                Batal
                             </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogTitle>Are you sure you want to delete your account?</DialogTitle>
-                            <DialogDescription>
-                                Once your account is deleted, all of its resources and data will also be permanently deleted. Please enter your
-                                password to confirm you would like to permanently delete your account.
-                            </DialogDescription>
-                            <form className="space-y-6" onSubmit={deleteUser}>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="password" className="sr-only">
-                                        Password
-                                    </Label>
+                        </DialogClose>
 
-                                    <Input
-                                        id="password"
-                                        type="password"
-                                        name="password"
-                                        ref={passwordInput}
-                                        value={data.password}
-                                        onChange={(e) => setData('password', e.target.value)}
-                                        placeholder="Password"
-                                        autoComplete="current-password"
-                                    />
-
-                                    <InputError message={errors.password} />
-                                </div>
-
-                                <DialogFooter>
-                                    <DialogClose asChild>
-                                        <Button variant="secondary" onClick={closeModal}>
-                                            Cancel
-                                        </Button>
-                                    </DialogClose>
-
-                                    <Button variant="destructive" disabled={processing} asChild>
-                                        <button type="submit">Delete account</button>
-                                    </Button>
-                                </DialogFooter>
-                            </form>
-                        </DialogContent>
-                    </Dialog>
-                </div>
-            </div>
-        </div>
+                        <Button variant="destructive" disabled={processing} className="h-10 rounded-lg text-xs font-bold px-4" asChild>
+                            <button type="submit">Hapus Akun</button>
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }

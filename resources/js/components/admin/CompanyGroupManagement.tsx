@@ -1,6 +1,7 @@
 import { useToast } from '@/components/contracts/Toast';
 import { Button } from '@/components/ui/base/Button';
-import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
+import { Column, DataTable } from '@/components/ui/data/DataTable';
+import { ExcelActions } from '@/components/ui/data/ExcelActions';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -12,15 +13,16 @@ import { FormSection, ManagementForm } from './ManagementForm';
 
 interface CompanyGroupManagementProps {
     groups: any;
+    regions: any;
     filters: any;
 }
 
 const GROUP_COLORS = [
-    'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400',
-    'bg-teal-100 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400',
-    'bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400',
-    'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
-    'bg-cyan-100 text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-400',
+    'bg-primary-muted text-primary',
+    'bg-success/10 text-success',
+    'bg-info/10 text-info',
+    'bg-primary/10 text-primary',
+    'bg-warning/10 text-warning',
 ];
 
 function groupColor(name: string) {
@@ -40,12 +42,12 @@ const GroupCell = ({ name }: Readonly<{ name: string }>) => (
             <Users size={18} />
         </div>
         <div className="flex min-w-0 flex-col">
-            <span className="mb-0.5 truncate text-sm leading-tight font-bold tracking-wide text-slate-900 dark:text-slate-100">{name}</span>
+            <span className="mb-0.5 truncate text-sm leading-tight font-semibold tracking-wide text-text-main">{name}</span>
         </div>
     </div>
 );
 
-export function CompanyGroupManagement({ groups, filters }: Readonly<CompanyGroupManagementProps>) {
+export function CompanyGroupManagement({ groups, regions, filters }: Readonly<CompanyGroupManagementProps>) {
     const { showToast } = useToast();
     const { canCreate, canUpdate, canDelete } = usePermissions('ADMIN_GROUPS');
     const [isFormView, setIsFormView] = React.useState(false);
@@ -68,6 +70,30 @@ export function CompanyGroupManagement({ groups, filters }: Readonly<CompanyGrou
         }
     }, [filters.action, filters.id]);
 
+    const filterConfig = useMemo(
+        () => [
+            {
+                label: 'Wilayah / Region',
+                key: 'region_id',
+                type: 'searchable',
+                options: (regions || []).map((r: any) => ({ label: r.name, value: r.id })),
+            },
+        ],
+        [regions],
+    );
+
+    const handleFilterChange = (newFilters: Record<string, any>) => {
+        router.get(
+            globalThis.location.pathname,
+            {
+                ...filters,
+                ...newFilters,
+                page: 1,
+            },
+            { preserveState: true, replace: true },
+        );
+    };
+
     const columns = useMemo<Column<any>[]>(
         () => [
             {
@@ -78,13 +104,13 @@ export function CompanyGroupManagement({ groups, filters }: Readonly<CompanyGrou
             {
                 header: 'Kode',
                 accessorKey: 'code',
-                cell: (row) => <span className="text-muted-foreground text-sm font-medium tracking-wide dark:text-slate-300/80">{row.code}</span>,
+                cell: (row) => <span className="text-text-desc text-sm font-medium tracking-wide">{row.code}</span>,
             },
             {
                 header: 'Deskripsi',
                 accessorKey: 'description',
                 cell: (row) => (
-                    <span className="text-muted-foreground line-clamp-1 max-w-[300px] text-sm font-medium tracking-wide dark:text-slate-300/80">
+                    <span className="text-text-desc line-clamp-1 max-w-[300px] text-sm font-medium tracking-wide">
                         {row.description || '—'}
                     </span>
                 ),
@@ -93,7 +119,7 @@ export function CompanyGroupManagement({ groups, filters }: Readonly<CompanyGrou
                 header: 'Jumlah Company',
                 accessorKey: 'companies_count',
                 cell: (row) => (
-                    <span className="text-muted-foreground text-sm font-medium tracking-wide dark:text-slate-300/80">
+                    <span className="text-text-desc text-sm font-medium tracking-wide">
                         {row.companies?.length || 0} Company
                     </span>
                 ),
@@ -157,7 +183,7 @@ export function CompanyGroupManagement({ groups, filters }: Readonly<CompanyGrou
                             type="button"
                             variant="ghost"
                             onClick={() => setIsConfirmOpen(true)}
-                            className="h-10 rounded-xl border border-rose-500/20 px-4 text-xs font-bold text-rose-500 transition-all duration-200 select-none hover:bg-rose-500 hover:text-white active:scale-95 dark:hover:bg-rose-500/20"
+                            className="border-danger/20 px-4 text-xs text-danger transition-all duration-200 hover:bg-danger hover:text-white"
                         >
                             <Trash2 size={15} className="mr-2" /> Hapus
                         </Button>
@@ -219,24 +245,24 @@ export function CompanyGroupManagement({ groups, filters }: Readonly<CompanyGrou
                                             variant="white"
                                             size="sm"
                                             onClick={() => router.get('/admin/companies', { action: 'create', company_group_id: editingGroup.id })}
-                                            className="border-primary/10 bg-primary/5 text-primary hover:bg-primary h-8 gap-2 rounded-lg border text-[10px] font-bold transition-all hover:text-white"
+                                            className="border-surface-border bg-surface-muted text-primary hover:bg-primary gap-2 border text-[10px] transition-all hover:text-white"
                                         >
                                             <Plus size={12} /> Tambah Company
                                         </Button>
                                     }
                                 >
-                                    <div className="divide-primary/5 border-primary/10 bg-primary/[0.02] divide-y rounded-xl border dark:bg-white/[0.02]">
+                                    <div className="divide-surface-border border-surface-border bg-surface-muted/50 divide-y rounded-xl border">
                                         {editingGroup.companies?.length > 0 ? (
                                             editingGroup.companies.map((company: any) => (
                                                 <div
                                                     key={company.id}
-                                                    className="hover:bg-primary/[0.04] flex items-center justify-between p-4 transition-colors"
+                                                    className="hover:bg-primary/5 flex items-center justify-between p-4 transition-colors"
                                                 >
                                                     <div className="flex flex-col">
-                                                        <span className="text-primary text-xs font-bold tracking-wide uppercase dark:text-white">
+                                                        <span className="text-text-main text-xs font-bold tracking-wide uppercase">
                                                             {company.name}
                                                         </span>
-                                                        <span className="text-primary/40 text-[10px] font-medium uppercase dark:text-white/40">
+                                                        <span className="text-text-desc text-[10px] font-medium uppercase">
                                                             {company.code} • {company.region?.name || 'GLOBAL'}
                                                         </span>
                                                     </div>
@@ -245,7 +271,7 @@ export function CompanyGroupManagement({ groups, filters }: Readonly<CompanyGrou
                                                         variant="ghost"
                                                         size="sm"
                                                         onClick={() => router.get('/admin/companies', { action: 'edit', id: company.id })}
-                                                        className="text-primary/60 hover:text-primary h-8 rounded-lg text-[10px] font-bold uppercase"
+                                                        className="text-text-desc hover:text-primary text-[10px]"
                                                     >
                                                         Kelola
                                                     </Button>
@@ -263,16 +289,16 @@ export function CompanyGroupManagement({ groups, filters }: Readonly<CompanyGrou
                     </div>
 
                     <div className="flex flex-col gap-8 md:col-span-4">
-                        <div className="border-border/80 bg-muted/20 group relative overflow-hidden rounded-2xl border p-6 shadow-sm backdrop-blur-sm transition-all duration-200 select-none dark:border-slate-800/80 dark:bg-slate-900/40">
+                        <div className="border-surface-border bg-surface-muted/40 group relative overflow-hidden rounded-2xl border p-6 shadow-sm backdrop-blur-sm transition-all duration-200 select-none">
                             <div className="absolute top-0 right-0 p-4 opacity-5 transition-opacity duration-200 group-hover:opacity-10">
                                 <Users size={80} strokeWidth={1} />
                             </div>
                             <div className="relative z-10 mb-4 flex items-center gap-3">
-                                <span className="text-xs font-bold tracking-wider text-slate-900 uppercase dark:text-slate-100">
+                                <span className="text-xs font-bold tracking-wider text-text-main uppercase">
                                     Master Hierarchy
                                 </span>
                             </div>
-                            <p className="text-muted-foreground relative z-10 text-xs leading-relaxed font-medium dark:text-slate-400">
+                            <p className="text-text-desc relative z-10 text-xs leading-relaxed font-medium">
                                 Company Group adalah level tertinggi dalam hirarki organisasi. Satu Group dapat membawahi beberapa Perusahaan (PT) di
                                 berbagai wilayah.
                             </p>
@@ -284,52 +310,71 @@ export function CompanyGroupManagement({ groups, filters }: Readonly<CompanyGrou
     }
 
     return (
-        <div className="bg-card/40 border-border/60 animate-in fade-in m-5 rounded-2xl border p-6 shadow-sm backdrop-blur-sm duration-200 select-none dark:border-slate-800/60 dark:bg-slate-900/20">
-            <TableMasterData
-                title="Database Group Perusahaan"
-                columns={columns}
-                borderless={true}
-                data={Array.isArray(groups) ? groups : groups?.data || []}
-                searchPlaceholder="Cari group..."
-                searchValue={filters.search || ''}
-                onSearchChange={(v: string) =>
-                    router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })
-                }
-                headerActions={
-                    canCreate && (
+        <DataTable
+            title="Database Group Perusahaan"
+            columns={columns}
+            borderless={true}
+            data={Array.isArray(groups) ? groups : groups?.data || []}
+            searchPlaceholder="Cari group..."
+            searchValue={filters.search || ''}
+            onSearchChange={(v: string) =>
+                router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })
+            }
+            filters={filterConfig as any}
+            activeFilters={filters}
+            onFilterChange={handleFilterChange}
+            headerActions={
+                <div className="flex items-center gap-2">
+                    <ExcelActions
+                        exportRoute="admin.company-groups.export"
+                        importRoute="admin.company-groups.import"
+                        label="Group"
+                    />
+                    {canCreate && (
                         <Button
                             variant="white"
                             onClick={openCreate}
-                            className="border-border bg-card text-foreground hover:bg-muted/60 hover:border-border h-10 gap-2 rounded-xl border px-5 text-xs font-bold tracking-wide shadow-sm transition-all duration-200 select-none hover:shadow-md dark:bg-slate-900/60 dark:hover:bg-slate-800/60"
                         >
                             <Plus size={15} className="text-primary" /> Tambah Group
                         </Button>
-                    )
-                }
-                onRowClick={openEdit}
-                bulkActions={
-                    canDelete
-                        ? [
-                              {
-                                  label: 'Hapus Terpilih',
-                                  icon: Trash2,
-                                  variant: 'destructive',
-                                  onClick: (ids: string[] | number[]) => {
-                                      if (confirm(`Hapus ${ids.length} group terpilih?`)) {
-                                          router.post(
-                                              '/admin/company-groups/bulk-delete',
-                                              { ids },
-                                              {
-                                                  onSuccess: () => showToast(`${ids.length} group telah dihapus`, 'success'),
-                                              },
-                                          );
-                                      }
-                                  },
+                    )}
+                </div>
+            }
+            onRowClick={openEdit}
+            bulkActions={
+                canDelete
+                    ? [
+                          {
+                              label: 'Hapus Terpilih',
+                              icon: Trash2,
+                              variant: 'destructive',
+                              onClick: (ids: string[] | number[]) => {
+                                  if (confirm(`Hapus ${ids.length} group terpilih?`)) {
+                                      router.post(
+                                          '/admin/company-groups/bulk-delete',
+                                          { ids },
+                                          {
+                                              onSuccess: () => showToast(`${ids.length} group telah dihapus`, 'success'),
+                                          },
+                                      );
+                                  }
                               },
-                          ]
-                        : undefined
-                }
-            />
-        </div>
+                          },
+                      ]
+                    : undefined
+            }
+            pagination={{
+                currentPage: groups.current_page || 1,
+                lastPage: groups.last_page || 1,
+                total: groups.total || 0,
+                from: groups.from || 1,
+                to: groups.to || 1,
+                perPage: groups.per_page || 10,
+                onPageChange: (page: number) =>
+                    router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                onPerPageChange: (pp: number) =>
+                    router.get(globalThis.location.pathname, { ...filters, per_page: pp, page: 1 }, { preserveState: true, preserveScroll: true }),
+            }}
+        />
     );
 }

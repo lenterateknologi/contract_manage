@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "positions": {
+    "table-m_workflows": {
+      "x": 1130.2170992784631,
+      "y": 1763.1253411275916
+    },
+    "table-m_workflow_steps": {
+      "x": 271,
+      "y": 698
+    },
+    "table-m_workflow_step_actions": {
+      "x": -61.67019602963154,
+      "y": 1641.1885302681135
+    },
+    "table-m_master_actions": {
+      "x": 562.6512978353899,
+      "y": 1467.961519775091
+    },
+    "table-m_workflow_step_roles": {
+      "x": -102.21645364275537,
+      "y": 466.69318099755014
+    },
+    "table-m_workflow_step_departments": {
+      "x": 248.6672380092627,
+      "y": 337.4780583058363
+    },
+    "table-m_workflow_step_users": {
+      "x": -99.9902055036206,
+      "y": 795.7708320412147
+    },
+    "table-m_workflow_initiator_roles": {
+      "x": 307.0845867187394,
+      "y": 1954.7386135748607
+    },
+    "table-m_workflow_initiator_departments": {
+      "x": 589.0845867187394,
+      "y": 2076.2059402717186
+    },
+    "table-m_workflow_initiator_users": {
+      "x": 850.1436715664687,
+      "y": 1495.132512559724
+    },
+    "table-m_access_modules": {
+      "x": 1170.4863052982555,
+      "y": 573.0325320859595
+    },
+    "table-m_modules": {
+      "x": 1677.0977753278983,
+      "y": 911.3859586291221
+    },
+    "table-m_module_groups": {
+      "x": 1938.5864728973688,
+      "y": 1758.2832196887732
+    },
+    "table-m_role_module_groups": {
+      "x": 1075.4750028677263,
+      "y": 1085.716780311227
+    }
+  }
+}

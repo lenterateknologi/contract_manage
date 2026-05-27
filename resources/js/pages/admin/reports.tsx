@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/base/Button';
-import { FilterCategory, FilterSheet } from '@/components/ui/data/FilterSheet';
+import { FilterCategory, FilterPopover } from '@/components/ui/data/FilterPopover';
 import { cn } from '@/lib/utils';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
@@ -30,7 +30,6 @@ export default function ReportsPage() {
     const [data, setData] = useState<ReportData | null>(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'contracts' | 'audit'>('contracts');
-    const [isFilterOpen, setIsFilterOpen] = useState(false);
 
     // Filters state - using unified keys
     const [activeFilters, setActiveFilters] = useState<Record<string, any>>({
@@ -66,11 +65,6 @@ export default function ReportsPage() {
             }
             return next;
         });
-    };
-
-    const applyFilters = () => {
-        fetchData(activeFilters);
-        setIsFilterOpen(false);
     };
 
     const resetFilters = () => {
@@ -167,18 +161,38 @@ export default function ReportsPage() {
 
                 <div className="flex items-center justify-between border-t border-slate-100 pt-4">
                     <div className="flex items-center gap-4">
-                        <Button
-                            onClick={() => setIsFilterOpen(true)}
-                            className={cn(
-                                'h-9 rounded-none border px-5 text-[10px] font-black tracking-[0.2em] uppercase transition-all',
-                                activeFilterCount > 0
-                                    ? 'border-black bg-black text-white hover:bg-slate-800'
-                                    : 'border-slate-200 bg-white text-slate-600 hover:border-black hover:bg-slate-50 hover:text-black',
-                            )}
+                        <FilterPopover
+                            categories={filterCategories}
+                            activeFilters={activeFilters}
+                            onFilterChange={(key, val) => {
+                                const nextFilters = { ...activeFilters, [key]: val };
+                                setActiveFilters(nextFilters);
+                                fetchData(nextFilters);
+                            }}
+                            onReset={() => {
+                                const clear = {
+                                    date_from: '',
+                                    date_to: '',
+                                    contract_type_ids: [],
+                                    creator_ids: [],
+                                    involved_ids: [],
+                                };
+                                setActiveFilters(clear);
+                                fetchData(clear);
+                            }}
                         >
-                            <ListFilter size={14} className="mr-2" />
-                            FILTER {activeFilterCount > 0 && `(${activeFilterCount})`}
-                        </Button>
+                            <Button
+                                className={cn(
+                                    'h-9 rounded-none border px-5 text-[10px] font-black tracking-[0.2em] uppercase transition-all',
+                                    activeFilterCount > 0
+                                        ? 'border-black bg-black text-white hover:bg-slate-800'
+                                        : 'border-slate-200 bg-white text-slate-600 hover:border-black hover:bg-slate-50 hover:text-black',
+                                )}
+                            >
+                                <ListFilter size={14} className="mr-2" />
+                                FILTER {activeFilterCount > 0 && `(${activeFilterCount})`}
+                            </Button>
+                        </FilterPopover>
 
                         {activeFilterCount > 0 && (
                             <button
@@ -242,17 +256,7 @@ export default function ReportsPage() {
                 )}
             </div>
 
-            <FilterSheet
-                isOpen={isFilterOpen}
-                onOpenChange={setIsFilterOpen}
-                title="FILTER LAPORAN"
-                description="Sesuaikan kriteria data untuk rekapitulasi dan audit trail."
-                categories={filterCategories}
-                activeFilters={activeFilters}
-                onFilterChange={handleFilterChange}
-                onReset={resetFilters}
-                applyText="TERAPKAN FILTER"
-            />
+            {/* FilterPopover is now used as a wrapper for the filter button above */}
         </div>
     );
 }

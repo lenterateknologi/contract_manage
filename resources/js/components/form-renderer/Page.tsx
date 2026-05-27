@@ -45,7 +45,7 @@ export const Page: React.FC<PageProps> = ({
                 {/* Margin Visual Guides */}
                 {showMargins && (
                     <div
-                        className="pointer-events-none absolute inset-0 border border-dashed border-blue-200 opacity-50 print:hidden"
+                        className="pointer-events-none absolute inset-0 border border-dashed border-surface-border opacity-50 print:hidden"
                         style={{
                             top: `${margins.top}mm`,
                             bottom: `${margins.bottom}mm`,

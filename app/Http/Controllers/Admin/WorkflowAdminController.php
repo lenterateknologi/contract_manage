@@ -24,8 +24,11 @@ class WorkflowAdminController extends Controller
     {
         $query = Workflow::with(['contractType', 'steps.approverRoles', 'steps.approverDepartments', 'steps.approverUsers', 'initiatorRolesData', 'initiatorDepartmentsData', 'initiatorUsersData'])
             ->when($request->search, function ($q, $search) {
-                $q->where('name', 'ilike', "%{$search}%")
-                    ->orWhere('description', 'ilike', "%{$search}%");
+                $search = strtolower($search);
+                $q->where(function ($qq) use ($search) {
+                    $qq->where(\Illuminate\Support\Facades\DB::raw('LOWER(name)'), 'like', "%{$search}%")
+                        ->orWhere(\Illuminate\Support\Facades\DB::raw('LOWER(description)'), 'like', "%{$search}%");
+                });
             })
             ->when($request->contract_type_id, function ($q, $type) {
                 $q->whereIn('contract_type_id', (array) $type);

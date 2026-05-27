@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/base/Button';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, Save, ChevronsUp } from 'lucide-react';
+import { ArrowLeft, ChevronsUp, Loader2, Save } from 'lucide-react';
 import React from 'react';
 
 interface ManagementFormProps {
@@ -29,20 +29,23 @@ export function ManagementForm({
     onCollapseAll,
 }: ManagementFormProps) {
     return (
-        <div className="animate-in fade-in slide-in-from-right-5 bg-card border-border/60 text-foreground m-5 flex flex-col overflow-hidden rounded-2xl border font-sans antialiased shadow-sm" style={{ maxHeight: 'calc(100svh - 2.5rem)' }}>
+        <div
+            className="animate-in fade-in slide-in-from-right-5 bg-surface-base border-surface-border text-text-main m-5 flex flex-col overflow-hidden rounded-2xl border font-sans antialiased shadow-sm"
+            style={{ maxHeight: 'calc(100svh - 2.5rem)' }}
+        >
             {/* COMPACT STICKY HEADER */}
-            <div className="sticky top-0 z-50 border-border/60 bg-muted/95 backdrop-blur supports-[backdrop-filter]:bg-muted/65 flex shrink-0 items-center justify-between border-b px-6 py-4">
+            <div className="border-surface-border bg-surface-muted/95 sticky top-0 z-50 flex shrink-0 items-center justify-between border-b px-6 py-4 backdrop-blur">
                 <div className="flex items-center gap-3">
-                    <Button variant="ghost" size="icon" className="hover:bg-muted h-8 w-8 shrink-0 rounded-xl" onClick={onClose}>
+                    <Button variant="ghost" size="icon" className="hover:bg-surface-muted h-8 w-8 shrink-0 rounded-xl" onClick={onClose}>
                         <ArrowLeft size={16} />
                     </Button>
 
                     <div className="flex flex-col gap-0.5">
                         <div className="flex items-center gap-2">
-                            <h1 className="text-foreground text-base font-bold tracking-tight">{title}</h1>
+                            <h1 className="text-text-main text-base font-black tracking-tight uppercase">{title}</h1>
                             {isEdit && <div className="bg-primary h-1.5 w-1.5 animate-pulse rounded-full" />}
                         </div>
-                        {subtitle && <p className="text-muted-foreground text-xs font-medium">{subtitle}</p>}
+                        {subtitle && <p className="text-text-desc text-[10px] font-bold tracking-wider uppercase">{subtitle}</p>}
                     </div>
                 </div>
 
@@ -52,7 +55,7 @@ export function ManagementForm({
                             variant="ghost"
                             size="icon"
                             onClick={onCollapseAll}
-                            className="hover:bg-slate-100 dark:hover:bg-slate-800 h-9 w-9 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                            className="hover:bg-surface-muted text-text-desc hover:text-text-main h-9 w-9 rounded-xl"
                             title="Tutup Semua Expand"
                         >
                             <ChevronsUp size={16} />
@@ -63,10 +66,10 @@ export function ManagementForm({
                         variant="primary"
                         onClick={onSave}
                         disabled={processing || (!isDirty && isEdit)}
-                        className="h-9 rounded-xl px-5 text-xs font-semibold shadow-sm"
+                        className="h-9 rounded-xl px-5 text-[10px] font-black uppercase shadow-sm"
                     >
                         {processing ? (
-                            <div className="border-primary-foreground/20 border-t-primary-foreground h-4 w-4 animate-spin rounded-full border-2" />
+                            <Loader2 size={14} className="animate-spin" />
                         ) : (
                             <div className="flex items-center gap-1.5">
                                 <Save size={14} />
@@ -78,7 +81,7 @@ export function ManagementForm({
             </div>
 
             {/* COMPACT FORM BODY */}
-            <div className="bg-card flex-1 overflow-y-auto p-6 md:p-8">
+            <div className="bg-surface-base flex-1 overflow-y-auto md:p-8">
                 <div className="mx-auto w-full max-w-[1600px]">{children}</div>
             </div>
         </div>
@@ -94,30 +97,13 @@ export function FormSection({
 }: {
     title?: string;
     subtitle?: string;
-    children: React.ReactNode;
+    children?: React.ReactNode;
     className?: string;
     headerAction?: React.ReactNode;
 }) {
     const hasHeader = title || headerAction;
 
-    return (
-        <>
-            {hasHeader && (
-                <div className="bg-muted/30 border-border/40 flex items-center justify-between border-b px-5 py-3.5">
-                    <div className="space-y-0.5">
-                        {title && (
-                            <div className="flex items-center gap-2">
-                                <span className="text-foreground text-sm font-bold tracking-wide">{title}</span>
-                            </div>
-                        )}
-                        {subtitle && <p className="text-muted-foreground text-xs font-medium">{subtitle}</p>}
-                    </div>
-                    {headerAction}
-                </div>
-            )}
-            {children}
-        </>
-    );
+    return <>{children}</>;
 }
 
 export function FormDangerZone({

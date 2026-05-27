@@ -94,6 +94,35 @@ class ContractController extends Controller
      */
     public function contractsView(Request $request, string $view = 'contracts'): Response
     {
+        $user = Auth::user();
+        $roleName = $user->role;
+        $hasFullAccess = in_array($roleName, ['Admin', 'Super Admin', 'Director', 'CEO', 'VP']);
+        $isManager = $roleName === 'Manager';
+        $userCompany = $user->company;
+
+        // Dynamic lists based on roles
+        $departmentsLoader = fn () => \App\Models\Department::query()
+            ->when($isManager, fn ($q) => $q->where('company_id', $user->company_id))
+            ->when(! $hasFullAccess && ! $isManager, fn ($q) => $q->where('id', $user->department_id))
+            ->orderBy('name')
+            ->get();
+
+        $regionsLoader = fn () => \App\Models\Region::query()
+            ->when(! $hasFullAccess && $userCompany, fn ($q) => $q->where('id', $userCompany->region_id))
+            ->orderBy('name')
+            ->get();
+
+        $companyGroupsLoader = fn () => \App\Models\CompanyGroup::query()
+            ->when(! $hasFullAccess && $userCompany, fn ($q) => $q->where('id', $userCompany->company_group_id))
+            ->orderBy('name')
+            ->get();
+
+        $companiesLoader = fn () => \App\Models\Company::query()
+            ->when($isManager && $userCompany, fn ($q) => $q->where('company_group_id', $userCompany->company_group_id))
+            ->when(! $hasFullAccess && ! $isManager && $userCompany, fn ($q) => $q->where('id', $user->company_id))
+            ->orderBy('name')
+            ->get();
+
         $contracts = $this->getFilteredContractsQuery($request, $view)
             ->paginate($request->integer('per_page', 10))
             ->withQueryString()
@@ -104,12 +133,12 @@ class ContractController extends Controller
             'contracts' => $contracts,
             'types' => ContractType::all(),
             'submissionTypes' => SubmissionType::where('is_active', true)->get(),
-            'users' => User::with('department')
-                ->when(Auth::user()->role === 'Manager', function ($q) {
-                    return $q->where('department_id', Auth::user()->department_id);
+            'users' => Inertia::defer(fn () => User::with('department')
+                ->when($isManager, function ($q) use ($user) {
+                    return $q->where('department_id', $user->department_id);
                 })
-                ->orderBy('name')->get()->map(fn ($u) => ContractFormatter::formatUser($u)),
-            'vendors' => Vendor::with('documents')->where('is_active', true)->orderBy('name')->get()->map(fn ($v) => [
+                ->orderBy('name')->get()->map(fn ($u) => ContractFormatter::formatUser($u))),
+            'vendors' => Inertia::defer(fn () => Vendor::with('documents')->where('is_active', true)->orderBy('name')->get()->map(fn ($v) => [
                 'id' => $v->id,
                 'name' => $v->name,
                 'pic_name' => $v->pic_name,
@@ -120,8 +149,8 @@ class ContractController extends Controller
                     'name' => $d->document_name,
                     'type' => $d->document_type,
                 ]),
-            ]),
-            'formTemplates' => FormTemplate::where('is_active', true)->with('contractType')->withCount('fields')->get()->map(fn ($ft) => [
+            ])),
+            'formTemplates' => Inertia::defer(fn () => FormTemplate::where('is_active', true)->with('contractType')->withCount('fields')->get()->map(fn ($ft) => [
                 'id' => $ft->id,
                 'name' => $ft->name,
                 'description' => $ft->description,
@@ -129,16 +158,18 @@ class ContractController extends Controller
                 'contract_type_id' => $ft->contract_type_id,
                 'contract_type_name' => $ft->contractType?->name,
                 'fields_count' => $ft->fields_count,
-            ]),
-            'departments' => \App\Models\Department::orderBy('name')->get(),
-            'roles' => Role::orderBy('name')->get(),
-            'regions' => \App\Models\Region::orderBy('name')->get(),
-            'contractStatuses' => \App\Models\ContractStatus::all(),
+            ])),
+            'departments' => Inertia::defer($departmentsLoader),
+            'roles' => Inertia::defer(fn () => Role::orderBy('name')->get()),
+            'regions' => Inertia::defer($regionsLoader),
+            'companyGroups' => Inertia::defer($companyGroupsLoader),
+            'companies' => Inertia::defer($companiesLoader),
+            'contractStatuses' => Inertia::defer(fn () => \App\Models\ContractStatus::all()),
             'filters' => array_merge($request->only([
                 'search', 'status', 'contract_type_id', 'role_id', 'department_id',
                 'created_from', 'created_to', 'region_ids', 'vendor_ids', 'statuses',
                 'contract_type_ids', 'pic_ids', 'department_ids', 'submission_type_id',
-                'period',
+                'period', 'company_group_ids', 'company_ids',
             ]), [
                 'per_page' => $request->integer('per_page', 10),
             ]),
@@ -188,7 +219,7 @@ class ContractController extends Controller
         }
 
         if ($view === 'dashboard') {
-            $data['metrics'] = $this->getDashboardMetrics($request);
+            $data['metrics'] = Inertia::defer(fn () => $this->getDashboardMetrics($request));
         }
 
         $data['breadcrumbs'] = [
@@ -201,10 +232,27 @@ class ContractController extends Controller
 
     public function showView(Request $request, string $id): Response
     {
-        $contract = Contract::with([
-            'creator', 'contractType', 'approvals.approver', 'approvals.workflowStep',
-            'workflow.steps', 'versions.uploader', 'histories.actor', 'messages.user',
-            'attachments.uploader', 'formSubmissions', 'vendor.documents',
+        $contract = Contract::query()->select([
+            'id', 'contract_no', 'title', 'description', 'contract_date', 'end_date',
+            'contract_type_id', 'transaction_type', 'status', 'current_version',
+            'workflow_id', 'workflow_step_id', 'created_by', 'submitted_at',
+            'created_at', 'initiated_by_id', 'vendor_id', 'parent_id',
+            'submission_type_id', 'crown_no', 'assigned_pic_id', 'assigned_by_id',
+            'contract_type_parent_id', 'metadata',
+        ])->with([
+            'creator:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'contractType:id,name',
+            'approvals.approver:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'approvals.workflowStep:id,step,role,description,step_category',
+            'workflow.steps:id,workflow_id,step,description,approver_type,department_id,role,step_category,meta',
+            'workflowStep:id,step,role,description,step_category',
+            'versions.uploader:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'histories.actor:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'messages.user:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'attachments.uploader:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'formSubmissions:id,contract_id,document_type,form_template_id,current_version,submitted_by,updated_at',
+            'vendor.documents:id,vendor_id,document_name,document_type',
+            'meta:contract_id,kop_topik,kop_sub_topik,p1_entity,p1_signer,p1_signer_position,p1_address,p2_entity,p2_signer,p2_signer_position,p2_address,f2_scope,f2_price,f2_payment,f2_tenure,f2_location',
         ])->findOrFail($id);
 
         // Authorization: Only Admin or Creator can view drafts
@@ -223,19 +271,19 @@ class ContractController extends Controller
             'initialSelected' => ContractFormatter::formatContract($contract),
             'types' => ContractType::all(),
             'submissionTypes' => SubmissionType::where('is_active', true)->get(),
-            'users' => User::with('department')
+            'users' => Inertia::defer(fn () => User::with('department')
                 ->when(Auth::user()->role === 'Manager', function ($q) {
                     return $q->where('department_id', Auth::user()->department_id);
                 })
-                ->orderBy('name')->get()->map(fn ($u) => ContractFormatter::formatUser($u)),
-            'vendors' => Vendor::where('is_active', true)->orderBy('name')->get()->map(fn ($v) => [
+                ->orderBy('name')->get()->map(fn ($u) => ContractFormatter::formatUser($u))),
+            'vendors' => Inertia::defer(fn () => Vendor::where('is_active', true)->orderBy('name')->get()->map(fn ($v) => [
                 'id' => $v->id,
                 'name' => $v->name,
                 'pic_name' => $v->pic_name,
                 'pic_position' => $v->pic_position,
                 'address' => $v->address,
-            ]),
-            'formTemplates' => FormTemplate::where('is_active', true)->with('contractType')->withCount('fields')->get()->map(fn ($ft) => [
+            ])),
+            'formTemplates' => Inertia::defer(fn () => FormTemplate::where('is_active', true)->with('contractType')->withCount('fields')->get()->map(fn ($ft) => [
                 'id' => $ft->id,
                 'name' => $ft->name,
                 'description' => $ft->description,
@@ -243,7 +291,7 @@ class ContractController extends Controller
                 'contract_type_id' => $ft->contract_type_id,
                 'contract_type_name' => $ft->contractType?->name,
                 'fields_count' => $ft->fields_count,
-            ]),
+            ])),
             'filters' => array_merge($request->only(['search', 'status', 'contract_type_id']), [
                 'per_page' => $request->integer('per_page', 10),
             ]),
@@ -258,11 +306,40 @@ class ContractController extends Controller
 
     private function getFilteredContractsQuery(Request $request, string $view = 'contracts')
     {
-        $query = Contract::with([
-            'creator.department', 'contractType', 'submissionType', 'approvals.approver.department', 'approvals.workflowStep',
-            'workflow.steps', 'versions.uploader', 'histories.actor', 'messages.user',
-            'attachments.uploader', 'formSubmissions', 'vendor.documents', 'initiator.department', 'parent',
-            'assignedPic', 'assignedBy',
+        $query = Contract::query()->select([
+            'id', 'contract_no', 'title', 'contract_date', 'end_date',
+            'contract_type_id', 'transaction_type', 'status', 'current_version',
+            'workflow_id', 'workflow_step_id', 'created_by', 'submitted_at',
+            'created_at', 'initiated_by_id', 'vendor_id', 'parent_id',
+            'submission_type_id', 'crown_no', 'assigned_pic_id', 'assigned_by_id',
+            'contract_type_parent_id',
+        ])->with([
+            'creator:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'creator.department:id,name',
+            'contractType:id,name',
+            'contractTypeParent:id,name',
+            'submissionType:id,name',
+            'statusDetail:code,label,display_mode',
+            'approvals.approver:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'approvals.approver.department:id,name',
+            'approvals.workflowStep:id,step,role,description,step_category',
+            'workflow.steps:id,workflow_id,step,description,approver_type,department_id,role,step_category,meta',
+            'workflowStep:id,step,role,description,step_category',
+            'versions.uploader:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'histories.actor:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'messages.user:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'attachments.uploader:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'formSubmissions:id,contract_id,document_type,form_template_id,current_version,submitted_by,updated_at',
+            'vendor:id,name,pic_name,pic_position,address',
+            'vendor.documents:id,vendor_id,document_name,document_type',
+            'initiator:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'initiator.department:id,name',
+            'parent:id,contract_no,title',
+            'assignedPic:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'assignedPic.department:id,name',
+            'assignedBy:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'assignedBy.department:id,name',
+            'meta:contract_id,kop_topik,kop_sub_topik,p1_entity,p1_signer,p1_signer_position,p1_address,p2_entity,p2_signer,p2_signer_position,p2_address,f2_scope,f2_price,f2_payment,f2_tenure,f2_location',
         ])->latest();
 
         // Apply View Filter
@@ -303,12 +380,12 @@ class ContractController extends Controller
 
         // Apply Search Filter
         if ($request->filled('search')) {
-            $search = $request->search;
+            $search = strtolower($request->search);
             $query->where(function ($q) use ($search) {
-                $q->where('title', 'ilike', "%{$search}%")
-                    ->orWhere('contract_no', 'ilike', "%{$search}%")
-                    ->orWhere('crown_no', 'ilike', "%{$search}%")
-                    ->orWhereHas('creator', fn ($uq) => $uq->where('name', 'ilike', "%{$search}%"));
+                $q->where(DB::raw('LOWER(title)'), 'like', "%{$search}%")
+                    ->orWhere(DB::raw('LOWER(contract_no)'), 'like', "%{$search}%")
+                    ->orWhere(DB::raw('LOWER(crown_no)'), 'like', "%{$search}%")
+                    ->orWhereHas('creator', fn ($uq) => $uq->where(DB::raw('LOWER(name)'), 'like', "%{$search}%"));
             });
         }
 
@@ -376,7 +453,11 @@ class ContractController extends Controller
     private function getDashboardMetrics(Request $request)
     {
         $user = Auth::user();
-        $isAdmin = $user->role === 'Admin';
+        $roleName = $user->role;
+        $hasFullAccess = in_array($roleName, ['Admin', 'Super Admin', 'Director', 'CEO', 'VP']);
+        $isAdmin = $hasFullAccess;
+        $isManager = $roleName === 'Manager';
+        $hasDepartmentAccess = ! $hasFullAccess && ! $isManager;
 
         // Normalize array filters
         $normalizeArray = function ($val) {
@@ -391,6 +472,8 @@ class ContractController extends Controller
         };
 
         $regionIds = $normalizeArray($request->input('region_ids', []));
+        $companyGroupIds = $normalizeArray($request->input('company_group_ids', []));
+        $companyIds = $normalizeArray($request->input('company_ids', []));
         $vendorIds = $normalizeArray($request->input('vendor_ids', []));
         $statuses = $normalizeArray($request->input('statuses', []));
         $contractTypeIds = $normalizeArray($request->input('contract_type_ids', []));
@@ -423,15 +506,22 @@ class ContractController extends Controller
             $createdTo = now()->toDateString();
         }
 
-        // Automatically restrict non-Admin users to their own department/division
-        if (! $isAdmin && $user->department_id) {
-            $departmentIds = [$user->department_id];
-        }
-
         $baseQuery = Contract::query();
 
-        // Apply division restriction for non-Admins
-        if (! $isAdmin && $user->department_id) {
+        // Apply role restrictions
+        if ($isManager && $user->company_id) {
+            $baseQuery->where(function ($q) use ($user) {
+                $q->whereHas('initiator', function ($sq) use ($user) {
+                    $sq->where('company_id', $user->company_id);
+                })
+                    ->orWhere(function ($sq) use ($user) {
+                        $sq->whereNull('initiated_by_id')
+                            ->whereHas('creator', function ($ssq) use ($user) {
+                                $ssq->where('company_id', $user->company_id);
+                            });
+                    });
+            });
+        } elseif ($hasDepartmentAccess && $user->department_id) {
             $baseQuery->where(function ($q) use ($user) {
                 $q->whereHas('initiator', function ($sq) use ($user) {
                     $sq->where('department_id', $user->department_id);
@@ -472,32 +562,77 @@ class ContractController extends Controller
             $baseQuery->whereIn('assigned_pic_id', $picIds);
         }
 
-        if (! empty($departmentIds)) {
-            $baseQuery->where(function ($q) use ($departmentIds) {
-                $q->whereHas('initiator', function ($sq) use ($departmentIds) {
-                    $sq->whereIn('department_id', $departmentIds);
-                })
-                    ->orWhere(function ($sq) use ($departmentIds) {
-                        $sq->whereNull('initiated_by_id')
-                            ->whereHas('creator', function ($ssq) use ($departmentIds) {
-                                $ssq->whereIn('department_id', $departmentIds);
-                            });
-                    });
-            });
-        }
+        // Apply search filter parameters based on role scope
+        if ($hasFullAccess) {
+            if (! empty($departmentIds)) {
+                $baseQuery->where(function ($q) use ($departmentIds) {
+                    $q->whereHas('initiator', function ($sq) use ($departmentIds) {
+                        $sq->whereIn('department_id', $departmentIds);
+                    })
+                        ->orWhere(function ($sq) use ($departmentIds) {
+                            $sq->whereNull('initiated_by_id')
+                                ->whereHas('creator', function ($ssq) use ($departmentIds) {
+                                    $ssq->whereIn('department_id', $departmentIds);
+                                });
+                        });
+                });
+            }
 
-        if (! empty($regionIds)) {
-            $baseQuery->where(function ($q) use ($regionIds) {
-                $q->whereHas('initiator.department.company', function ($sq) use ($regionIds) {
-                    $sq->whereIn('region_id', $regionIds);
-                })
-                    ->orWhere(function ($sq) use ($regionIds) {
-                        $sq->whereNull('initiated_by_id')
-                            ->whereHas('creator.department.company', function ($ssq) use ($regionIds) {
-                                $ssq->whereIn('region_id', $regionIds);
-                            });
-                    });
-            });
+            if (! empty($regionIds)) {
+                $baseQuery->where(function ($q) use ($regionIds) {
+                    $q->whereHas('initiator.company', function ($sq) use ($regionIds) {
+                        $sq->whereIn('region_id', $regionIds);
+                    })
+                        ->orWhere(function ($sq) use ($regionIds) {
+                            $sq->whereNull('initiated_by_id')
+                                ->whereHas('creator.company', function ($ssq) use ($regionIds) {
+                                    $ssq->whereIn('region_id', $regionIds);
+                                });
+                        });
+                });
+            }
+
+            if (! empty($companyGroupIds)) {
+                $baseQuery->where(function ($q) use ($companyGroupIds) {
+                    $q->whereHas('initiator.company', function ($sq) use ($companyGroupIds) {
+                        $sq->whereIn('company_group_id', $companyGroupIds);
+                    })
+                        ->orWhere(function ($sq) use ($companyGroupIds) {
+                            $sq->whereNull('initiated_by_id')
+                                ->whereHas('creator.company', function ($ssq) use ($companyGroupIds) {
+                                    $ssq->whereIn('company_group_id', $companyGroupIds);
+                                });
+                        });
+                });
+            }
+
+            if (! empty($companyIds)) {
+                $baseQuery->where(function ($q) use ($companyIds) {
+                    $q->whereHas('initiator', function ($sq) use ($companyIds) {
+                        $sq->whereIn('company_id', $companyIds);
+                    })
+                        ->orWhere(function ($sq) use ($companyIds) {
+                            $sq->whereNull('initiated_by_id')
+                                ->whereHas('creator', function ($ssq) use ($companyIds) {
+                                    $ssq->whereIn('company_id', $companyIds);
+                                });
+                        });
+                });
+            }
+        } elseif ($isManager) {
+            if (! empty($departmentIds)) {
+                $baseQuery->where(function ($q) use ($departmentIds) {
+                    $q->whereHas('initiator', function ($sq) use ($departmentIds) {
+                        $sq->whereIn('department_id', $departmentIds);
+                    })
+                        ->orWhere(function ($sq) use ($departmentIds) {
+                            $sq->whereNull('initiated_by_id')
+                                ->whereHas('creator', function ($ssq) use ($departmentIds) {
+                                    $ssq->whereIn('department_id', $departmentIds);
+                                });
+                        });
+                });
+            }
         }
 
         // 1. KPI Cards values
@@ -513,7 +648,13 @@ class ContractController extends Controller
         $renewalRate = ($expiredContracts + $renewedContractsCount) > 0
             ? round(($renewedContractsCount / ($expiredContracts + $renewedContractsCount)) * 100, 1)
             : 0;
-        $totalValue = (clone $baseQuery)->select('f2_price')->get()->sum(fn ($c) => $this->parsePrice($c->f2_price));
+        $totalValue = 0;
+        $prices = (clone $baseQuery)
+            ->join('t_contract_meta', 't_contracts.id', '=', 't_contract_meta.contract_id')
+            ->pluck('t_contract_meta.f2_price');
+        foreach ($prices as $price) {
+            $totalValue += $this->parsePrice($price);
+        }
 
         $approvedContracts = (clone $baseQuery)->where('status', 'approved')->orderByDesc('updated_at')->limit(50)->get();
         $avgDays = 0;
@@ -531,34 +672,34 @@ class ContractController extends Controller
         }
 
         // Submission type distribution for donut
-        $submissionTypeDistribution = (clone $baseQuery)
+        $submissionTypeCounts = (clone $baseQuery)
             ->whereNotNull('submission_type_id')
             ->select('submission_type_id', DB::raw('count(*) as count'))
             ->groupBy('submission_type_id')
-            ->with('submissionType:id,name')
-            ->get()
-            ->map(fn ($item) => [
-                'label' => $item->submissionType?->name ?? 'Unknown',
-                'count' => (int) $item->count,
+            ->pluck('count', 'submission_type_id');
+
+        $submissionTypeDistribution = SubmissionType::all()
+            ->map(fn ($type) => [
+                'label' => $type->name,
+                'count' => (int) $submissionTypeCounts->get($type->id, 0),
             ])
             ->values();
 
-        // Contract type distribution for donut
-        $contractTypeDistribution = (clone $baseQuery)
+        // Contract type distribution for bar chart
+        $contractTypeCounts = (clone $baseQuery)
             ->whereNotNull('contract_type_id')
             ->select('contract_type_id', DB::raw('count(*) as count'))
             ->groupBy('contract_type_id')
-            ->with('contractType:id,name,parent_id')
-            ->get()
-            ->filter(function ($item) {
-                $ct = $item->contractType;
+            ->pluck('count', 'contract_type_id');
 
-                return $ct && $ct->parent_id !== null && $ct->parent_id !== $ct->id;
-            })
-            ->map(fn ($item) => [
-                'label' => $item->contractType?->name ?? 'Unknown',
-                'count' => (int) $item->count,
+        $contractTypeDistribution = ContractType::whereNotNull('parent_id')
+            ->whereColumn('parent_id', '!=', 'id')
+            ->get()
+            ->map(fn ($type) => [
+                'label' => $type->name,
+                'count' => (int) $contractTypeCounts->get($type->id, 0),
             ])
+            ->sortByDesc('count')
             ->values();
 
         // 2. Overview Tab Datasets
@@ -846,7 +987,10 @@ class ContractController extends Controller
             ['range' => 'Rp 50M - 500M', 'count' => 0],
             ['range' => '> Rp 500M', 'count' => 0],
         ];
-        $prices = (clone $baseQuery)->select('f2_price')->get()->map(fn ($c) => $this->parsePrice($c->f2_price));
+        $prices = (clone $baseQuery)
+            ->join('t_contract_meta', 't_contracts.id', '=', 't_contract_meta.contract_id')
+            ->pluck('t_contract_meta.f2_price')
+            ->map(fn ($price) => $this->parsePrice($price));
         foreach ($prices as $price) {
             if ($price < 50000000) {
                 $valueDistribution[0]['count']++;
@@ -898,9 +1042,45 @@ class ContractController extends Controller
 
         // 5. Workload Tab Datasets
         // User Workloads
-        $userWorkloads = User::with('department')
-            ->get()
-            ->map(function ($u) {
+        $startOfMonth = ! empty($createdFrom) ? Carbon::parse($createdFrom)->startOfDay() : Carbon::now()->startOfMonth();
+        $endOfMonth = ! empty($createdTo) ? Carbon::parse($createdTo)->endOfDay() : Carbon::now()->endOfMonth();
+
+        $userQuery = User::with('department');
+
+        // Apply role restrictions on the users shown
+        if ($isManager && $user->company_id) {
+            $userQuery->where('company_id', $user->company_id);
+        } elseif ($hasDepartmentAccess && $user->department_id) {
+            $userQuery->where('department_id', $user->department_id);
+        }
+
+        // Apply explicit filters from request if present (only if the user has access to filter them)
+        if ($hasFullAccess) {
+            if (! empty($regionIds)) {
+                $userQuery->whereHas('company', function ($q) use ($regionIds) {
+                    $q->whereIn('region_id', $regionIds);
+                });
+            }
+            if (! empty($companyGroupIds)) {
+                $userQuery->whereHas('company', function ($q) use ($companyGroupIds) {
+                    $q->whereIn('company_group_id', $companyGroupIds);
+                });
+            }
+            if (! empty($companyIds)) {
+                $userQuery->whereIn('company_id', $companyIds);
+            }
+            if (! empty($departmentIds)) {
+                $userQuery->whereIn('department_id', $departmentIds);
+            }
+        } elseif ($isManager) {
+            if (! empty($departmentIds)) {
+                $userQuery->whereIn('department_id', $departmentIds);
+            }
+        }
+
+        $userWorkloads = $userQuery->get()
+            ->map(function ($u) use ($startOfMonth, $endOfMonth) {
+                // Semua kontrak aktif saat ini (tidak harus bulan ini)
                 $activeCount = Contract::where('assigned_pic_id', $u->id)->whereIn('status', ['in_review', 'revision'])->count();
                 $pendingCount = Approval::where('user_id', $u->id)->where('status', 'pending')->count();
                 $initiatedCount = Contract::where(function ($query) use ($u) {
@@ -908,6 +1088,25 @@ class ContractController extends Controller
                         $q->whereNull('initiated_by_id')->where('created_by', $u->id);
                     });
                 })->count();
+
+                // Statistik Bulan Ini
+                $pendingThisMonth = Approval::where('user_id', $u->id)
+                    ->where('status', 'pending')
+                    ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
+                    ->count();
+
+                $activeThisMonth = Contract::where('assigned_pic_id', $u->id)
+                    ->whereIn('status', ['in_review', 'revision'])
+                    ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
+                    ->count();
+
+                $completedThisMonth = Approval::where('user_id', $u->id)
+                    ->where('status', 'approved')
+                    ->whereBetween('updated_at', [$startOfMonth, $endOfMonth])
+                    ->count() + Contract::where('assigned_pic_id', $u->id)
+                    ->whereIn('status', ['approved', 'active', 'archived'])
+                    ->whereBetween('updated_at', [$startOfMonth, $endOfMonth])
+                    ->count();
 
                 return [
                     'id' => $u->id,
@@ -923,7 +1122,12 @@ class ContractController extends Controller
                     'active_contracts_count' => $activeCount,
                     'pending_tasks_count' => $pendingCount,
                     'initiated_contracts_count' => $initiatedCount,
-                    'load_status' => $activeCount >= 3 ? 'Sibuk' : 'Ready',
+                    'load_status' => $activeCount >= 10 ? 'Sibuk' : 'Ready', // Changed limit to 10 just for badge logic, user asked to remove limit 5
+                    'stats_this_month' => [
+                        'pending' => $pendingThisMonth,
+                        'active' => $activeThisMonth,
+                        'completed' => $completedThisMonth,
+                    ],
                 ];
             })
             ->sortByDesc('active_contracts_count')
@@ -1151,22 +1355,31 @@ class ContractController extends Controller
     )]
     public function show(string $id): JsonResponse
     {
-        $contract = Contract::with([
-            'creator',
-            'initiator.department',
-            'versions.uploader',
-            'approvals.approver',
-            'approvals.workflowStep',
-            'workflow.steps',
-            'histories.actor',
-            'messages.user',
-            'attachments.uploader',
-            'contractType',
-            'submissionType',
-            'formSubmissions',
-            'vendor.documents',
-            'assignedPic',
-            'assignedBy',
+        $contract = Contract::query()->select([
+            'id', 'contract_no', 'title', 'description', 'contract_date', 'end_date',
+            'contract_type_id', 'transaction_type', 'status', 'current_version',
+            'workflow_id', 'workflow_step_id', 'created_by', 'submitted_at',
+            'created_at', 'initiated_by_id', 'vendor_id', 'parent_id',
+            'submission_type_id', 'crown_no', 'assigned_pic_id', 'assigned_by_id',
+            'contract_type_parent_id', 'metadata',
+        ])->with([
+            'creator:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'initiator.department:id,name',
+            'versions.uploader:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'approvals.approver:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'approvals.workflowStep:id,step,role,description,step_category',
+            'workflow.steps:id,workflow_id,step,description,approver_type,department_id,role,step_category,meta',
+            'workflowStep:id,step,role,description,step_category',
+            'histories.actor:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'messages.user:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'attachments.uploader:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'contractType:id,name',
+            'submissionType:id,name',
+            'formSubmissions:id,contract_id,document_type,form_template_id,current_version,submitted_by,updated_at',
+            'vendor.documents:id,vendor_id,document_name,document_type',
+            'assignedPic:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'assignedBy:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
+            'meta:contract_id,kop_topik,kop_sub_topik,p1_entity,p1_signer,p1_signer_position,p1_address,p2_entity,p2_signer,p2_signer_position,p2_address,f2_scope,f2_price,f2_payment,f2_tenure,f2_location',
         ])->findOrFail($id);
 
         // Authorization: Only Admin or Creator can view drafts

@@ -20,10 +20,13 @@ return new class() extends Migration
     public function down(): void
     {
         Schema::create('m_company_group_region', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('company_group_id')->constrained('m_company_groups')->onDelete('cascade');
-            $table->foreignId('region_id')->constrained('m_regions')->onDelete('cascade');
+            $table->uuid('id')->primary();
+            $table->foreignUuid('company_group_id')->constrained('m_company_groups')->cascadeOnDelete();
+            $table->foreignUuid('region_id')->constrained('m_regions')->cascadeOnDelete();
             $table->timestamps();
+
+            // Ensure unique combination
+            $table->unique(['company_group_id', 'region_id'], 'group_region_unique');
         });
     }
 };

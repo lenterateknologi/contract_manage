@@ -1,0 +1,234 @@
+// DBML Schema Group: Workflow, Access & Permissions
+// Visualizable on dbdiagram.io or DBML Previewer
+
+Table m_workflows {
+  id uuid [pk]
+  name varchar [not null]
+  description text
+  contract_type varchar [not null]
+  department_id uuid
+  initiator_type varchar
+  sla_drafting_hours integer
+  sla_total_hours integer
+  sla_cutoff_hour integer
+  scope varchar
+  workflow_category varchar
+  company_group_ids json
+  region_ids json
+  company_ids json
+  approver_roles json
+  approver_departments json
+  approver_users json
+  legal_roles json
+  legal_departments json
+  legal_users json
+  is_default boolean [default: false]
+  is_template boolean [default: true]
+  is_active boolean [default: true]
+  is_tax_involved boolean [default: false]
+  created_by uuid
+  updated_by uuid
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp
+}
+
+Table m_workflow_steps {
+  id uuid [pk]
+  workflow_id uuid [not null]
+  step integer [not null]
+  step_category varchar [default: 'approval']
+  approver_type varchar [default: 'role']
+  role_id uuid
+  label varchar
+  description text
+  condition_expression text
+  is_optional boolean [default: false]
+  optional_label varchar
+  uploader_type varchar
+  hierarchy_level integer
+  company_group_ids json
+  region_ids json
+  company_ids json
+  is_mandatory boolean [default: true]
+  is_active boolean [default: true]
+  meta json
+  created_by uuid
+  updated_by uuid
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp
+}
+
+Table m_workflow_step_actions {
+  id uuid [pk]
+  workflow_step_id uuid [not null]
+  master_action_id uuid [not null]
+  next_step_id uuid
+  next_workflow_id uuid
+  next_workflow_step_id uuid
+  required_fields json
+  autofilled_fields json
+  signing_parties json
+  assignee_config json
+  alias varchar
+  description text
+  is_active boolean [default: true]
+  created_by uuid
+  updated_by uuid
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp
+}
+
+Table m_master_actions {
+  id uuid [pk]
+  name varchar [not null]
+  code varchar [unique, not null]
+  is_active boolean [default: true]
+  created_by uuid
+  updated_by uuid
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp
+}
+
+Table m_workflow_step_roles {
+  id uuid [pk]
+  workflow_step_id uuid [not null]
+  role_name varchar [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table m_workflow_step_departments {
+  id uuid [pk]
+  workflow_step_id uuid [not null]
+  department_id uuid [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table m_workflow_step_users {
+  id uuid [pk]
+  workflow_step_id uuid [not null]
+  user_id uuid [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table m_workflow_initiator_roles {
+  id uuid [pk]
+  workflow_id uuid [not null]
+  role_name varchar [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table m_workflow_initiator_departments {
+  id uuid [pk]
+  workflow_id uuid [not null]
+  department_id uuid [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table m_workflow_initiator_users {
+  id uuid [pk]
+  workflow_id uuid [not null]
+  user_id uuid [not null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table m_access_modules {
+  id uuid [pk]
+  role_id uuid [not null]
+  module_id uuid [not null]
+  module_group_id uuid
+  can_read boolean [default: false]
+  can_create boolean [default: false]
+  can_update boolean [default: false]
+  can_delete boolean [default: false]
+  can_approve boolean [default: false]
+  sequence integer [default: 0]
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp
+}
+
+Table m_modules {
+  id uuid [pk]
+  name varchar [not null]
+  identifier varchar [unique, not null]
+  module_group_id uuid
+  icon varchar
+  route varchar
+  sequence integer [default: 0]
+  showed_as_menu boolean [default: true]
+  is_active boolean [default: true]
+  created_by uuid
+  updated_by uuid
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp
+}
+
+Table m_module_groups {
+  id uuid [pk]
+  name varchar [unique, not null]
+  icon varchar
+  sequence integer [default: 0]
+  created_by uuid
+  updated_by uuid
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp
+}
+
+Table m_role_module_groups {
+  id bigint [pk]
+  role_id uuid [not null]
+  module_group_id uuid [not null]
+  sequence integer [default: 0]
+  created_at timestamp
+  updated_at timestamp
+}
+
+// Relationships
+Ref: m_workflow_steps.workflow_id > m_workflows.id
+Ref: m_workflow_step_actions.workflow_step_id > m_workflow_steps.id [delete: cascade]
+Ref: m_workflow_step_actions.master_action_id > m_master_actions.id [delete: cascade]
+Ref: m_workflow_step_actions.next_step_id > m_workflow_steps.id
+Ref: m_workflow_step_actions.next_workflow_id > m_workflows.id
+Ref: m_workflow_step_actions.next_workflow_step_id > m_workflow_steps.id
+
+Ref: m_workflow_step_roles.workflow_step_id > m_workflow_steps.id [delete: cascade]
+Ref: m_workflow_step_departments.workflow_step_id > m_workflow_steps.id [delete: cascade]
+Ref: m_workflow_step_users.workflow_step_id > m_workflow_steps.id [delete: cascade]
+
+Ref: m_workflow_initiator_roles.workflow_id > m_workflows.id [delete: cascade]
+Ref: m_workflow_initiator_departments.workflow_id > m_workflows.id [delete: cascade]
+Ref: m_workflow_initiator_users.workflow_id > m_workflows.id [delete: cascade]
+
+Ref: m_access_modules.module_id > m_modules.id [delete: cascade]
+Ref: m_access_modules.module_group_id > m_module_groups.id
+Ref: m_modules.module_group_id > m_module_groups.id
+Ref: m_role_module_groups.module_group_id > m_module_groups.id [delete: cascade]
+
+TableGroup workflow_access {
+  m_workflows
+  m_workflow_steps
+  m_workflow_step_actions
+  m_master_actions
+  m_workflow_step_roles
+  m_workflow_step_departments
+  m_workflow_step_users
+  m_workflow_initiator_roles
+  m_workflow_initiator_departments
+  m_workflow_initiator_users
+  m_access_modules
+  m_modules
+  m_module_groups
+  m_role_module_groups
+}

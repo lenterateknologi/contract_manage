@@ -1,3 +1,4 @@
+import { useDebounce } from '@/hooks/use-debounce';
 import CreateContractModal from '@/components/contracts/CreateContractModal';
 import PreviewModal from '@/components/contracts/PreviewModal';
 import ContractDetailView from './components/ContractDetailView';
@@ -7,8 +8,10 @@ import { ProfileView } from '@/components/contracts/ProfileView';
 import SendApprovalModal from '@/components/contracts/SendApprovalModal';
 import { ToastProvider, useToast } from '@/components/contracts/Toast';
 import { Button } from '@/components/ui/base/Button';
-import { FilterSheet } from '@/components/ui/data/FilterSheet';
-import { Column, TableContract } from '@/components/ui/data/TableContract';
+import { StatusBadge } from '@/components/ui/data/StatusBadge';
+import { FilterPopover } from '@/components/ui/data/FilterPopover';
+import { Column, DataTable as TableContract } from '@/components/ui/data/DataTable';
+import { ContractTableSkeleton, ContractCardSkeleton } from '@/components/ui/feedback/ContractSkeleton';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
 import { SearchInput } from '@/components/ui/forms/SearchInput';
 import { LayoutToggle, LayoutType } from '@/components/ui/navigation/LayoutToggle';
@@ -60,60 +63,6 @@ import {
     renderStatusAndStep,
     TypeAndVendorCell,
 } from './components/ContractTableCells';
-function ExpiryBadge({ endDate }: Readonly<{ endDate: string | null }>) {
-    if (!endDate) return null;
-    const end = new Date(endDate);
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    const diffTime = end.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    let color = 'bg-black text-white border-black/10 dark:bg-white dark:text-black';
-    let icon = 'fa-circle-check';
-    let label = `${diffDays} Hari Lagi`;
-
-    if (diffDays < 0) {
-        color = 'bg-black/10 text-black border-black/10 dark:bg-white/10 dark:text-white';
-        icon = 'fa-circle-exclamation';
-        label = `Expired ${Math.abs(diffDays)} Hari`;
-    } else if (diffDays <= 30) {
-        color = 'bg-black text-white border-black/10 dark:bg-white dark:text-black';
-        icon = 'fa-triangle-exclamation';
-    } else if (diffDays <= 90) {
-        color = 'text-black dark:text-white border border-black/10';
-        icon = 'fa-clock';
-    }
-
-    return (
-        <div className={cn('inline-flex items-center gap-1.5 text-[11px] font-semibold', color)}>
-            <i className={cn('fa-solid text-[10px]', icon)} />
-            {label}
-        </div>
-    );
-}
-
-const StatusBadge = ({ status }: { status: string }) => {
-    const config: Record<string, { bg: string; dot: string; text: string; label: string }> = {
-        draft: { bg: 'bg-slate-100', dot: 'bg-slate-400', text: 'text-slate-600', label: 'Draft' },
-        in_review: { bg: 'bg-amber-100', dot: 'bg-amber-500', text: 'text-amber-700', label: 'Review' },
-        revision: { bg: 'bg-rose-100', dot: 'bg-rose-500', text: 'text-rose-700', label: 'Revisi' },
-        pending: { bg: 'bg-orange-100', dot: 'bg-orange-500', text: 'text-orange-700', label: 'Pending' },
-        approved: { bg: 'bg-emerald-100', dot: 'bg-emerald-500', text: 'text-emerald-700', label: 'Disetujui' },
-        active: { bg: 'bg-blue-100', dot: 'bg-blue-500', text: 'text-blue-700', label: 'Aktif' },
-        expired: { bg: 'bg-red-100', dot: 'bg-red-500', text: 'text-red-700', label: 'Expired' },
-        archived: { bg: 'bg-zinc-100', dot: 'bg-zinc-400', text: 'text-zinc-500', label: 'Arsip' },
-        rejected: { bg: 'bg-red-100', dot: 'bg-red-500', text: 'text-red-700', label: 'Ditolak' },
-    };
-
-    const s = config[status as keyof typeof config] || config.draft;
-
-    return (
-        <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-semibold', s.bg, s.text)}>
-            <span className={cn('h-1.5 w-1.5 rounded-full', s.dot)} />
-            {s.label}
-        </span>
-    );
-};
 
 const SLACountdown = ({ deadline, status }: Readonly<{ deadline: string | null; status: string }>) => {
     const [timeLeft, setTimeLeft] = useState<string>('');
@@ -167,72 +116,17 @@ const SLACountdown = ({ deadline, status }: Readonly<{ deadline: string | null; 
     };
 
     return (
-        <div className={cn('flex w-fit items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-bold ring-1', getUrgencyStyles())}>
+        <div className={cn('flex w-fit items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold ring-1', getUrgencyStyles())}>
             <Clock size={10} className={urgency === 'danger' ? 'animate-pulse' : ''} />
             {timeLeft}
         </div>
     );
 };
-const ContractInfoCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <div className="flex flex-col">
-        <div className="flex items-center gap-2">
-            <span className="text-sidebar-foreground text-[13px] leading-tight font-bold">{c.title}</span>
-            {!!c.current_version && (
-                <div className="bg-sidebar-primary flex-shrink-0 rounded px-1.5 py-0.5">
-                    <span className="text-[9px] font-black text-white uppercase">V{c.current_version}</span>
-                </div>
-            )}
-        </div>
-        <div className="mt-1.5 flex items-center gap-2">
-            <span className="text-sidebar-foreground/40 text-[10px] font-bold tracking-wide uppercase">{c.contract_type}</span>
-            <span className="bg-sidebar-foreground/20 h-1 w-1 rounded-full" />
-            <span className="text-sidebar-foreground/40 text-[10px] font-bold tracking-wide uppercase">{c.vendor?.name || 'No Vendor'}</span>
-        </div>
-    </div>
-);
-
-const DepartmentCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <span className="text-sidebar-foreground/50 text-[11px] font-semibold tracking-wide uppercase">{c.initiator?.department_name || 'UMUM'}</span>
-);
-
-const ProgressCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <span className="text-sidebar-foreground/90 text-[10px] font-bold tracking-tight">
-        {c.progress.done}/{c.progress.total}
-    </span>
-);
 
 const CreatedAtCell = ({ c }: Readonly<{ c: Contract }>) => (
     <span className="text-sidebar-foreground/40 text-[11px] font-medium">{c.created_at}</span>
 );
 
-const ContractNoCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <span className="text-sidebar-primary/70 font-mono text-[10px] font-bold">{c.contract_no || 'N/A'}</span>
-);
-
-const TitleCell = ({ c }: Readonly<{ c: Contract }>) => <span className="text-sidebar-foreground line-clamp-1 text-[11px] font-bold">{c.title}</span>;
-
-const TypeCell = ({ c, types }: Readonly<{ c: Contract; types: ContractType[] }>) => {
-    const TYPE_COLORS = [
-        'bg-violet-100 text-violet-700',
-        'bg-blue-100 text-blue-700',
-        'bg-cyan-100 text-cyan-700',
-        'bg-teal-100 text-teal-700',
-        'bg-indigo-100 text-indigo-700',
-        'bg-purple-100 text-purple-700',
-    ];
-    const type = types.find((t) => t.id === c.contract_type_id);
-    const colorIdx = type ? type.name.charCodeAt(0) % TYPE_COLORS.length : 0;
-    return (
-        <span className={cn('inline-block rounded-full px-2.5 py-0.5 text-[9px] font-bold tracking-wide uppercase', TYPE_COLORS[colorIdx])}>
-            {(type?.name || 'N/A').replace('Perjanjian ', '').replace('Addendum / ', '')}
-        </span>
-    );
-};
-
-// Stable cell renderers to satisfy linting
-const renderContractNo = (c: Contract) => <ContractNoCell c={c} />;
-const renderTitle = (c: Contract) => <TitleCell c={c} />;
-const renderStatus = (c: Contract) => <StatusBadge status={c.status} />;
 const renderCreatedAt = (c: Contract) => <CreatedAtCell c={c} />;
 
 const BulkActions = ({
@@ -253,7 +147,6 @@ const BulkActions = ({
             <Button
                 variant="outline"
                 size="sm"
-                className="h-8 border-black/10 px-3 dark:border-white/10"
                 onClick={() => handleBulkApprove(selectedRows)}
             >
                 <Check className="mr-1.5 h-3 w-3" /> Approve
@@ -263,7 +156,6 @@ const BulkActions = ({
             <Button
                 variant="outline"
                 size="sm"
-                className="h-8 border-rose-500/20 px-3 text-rose-600 hover:bg-rose-600 hover:text-white"
                 onClick={() => handleBulkDelete(selectedRows)}
             >
                 <Trash2 className="mr-1.5 h-3 w-3" /> Hapus
@@ -289,7 +181,8 @@ const RowActions = ({
         <DropdownMenuTrigger asChild>
             <Button
                 variant="ghost"
-                className="border-sidebar-border dark:bg-sidebar-accent/50 hover:bg-sidebar-accent group h-8 w-8 rounded-lg border bg-white p-0 transition-all"
+                size="icon"
+                className="group"
             >
                 <MoreVertical size={14} className="text-sidebar-foreground/40 group-hover:text-sidebar-primary" />
             </Button>
@@ -300,7 +193,7 @@ const RowActions = ({
         >
             <DropdownMenuItem
                 onClick={() => openDetail(c)}
-                className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-bold tracking-tight text-slate-600 uppercase"
+                className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-semibold tracking-tight text-slate-600 uppercase"
             >
                 <Eye size={14} /> Lihat Detail
             </DropdownMenuItem>
@@ -309,7 +202,7 @@ const RowActions = ({
                     setSelected(c);
                     setEditOpen(true);
                 }}
-                className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-bold tracking-tight text-slate-600 uppercase"
+                className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-semibold tracking-tight text-slate-600 uppercase"
             >
                 <FileEdit size={14} /> Perbarui
             </DropdownMenuItem>
@@ -319,13 +212,14 @@ const RowActions = ({
                     setSelected(c);
                     setDeleteOpen(true);
                 }}
-                className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-bold tracking-tight text-rose-600 uppercase focus:bg-rose-50 focus:text-rose-600"
+                className="flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-semibold tracking-tight text-rose-600 uppercase focus:bg-rose-50 focus:text-rose-600"
             >
                 <Trash2 size={14} /> Hapus Data
             </DropdownMenuItem>
         </DropdownMenuContent>
     </DropdownMenu>
 );
+
 function ContractPage({
     contracts: contractsPaged,
     meId,
@@ -372,7 +266,27 @@ function ContractPage({
     const [view, setView] = useState<View>(currentView);
     const [selected, setSelected] = useState<Contract | null>(initialSelected ?? null);
     const [search, setSearch] = useState(filters?.search || '');
-    const [filterOpen, setFilterOpen] = useState(false);
+    const debouncedSearch = useDebounce(search, 500);
+
+    const handleFilterChange = useCallback(
+        (newFilters: any) => {
+            const merged = { ...filters, ...newFilters };
+            const query = Object.fromEntries(
+                Object.entries(merged).filter(([_, v]) => v !== undefined && v !== '' && (Array.isArray(v) ? v.length > 0 : true)),
+            ) as any;
+            router.get(globalThis.location.pathname, query, { preserveState: true, preserveScroll: true, replace: true });
+        },
+        [filters],
+    );
+
+    // Trigger search when debounced value changes
+    useEffect(() => {
+        if (debouncedSearch !== (filters?.search || '')) {
+            handleFilterChange({ search: debouncedSearch, page: 1 });
+        }
+    }, [debouncedSearch, handleFilterChange, filters?.search]);
+
+    // Filter open state is handled internally by FilterPopover
     const [createOpen, setCreateOpen] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
     const [deleteOpen, setDeleteOpen] = useState(false);
@@ -394,17 +308,6 @@ function ContractPage({
     useEffect(() => {
         setSelected(initialSelected ?? null);
     }, [initialSelected]);
-
-    const handleFilterChange = useCallback(
-        (newFilters: any) => {
-            const merged = { ...filters, ...newFilters };
-            const query = Object.fromEntries(
-                Object.entries(merged).filter(([_, v]) => v !== undefined && v !== '' && (Array.isArray(v) ? v.length > 0 : true)),
-            ) as any;
-            router.get(globalThis.location.pathname, query, { preserveState: true, preserveScroll: true, replace: true });
-        },
-        [filters],
-    );
 
     const updateContract = useCallback(
         (c: Contract, silent = false) => {
@@ -496,8 +399,8 @@ function ContractPage({
         }
     };
 
-    const canBulkApprove = !!meUser?.is_admin;
-    const canBulkDelete = !!meUser?.is_admin;
+    const canBulkApprove = meUser?.role === 'Admin' || meUser?.role === 'Super Admin' || !!meUser?.is_admin;
+    const canBulkDelete = meUser?.role === 'Admin' || meUser?.role === 'Super Admin' || !!meUser?.is_admin;
 
     const handleBulkApprove = async (rows: Contract[]) => {
         if (!confirm(`Setujui ${rows.length} kontrak terpilih?`)) return;
@@ -557,13 +460,6 @@ function ContractPage({
             />
         ),
         [canBulkApprove, handleBulkApprove, canBulkDelete, handleBulkDelete],
-    );
-
-    const renderRowActions = useCallback(
-        (row: Contract) => (
-            <RowActions c={row} openDetail={openDetail} setSelected={setSelected} setEditOpen={setEditOpen} setDeleteOpen={setDeleteOpen} />
-        ),
-        [openDetail, setSelected, setEditOpen, setDeleteOpen],
     );
 
     const renderTypeAndVendor = useCallback((c: Contract) => <TypeAndVendorCell c={c} types={types} />, [types]);
@@ -646,83 +542,116 @@ function ContractPage({
                             )}
                             {view === 'profile' && <ProfileView meUser={meUser} showToast={showToast} />}
                             {view !== 'profile' && view !== 'dashboard' && (
-                                <div className="border-sidebar-border bg-sidebar flex min-h-0 flex-1 flex-col gap-0 overflow-hidden">
-                                    {/* Unified Toolbar — Identical for both modes */}
-                                    <div className="border-sidebar-border bg-background sticky top-0 z-20 flex items-center gap-6 border-b px-5 py-4">
-                                        <SearchInput
-                                            containerClassName="max-w-sm flex-1"
-                                            placeholder="Cari kontrak..."
-                                            value={search}
-                                            onChange={(e) => setSearch(e.target.value)}
-                                        />
-
+                                <div className="bg-surface-base/20 border-surface-border flex min-h-0 flex-1 flex-col gap-0 overflow-hidden">
+                                    <div className="border-surface-border bg-surface-base/80 backdrop-blur-md sticky top-0 z-[50] flex items-center gap-6 border-b px-5 py-4">
+                                        <div className="flex items-center gap-2 max-w-sm flex-1">
+                                            <SearchInput
+                                                containerClassName="flex-1"
+                                                placeholder="Cari kontrak..."
+                                                value={search}
+                                                onChange={(e) => setSearch(e.target.value)}
+                                            />
+                                            <FilterPopover
+                                                totalResults={contractsPaged.total}
+                                                activeFilters={{
+                                                    status: ensureArray(filters.status),
+                                                    contract_type_id: ensureArray(filters.contract_type_id),
+                                                    department_id: ensureArray(filters.department_id),
+                                                    created_from: filters.created_from || '',
+                                                    created_to: filters.created_to || '',
+                                                }}
+                                                onFilterChange={handleSingleFilterToggle}
+                                                onReset={handleClearAllFilters}
+                                                categories={[
+                                                    {
+                                                        label: 'Status Dokumen',
+                                                        key: 'status',
+                                                        type: 'searchable',
+                                                        options: [
+                                                            { label: 'Draft', value: 'draft', icon: Layers, color: 'bg-surface-muted text-text-soft' },
+                                                            { label: 'Pending', value: 'pending', icon: Clock, color: 'bg-warning/10 text-warning' },
+                                                            { label: 'In Review', value: 'in_review', icon: Zap, color: 'bg-warning/10 text-warning' },
+                                                            { label: 'Revision', value: 'revision', icon: AlertTriangle, color: 'bg-danger/10 text-danger' },
+                                                            { label: 'Approved', value: 'approved', icon: CheckCircle2, color: 'bg-primary text-primary-foreground' },
+                                                            { label: 'Rejected', value: 'rejected', icon: AlertCircle, color: 'bg-danger/10 text-danger' },
+                                                        ],
+                                                    },
+                                                    {
+                                                        label: 'Departemen',
+                                                        key: 'department_id',
+                                                        type: 'searchable',
+                                                        options: departments.map((d) => ({
+                                                            label: d.name,
+                                                            value: d.id,
+                                                        })),
+                                                    },
+                                                    {
+                                                        label: 'Kategori Kontrak',
+                                                        key: 'contract_type_id',
+                                                        type: 'searchable',
+                                                        options: types.map((t) => ({
+                                                            label: t.name,
+                                                            value: t.id,
+                                                            icon: FileType,
+                                                        })),
+                                                    },
+                                                    {
+                                                        label: 'Rentang Tanggal Dibuat',
+                                                        key: 'created',
+                                                        type: 'date-range',
+                                                    },
+                                                ]}
+                                            >
+                                                <Button
+                                                    variant={activeFiltersCount > 0 ? "primary" : "white"}
+                                                    className="relative h-10 w-10 p-0 flex items-center justify-center shrink-0 rounded-xl"
+                                                >
+                                                    <Filter size={14} strokeWidth={2.5} />
+                                                    {activeFiltersCount > 0 && (
+                                                        <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[9px] font-semibold bg-primary text-white shadow-sm border border-white dark:border-black">
+                                                            {activeFiltersCount}
+                                                        </span>
+                                                    )}
+                                                </Button>
+                                            </FilterPopover>
+                                        </div>
                                         <div className="ml-auto flex items-center gap-2">
                                             <LayoutToggle value={layout as LayoutType} onChange={(val) => setLayout(val)} />
-
-                                            <Button
-                                                variant="outline"
-                                                onClick={() => setFilterOpen(true)}
-                                                className={cn(
-                                                    'relative h-10 px-4 transition-all active:scale-95',
-                                                    activeFiltersCount > 0 && 'border-[var(--primary)] bg-[var(--primary)] text-white',
-                                                )}
-                                            >
-                                                <Filter size={14} />
-                                                Filter
-                                                {activeFiltersCount > 0 && (
-                                                    <span
-                                                        className={cn(
-                                                            'ml-1 flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[9px] font-bold',
-                                                            filters.status?.length || filters.contract_type_id?.length
-                                                                ? 'bg-white text-[var(--primary)]'
-                                                                : 'bg-[var(--primary)] text-white',
-                                                        )}
-                                                    >
-                                                        {activeFiltersCount}
-                                                    </span>
-                                                )}
-                                            </Button>
-                                            <Button variant="primary" onClick={() => setCreateOpen(true)} className="h-10 px-6 active:scale-95">
-                                                <PlusCircle size={16} /> Kontrak Baru
+                                            <Button variant="white" onClick={() => setCreateOpen(true)}>
+                                                <PlusCircle size={16} strokeWidth={2.5} /> Kontrak Baru
                                             </Button>
                                         </div>
                                     </div>
 
-                                    {/* Submission Type Tabs Filter */}
-                                    <div className="border-sidebar-border bg-background/50 border-b px-5 py-2 flex items-center gap-1.5 overflow-x-auto scrollbar-none backdrop-blur-md sticky top-[73px] z-10">
-                                        <button
+                                    <div className="border-surface-border bg-surface-base/40 border-b px-5 py-2 flex items-center gap-1.5 overflow-x-auto scrollbar-none backdrop-blur-md sticky top-[73px] z-10">
+                                        <Button
                                             onClick={() => handleFilterChange({ submission_type_id: undefined, page: 1 })}
-                                            className={cn(
-                                                "px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 whitespace-nowrap active:scale-95",
-                                                !filters.submission_type_id
-                                                    ? "bg-[var(--primary)] text-white shadow-sm font-bold"
-                                                    : "text-black/60 dark:text-white/60 hover:bg-black/5 dark:hover:bg-white/5 hover:text-black dark:hover:text-white"
-                                            )}
+                                            variant={!filters.submission_type_id ? "primary" : "ghost"}
+                                            size="sm"
+                                            className="whitespace-nowrap"
                                         >
                                             Semua Kontrak
-                                        </button>
+                                        </Button>
                                         {submissionTypes.map((type) => (
-                                            <button
+                                            <Button
                                                 key={type.id}
                                                 onClick={() => handleFilterChange({ submission_type_id: type.id, page: 1 })}
-                                                className={cn(
-                                                    "px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 whitespace-nowrap active:scale-95",
-                                                    filters.submission_type_id === type.id
-                                                        ? "bg-[var(--primary)] text-white shadow-sm font-bold"
-                                                        : "text-black/60 dark:text-white/60 hover:bg-black/5 dark:hover:bg-white/5 hover:text-black dark:hover:text-white"
-                                                )}
+                                                variant={filters.submission_type_id === type.id ? "primary" : "ghost"}
+                                                size="sm"
+                                                className="whitespace-nowrap"
                                             >
                                                 {type.name}
-                                            </button>
+                                            </Button>
                                         ))}
                                     </div>
 
-                                    <div className={cn('flex-1 overflow-auto', layout === 'grid' && 'p-4')}>
+                                    <div className={cn('flex-1 overflow-auto custom-scrollbar', layout === 'grid' && 'p-4')}>
                                         {layout === 'table' ? (
                                             <TableContract
                                                 columns={columns}
                                                 data={contractsPaged.data}
                                                 loading={processing}
+                                                skeleton={<ContractTableSkeleton />}
                                                 onRowClick={openDetail}
                                                 onSelectionChange={setSelectedRows}
                                                 selectedRows={selectedRows}
@@ -736,118 +665,97 @@ function ContractPage({
                                                 }}
                                             />
                                         ) : (
-                                            <div className="flex flex-col gap-8">
-                                                <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                                                    {contractsPaged.data.map((c) => (
-                                                        <button
-                                                            key={c.id}
-                                                            onClick={() => openDetail(c)}
-                                                            className="group border-sidebar-border bg-sidebar hover:border-sidebar-primary hover:shadow-sidebar-primary/10 dark:hover:bg-sidebar-accent/10 relative flex cursor-pointer flex-col gap-4 rounded-xl border p-5 text-left transition-all hover:shadow-xl focus:ring-2 focus:ring-[var(--primary)] focus:outline-none"
-                                                        >
-                                                            <div className="flex items-start justify-between gap-3">
-                                                                <div className="flex min-w-0 flex-col gap-1">
-                                                                    <span className="group-hover:text-sidebar-primary text-xs font-medium text-black/40 transition-all dark:text-white/40">
-                                                                        {c.contract_no || 'No Req'}
-                                                                    </span>
-                                                                    <h3 className="group-hover:text-sidebar-primary line-clamp-2 text-sm leading-tight font-semibold text-black transition-colors dark:text-white">
-                                                                        {c.title}
-                                                                    </h3>
-                                                                    <span className="mt-0.5 text-xs font-medium text-black/30 dark:text-white/30">
-                                                                        {c.contract_type}
-                                                                    </span>
-                                                                </div>
-                                                                <div className="flex-shrink-0 origin-top-right scale-90">
-                                                                    <StatusBadge status={c.status} />
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="border-sidebar-border/50 bg-sidebar-accent/30 dark:bg-sidebar-accent/10 group-hover:border-sidebar-primary/20 flex flex-col gap-3 rounded-lg border p-3 transition-all">
-                                                                <div className="flex items-center justify-between">
-                                                                    <span className="text-xs font-medium text-black/40 dark:text-white/40">
-                                                                        Departemen
-                                                                    </span>
-                                                                    <span className="truncate text-xs font-semibold text-black dark:text-white">
-                                                                        {c.initiator?.department_name || 'Umum'}
-                                                                    </span>
-                                                                </div>
-                                                                {c.assigned_pic && (
-                                                                    <div className="flex items-center justify-between">
-                                                                        <span className="text-xs font-medium text-black/40 dark:text-white/40">
-                                                                            PJ Legal
+                                            processing ? (
+                                                <ContractCardSkeleton />
+                                            ) : (
+                                                <div className="flex flex-col gap-8">
+                                                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                                                        {contractsPaged.data.map((c) => (
+                                                            <button
+                                                                key={c.id}
+                                                                onClick={() => openDetail(c)}
+                                                                className="group border-surface-border bg-surface-base/60 backdrop-blur-sm hover:border-primary hover:shadow-primary/5 relative flex cursor-pointer flex-col gap-4 rounded-2xl border p-6 text-left transition-all hover:shadow-2xl focus:ring-2 focus:ring-primary focus:outline-none"
+                                                            >
+                                                                <div className="flex items-start justify-between gap-3">
+                                                                    <div className="flex min-w-0 flex-col gap-1">
+                                                                        <span className="group-hover:text-primary text-[10px] font-semibold uppercase tracking-wider text-text-soft transition-all">
+                                                                            {c.contract_no || 'No Req'}
                                                                         </span>
-                                                                        <span className="truncate text-xs font-semibold text-black dark:text-white">
-                                                                            {c.assigned_pic.name}
+                                                                        <h3 className="group-hover:text-primary line-clamp-2 text-sm leading-tight font-semibold uppercase tracking-tight text-text-main transition-colors">
+                                                                            {c.title}
+                                                                        </h3>
+                                                                        <span className="mt-0.5 text-[10px] font-medium text-text-desc uppercase italic">
+                                                                            {c.contract_type}
                                                                         </span>
                                                                     </div>
-                                                                )}
-                                                                <div className="flex items-center justify-between pt-1 text-xs font-medium">
-                                                                    <span className="text-black/40 dark:text-white/40">Progress</span>
-                                                                    <span className="font-semibold text-black dark:text-white">
-                                                                        {c.progress.done}/{c.progress.total}
-                                                                    </span>
+                                                                    <div className="flex-shrink-0 origin-top-right scale-90">
+                                                                        <StatusBadge status={c.status} />
+                                                                    </div>
                                                                 </div>
-                                                            </div>
 
-                                                            <div className="border-sidebar-border/50 mt-auto flex items-center justify-end border-t pt-4">
-                                                                <div className="origin-right scale-75">
-                                                                    <SLACountdown deadline={c.sla_deadline ?? null} status={c.status} />
+                                                                <div className="border-surface-border/40 bg-surface-muted/30 group-hover:border-primary/20 flex flex-col gap-3 rounded-xl border p-4 transition-all">
+                                                                    <div className="flex items-center justify-between">
+                                                                        <span className="text-[10px] font-semibold uppercase text-text-soft">Departemen</span>
+                                                                        <span className="truncate text-[11px] font-semibold uppercase text-text-main">{c.initiator?.department_name || 'Umum'}</span>
+                                                                    </div>
+                                                                    {c.assigned_pic && (
+                                                                        <div className="flex items-center justify-between">
+                                                                            <span className="text-[10px] font-semibold uppercase text-text-soft">PJ Legal</span>
+                                                                            <span className="truncate text-[11px] font-semibold uppercase text-text-main">{c.assigned_pic.name}</span>
+                                                                        </div>
+                                                                    )}
+                                                                    <div className="flex items-center justify-between pt-1 text-[10px] font-semibold uppercase">
+                                                                        <span className="text-text-soft">Progress</span>
+                                                                        <span className="font-semibold text-primary bg-primary/5 px-2 py-0.5 rounded-lg">
+                                                                            {c.progress.done}/{c.progress.total}
+                                                                        </span>
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                        </button>
-                                                    ))}
-                                                </div>
 
-                                                <div className="mt-8 mb-10 flex w-full items-center justify-between">
-                                                    <div className="flex items-center gap-4 rounded-xl border border-[#0f2a4a]/10 bg-[#0f2a4a]/[0.03] px-6 py-2 shadow-sm transition-all duration-500 dark:border-white/10 dark:bg-white/[0.03]">
-                                                        <div className="flex items-center gap-4 text-xs font-semibold whitespace-nowrap text-slate-700 dark:text-slate-300">
-                                                            <span className="hidden sm:inline">Menampilkan</span>
-                                                            <span>
-                                                                {contractsPaged.from} - {contractsPaged.to} / {contractsPaged.total}
-                                                            </span>
-                                                        </div>
+                                                                <div className="border-surface-border/50 mt-auto flex items-center justify-end border-t pt-4">
+                                                                    <div className="origin-right scale-75">
+                                                                        <SLACountdown deadline={c.sla_deadline ?? null} status={c.status} />
+                                                                    </div>
+                                                                </div>
+                                                            </button>
+                                                        ))}
                                                     </div>
 
-                                                    <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-1 shadow-sm transition-all duration-500 dark:border-white/10 dark:bg-white/[0.03]">
-                                                        <button
-                                                            disabled={contractsPaged.current_page === 1}
-                                                            onClick={() =>
-                                                                router.get(
-                                                                    globalThis.location.pathname,
-                                                                    { ...filters, page: contractsPaged.current_page - 1 },
-                                                                    { preserveState: true },
-                                                                )
-                                                            }
-                                                            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 transition-all hover:bg-slate-100 disabled:opacity-20 dark:text-white/60 dark:hover:bg-white/10"
-                                                        >
-                                                            <ChevronLeft className="h-4 w-4" />
-                                                        </button>
-
-                                                        <div className="mx-1 flex items-center gap-1">
-                                                            <div className="flex h-8 min-w-[32px] items-center justify-center rounded-lg bg-[#0f2a4a] px-3 text-xs font-bold text-white shadow-sm">
-                                                                {contractsPaged.current_page}
-                                                            </div>
-                                                            <span className="mx-1 text-xs font-medium text-slate-400">/</span>
-                                                            <div className="text-xs font-bold text-slate-600 dark:text-slate-400">
-                                                                {contractsPaged.last_page}
+                                                    <div className="mt-8 mb-10 flex w-full items-center justify-between px-1">
+                                                        <div className="flex items-center gap-4 rounded-xl border border-surface-border bg-surface-muted/40 px-6 py-2 shadow-sm backdrop-blur-sm transition-all duration-500">
+                                                            <div className="text-xs font-semibold whitespace-nowrap text-text-desc uppercase tracking-wider">
+                                                                Menampilkan <span className="font-semibold text-text-main">{contractsPaged.from} - {contractsPaged.to}</span> dari <span className="font-semibold text-text-main">{contractsPaged.total}</span> data
                                                             </div>
                                                         </div>
 
-                                                        <button
-                                                            disabled={contractsPaged.current_page === contractsPaged.last_page}
-                                                            onClick={() =>
-                                                                router.get(
-                                                                    globalThis.location.pathname,
-                                                                    { ...filters, page: contractsPaged.current_page + 1 },
-                                                                    { preserveState: true },
-                                                                )
-                                                            }
-                                                            className="flex h-8 w-8 items-center justify-center rounded-lg text-[#0f2a4a]/60 transition-all hover:bg-[#0f2a4a]/5 disabled:opacity-20 dark:text-white/60 dark:hover:bg-white/10"
-                                                        >
-                                                            <ChevronRight className="h-4 w-4" />
-                                                        </button>
+                                                        <div className="flex items-center gap-1.5 rounded-2xl border border-surface-border bg-surface-base/40 p-1.5 shadow-sm backdrop-blur-sm transition-all duration-500">
+                                                            <Button
+                                                                variant="white"
+                                                                size="icon"
+                                                                disabled={contractsPaged.current_page === 1}
+                                                                onClick={() => router.get(globalThis.location.pathname, { ...filters, page: contractsPaged.current_page - 1 }, { preserveState: true })}
+                                                                className="h-9 w-9 rounded-xl"
+                                                            >
+                                                                <ChevronLeft className="h-4 w-4 text-text-main" />
+                                                            </Button>
+                                                            <div className="mx-2 flex items-center gap-2 px-4 h-9 bg-surface-muted/60 rounded-xl border border-surface-border/40">
+                                                                <span className="text-xs font-semibold text-primary">{contractsPaged.current_page}</span>
+                                                                <span className="text-xs font-semibold text-text-soft">/</span>
+                                                                <span className="text-xs font-semibold text-primary">{contractsPaged.last_page || 1}</span>
+                                                            </div>
+                                                            <Button
+                                                                variant="white"
+                                                                size="icon"
+                                                                disabled={contractsPaged.current_page === contractsPaged.last_page}
+                                                                onClick={() => router.get(globalThis.location.pathname, { ...filters, page: contractsPaged.current_page + 1 }, { preserveState: true })}
+                                                                className="h-9 w-9 rounded-xl"
+                                                            >
+                                                                <ChevronRight className="h-4 w-4 text-text-main" />
+                                                            </Button>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
+                                            )
                                         )}
                                     </div>
                                 </div>
@@ -866,7 +774,6 @@ function ContractPage({
                 users={users}
                 vendors={vendors}
             />
-            {/* RejectModal was here */}
             <SendApprovalModal
                 open={sendOpen}
                 onClose={() => setSendOpen(false)}
@@ -884,102 +791,37 @@ function ContractPage({
                 vendors={vendors}
                 processing={processing}
             />
-            <FilterSheet
-                isOpen={filterOpen}
-                onOpenChange={setFilterOpen}
-                title="Filter Kontrak"
-                description="Saring data kontrak berdasarkan status dan tipe dokumen"
-                totalResults={contractsPaged.total}
-                activeFilters={{
-                    status: ensureArray(filters.status),
-                    contract_type_id: ensureArray(filters.contract_type_id),
-                    department_id: ensureArray(filters.department_id),
-                    created_from: filters.created_from || '',
-                    created_to: filters.created_to || '',
-                }}
-                onFilterChange={handleSingleFilterToggle}
-                onReset={handleClearAllFilters}
-                categories={[
-                    {
-                        label: 'Status Dokumen',
-                        key: 'status',
-                        type: 'searchable',
-                        options: [
-                            { label: 'Draft', value: 'draft', icon: Layers, color: 'bg-slate-50 text-slate-400' },
-                            { label: 'Pending', value: 'pending', icon: Clock, color: 'bg-black/5 text-black' },
-                            { label: 'In Review', value: 'in_review', icon: Zap, color: 'bg-black/5 text-black' },
-                            { label: 'Revision', value: 'revision', icon: AlertTriangle, color: 'bg-black/5 text-black' },
-                            { label: 'Approved', value: 'approved', icon: CheckCircle2, color: 'bg-black text-white' },
-                            { label: 'Rejected', value: 'rejected', icon: AlertCircle, color: 'bg-black/5 text-black' },
-                        ],
-                    },
-                    {
-                        label: 'Departemen',
-                        key: 'department_id',
-                        type: 'searchable',
-                        options: departments.map((d) => ({
-                            label: d.name,
-                            value: d.id,
-                        })),
-                    },
-                    {
-                        label: 'Kategori Kontrak',
-                        key: 'contract_type_id',
-                        type: 'searchable',
-                        options: types.map((t) => ({
-                            label: t.name,
-                            value: t.id,
-                            icon: FileType,
-                        })),
-                    },
-                    {
-                        label: 'Rentang Tanggal Dibuat',
-                        key: 'created',
-                        type: 'date-range',
-                    },
-                ]}
-            />
+            {/* FilterSheet is removed and replaced by FilterPopover trigger above */}
             <ConfirmationModal
                 open={deleteOpen}
                 onClose={() => setDeleteOpen(false)}
                 onConfirm={handleDelete}
                 title="Hapus Kontrak?"
-                description="Seluruh data dokumen, riwayat, dan chat terkait kontrak ini akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan."
+                description="Seluruh data dokumen, riwayat, dan chat terkait kontrak ini akan dihapus secara permanen."
                 processing={processing}
             />
             <PreviewModal open={previewOpen} onClose={() => setPreviewOpen(false)} title={previewTitle} url={previewUrl} hasFile={previewHasFile} />
             {timelinePdfPreviewUrl && (
-                <div className="bg-background/90 animate-in fade-in zoom-in-95 fixed inset-0 z-[100] flex flex-col backdrop-blur-xl duration-300">
-                    <div className="border-border flex h-16 items-center justify-between border-b bg-slate-50 px-6">
+                <div className="bg-surface-base/90 animate-in fade-in zoom-in-95 fixed inset-0 z-[100] flex flex-col backdrop-blur-xl duration-300">
+                    <div className="flex h-16 items-center justify-between border-b border-surface-border bg-surface-muted px-6">
                         <div className="flex flex-col">
-                            <h3 className="text-foreground flex items-center gap-2 text-sm font-bold uppercase">
-                                <i className="fa-solid fa-file-pdf text-black dark:text-white" /> Export Alur Approval
+                            <h3 className="text-text-main flex items-center gap-2 text-sm font-semibold uppercase tracking-wider">
+                                <FileText className="size-4 text-primary" /> Export Alur Approval
                             </h3>
-                            <span className="text-muted-foreground text-[10px] font-bold">{selected?.contract_no} — Generation Complete</span>
+                            <span className="text-text-soft text-[10px] font-semibold uppercase tracking-wider">{selected?.contract_no} — Generation Complete</span>
                         </div>
                         <div className="flex items-center gap-3">
-                            <a
-                                href={timelinePdfPreviewUrl}
-                                download={`Alur_Approval_${selected?.id}.pdf`}
-                                className="flex items-center gap-2 rounded-md bg-indigo-600 px-6 py-2 text-xs font-bold text-white uppercase shadow-xl shadow-indigo-500/20 transition-all hover:bg-indigo-700"
-                            >
-                                <Download size={14} /> Download PDF
-                            </a>
-                            <button
-                                onClick={() => setTimelinePdfPreviewUrl(null)}
-                                className="text-foreground rounded-md border border-slate-200 bg-white px-4 py-2 text-xs font-bold uppercase transition-all hover:bg-slate-50"
-                            >
-                                Tutup
-                            </button>
+                            <Button asChild variant="primary" className="h-9">
+                                <a href={timelinePdfPreviewUrl} download={`Alur_Approval_${selected?.id}.pdf`}>
+                                    <Download size={14} /> Download PDF
+                                </a>
+                            </Button>
+                            <Button variant="outline" className="h-9" onClick={() => setTimelinePdfPreviewUrl(null)}>Tutup</Button>
                         </div>
                     </div>
                     <div className="flex flex-1 justify-center overflow-hidden p-8">
-                        <div className="ring-border animate-in slide-in-from-bottom-5 fill-mode-both h-full w-full max-w-[210mm] overflow-hidden rounded-sm bg-white shadow-2xl ring-1 delay-150 duration-500">
-                            <iframe
-                                src={`${timelinePdfPreviewUrl}#toolbar=0&navpanes=0`}
-                                className="h-full w-full border-none"
-                                title="Approval Timeline Preview"
-                            />
+                        <div className="ring-surface-border animate-in slide-in-from-bottom-5 fill-mode-both h-full w-full max-w-[210mm] overflow-hidden rounded-xl bg-white shadow-2xl ring-1 delay-150 duration-500">
+                            <iframe src={`${timelinePdfPreviewUrl}#toolbar=0&navpanes=0`} className="h-full w-full border-none" title="Approval Timeline Preview" />
                         </div>
                     </div>
                 </div>
@@ -1019,70 +861,40 @@ export default function ContractsIndex({
     const meId = auth?.user?.id ?? '';
     const meUser = auth?.user ?? null;
 
-    // Use state to manage current data, but sync with props from Inertia
     const [contractsPaged, setContractsPaged] = useState<PaginatedData<Contract>>(initialContractsPaged);
     const [types, setTypes] = useState<ContractType[]>(initialTypes);
     const [submissionTypes, setSubmissionTypes] = useState<any[]>(initialSubmissionTypes);
     const [metrics, setMetrics] = useState<any>(initialMetrics);
 
-    // Boot loading state: only true if we have NO data AND we are not already showing a specific contract
     const [bootLoading, setBootLoading] = useState(
         initialContractsPaged.data.length === 0 && !initialMetrics && !initialSelectedProp && initialTypes.length === 0,
     );
 
-    // Sync props to state when they change (Inertia partial reloads or navigation)
-    useEffect(() => {
-        setContractsPaged(initialContractsPaged);
-    }, [initialContractsPaged]);
+    useEffect(() => { setContractsPaged(initialContractsPaged); }, [initialContractsPaged]);
+    useEffect(() => { if (initialTypes.length > 0) setTypes(initialTypes); }, [initialTypes]);
+    useEffect(() => { if (initialSubmissionTypes.length > 0) setSubmissionTypes(initialSubmissionTypes); }, [initialSubmissionTypes]);
+    useEffect(() => { if (initialMetrics) setMetrics(initialMetrics); }, [initialMetrics]);
 
-    useEffect(() => {
-        if (initialTypes.length > 0) setTypes(initialTypes);
-    }, [initialTypes]);
-
-    useEffect(() => {
-        if (initialSubmissionTypes.length > 0) setSubmissionTypes(initialSubmissionTypes);
-    }, [initialSubmissionTypes]);
-
-    useEffect(() => {
-        if (initialMetrics) setMetrics(initialMetrics);
-    }, [initialMetrics]);
-
-    // Initial data fetch ONLY if props are truly missing and we are on a list view
     useEffect(() => {
         const hasCriticalData = initialContractsPaged.data.length > 0 || initialSelectedProp || initialMetrics;
-
-        if (hasCriticalData && initialTypes.length > 0) {
-            setBootLoading(false);
-            return;
-        }
-
-        // If we really need to fetch (e.g. direct URL visit with partial props)
-        if (hasCriticalData) {
-            setBootLoading(false);
-        } else {
+        if (hasCriticalData && initialTypes.length > 0) { setBootLoading(false); return; }
+        if (hasCriticalData) { setBootLoading(false); }
+        else {
             setBootLoading(true);
             Promise.all([
                 contractApi.list({ view: currentView }),
                 contractApi.getTypes(),
-                axios
-                    .get('/api/contracts/submission-types')
-                    .then((res) => res.data)
-                    .catch(() => []),
-                axios
-                    .post('/admin/api/reports/data', {})
-                    .then((res) => res.data)
-                    .catch(() => null),
-            ])
-                .then(([cData, tData, sData, mData]) => {
-                    setContractsPaged(cData as any);
-                    setTypes(tData);
-                    setSubmissionTypes(sData);
-                    setMetrics(mData);
-                    setBootLoading(false);
-                })
-                .catch(() => setBootLoading(false));
+                axios.get('/api/contracts/submission-types').then((res) => res.data).catch(() => []),
+                axios.post('/admin/api/reports/data', {}).then((res) => res.data).catch(() => null),
+            ]).then(([cData, tData, sData, mData]) => {
+                setContractsPaged(cData as any);
+                setTypes(tData);
+                setSubmissionTypes(sData);
+                setMetrics(mData);
+                setBootLoading(false);
+            }).catch(() => setBootLoading(false));
         }
-    }, [currentView]); // Only re-run if view changes drastically
+    }, [currentView]);
 
     return (
         <>
@@ -1093,15 +905,13 @@ export default function ContractsIndex({
                         <div className="relative flex items-center justify-center">
                             <LoadingLottie width={180} height={180} />
                             <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="h-32 w-32 animate-spin rounded-full border-b-2 border-slate-800 opacity-20 dark:border-white" />
+                                <div className="h-32 w-32 animate-spin rounded-full border-b-2 border-primary opacity-20" />
                             </div>
                         </div>
                         <div className="flex flex-col items-center gap-2">
-                            <span className="animate-pulse text-xs font-semibold tracking-wider text-slate-700 uppercase dark:text-slate-300">
-                                Memuat Sistem Kontrak
-                            </span>
-                            <div className="h-0.5 w-48 overflow-hidden rounded-full bg-slate-100 dark:bg-white/10">
-                                <div className="animate-progress h-full w-full origin-left bg-black dark:bg-white" />
+                            <span className="animate-pulse text-xs font-semibold tracking-wider text-text-desc uppercase">Memuat Sistem Kontrak</span>
+                            <div className="h-0.5 w-48 overflow-hidden rounded-full bg-surface-muted">
+                                <div className="animate-progress h-full w-full origin-left bg-primary" />
                             </div>
                         </div>
                     </div>

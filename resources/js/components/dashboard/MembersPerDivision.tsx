@@ -84,22 +84,22 @@ export function MembersPerDivision({
     };
 
     return (
-        <div className="space-y-4 m-5 select-none animate-in fade-in duration-500">
+        <div className="space-y-5 m-5 select-none animate-in fade-in duration-500">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-foreground text-xs font-extrabold tracking-tight">Anggota per Divisi</h2>
-                    <p className="text-muted-foreground text-[9px] font-semibold mt-0.5">
+                    <h2 className="text-text-main text-sm font-semibold tracking-tight uppercase">Anggota per Divisi</h2>
+                    <p className="text-text-desc text-xs font-semibold mt-0.5">
                         Daftar pengguna terdaftar dikelompokkan berdasarkan divisi/departemen mereka.
                     </p>
                 </div>
-                <div className="bg-muted/40 border border-border/40 px-2.5 py-1 rounded-full flex items-center gap-1.5 text-[9px] font-bold text-foreground">
-                    <Users size={10} className="text-primary" />
-                    <span className="text-[9px]">Total {users.length} Pengguna</span>
+                <div className="bg-surface-muted/40 border border-surface-border/40 px-3 py-1 rounded-full flex items-center gap-1.5 text-xs font-medium text-text-main">
+                    <Users size={13} className="text-primary" />
+                    <span className="text-xs font-semibold uppercase">Total {users.length} Pengguna</span>
                 </div>
             </div>
 
             {/* Compact Grid of Division Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 {sortedDeptIds.map((deptId) => {
                     const dept = deptMap.get(deptId);
                     const deptName = dept ? dept.name : 'Direksi & Staff Umum';
@@ -109,41 +109,41 @@ export function MembersPerDivision({
                     return (
                         <div
                             key={deptId}
-                            className="group border border-border/60 bg-card/40 hover:bg-card/65 relative flex flex-col overflow-hidden rounded-xl p-2 shadow-xs transition-all duration-300 backdrop-blur-sm dark:border-slate-800/60 dark:bg-slate-900/20 hover:shadow-md hover:-translate-y-0.5"
+                            className="group border border-surface-border/60 bg-surface-base/40 hover:bg-surface-base/65 relative flex flex-col overflow-hidden rounded-xl p-4 shadow-sm transition-all duration-300 backdrop-blur-sm hover:shadow-md hover:-translate-y-0.5"
                         >
                             {/* Department Header */}
-                            <div className="flex items-start justify-between border-b border-border/20 pb-1 mb-1.5 dark:border-slate-800/30">
-                                <div className="flex items-center gap-1 min-w-0">
-                                    <div className="bg-primary/10 text-primary border border-primary/10 rounded-md p-0.5 shrink-0">
-                                        <Building2 size={10} />
+                            <div className="flex items-start justify-between border-b border-surface-border/20 pb-2 mb-3">
+                                <div className="flex items-center gap-2 min-w-0">
+                                    <div className="bg-primary/10 text-primary border border-primary/10 rounded-md p-1.5 shrink-0">
+                                        <Building2 size={14} />
                                     </div>
                                     <div className="min-w-0">
-                                        <h3 className="text-foreground truncate text-[9px] font-extrabold tracking-tight" title={deptName}>
+                                        <h3 className="text-text-main truncate text-xs font-semibold tracking-tight uppercase" title={deptName}>
                                             {deptName}
                                         </h3>
-                                        <span className="text-muted-foreground text-[7.5px] font-semibold block leading-none mt-0.5">{deptCode || 'Management'}</span>
+                                        <span className="text-text-desc text-[10px] font-medium block leading-none mt-1 uppercase">{deptCode || 'Management'}</span>
                                     </div>
                                 </div>
-                                <span className="bg-primary/10 text-primary/80 border border-primary/10 text-[6.5px] font-extrabold uppercase px-1 py-0.5 rounded-full shrink-0">
+                                <span className="bg-primary/10 text-primary/80 border border-primary/10 text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full shrink-0">
                                     {deptMembers.length}
                                 </span>
                             </div>
 
                             {/* Members list inside division */}
-                            <div className="space-y-1 max-h-[140px] overflow-y-auto pr-0.5 custom-scrollbar">
+                            <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-0.5 custom-scrollbar">
                                 {deptMembers.map((u: User) => {
                                     const customStyle = u.bg_color && u.text_color
                                         ? { backgroundColor: u.bg_color, color: u.text_color }
                                         : undefined;
 
                                     return (
-                                        <div key={u.id} className="flex items-center gap-1 group/user py-0">
+                                        <div key={u.id} className="flex items-center gap-2 group/user py-0.5">
                                             {/* Avatar Initials */}
                                             <div
                                                 style={customStyle}
                                                 className={cn(
-                                                    "h-4 w-4 rounded-full flex items-center justify-center text-[7px] font-extrabold shrink-0 border border-black/5 dark:border-white/5",
-                                                    !customStyle && "bg-muted text-muted-foreground"
+                                                    "h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0 border border-surface-border/10",
+                                                    !customStyle && "bg-surface-muted text-text-desc"
                                                 )}
                                             >
                                                 {u.initials || getInitials(u.name)}
@@ -151,20 +151,20 @@ export function MembersPerDivision({
 
                                             {/* User Details */}
                                             <div className="min-w-0 flex-1">
-                                                <span className="text-foreground text-[8.5px] font-bold block truncate leading-tight group-hover/user:text-primary transition-colors">
+                                                <span className="text-text-main text-xs font-medium block truncate leading-tight group-hover/user:text-primary transition-colors">
                                                     {u.name}
                                                 </span>
-                                                <div className="flex items-center gap-0.5 mt-0.5">
-                                                    <span className="text-muted-foreground text-[7.5px] font-semibold truncate leading-none">
+                                                <div className="flex items-center gap-1.5 mt-0.5">
+                                                    <span className="text-text-desc text-[10px] font-semibold truncate leading-none uppercase">
                                                         {u.role}
                                                     </span>
-                                                    <span className="text-muted-foreground/30 text-[7.5px] leading-none">·</span>
+                                                    <span className="text-text-desc/30 text-[10px] leading-none">·</span>
                                                     <a
                                                         href={`mailto:${u.email}`}
-                                                        className="text-muted-foreground/50 hover:text-primary text-[7px] transition-colors shrink-0 leading-none"
+                                                        className="text-text-desc/50 hover:text-primary text-[9px] transition-colors shrink-0 leading-none"
                                                         title={u.email}
                                                     >
-                                                        <Mail size={7.5} />
+                                                        <Mail size={11} />
                                                     </a>
                                                 </div>
                                             </div>

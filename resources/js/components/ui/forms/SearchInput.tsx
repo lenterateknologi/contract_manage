@@ -1,22 +1,26 @@
 import * as React from "react";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/base/Input";
 
-export interface SearchInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+export interface SearchInputProps extends React.ComponentProps<typeof Input> {
     containerClassName?: string;
 }
 
 const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
     ({ className, containerClassName, ...props }, ref) => {
         return (
-            <div className={cn("relative w-full", containerClassName)}>
+            <div className={cn("relative w-full group", containerClassName)}>
                 <Search
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-sidebar-foreground/40"
-                    strokeWidth={3}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-text-desc/40 dark:text-white/60 group-focus-within:text-primary dark:group-focus-within:text-white transition-colors z-10"
+                    strokeWidth={2}
                 />
-                <input
+                <Input
                     className={cn(
-                        "w-full h-10 pl-10 pr-4 border border-primary/20 dark:border-white/20 bg-card text-card-foreground focus:border-primary dark:focus:border-white rounded-xl text-xs font-semibold placeholder:text-sidebar-foreground/40 transition-all outline-none shadow-sm",
+                        "pl-10 pr-4 h-10 rounded-xl text-xs font-medium text-text-main placeholder:text-text-soft",
+                        "bg-surface-base/40 backdrop-blur-md border border-surface-border shadow-sm transition-all",
+                        "focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:border-primary focus-visible:ring-offset-0",
+                        "dark:text-white dark:border dark:border-white dark:placeholder:text-white dark:bg-transparent dark:focus-within:border-white",
                         className
                     )}
                     ref={ref}

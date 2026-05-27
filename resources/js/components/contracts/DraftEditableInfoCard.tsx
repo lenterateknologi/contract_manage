@@ -136,7 +136,7 @@ export function DraftEditableInfoCard({
     }, [title, description, typeId, vendorId, submissionTypeId, kopSubTopik, taxRequired, isDraft, onUpdate]);
 
     const inputCls =
-        'w-full bg-black/[0.03] dark:bg-white/[0.05] border border-border/50 rounded-lg px-3 py-1.5 text-sm text-foreground dark:text-white outline-none focus:bg-white dark:focus:bg-slate-900 transition-all shadow-sm';
+        'w-full bg-surface-muted border-surface-border rounded-lg px-3 py-1.5 text-sm text-text-main outline-none focus:bg-surface-base transition-all shadow-sm';
 
     const f2Version = selected.versions?.filter((x) => x.document_type === 'f2').sort((a, b) => b.version_no - a.version_no)[0];
 
@@ -146,12 +146,12 @@ export function DraftEditableInfoCard({
     );
 
     return (
-        <div className="bg-card text-foreground border-border overflow-hidden rounded-xl border shadow-sm">
-            <div className="bg-primary flex h-12 items-center justify-between border-b border-black/10 px-4 dark:border-white/10 dark:bg-white">
-                <div className="flex items-center gap-2 text-sm font-semibold text-white dark:text-black">
-                    <Info size={16} className="text-white/70 dark:text-black/70" /> Informasi Kontrak
+        <div className="bg-surface-base text-text-main border-surface-border overflow-hidden rounded-xl border shadow-sm">
+            <div className="bg-primary flex h-12 items-center justify-between border-b px-4">
+                <div className="flex items-center gap-2 text-sm font-semibold text-white">
+                    <Info size={16} className="text-white/70" /> Informasi Kontrak
                     {isDraft && (
-                        <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-semibold text-white dark:bg-black/10 dark:text-black">
+                        <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-semibold text-white">
                             Dapat Diedit
                         </span>
                     )}
@@ -161,25 +161,25 @@ export function DraftEditableInfoCard({
                         <div className="flex items-center gap-2 px-2">
                             {localSaving ? (
                                 <>
-                                    <Loader2 size={12} className="animate-spin text-white/70 dark:text-black/60" />
-                                    <span className="text-xs text-white/70 dark:text-black/60">Menyimpan...</span>
+                                    <Loader2 size={12} className="animate-spin text-white/70" />
+                                    <span className="text-xs text-white/70">Menyimpan...</span>
                                 </>
                             ) : hasChanges ? (
                                 <>
-                                    <div className="bg-primary h-1.5 w-1.5 animate-pulse rounded-full" />
-                                    <span className="text-xs text-white/70 dark:text-black/60">Berubah</span>
+                                    <div className="bg-primary h-1.5 w-1.5 animate-pulse rounded-full ring-2 ring-white/50" />
+                                    <span className="text-xs text-white/70">Berubah</span>
                                 </>
                             ) : (
                                 <>
-                                    <Check size={12} className="text-emerald-300 dark:text-emerald-600" />
-                                    <span className="text-xs text-white/70 dark:text-black/60">Tersimpan</span>
+                                    <Check size={12} className="text-emerald-300" />
+                                    <span className="text-xs text-white/70">Tersimpan</span>
                                 </>
                             )}
                         </div>
                     )}
                     <button
                         onClick={() => setMinimized(!minimized)}
-                        className="text-white/70 transition-all hover:text-white active:scale-95 dark:text-black/60 dark:hover:text-black"
+                        className="text-white/70 transition-all hover:text-white active:scale-95"
                     >
                         {minimized ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
                     </button>
@@ -188,15 +188,15 @@ export function DraftEditableInfoCard({
             {!minimized && (
                 <div className="grid grid-cols-1 gap-4 p-4">
                     <div>
-                        <div className="text-muted-foreground mb-1 text-xs font-semibold">No. Pengajuan</div>
-                        <span className="bg-muted text-foreground inline-block rounded px-3 py-1.5 font-mono text-sm font-bold shadow-sm">
+                        <div className="text-text-desc mb-1 text-xs font-semibold">No. Pengajuan</div>
+                        <span className="bg-surface-muted text-text-main inline-block rounded px-3 py-1.5 font-mono text-sm font-medium shadow-sm">
                             {selected.contract_no}
                         </span>
                     </div>
 
                     <div>
-                        <div className="text-muted-foreground mb-1 text-xs font-semibold">No. Kontrak (F2)</div>
-                        <div className="bg-primary/5 border-primary/10 text-primary flex h-9 items-center rounded-lg border px-3 text-sm font-black dark:bg-white/5 dark:text-white">
+                        <div className="text-text-desc mb-1 text-xs font-semibold">No. Kontrak (F2)</div>
+                        <div className="bg-primary/5 border-primary/10 text-primary flex h-9 items-center rounded-lg border px-3 text-sm font-semibold">
                             {(selected as any).crown_no || 'Belum diisi di F2'}
                         </div>
                     </div>
@@ -204,7 +204,7 @@ export function DraftEditableInfoCard({
                     {isDraft ? (
                         <>
                             <div className="col-span-full">
-                                <div className="text-muted-foreground mb-1 text-xs font-semibold">Judul Kontrak</div>
+                                <div className="text-text-desc mb-1 text-xs font-semibold">Judul Kontrak</div>
                                 <input
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
@@ -216,7 +216,7 @@ export function DraftEditableInfoCard({
                     ) : null}
 
                     <div>
-                        <div className="text-muted-foreground mb-1 text-xs font-semibold">Jenis Kontrak</div>
+                        <div className="text-text-desc mb-1 text-xs font-semibold">Jenis Kontrak</div>
                         {isDraft ? (
                             <select value={typeId} onChange={(e) => setTypeId(e.target.value)} className={inputCls}>
                                 <option value="">Pilih Tipe</option>
@@ -235,7 +235,7 @@ export function DraftEditableInfoCard({
                     </div>
 
                     <div>
-                        <div className="text-muted-foreground mb-1 text-xs font-semibold">Perjanjian</div>
+                        <div className="text-text-desc mb-1 text-xs font-semibold">Perjanjian</div>
                         {isDraft ? (
                             <select value={submissionTypeId} onChange={(e) => setSubmissionTypeId(e.target.value)} className={inputCls}>
                                 <option value="">Pilih Tipe</option>
@@ -247,12 +247,12 @@ export function DraftEditableInfoCard({
                                     ))}
                             </select>
                         ) : (
-                            <span className="text-foreground text-sm font-medium">{selected.submission_type || '—'}</span>
+                            <span className="text-text-main text-sm font-medium">{selected.submission_type || '—'}</span>
                         )}
                     </div>
 
                     <div>
-                        <div className="text-muted-foreground mb-1 text-xs font-semibold">Pihak Kedua (Vendor)</div>
+                        <div className="text-text-desc mb-1 text-xs font-semibold">Pihak Kedua (Vendor)</div>
                         {isDraft ? (
                             <select value={vendorId} onChange={(e) => setVendorId(e.target.value)} className={inputCls}>
                                 <option value="">Pilih Vendor</option>
@@ -264,69 +264,69 @@ export function DraftEditableInfoCard({
                                     ))}
                             </select>
                         ) : (
-                            <span className="bg-muted text-foreground rounded-full px-3 py-1 text-xs font-semibold shadow-sm">
+                            <span className="bg-surface-muted text-text-main rounded-full px-3 py-1 text-xs font-semibold shadow-sm">
                                 {(selected as any).vendor?.name || '-'}
                             </span>
                         )}
                     </div>
 
                     <div>
-                        <div className="text-muted-foreground mb-1 text-xs font-semibold">Dibuat Oleh</div>
+                        <div className="text-text-desc mb-1 text-xs font-semibold">Dibuat Oleh</div>
                         <div className="flex items-center gap-1.5">
                             <Avatar user={selected.creator} size="sm" />
-                            <span className="text-foreground text-sm font-medium">{selected.creator?.name}</span>
+                            <span className="text-text-main text-sm font-medium">{selected.creator?.name}</span>
                         </div>
                     </div>
 
                     <div>
-                        <div className="text-muted-foreground mb-1 text-xs font-semibold">Tgl Dibuat</div>
-                        <span className="text-foreground text-sm font-medium">{selected.created_at}</span>
+                        <div className="text-text-desc mb-1 text-xs font-semibold">Tgl Dibuat</div>
+                        <span className="text-text-main text-sm font-medium">{selected.created_at}</span>
                     </div>
 
-                    <div className="border-border col-span-full mt-2 border-t pt-4">
+                    <div className="border-surface-border col-span-full mt-2 border-t pt-4">
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div>
-                                <div className="text-muted-foreground mb-1.5 text-xs font-semibold">Disetujui Oleh</div>
+                                <div className="text-text-desc mb-1.5 text-xs font-semibold">Disetujui Oleh</div>
                                 {selected.assigned_by ? (
                                     <div className="flex items-center gap-2">
-                                        <Avatar user={selected.assigned_by} size="sm" className="ring-1 ring-slate-200" />
-                                        <span className="text-foreground text-sm font-semibold">{selected.assigned_by.name}</span>
+                                        <Avatar user={selected.assigned_by} size="sm" className="ring-surface-muted ring-1" />
+                                        <span className="text-text-main text-sm font-semibold">{selected.assigned_by.name}</span>
                                     </div>
                                 ) : (
-                                    <span className="text-muted-foreground text-xs italic">Belum disetujui manager</span>
+                                    <span className="text-text-soft text-xs italic">Belum disetujui manager</span>
                                 )}
                             </div>
 
                             <div>
-                                <div className="text-muted-foreground mb-1.5 text-xs font-semibold">Ditugaskan</div>
+                                <div className="text-text-desc mb-1.5 text-xs font-semibold">Ditugaskan</div>
                                 {selected.assigned_pic ? (
                                     <div className="flex items-center gap-2">
-                                        <Avatar user={selected.assigned_pic} size="sm" className="ring-1 ring-slate-200" />
-                                        <span className="text-foreground text-sm font-semibold">{selected.assigned_pic.name}</span>
+                                        <Avatar user={selected.assigned_pic} size="sm" className="ring-surface-muted ring-1" />
+                                        <span className="text-text-main text-sm font-semibold">{selected.assigned_pic.name}</span>
                                     </div>
                                 ) : (
-                                    <span className="text-muted-foreground text-xs italic">Belum ditugaskan</span>
+                                    <span className="text-text-soft text-xs italic">Belum ditugaskan</span>
                                 )}
                             </div>
                         </div>
                     </div>
 
                     {selected.workflow_step && (
-                        <div className="border-border col-span-full border-t pt-4">
-                            <div className="text-muted-foreground mb-2 text-xs font-semibold">Posisi Kontrak Saat Ini (Workflow)</div>
-                            <div className="animate-in fade-in border-primary/20 bg-primary/5 flex items-center gap-2 rounded-xl border p-3 shadow-sm dark:border-white/10 dark:bg-white/5">
-                                <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-lg dark:bg-white/10 dark:text-white">
+                        <div className="border-surface-border col-span-full border-t pt-4">
+                            <div className="text-text-desc mb-2 text-xs font-semibold">Posisi Kontrak Saat Ini (Workflow)</div>
+                            <div className="animate-in fade-in border-primary/20 bg-primary/5 flex items-center gap-2 rounded-xl border p-3 shadow-sm">
+                                <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-lg">
                                     <Info size={16} strokeWidth={2.5} />
                                 </div>
                                 <div className="flex flex-col gap-0.5">
-                                    <span className="text-primary text-xs font-bold dark:text-white">
+                                    <span className="text-primary text-xs font-medium">
                                         Sedang Di: {selected.workflow_step.description}
                                     </span>
-                                    <span className="text-primary/70 text-xs font-semibold dark:text-white/70">
+                                    <span className="text-primary/70 text-xs font-semibold">
                                         Peran: {selected.workflow_step.role}
                                     </span>
                                     {selected.workflow_step.target_approvers && (
-                                        <span className="text-primary/60 mt-1 text-[10px] font-bold tracking-tight uppercase dark:text-white/60">
+                                        <span className="text-primary/60 mt-1 text-[10px] font-semibold tracking-tight uppercase">
                                             Target Penyetuju: {selected.workflow_step.target_approvers}
                                         </span>
                                     )}
@@ -336,13 +336,13 @@ export function DraftEditableInfoCard({
                     )}
 
                     {isDraft && (
-                        <div className="border-border col-span-full mt-2 border-t pt-4">
+                        <div className="border-surface-border col-span-full mt-2 border-t pt-4">
                             <div
                                 className={cn(
                                     'mb-4 rounded-xl border p-3 transition-all duration-300',
                                     taxRequired
-                                        ? 'bg-primary/5 border-primary/20 dark:border-white/20 dark:bg-white/5'
-                                        : 'border-black/5 bg-black/[0.02] dark:border-white/5 dark:bg-white/[0.02]',
+                                        ? 'bg-primary/5 border-primary/20'
+                                        : 'border-surface-border/50 bg-surface-muted/30',
                                 )}
                             >
                                 <label className="flex cursor-pointer items-center justify-between">
@@ -352,7 +352,7 @@ export function DraftEditableInfoCard({
                                                 'flex h-8 w-8 items-center justify-center rounded-lg transition-all',
                                                 taxRequired
                                                     ? 'bg-primary shadow-primary/20 text-white shadow-lg'
-                                                    : 'bg-black/5 text-black/20 dark:bg-white/5 dark:text-white/20',
+                                                    : 'bg-surface-muted text-text-soft/20',
                                             )}
                                         >
                                             <svg
@@ -375,13 +375,13 @@ export function DraftEditableInfoCard({
                                         <div className="flex flex-col">
                                             <span
                                                 className={cn(
-                                                    'text-[11px] font-black tracking-wider uppercase',
-                                                    taxRequired ? 'text-primary dark:text-white' : 'text-black/40 dark:text-white/40',
+                                                    'text-[11px] font-semibold tracking-wider uppercase',
+                                                    taxRequired ? 'text-primary' : 'text-text-soft/40',
                                                 )}
                                             >
                                                 Ada Pajak
                                             </span>
-                                            <span className="text-[9px] font-medium text-black/30 dark:text-white/30">
+                                            <span className="text-text-soft/30 text-[9px] font-medium">
                                                 Aktifkan jika kontrak dikenakan pajak (PPN/PPh)
                                             </span>
                                         </div>
@@ -390,7 +390,7 @@ export function DraftEditableInfoCard({
                                         onClick={() => setTaxRequired(!taxRequired)}
                                         className={cn(
                                             'relative h-5 w-9 rounded-full transition-all duration-300',
-                                            taxRequired ? 'bg-primary shadow-inner shadow-black/10' : 'bg-black/10 dark:bg-white/10',
+                                            taxRequired ? 'bg-primary shadow-inner shadow-black/10' : 'bg-surface-muted border-surface-border border',
                                         )}
                                     >
                                         <div

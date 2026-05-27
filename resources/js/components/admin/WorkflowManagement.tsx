@@ -1,6 +1,6 @@
 import { useToast } from '@/components/contracts/Toast';
 import { Button } from '@/components/ui/base/Button';
-import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
+import { Column, DataTable } from '@/components/ui/data/DataTable';
 import { Modal } from '@/components/ui/overlays/Modal';
 import { usePermissions } from '@/hooks/use-permissions';
 import { router } from '@inertiajs/react';
@@ -11,11 +11,11 @@ import { useMemo, useRef, useState } from 'react';
 const WorkflowNameCell = ({ row, contractTypes }: { readonly row: any; readonly contractTypes: any[] }) => (
     <div className="group flex flex-col py-1">
         <div className="flex items-center gap-2">
-            <span className="text-primary text-[12px] font-semibold tracking-tight uppercase transition-transform group-hover:translate-x-1 dark:text-white">
+            <span className="text-text-main text-[12px] font-semibold tracking-tight uppercase transition-transform group-hover:translate-x-1">
                 {row.name}
             </span>
             {(row.is_default === true || row.is_default === 1 || row.is_default === '1') && (
-                <div className="bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-lg border px-1.5 py-0.5 text-[7px] font-black uppercase tracking-wider">
+                <div className="bg-success/10 border-success/20 text-success rounded-lg border px-1.5 py-0.5 text-[7px] font-semibold tracking-wider uppercase">
                     DEFAULT
                 </div>
             )}
@@ -31,15 +31,15 @@ const InitiatorCell = ({ row }: { readonly row: any }) => {
         row.initiator_type === 'all'
             ? 'Publik'
             : row.initiator_type === 'role'
-              ? `${row.initiator_roles?.length || 0} Role`
-              : `${row.initiator_users?.length || 0} User`;
+                ? `${row.initiator_roles?.length || 0} Role`
+                : `${row.initiator_users?.length || 0} User`;
     const Icon = row.initiator_type === 'all' ? UsersIcon : row.initiator_type === 'role' ? Shield : UserCheck;
     return (
         <div className="flex items-center gap-2">
-            <div className="bg-primary/[0.03] text-primary/40 rounded-md p-1 dark:bg-white/[0.03] dark:text-white/40">
+            <div className="bg-primary/5 text-primary/40 rounded-md p-1">
                 <Icon size={10} />
             </div>
-            <span className="text-primary/60 text-[9px] font-semibold uppercase dark:text-white/60">{text}</span>
+            <span className="text-text-desc text-[9px] font-medium uppercase">{text}</span>
         </div>
     );
 };
@@ -50,18 +50,18 @@ const StepsCell = ({ row }: { readonly row: any }) => (
             {row.steps?.slice(0, 3).map((s: any, i: number) => (
                 <div
                     key={s.id || i}
-                    className="bg-primary flex h-7 w-7 items-center justify-center rounded-lg border border-white text-[9px] font-semibold text-white shadow-md"
+                    className="bg-primary border-surface-base text-primary-foreground flex h-7 w-7 items-center justify-center rounded-lg border text-[9px] font-medium shadow-md"
                 >
                     {i + 1}
                 </div>
             ))}
             {row.steps?.length > 3 && (
-                <div className="bg-primary/10 text-primary flex h-7 w-7 items-center justify-center rounded-lg border border-white text-[8px] font-semibold dark:bg-white/10 dark:text-white">
+                <div className="bg-primary/10 text-primary border-surface-base flex h-7 w-7 items-center justify-center rounded-lg border text-[8px] font-medium">
                     +{row.steps.length - 3}
                 </div>
             )}
         </div>
-        <span className="text-primary/30 text-[9px] font-semibold uppercase dark:text-white/30">{row.steps?.length || 0} TAHAP</span>
+        <span className="text-text-soft text-[9px] font-medium uppercase">{row.steps?.length || 0} TAHAP</span>
     </div>
 );
 
@@ -185,20 +185,10 @@ function ImportWorkflowModal({ isOpen, onClose, showToast }: Readonly<ImportWork
                     onDragLeave={handleDrag}
                     onDrop={handleDrop}
                     onClick={() => fileInputRef.current?.click()}
-                    className={`relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-8 text-center transition-all duration-200 ${
-                        dragActive
-                            ? 'border-primary bg-primary/[0.02]'
-                            : 'border-border hover:border-primary/50 hover:bg-muted/30'
-                    }`}
+                    className={`relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-8 text-center transition-all duration-200 ${dragActive ? 'border-primary bg-primary/[0.02]' : 'border-border hover:border-primary/50 hover:bg-muted/30'
+                        }`}
                 >
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept=".json"
-                        onChange={handleChange}
-                        className="hidden"
-                        disabled={loading}
-                    />
+                    <input ref={fileInputRef} type="file" accept=".json" onChange={handleChange} className="hidden" disabled={loading} />
 
                     <div className="bg-primary/5 text-primary mb-4 rounded-2xl p-4">
                         <Upload size={24} />
@@ -207,13 +197,11 @@ function ImportWorkflowModal({ isOpen, onClose, showToast }: Readonly<ImportWork
                     <p className="text-foreground mb-1 text-sm font-semibold">
                         {file ? file.name : 'Seret & letakkan berkas JSON alur kerja di sini'}
                     </p>
-                    <p className="text-muted-foreground text-xs">
-                        atau klik untuk memilih berkas dari perangkat Anda
-                    </p>
+                    <p className="text-muted-foreground text-xs">atau klik untuk memilih berkas dari perangkat Anda</p>
                 </div>
 
                 {error && (
-                    <div className="bg-rose-500/10 border-rose-500/20 text-rose-500 rounded-xl border p-4 text-xs font-medium leading-relaxed">
+                    <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-4 text-xs leading-relaxed font-medium text-rose-500">
                         {error}
                     </div>
                 )}
@@ -223,22 +211,27 @@ function ImportWorkflowModal({ isOpen, onClose, showToast }: Readonly<ImportWork
                         <h4 className="text-foreground mb-3 text-xs font-bold tracking-wide uppercase">
                             Informasi Berkas ({parsedData.length} Alur Kerja Terdeteksi)
                         </h4>
-                        <div className="max-h-48 overflow-y-auto space-y-3 pr-1">
+                        <div className="max-h-48 space-y-3 overflow-y-auto pr-1">
                             {parsedData.map((item, index) => (
-                                <div key={item.name || index} className="border-border/40 bg-card flex items-start gap-3 rounded-xl border p-3.5 shadow-xs">
+                                <div
+                                    key={item.name || index}
+                                    className="border-border/40 bg-card flex items-start gap-3 rounded-xl border p-3.5 shadow-xs"
+                                >
                                     <div className="bg-primary/5 text-primary mt-0.5 rounded-lg p-2.5">
                                         <FileJson size={16} />
                                     </div>
                                     <div className="min-w-0 flex-1">
                                         <p className="text-foreground truncate text-[12px] font-bold">{item.name}</p>
-                                        <p className="text-muted-foreground mt-0.5 line-clamp-1 text-[10px]">{item.description || 'Tidak ada deskripsi'}</p>
+                                        <p className="text-muted-foreground mt-0.5 line-clamp-1 text-[10px]">
+                                            {item.description || 'Tidak ada deskripsi'}
+                                        </p>
                                         <div className="mt-2 flex items-center gap-2">
                                             <span className="border-border/30 bg-muted text-muted-foreground rounded-xs border px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider">
                                                 {item.contract_type_id
                                                     ? (contractTypes?.find((t) => t.id === item.contract_type_id)?.name || 'UNKNOWN')
                                                     : (item.contract_type || 'GLOBAL')}
                                             </span>
-                                            <span className="bg-primary/10 text-primary rounded-xs px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider">
+                                            <span className="bg-primary/10 text-primary rounded-xs px-1.5 py-0.5 text-[8px] font-bold tracking-wider uppercase">
                                                 {item.steps?.length || 0} Tahap
                                             </span>
                                         </div>
@@ -250,19 +243,10 @@ function ImportWorkflowModal({ isOpen, onClose, showToast }: Readonly<ImportWork
                 )}
 
                 <div className="border-border/30 flex items-center justify-end gap-3 border-t pt-5">
-                    <Button
-                        variant="outline"
-                        onClick={onClose}
-                        disabled={loading}
-                        className="h-10 rounded-xl px-5 text-xs font-semibold shadow-xs"
-                    >
+                    <Button variant="outline" onClick={onClose} disabled={loading} className="h-10 rounded-xl px-5 text-xs font-semibold shadow-xs">
                         Batal
                     </Button>
-                    <Button
-                        onClick={handleImport}
-                        disabled={!file || loading}
-                        className="h-10 gap-2 rounded-xl px-6 text-xs font-semibold shadow-md"
-                    >
+                    <Button onClick={handleImport} disabled={!file || loading} className="h-10 gap-2 rounded-xl px-6 text-xs font-semibold shadow-md">
                         {loading && <Loader2 size={12} className="animate-spin" />}
                         {loading ? 'Mengimpor...' : 'Mulai Impor'}
                     </Button>
@@ -285,9 +269,9 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
 
     const columns = useMemo<Column<any>[]>(
         () => [
-            { header: 'Identitas Alur', accessorKey: 'name', sortable: true, cell: (row) => <WorkflowNameCell row={row} contractTypes={contractTypes} /> },
-            { header: 'Otoritas Inisiasi', accessorKey: 'initiator_type', cell: (row) => <InitiatorCell row={row} /> },
-            { header: 'Struktur Tahapan', accessorKey: 'steps_count', cell: (row) => <StepsCell row={row} /> },
+            { header: 'Identitas Alur', accessorKey: 'name', sortable: true, cell: (row: any) => <WorkflowNameCell row={row} /> },
+            { header: 'Otoritas Inisiasi', accessorKey: 'initiator_type', cell: (row: any) => <InitiatorCell row={row} /> },
+            { header: 'Struktur Tahapan', accessorKey: 'steps_count', cell: (row: any) => <StepsCell row={row} /> },
         ],
         [contractTypes],
     );
@@ -301,8 +285,8 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
     };
 
     return (
-        <div className="border-border bg-card m-5 rounded-2xl border p-5 shadow-sm">
-            <TableMasterData
+        <>
+            <DataTable
                 title="Manajemen Alur Kerja"
                 borderless={true}
                 columns={columns}
@@ -318,16 +302,14 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                         {canCreate && (
                             <>
                                 <Button
-                                    variant="outline"
+                                    variant="white"
                                     onClick={() => setIsImportOpen(true)}
-                                    className="border-border/40 bg-card text-foreground hover:bg-muted/60 hover:border-border/60 h-10 gap-2 rounded-xl border px-5 text-xs font-bold shadow-sm transition-all duration-200 hover:shadow-md active:scale-95"
                                 >
                                     <Upload size={12} className="mr-2" /> Impor Alur
                                 </Button>
                                 <Button
                                     variant="white"
                                     onClick={openCreate}
-                                    className="border-border/40 bg-card text-foreground hover:bg-muted/60 hover:border-border/60 h-10 gap-2 rounded-xl border px-6 text-xs font-bold shadow-sm transition-all duration-200 hover:shadow-md active:scale-95"
                                 >
                                     <Plus size={12} className="mr-2" /> Registrasi Baru
                                 </Button>
@@ -335,43 +317,41 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                         )}
                     </div>
                 }
-                bulkActions={
-                    useMemo(() => {
-                        const actions = [];
-                        
+                bulkActions={useMemo(() => {
+                    const actions = [];
+
+                    actions.push({
+                        label: 'Ekspor Terpilih',
+                        icon: Download,
+                        variant: 'outline' as const,
+                        onClick: (ids: string[]) => {
+                            const params = new URLSearchParams();
+                            ids.forEach((id) => params.append('ids[]', id));
+                            window.location.href = route('admin.workflows.export') + '?' + params.toString();
+                        },
+                    });
+
+                    if (canDelete) {
                         actions.push({
-                            label: 'Ekspor Terpilih',
-                            icon: Download,
-                            variant: 'outline' as const,
+                            label: 'Hapus Terpilih',
+                            icon: Trash2,
+                            variant: 'destructive' as const,
                             onClick: (ids: string[]) => {
-                                const params = new URLSearchParams();
-                                ids.forEach(id => params.append('ids[]', id));
-                                window.location.href = route('admin.workflows.export') + '?' + params.toString();
+                                if (confirm(`Apakah Anda yakin ingin menghapus ${ids.length} alur kerja terpilih?`)) {
+                                    router.post(
+                                        route('admin.workflows.bulk-destroy'),
+                                        { ids },
+                                        {
+                                            onSuccess: () => showToast(`${ids.length} alur kerja telah dihapus`, 'success'),
+                                        },
+                                    );
+                                }
                             },
                         });
+                    }
 
-                        if (canDelete) {
-                            actions.push({
-                                label: 'Hapus Terpilih',
-                                icon: Trash2,
-                                variant: 'destructive' as const,
-                                onClick: (ids: string[]) => {
-                                    if (confirm(`Apakah Anda yakin ingin menghapus ${ids.length} alur kerja terpilih?`)) {
-                                        router.post(
-                                            route('admin.workflows.bulk-destroy'),
-                                            { ids },
-                                            {
-                                                onSuccess: () => showToast(`${ids.length} alur kerja telah dihapus`, 'success'),
-                                            },
-                                        );
-                                    }
-                                },
-                            });
-                        }
-
-                        return actions;
-                    }, [canDelete, showToast])
-                }
+                    return actions;
+                }, [canDelete, showToast])}
                 pagination={{
                     currentPage: workflows.current_page || 1,
                     lastPage: workflows.last_page || 1,
@@ -390,12 +370,13 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                 }}
             />
 
-            <ImportWorkflowModal 
-                isOpen={isImportOpen} 
-                onClose={() => setIsImportOpen(false)} 
-                showToast={showToast} 
+            <ImportWorkflowModal
+                isOpen={isImportOpen}
+                onClose={() => setIsImportOpen(false)}
+                showToast={showToast}
                 contractTypes={contractTypes}
             />
-        </div>
-    );
+            <div />
+
+            );
 }

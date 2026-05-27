@@ -1,6 +1,7 @@
 import { useToast } from '@/components/contracts/Toast';
 import { FormField } from '@/components/form-renderer/FormElement';
 import { InteractiveForm } from '@/components/form-renderer/InteractiveForm';
+import { Button } from '@/components/ui/base/Button';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
 import { SearchInput } from '@/components/ui/forms/SearchInput';
 import { Modal } from '@/components/ui/overlays/Modal';
@@ -578,11 +579,11 @@ function GenericFormTab({
 
     if (!matchingTemplate) {
         return (
-            <div className="rounded-xl border border-dashed border-black/10 bg-black/5 py-20 text-center dark:border-white/10 dark:bg-white/5">
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-black/10 dark:bg-white/10">
-                    <FileText className="text-black/40 dark:text-white/40" size={24} />
+            <div className="border-surface-border bg-surface-muted rounded-xl border border-dashed py-20 text-center">
+                <div className="bg-surface-base mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full shadow-sm">
+                    <FileText className="text-text-soft" size={24} />
                 </div>
-                <h5 className="mb-1 font-bold text-black uppercase dark:text-white" style={{ fontSize: 12 }}>
+                <h5 className="text-text-main mb-1 font-semibold uppercase" style={{ fontSize: 12 }}>
                     Belum Ada Template {docType.toUpperCase()}
                 </h5>
             </div>
@@ -591,7 +592,7 @@ function GenericFormTab({
 
     if (loading)
         return (
-            <div className="flex flex-col items-center justify-center py-20 text-[10px] font-bold text-black/40 uppercase dark:text-white/40">
+            <div className="text-text-soft flex flex-col items-center justify-center py-20 text-[10px] font-semibold uppercase">
                 <LoadingLottie width={80} height={80} className="mb-4" />
                 Memuat form {docType.toUpperCase()}...
             </div>
@@ -606,16 +607,16 @@ function GenericFormTab({
     } as any;
 
     return (
-        <div className="bg-card animate-in fade-in flex flex-1 flex-col overflow-hidden duration-300">
+        <div className="bg-surface-base animate-in fade-in flex flex-1 flex-col overflow-hidden duration-300">
             {/* PDF Preview Overlay */}
             {pdfPreviewUrl && (
-                <div className="dark:bg-sidebar/90 animate-in fade-in zoom-in-95 fixed inset-0 z-[100] flex flex-col bg-white/90 backdrop-blur-md duration-300">
-                    <div className="flex h-16 items-center justify-between border-b border-black/10 px-6 dark:border-white/10">
+                <div className="animate-in fade-in zoom-in-95 bg-surface-base/90 fixed inset-0 z-[100] flex flex-col backdrop-blur-md duration-300">
+                    <div className="border-surface-border flex h-16 items-center justify-between border-b px-6">
                         <div className="flex flex-col">
-                            <h3 className="flex items-center gap-2 text-[11px] font-bold text-black uppercase dark:text-white">
-                                <FileText size={16} className="text-black dark:text-white" /> Preview Dokumen {docType.toUpperCase()}
+                            <h3 className="text-text-main flex items-center gap-2 text-[11px] font-semibold uppercase">
+                                <FileText size={16} /> Preview Dokumen {docType.toUpperCase()}
                             </h3>
-                            <span className="text-[9px] font-bold tracking-wider text-black/40 uppercase dark:text-white/40">
+                            <span className="text-text-soft text-[9px] font-medium tracking-wider uppercase">
                                 {selected.contract_no} — Ready for Download
                             </span>
                         </div>
@@ -623,20 +624,17 @@ function GenericFormTab({
                             <a
                                 href={pdfPreviewUrl}
                                 download={`${selected.contract_no}_${docType.toUpperCase()}.pdf`}
-                                className="flex items-center gap-2 rounded-lg bg-black px-6 py-2.5 text-[10px] font-bold text-white uppercase shadow-lg transition-all hover:opacity-90 active:scale-95 dark:bg-white dark:text-black"
+                                className="bg-primary text-primary-foreground shadow-primary/20 flex h-10 items-center gap-2 rounded-xl px-6 text-[10px] font-medium uppercase shadow-lg transition-all hover:opacity-90 active:scale-95"
                             >
                                 <Download size={14} /> Download PDF
                             </a>
-                            <button
-                                onClick={() => setPdfPreviewUrl(null)}
-                                className="rounded-lg bg-black/5 px-4 py-2.5 text-[10px] font-bold text-black uppercase transition-all hover:bg-black/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
-                            >
+                            <Button variant="white" onClick={() => setPdfPreviewUrl(null)}>
                                 Tutup
-                            </button>
+                            </Button>
                         </div>
                     </div>
                     <div className="flex flex-1 justify-center overflow-hidden p-8">
-                        <div className="animate-in slide-in-from-bottom-5 fill-mode-both h-full w-full max-w-[210mm] overflow-hidden rounded-sm bg-white shadow-2xl ring-1 ring-black/10 delay-150 duration-500 dark:ring-white/10">
+                        <div className="animate-in slide-in-from-bottom-5 fill-mode-both border-surface-border h-full w-full max-w-[210mm] overflow-hidden rounded-sm bg-white shadow-2xl ring-1 delay-150 duration-500">
                             <iframe src={`${pdfPreviewUrl}#toolbar=0&navpanes=0`} className="h-full w-full border-none" title="PDF Preview" />
                         </div>
                     </div>
@@ -644,16 +642,16 @@ function GenericFormTab({
             )}
 
             {isF2 && (meUser?.department === 'Legal' || meUser?.role === 'PIC Legal' || meUser?.role === 'Admin') && (
-                <div className="bg-primary/5 border-b border-black/10 px-6 py-4 dark:border-white/10 dark:bg-white/5">
+                <div className="bg-primary/5 border-surface-border border-b px-6 py-4">
                     <div className="flex flex-wrap items-end gap-6">
                         {(meUser?.role === 'Legal Staff' || meUser?.role === 'Admin' || meUser?.role === 'PIC Legal') && (
                             <div className="min-w-[200px] flex-1 space-y-1.5">
-                                <label className="text-primary/60 flex items-center gap-1.5 text-[10px] font-black uppercase dark:text-white/60">
-                                    <i className="fa-solid fa-hashtag" /> No. Kontrak (F2)
+                                <label className="text-primary/60 flex items-center gap-1.5 text-[10px] font-semibold uppercase">
+                                    <span className="font-mono">#</span> No. Kontrak (F2)
                                 </label>
                                 <div className="group relative flex gap-2">
-                                    <div className="text-primary/40 group-focus-within:text-primary absolute inset-y-0 left-0 flex items-center pl-3 transition-colors dark:text-white/40 dark:group-focus-within:text-white">
-                                        <i className="fa-solid fa-hashtag text-[10px]" />
+                                    <div className="text-primary/40 group-focus-within:text-primary absolute inset-y-0 left-0 flex items-center pl-3 transition-colors">
+                                        <span className="font-mono text-[10px] font-semibold">#</span>
                                     </div>
                                     <input
                                         type="text"
@@ -665,16 +663,16 @@ function GenericFormTab({
                                             // Trigger debounced update to server
                                             contractApi.update(selected.id, { crown_no: val });
                                         }}
-                                        className="focus:border-primary/50 h-10 flex-1 rounded-xl border border-black/10 bg-white pr-4 pl-9 text-xs font-medium shadow-sm transition-all outline-none dark:border-white/10 dark:bg-black/20 dark:focus:border-white/50"
+                                        className="focus:border-primary/50 border-surface-border bg-surface-base text-text-main h-10 flex-1 rounded-xl border pr-4 pl-9 text-xs font-semibold shadow-sm transition-all outline-none"
                                     />
                                 </div>
                             </div>
                         )}
 
                         {(meUser?.role === 'PIC Legal' || meUser?.role === 'Admin') && (
-                            <div className="flex h-10 items-center gap-4 rounded-lg border border-black/10 bg-white px-4 shadow-sm dark:border-white/10 dark:bg-black/20">
-                                <label className="flex items-center gap-1.5 text-[10px] font-black text-black/60 uppercase dark:text-white/60">
-                                    <i className="fa-solid fa-signature" /> Digital Signature
+                            <div className="border-surface-border bg-surface-base flex h-10 items-center gap-4 rounded-lg border px-4 shadow-sm">
+                                <label className="text-text-soft flex items-center gap-1.5 text-[10px] font-semibold uppercase">
+                                    <Download size={12} className="opacity-40" /> Digital Signature
                                 </label>
                                 <button
                                     onClick={() => {
@@ -684,7 +682,7 @@ function GenericFormTab({
                                     }}
                                     className={cn(
                                         'focus-visible:ring-ring focus-visible:ring-offset-background relative inline-flex h-5 w-10 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
-                                        selected.is_digital_signature ? 'bg-primary' : 'bg-black/20 dark:bg-white/20',
+                                        selected.is_digital_signature ? 'bg-primary' : 'bg-surface-muted',
                                     )}
                                 >
                                     <span
@@ -694,7 +692,7 @@ function GenericFormTab({
                                         )}
                                     />
                                 </button>
-                                <span className="text-[10px] font-black text-black uppercase dark:text-white">
+                                <span className="text-text-main text-[10px] font-semibold uppercase">
                                     {selected.is_digital_signature ? 'Aktif' : 'Non-Aktif'}
                                 </span>
                             </div>
@@ -703,14 +701,14 @@ function GenericFormTab({
                 </div>
             )}
 
-            <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between border-b border-black/5 bg-white/50 px-6 backdrop-blur-md dark:border-white/5 dark:bg-black/50">
+            <div className="border-surface-border bg-surface-base/50 sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between border-b px-6 backdrop-blur-md">
                 <div className="flex items-center gap-4">
                     <div className="flex flex-col">
                         <div className="flex items-center gap-2">
-                            <h4 className="text-xs font-bold tracking-tight text-black uppercase dark:text-white">
+                            <h4 className="text-xs font-medium tracking-tight text-black uppercase dark:text-white">
                                 {docType === 'f1' ? 'F1 Internal' : 'F2 Summary'}
                             </h4>
-                            <span className="rounded bg-black/5 px-1.5 py-0.5 text-[9px] font-bold text-black/60 dark:bg-white/10 dark:text-white/60">
+                            <span className="rounded bg-black/5 px-1.5 py-0.5 text-[9px] font-medium text-black/60 dark:bg-white/10 dark:text-white/60">
                                 V{submissionInfo?.current_version || 1}
                             </span>
                         </div>
@@ -723,7 +721,7 @@ function GenericFormTab({
                             {autoSaveStatus === 'saving' && (
                                 <>
                                     <Loader2 size={12} className="animate-spin text-black dark:text-white" />
-                                    <span className="text-[11px] font-bold text-black dark:text-white">Menyimpan...</span>
+                                    <span className="text-[11px] font-medium text-black dark:text-white">Menyimpan...</span>
                                 </>
                             )}
                             {autoSaveStatus === 'saved' && (
@@ -735,29 +733,19 @@ function GenericFormTab({
                         </div>
                     )}
                     <div className="relative">
-                        <button
-                            onClick={() => setShowVersions(!showVersions)}
-                            className={cn(
-                                'group flex h-8 items-center gap-2 rounded-lg border text-[11px] font-bold uppercase transition-all active:scale-95',
-                                showVersions
-                                    ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black'
-                                    : 'border-black/5 bg-white text-black/60 hover:border-black/20 hover:text-black dark:border-white/5 dark:bg-transparent dark:text-white/60 dark:hover:text-white',
-                            )}
-                        >
+                        <Button variant={showVersions ? 'primary' : 'white'} onClick={() => { setShowVersions(!showVersions); setShowMoreActions(false); }}>
                             <History
                                 size={14}
                                 className={cn(
-                                    'ml-3 transition-colors',
-                                    showVersions
-                                        ? 'text-white'
-                                        : 'text-black/40 group-hover:text-black dark:text-white/40 dark:group-hover:text-white',
+                                    'transition-colors',
+                                    showVersions ? 'text-primary-foreground' : 'text-text-soft group-hover:text-primary',
                                 )}
                             />
-                            <span className="mr-3">{versions.length || 0} Versi</span>
-                        </button>
+                            <span>{versions.length || 0} Versi</span>
+                        </Button>
 
                         {showVersions && (
-                            <div className="animate-in fade-in zoom-in-95 absolute top-full right-0 z-[999] mt-2 w-80 origin-top-right rounded-2xl border border-black/10 bg-white p-1.5 shadow-2xl backdrop-blur-md duration-200 dark:border-white/10 dark:bg-[#1e293b]">
+                            <div className="animate-in fade-in zoom-in-95 border-surface-border bg-surface-base absolute top-full right-0 z-[999] mt-2 w-80 origin-top-right rounded-2xl border p-1.5 shadow-2xl backdrop-blur-md duration-200">
                                 <div className="border-b border-black/5 p-3 dark:border-white/5">
                                     <SearchInput
                                         autoFocus
@@ -781,15 +769,15 @@ function GenericFormTab({
                                             >
                                                 <div className="flex flex-col">
                                                     <div className="flex items-center gap-2.5">
-                                                        <span className="flex h-6 w-6 items-center justify-center rounded bg-black text-[10px] font-bold text-white dark:bg-white dark:text-black">
+                                                        <span className="flex h-6 w-6 items-center justify-center rounded bg-black text-[10px] font-medium text-white dark:bg-white dark:text-black">
                                                             {v.version_no}
                                                         </span>
-                                                        <span className="text-xs font-bold text-black dark:text-white">Versi {v.version_no}</span>
+                                                        <span className="text-xs font-medium text-black dark:text-white">Versi {v.version_no}</span>
                                                     </div>
                                                     <div className="mt-1 flex items-center gap-2">
-                                                        <span className="text-[10px] font-bold text-black dark:text-white">{v.created_at}</span>
+                                                        <span className="text-[10px] font-medium text-black dark:text-white">{v.created_at}</span>
                                                         <div className="h-1 w-1 rounded-full bg-black dark:bg-white" />
-                                                        <span className="text-[10px] font-bold text-black dark:text-white">
+                                                        <span className="text-[10px] font-medium text-black dark:text-white">
                                                             {v.created_by?.name || 'System'}
                                                         </span>
                                                     </div>
@@ -803,7 +791,7 @@ function GenericFormTab({
                                     ) : (
                                         <div className="py-16 text-center">
                                             <FolderOpen className="mx-auto mb-3 text-black dark:text-white" size={24} />
-                                            <span className="text-xs font-bold text-black dark:text-white">Data Kosong</span>
+                                            <span className="text-xs font-medium text-black dark:text-white">Data Kosong</span>
                                         </div>
                                     )}
                                 </div>
@@ -812,29 +800,21 @@ function GenericFormTab({
                     </div>
 
                     <div className="relative">
-                        <button
-                            onClick={() => setShowMoreActions(!showMoreActions)}
-                            className={cn(
-                                'flex h-8 w-8 items-center justify-center rounded-lg border transition-all active:scale-95',
-                                showMoreActions
-                                    ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black'
-                                    : 'border-black/5 bg-white text-black/40 hover:bg-black/5 dark:border-white/5 dark:bg-transparent dark:text-white/40',
-                            )}
-                        >
+                        <Button variant={showMoreActions ? 'primary' : 'white'} size="icon" onClick={() => { setShowMoreActions(!showMoreActions); setShowVersions(false); }}>
                             <MoreVertical size={14} />
-                        </button>
+                        </Button>
 
                         {showMoreActions && (
-                            <div className="animate-in fade-in zoom-in-95 absolute top-full right-0 z-[999] mt-2 w-64 origin-top-right rounded-2xl border border-black/10 bg-white p-1.5 shadow-2xl backdrop-blur-xl duration-200 dark:border-white/10 dark:bg-[#1e293b]">
+                            <div className="animate-in fade-in zoom-in-95 border-surface-border bg-surface-base absolute top-full right-0 z-[999] mt-2 w-64 origin-top-right rounded-2xl border p-1.5 shadow-2xl backdrop-blur-xl duration-200">
                                 {versions.length > 1 && (
                                     <a
                                         href={`/admin/contracts/${selected.id}/form-submissions/${docType}/compare`}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         onClick={() => setShowMoreActions(false)}
-                                        className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-xs font-semibold text-[#0f172a] transition-all hover:bg-black/5 dark:text-white dark:hover:bg-white/5"
+                                        className="text-text-main hover:bg-surface-muted flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-xs font-semibold transition-all"
                                     >
-                                        <Columns size={16} className="opacity-40" />
+                                        <Columns size={16} className="text-text-soft" />
                                         Bandingkan Versi
                                     </a>
                                 )}
@@ -845,7 +825,7 @@ function GenericFormTab({
                                         setShowMoreActions(false);
                                     }}
                                     disabled={isExporting}
-                                    className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-xs font-semibold text-[#0f172a] transition-all hover:bg-black/5 disabled:opacity-20 dark:text-white dark:hover:bg-white/5"
+                                    className="text-text-main hover:bg-surface-muted flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-xs font-semibold transition-all disabled:opacity-20"
                                 >
                                     {isExporting ? (
                                         <Loader2 size={16} className="animate-spin opacity-40" />
@@ -868,7 +848,7 @@ function GenericFormTab({
                     >
                         <div className="space-y-6">
                             <div>
-                                <label className="mb-2 block text-xs font-bold text-black dark:text-white">Catatan Perubahan</label>
+                                <label className="mb-2 block text-xs font-medium text-black dark:text-white">Catatan Perubahan</label>
                                 <textarea
                                     autoFocus
                                     value={versionNote}
@@ -879,20 +859,13 @@ function GenericFormTab({
                                 />
                             </div>
                             <div className="flex gap-4">
-                                <button
-                                    onClick={() => setShowNoteModal(false)}
-                                    className="flex-1 rounded-xl border-2 border-black bg-white py-4 text-xs font-bold text-black transition-all hover:bg-black hover:text-white active:scale-95 dark:border-white dark:bg-transparent dark:text-white dark:hover:bg-white dark:hover:text-black"
-                                >
+                                <Button variant="outline" onClick={() => setShowNoteModal(false)} className="flex-1">
                                     Batal
-                                </button>
-                                <button
-                                    onClick={handleManualSave}
-                                    disabled={saving}
-                                    className="flex flex-[1.5] items-center justify-center gap-2.5 rounded-xl bg-black py-4 text-xs font-bold text-white shadow-xl transition-all hover:opacity-90 active:scale-95 disabled:opacity-20 dark:bg-white dark:text-black"
-                                >
+                                </Button>
+                                <Button onClick={handleManualSave} disabled={saving} className="shadow-primary/20 flex-[1.5]">
                                     {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
                                     Simpan Versi Baru
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </Modal>
@@ -900,14 +873,10 @@ function GenericFormTab({
                     <div className="mx-1 h-8 w-px bg-black/10 dark:bg-white/10" />
 
                     {isDraft && (
-                        <button
-                            onClick={() => setShowNoteModal(true)}
-                            disabled={saving}
-                            className="bg-primary flex h-9 items-center gap-2 rounded-lg px-5 text-xs font-bold text-white shadow-lg transition-all hover:opacity-90 active:scale-95 disabled:opacity-20 dark:bg-white dark:text-black"
-                        >
+                        <Button onClick={() => setShowNoteModal(true)} disabled={saving} className="shadow-primary/20">
                             <PlusCircle size={16} />
                             Update Versi
-                        </button>
+                        </Button>
                     )}
                 </div>
             </div>

@@ -24,6 +24,7 @@ class AccessModule extends Model
         'can_bulk_delete',
         'created_by',
         'module_group_id',
+        'sequence',
     ];
 
     public $timestamps = true;

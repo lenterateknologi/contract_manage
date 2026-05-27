@@ -60,6 +60,16 @@ class HandleInertiaRequests extends Middleware
                     'role' => $request->user()->role,
                     'bg_color' => $request->user()->bg_color,
                     'text_color' => $request->user()->text_color,
+                    'stats' => [
+                        'total_created' => \App\Models\Contract::where('created_by', $request->user()->id)->count(),
+                        'pending_approvals' => \App\Models\Approval::where('user_id', $request->user()->id)
+                            ->where('status', 'pending')
+                            ->whereHas('contract', fn($q) => $q->whereNull('deleted_at'))
+                            ->count(),
+                        'assigned_active' => \App\Models\Contract::where('assigned_pic_id', $request->user()->id)
+                            ->where('status', 'active')
+                            ->count(),
+                    ]
                 ]) : null,
                 'permissions' => $this->getUserPermissions($request),
             ],
@@ -115,6 +125,10 @@ class HandleInertiaRequests extends Middleware
         $modules = Module::where('m_modules.showed_as_menu', true)
             ->join('m_access_modules', 'm_modules.id', '=', 'm_access_modules.module_id')
             ->join('m_module_groups', 'm_access_modules.module_group_id', '=', 'm_module_groups.id')
+            ->leftJoin('m_role_module_groups', function ($join) use ($role) {
+                $join->on('m_module_groups.id', '=', 'm_role_module_groups.module_group_id')
+                    ->where('m_role_module_groups.role_id', '=', $role->id);
+            })
             ->where('m_access_modules.role_id', $role->id)
             ->where('m_access_modules.can_read', true)
             ->select(
@@ -123,67 +137,45 @@ class HandleInertiaRequests extends Middleware
                 'm_modules.route',
                 'm_modules.icon',
                 'm_module_groups.name as group_title',
+                'm_role_module_groups.sequence as group_sequence',
+                'm_access_modules.sequence as module_sequence',
             )
-            ->groupBy('m_modules.id', 'm_modules.name', 'm_modules.route', 'm_modules.icon', 'm_module_groups.name')
             ->get();
 
-        $groupOrder = [
-            'Beranda' => 1,
-            'Modul Kontrak' => 2,
-            'Desain Template' => 3,
-            'Konfigurasi Alur' => 4,
-            'Data Master' => 5,
-            'Sistem & Laporan' => 6,
-        ];
-
-        $moduleOrder = [
-            'Dashboard Utama' => 1,
-            'Draft saya' => 2,
-            'Semua Kontrak' => 3,
-            'Perlu Persetujuan' => 4,
-            'Masa Berlaku' => 5,
-            'Kategori Kontrak' => 6,
-            'Formulir Digital' => 7,
-            'Alur Persetujuan' => 8,
-            'Master Status' => 9,
-            'Data Group' => 10,
-            'Data Region' => 11,
-            'Data Company' => 12,
-            'Manajemen Pengguna' => 13,
-            'Hak Akses & Peran' => 14,
-            'Data Departemen' => 15,
-            'Daftar Vendor' => 16,
-            'Anggota Divisi' => 17,
-            'Analitik Kontrak' => 18,
-            'Jejak Audit' => 19,
-            'Ekspor Impor Master' => 20,
-        ];
-
         $groups = $modules->groupBy(fn ($item) => trim($item->group_title))
-            ->map(function ($items, $title) use ($moduleOrder) {
+            ->map(function ($items, $title) {
+                $first = $items->first();
                 $sortedItems = $items->map(fn ($module) => [
                     'title' => $module->name,
                     'url' => $module->route,
                     'icon' => $module->icon,
+                    'sequence' => $module->module_sequence,
                 ])->values()->all();
 
-                usort($sortedItems, function ($a, $b) use ($moduleOrder) {
-                    $orderA = $moduleOrder[$a['title']] ?? 999;
-                    $orderB = $moduleOrder[$b['title']] ?? 999;
+                usort($sortedItems, function ($a, $b) {
+                    $orderA = $a['sequence'] ?? 9999;
+                    $orderB = $b['sequence'] ?? 9999;
+                    if ($orderA === $orderB) {
+                        return strcmp($a['title'], $b['title']);
+                    }
 
                     return $orderA <=> $orderB;
                 });
 
                 return [
                     'title' => $title,
+                    'sequence' => $first?->group_sequence,
                     'items' => $sortedItems,
                 ];
             })
             ->all();
 
-        uksort($groups, function ($a, $b) use ($groupOrder) {
-            $orderA = $groupOrder[$a] ?? 999;
-            $orderB = $groupOrder[$b] ?? 999;
+        usort($groups, function ($a, $b) {
+            $orderA = $a['sequence'] ?? 9999;
+            $orderB = $b['sequence'] ?? 9999;
+            if ($orderA === $orderB) {
+                return strcmp($a['title'], $b['title']);
+            }
 
             return $orderA <=> $orderB;
         });

@@ -7,6 +7,7 @@ export function HighlightingCell({ text, search }: Readonly<{ text: string; sear
                 const key = `${part}-${i}`;
                 return part.toLowerCase() === search.toLowerCase() ? (
                     <mark key={key} className="bg-yellow-200 text-yellow-900 rounded-sm px-0.5">{part}</mark>
+
                 ) : (
                     <span key={key}>{part}</span>
                 );

@@ -11,9 +11,11 @@ return new class() extends Migration
      */
     public function up(): void
     {
-        Schema::table('m_contract_types', function (Blueprint $table) {
-            $table->uuid('parent_id')->nullable()->index()->comment('induk dari jenis kontrak');
-        });
+        if (! Schema::hasColumn('m_contract_types', 'parent_id')) {
+            Schema::table('m_contract_types', function (Blueprint $table) {
+                $table->uuid('parent_id')->nullable()->index()->comment('induk dari jenis kontrak');
+            });
+        }
     }
 
     /**
@@ -21,8 +23,10 @@ return new class() extends Migration
      */
     public function down(): void
     {
-        Schema::table('m_contract_types', function (Blueprint $table) {
-            $table->dropColumn(['parent_id']);
-        });
+        if (Schema::hasColumn('m_contract_types', 'parent_id')) {
+            Schema::table('m_contract_types', function (Blueprint $table) {
+                $table->dropColumn(['parent_id']);
+            });
+        }
     }
 };

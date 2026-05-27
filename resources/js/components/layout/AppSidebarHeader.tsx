@@ -28,7 +28,7 @@ export const AppSidebarHeader = memo(function AppSidebarHeader({ breadcrumbs = [
                 className={cn(
                     'm-4 flex h-14 items-center justify-between rounded-2xl px-6',
                     'bg-card/90 dark:bg-card/90 backdrop-blur-xl',
-                    'border-border/60 dark:border-border/60 border shadow-xl dark:shadow-black/20',
+                    'border-border/60 dark:border-border/60 border shadow-sm dark:shadow-black/20',
                     'transform transition-all duration-300 ease-in-out',
                     isDetailRoute ? 'scale-[0.97] opacity-0' : 'scale-100 opacity-100',
                 )}

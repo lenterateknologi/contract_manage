@@ -208,6 +208,7 @@ class FormTemplateController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'document_type' => 'nullable|string|max:50',
             'fields' => 'sometimes|array',
             'fields.*.label' => 'nullable|string|max:255',
             'fields.*.type' => 'required|string',
@@ -222,6 +223,9 @@ class FormTemplateController extends Controller
 
             $template->name = $request->name;
             $template->description = $request->description;
+            if ($request->has('document_type')) {
+                $template->document_type = $request->document_type;
+            }
             $template->has_letterhead = $request->has_letterhead ?? false;
             $template->letterhead_json = $request->letterhead_json ?? null;
             $template->updated_by = Auth::id();
@@ -231,7 +235,7 @@ class FormTemplateController extends Controller
             $template->fields()->delete();
 
             $idMapping = [];
-            $allFieldsData = $request->fields;
+            $allFieldsData = $request->fields ?? [];
 
             // First pass: Create all fields without setting parent_id
             foreach ($allFieldsData as $fieldData) {
@@ -478,6 +482,142 @@ class FormTemplateController extends Controller
 
             return redirect()->route('admin.form-templates.index')->with('success', 'Template berhasil diduplikasi.');
         });
+    }
+
+    /**
+     * Export a form template as a JSON file.
+     */
+    public function export(FormTemplate $template)
+    {
+        $template->load(['fields' => fn ($q) => $q->orderBy('order')]);
+
+        $fields = $template->fields->map(function ($field) {
+            return [
+                'id' => $field->id,
+                'parent_id' => $field->parent_id,
+                'label' => $field->label,
+                'name' => $field->name,
+                'type' => $field->type,
+                'container_type' => $field->container_type,
+                'placeholder' => $field->placeholder,
+                'is_required' => (bool) $field->is_required,
+                'use_rich_text' => (bool) $field->use_rich_text,
+                'width' => $field->width,
+                'options' => $field->options,
+                'order' => (int) $field->order,
+                'validation_rules' => $field->validation_rules,
+            ];
+        });
+
+        $exportData = [
+            'version' => '1.0',
+            'name' => $template->name,
+            'description' => $template->description,
+            'document_type' => $template->document_type,
+            'contract_type_id' => $template->contract_type_id,
+            'has_letterhead' => (bool) $template->has_letterhead,
+            'letterhead_json' => $template->letterhead_json,
+            'fields' => $fields->toArray(),
+        ];
+
+        $fileName = Str::slug($template->name) . '_export_' . date('Ymd_His') . '.json';
+
+        return response()->streamDownload(function () use ($exportData) {
+            echo json_encode($exportData, JSON_PRETTY_PRINT);
+        }, $fileName, [
+            'Content-Type' => 'application/json',
+        ]);
+    }
+
+    /**
+     * Import a form template from a JSON file.
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:json,txt',
+        ]);
+
+        try {
+            $fileContent = file_get_contents($request->file('file')->getRealPath());
+            $data = json_decode($fileContent, true);
+
+            if (! is_array($data) || ! isset($data['name']) || ! isset($data['fields'])) {
+                return back()->withErrors(['error' => 'Format file JSON tidak valid atau data tidak lengkap.']);
+            }
+
+            return DB::transaction(function () use ($data) {
+                // Find a unique name
+                $originalName = ($data['name'] ?? 'Imported Form Template') . ' (Imported)';
+                $name = $originalName;
+                $i = 1;
+                while (FormTemplate::where('name', $name)->exists()) {
+                    $name = $originalName . " (Copy {$i})";
+                    $i++;
+                }
+
+                // Verify contract_type_id exists
+                $contractTypeId = null;
+                if (! empty($data['contract_type_id'])) {
+                    $exists = DB::table('m_contract_types')->where('id', $data['contract_type_id'])->exists();
+                    if ($exists) {
+                        $contractTypeId = $data['contract_type_id'];
+                    }
+                }
+
+                $template = new FormTemplate();
+                $template->name = $name;
+                $template->description = $data['description'] ?? null;
+                $template->document_type = $data['document_type'] ?? 'other';
+                $template->contract_type_id = $contractTypeId;
+                $template->has_letterhead = $data['has_letterhead'] ?? false;
+                $template->letterhead_json = $data['letterhead_json'] ?? null;
+                $template->created_by = Auth::id();
+                $template->updated_by = Auth::id();
+                $template->save();
+
+                $idMapping = [];
+
+                // First pass: Create all fields
+                foreach ($data['fields'] as $fieldData) {
+                    $label = $fieldData['label'] ?? '';
+                    $fieldName = $fieldData['name'] ?? (! empty($label) ? Str::snake($label) : 'field_' . Str::random(6));
+
+                    $field = $template->fields()->create([
+                        'label' => $label,
+                        'name' => $fieldName,
+                        'type' => $fieldData['type'],
+                        'container_type' => $fieldData['container_type'] ?? null,
+                        'placeholder' => $fieldData['placeholder'] ?? null,
+                        'is_required' => $fieldData['is_required'] ?? false,
+                        'use_rich_text' => $fieldData['use_rich_text'] ?? false,
+                        'width' => $fieldData['width'] ?? '1/1',
+                        'options' => $fieldData['options'] ?? null,
+                        'order' => $fieldData['order'] ?? 0,
+                        'validation_rules' => $fieldData['validation_rules'] ?? null,
+                    ]);
+                    $idMapping[$fieldData['id']] = $field->id;
+                }
+
+                // Second pass: Restore parent_id relationships
+                foreach ($data['fields'] as $fieldData) {
+                    if (! empty($fieldData['parent_id']) && isset($idMapping[$fieldData['parent_id']])) {
+                        $dbId = $idMapping[$fieldData['id']];
+                        DB::table('m_form_fields')
+                            ->where('id', $dbId)
+                            ->update(['parent_id' => $idMapping[$fieldData['parent_id']]]);
+                    }
+                }
+
+                return redirect()->route('admin.form-templates.index')->with('success', 'Template form berhasil diimpor.');
+            });
+        } catch (\Exception $e) {
+            Log::error('Form Template Import Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return back()->withErrors(['error' => 'Gagal mengimpor template form: ' . $e->getMessage()]);
+        }
     }
 
     /**

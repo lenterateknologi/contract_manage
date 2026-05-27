@@ -84,7 +84,11 @@ test('admin can export master data including workflow tables', function () {
 
     $response->assertHeader('Content-Type', 'application/json');
 
-    $data = json_decode($response->getContent(), true);
+    ob_start();
+    $response->sendContent();
+    $content = ob_get_clean();
+
+    $data = json_decode($content, true);
 
     expect($data)->toBeArray()
         ->toHaveKey('workflows')
@@ -204,7 +208,11 @@ test('admin can export and import contract types hierarchy correctly', function 
         ->get(route('admin.master-data-sync.export'))
         ->assertOk();
 
-    $data = json_decode($response->getContent(), true);
+    ob_start();
+    $response->sendContent();
+    $content = ob_get_clean();
+
+    $data = json_decode($content, true);
     expect($data)->toHaveKey('contract_types');
 
     $parentExport = collect($data['contract_types'])->firstWhere('code', 'CT-PARENT');
@@ -214,7 +222,7 @@ test('admin can export and import contract types hierarchy correctly', function 
     expect($childExport['parent_code'])->toBe('CT-PARENT');
 
     // Clean DB types to test import
-    App\Models\ContractType::query()->delete();
+    App\Models\ContractType::query()->forceDelete();
 
     // Prepare import payload
     $payload = [

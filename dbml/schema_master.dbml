@@ -1,0 +1,173 @@
+// DBML Schema Group: Master Data & Organization
+// Visualizable on dbdiagram.io or DBML Previewer
+
+Table m_users {
+  id uuid [pk]
+  name varchar [not null]
+  email varchar [unique, not null]
+  email_verified_at timestamp
+  password varchar [not null]
+  username varchar [unique]
+  initials varchar
+  role varchar
+  position varchar
+  phone varchar
+  bg_color varchar
+  text_color varchar
+  role_id uuid
+  department_id uuid
+  is_active boolean [default: true]
+  remember_token varchar
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp
+}
+
+Table m_departments {
+  id uuid [pk]
+  name varchar [not null]
+  code varchar [unique, not null]
+  description text
+  is_active boolean [default: true]
+  company_id uuid
+  created_by uuid
+  updated_by uuid
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp
+}
+
+Table m_roles {
+  id uuid [pk]
+  name varchar [unique, not null]
+  description text
+  created_by uuid
+  updated_by uuid
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp
+}
+
+Table m_companies {
+  id uuid [pk]
+  name varchar [not null]
+  code varchar [unique, not null]
+  alias varchar
+  address text
+  company_group_id uuid
+  region_id uuid
+  is_active boolean [default: true]
+  created_by uuid
+  updated_by uuid
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp
+}
+
+Table m_company_groups {
+  id uuid [pk]
+  name varchar [not null]
+  code varchar [unique, not null]
+  description text
+  is_active boolean [default: true]
+  created_by uuid
+  updated_by uuid
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp
+}
+
+Table m_regions {
+  id uuid [pk]
+  name varchar [not null]
+  code varchar [unique, not null]
+  alias varchar
+  description text
+  is_active boolean [default: true]
+  id_portal_master varchar
+  created_by uuid
+  updated_by uuid
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp
+}
+
+Table m_vendors {
+  id uuid [pk]
+  name varchar [not null]
+  code varchar [unique, not null]
+  email varchar
+  phone varchar
+  address text
+  tax_id varchar
+  category varchar
+  is_active boolean [default: true]
+  created_by uuid
+  updated_by uuid
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp
+}
+
+Table m_submission_types {
+  id uuid [pk]
+  name varchar [not null]
+  code varchar [unique, not null]
+  description text
+  is_active boolean [default: true]
+  created_by uuid
+  updated_by uuid
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp
+}
+
+Table m_contract_statuses {
+  id uuid [pk]
+  code varchar [unique, not null]
+  label varchar [not null]
+  color varchar [default: 'gray']
+  bg_color varchar
+  icon varchar
+  description text
+  sequence integer [default: 0]
+  display_mode varchar [default: 'badge']
+  allow_info_edit boolean [default: false]
+  allow_reference boolean [default: false]
+  created_by uuid
+  updated_by uuid
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp
+}
+
+Table m_numbering_formats {
+  id uuid [pk]
+  name varchar [not null]
+  format varchar [not null]
+  module varchar [not null]
+  is_active boolean [default: true]
+  created_at timestamp
+  updated_at timestamp
+  deleted_at timestamp
+}
+
+// Relationships
+Ref: m_users.role_id > m_roles.id
+Ref: m_users.department_id > m_departments.id
+Ref: m_departments.company_id > m_companies.id
+Ref: m_companies.company_group_id > m_company_groups.id
+Ref: m_companies.region_id > m_regions.id
+
+TableGroup master_organization {
+  m_users
+  m_departments
+  m_roles
+  m_companies
+  m_company_groups
+  m_regions
+  m_vendors
+  m_submission_types
+  m_contract_statuses
+  m_numbering_formats
+}

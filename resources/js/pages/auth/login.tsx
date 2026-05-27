@@ -4,8 +4,7 @@ import { FormEventHandler, useState } from 'react';
 
 import { Button } from '@/components/ui/base/Button';
 import { Checkbox } from '@/components/ui/base/Checkbox';
-import { Input } from '@/components/ui/base/Input';
-import InputError from '@/components/ui/base/InputError';
+import { FormInput } from '@/components/ui/forms/FormInput';
 import { Label } from '@/components/ui/base/Label';
 import TextLink from '@/components/ui/base/TextLink';
 import AuthSplitLayout from '@/layouts/auth/auth-split-layout';
@@ -59,51 +58,43 @@ export default function Login({ status, canResetPassword }: Readonly<LoginProps>
                     </div>
                 )}
                 <div className="grid gap-5">
-                    <div className="grid gap-2">
-                        <Label htmlFor="email" className="text-sm font-semibold text-slate-700">
-                            Alamat Email
-                        </Label>
-                        <Input
-                            id="email"
-                            type="text"
-                            required
-                            autoFocus
-                            autoComplete="email"
-                            value={data.email}
-                            onChange={(e) => setData('email', e.target.value)}
-                            placeholder="Alamat email Anda"
-                            className="focus:border-primary focus:ring-primary h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 transition-all focus:ring-1"
-                        />
-                        <InputError message={errors.email} />
-                    </div>
+                    <FormInput
+                        id="email"
+                        label="Alamat Email"
+                        type="email"
+                        required
+                        autoFocus
+                        autoComplete="email"
+                        value={data.email}
+                        onChange={(e) => setData('email', e.target.value)}
+                        placeholder="Alamat email Anda"
+                        error={errors.email}
+                        className="rounded-xl"
+                    />
 
                     <div className="grid gap-2">
-                        <div className="flex items-center justify-between">
-                            <Label htmlFor="password" className="text-sm font-semibold text-slate-700">
-                                Kata Sandi
-                            </Label>
-                        </div>
                         <div className="relative">
-                            <Input
+                            <FormInput
                                 id="password"
+                                label="Kata Sandi"
                                 type={showPassword ? 'text' : 'password'}
                                 required
                                 autoComplete="current-password"
                                 value={data.password}
                                 onChange={(e) => setData('password', e.target.value)}
                                 placeholder="Kata sandi Anda"
-                                className="focus:border-primary focus:ring-primary h-11 rounded-xl border border-slate-200 bg-white px-4 pr-12 text-sm text-slate-900 transition-all focus:ring-1"
+                                error={errors.password}
+                                className="rounded-xl pr-12"
                             />
                             <button
                                 type="button"
                                 tabIndex={-1}
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="absolute top-1/2 right-4 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                className="absolute top-10 right-4 text-slate-400 hover:text-slate-600"
                             >
                                 {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                             </button>
                         </div>
-                        <InputError message={errors.password} />
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -128,7 +119,7 @@ export default function Login({ status, canResetPassword }: Readonly<LoginProps>
 
                     <Button
                         type="submit"
-                        className="bg-primary text-primary-foreground hover:bg-primary/90 h-11 w-full rounded-xl text-sm font-bold shadow-sm transition-all active:scale-[0.98]"
+                        className="h-11 w-full rounded-xl text-sm font-bold shadow-sm transition-all active:scale-[0.98]"
                         disabled={processing}
                     >
                         {processing && <LoaderCircle className="mr-2 size-4 animate-spin" />}

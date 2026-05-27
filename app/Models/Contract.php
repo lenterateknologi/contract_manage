@@ -15,6 +15,50 @@ class Contract extends Model
 
     use HasFactory, HasUuids, SoftDeletes;
 
+    protected $with = ['meta'];
+
+    protected $appends = [
+        'kop_topik',
+        'kop_sub_topik',
+        'kop_lampiran',
+        'f1_tujuan',
+        'f1_sifat',
+        'p1_entity',
+        'p1_signer',
+        'p1_signer_position',
+        'p1_address',
+        'p2_entity',
+        'p2_signer',
+        'p2_signer_position',
+        'p2_address',
+        'f2_scope',
+        'f2_price',
+        'f2_payment',
+        'f2_tenure',
+        'f2_location',
+    ];
+
+    protected static $metaColumns = [
+        'kop_topik',
+        'kop_sub_topik',
+        'kop_lampiran',
+        'f1_tujuan',
+        'f1_sifat',
+        'p1_entity',
+        'p1_signer',
+        'p1_signer_position',
+        'p1_address',
+        'p2_entity',
+        'p2_signer',
+        'p2_signer_position',
+        'p2_address',
+        'f2_scope',
+        'f2_price',
+        'f2_payment',
+        'f2_tenure',
+        'f2_location',
+    ];
+
     protected $fillable = [
         'contract_no',
         'crown_no',
@@ -192,5 +236,80 @@ class Contract extends Model
         }
 
         return ['done' => 0, 'total' => 0, 'pct' => 0];
+    }
+
+    /**
+     * Boot the model.
+     */
+    protected static function booted(): void
+    {
+        static::saved(function (self $contract) {
+            if ($contract->relationLoaded('meta') && $contract->meta) {
+                $meta = $contract->meta;
+                $meta->contract_id = $contract->id;
+                $meta->save();
+            }
+        });
+    }
+
+    /**
+     * Get the metadata relationship.
+     */
+    public function meta(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(ContractMeta::class, 'contract_id', 'id');
+    }
+
+    /**
+     * Override getAttribute to transparently fetch from meta relation.
+     */
+    public function getAttribute($key)
+    {
+        if (in_array($key, static::$metaColumns)) {
+            if ($this->relationLoaded('meta')) {
+                return $this->meta ? $this->meta->{$key} : null;
+            }
+
+            $meta = $this->meta;
+
+            return $meta ? $meta->{$key} : null;
+        }
+
+        return parent::getAttribute($key);
+    }
+
+    /**
+     * Override setAttribute to transparently set into meta relation.
+     */
+    public function setAttribute($key, $value)
+    {
+        if (in_array($key, static::$metaColumns)) {
+            $meta = $this->meta;
+            if (! $meta) {
+                $meta = new ContractMeta();
+                if ($this->exists) {
+                    $meta->contract_id = $this->id;
+                }
+                $this->setRelation('meta', $meta);
+            }
+
+            $meta->{$key} = $value;
+
+            return $this;
+        }
+
+        return parent::setAttribute($key, $value);
+    }
+
+    /**
+     * Mutate an attribute for an array.
+     */
+    protected function mutateAttributeForArray($key, $value)
+    {
+        if (in_array($key, static::$metaColumns)) {
+            return $this->getAttribute($key);
+        }
+
+        return parent::mutateAttributeForArray($key, $value);
     }
 }

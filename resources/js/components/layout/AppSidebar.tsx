@@ -43,6 +43,7 @@ import {
 } from 'lucide-react';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import AppLogo from './AppLogo';
+import { SearchInput } from '@/components/ui/forms/SearchInput';
 
 const iconMap: Record<string, LucideIcon> = {
     LayoutGrid,
@@ -146,13 +147,11 @@ export const AppSidebar = memo(function AppSidebar() {
                         </SidebarMenu>
                     ) : (
                         <div className="px-2">
-                            <div className="group/search relative">
-                                <Search className="text-sidebar-foreground/40 group-focus-within/search:text-sidebar-primary absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 transition-colors duration-300" />
-                                <input
+                            <div className="relative group/search">
+                                <SearchInput
                                     ref={inputRef}
-                                    type="text"
                                     placeholder="Cari fitur..."
-                                    className="bg-sidebar-accent/50 border-sidebar-border/50 focus:ring-sidebar-primary/20 focus:bg-sidebar-accent text-sidebar-foreground placeholder:text-sidebar-foreground/30 h-9 w-full rounded-lg border py-2 pr-12 pl-10 text-[13px] font-semibold transition-all duration-300 outline-none focus:ring-2"
+                                    className="bg-sidebar-accent/50 border-sidebar-border/50 text-sidebar-foreground placeholder:text-sidebar-foreground/30 h-9 w-full rounded-lg text-[13px] font-semibold transition-all duration-300 pr-12"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     autoFocus={search !== ''}
@@ -165,7 +164,7 @@ export const AppSidebar = memo(function AppSidebar() {
                                 {search && (
                                     <button
                                         onClick={() => setSearch('')}
-                                        className="absolute top-1/2 right-2 -translate-y-1/2 rounded-full p-1.5 transition-colors hover:bg-white/10"
+                                        className="absolute top-1/2 right-2 -translate-y-1/2 rounded-full p-1.5 transition-colors hover:bg-white/10 z-10"
                                     >
                                         <X className="text-sidebar-foreground/60 h-3.5 w-3.5" />
                                     </button>

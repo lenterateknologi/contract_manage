@@ -1,6 +1,7 @@
 import { useToast } from '@/components/contracts/Toast';
 import { Button } from '@/components/ui/base/Button';
-import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
+import { Column, DataTable } from '@/components/ui/data/DataTable';
+import { ExcelActions } from '@/components/ui/data/ExcelActions';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -28,7 +29,7 @@ function regionColor(name: string) {
     return REGION_COLORS[Math.abs(h) % REGION_COLORS.length];
 }
 
-const RegionCell = ({ name }: Readonly<{ name: string }>) => (
+const RegionCell = ({ name, description }: Readonly<{ name: string; description?: string }>) => (
     <div className="flex items-center gap-3 select-none">
         <div
             className={cn(
@@ -38,8 +39,13 @@ const RegionCell = ({ name }: Readonly<{ name: string }>) => (
         >
             <GitBranch size={18} />
         </div>
-        <div className="flex min-w-0 flex-col">
-            <span className="mb-0.5 truncate text-sm leading-tight font-bold tracking-wide text-slate-900 dark:text-slate-100">{name}</span>
+        <div className="flex min-w-0 flex-col gap-0.5">
+            <span className="text-sm font-semibold tracking-wide text-text-main leading-tight">{name}</span>
+            {description && (
+                <span className="text-text-desc text-[11px] font-medium leading-normal">
+                    {description}
+                </span>
+            )}
         </div>
     </div>
 );
@@ -74,18 +80,18 @@ export function RegionManagement({ regions, filters }: Readonly<RegionManagement
             {
                 header: 'Nama Region',
                 accessorKey: 'name',
-                cell: (row) => <RegionCell name={row.name} />,
+                cell: (row) => <RegionCell name={row.name} description={row.description} />,
             },
             {
                 header: 'Kode',
                 accessorKey: 'code',
-                cell: (row) => <span className="text-muted-foreground text-sm font-medium tracking-wide dark:text-slate-300/80">{row.code}</span>,
+                cell: (row) => <span className="text-text-desc text-sm font-medium tracking-wide">{row.code}</span>,
             },
             {
                 header: 'ID Portal',
                 accessorKey: 'id_portal_master',
                 cell: (row) => (
-                    <span className="text-muted-foreground text-sm font-medium tracking-wide dark:text-slate-300/80">
+                    <span className="text-text-desc text-sm font-medium tracking-wide">
                         {row.id_portal_master || '—'}
                     </span>
                 ),
@@ -94,7 +100,7 @@ export function RegionManagement({ regions, filters }: Readonly<RegionManagement
                 header: 'Jumlah Company',
                 accessorKey: 'companies_count',
                 cell: (row) => (
-                    <span className="text-muted-foreground text-sm font-medium tracking-wide dark:text-slate-300/80">
+                    <span className="text-text-desc text-sm font-medium tracking-wide">
                         {row.companies?.length || 0} Company
                     </span>
                 ),
@@ -160,7 +166,7 @@ export function RegionManagement({ regions, filters }: Readonly<RegionManagement
                             type="button"
                             variant="ghost"
                             onClick={() => setIsConfirmOpen(true)}
-                            className="h-10 rounded-xl border border-rose-500/20 px-4 text-xs font-bold text-rose-500 transition-all duration-200 select-none hover:bg-rose-500 hover:text-white active:scale-95 dark:hover:bg-rose-500/20"
+                            className="h-10 rounded-xl border border-danger/20 px-4 text-xs font-bold text-danger transition-all duration-200 select-none hover:bg-danger hover:text-white active:scale-95"
                         >
                             <Trash2 size={15} className="mr-2" /> Hapus
                         </Button>
@@ -236,24 +242,24 @@ export function RegionManagement({ regions, filters }: Readonly<RegionManagement
                                             variant="white"
                                             size="sm"
                                             onClick={() => router.get('/admin/companies', { action: 'create', region_id: editingRegion.id })}
-                                            className="border-primary/10 bg-primary/5 text-primary hover:bg-primary h-8 gap-2 rounded-lg border text-[10px] font-bold transition-all hover:text-white"
+                                            className="border-surface-border bg-surface-muted text-primary hover:bg-primary h-8 gap-2 rounded-lg border text-[10px] font-bold transition-all hover:text-white"
                                         >
                                             <Plus size={12} /> Tambah Company
                                         </Button>
                                     }
                                 >
-                                    <div className="divide-primary/5 border-primary/10 bg-primary/[0.02] divide-y rounded-xl border dark:bg-white/[0.02]">
+                                    <div className="divide-surface-border border-surface-border bg-surface-muted/30 divide-y rounded-xl border">
                                         {editingRegion.companies?.length > 0 ? (
                                             editingRegion.companies.map((company: any) => (
                                                 <div
                                                     key={company.id}
-                                                    className="hover:bg-primary/[0.04] flex items-center justify-between p-4 transition-colors"
+                                                    className="hover:bg-primary/5 flex items-center justify-between p-4 transition-colors"
                                                 >
                                                     <div className="flex flex-col">
-                                                        <span className="text-primary text-xs font-bold tracking-wide uppercase dark:text-white">
+                                                        <span className="text-text-main text-xs font-bold tracking-wide uppercase">
                                                             {company.name}
                                                         </span>
-                                                        <span className="text-primary/40 text-[10px] font-medium uppercase dark:text-white/40">
+                                                        <span className="text-text-soft text-[10px] font-medium uppercase">
                                                             {company.code} • {company.alias || company.code}
                                                         </span>
                                                     </div>
@@ -262,7 +268,7 @@ export function RegionManagement({ regions, filters }: Readonly<RegionManagement
                                                         variant="ghost"
                                                         size="sm"
                                                         onClick={() => router.get('/admin/companies', { action: 'edit', id: company.id })}
-                                                        className="text-primary/60 hover:text-primary h-8 rounded-lg text-[10px] font-bold uppercase"
+                                                        className="text-text-desc hover:text-primary h-8 rounded-lg text-[10px] font-bold uppercase"
                                                     >
                                                         Kelola
                                                     </Button>
@@ -270,7 +276,7 @@ export function RegionManagement({ regions, filters }: Readonly<RegionManagement
                                             ))
                                         ) : (
                                             <div className="flex flex-col items-center justify-center py-10 opacity-40">
-                                                <p className="text-[10px] font-bold uppercase">Belum ada company terdaftar</p>
+                                                <p className="text-[10px] font-bold uppercase text-text-soft">Belum ada company terdaftar</p>
                                             </div>
                                         )}
                                     </div>
@@ -280,16 +286,16 @@ export function RegionManagement({ regions, filters }: Readonly<RegionManagement
                     </div>
 
                     <div className="flex flex-col gap-8 md:col-span-4">
-                        <div className="border-border/80 bg-muted/20 group relative overflow-hidden rounded-2xl border p-6 shadow-sm backdrop-blur-sm transition-all duration-200 select-none dark:border-slate-800/80 dark:bg-slate-900/40">
+                        <div className="border-surface-border bg-surface-muted/40 group relative overflow-hidden rounded-2xl border p-6 shadow-sm backdrop-blur-sm transition-all duration-200 select-none">
                             <div className="absolute top-0 right-0 p-4 opacity-5 transition-opacity duration-200 group-hover:opacity-10">
                                 <GitBranch size={80} strokeWidth={1} />
                             </div>
                             <div className="relative z-10 mb-4 flex items-center gap-3">
-                                <span className="text-xs font-bold tracking-wider text-slate-900 uppercase dark:text-slate-100">
+                                <span className="text-xs font-bold tracking-wider text-text-main uppercase">
                                     Master Hierarchy
                                 </span>
                             </div>
-                            <p className="text-muted-foreground relative z-10 text-xs leading-relaxed font-medium dark:text-slate-400">
+                            <p className="text-text-desc relative z-10 text-xs leading-relaxed font-medium">
                                 Region adalah level menengah dalam hirarki organisasi. Region bersifat global dan dapat digunakan oleh berbagai Group
                                 Perusahaan.
                             </p>
@@ -301,52 +307,56 @@ export function RegionManagement({ regions, filters }: Readonly<RegionManagement
     }
 
     return (
-        <div className="bg-card/40 border-border/60 animate-in fade-in m-5 rounded-2xl border p-6 shadow-sm backdrop-blur-sm duration-200 select-none dark:border-slate-800/60 dark:bg-slate-900/20">
-            <TableMasterData
-                title="Database Region Operasional"
-                columns={columns}
-                borderless={true}
-                data={Array.isArray(regions) ? regions : regions?.data || []}
-                searchPlaceholder="Cari region..."
-                searchValue={filters.search || ''}
-                onSearchChange={(v: string) =>
-                    router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })
-                }
-                headerActions={
-                    canCreate && (
+        <DataTable
+            title="Database Region Operasional"
+            columns={columns}
+            borderless={true}
+            data={Array.isArray(regions) ? regions : regions?.data || []}
+            searchPlaceholder="Cari region..."
+            searchValue={filters.search || ''}
+            onSearchChange={(v: string) =>
+                router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })
+            }
+            headerActions={
+                <div className="flex items-center gap-2">
+                    <ExcelActions
+                        exportRoute="admin.regions.export"
+                        importRoute="admin.regions.import"
+                        label="Region"
+                    />
+                    {canCreate && (
                         <Button
                             variant="white"
                             onClick={openCreate}
-                            className="border-border bg-card text-foreground hover:bg-muted/60 hover:border-border h-10 gap-2 rounded-xl border px-5 text-xs font-bold tracking-wide shadow-sm transition-all duration-200 select-none hover:shadow-md dark:bg-slate-900/60 dark:hover:bg-slate-800/60"
                         >
                             <Plus size={15} className="text-primary" /> Tambah Region
                         </Button>
-                    )
-                }
-                onRowClick={openEdit}
-                bulkActions={
-                    canDelete
-                        ? [
-                              {
-                                  label: 'Hapus Terpilih',
-                                  icon: Trash2,
-                                  variant: 'destructive',
-                                  onClick: (ids: string[] | number[]) => {
-                                      if (confirm(`Hapus ${ids.length} region terpilih?`)) {
-                                          router.post(
-                                              '/admin/regions/bulk-delete',
-                                              { ids },
-                                              {
-                                                  onSuccess: () => showToast(`${ids.length} region telah dihapus`, 'success'),
-                                              },
-                                          );
-                                      }
-                                  },
+                    )}
+                </div>
+            }
+            onRowClick={openEdit}
+            bulkActions={
+                canDelete
+                    ? [
+                          {
+                              label: 'Hapus Terpilih',
+                              icon: Trash2,
+                              variant: 'destructive',
+                              onClick: (ids: string[] | number[]) => {
+                                  if (confirm(`Hapus ${ids.length} region terpilih?`)) {
+                                      router.post(
+                                          '/admin/regions/bulk-delete',
+                                          { ids },
+                                          {
+                                              onSuccess: () => showToast(`${ids.length} region telah dihapus`, 'success'),
+                                          },
+                                      );
+                                  }
                               },
-                          ]
-                        : undefined
-                }
-            />
-        </div>
+                          },
+                      ]
+                    : undefined
+            }
+        />
     );
 }

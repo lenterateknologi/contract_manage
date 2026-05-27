@@ -1,6 +1,6 @@
 import { useToast } from '@/components/contracts/Toast';
 import { Button } from '@/components/ui/base/Button';
-import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
+import { Column, DataTable } from '@/components/ui/data/DataTable';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { CompactSwitch } from '@/components/ui/forms/CompactSwitch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
@@ -22,7 +22,7 @@ interface UserManagementProps {
 
 const AVATAR_COLORS = [
     'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400',
-    'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+    'bg-info/10 text-info dark:bg-info/20 dark:text-info',
     'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
     'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
     'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
@@ -32,11 +32,11 @@ const AVATAR_COLORS = [
 ];
 
 const ROLE_COLORS: Record<string, string> = {
-    Admin: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-400 border border-violet-500/20',
-    Manager: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 border border-blue-500/20',
-    Staff: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-500/20',
-    Reviewer: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 border border-amber-500/20',
-    Approver: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 border border-emerald-500/20',
+    Admin: 'bg-role-admin-bg text-role-admin-text border border-role-admin-text/20',
+    Manager: 'bg-role-manager-bg text-role-manager-text border border-role-manager-text/20',
+    Staff: 'bg-role-staff-bg text-role-staff-text border border-role-staff-text/20',
+    Reviewer: 'bg-role-reviewer-bg text-role-reviewer-text border border-role-reviewer-text/20',
+    Approver: 'bg-role-approver-bg text-role-approver-text border border-role-approver-text/20',
 };
 
 function avatarColor(name: string): string {
@@ -49,27 +49,27 @@ const UserCell = ({ name, email }: Readonly<{ name: string; email: string }>) =>
     <div className="flex items-center gap-3 select-none">
         <div
             className={cn(
-                'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold shadow-sm backdrop-blur-sm transition-all duration-200',
+                'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-semibold shadow-sm backdrop-blur-sm transition-all duration-200',
                 avatarColor(name),
             )}
         >
             {name.charAt(0).toUpperCase()}
         </div>
         <div className="flex min-w-0 flex-col">
-            <span className="truncate text-sm leading-tight font-bold tracking-wide text-slate-900 dark:text-slate-100">{name}</span>
-            <span className="text-muted-foreground/80 mt-0.5 truncate text-xs leading-none font-medium dark:text-slate-400">{email}</span>
+            <span className="truncate text-sm leading-tight font-semibold tracking-wide text-text-main">{name}</span>
+            <span className="text-text-desc mt-0.5 truncate text-xs leading-none font-medium">{email}</span>
         </div>
     </div>
 );
 
 const IdentityCell = ({ username, phone }: Readonly<{ username: string; phone?: string }>) => (
     <div className="flex flex-col gap-1 select-none">
-        <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-bold tracking-wide dark:text-slate-300">
+        <div className="text-text-desc flex items-center gap-1.5 text-xs font-semibold tracking-wide">
             <Fingerprint size={12} className="text-primary opacity-60" />
             {username}
         </div>
         {phone && (
-            <div className="text-muted-foreground/60 flex items-center gap-1.5 text-xs font-medium tracking-tight dark:text-slate-400">
+            <div className="text-text-soft flex items-center gap-1.5 text-xs font-medium tracking-tight">
                 <Phone size={12} className="opacity-40" />
                 {phone}
             </div>
@@ -79,18 +79,18 @@ const IdentityCell = ({ username, phone }: Readonly<{ username: string; phone?: 
 
 const PlacementCell = ({ departmentName, position }: Readonly<{ departmentName?: string; position?: string }>) => (
     <div className="flex flex-col gap-1 select-none">
-        <span className="inline-block w-fit rounded-xl border border-indigo-500/20 bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700 shadow-sm backdrop-blur-md dark:bg-indigo-900/30 dark:text-indigo-400">
+        <span className="inline-block w-fit rounded-xl border border-primary/20 bg-primary-muted px-3 py-1 text-xs font-semibold text-primary shadow-sm backdrop-blur-md">
             {departmentName || 'Global'}
         </span>
-        <span className="text-muted-foreground mt-0.5 pl-1 text-xs font-medium dark:text-slate-400/80">{position || 'Staf'}</span>
+        <span className="text-text-desc mt-0.5 pl-1 text-xs font-medium">{position || 'Staf'}</span>
     </div>
 );
 
 const AuthorityCell = ({ role }: Readonly<{ role: string }>) => (
     <span
         className={cn(
-            'inline-flex items-center rounded-xl px-3 py-1 text-xs font-bold tracking-wide shadow-sm backdrop-blur-sm select-none',
-            ROLE_COLORS[role] ?? 'border border-slate-500/20 bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
+            'inline-flex items-center rounded-xl px-3 py-1 text-xs font-semibold tracking-wide shadow-sm backdrop-blur-sm select-none',
+            ROLE_COLORS[role] ?? 'border border-text-soft/20 bg-secondary text-text-desc',
         )}
     >
         {role}
@@ -99,11 +99,11 @@ const AuthorityCell = ({ role }: Readonly<{ role: string }>) => (
 
 const AccessCell = ({ isActive }: Readonly<{ isActive: boolean }>) => (
     <div className="flex items-center gap-2 select-none">
-        <div className={cn('h-2 w-2 shrink-0 rounded-full', isActive ? 'animate-pulse bg-emerald-500' : 'bg-rose-400')} />
+        <div className={cn('h-2 w-2 shrink-0 rounded-full', isActive ? 'animate-pulse bg-success' : 'bg-danger')} />
         <span
             className={cn(
-                'text-xs font-bold tracking-wide',
-                isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400',
+                'text-xs font-semibold tracking-wide',
+                isActive ? 'text-success' : 'text-danger',
             )}
         >
             {isActive ? 'Aktif' : 'Nonaktif'}
@@ -314,7 +314,7 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                             type="button"
                             variant="ghost"
                             onClick={() => setIsConfirmOpen(true)}
-                            className="h-10 rounded-xl border border-rose-500/20 px-4 text-xs font-bold text-rose-500 transition-all duration-200 select-none hover:bg-rose-500 hover:text-white active:scale-95 dark:hover:bg-rose-500/20"
+                            className="border-danger/20 text-danger hover:bg-danger hover:text-white"
                         >
                             <Trash2 size={15} className="mr-2" /> Hapus
                         </Button>
@@ -396,14 +396,14 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                         <FormSection title="Penempatan & Otoritas" subtitle="Struktur organisasi dan peran sistem">
                             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                 <div className="space-y-2">
-                                    <label className="text-primary/60 flex items-center gap-2 text-[10px] font-bold uppercase dark:text-white/60">
+                                    <label className="text-text-desc flex items-center gap-2 text-[10px] font-bold uppercase">
                                         Role Akses
                                     </label>
                                     <Select value={form.data.role} onValueChange={(v: string) => form.setData('role', String(v))}>
                                         <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-10 rounded-xl text-xs font-bold transition-all">
                                             <SelectValue />
                                         </SelectTrigger>
-                                        <SelectContent className="border-primary/10 rounded-xl bg-white shadow-2xl dark:bg-black">
+                                        <SelectContent className="border-surface-border rounded-xl bg-surface-base shadow-2xl">
                                             {roles.map((r) => (
                                                 <SelectItem key={r.id} value={r.name} className="py-2.5 text-xs font-bold uppercase">
                                                     {r.name}
@@ -412,11 +412,11 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                                         </SelectContent>
                                     </Select>
                                     {form.errors.role && (
-                                        <p className="mt-1 text-[10px] font-bold tracking-tight text-rose-500 uppercase">{form.errors.role}</p>
+                                        <p className="mt-1 text-[10px] font-bold tracking-tight text-danger uppercase">{form.errors.role}</p>
                                     )}
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-primary/60 flex items-center gap-2 text-[10px] font-bold uppercase dark:text-white/60">
+                                    <label className="text-text-desc flex items-center gap-2 text-[10px] font-bold uppercase">
                                         Unit / Departemen
                                     </label>
                                     <Select
@@ -426,7 +426,7 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                                         <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-10 rounded-xl text-xs font-bold transition-all">
                                             <SelectValue />
                                         </SelectTrigger>
-                                        <SelectContent className="border-primary/10 rounded-xl bg-white shadow-2xl dark:bg-black">
+                                        <SelectContent className="border-surface-border rounded-xl bg-surface-base shadow-2xl">
                                             {departments.map((d) => (
                                                 <SelectItem key={d.id} value={String(d.id)} className="py-2.5 text-xs font-bold uppercase">
                                                     {d.name}
@@ -435,7 +435,7 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                                         </SelectContent>
                                     </Select>
                                     {form.errors.department_id && (
-                                        <p className="mt-1 text-[10px] font-bold tracking-tight text-rose-500 uppercase">
+                                        <p className="mt-1 text-[10px] font-bold tracking-tight text-danger uppercase">
                                             {form.errors.department_id}
                                         </p>
                                     )}
@@ -463,32 +463,32 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                             />
                         </FormSection>
 
-                        <div className="border-border/80 bg-muted/20 group relative overflow-hidden rounded-2xl border p-6 shadow-sm backdrop-blur-sm transition-all duration-200 select-none dark:border-slate-800/80 dark:bg-slate-900/40">
+                        <div className="border-surface-border/80 bg-surface-muted/20 group relative overflow-hidden rounded-2xl border p-6 shadow-sm backdrop-blur-sm transition-all duration-200 select-none">
                             <div className="absolute top-0 right-0 p-4 opacity-5 transition-opacity duration-200 group-hover:opacity-10">
                                 <UserCircle size={80} strokeWidth={1} />
                             </div>
 
                             <div className="relative z-10 mb-4 flex items-center gap-3">
-                                <span className="text-xs font-bold tracking-wider text-slate-900 uppercase dark:text-slate-100">Preview Profil</span>
+                                <span className="text-xs font-bold tracking-wider text-text-main uppercase">Preview Profil</span>
                             </div>
 
-                            <div className="border-border/60 relative z-10 flex flex-col items-center border-y border-dashed py-4 select-none dark:border-slate-800/60">
+                            <div className="border-surface-border/60 relative z-10 flex flex-col items-center border-y border-dashed py-4 select-none">
                                 <div className="bg-primary mb-4 flex h-16 w-16 items-center justify-center rounded-xl text-2xl font-bold text-white shadow-md">
                                     {form.data.name ? form.data.name.charAt(0).toUpperCase() : '?'}
                                 </div>
-                                <span className="px-4 text-center text-sm leading-tight font-bold tracking-wide text-slate-900 dark:text-slate-100">
+                                <span className="px-4 text-center text-sm leading-tight font-bold tracking-wide text-text-main">
                                     {form.data.name || 'Nama Belum Diisi'}
                                 </span>
-                                <span className="text-muted-foreground/80 mt-1 px-4 text-center text-xs font-bold tracking-wider uppercase dark:text-slate-400">
+                                <span className="text-text-desc/80 mt-1 px-4 text-center text-xs font-bold tracking-wider uppercase">
                                     {form.data.position || 'Jabatan Belum Diatur'}
                                 </span>
 
-                                <div className="border-border/40 mt-4 flex w-full flex-col items-center gap-2 border-t pt-4 dark:border-slate-800/40">
-                                    <div className="text-muted-foreground flex items-center gap-2 text-xs font-medium dark:text-slate-300">
+                                <div className="border-surface-border/40 mt-4 flex w-full flex-col items-center gap-2 border-t pt-4">
+                                    <div className="text-text-desc flex items-center gap-2 text-xs font-medium">
                                         <Mail size={13} className="text-primary" />
                                         {form.data.email || 'Email Belum Set'}
                                     </div>
-                                    <div className="text-muted-foreground flex items-center gap-2 text-xs font-bold dark:text-slate-300">
+                                    <div className="text-text-desc flex items-center gap-2 text-xs font-bold">
                                         <ShieldAlert size={13} className="text-primary" />
                                         {form.data.role}
                                     </div>
@@ -502,9 +502,9 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
     }
 
     return (
-        <div className="bg-card/40 border-border/60 animate-in fade-in m-5 rounded-2xl border p-6 shadow-sm backdrop-blur-sm duration-200 select-none dark:border-slate-800/60 dark:bg-slate-900/20">
-            <TableMasterData
-                title="Database Pengguna"
+        <>
+        <DataTable
+            title="Database Pengguna"
                 columns={columns}
                 borderless={true}
                 data={users.data || []}
@@ -522,9 +522,8 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                             type="button"
                             variant="white"
                             onClick={handleExportExcel}
-                            className="border-border bg-card text-foreground hover:bg-muted/60 hover:border-border h-10 gap-2 rounded-xl border px-4 text-xs font-bold tracking-wide shadow-sm transition-all duration-200 select-none hover:shadow-md dark:bg-slate-900/60 dark:hover:bg-slate-800/60"
                         >
-                            <Download className="text-emerald-500 h-4 w-4" /> Export Excel
+                            <Download className="text-success h-4 w-4" /> Export Excel
                         </Button>
                         {canCreate && (
                             <>
@@ -532,15 +531,13 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                                     type="button"
                                     variant="white"
                                     onClick={() => setIsImportModalOpen(true)}
-                                    className="border-border bg-card text-foreground hover:bg-muted/60 hover:border-border h-10 gap-2 rounded-xl border px-4 text-xs font-bold tracking-wide shadow-sm transition-all duration-200 select-none hover:shadow-md dark:bg-slate-900/60 dark:hover:bg-slate-800/60"
                                 >
-                                    <Upload className="text-indigo-500 h-4 w-4" /> Import Excel
+                                    <Upload className="text-primary h-4 w-4" /> Import Excel
                                 </Button>
                                 <Button
                                     type="button"
                                     variant="white"
                                     onClick={openCreate}
-                                    className="border-border bg-card text-foreground hover:bg-muted/60 hover:border-border h-10 gap-2 rounded-xl border px-4 text-xs font-bold tracking-wide shadow-sm transition-all duration-200 select-none hover:shadow-md dark:bg-slate-900/60 dark:hover:bg-slate-800/60"
                                 >
                                     <Plus className="text-primary h-4 w-4" /> Tambah User
                                 </Button>
@@ -598,12 +595,12 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                     }}
                     title={
                         <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-600 shadow-inner">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-inner">
                                 <FileSpreadsheet size={20} />
                             </div>
                             <div>
-                                <h3 className="text-sm font-bold tracking-wider text-slate-900 uppercase dark:text-white">Import Database Karyawan</h3>
-                                <p className="mt-0.5 text-[10px] font-medium text-slate-400 uppercase">Perbarui & tambah data karyawan secara massal</p>
+                                <h3 className="text-sm font-bold tracking-wider text-text-main uppercase">Import Database Karyawan</h3>
+                                <p className="mt-0.5 text-[10px] font-medium text-text-soft uppercase">Perbarui & tambah data karyawan secara massal</p>
                             </div>
                         </div>
                     }
@@ -611,7 +608,7 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                 >
                     <form onSubmit={handleImportSubmit} className="space-y-5 text-left mt-4">
                         {(importForm.errors as any).error && (
-                            <div className="flex items-start gap-2.5 rounded-2xl border border-rose-500/20 bg-rose-500/5 p-4 text-[11px] font-bold text-rose-500 uppercase leading-normal">
+                            <div className="flex items-start gap-2.5 rounded-2xl border border-danger/20 bg-danger/5 p-4 text-[11px] font-bold text-danger uppercase leading-normal">
                                 <ShieldAlert size={16} className="shrink-0 mt-0.5" />
                                 <div>
                                     <span className="block font-black">Kesalahan Impor:</span>
@@ -622,26 +619,26 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
 
                         <div className="space-y-2">
                             <div className="flex items-center justify-between px-1">
-                                <span className="text-[9px] font-black text-slate-400 uppercase">Petunjuk Format & Template</span>
+                                <span className="text-[9px] font-black text-text-soft uppercase">Petunjuk Format & Template</span>
                             </div>
-                            <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
-                                <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 leading-relaxed uppercase">
+                            <div className="rounded-2xl border border-surface-border bg-surface-muted p-4">
+                                <p className="text-[10px] font-medium text-text-desc leading-relaxed uppercase">
                                     Sistem menggunakan format 3 worksheet dengan validasi departemen otomatis menggunakan VLOOKUP. Gunakan tombol di bawah ini untuk mengunduh database saat ini sebagai template acuan pengisian.
                                 </p>
                                 <Button
                                     type="button"
                                     variant="white"
                                     onClick={handleExportExcel}
-                                    className="mt-3 h-8 gap-2 rounded-xl border border-slate-200 bg-white px-3 text-[10px] font-bold uppercase transition-all select-none hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950"
+                                    className="mt-3"
                                 >
-                                    <Download size={12} className="text-emerald-500" /> Unduh Template Database
+                                    <Download size={12} className="text-success" /> Unduh Template Database
                                 </Button>
                             </div>
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="px-1 text-[9px] font-black text-slate-400 uppercase">
-                                File Dokumen Excel <span className="text-rose-500">*</span>
+                            <label className="px-1 text-[9px] font-black text-text-soft uppercase">
+                                File Dokumen Excel <span className="text-danger">*</span>
                             </label>
                             <div 
                                 onDragEnter={handleDrag}
@@ -665,71 +662,72 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                                         className={cn(
                                             "flex cursor-pointer flex-col items-center justify-center gap-4 rounded-3xl border-2 border-dashed p-10 text-center transition-all duration-200 select-none",
                                             dragActive 
-                                                ? "border-indigo-500 bg-indigo-500/5 dark:bg-indigo-500/10" 
-                                                : "border-slate-200 bg-slate-50/20 hover:border-indigo-500 hover:bg-indigo-50/5 dark:border-slate-800"
+                                                ? "border-primary bg-primary/5" 
+                                                : "border-surface-border bg-surface-muted/20 hover:border-primary hover:bg-primary/5"
                                         )}
                                     >
                                         <div className={cn(
                                             "flex h-14 w-14 items-center justify-center rounded-2xl shadow-inner transition-transform duration-200 hover:scale-110",
-                                            dragActive ? "bg-indigo-500 text-white" : "bg-indigo-500/10 text-indigo-600"
+                                            dragActive ? "bg-primary text-white" : "bg-primary/10 text-primary"
                                         )}>
                                             <Upload size={24} />
                                         </div>
                                         <div>
-                                            <h4 className="text-xs font-black text-slate-800 uppercase dark:text-slate-200">
+                                            <h4 className="text-xs font-black text-text-main uppercase">
                                                 Tarik & Lepas File Excel di Sini
                                             </h4>
-                                            <p className="mt-1 text-[9px] font-bold tracking-wider text-slate-400 uppercase">
+                                            <p className="mt-1 text-[9px] font-bold tracking-wider text-text-soft uppercase">
                                                 Atau klik untuk menelusuri penyimpanan lokal
                                             </p>
                                         </div>
-                                        <div className="rounded-xl border border-slate-100 bg-white px-3 py-1 text-[8px] font-bold text-slate-400 uppercase dark:border-slate-800 dark:bg-black/40">
+                                        <div className="rounded-xl border border-surface-border bg-surface-base px-3 py-1 text-[8px] font-bold text-text-soft uppercase">
                                             Format: .xlsx atau .xls (Maks. 5MB)
                                         </div>
                                     </label>
                                 ) : (
-                                    <div className="flex flex-col items-center justify-center gap-4 rounded-3xl border-2 border-emerald-500/20 bg-emerald-500/[0.02] p-8 text-center dark:border-emerald-500/30 select-none">
-                                        <div className="flex h-14 w-14 animate-bounce items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 shadow-inner">
+                                    <div className="flex flex-col items-center justify-center gap-4 rounded-3xl border-2 border-success/20 bg-success/[0.02] p-8 text-center select-none">
+                                        <div className="flex h-14 w-14 animate-bounce items-center justify-center rounded-2xl bg-success/10 text-success shadow-inner">
                                             <FileSpreadsheet size={26} />
                                         </div>
                                         <div className="max-w-[320px]">
-                                            <h4 className="text-[10px] font-black tracking-wider text-emerald-600 uppercase dark:text-emerald-400">
+                                            <h4 className="text-[10px] font-black tracking-wider text-success uppercase">
                                                 File Excel Terpilih
                                             </h4>
-                                            <p className="mx-auto mt-2 max-w-[280px] truncate rounded-xl border border-slate-100 bg-white px-3 py-1 text-xs font-black text-slate-800 uppercase dark:border-slate-800 dark:bg-black/30 dark:text-slate-200">
+                                            <p className="mx-auto mt-2 max-w-[280px] truncate rounded-xl border border-surface-border bg-surface-base px-3 py-1 text-xs font-black text-text-main uppercase">
                                                 {importForm.data.file.name}
                                             </p>
-                                            <p className="mt-1.5 text-[9px] font-bold text-slate-400 uppercase">
+                                            <p className="mt-1.5 text-[9px] font-bold text-text-soft uppercase">
                                                 Ukuran: {(importForm.data.file.size / 1024).toFixed(1)} KB • Tipe: Excel Document
                                             </p>
                                         </div>
-                                        <button
+                                        <Button
+                                            variant="ghost"
                                             type="button"
                                             onClick={() => importForm.setData('file', null)}
-                                            className="mt-2 rounded-xl bg-rose-500/5 px-4 py-2 text-[9px] font-black text-rose-500 uppercase transition-all hover:bg-rose-500/10 hover:underline"
+                                            className="mt-2 h-8 rounded-xl bg-danger/5 px-4 text-[9px] font-black text-danger uppercase transition-all hover:bg-danger/10 hover:underline"
                                         >
                                             Ganti File
-                                        </button>
+                                        </Button>
                                     </div>
                                 )}
                             </div>
                         </div>
 
-                        <div className="mt-6 flex items-center justify-end gap-3 border-t border-slate-100 pt-6 dark:border-slate-800">
-                            <button
+                        <div className="mt-6 flex items-center justify-end gap-3 border-t border-surface-border pt-6">
+                            <Button
+                                variant="outline"
                                 type="button"
                                 onClick={() => {
                                     setIsImportModalOpen(false);
                                     importForm.reset();
                                 }}
-                                className="rounded-xl border border-slate-200 px-5 py-2.5 text-[10px] font-black text-slate-500 uppercase transition-all hover:bg-slate-50 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-900"
                             >
                                 Batal
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                                 type="submit"
                                 disabled={importForm.processing || !importForm.data.file}
-                                className="flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-[10px] font-black text-white uppercase shadow-lg shadow-indigo-600/20 transition-all hover:scale-[1.02] hover:bg-indigo-700 active:scale-[0.98] disabled:opacity-50"
+                                className="px-8 shadow-primary/20"
                             >
                                 {importForm.processing ? (
                                     <>
@@ -742,11 +740,11 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                                         Mulai Impor
                                     </>
                                 )}
-                            </button>
+                            </Button>
                         </div>
                     </form>
                 </Modal>
             )}
-        </div>
+        </>
     );
 }

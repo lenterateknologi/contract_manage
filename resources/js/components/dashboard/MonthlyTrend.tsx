@@ -9,7 +9,7 @@ export function MonthlyTrend({ items }: MonthlyTrendProps) {
     const max = Math.max(...items.map((t) => t.total), 1);
 
     return (
-        <div className="border-border/60 bg-card/40 text-card-foreground rounded-2xl border p-6 shadow-sm backdrop-blur-sm dark:border-slate-800/60 dark:bg-slate-900/20 lg:col-span-5 select-none">
+        <div className="border-surface-border/60 bg-surface-base/40 text-text-main rounded-2xl border p-6 shadow-sm backdrop-blur-sm lg:col-span-5 select-none">
             <SectionTitle>Tren 6 Bulan Terakhir</SectionTitle>
             {items.length > 0 ? (
                 <div className="flex h-[120px] items-end gap-2.5 px-2">
@@ -17,7 +17,7 @@ export function MonthlyTrend({ items }: MonthlyTrendProps) {
                         const h = Math.max((t.total / max) * 100, 4);
                         return (
                             <div key={t.month} className="group flex flex-1 flex-col items-center gap-1.5">
-                                <span className="text-muted-foreground/0 group-hover:text-muted-foreground/80 text-[9px] font-bold transition-all duration-200 translate-y-1 group-hover:translate-y-0">
+                                <span className="text-text-desc/0 group-hover:text-text-desc/80 text-[9px] font-medium transition-all duration-200 translate-y-1 group-hover:translate-y-0">
                                     {t.total}
                                 </span>
                                 <div
@@ -25,14 +25,14 @@ export function MonthlyTrend({ items }: MonthlyTrendProps) {
                                     style={{ height: `${h}%` }}
                                     title={`${t.month}: ${t.total} kontrak`}
                                 />
-                                <span className="text-muted-foreground/50 text-[10px] font-semibold mt-1">{t.month}</span>
+                                <span className="text-text-desc/50 text-[10px] font-medium mt-1">{t.month}</span>
                             </div>
                         );
                     })}
                 </div>
             ) : (
                 <div className="flex h-[120px] items-center justify-center">
-                    <p className="text-muted-foreground/40 text-[12px]">Belum ada data tren</p>
+                    <p className="text-text-desc/40 text-[12px]">Belum ada data tren</p>
                 </div>
             )}
         </div>

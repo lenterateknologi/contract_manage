@@ -1,8 +1,9 @@
 import { useToast } from '@/components/contracts/Toast';
 import { Button } from '@/components/ui/base/Button';
-import { FilterCategory, FilterSheet } from '@/components/ui/data/FilterSheet';
+import { FilterCategory, FilterPopover } from '@/components/ui/data/FilterPopover';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
 import { SearchInput } from '@/components/ui/forms/SearchInput';
+import { useDebounce } from '@/hooks/use-debounce';
 import { contractApi } from '@/lib/contract-api';
 import { cn } from '@/lib/utils';
 import { Contract } from '@/types/contracts';
@@ -17,7 +18,7 @@ export default function ContractAuditTrail({ contract }: Props) {
     const { showToast } = useToast();
     const [histories, setHistories] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    // Filter open state is handled internally by FilterPopover
     const [filters, setFilters] = useState({
         action: '',
         actor_id: '',
@@ -25,15 +26,19 @@ export default function ContractAuditTrail({ contract }: Props) {
         date_to: '',
         search: '',
     });
+    const debouncedSearch = useDebounce(filters.search, 500);
 
     const [users, setUsers] = useState<any[]>([]);
 
     useEffect(() => {
         contractApi.getUsers().then(setUsers);
-        fetchHistories();
     }, [contract.id]);
 
-    const fetchHistories = async (currentFilters = filters) => {
+    useEffect(() => {
+        fetchHistories();
+    }, [debouncedSearch, filters.action, filters.actor_id, filters.date_from, filters.date_to]);
+
+    const fetchHistories = async (currentFilters = { ...filters, search: debouncedSearch }) => {
         setLoading(true);
         try {
             const data = await contractApi.auditTrail.list(contract.id, currentFilters);
@@ -92,32 +97,53 @@ export default function ContractAuditTrail({ contract }: Props) {
                         placeholder="CARI AKTIVITAS..."
                         value={filters.search}
                         onChange={(e) => {
-                            const newFilters = { ...filters, search: e.target.value };
-                            setFilters(newFilters);
-                            fetchHistories(newFilters);
+                            setFilters({ ...filters, search: e.target.value });
                         }}
                         className="h-10 text-[10px] uppercase"
                     />
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setIsFilterOpen(true)}
-                        className={cn(
-                            'h-10 gap-2 rounded-xl border-black/10 px-4 font-bold text-black shadow-sm transition-all hover:bg-black/5 dark:border-white/10 dark:text-white dark:hover:bg-white/5',
-                            activeCount > 0 && 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black',
-                        )}
+                    <FilterPopover
+                        categories={filterCategories}
+                        activeFilters={{
+                            actor_id: filters.actor_id ? [filters.actor_id] : [],
+                            date_from: filters.date_from,
+                            date_to: filters.date_to,
+                        }}
+                        onFilterChange={(key, val) => {
+                            const newFilters = { ...filters };
+                            if (key === 'actor_id') {
+                                newFilters.actor_id = Array.isArray(val) ? (val[0] || '') : val;
+                            } else if (key === 'date_from' || key === 'date_to') {
+                                newFilters[key] = val;
+                            }
+                            setFilters(newFilters);
+                            fetchHistories(newFilters);
+                        }}
+                        onReset={() => {
+                            const r = { ...filters, actor_id: '', date_from: '', date_to: '' };
+                            setFilters(r);
+                            fetchHistories(r);
+                        }}
                     >
-                        <ListFilter size={14} strokeWidth={3} />
-                        <span className="text-[10px] uppercase">Filter</span>
-                        {activeCount > 0 && (
-                            <span className="ml-1 flex h-4 w-4 items-center justify-center rounded-md bg-white text-[8px] font-bold text-black dark:bg-black dark:text-white">
-                                {activeCount}
-                            </span>
-                        )}
-                    </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className={cn(
+                                'h-10 gap-2 rounded-xl border-black/10 px-4 font-bold text-black shadow-sm transition-all hover:bg-black/5 dark:border-white/10 dark:text-white dark:hover:bg-white/5',
+                                activeCount > 0 && 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black',
+                            )}
+                        >
+                            <ListFilter size={14} strokeWidth={3} />
+                            <span className="text-[10px] uppercase">Filter</span>
+                            {activeCount > 0 && (
+                                <span className="ml-1 flex h-4 w-4 items-center justify-center rounded-md bg-white text-[8px] font-bold text-black dark:bg-black dark:text-white">
+                                    {activeCount}
+                                </span>
+                            )}
+                        </Button>
+                    </FilterPopover>
 
                     <button
                         onClick={handleExportExcel}
@@ -130,33 +156,7 @@ export default function ContractAuditTrail({ contract }: Props) {
             </div>
 
             <div className="pb-6">
-                <FilterSheet
-                    isOpen={isFilterOpen}
-                    onOpenChange={setIsFilterOpen}
-                    title="FILTER AKTIVITAS"
-                    description="Saring riwayat aktivitas berdasarkan kriteria"
-                    categories={filterCategories}
-                    activeFilters={{
-                        actor_id: filters.actor_id ? [filters.actor_id] : [],
-                        date_from: filters.date_from,
-                        date_to: filters.date_to,
-                    }}
-                    onFilterChange={(key, val) => {
-                        const newFilters = { ...filters };
-                        if (key === 'actor_id') {
-                            newFilters.actor_id = filters.actor_id === val ? '' : val;
-                        } else if (key === 'date_from' || key === 'date_to') {
-                            newFilters[key] = val;
-                        }
-                        setFilters(newFilters);
-                        fetchHistories(newFilters);
-                    }}
-                    onReset={() => {
-                        const r = { ...filters, actor_id: '', date_from: '', date_to: '' };
-                        setFilters(r);
-                        fetchHistories(r);
-                    }}
-                />
+                {/* FilterPopover wraps trigger button above */}
 
                 {/* Timeline View */}
                 {loading ? (

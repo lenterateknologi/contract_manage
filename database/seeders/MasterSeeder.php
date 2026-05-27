@@ -114,7 +114,7 @@ class MasterSeeder extends Seeder
             ['name' => 'Ekspor Impor Master', 'identifier' => 'ADMIN_MASTER_DATA', 'group' => 'Sistem & Laporan', 'route' => '/admin/master-data-sync', 'icon' => 'RefreshCw'],
         ];
 
-        foreach ($mods as $m) {
+        foreach ($mods as $mIdx => $m) {
             $groupId = ModuleGroup::where('name', $m['group'])->value('id');
             Module::create([
                 'name' => $m['name'],

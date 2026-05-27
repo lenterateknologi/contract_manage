@@ -1,4 +1,7 @@
+import { Button } from '@/components/ui/base/Button';
+import { cn } from '@/lib/utils';
 import { Contract } from '@/types/contracts';
+import { ArrowRight, Columns, List, Loader2, X } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 declare const mammoth: any;
@@ -103,31 +106,28 @@ export default function CompareModal({ open, onClose, contract, initialVersion, 
             >
                 <div className="flex flex-shrink-0 items-center justify-between border-b border-gray-100 px-5 py-3.5">
                     <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-violet-100 bg-violet-50">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-violet-100 bg-violet-50">
                             <i className="fa-solid fa-code-compare text-violet-500" />
                         </div>
                         <div>
-                            <div className="text-[13px] font-semibold">
+                            <div className="text-[13px] font-bold">
                                 {contract.title} ({type.toUpperCase()})
                             </div>
                             <div className="text-[10px] text-gray-400">{contract.contract_no}</div>
                         </div>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="flex h-7 w-7 items-center justify-center rounded-md text-[13px] text-gray-400 hover:bg-gray-100"
-                    >
-                        <i className="fa-solid fa-xmark" />
-                    </button>
+                    <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0">
+                        <X size={16} />
+                    </Button>
                 </div>
 
                 <div className="flex flex-shrink-0 flex-wrap items-center gap-3 border-b border-gray-100 bg-gray-50 px-5 py-2.5">
                     <div className="flex items-center gap-2">
-                        <label className="text-[11px] font-semibold text-gray-500">Dari</label>
+                        <label className="text-[11px] font-bold text-gray-500 uppercase">Dari</label>
                         <select
                             value={fromVer}
                             onChange={(e) => setFromVer(+e.target.value)}
-                            className="rounded-md border border-gray-200 bg-white px-2 py-1.5 text-[12px] outline-none"
+                            className="rounded-xl border border-gray-200 bg-white px-2 py-1.5 text-[12px] outline-none"
                         >
                             {filteredVersions.map((v) => (
                                 <option key={v.id} value={v.version_no}>
@@ -136,13 +136,13 @@ export default function CompareModal({ open, onClose, contract, initialVersion, 
                             ))}
                         </select>
                     </div>
-                    <i className="fa-solid fa-arrow-right text-[12px] text-gray-400" />
+                    <ArrowRight size={14} className="text-gray-400" />
                     <div className="flex items-center gap-2">
-                        <label className="text-[11px] font-semibold text-gray-500">Ke</label>
+                        <label className="text-[11px] font-bold text-gray-500 uppercase">Ke</label>
                         <select
                             value={toVer}
                             onChange={(e) => setToVer(+e.target.value)}
-                            className="rounded-md border border-gray-200 bg-white px-2 py-1.5 text-[12px] outline-none"
+                            className="rounded-xl border border-gray-200 bg-white px-2 py-1.5 text-[12px] outline-none"
                         >
                             {filteredVersions.map((v) => (
                                 <option key={v.id} value={v.version_no}>
@@ -151,25 +151,30 @@ export default function CompareModal({ open, onClose, contract, initialVersion, 
                             ))}
                         </select>
                     </div>
-                    <div className="ml-2 flex items-center gap-1 rounded-lg border border-gray-200 bg-white p-0.5">
+                    <div className="ml-2 flex items-center gap-1 rounded-xl border border-gray-200 bg-white p-0.5">
                         {(['side', 'inline'] as const).map((m) => (
-                            <button
+                            <Button
                                 key={m}
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => setMode(m)}
-                                className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors ${mode === m ? 'bg-gray-100 text-gray-700' : 'text-gray-400'}`}
+                                className={cn(
+                                    'h-7 px-3 text-[11px] transition-all',
+                                    mode === m ? 'bg-black text-white dark:bg-white dark:text-black' : 'text-gray-400',
+                                )}
                             >
                                 {m === 'side' ? (
                                     <>
-                                        <i className="fa-solid fa-columns mr-1" />
+                                        <Columns size={12} className="mr-1.5" />
                                         Side
                                     </>
                                 ) : (
                                     <>
-                                        <i className="fa-solid fa-bars mr-1" />
+                                        <List size={12} className="mr-1.5" />
                                         Inline
                                     </>
                                 )}
-                            </button>
+                            </Button>
                         ))}
                     </div>
                     <div className="ml-auto flex items-center gap-3 text-[11px] text-gray-500">
@@ -185,7 +190,7 @@ export default function CompareModal({ open, onClose, contract, initialVersion, 
                 <div className="flex flex-1 overflow-hidden" style={{ minHeight: 0 }}>
                     {loading ? (
                         <div className="flex flex-1 flex-col items-center justify-center gap-3 text-gray-400">
-                            <i className="fa-solid fa-spinner fa-spin text-3xl text-blue-400" />
+                            <Loader2 className="text-primary h-10 w-10 animate-spin opacity-20" />
                             <span className="text-[13px]">Memuat file...</span>
                         </div>
                     ) : mode === 'side' ? (

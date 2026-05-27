@@ -3,7 +3,7 @@ import { Checkbox } from '@/components/ui/base/Checkbox';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { cn } from '@/lib/utils';
 import { useForm } from '@inertiajs/react';
-import { CalendarDays, FileText, Hash, Info, LayoutGrid, Save, Settings2 } from 'lucide-react';
+import { CalendarDays, FileText, Hash, Info, LayoutGrid, Save, Settings2, Loader2 } from 'lucide-react';
 import React, { useState } from 'react';
 
 interface NumberingFormat {
@@ -21,17 +21,17 @@ interface Props {
 
 export function NumberingFormatManagement({ formats }: Readonly<Props>) {
     return (
-        <div className="animate-in fade-in flex flex-col gap-12 bg-white p-4 duration-500 dark:bg-black">
-            <div className="border-primary/10 flex items-center justify-between border-b pb-10 dark:border-white/10">
+        <div className="animate-in fade-in flex flex-col gap-12 bg-card p-4 duration-500">
+            <div className="border-surface-border flex items-center justify-between border-b pb-10">
                 <div className="flex items-center gap-5">
-                    <div className="bg-primary shadow-primary/20 flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-2xl dark:bg-white dark:text-black dark:shadow-white/5">
+                    <div className="bg-primary shadow-primary/20 flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-2xl">
                         <Hash size={28} />
                     </div>
                     <div>
-                        <h2 className="text-primary/40 mb-1 text-[11px] font-black tracking-[0.4em] uppercase dark:text-white/40">
+                        <h2 className="text-text-desc mb-1 text-[11px] font-black tracking-[0.4em] uppercase">
                             Serial Architecture
                         </h2>
-                        <p className="text-primary text-2xl font-black tracking-tight uppercase italic dark:text-white">Sistem Penomoran Otomatis</p>
+                        <p className="text-text-main text-2xl font-black tracking-tight uppercase italic">Sistem Penomoran Otomatis</p>
                     </div>
                 </div>
             </div>
@@ -42,29 +42,29 @@ export function NumberingFormatManagement({ formats }: Readonly<Props>) {
                 ))}
 
                 {formats.length === 0 && (
-                    <div className="border-primary/5 bg-primary/[0.01] flex flex-col items-center justify-center rounded-[2.5rem] border-4 border-dashed py-32 dark:border-white/5 dark:bg-white/[0.01]">
-                        <Hash className="text-primary/10 mb-6 h-16 w-16 dark:text-white/10" />
-                        <span className="text-primary/20 text-[13px] font-black tracking-[0.5em] uppercase dark:text-white/20">
+                    <div className="border-surface-border bg-surface-muted flex flex-col items-center justify-center rounded-[2.5rem] border-4 border-dashed py-32">
+                        <Hash className="text-text-main/10 mb-6 h-16 w-16" />
+                        <span className="text-text-main/20 text-[13px] font-black tracking-[0.5em] uppercase">
                             Konfigurasi Belum Terdaftar
                         </span>
                     </div>
                 )}
             </div>
 
-            <div className="border-primary/10 bg-primary/[0.02] group relative overflow-hidden rounded-[2rem] border p-10 dark:border-white/10 dark:bg-white/[0.02]">
+            <div className="border-surface-border bg-surface-muted group relative overflow-hidden rounded-[2rem] border p-10">
                 <div className="absolute top-0 right-0 p-8 opacity-5 transition-opacity group-hover:opacity-10">
                     <Info size={120} strokeWidth={1} />
                 </div>
                 <div className="relative z-10 flex items-start gap-6">
-                    <div className="bg-primary flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white shadow-lg dark:bg-white dark:text-black">
+                    <div className="bg-primary flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white shadow-lg">
                         <Info size={20} />
                     </div>
                     <div className="flex flex-col gap-8">
                         <div className="flex flex-col">
-                            <span className="text-primary mb-2 text-[11px] font-black tracking-[0.3em] uppercase dark:text-white">
+                            <span className="text-text-main mb-2 text-[11px] font-black tracking-[0.3em] uppercase">
                                 Panduan Sintaks Placeholder
                             </span>
-                            <p className="text-primary/40 text-[9px] font-bold uppercase dark:text-white/40">
+                            <p className="text-text-desc text-[9px] font-bold uppercase">
                                 Gunakan tag di bawah ini untuk membangun pola penomoran dokumen yang dinamis
                             </p>
                         </div>
@@ -78,12 +78,12 @@ export function NumberingFormatManagement({ formats }: Readonly<Props>) {
                                 { tag: '{{kode_perjanjian}}', desc: 'Kode Klasifikasi Tipe Perjanjian', icon: FileText },
                             ].map((item) => (
                                 <div key={item.tag} className="group/tag flex items-center gap-4">
-                                    <div className="bg-primary/[0.05] text-primary group-hover/tag:bg-primary flex h-8 w-8 items-center justify-center rounded-lg transition-all group-hover/tag:text-white dark:bg-white/[0.05] dark:text-white dark:group-hover/tag:bg-white dark:group-hover/tag:text-black">
+                                    <div className="bg-primary/[0.05] text-primary group-hover/tag:bg-primary flex h-8 w-8 items-center justify-center rounded-lg transition-all group-hover/tag:text-white">
                                         <item.icon size={12} />
                                     </div>
                                     <div className="flex flex-col">
-                                        <code className="text-primary text-[10px] font-black uppercase dark:text-white">{item.tag}</code>
-                                        <span className="text-primary/30 mt-0.5 text-[8px] font-bold uppercase dark:text-white/30">{item.desc}</span>
+                                        <code className="text-text-main text-[10px] font-black uppercase">{item.tag}</code>
+                                        <span className="text-text-main/30 mt-0.5 text-[8px] font-bold uppercase">{item.desc}</span>
                                     </div>
                                 </div>
                             ))}
@@ -121,27 +121,27 @@ function FormatCard({ format }: Readonly<{ format: NumberingFormat }>) {
             className={cn(
                 'overflow-hidden rounded-[2.5rem] border transition-all duration-500',
                 isEditing
-                    ? 'border-primary ring-primary/5 shadow-2xl ring-8 dark:border-white dark:ring-white/5'
-                    : 'border-primary/10 hover:border-primary/30 bg-white dark:border-white/10 dark:bg-black dark:hover:border-white/30',
+                    ? 'border-primary ring-primary/5 shadow-2xl ring-8'
+                    : 'border-surface-border hover:border-primary/30 bg-card',
             )}
         >
-            <div className="border-primary/10 bg-primary/[0.01] flex items-center justify-between border-b px-10 py-8 dark:border-white/10 dark:bg-white/[0.01]">
+            <div className="border-surface-border bg-surface-muted flex items-center justify-between border-b px-10 py-8">
                 <div className="flex items-center gap-5">
-                    <div className="bg-primary/[0.03] border-primary/10 text-primary flex h-12 w-12 items-center justify-center rounded-2xl border shadow-inner dark:border-white/10 dark:bg-white/[0.03] dark:text-white">
+                    <div className="bg-primary/[0.03] border-surface-border text-primary flex h-12 w-12 items-center justify-center rounded-2xl border shadow-inner">
                         <Settings2 size={20} />
                     </div>
                     <div className="flex flex-col">
-                        <h3 className="text-primary mb-1 text-[11px] font-black tracking-[0.3em] uppercase dark:text-white">
+                        <h3 className="text-text-main mb-1 text-[11px] font-black tracking-[0.3em] uppercase">
                             Modul: {format.module}
                         </h3>
                         <div className="flex items-center gap-2">
                             <div
                                 className={cn(
                                     'h-1.5 w-1.5 rounded-full',
-                                    format.is_active ? 'animate-pulse bg-emerald-500' : 'bg-primary/20 dark:bg-white/20',
+                                    format.is_active ? 'animate-pulse bg-success' : 'bg-primary/20',
                                 )}
                             />
-                            <span className="text-primary/40 text-[9px] font-black tracking-[0.1em] uppercase dark:text-white/40">
+                            <span className="text-text-desc text-[9px] font-black tracking-[0.1em] uppercase">
                                 {format.is_active ? 'Sistem Aktif & Terpantau' : 'Sistem Penomoran Non-Aktif'}
                             </span>
                         </div>
@@ -191,15 +191,15 @@ function FormatCard({ format }: Readonly<{ format: NumberingFormat }>) {
                             </div>
                         </div>
 
-                        <div className="border-primary/10 flex items-center justify-between border-t pt-8 dark:border-white/10">
+                        <div className="border-surface-border flex items-center justify-between border-t pt-8">
                             <div
-                                className="bg-primary/[0.03] border-primary/10 group hover:bg-primary/[0.05] flex cursor-pointer items-center gap-4 rounded-xl border p-4 transition-colors dark:border-white/10 dark:bg-white/[0.03] dark:hover:bg-white/[0.05]"
+                                className="bg-primary/[0.03] border-surface-border group hover:bg-primary/[0.05] flex cursor-pointer items-center gap-4 rounded-xl border p-4 transition-colors"
                                 onClick={() => setData('is_active', !data.is_active)}
                             >
                                 <Checkbox checked={data.is_active} onCheckedChange={() => {}} />
                                 <div className="flex flex-col">
-                                    <span className="text-primary text-[10px] font-black uppercase dark:text-white">Aktivasi Sistem</span>
-                                    <span className="text-primary/30 mt-0.5 text-[8px] font-bold uppercase dark:text-white/30">
+                                    <span className="text-text-main text-[10px] font-black uppercase">Aktivasi Sistem</span>
+                                    <span className="text-text-main/30 mt-0.5 text-[8px] font-bold uppercase">
                                         Aktifkan generator nomor otomatis
                                     </span>
                                 </div>
@@ -213,17 +213,16 @@ function FormatCard({ format }: Readonly<{ format: NumberingFormat }>) {
                                         setIsEditing(false);
                                         reset();
                                     }}
-                                    className="text-primary/30 h-12 rounded-2xl px-8 text-[11px] font-black uppercase transition-all hover:text-rose-500"
                                 >
                                     Batalkan
                                 </Button>
                                 <Button
                                     type="submit"
                                     disabled={processing}
-                                    className="group h-12 rounded-2xl px-12 text-[11px] font-black uppercase shadow-2xl active:scale-95"
+                                    className="px-12"
                                 >
                                     {processing ? (
-                                        <Save className="mr-2 h-4 w-4 animate-spin" />
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     ) : (
                                         <Save size={16} className="mr-2 transition-transform group-hover:rotate-12" />
                                     )}
@@ -235,7 +234,7 @@ function FormatCard({ format }: Readonly<{ format: NumberingFormat }>) {
                 ) : (
                     <div className="grid grid-cols-1 items-center gap-16 lg:grid-cols-12">
                         <div className="lg:col-span-7">
-                            <span className="text-primary/30 mb-4 block px-1 text-[10px] font-black tracking-[0.3em] uppercase italic dark:text-white/30">
+                            <span className="text-text-main/30 mb-4 block px-1 text-[10px] font-black tracking-[0.3em] uppercase italic">
                                 Preview Aktual Pattern
                             </span>
                             <div className="group bg-primary shadow-primary/20 relative flex min-h-[100px] items-center gap-6 overflow-hidden rounded-[2rem] p-8 shadow-2xl dark:bg-white dark:shadow-white/5">
@@ -251,26 +250,26 @@ function FormatCard({ format }: Readonly<{ format: NumberingFormat }>) {
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-6 lg:col-span-5">
-                            <div className="border-primary/10 bg-primary/[0.02] rounded-[1.5rem] border p-6 shadow-sm transition-all hover:shadow-md dark:border-white/10 dark:bg-white/[0.02]">
-                                <span className="text-primary/30 mb-4 block text-[9px] font-black tracking-[0.2em] uppercase dark:text-white/30">
+                            <div className="border-surface-border bg-surface-muted rounded-[1.5rem] border p-6 shadow-sm transition-all hover:shadow-md">
+                                <span className="text-text-main/30 mb-4 block text-[9px] font-black tracking-[0.2em] uppercase">
                                     Index Terakhir
                                 </span>
                                 <div className="flex items-baseline gap-2">
-                                    <span className="text-primary text-4xl leading-none font-black tracking-tighter tabular-nums dark:text-white">
+                                    <span className="text-text-main text-4xl leading-none font-black tracking-tighter tabular-nums">
                                         {format.current_number}
                                     </span>
-                                    <span className="text-primary/20 text-[9px] font-black uppercase italic dark:text-white/20">Serial</span>
+                                    <span className="text-text-main/20 text-[9px] font-black uppercase italic">Serial</span>
                                 </div>
                             </div>
-                            <div className="border-primary/10 bg-primary/[0.02] rounded-[1.5rem] border p-6 shadow-sm transition-all hover:shadow-md dark:border-white/10 dark:bg-white/[0.02]">
-                                <span className="text-primary/30 mb-4 block text-[9px] font-black tracking-[0.2em] uppercase dark:text-white/30">
+                            <div className="border-surface-border bg-surface-muted rounded-[1.5rem] border p-6 shadow-sm transition-all hover:shadow-md">
+                                <span className="text-text-main/30 mb-4 block text-[9px] font-black tracking-[0.2em] uppercase">
                                     Padding Digit
                                 </span>
                                 <div className="flex items-baseline gap-2">
-                                    <span className="text-primary text-4xl leading-none font-black tracking-tighter tabular-nums dark:text-white">
+                                    <span className="text-text-main text-4xl leading-none font-black tracking-tighter tabular-nums">
                                         {format.padding}
                                     </span>
-                                    <span className="text-primary/20 text-[9px] font-black uppercase italic dark:text-white/20">Digit</span>
+                                    <span className="text-text-main/20 text-[9px] font-black uppercase italic">Digit</span>
                                 </div>
                             </div>
                         </div>

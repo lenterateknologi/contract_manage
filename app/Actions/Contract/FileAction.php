@@ -194,19 +194,23 @@ class FileAction
         if (! file_exists($pdfPath)) {
             $soffice = '/Applications/LibreOffice.app/Contents/MacOS/soffice';
             $userDir = 'file://' . sys_get_temp_dir() . '/soffice_user_' . md5($contract->id);
-            $command = "export HOME=/tmp && \"{$soffice}\" -env:UserInstallation={$userDir} --headless --convert-to pdf --outdir \"{$pdfDir}\" \"{$sourcePath}\" 2>&1";
+
+            $safeSoffice = escapeshellarg($soffice);
+            $safeUserDir = escapeshellarg($userDir);
+            $safePdfDir = escapeshellarg($pdfDir);
+            $safeSourcePath = escapeshellarg($sourcePath);
+
+            $command = "export HOME=/tmp && {$safeSoffice} -env:UserInstallation={$safeUserDir} --headless --convert-to pdf --outdir {$safePdfDir} {$safeSourcePath} 2>&1";
             $output = shell_exec($command);
 
             if (! file_exists($pdfPath)) {
                 Log::error('PDF Generation Failed', [
-                    'command' => $command,
+                    'contract_id' => $contract->id,
                     'output' => $output,
                 ]);
 
                 return response()->json([
                     'message' => 'Failed to generate PDF.',
-                    'debug' => $output,
-                    'path' => $sourcePath,
                 ], 500);
             }
         }
@@ -243,7 +247,13 @@ class FileAction
             } else {
                 $soffice = '/Applications/LibreOffice.app/Contents/MacOS/soffice';
                 $userDir = 'file://' . sys_get_temp_dir() . '/soffice_user_at_' . md5($atId);
-                $command = "export HOME=/tmp && \"{$soffice}\" -env:UserInstallation={$userDir} --headless --convert-to pdf --outdir \"{$pdfDir}\" \"{$sourcePath}\" 2>&1";
+
+                $safeSoffice = escapeshellarg($soffice);
+                $safeUserDir = escapeshellarg($userDir);
+                $safePdfDir = escapeshellarg($pdfDir);
+                $safeSourcePath = escapeshellarg($sourcePath);
+
+                $command = "export HOME=/tmp && {$safeSoffice} -env:UserInstallation={$safeUserDir} --headless --convert-to pdf --outdir {$safePdfDir} {$safeSourcePath} 2>&1";
                 shell_exec($command);
             }
         }
@@ -299,7 +309,13 @@ class FileAction
             } else {
                 $soffice = '/Applications/LibreOffice.app/Contents/MacOS/soffice';
                 $userDir = 'file://' . sys_get_temp_dir() . '/soffice_user_vendor_' . md5($docId);
-                $command = "export HOME=/tmp && \"{$soffice}\" -env:UserInstallation={$userDir} --headless --convert-to pdf --outdir \"{$pdfDir}\" \"{$sourcePath}\" 2>&1";
+
+                $safeSoffice = escapeshellarg($soffice);
+                $safeUserDir = escapeshellarg($userDir);
+                $safePdfDir = escapeshellarg($pdfDir);
+                $safeSourcePath = escapeshellarg($sourcePath);
+
+                $command = "export HOME=/tmp && {$safeSoffice} -env:UserInstallation={$safeUserDir} --headless --convert-to pdf --outdir {$safePdfDir} {$safeSourcePath} 2>&1";
                 shell_exec($command);
             }
         }

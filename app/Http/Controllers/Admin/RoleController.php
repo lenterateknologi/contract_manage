@@ -26,9 +26,10 @@ class RoleController extends Controller
     {
         $query = Role::query()
             ->when($request->search, function ($q, $search) {
+                $search = strtolower($search);
                 $q->where(function ($qq) use ($search) {
-                    $qq->where('name', 'ilike', "%{$search}%")
-                        ->orWhere('description', 'ilike', "%{$search}%");
+                    $qq->where(\Illuminate\Support\Facades\DB::raw('LOWER(name)'), 'like', "%{$search}%")
+                        ->orWhere(\Illuminate\Support\Facades\DB::raw('LOWER(description)'), 'like', "%{$search}%");
                 });
             })
             ->when($request->created_from, function ($q, $from) {
@@ -123,15 +124,26 @@ class RoleController extends Controller
         });
 
         // 2. Get Navigation Structure for the Drag & Drop Tab
-        $groups = ModuleGroup::orderBy('name')->get()->map(function ($group) use ($role) {
-            $group->modules = Module::whereHas('accessModules', function ($q) use ($role, $group) {
-                $q->where('role_id', $role->id)
-                    ->where('module_group_id', $group->id)
-                    ->where('can_read', true);
-            })->orderBy('name')->get();
+        $groups = ModuleGroup::select('m_module_groups.*')
+            ->leftJoin('m_role_module_groups', function ($join) use ($role) {
+                $join->on('m_module_groups.id', '=', 'm_role_module_groups.module_group_id')
+                    ->where('m_role_module_groups.role_id', '=', $role->id);
+            })
+            ->orderByRaw('COALESCE(m_role_module_groups.sequence, 9999) ASC')
+            ->orderBy('m_module_groups.name')
+            ->get()
+            ->map(function ($group) use ($role) {
+                $group->modules = Module::select('m_modules.*')
+                    ->join('m_access_modules', 'm_modules.id', '=', 'm_access_modules.module_id')
+                    ->where('m_access_modules.role_id', $role->id)
+                    ->where('m_access_modules.module_group_id', $group->id)
+                    ->where('m_access_modules.can_read', true)
+                    ->orderByRaw('COALESCE(m_access_modules.sequence, 9999) ASC')
+                    ->orderBy('m_modules.name')
+                    ->get();
 
-            return $group;
-        })->values();
+                return $group;
+            })->values();
 
         $allModules = Module::orderBy('name')->get();
 

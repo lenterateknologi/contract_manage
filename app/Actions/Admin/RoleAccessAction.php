@@ -66,26 +66,33 @@ class RoleAccessAction
             $roleId = $role->id;
             $activeModuleIds = [];
 
-            foreach ($groups as $groupData) {
-                // Ensure group exists for this role
+            foreach ($groups as $gIdx => $groupData) {
+                // Ensure group exists for this role with the updated sequence
                 RoleModuleGroup::updateOrCreate(
                     [
                         'role_id' => $roleId,
                         'module_group_id' => $groupData['id'],
                     ],
-                    [],
+                    [
+                        'sequence' => $gIdx + 1,
+                    ],
                 );
 
                 if (! empty($groupData['modules'])) {
-                    foreach ($groupData['modules'] as $moduleData) {
+                    foreach ($groupData['modules'] as $mIdx => $moduleData) {
                         $activeModuleIds[] = $moduleData['id'];
 
-                        AccessModule::where('role_id', $roleId)
-                            ->where('module_id', $moduleData['id'])
-                            ->update([
+                        AccessModule::updateOrCreate(
+                            [
+                                'role_id' => $roleId,
+                                'module_id' => $moduleData['id'],
+                            ],
+                            [
                                 'can_read' => true,
                                 'module_group_id' => $groupData['id'],
-                            ]);
+                                'sequence' => $mIdx + 1,
+                            ],
+                        );
                     }
                 }
             }
@@ -96,6 +103,7 @@ class RoleAccessAction
                 ->update([
                     'can_read' => false,
                     'module_group_id' => null,
+                    'sequence' => null,
                 ]);
         });
     }

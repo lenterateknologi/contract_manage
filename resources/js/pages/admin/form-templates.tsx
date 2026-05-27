@@ -3,8 +3,8 @@ import { Button } from '@/components/ui/base/Button';
 import { Input } from '@/components/ui/base/Input';
 import { Label } from '@/components/ui/base/Label';
 import { Textarea } from '@/components/ui/base/Textarea';
-import { FilterCategory, FilterSheet } from '@/components/ui/data/FilterSheet';
-import { Column, TableMasterData } from '@/components/ui/data/TableMasterData';
+import { FilterCategory, FilterPopover } from '@/components/ui/data/FilterPopover';
+import { Column, DataTable as TableMasterData } from '@/components/ui/data/DataTable';
 import { SearchInput } from '@/components/ui/forms/SearchInput';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
 import { LayoutToggle } from '@/components/ui/navigation/LayoutToggle';
@@ -18,8 +18,10 @@ import {
 } from '@/components/ui/overlays/DropdownMenu';
 import { cn } from '@/lib/utils';
 import { Head, router, useForm } from '@inertiajs/react';
-import { Copy, Edit2, FileCheck, FileJson, FileText, Filter, Layout, MoreHorizontal, Plus, Settings, Trash2 } from 'lucide-react';
+import { Copy, Edit2, FileCheck, FileJson, FileText, Filter, Layout, MoreHorizontal, Plus, Settings, Trash2, Download, Upload, Loader2 } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
+import { Modal } from '@/components/ui/overlays/Modal';
+import { useToast } from '@/components/contracts/Toast';
 
 interface FormTemplate {
     id: string;
@@ -43,13 +45,221 @@ interface Props {
     contract_types: ContractType[];
 }
 
+interface ImportFormTemplateModalProps {
+    readonly isOpen: boolean;
+    readonly onClose: () => void;
+    readonly showToast: (message: string, type?: 'success' | 'danger' | 'info') => void;
+}
+
+function ImportFormTemplateModal({ isOpen, onClose, showToast }: Readonly<ImportFormTemplateModalProps>) {
+    const [file, setFile] = useState<File | null>(null);
+    const [dragActive, setDragActive] = useState(false);
+    const [parsedData, setParsedData] = useState<any[] | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const handleDrag = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.type === 'dragenter' || e.type === 'dragover') {
+            setDragActive(true);
+        } else if (e.type === 'dragleave') {
+            setDragActive(false);
+        }
+    };
+
+    const processFile = (selectedFile: File) => {
+        if (selectedFile.type !== 'application/json' && !selectedFile.name.endsWith('.json')) {
+            setError('Hanya berkas berformat .json yang diperbolehkan.');
+            setFile(null);
+            setParsedData(null);
+            return;
+        }
+
+        setError(null);
+        setFile(selectedFile);
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const json = JSON.parse(e.target?.result as string);
+                const dataArray = Array.isArray(json) ? json : [json];
+
+                const isValid = dataArray.every((item) => typeof item === 'object' && item !== null && 'name' in item && 'fields' in item);
+                if (!isValid) {
+                    throw new Error("Struktur JSON template form tidak valid. Harus memiliki properti 'name' dan 'fields'.");
+                }
+
+                setParsedData(dataArray);
+            } catch (err: any) {
+                setError(err.message || 'Gagal membaca berkas JSON.');
+                setFile(null);
+                setParsedData(null);
+            }
+        };
+        reader.readAsText(selectedFile);
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(false);
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            processFile(e.dataTransfer.files[0]);
+        }
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        e.preventDefault();
+        if (e.target.files && e.target.files[0]) {
+            processFile(e.target.files[0]);
+        }
+    };
+
+    const handleImport = () => {
+        if (!file) {
+            return;
+        }
+        setLoading(true);
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        router.post(route('admin.form-templates.import'), formData, {
+            forceFormData: true,
+            onSuccess: () => {
+                showToast('Template form berhasil diimpor', 'success');
+                setFile(null);
+                setParsedData(null);
+                setLoading(false);
+                onClose();
+            },
+            onError: (errors: any) => {
+                setError(errors.error || 'Gagal mengimpor template form.');
+                setLoading(false);
+            },
+        });
+    };
+
+    return (
+        <Modal
+            isOpen={isOpen}
+            onClose={() => {
+                if (!loading) {
+                    setFile(null);
+                    setParsedData(null);
+                    setError(null);
+                    onClose();
+                }
+            }}
+            title="Impor Template Form"
+            description="Unggah berkas konfigurasi template form builder berformat JSON"
+            maxWidth="md"
+        >
+            <div className="flex flex-col gap-6">
+                <div
+                    onDragEnter={handleDrag}
+                    onDragOver={handleDrag}
+                    onDragLeave={handleDrag}
+                    onDrop={handleDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-8 text-center transition-all duration-200 cursor-pointer ${dragActive
+                        ? 'border-primary bg-primary/[0.02]'
+                        : 'border-border hover:border-primary/50 hover:bg-muted/30'
+                        }`}
+                >
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".json"
+                        onChange={handleChange}
+                        className="hidden"
+                        disabled={loading}
+                    />
+
+                    <div className="bg-primary/5 text-primary mb-4 rounded-2xl p-4">
+                        <Upload size={24} />
+                    </div>
+
+                    <p className="text-foreground mb-1 text-sm font-semibold">
+                        {file ? file.name : 'Seret & letakkan berkas JSON template di sini'}
+                    </p>
+                    <p className="text-muted-foreground text-xs">
+                        atau klik untuk memilih berkas dari perangkat Anda
+                    </p>
+                </div>
+
+                {error && (
+                    <div className="bg-rose-500/10 border-rose-500/20 text-rose-500 rounded-xl border p-4 text-xs font-medium leading-relaxed">
+                        {error}
+                    </div>
+                )}
+
+                {parsedData && (
+                    <div className="border-border/50 bg-muted/20 rounded-2xl border p-5">
+                        <h4 className="text-foreground mb-3 text-xs font-bold tracking-wide uppercase">
+                            Informasi Berkas ({parsedData.length} Template Terdeteksi)
+                        </h4>
+                        <div className="max-h-48 overflow-y-auto space-y-3 pr-1">
+                            {parsedData.map((item, index) => (
+                                <div key={item.name || index} className="border-border/40 bg-card flex items-start gap-3 rounded-xl border p-3.5 shadow-sm">
+                                    <div className="bg-primary/5 text-primary mt-0.5 rounded-lg p-2.5">
+                                        <FileJson size={16} />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-foreground truncate text-[12px] font-bold">{item.name}</p>
+                                        <p className="text-muted-foreground mt-0.5 line-clamp-1 text-[10px]">{item.description || 'Tidak ada deskripsi'}</p>
+                                        <div className="mt-2 flex items-center gap-2">
+                                            <span className="border-border/30 bg-muted text-muted-foreground rounded-xs border px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider">
+                                                {item.document_type || 'Custom'}
+                                            </span>
+                                            <span className="bg-primary/10 text-primary rounded-xs px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider">
+                                                {item.fields?.length || 0} Elemen
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                <div className="border-border/30 flex items-center justify-end gap-3 border-t pt-5">
+                    <Button
+                        variant="outline"
+                        onClick={onClose}
+                        disabled={loading}
+                        className="h-10 rounded-xl px-5 text-xs font-semibold"
+                    >
+                        Batal
+                    </Button>
+                    <Button
+                        onClick={handleImport}
+                        disabled={!file || loading}
+                        className="h-10 gap-2 rounded-xl px-6 text-xs font-semibold shadow-md"
+                    >
+                        {loading && <Loader2 size={12} className="animate-spin" />}
+                        {loading ? 'Mengimpor...' : 'Mulai Impor'}
+                    </Button>
+                </div>
+            </div>
+        </Modal>
+    );
+}
+
 export default function FormTemplates({ templates, contract_types }: Props) {
+    const { showToast } = useToast();
     const [searchQuery, setSearchQuery] = useState('');
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [selectedTemplate, setSelectedTemplate] = useState<FormTemplate | null>(null);
+
+    const handleExport = (id: string) => {
+        window.location.href = route('admin.form-templates.export', id);
+    };
 
     // Filter States
     const [activeFilters, setActiveFilters] = useState<Record<string, string[]>>({
@@ -141,6 +351,9 @@ export default function FormTemplates({ templates, contract_types }: Props) {
 
     const handleFilterChange = (key: string, value: any) => {
         setActiveFilters((prev) => {
+            if (Array.isArray(value)) {
+                return { ...prev, [key]: value };
+            }
             const current = [...(prev[key] || [])];
             const valStr = String(value);
             const idx = current.indexOf(valStr);
@@ -236,28 +449,35 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                     <div className="ml-auto flex items-center gap-2">
                         <LayoutToggle value={layout} onChange={setLayout} className="mr-2" />
 
-                        <Button
-                            variant="outline"
-                            onClick={() => setIsFilterOpen(true)}
-                            className={cn(
-                                'text-foreground hover:bg-muted border-border relative h-10 px-4 transition-all active:scale-95',
-                                hasActiveFilters && 'bg-primary text-primary-foreground border-primary',
-                            )}
+                        <FilterPopover
+                            categories={filterCategories}
+                            activeFilters={activeFilters}
+                            onFilterChange={handleFilterChange}
+                            onReset={handleResetFilters}
+                            totalResults={filteredTemplates.length}
                         >
-                            <Filter size={14} />
-                            Filter
-                            {hasActiveFilters && (
-                                <span
-                                    className={cn(
-                                        'ml-1 flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[9px] font-bold',
-                                        hasActiveFilters ? 'text-primary bg-white' : 'bg-primary text-white',
-                                    )}
-                                >
-                                    {Object.values(activeFilters).flat().length}
-                                </span>
-                            )}
+                            <Button
+                                variant="outline"
+                            >
+                                <Filter size={14} />
+                                Filter
+                                {hasActiveFilters && (
+                                    <span
+                                        className={cn(
+                                            'ml-1 flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[9px] font-bold',
+                                            hasActiveFilters ? 'text-primary bg-white' : 'bg-primary text-white',
+                                        )}
+                                    >
+                                        {Object.values(activeFilters).flat().length}
+                                    </span>
+                                )}
+                            </Button>
+                        </FilterPopover>
+                        <Button variant="outline" onClick={() => setIsImportModalOpen(true)}>
+                            <Upload size={14} />
+                            Impor Template
                         </Button>
-                        <Button variant="primary" onClick={() => setIsCreateModalOpen(true)} className="h-10 px-6 shadow-xl active:scale-95">
+                        <Button variant="outline" onClick={() => setIsCreateModalOpen(true)} >
                             <Plus size={14} />
                             Initialize Form
                         </Button>
@@ -310,6 +530,13 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                                                 >
                                                     <Copy className="text-muted-foreground mr-3 h-4 w-4" />
                                                     <span className="text-foreground text-[10px] font-semibold uppercase">Clone Asset</span>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                    onClick={() => handleExport(template.id)}
+                                                    className="focus:bg-muted cursor-pointer rounded-lg py-2.5"
+                                                >
+                                                    <Download className="text-muted-foreground mr-3 h-4 w-4" />
+                                                    <span className="text-foreground text-[10px] font-semibold uppercase">Export JSON</span>
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator className="bg-border my-1" />
                                                 <DropdownMenuItem
@@ -422,18 +649,7 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                 </div>
             </div>
 
-            {/* Global UI Filter Component */}
-            <FilterSheet
-                isOpen={isFilterOpen}
-                onOpenChange={setIsFilterOpen}
-                title="Library Filter"
-                description="Manage your template collection visibility."
-                categories={filterCategories}
-                activeFilters={activeFilters}
-                onFilterChange={handleFilterChange}
-                onReset={handleResetFilters}
-                totalResults={filteredTemplates.length}
-            />
+            {/* FilterPopover is now used as a wrapper for the filter button above */}
 
             {/* Modals - High Density */}
             {/* Create Template Modal */}
@@ -647,6 +863,12 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                     </div>
                 </DialogContent>
             </Dialog>
+
+            <ImportFormTemplateModal
+                isOpen={isImportModalOpen}
+                onClose={() => setIsImportModalOpen(false)}
+                showToast={showToast}
+            />
 
             <style aria-hidden="true">{`
                 .custom-scrollbar::-webkit-scrollbar {

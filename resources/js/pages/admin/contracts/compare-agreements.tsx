@@ -163,15 +163,6 @@ export default function CompareAgreements({ contract, versions, initialV1, initi
                     <span className="text-[10px] font-bold">Mode Perbandingan</span>
                 </div>
             </div>
-
-            <style
-                dangerouslySetInnerHTML={{
-                    __html: `
-                .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-                .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-            `,
-                }}
-            />
         </div>
     );
 }

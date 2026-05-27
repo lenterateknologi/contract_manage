@@ -170,11 +170,11 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
     if (!contract.vendor) {
         return (
             <div className="animate-in fade-in flex flex-1 flex-col items-center justify-center p-20 text-center duration-500">
-                <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-black/5 text-black/10 dark:bg-white/5 dark:text-white/10">
+                <div className="bg-surface-muted text-text-soft mb-6 flex h-20 w-20 items-center justify-center rounded-full">
                     <FileIcon size={40} />
                 </div>
-                <h4 className="text-[11px] font-black tracking-[0.3em] text-black uppercase dark:text-white">Vendor Belum Dipilih</h4>
-                <p className="mt-2 max-w-[280px] text-[10px] leading-relaxed font-bold text-black/40 uppercase dark:text-white/40">
+                <h4 className="text-text-main text-[11px] font-black uppercase tracking-[0.3em]">Vendor Belum Dipilih</h4>
+                <p className="text-text-desc mt-2 max-w-[280px] text-[10px] font-bold leading-relaxed uppercase">
                     Silakan pilih vendor terlebih dahulu pada panel informasi kontrak untuk mengelola lampiran.
                 </p>
             </div>
@@ -196,17 +196,17 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
             <div className="bg-card animate-in fade-in flex flex-1 flex-col overflow-hidden duration-500">
                 <style>{DOCX_STYLES}</style>
                 {/* High-Fidelity HUD for Attachment Preview */}
-                <div className="dark:bg-sidebar/80 flex h-[72px] shrink-0 items-center justify-between border-b border-black/10 bg-white/80 px-6 backdrop-blur-xl dark:border-white/10">
+                <div className="border-surface-border flex h-[72px] shrink-0 items-center justify-between border-b bg-surface-base/80 px-6 backdrop-blur-xl">
                     <div className="flex items-center gap-4">
                         <div className="flex flex-col">
                             <div className="flex items-center gap-2">
-                                <div className="bg-primary h-4 w-1 rounded-full dark:bg-white" />
-                                <h4 className="text-[11px] leading-none font-bold text-black uppercase dark:text-white">{previewAt.label}</h4>
-                                <span className="bg-primary dark:text-primary rounded px-2 py-0.5 text-[8px] font-bold text-white uppercase dark:bg-white">
+                                <div className="bg-primary h-4 w-1 rounded-full" />
+                                <h4 className="text-text-main text-[11px] font-bold leading-none uppercase">{previewAt.label}</h4>
+                                <span className="bg-primary rounded px-2 py-0.5 text-[8px] font-bold text-white uppercase">
                                     {previewAt.category || 'Attachment'}
                                 </span>
                             </div>
-                            <span className="mt-1.5 text-[9px] font-bold tracking-[0.2em] text-black/40 uppercase dark:text-white/40">
+                            <span className="text-text-desc mt-1.5 text-[9px] font-bold tracking-[0.2em] uppercase">
                                 {previewAt.file_name} &bull; Document Preview
                             </span>
                         </div>
@@ -215,7 +215,7 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                     <div className="flex items-center gap-2.5">
                         <button
                             onClick={() => setPreviewAt(null)}
-                            className="dark:bg-sidebar flex h-8 items-center gap-2 rounded-lg border border-black/20 bg-white px-4 text-[10px] font-bold text-black/60 uppercase transition-all hover:bg-black/5 active:scale-95 dark:border-white/20 dark:text-white/60 dark:hover:bg-white/5"
+                            className="bg-surface-base border-surface-border text-text-desc flex h-8 items-center gap-2 rounded-lg border px-4 text-[10px] font-bold uppercase transition-all hover:bg-surface-muted active:scale-95"
                         >
                             <ArrowLeft size={14} /> BACK TO LIST
                         </button>
@@ -227,19 +227,19 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                                     : contractApi.attachmentDownloadUrl(contract.id, previewAt.id)
                             }
                             download
-                            className="dark:bg-sidebar flex h-8 items-center gap-2 rounded-lg border border-black/20 bg-white px-4 text-[10px] font-bold text-black uppercase transition-all hover:bg-black/5 active:scale-95 dark:border-white/20 dark:text-white dark:hover:bg-white/5"
+                            className="bg-surface-base border-surface-border text-text-main flex h-8 items-center gap-2 rounded-lg border px-4 text-[10px] font-bold uppercase transition-all hover:bg-surface-muted active:scale-95"
                         >
                             <Download size={14} className="opacity-40" /> DOWNLOAD
                         </a>
                     </div>
                 </div>
 
-                <div className="flex flex-1 justify-center bg-black/5 p-8 dark:bg-white/5">
-                    <div className="relative mb-20 min-h-[80vh] w-full max-w-[210mm] overflow-hidden rounded-sm bg-white shadow-2xl ring-1 ring-black/10 dark:ring-white/10">
+                <div className="bg-surface-muted flex flex-1 justify-center p-8">
+                    <div className="border-surface-border relative mb-20 min-h-[80vh] w-full max-w-[210mm] overflow-hidden rounded-sm bg-white shadow-2xl ring-1">
                         {previewLoading && (
-                            <div className="dark:bg-sidebar/80 absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
+                            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-surface-base/80 backdrop-blur-sm">
                                 <LoadingLottie width={100} height={100} />
-                                <span className="text-[10px] font-black text-black/40 uppercase dark:text-white/40">Menyiapkan Preview...</span>
+                                <span className="text-text-soft text-[10px] font-black uppercase">Menyiapkan Preview...</span>
                             </div>
                         )}
 
@@ -279,8 +279,8 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                             className={cn(
                                 'group relative flex items-center justify-between rounded-xl border p-4 transition-all duration-300 outline-none',
                                 at
-                                    ? 'dark:bg-sidebar cursor-pointer border-black/10 bg-white hover:-translate-y-1 hover:border-black hover:shadow-xl hover:shadow-black/5 dark:border-white/10 dark:hover:border-white dark:hover:shadow-white/5'
-                                    : 'border-black/5 bg-black/[0.01] dark:border-white/5 dark:bg-white/[0.01]',
+                                    ? 'bg-surface-base border-surface-border cursor-pointer hover:-translate-y-1 hover:border-text-main hover:shadow-xl'
+                                    : 'bg-surface-muted/30 border-surface-border/50',
                             )}
                         >
                             <div className="flex min-w-0 items-center gap-4">
@@ -288,8 +288,8 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                                     className={cn(
                                         'flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl transition-all duration-300',
                                         at
-                                            ? 'bg-black/5 text-black/60 shadow-inner group-hover:bg-black group-hover:text-white dark:bg-white/5 dark:text-white/60 dark:group-hover:bg-white dark:group-hover:text-black'
-                                            : 'bg-black/[0.02] text-black/10 dark:bg-white/[0.02] dark:text-white/10',
+                                            ? 'bg-surface-muted text-text-desc shadow-inner group-hover:bg-text-main group-hover:text-surface-base'
+                                            : 'bg-surface-muted/50 text-text-soft/20',
                                     )}
                                 >
                                     {at ? <FileCheck size={20} strokeWidth={2.5} /> : <FileIcon size={20} strokeWidth={2.5} />}
@@ -298,18 +298,18 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                                     <div
                                         className={cn(
                                             'truncate text-[12px] font-bold tracking-tight',
-                                            at ? 'text-black uppercase dark:text-white' : 'text-black/40 uppercase dark:text-white/40',
+                                            at ? 'text-text-main uppercase' : 'text-text-soft/40 uppercase',
                                         )}
                                         title={label}
                                     >
                                         {label}
                                     </div>
                                     {at ? (
-                                        <div className="mt-1 truncate text-[9px] font-bold tracking-[0.1em] text-black/30 uppercase dark:text-white/30">
-                                            {at.file_name} · <span className="text-black dark:text-white">READY</span>
+                                        <div className="text-text-soft mt-1 truncate text-[9px] font-bold tracking-[0.1em] uppercase">
+                                            {at.file_name} · <span className="text-text-main">READY</span>
                                         </div>
                                     ) : (
-                                        <div className="mt-1 text-[9px] font-bold text-black/10 uppercase italic dark:text-white/10">Kosong</div>
+                                        <div className="text-text-soft/20 mt-1 text-[9px] font-bold uppercase italic">Kosong</div>
                                     )}
                                 </div>
                             </div>
@@ -325,7 +325,7 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                                             }
                                             download
                                             onClick={(e) => e.stopPropagation()}
-                                            className="dark:bg-sidebar flex h-8 w-8 items-center justify-center rounded-lg border border-black/10 bg-white shadow-sm transition-all hover:bg-black hover:text-white active:scale-95 dark:border-white/10 dark:text-white dark:hover:bg-white dark:hover:text-black"
+                                            className="bg-surface-base border-surface-border text-text-main flex h-8 w-8 items-center justify-center rounded-lg border shadow-sm transition-all hover:bg-text-main hover:text-surface-base active:scale-95"
                                             title="Download"
                                         >
                                             <Download size={14} strokeWidth={2.5} />
@@ -336,7 +336,7 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                                                     e.stopPropagation();
                                                     handleDelete(at.id, label);
                                                 }}
-                                                className="dark:bg-sidebar flex h-8 w-8 items-center justify-center rounded-lg border border-black/10 bg-white text-black shadow-sm transition-all hover:bg-black hover:text-white active:scale-95 dark:border-white/10 dark:text-white dark:hover:bg-white dark:hover:text-black"
+                                                className="bg-surface-base border-surface-border text-text-main flex h-8 w-8 items-center justify-center rounded-lg border shadow-sm transition-all hover:bg-text-main hover:text-surface-base active:scale-95"
                                                 title="Delete"
                                             >
                                                 <Trash2 size={14} strokeWidth={2.5} />
@@ -352,7 +352,7 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                                             setActiveCat(vendorType);
                                             fileRef.current?.click();
                                         }}
-                                        className="dark:bg-sidebar flex h-8 items-center gap-2 rounded-lg border border-black/10 bg-white px-4 text-[10px] font-bold text-black/40 uppercase transition-all hover:bg-black hover:text-white active:scale-95 disabled:opacity-20 dark:border-white/10 dark:text-white/40 dark:hover:bg-white dark:hover:text-black"
+                                        className="bg-surface-base border-surface-border text-text-desc flex h-8 items-center gap-2 rounded-lg border px-4 text-[10px] font-bold uppercase transition-all hover:bg-text-main hover:text-surface-base active:scale-95 disabled:opacity-20"
                                     >
                                         {isUp ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
                                         Upload

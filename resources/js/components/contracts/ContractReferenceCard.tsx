@@ -1,10 +1,11 @@
 import { Button } from '@/components/ui/base/Button';
 import { SearchInput } from '@/components/ui/forms/SearchInput';
+import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
 import { Contract } from '@/types/contracts';
 import axios from 'axios';
 import { ExternalLink, Link as LinkIcon, Loader2, Plus, Search, Trash2, X } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface ContractReferenceCardProps {
     selected: Contract;
@@ -14,20 +15,23 @@ interface ContractReferenceCardProps {
 }
 
 export function ContractReferenceCard({ selected, canUpdate, onUpdate, processing }: ContractReferenceCardProps) {
+    const parent = selected.parent;
     const canModifyRef = selected.allow_reference && canUpdate;
     const [isEditing, setIsEditing] = useState(false);
     const [search, setSearch] = useState('');
+    const debouncedSearch = useDebounce(search, 500);
     const [results, setResults] = useState<any[]>([]);
     const [isSearching, setIsSearching] = useState(false);
 
-    const parent = selected.parent;
-
-    const handleSearch = async (val: string) => {
-        setSearch(val);
-        if (val.length < 2) {
+    useEffect(() => {
+        if (debouncedSearch.length >= 2) {
+            performSearch(debouncedSearch);
+        } else {
             setResults([]);
-            return;
         }
+    }, [debouncedSearch]);
+
+    const performSearch = async (val: string) => {
         setIsSearching(true);
         try {
             const res = await axios.get('/api/contracts', {
@@ -170,7 +174,7 @@ export function ContractReferenceCard({ selected, canUpdate, onUpdate, processin
                                 <SearchInput
                                     autoFocus
                                     value={search}
-                                    onChange={(e) => handleSearch(e.target.value)}
+                                    onChange={(e) => setSearch(e.target.value)}
                                     placeholder="CARI BERDASARKAN NO. KONTRAK ATAU JUDUL..."
                                     className="h-11 text-xs tracking-wider"
                                 />

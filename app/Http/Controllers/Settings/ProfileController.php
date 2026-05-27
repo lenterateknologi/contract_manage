@@ -71,6 +71,7 @@ class ProfileController extends Controller
                 'initials' => $user->initials,
                 'bg_color' => $user->bg_color,
                 'text_color' => $user->text_color,
+                'created_at' => $user->created_at->isoFormat('D MMMM YYYY'),
             ],
         ]);
     }

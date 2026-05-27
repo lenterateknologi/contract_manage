@@ -13,6 +13,7 @@ export interface UserProfile {
     };
     bg_color: string;
     text_color: string;
+    avatar_url?: string;
 }
 
 export interface ContractVersion {
@@ -148,6 +149,7 @@ export interface Contract {
         tax_required?: boolean;
         [key: string]: any;
     };
+    meta?: Record<string, any>;
     progress: {
         done: number;
         total: number;
