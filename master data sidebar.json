@@ -1,0 +1,1451 @@
+{
+    "roles": [
+        {
+            "id": "372d99de-1b85-4832-882d-7bde7f67f2a8",
+            "name": "Admin",
+            "description": "Super Administrator with full access"
+        },
+        {
+            "id": "b42030a5-9a0b-4388-bc56-48de5f2556b9",
+            "name": "Manager",
+            "description": "Department head or team manager with approval authority"
+        },
+        {
+            "id": "fda004ef-7a3e-41b2-98c1-6448754aaac3",
+            "name": "Staff",
+            "description": "Regular employee with initiation and review authority"
+        },
+        {
+            "id": "14daa17a-981d-4e18-9f30-c8663867d16f",
+            "name": "Director",
+            "description": "Executive level with final approval authority"
+        },
+        {
+            "id": "c73a12d3-5dcc-41f3-ae60-ed2b4d3ec0f2",
+            "name": "Vendor",
+            "description": "External party with restricted access"
+        },
+        {
+            "id": "b8131509-14ce-4b35-8c66-bbd546088ea2",
+            "name": "VP",
+            "description": "Vice President with high-level approval authority"
+        },
+        {
+            "id": "de0f3016-504e-4940-ad6d-f2f3969df19e",
+            "name": "CEO",
+            "description": "Chief Executive Officer with ultimate approval authority"
+        }
+    ],
+    "access_mappings": [
+        {
+            "role_name": "Admin",
+            "module_identifier": "DASH",
+            "module_group_name": "Beranda",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": true,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": 1
+        },
+        {
+            "role_name": "Manager",
+            "module_identifier": "DASH",
+            "module_group_name": "Beranda",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": false,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": null
+        },
+        {
+            "role_name": "Manager",
+            "module_identifier": "MY_CTC",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": false,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": null
+        },
+        {
+            "role_name": "Manager",
+            "module_identifier": "CONTRACTS",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": false,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": null
+        },
+        {
+            "role_name": "Manager",
+            "module_identifier": "PENDING",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": false,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": null
+        },
+        {
+            "role_name": "Manager",
+            "module_identifier": "EXPIRY",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": false,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": null
+        },
+        {
+            "role_name": "Staff",
+            "module_identifier": "DASH",
+            "module_group_name": "Beranda",
+            "can_read": true,
+            "can_create": false,
+            "can_update": false,
+            "can_delete": false,
+            "can_approve": false,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": null
+        },
+        {
+            "role_name": "Staff",
+            "module_identifier": "MY_CTC",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": false,
+            "can_update": false,
+            "can_delete": false,
+            "can_approve": false,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": null
+        },
+        {
+            "role_name": "Staff",
+            "module_identifier": "CONTRACTS",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": false,
+            "can_update": false,
+            "can_delete": false,
+            "can_approve": false,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": null
+        },
+        {
+            "role_name": "Staff",
+            "module_identifier": "PENDING",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": false,
+            "can_update": false,
+            "can_delete": false,
+            "can_approve": false,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": null
+        },
+        {
+            "role_name": "Staff",
+            "module_identifier": "EXPIRY",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": false,
+            "can_update": false,
+            "can_delete": false,
+            "can_approve": false,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": null
+        },
+        {
+            "role_name": "Director",
+            "module_identifier": "DASH",
+            "module_group_name": "Beranda",
+            "can_read": true,
+            "can_create": false,
+            "can_update": false,
+            "can_delete": false,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": null
+        },
+        {
+            "role_name": "Director",
+            "module_identifier": "MY_CTC",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": false,
+            "can_update": false,
+            "can_delete": false,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": null
+        },
+        {
+            "role_name": "Director",
+            "module_identifier": "CONTRACTS",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": false,
+            "can_update": false,
+            "can_delete": false,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": null
+        },
+        {
+            "role_name": "Director",
+            "module_identifier": "PENDING",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": false,
+            "can_update": false,
+            "can_delete": false,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": null
+        },
+        {
+            "role_name": "Director",
+            "module_identifier": "EXPIRY",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": false,
+            "can_update": false,
+            "can_delete": false,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": null
+        },
+        {
+            "role_name": "Vendor",
+            "module_identifier": "DASH",
+            "module_group_name": "Beranda",
+            "can_read": true,
+            "can_create": false,
+            "can_update": false,
+            "can_delete": false,
+            "can_approve": false,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": null
+        },
+        {
+            "role_name": "Vendor",
+            "module_identifier": "MY_CTC",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": false,
+            "can_update": false,
+            "can_delete": false,
+            "can_approve": false,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": null
+        },
+        {
+            "role_name": "Vendor",
+            "module_identifier": "CONTRACTS",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": false,
+            "can_update": false,
+            "can_delete": false,
+            "can_approve": false,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": null
+        },
+        {
+            "role_name": "Vendor",
+            "module_identifier": "PENDING",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": false,
+            "can_update": false,
+            "can_delete": false,
+            "can_approve": false,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": null
+        },
+        {
+            "role_name": "Vendor",
+            "module_identifier": "EXPIRY",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": false,
+            "can_update": false,
+            "can_delete": false,
+            "can_approve": false,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": null
+        },
+        {
+            "role_name": "VP",
+            "module_identifier": "DASH",
+            "module_group_name": "Beranda",
+            "can_read": true,
+            "can_create": false,
+            "can_update": false,
+            "can_delete": false,
+            "can_approve": false,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": null
+        },
+        {
+            "role_name": "VP",
+            "module_identifier": "MY_CTC",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": false,
+            "can_update": false,
+            "can_delete": false,
+            "can_approve": false,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": null
+        },
+        {
+            "role_name": "VP",
+            "module_identifier": "CONTRACTS",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": false,
+            "can_update": false,
+            "can_delete": false,
+            "can_approve": false,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": null
+        },
+        {
+            "role_name": "VP",
+            "module_identifier": "PENDING",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": false,
+            "can_update": false,
+            "can_delete": false,
+            "can_approve": false,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": null
+        },
+        {
+            "role_name": "VP",
+            "module_identifier": "EXPIRY",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": false,
+            "can_update": false,
+            "can_delete": false,
+            "can_approve": false,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": null
+        },
+        {
+            "role_name": "CEO",
+            "module_identifier": "DASH",
+            "module_group_name": "Beranda",
+            "can_read": true,
+            "can_create": false,
+            "can_update": false,
+            "can_delete": false,
+            "can_approve": false,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": null
+        },
+        {
+            "role_name": "CEO",
+            "module_identifier": "MY_CTC",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": false,
+            "can_update": false,
+            "can_delete": false,
+            "can_approve": false,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": null
+        },
+        {
+            "role_name": "CEO",
+            "module_identifier": "CONTRACTS",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": false,
+            "can_update": false,
+            "can_delete": false,
+            "can_approve": false,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": null
+        },
+        {
+            "role_name": "CEO",
+            "module_identifier": "PENDING",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": false,
+            "can_update": false,
+            "can_delete": false,
+            "can_approve": false,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": null
+        },
+        {
+            "role_name": "CEO",
+            "module_identifier": "EXPIRY",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": false,
+            "can_update": false,
+            "can_delete": false,
+            "can_approve": false,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": null
+        },
+        {
+            "role_name": "Admin",
+            "module_identifier": "ADMIN_FORMS",
+            "module_group_name": "Formulir",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": true,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": 1
+        },
+        {
+            "role_name": "Admin",
+            "module_identifier": "ADMIN_TEMPLATES",
+            "module_group_name": "Formulir",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": true,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": 2
+        },
+        {
+            "role_name": "Admin",
+            "module_identifier": "ANLTX",
+            "module_group_name": "Laporan",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": true,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": 1
+        },
+        {
+            "role_name": "Admin",
+            "module_identifier": "AUDIT",
+            "module_group_name": "Laporan",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": true,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": 2
+        },
+        {
+            "role_name": "Admin",
+            "module_identifier": "ADMIN_ROLES",
+            "module_group_name": "Manajemen Pengguna",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": true,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": 2
+        },
+        {
+            "role_name": "Admin",
+            "module_identifier": "ADMIN_TYPES",
+            "module_group_name": "Pengaturan Sistem",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": true,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": 2
+        },
+        {
+            "role_name": "Admin",
+            "module_identifier": "ADMIN_DEPTS",
+            "module_group_name": "Manajemen Entitas",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": true,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": 4
+        },
+        {
+            "role_name": "Admin",
+            "module_identifier": "ADMIN_NAV_MAPPING",
+            "module_group_name": "Pengaturan Sistem",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": true,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": 3
+        },
+        {
+            "role_name": "Admin",
+            "module_identifier": "ADMIN_STATUS",
+            "module_group_name": "Pengaturan Sistem",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": true,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": 4
+        },
+        {
+            "role_name": "Admin",
+            "module_identifier": "ADMIN_ACCESS_MAPPING",
+            "module_group_name": "Pengaturan Sistem",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": true,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": 5
+        },
+        {
+            "role_name": "Admin",
+            "module_identifier": "CONTRACTS",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": true,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": 1
+        },
+        {
+            "role_name": "Admin",
+            "module_identifier": "EXPIRY",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": true,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": 2
+        },
+        {
+            "role_name": "Admin",
+            "module_identifier": "MY_CTC",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": true,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": 3
+        },
+        {
+            "role_name": "Admin",
+            "module_identifier": "ADMIN_WORKFLOWS",
+            "module_group_name": "Pengaturan Sistem",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": true,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": 1
+        },
+        {
+            "role_name": "Admin",
+            "module_identifier": "ADMIN_VENDORS",
+            "module_group_name": "Lainnya",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": true,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": 1
+        },
+        {
+            "role_name": "Admin",
+            "module_identifier": "PENDING",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": true,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": 4
+        },
+        {
+            "role_name": "Admin",
+            "module_identifier": "ADMIN_REGIONS",
+            "module_group_name": "Manajemen Entitas",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": true,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": 1
+        },
+        {
+            "role_name": "Admin",
+            "module_identifier": "ADMIN_GROUPS",
+            "module_group_name": "Manajemen Entitas",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": true,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": 2
+        },
+        {
+            "role_name": "Admin",
+            "module_identifier": "ADMIN_COMPANIES",
+            "module_group_name": "Manajemen Entitas",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": true,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": 3
+        },
+        {
+            "role_name": "Admin",
+            "module_identifier": "ADMIN_MEMBERS",
+            "module_group_name": "Lainnya",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": true,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": 2
+        },
+        {
+            "role_name": "Admin",
+            "module_identifier": "ADMIN_USERS",
+            "module_group_name": "Manajemen Pengguna",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": true,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": 1
+        }
+    ],
+    "role_navigation_mappings": [
+        {
+            "role_name": "Admin",
+            "module_group_name": "Manajemen Entitas",
+            "sequence": 4,
+            "modules": [
+                {
+                    "module_identifier": "ADMIN_REGIONS",
+                    "sequence": 1
+                },
+                {
+                    "module_identifier": "ADMIN_GROUPS",
+                    "sequence": 2
+                },
+                {
+                    "module_identifier": "ADMIN_COMPANIES",
+                    "sequence": 3
+                },
+                {
+                    "module_identifier": "ADMIN_DEPTS",
+                    "sequence": 4
+                }
+            ]
+        },
+        {
+            "role_name": "Admin",
+            "module_group_name": "Pengaturan Sistem",
+            "sequence": 7,
+            "modules": [
+                {
+                    "module_identifier": "ADMIN_WORKFLOWS",
+                    "sequence": 1
+                },
+                {
+                    "module_identifier": "ADMIN_TYPES",
+                    "sequence": 2
+                },
+                {
+                    "module_identifier": "ADMIN_NAV_MAPPING",
+                    "sequence": 3
+                },
+                {
+                    "module_identifier": "ADMIN_STATUS",
+                    "sequence": 4
+                },
+                {
+                    "module_identifier": "ADMIN_ACCESS_MAPPING",
+                    "sequence": 5
+                }
+            ]
+        },
+        {
+            "role_name": "Admin",
+            "module_group_name": "Modul Kontrak",
+            "sequence": 2,
+            "modules": [
+                {
+                    "module_identifier": "CONTRACTS",
+                    "sequence": 1
+                },
+                {
+                    "module_identifier": "EXPIRY",
+                    "sequence": 2
+                },
+                {
+                    "module_identifier": "MY_CTC",
+                    "sequence": 3
+                },
+                {
+                    "module_identifier": "PENDING",
+                    "sequence": 4
+                }
+            ]
+        },
+        {
+            "role_name": "Admin",
+            "module_group_name": null,
+            "sequence": 3,
+            "modules": []
+        },
+        {
+            "role_name": "Admin",
+            "module_group_name": "Formulir",
+            "sequence": 3,
+            "modules": [
+                {
+                    "module_identifier": "ADMIN_FORMS",
+                    "sequence": 1
+                },
+                {
+                    "module_identifier": "ADMIN_TEMPLATES",
+                    "sequence": 2
+                }
+            ]
+        },
+        {
+            "role_name": "Admin",
+            "module_group_name": "Manajemen Pengguna",
+            "sequence": 5,
+            "modules": [
+                {
+                    "module_identifier": "ADMIN_USERS",
+                    "sequence": 1
+                },
+                {
+                    "module_identifier": "ADMIN_ROLES",
+                    "sequence": 2
+                }
+            ]
+        },
+        {
+            "role_name": "Admin",
+            "module_group_name": "Laporan",
+            "sequence": 6,
+            "modules": [
+                {
+                    "module_identifier": "ANLTX",
+                    "sequence": 1
+                },
+                {
+                    "module_identifier": "AUDIT",
+                    "sequence": 2
+                }
+            ]
+        },
+        {
+            "role_name": "Admin",
+            "module_group_name": "Lainnya",
+            "sequence": 8,
+            "modules": [
+                {
+                    "module_identifier": "ADMIN_VENDORS",
+                    "sequence": 1
+                },
+                {
+                    "module_identifier": "ADMIN_MEMBERS",
+                    "sequence": 2
+                }
+            ]
+        },
+        {
+            "role_name": "Manager",
+            "module_group_name": "Beranda",
+            "sequence": null,
+            "modules": [
+                {
+                    "module_identifier": "DASH",
+                    "sequence": null
+                }
+            ]
+        },
+        {
+            "role_name": "Manager",
+            "module_group_name": "Modul Kontrak",
+            "sequence": null,
+            "modules": [
+                {
+                    "module_identifier": "MY_CTC",
+                    "sequence": null
+                },
+                {
+                    "module_identifier": "CONTRACTS",
+                    "sequence": null
+                },
+                {
+                    "module_identifier": "PENDING",
+                    "sequence": null
+                },
+                {
+                    "module_identifier": "EXPIRY",
+                    "sequence": null
+                }
+            ]
+        },
+        {
+            "role_name": "Manager",
+            "module_group_name": "Formulir",
+            "sequence": null,
+            "modules": []
+        },
+        {
+            "role_name": "Manager",
+            "module_group_name": null,
+            "sequence": null,
+            "modules": []
+        },
+        {
+            "role_name": "Manager",
+            "module_group_name": "Manajemen Pengguna",
+            "sequence": null,
+            "modules": []
+        },
+        {
+            "role_name": "Manager",
+            "module_group_name": "Laporan",
+            "sequence": null,
+            "modules": []
+        },
+        {
+            "role_name": "Staff",
+            "module_group_name": "Beranda",
+            "sequence": null,
+            "modules": [
+                {
+                    "module_identifier": "DASH",
+                    "sequence": null
+                }
+            ]
+        },
+        {
+            "role_name": "Staff",
+            "module_group_name": "Modul Kontrak",
+            "sequence": null,
+            "modules": [
+                {
+                    "module_identifier": "MY_CTC",
+                    "sequence": null
+                },
+                {
+                    "module_identifier": "CONTRACTS",
+                    "sequence": null
+                },
+                {
+                    "module_identifier": "PENDING",
+                    "sequence": null
+                },
+                {
+                    "module_identifier": "EXPIRY",
+                    "sequence": null
+                }
+            ]
+        },
+        {
+            "role_name": "Staff",
+            "module_group_name": "Formulir",
+            "sequence": null,
+            "modules": []
+        },
+        {
+            "role_name": "Staff",
+            "module_group_name": null,
+            "sequence": null,
+            "modules": []
+        },
+        {
+            "role_name": "Staff",
+            "module_group_name": "Manajemen Pengguna",
+            "sequence": null,
+            "modules": []
+        },
+        {
+            "role_name": "Staff",
+            "module_group_name": "Laporan",
+            "sequence": null,
+            "modules": []
+        },
+        {
+            "role_name": "Director",
+            "module_group_name": "Beranda",
+            "sequence": null,
+            "modules": [
+                {
+                    "module_identifier": "DASH",
+                    "sequence": null
+                }
+            ]
+        },
+        {
+            "role_name": "Director",
+            "module_group_name": "Modul Kontrak",
+            "sequence": null,
+            "modules": [
+                {
+                    "module_identifier": "MY_CTC",
+                    "sequence": null
+                },
+                {
+                    "module_identifier": "CONTRACTS",
+                    "sequence": null
+                },
+                {
+                    "module_identifier": "PENDING",
+                    "sequence": null
+                },
+                {
+                    "module_identifier": "EXPIRY",
+                    "sequence": null
+                }
+            ]
+        },
+        {
+            "role_name": "Director",
+            "module_group_name": "Formulir",
+            "sequence": null,
+            "modules": []
+        },
+        {
+            "role_name": "Director",
+            "module_group_name": null,
+            "sequence": null,
+            "modules": []
+        },
+        {
+            "role_name": "Director",
+            "module_group_name": "Manajemen Pengguna",
+            "sequence": null,
+            "modules": []
+        },
+        {
+            "role_name": "Director",
+            "module_group_name": "Laporan",
+            "sequence": null,
+            "modules": []
+        },
+        {
+            "role_name": "Vendor",
+            "module_group_name": "Beranda",
+            "sequence": null,
+            "modules": [
+                {
+                    "module_identifier": "DASH",
+                    "sequence": null
+                }
+            ]
+        },
+        {
+            "role_name": "Vendor",
+            "module_group_name": "Modul Kontrak",
+            "sequence": null,
+            "modules": [
+                {
+                    "module_identifier": "MY_CTC",
+                    "sequence": null
+                },
+                {
+                    "module_identifier": "CONTRACTS",
+                    "sequence": null
+                },
+                {
+                    "module_identifier": "PENDING",
+                    "sequence": null
+                },
+                {
+                    "module_identifier": "EXPIRY",
+                    "sequence": null
+                }
+            ]
+        },
+        {
+            "role_name": "Vendor",
+            "module_group_name": "Formulir",
+            "sequence": null,
+            "modules": []
+        },
+        {
+            "role_name": "Vendor",
+            "module_group_name": null,
+            "sequence": null,
+            "modules": []
+        },
+        {
+            "role_name": "Vendor",
+            "module_group_name": "Manajemen Pengguna",
+            "sequence": null,
+            "modules": []
+        },
+        {
+            "role_name": "Vendor",
+            "module_group_name": "Laporan",
+            "sequence": null,
+            "modules": []
+        },
+        {
+            "role_name": "VP",
+            "module_group_name": "Beranda",
+            "sequence": null,
+            "modules": [
+                {
+                    "module_identifier": "DASH",
+                    "sequence": null
+                }
+            ]
+        },
+        {
+            "role_name": "VP",
+            "module_group_name": "Modul Kontrak",
+            "sequence": null,
+            "modules": [
+                {
+                    "module_identifier": "MY_CTC",
+                    "sequence": null
+                },
+                {
+                    "module_identifier": "CONTRACTS",
+                    "sequence": null
+                },
+                {
+                    "module_identifier": "PENDING",
+                    "sequence": null
+                },
+                {
+                    "module_identifier": "EXPIRY",
+                    "sequence": null
+                }
+            ]
+        },
+        {
+            "role_name": "VP",
+            "module_group_name": "Formulir",
+            "sequence": null,
+            "modules": []
+        },
+        {
+            "role_name": "VP",
+            "module_group_name": null,
+            "sequence": null,
+            "modules": []
+        },
+        {
+            "role_name": "VP",
+            "module_group_name": "Manajemen Pengguna",
+            "sequence": null,
+            "modules": []
+        },
+        {
+            "role_name": "VP",
+            "module_group_name": "Laporan",
+            "sequence": null,
+            "modules": []
+        },
+        {
+            "role_name": "CEO",
+            "module_group_name": "Beranda",
+            "sequence": null,
+            "modules": [
+                {
+                    "module_identifier": "DASH",
+                    "sequence": null
+                }
+            ]
+        },
+        {
+            "role_name": "CEO",
+            "module_group_name": "Modul Kontrak",
+            "sequence": null,
+            "modules": [
+                {
+                    "module_identifier": "MY_CTC",
+                    "sequence": null
+                },
+                {
+                    "module_identifier": "CONTRACTS",
+                    "sequence": null
+                },
+                {
+                    "module_identifier": "PENDING",
+                    "sequence": null
+                },
+                {
+                    "module_identifier": "EXPIRY",
+                    "sequence": null
+                }
+            ]
+        },
+        {
+            "role_name": "CEO",
+            "module_group_name": "Formulir",
+            "sequence": null,
+            "modules": []
+        },
+        {
+            "role_name": "CEO",
+            "module_group_name": null,
+            "sequence": null,
+            "modules": []
+        },
+        {
+            "role_name": "CEO",
+            "module_group_name": "Manajemen Pengguna",
+            "sequence": null,
+            "modules": []
+        },
+        {
+            "role_name": "CEO",
+            "module_group_name": "Laporan",
+            "sequence": null,
+            "modules": []
+        },
+        {
+            "role_name": "Admin",
+            "module_group_name": "Beranda",
+            "sequence": 1,
+            "modules": [
+                {
+                    "module_identifier": "DASH",
+                    "sequence": 1
+                }
+            ]
+        }
+    ],
+    "module_groups": [
+        {
+            "name": "Beranda",
+            "icon": "LayoutGrid"
+        },
+        {
+            "name": "Modul Kontrak",
+            "icon": "FileText"
+        },
+        {
+            "name": "Pengaturan Sistem",
+            "icon": "LayoutGrid"
+        },
+        {
+            "name": "Laporan",
+            "icon": "ShieldCheck"
+        },
+        {
+            "name": "Lainnya",
+            "icon": "LayoutGrid"
+        },
+        {
+            "name": "Manajemen Entitas",
+            "icon": "LayoutGrid"
+        },
+        {
+            "name": "Manajemen Pengguna",
+            "icon": "Database"
+        },
+        {
+            "name": "Formulir",
+            "icon": "Library"
+        }
+    ],
+    "modules": [
+        {
+            "identifier": "ADMIN_COMPANIES",
+            "name": "Company",
+            "route": "\/admin\/companies",
+            "icon": "Building2",
+            "description": null,
+            "module_group_name": "Manajemen Pengguna",
+            "showed_as_menu": true
+        },
+        {
+            "identifier": "ADMIN_DEPTS",
+            "name": "Departemen",
+            "route": "\/admin\/departments",
+            "icon": "Building2",
+            "description": null,
+            "module_group_name": "Manajemen Pengguna",
+            "showed_as_menu": true
+        },
+        {
+            "identifier": "EXPIRY",
+            "name": "Masa Berlaku",
+            "route": "\/contracts\/expiry",
+            "icon": "History",
+            "description": null,
+            "module_group_name": null,
+            "showed_as_menu": true
+        },
+        {
+            "identifier": "ADMIN_TYPES",
+            "name": "Kategori Kontrak",
+            "route": "\/admin\/contract-types",
+            "icon": "FolderClosed",
+            "description": null,
+            "module_group_name": "Formulir",
+            "showed_as_menu": true
+        },
+        {
+            "identifier": "ADMIN_WORKFLOWS",
+            "name": "Alur Persetujuan",
+            "route": "\/admin\/workflows",
+            "icon": "Workflow",
+            "description": null,
+            "module_group_name": null,
+            "showed_as_menu": true
+        },
+        {
+            "identifier": "ADMIN_STATUS",
+            "name": "Master Status",
+            "route": "\/admin\/contract-statuses",
+            "icon": "Tags",
+            "description": null,
+            "module_group_name": null,
+            "showed_as_menu": true
+        },
+        {
+            "identifier": "ADMIN_ACCESS_MAPPING",
+            "name": "Pemetaan Hak Akses",
+            "route": "\/admin\/access-mapping",
+            "icon": "ShieldCheck",
+            "description": null,
+            "module_group_name": "Manajemen Pengguna",
+            "showed_as_menu": true
+        },
+        {
+            "identifier": "ADMIN_NAV_MAPPING",
+            "name": "Pemetaan Navigasi",
+            "route": "\/admin\/navigation-mapping",
+            "icon": "LayoutGrid",
+            "description": null,
+            "module_group_name": "Manajemen Pengguna",
+            "showed_as_menu": true
+        },
+        {
+            "identifier": "ADMIN_VENDORS",
+            "name": "Daftar Vendor",
+            "route": "\/admin\/vendors",
+            "icon": "Truck",
+            "description": null,
+            "module_group_name": "Manajemen Pengguna",
+            "showed_as_menu": true
+        },
+        {
+            "identifier": "ADMIN_MEMBERS",
+            "name": "Anggota Divisi",
+            "route": "\/admin\/members",
+            "icon": "Users",
+            "description": null,
+            "module_group_name": "Manajemen Pengguna",
+            "showed_as_menu": true
+        },
+        {
+            "identifier": "DASH",
+            "name": "Dashboard Utama",
+            "route": "\/dashboard",
+            "icon": "LayoutGrid",
+            "description": null,
+            "module_group_name": "Beranda",
+            "showed_as_menu": true
+        },
+        {
+            "identifier": "ADMIN_USERS",
+            "name": "Pengguna",
+            "route": "\/admin\/users",
+            "icon": "UserCog",
+            "description": null,
+            "module_group_name": "Manajemen Pengguna",
+            "showed_as_menu": true
+        },
+        {
+            "identifier": "ADMIN_ROLES",
+            "name": "Peran",
+            "route": "\/admin\/roles",
+            "icon": "KeyRound",
+            "description": null,
+            "module_group_name": "Manajemen Pengguna",
+            "showed_as_menu": true
+        },
+        {
+            "identifier": "ANLTX",
+            "name": "Kontrak",
+            "route": "\/admin\/reports\/analytics",
+            "icon": "BarChart3",
+            "description": null,
+            "module_group_name": "Laporan",
+            "showed_as_menu": true
+        },
+        {
+            "identifier": "AUDIT",
+            "name": "Aktivitas",
+            "route": "\/admin\/reports\/audit",
+            "icon": "ClipboardList",
+            "description": null,
+            "module_group_name": "Laporan",
+            "showed_as_menu": true
+        },
+        {
+            "identifier": "ADMIN_FORMS",
+            "name": "Custom",
+            "route": "\/admin\/form-templates",
+            "icon": "ScanLine",
+            "description": null,
+            "module_group_name": "Formulir",
+            "showed_as_menu": true
+        },
+        {
+            "identifier": "ADMIN_TEMPLATES",
+            "name": "Digital",
+            "route": "\/admin\/templates",
+            "icon": "FileCode",
+            "description": null,
+            "module_group_name": "Formulir",
+            "showed_as_menu": true
+        },
+        {
+            "identifier": "CONTRACTS",
+            "name": "Semua",
+            "route": "\/contracts",
+            "icon": "FileText",
+            "description": null,
+            "module_group_name": "Beranda",
+            "showed_as_menu": true
+        },
+        {
+            "identifier": "MY_CTC",
+            "name": "Saya",
+            "route": "\/contracts\/mine",
+            "icon": "UserCheck",
+            "description": null,
+            "module_group_name": "Beranda",
+            "showed_as_menu": true
+        },
+        {
+            "identifier": "PENDING",
+            "name": "Perlu Persetujuan",
+            "route": "\/contracts\/pending",
+            "icon": "Clock",
+            "description": null,
+            "module_group_name": "Beranda",
+            "showed_as_menu": true
+        },
+        {
+            "identifier": "ADMIN_REGIONS",
+            "name": "Region",
+            "route": "\/admin\/regions",
+            "icon": "GitBranch",
+            "description": null,
+            "module_group_name": "Manajemen Pengguna",
+            "showed_as_menu": true
+        },
+        {
+            "identifier": "ADMIN_GROUPS",
+            "name": "Group",
+            "route": "\/admin\/company-groups",
+            "icon": "Users",
+            "description": null,
+            "module_group_name": "Manajemen Pengguna",
+            "showed_as_menu": true
+        }
+    ]
+}

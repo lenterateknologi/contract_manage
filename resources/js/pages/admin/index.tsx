@@ -57,6 +57,7 @@ interface Props {
         workflows: number;
         roles: number;
         access_mappings: number;
+        navigation_mappings: number;
     };
 }
 

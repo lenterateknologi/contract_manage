@@ -64,6 +64,107 @@ class MasterSeeder extends Seeder
         Module::query()->forceDelete();
         ModuleGroup::query()->forceDelete();
 
+        $jsonPath = base_path('master data sidebar.json');
+        if (file_exists($jsonPath)) {
+            $jsonData = json_decode(file_get_contents($jsonPath), true);
+
+            // Seed Module Groups
+            if (! empty($jsonData['module_groups'])) {
+                foreach ($jsonData['module_groups'] as $groupData) {
+                    ModuleGroup::create([
+                        'name' => $groupData['name'],
+                        'icon' => $groupData['icon'] ?? null,
+                        'created_by' => $admin->id,
+                        'updated_by' => $admin->id,
+                    ]);
+                }
+            }
+
+            // Get groups map
+            $groupMap = ModuleGroup::pluck('id', 'name')->all();
+
+            // Seed Modules
+            if (! empty($jsonData['modules'])) {
+                foreach ($jsonData['modules'] as $moduleData) {
+                    $groupId = ! empty($moduleData['module_group_name']) ? ($groupMap[$moduleData['module_group_name']] ?? null) : null;
+                    Module::create([
+                        'identifier' => $moduleData['identifier'],
+                        'name' => $moduleData['name'],
+                        'route' => $moduleData['route'] ?? null,
+                        'icon' => $moduleData['icon'] ?? null,
+                        'description' => $moduleData['description'] ?? null,
+                        'module_group_id' => $groupId,
+                        'showed_as_menu' => $moduleData['showed_as_menu'] ?? true,
+                        'is_active' => $moduleData['is_active'] ?? true,
+                        'created_by' => $admin->id,
+                        'updated_by' => $admin->id,
+                    ]);
+                }
+            }
+
+            // Get modules map
+            $moduleMap = Module::pluck('id', 'identifier')->all();
+            $roleMap = Role::pluck('id', 'name')->all();
+
+            // Seed Access Mappings
+            if (! empty($jsonData['access_mappings'])) {
+                foreach ($jsonData['access_mappings'] as $accessData) {
+                    $roleId = $roleMap[$accessData['role_name']] ?? null;
+                    $moduleId = $moduleMap[$accessData['module_identifier']] ?? null;
+                    $groupId = ! empty($accessData['module_group_name']) ? ($groupMap[$accessData['module_group_name']] ?? null) : null;
+
+                    if ($roleId && $moduleId) {
+                        AccessModule::create([
+                            'id' => (string) Str::uuid(),
+                            'role_id' => $roleId,
+                            'module_id' => $moduleId,
+                            'module_group_id' => $groupId,
+                            'can_read' => $accessData['can_read'] ?? false,
+                            'can_create' => $accessData['can_create'] ?? false,
+                            'can_update' => $accessData['can_update'] ?? false,
+                            'can_delete' => $accessData['can_delete'] ?? false,
+                            'can_approve' => $accessData['can_approve'] ?? false,
+                            'can_bulk_approve' => $accessData['can_bulk_approve'] ?? false,
+                            'can_bulk_delete' => $accessData['can_bulk_delete'] ?? false,
+                            'sequence' => $accessData['sequence'] ?? null,
+                        ]);
+                    }
+                }
+            }
+
+            // Seed Role Navigation Mappings
+            if (! empty($jsonData['role_navigation_mappings'])) {
+                foreach ($jsonData['role_navigation_mappings'] as $navMapping) {
+                    $roleId = $roleMap[$navMapping['role_name']] ?? null;
+                    $groupId = $groupMap[$navMapping['module_group_name']] ?? null;
+
+                    if ($roleId && $groupId) {
+                        DB::table('m_role_module_groups')->insert([
+                            'role_id' => $roleId,
+                            'module_group_id' => $groupId,
+                            'sequence' => $navMapping['sequence'] ?? 9999,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+
+                        // Seed module sequences within the navigation mapping
+                        if (! empty($navMapping['modules']) && is_array($navMapping['modules'])) {
+                            foreach ($navMapping['modules'] as $mOrder) {
+                                $mId = $moduleMap[$mOrder['module_identifier']] ?? null;
+                                if ($mId) {
+                                    AccessModule::where('role_id', $roleId)
+                                        ->where('module_id', $mId)
+                                        ->update(['sequence' => $mOrder['sequence'] ?? null]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return;
+        }
+
         $groups = [
             ['name' => 'Beranda', 'icon' => 'LayoutGrid'],
             ['name' => 'Modul Kontrak', 'icon' => 'FileText'],
@@ -111,7 +212,6 @@ class MasterSeeder extends Seeder
             // Sistem & Laporan
             ['name' => 'Analitik Kontrak', 'identifier' => 'ANLTX', 'group' => 'Sistem & Laporan', 'route' => '/admin/reports/analytics', 'icon' => 'BarChart3'],
             ['name' => 'Jejak Audit', 'identifier' => 'AUDIT', 'group' => 'Sistem & Laporan', 'route' => '/admin/reports/audit', 'icon' => 'History'],
-            ['name' => 'Ekspor Impor Master', 'identifier' => 'ADMIN_MASTER_DATA', 'group' => 'Sistem & Laporan', 'route' => '/admin/master-data-sync', 'icon' => 'RefreshCw'],
         ];
 
         foreach ($mods as $mIdx => $m) {

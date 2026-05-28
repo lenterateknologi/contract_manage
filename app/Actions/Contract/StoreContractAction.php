@@ -67,7 +67,7 @@ class StoreContractAction
             ContractHistory::create(['contract_id' => $contract->id, 'action' => 'CONTRACT_CREATED', 'description' => 'Kontrak dibuat', 'actor_id' => $userId]);
 
             // AUTOMATION: Automatically assign workflow and set to Step 1 (Drafting)
-            $contract = $this->workflowService->sendForApproval($contract);
+            $contract = $this->workflowService->sendForApproval($contract, $validated['workflow_id'] ?? null);
 
             $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'histories.actor', 'messages.user', 'contractType', 'workflowStep']);
 

@@ -122,11 +122,6 @@ class WorkflowStep extends Model
         return $this->belongsTo(Workflow::class);
     }
 
-    public function department(): BelongsTo
-    {
-        return $this->belongsTo(Department::class);
-    }
-
     public function approvals(): HasMany
     {
         return $this->hasMany(Approval::class);

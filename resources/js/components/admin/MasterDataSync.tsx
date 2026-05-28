@@ -20,7 +20,8 @@ import {
     GitBranch,
     ShieldCheck,
     LayoutGrid,
-    Loader2
+    Loader2,
+    FileText
 } from 'lucide-react';
 import React, { useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -33,8 +34,10 @@ interface Counts {
     contract_statuses: number;
     contract_types: number;
     workflows: number;
+    contracts?: number;
     roles: number;
     access_mappings: number;
+    navigation_mappings: number;
 }
 
 interface Props {
@@ -57,8 +60,10 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
         contract_statuses: 0,
         contract_types: 0,
         workflows: 0,
+        contracts: 0,
         roles: 0,
         access_mappings: 0,
+        navigation_mappings: 0,
     };
 
     const [selectedEntities, setSelectedEntities] = useState<string[]>([]);
@@ -71,9 +76,10 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
         { id: 'contract_statuses', label: 'Status Alur', count: activeCounts.contract_statuses, icon: CheckSquare, desc: 'Status siklus hidup kontrak' },
         { id: 'contract_types', label: 'Tipe Kategori', count: activeCounts.contract_types, icon: FileSpreadsheet, desc: 'Templat & alur persetujuan' },
         { id: 'workflows', label: 'Alur Kerja (Workflows)', count: activeCounts.workflows, icon: GitBranch, desc: 'Definisi tahapan approval' },
+        { id: 'contracts', label: 'Transaksi Kontrak', count: activeCounts.contracts ?? 0, icon: FileText, desc: 'Data kontrak, persetujuan, & riwayat versi' },
         { id: 'roles', label: 'Peran (Roles)', count: activeCounts.roles, icon: ShieldCheck, desc: 'Jabatan & otoritas sistem' },
         { id: 'access_mappings', label: 'Pemetaan Hak Akses', count: activeCounts.access_mappings, icon: ShieldCheck, desc: 'Konfigurasi hak akses modul per role' },
-        { id: 'navigation_mappings', label: 'Pemetaan Navigasi', count: activeCounts.roles, icon: LayoutGrid, desc: 'Urutan dan grup menu navigasi per role' },
+        { id: 'navigation_mappings', label: 'Pemetaan Navigasi', count: activeCounts.navigation_mappings, icon: LayoutGrid, desc: 'Urutan dan grup menu navigasi per role' },
     ];
 
     const toggleEntity = (id: string) => {
@@ -154,7 +160,36 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                 setLoading(false);
             },
             onError: (errors: any) => {
-                setError(errors.error ?? 'Gagal mengimpor data master. Periksa format berkas JSON Anda.');
+                const msg = errors.error ?? 'Gagal mengimpor data master. Periksa format berkas JSON Anda.';
+                setError(msg);
+                showToast(msg, 'danger');
+                setLoading(false);
+            },
+        });
+    };
+
+    const handleCleanData = () => {
+        if (selectedEntities.length === 0) {
+            showToast('Pilih setidaknya satu entitas untuk dibersihkan', 'danger');
+            return;
+        }
+
+        if (!window.confirm(`Apakah Anda yakin ingin menghapus data dari ${selectedEntities.length} entitas terpilih? Tindakan ini akan menghapus data tersebut secara permanen dan tidak dapat dibatalkan.`)) {
+            return;
+        }
+
+        setLoading(true);
+        setError(null);
+        router.post(route('admin.master-data-sync.clean'), { entities: selectedEntities }, {
+            onSuccess: () => {
+                showToast('Entitas data terpilih berhasil dibersihkan', 'success');
+                setSelectedEntities([]);
+                setLoading(false);
+            },
+            onError: (errors: any) => {
+                const msg = errors.error ?? 'Gagal membersihkan data terpilih.';
+                setError(msg);
+                showToast(msg, 'danger');
                 setLoading(false);
             },
         });
@@ -302,6 +337,31 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                                 </div>
                             </div>
                         )}
+                    </div>
+
+                    {/* Danger Zone: Clean Data Master Card */}
+                    <div className="border-danger/20 bg-danger/[0.02] backdrop-blur-sm rounded-2xl border p-6 shadow-sm">
+                        <div className="mb-4 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <AlertTriangle size={16} className="text-danger" />
+                                <h3 className="text-danger text-[11px] font-semibold tracking-wider uppercase">Danger Zone</h3>
+                            </div>
+                            <span className="bg-danger/10 text-danger rounded-lg px-2 py-0.5 text-[10px] font-semibold">
+                                {selectedEntities.length} Terpilih
+                            </span>
+                        </div>
+                        <p className="text-text-desc mb-6 text-[11px] leading-relaxed font-medium">
+                            Bersihkan data dari entitas yang dicentang pada tabel di samping secara permanen dari database. Tindakan ini tidak dapat dibatalkan.
+                        </p>
+                        <Button
+                            onClick={handleCleanData}
+                            disabled={loading || selectedEntities.length === 0}
+                            variant="destructive"
+                            className="w-full shadow-danger/20"
+                        >
+                            {loading ? <Loader2 className="animate-spin" size={14} /> : <AlertTriangle size={14} className="mr-2" />}
+                            CLEAN DATA TERPILIH
+                        </Button>
                     </div>
                 </div>
             </div>

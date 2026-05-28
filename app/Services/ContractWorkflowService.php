@@ -206,8 +206,9 @@ class ContractWorkflowService
                 } else {
 
                     $query = User::whereIn('role', ['Staff Legal', 'Admin']);
-                    if ($step->department_id) {
-                        $query->where('department_id', $step->department_id);
+                    $targetDeptIds = ! empty($step->department_ids) ? $step->department_ids : [];
+                    if (! empty($targetDeptIds)) {
+                        $query->whereIn('department_id', $targetDeptIds);
                     }
                     $approvers = $query->get();
                 }

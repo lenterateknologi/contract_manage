@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { TreeSelect } from '@/components/ui/forms/TreeSelect';
 import { PortalSelect } from '@/components/ui/forms/PortalSelect';
 import { cn } from '@/lib/utils';
+import { contractApi } from '@/lib/contract-api';
 
 interface Props {
     open: boolean;
@@ -33,6 +34,9 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
     const [category, setCategory] = useState<'contract' | 'non-contract' | 'nda'>('contract');
     const [projectName, setProjectName] = useState('');
     const [loading, setLoading] = useState(false);
+    const [workflows, setWorkflows] = useState<any[]>([]);
+    const [workflowId, setWorkflowId] = useState('');
+    const [fetchingWorkflows, setFetchingWorkflows] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     const initiatorOptions = [
@@ -53,6 +57,35 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
             setInitiatedById(auth.user.id);
         }
     }, [open, auth]);
+
+    useEffect(() => {
+        if (typeId) {
+            fetchWorkflows(typeId);
+        } else {
+            setWorkflows([]);
+            setWorkflowId('');
+        }
+    }, [typeId]);
+
+    const fetchWorkflows = async (tId: string) => {
+        setFetchingWorkflows(true);
+        try {
+            const data = await contractApi.getWorkflows(tId);
+            setWorkflows(data);
+
+            if (data.length === 1) {
+                setWorkflowId(data[0].id);
+            } else if (data.length > 1) {
+                const defaultWf = data.find((w: any) => w.is_default);
+                if (defaultWf) setWorkflowId(defaultWf.id);
+                else setWorkflowId('');
+            }
+        } catch (err) {
+            console.error('Failed to fetch workflows', err);
+        } finally {
+            setFetchingWorkflows(false);
+        }
+    };
 
     const isLegalOrAdmin =
         auth?.user?.role === 'Admin' ||
@@ -89,6 +122,9 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
             fd.append('vendor_id', vendorId);
         }
         fd.append('category', category);
+        if (workflowId) {
+            fd.append('workflow_id', workflowId);
+        }
         if (category === 'nda') {
             fd.append('project_name', projectName);
             fd.append('topic', 'nda');
@@ -131,7 +167,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                     <span>Buat Kontrak Baru</span>
                 </div>
             }
-            maxWidth="lg"
+            maxWidth="5xl"
             footer={
                 <div className="flex w-full justify-end gap-3">
                     <Button variant="ghost" onClick={onClose} disabled={loading}>
@@ -202,6 +238,26 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                         )}
                     </div>
                 </div>
+
+                {workflows.length > 1 && (
+                    <div className="animate-in fade-in slide-in-from-top-2 space-y-1.5 rounded-2xl border border-primary/10 bg-primary/[0.02] p-4">
+                        <label className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-primary">
+                            <ShieldCheck size={14} /> Pilih Alur Kerja (Workflow) <span className="text-rose-500">*</span>
+                        </label>
+                        <PortalSelect
+                            value={workflowId}
+                            onValueChange={(val) => setWorkflowId(val)}
+                            options={workflows.map((w) => ({ value: String(w.id), label: w.name }))}
+                            placeholder="Pilih Alur Kerja"
+                        />
+                        <p className="text-muted-foreground text-[9px] font-medium leading-relaxed italic">
+                            Terdapat lebih dari satu alur kerja yang tersedia untuk tipe kontrak ini. Silakan pilih alur yang sesuai.
+                        </p>
+                        {errors.workflow_id && (
+                            <div className="mt-1 text-[10px] font-medium text-rose-500">{errors.workflow_id}</div>
+                        )}
+                    </div>
+                )}
 
                 <FormInput
                     label="Nama Project / Judul Kontrak *"

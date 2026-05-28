@@ -49,10 +49,9 @@ class ModuleSeeder extends Seeder
             ['identifier' => 'ADMIN_VENDORS', 'name' => 'Daftar Vendor',      'route' => '/admin/vendors',     'icon' => 'Truck',    'group' => 'Data Master', 'sequence' => 7],
             ['identifier' => 'ADMIN_MEMBERS', 'name' => 'Anggota Divisi',    'route' => '/admin/members',     'icon' => 'Users',    'group' => 'Data Master', 'sequence' => 8],
 
-            // Sistem & Laporan
+            // Sistem & Laporan ( analitik, audit, master data export import , navigation , role akses)
             ['identifier' => 'ANLTX', 'name' => 'Analitik Kontrak', 'route' => '/admin/reports/analytics', 'icon' => 'BarChart3', 'group' => 'Sistem & Laporan', 'sequence' => 1],
             ['identifier' => 'AUDIT', 'name' => 'Jejak Audit',      'route' => '/admin/reports/audit',     'icon' => 'ClipboardList', 'group' => 'Sistem & Laporan', 'sequence' => 2],
-            ['identifier' => 'ADMIN_MASTER_DATA', 'name' => 'Ekspor Impor Master', 'route' => '/admin/master-data-sync', 'icon' => 'RefreshCw', 'group' => 'Sistem & Laporan', 'sequence' => 3],
         ];
 
         // Get the Admin Role

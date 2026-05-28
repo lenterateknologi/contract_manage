@@ -38,4 +38,9 @@ class AccessModule extends Model
     {
         return $this->belongsTo(Module::class, 'module_id');
     }
+
+    public function moduleGroup()
+    {
+        return $this->belongsTo(ModuleGroup::class, 'module_group_id');
+    }
 }

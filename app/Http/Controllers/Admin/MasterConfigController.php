@@ -406,6 +406,7 @@ class MasterConfigController extends Controller
             'route' => 'nullable|string|max:255',
             'icon' => 'nullable|string|max:50',
             'showed_as_menu' => 'boolean',
+            'description' => 'nullable|string',
         ]);
         $data['created_by'] = $data['updated_by'] = Auth::id();
         Module::create($data);
@@ -422,6 +423,7 @@ class MasterConfigController extends Controller
             'route' => 'nullable|string|max:255',
             'icon' => 'nullable|string|max:50',
             'showed_as_menu' => 'boolean',
+            'description' => 'nullable|string',
         ]);
         $data['updated_by'] = Auth::id();
         $module->update($data);

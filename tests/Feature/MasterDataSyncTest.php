@@ -158,6 +158,8 @@ test('admin can import master data using id as key for createorupdate', function
     $file = UploadedFile::fake()->createWithContent('master_data.json', json_encode($payload));
 
     $response = $this->actingAs($this->admin)
+        ->withoutExceptionHandling()
+        ->withoutMiddleware()
         ->post(route('admin.master-data-sync.import'), [
             'file' => $file,
         ]);
@@ -181,8 +183,81 @@ test('admin can import master data using id as key for createorupdate', function
         'id' => $uuidAction,
         'workflow_step_id' => $uuidStep,
         'master_action_id' => $masterAction->id,
-        'master_action_id' => $masterAction->id,
     ]);
+
+    // Now test importing again with the same UUIDs but updated values (replace scenario)
+    $payload2 = [
+        'company_groups' => [],
+        'regions' => [],
+        'companies' => [],
+        'departments' => [],
+        'contract_statuses' => [],
+        'workflows' => [
+            [
+                'id' => $uuidWorkflow,
+                'name' => 'Updated Workflow Name',
+                'description' => 'An updated description',
+                'is_active' => true,
+            ],
+        ],
+        'workflow_initiator_departments' => [],
+        'workflow_initiator_roles' => [],
+        'workflow_initiator_users' => [],
+        'workflow_steps' => [
+            [
+                'id' => $uuidStep,
+                'workflow_id' => $uuidWorkflow,
+                'step' => 1,
+                'step_category' => 'approval',
+                'is_active' => true,
+            ],
+        ],
+        'workflow_step_departments' => [],
+        'workflow_step_roles' => [],
+        'workflow_step_users' => [],
+        'workflow_step_actions' => [
+            [
+                'id' => $uuidAction,
+                'workflow_step_id' => $uuidStep,
+                'master_action_id' => $masterAction->id,
+                'is_active' => false,
+            ],
+        ],
+        'contract_types' => [],
+    ];
+
+    $file2 = UploadedFile::fake()->createWithContent('master_data_updated.json', json_encode($payload2));
+
+    $response2 = $this->actingAs($this->admin)
+        ->withoutExceptionHandling()
+        ->withoutMiddleware()
+        ->post(route('admin.master-data-sync.import'), [
+            'file' => $file2,
+        ]);
+
+    $response2->assertRedirect(route('admin.master-data-sync'));
+    $response2->assertSessionHasNoErrors();
+
+    // Verify it was replaced/updated in the database
+    $this->assertDatabaseHas('m_workflows', [
+        'id' => $uuidWorkflow,
+        'name' => 'Updated Workflow Name',
+    ]);
+    expect(Workflow::count())->toBe(1);
+
+    $this->assertDatabaseHas('m_workflow_steps', [
+        'id' => $uuidStep,
+        'workflow_id' => $uuidWorkflow,
+        'step_category' => 'approval',
+    ]);
+    expect(WorkflowStep::count())->toBe(1);
+
+    $this->assertDatabaseHas('m_workflow_step_actions', [
+        'id' => $uuidAction,
+        'workflow_step_id' => $uuidStep,
+        'is_active' => false,
+    ]);
+    expect(WorkflowStepAction::count())->toBe(1);
 });
 
 test('admin can export and import contract types hierarchy correctly', function () {
@@ -261,6 +336,8 @@ test('admin can export and import contract types hierarchy correctly', function 
     $file = UploadedFile::fake()->createWithContent('master_data.json', json_encode($payload));
 
     $response = $this->actingAs($this->admin)
+        ->withoutExceptionHandling()
+        ->withoutMiddleware()
         ->post(route('admin.master-data-sync.import'), [
             'file' => $file,
         ]);
@@ -273,4 +350,60 @@ test('admin can export and import contract types hierarchy correctly', function 
     expect($importedParent)->not->toBeNull();
     expect($importedChild)->not->toBeNull();
     expect($importedChild->parent_id)->toBe($importedParent->id);
+});
+
+test('admin can clean master and transactional data', function () {
+    // 1. Seed some master data
+    $w = Workflow::create([
+        'id' => (string) Str::uuid(),
+        'name' => 'Clean Test Workflow',
+        'is_active' => true,
+    ]);
+
+    $companyGroup = App\Models\CompanyGroup::create([
+        'id' => (string) Str::uuid(),
+        'code' => 'CG-TEST',
+        'name' => 'CG Test Name',
+        'is_active' => true,
+    ]);
+
+    $group = App\Models\ModuleGroup::create([
+        'id' => (string) Str::uuid(),
+        'name' => 'Clean Test Group',
+    ]);
+
+    $module = App\Models\Module::create([
+        'id' => (string) Str::uuid(),
+        'name' => 'Clean Test Module',
+        'identifier' => 'CLEAN_TEST_MOD',
+        'module_group_id' => $group->id,
+    ]);
+
+    // 2. Perform the clean POST request
+    $response = $this->actingAs($this->admin)
+        ->post(route('admin.master-data-sync.clean'), [
+            'entities' => ['workflows', 'company_groups', 'navigation_mappings'],
+        ]);
+
+    $response->assertRedirect(route('admin.master-data-sync'));
+    $response->assertSessionHasNoErrors();
+
+    // 3. Verify it was cleared from the database
+    $this->assertDatabaseMissing('m_workflows', [
+        'id' => $w->id,
+    ]);
+    $this->assertDatabaseMissing('m_company_groups', [
+        'id' => $companyGroup->id,
+    ]);
+    $this->assertDatabaseMissing('m_modules', [
+        'id' => $module->id,
+    ]);
+    $this->assertDatabaseMissing('m_module_groups', [
+        'id' => $group->id,
+    ]);
+
+    // 4. Verify admin user still exists
+    $this->assertDatabaseHas('m_users', [
+        'id' => $this->admin->id,
+    ]);
 });

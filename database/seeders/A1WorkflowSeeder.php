@@ -34,10 +34,12 @@ class A1WorkflowSeeder extends Seeder
             $taxDeptId = $depts['Tax'] ?? null;
 
             // --- A. A1 KONTRAK (Standard Workflow) ---
+            $contractTypeId = ContractType::where('code', 'A1-CON')->value('id');
+
             $workflow = Workflow::create([
                 'name' => 'A1 - Standard Contract Workflow',
                 'description' => 'Master Workflow for Contracts (15 Steps) - Latest Version',
-                'contract_type' => 'A1-CON',
+                'contract_type_id' => $contractTypeId,
                 'initiator_type' => 'all',
                 'is_active' => true,
                 'is_default' => true,

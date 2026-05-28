@@ -64,12 +64,12 @@ class HandleInertiaRequests extends Middleware
                         'total_created' => \App\Models\Contract::where('created_by', $request->user()->id)->count(),
                         'pending_approvals' => \App\Models\Approval::where('user_id', $request->user()->id)
                             ->where('status', 'pending')
-                            ->whereHas('contract', fn($q) => $q->whereNull('deleted_at'))
+                            ->whereHas('contract', fn ($q) => $q->whereNull('deleted_at'))
                             ->count(),
                         'assigned_active' => \App\Models\Contract::where('assigned_pic_id', $request->user()->id)
                             ->where('status', 'active')
                             ->count(),
-                    ]
+                    ],
                 ]) : null,
                 'permissions' => $this->getUserPermissions($request),
             ],
@@ -179,6 +179,60 @@ class HandleInertiaRequests extends Middleware
 
             return $orderA <=> $orderB;
         });
+
+        if ($request->user() && ($request->user()->role === 'Admin' || $request->user()->role === 'Super Admin' || $request->user()->is_admin)) {
+            $hasPengaturanSistem = false;
+            foreach ($groups as &$group) {
+                if (trim($group['title']) === 'Pengaturan Sistem') {
+                    $group['items'][] = [
+                        'title' => 'Ekspor Impor Master',
+                        'url' => '/admin/master-data-sync',
+                        'icon' => 'RefreshCw',
+                        'sequence' => 3,
+                    ];
+                    // Sort items by sequence again
+                    usort($group['items'], function ($a, $b) {
+                        $orderA = $a['sequence'] ?? 9999;
+                        $orderB = $b['sequence'] ?? 9999;
+                        if ($orderA === $orderB) {
+                            return strcmp($a['title'], $b['title']);
+                        }
+
+                        return $orderA <=> $orderB;
+                    });
+                    $hasPengaturanSistem = true;
+
+                    break;
+                }
+            }
+            unset($group);
+
+            if (! $hasPengaturanSistem) {
+                $groupModel = \App\Models\ModuleGroup::firstWhere('name', 'Pengaturan Sistem');
+                $groups[] = [
+                    'title' => 'Pengaturan Sistem',
+                    'sequence' => $groupModel?->sequence ?? 5,
+                    'items' => [
+                        [
+                            'title' => 'Ekspor Impor Master',
+                            'url' => '/admin/master-data-sync',
+                            'icon' => 'RefreshCw',
+                            'sequence' => 3,
+                        ],
+                    ],
+                ];
+                // Sort the groups
+                usort($groups, function ($a, $b) {
+                    $orderA = $a['sequence'] ?? 9999;
+                    $orderB = $b['sequence'] ?? 9999;
+                    if ($orderA === $orderB) {
+                        return strcmp($a['title'], $b['title']);
+                    }
+
+                    return $orderA <=> $orderB;
+                });
+            }
+        }
 
         return array_values($groups);
     }

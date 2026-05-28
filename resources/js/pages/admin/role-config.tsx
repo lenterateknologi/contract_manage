@@ -9,7 +9,15 @@ import {
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { FormSection, ManagementForm } from '@/components/admin/ManagementForm';
 import { useToast } from '@/components/contracts/Toast';
+import { SELECTABLE_ICONS } from '@/components/admin/NavigationManagement';
 import { Button } from '@/components/ui/base/Button';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/forms/Select';
 import { Checkbox } from '@/components/ui/base/Checkbox';
 import {
     DropdownMenu,
@@ -90,6 +98,7 @@ interface Module {
     sequence: number;
     access?: any;
     showed_as_menu?: boolean;
+    description?: string | null;
     module_group?: {
         id: string;
         name: string;
@@ -142,13 +151,25 @@ const ModuleRow = React.memo(
                 )}
             >
                 <td className="border-r border-surface-border/40 bg-surface-base sticky left-0 z-10 px-4 py-2.5 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.05)] transition-colors group-hover:bg-surface-muted/30">
-                    <div className="flex flex-col leading-tight">
-                        <span className="text-text-main text-xs font-semibold tracking-wide group-hover:text-primary">
-                            {module.name}
-                        </span>
-                        <span className="text-text-desc/50 font-mono text-[9px] tracking-wider uppercase">
-                            {module.identifier}
-                        </span>
+                    <div className="flex items-start gap-2.5">
+                        {module.icon && SELECTABLE_ICONS[module.icon] && (
+                            <div className="text-muted-foreground/60 group-hover:text-primary mt-0.5 shrink-0">
+                                {React.createElement(SELECTABLE_ICONS[module.icon], { size: 14 })}
+                            </div>
+                        )}
+                        <div className="flex flex-col leading-tight min-w-0">
+                            <span className="text-text-main text-xs font-semibold tracking-wide group-hover:text-primary truncate">
+                                {module.name}
+                            </span>
+                            <span className="text-text-desc/50 font-mono text-[9px] tracking-wider uppercase">
+                                {module.identifier}
+                            </span>
+                            {module.description && (
+                                <span className="text-text-desc/40 mt-0.5 text-[10px] font-normal leading-normal whitespace-pre-wrap">
+                                    {module.description}
+                                </span>
+                            )}
+                        </div>
                     </div>
                 </td>
                 {PERMISSIONS.map((p) => (
@@ -245,10 +266,21 @@ const SortableModuleItem = ({
                 </button>
             </div>
             <div className="min-w-0 flex-1">
-                <p className="text-foreground truncate text-sm font-bold tracking-tight">{module.name}</p>
+                <div className="flex items-center gap-2">
+                    {module.icon && SELECTABLE_ICONS[module.icon] && React.createElement(SELECTABLE_ICONS[module.icon], {
+                        size: 14,
+                        className: "text-muted-foreground/70 shrink-0"
+                    })}
+                    <p className="text-foreground truncate text-sm font-bold tracking-tight">{module.name}</p>
+                </div>
                 <p className="text-muted-foreground mt-0.5 truncate text-xs font-semibold tracking-wide">
                     {module.route || 'SYSTEM_INTERNAL'}
                 </p>
+                {module.description && (
+                    <p className="text-muted-foreground/50 mt-1 text-[11px] font-normal leading-relaxed whitespace-pre-wrap">
+                        {module.description}
+                    </p>
+                )}
             </div>
             <button
                 onClick={() => onEditModule(module)}
@@ -474,11 +506,22 @@ const AvailableModuleItem = ({
                 >
                     <GripVertical size={16} />
                 </div>
-                <div className="min-w-0">
-                    <span className="text-foreground block truncate text-sm font-bold tracking-tight uppercase">{module.name}</span>
+                <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                        {module.icon && SELECTABLE_ICONS[module.icon] && React.createElement(SELECTABLE_ICONS[module.icon], {
+                            size: 14,
+                            className: "text-muted-foreground/70 shrink-0"
+                        })}
+                        <span className="text-foreground block truncate text-sm font-bold tracking-tight uppercase">{module.name}</span>
+                    </div>
                     <span className="text-muted-foreground/70 mt-0.5 block truncate text-xs font-semibold tracking-wide uppercase">
                         {module.route || 'NO_PATH'}
                     </span>
+                    {module.description && (
+                        <p className="text-muted-foreground/50 mt-1 text-[11px] font-normal leading-relaxed whitespace-pre-wrap">
+                            {module.description}
+                        </p>
+                    )}
                 </div>
             </div>
             <div className="flex items-center gap-1 opacity-0 transition-all group-hover:opacity-100 ml-2 shrink-0">
@@ -519,6 +562,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
         const activeModuleIds = new Set(navigation.flatMap((g) => g.modules.map((m) => m.id)));
         return allModules.filter((m) => !activeModuleIds.has(m.id));
     });
+    const [isSavingNav, setIsSavingNav] = useState(false);
 
     // Group CRUD States
     const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
@@ -610,6 +654,8 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
     const [moduleIdentifier, setModuleIdentifier] = useState('');
     const [moduleRoute, setModuleRoute] = useState('');
     const [moduleGroupId, setModuleGroupId] = useState('');
+    const [moduleIcon, setModuleIcon] = useState('LayoutGrid');
+    const [moduleDescription, setModuleDescription] = useState('');
     const [isProcessingModule, setIsModuleProcessing] = useState(false);
 
     const openModuleModal = (module: Module | null = null) => {
@@ -618,6 +664,8 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
         setModuleIdentifier(module ? module.identifier || '' : '');
         setModuleRoute(module ? module.route || '' : '');
         setModuleGroupId(module ? module.module_group_id || '' : navItems[0]?.id || '');
+        setModuleIcon(module ? module.icon || 'LayoutGrid' : 'LayoutGrid');
+        setModuleDescription(module ? module.description || '' : '');
         setIsModuleModalOpen(true);
     };
 
@@ -635,8 +683,9 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                         identifier: editingModuleItem.identifier,
                         module_group_id: editingModuleItem.module_group_id || navItems[0]?.id,
                         route: moduleRoute,
-                        icon: editingModuleItem.icon || 'LayoutGrid',
+                        icon: moduleIcon,
                         showed_as_menu: editingModuleItem.showed_as_menu !== undefined ? editingModuleItem.showed_as_menu : true,
+                        description: moduleDescription,
                     },
                     {
                         onSuccess: () => {
@@ -656,8 +705,9 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                         identifier: moduleIdentifier,
                         module_group_id: moduleGroupId || navItems[0]?.id,
                         route: moduleRoute,
-                        icon: 'LayoutGrid',
+                        icon: moduleIcon,
                         showed_as_menu: true,
+                        description: moduleDescription,
                     },
                     {
                         onSuccess: () => {
@@ -714,13 +764,67 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
         })),
     });
 
-    const handleAccessSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleAccessSubmit = (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
         accessForm.post(`/admin/roles/${role.id}/access`, {
             onSuccess: () => showToast('Hak akses role berhasil diperbarui.', 'success'),
             onError: () => showToast('Gagal menyimpan hak akses.', 'danger'),
         });
     };
+
+    const handleNavSave = () => {
+        setIsSavingNav(true);
+        const data = navItems.map((g, gIdx) => ({
+            id: g.id,
+            sequence: gIdx + 1,
+            modules: g.modules.map((m, mIdx) => ({
+                id: m.id,
+                sequence: mIdx + 1,
+            })),
+        }));
+
+        router.post(`/admin/roles/${role.id}/reorder`, { role_id: role.id, groups: data }, {
+            onSuccess: () => showToast('Urutan navigasi berhasil disimpan', 'success'),
+            onFinish: () => setIsSavingNav(false),
+        });
+    };
+
+    // Add Enter key shortcut to save configurations
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            const target = event.target as HTMLElement;
+            // Ignore if user is editing inside a form input, select, textarea, or DND modal is active
+            if (
+                target.tagName === 'INPUT' ||
+                target.tagName === 'TEXTAREA' ||
+                target.tagName === 'SELECT' ||
+                isGroupModalOpen ||
+                isModuleModalOpen ||
+                isDeleteGroupModalOpen ||
+                isDeleteModuleModalOpen
+            ) {
+                return;
+            }
+
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                if (activeTab === 'access') {
+                    if (!accessForm.processing) {
+                        handleAccessSubmit();
+                    }
+                } else {
+                    if (!isSavingNav) {
+                        handleNavSave();
+                    }
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [activeTab, accessForm.processing, isSavingNav, isGroupModalOpen, isModuleModalOpen, isDeleteGroupModalOpen, isDeleteModuleModalOpen, navItems, role.id]);
 
     const updateAccess = (moduleId: string, permission: Permission, checked: boolean) => {
         accessForm.setData(
@@ -819,7 +923,6 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
     // --- Drag & Drop Core Logic ---
     const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
     const [activeType, setActiveType] = useState<'group' | 'module' | null>(null);
-    const [isSavingNav, setIsSavingNav] = useState(false);
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -846,8 +949,8 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
 
         if (!activeContainer || !overContainer || activeContainer === overContainer) return;
 
-        const activeItems = activeContainer === 'available-list' 
-            ? availableModules 
+        const activeItems = activeContainer === 'available-list'
+            ? availableModules
             : navItems.find((g) => g.id === activeContainer)?.modules || [];
         const movedItem = activeItems.find((m) => m.id === activeId);
         if (!movedItem) return;
@@ -954,23 +1057,6 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                 return g;
             })
         );
-    };
-
-    const handleNavSave = () => {
-        setIsSavingNav(true);
-        const data = navItems.map((g, gIdx) => ({
-            id: g.id,
-            sequence: gIdx + 1,
-            modules: g.modules.map((m, mIdx) => ({
-                id: m.id,
-                sequence: mIdx + 1,
-            })),
-        }));
-
-        router.post(`/admin/roles/${role.id}/reorder`, { role_id: role.id, groups: data }, {
-            onSuccess: () => showToast('Urutan navigasi berhasil disimpan', 'success'),
-            onFinish: () => setIsSavingNav(false),
-        });
     };
 
     const dropAnimation = {
@@ -1168,7 +1254,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                                             <div className="flex items-center gap-2">
                                                                 <div className="bg-primary/5 text-primary rounded-lg p-1 ring-1 ring-primary/10">
                                                                     <LayoutGrid className="h-3 w-3" />
-                                                                 </div>
+                                                                </div>
                                                                 <span className="text-text-main text-[11px] font-black tracking-wide uppercase">
                                                                     {group.name}
                                                                 </span>
@@ -1204,15 +1290,15 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                                                             accessForm.data.accesses.map((access) =>
                                                                                 groupModuleIds.includes(access.module_id)
                                                                                     ? {
-                                                                                          ...access,
-                                                                                          can_read: !!checked,
-                                                                                          can_create: !!checked,
-                                                                                          can_update: !!checked,
-                                                                                          can_delete: !!checked,
-                                                                                          can_approve: !!checked,
-                                                                                          can_bulk_approve: !!checked,
-                                                                                          can_bulk_delete: !!checked,
-                                                                                      }
+                                                                                        ...access,
+                                                                                        can_read: !!checked,
+                                                                                        can_create: !!checked,
+                                                                                        can_update: !!checked,
+                                                                                        can_delete: !!checked,
+                                                                                        can_approve: !!checked,
+                                                                                        can_bulk_approve: !!checked,
+                                                                                        can_bulk_delete: !!checked,
+                                                                                    }
                                                                                     : access,
                                                                             ),
                                                                         );
@@ -1456,6 +1542,39 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                 </select>
                             </div>
                         )}
+                        <div className="flex flex-col gap-2">
+                            <label className="text-muted-foreground text-[10px] font-black tracking-widest uppercase">Icon Modul</label>
+                            <Select
+                                value={moduleIcon}
+                                onValueChange={setModuleIcon}
+                            >
+                                <SelectTrigger className="border-surface-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-xl border px-4 text-sm font-bold transition-all focus:ring-2 outline-hidden text-foreground">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="border-surface-border max-h-60 rounded-xl bg-card shadow-2xl overflow-y-auto">
+                                    {Object.keys(SELECTABLE_ICONS).map((iconName) => {
+                                        const IconComponent = SELECTABLE_ICONS[iconName];
+                                        return (
+                                            <SelectItem key={iconName} value={iconName} className="py-2.5 text-xs font-medium uppercase">
+                                                <div className="flex items-center gap-2">
+                                                    {IconComponent && <IconComponent size={14} className="text-text-main/50" />}
+                                                    <span>{iconName}</span>
+                                                </div>
+                                            </SelectItem>
+                                        );
+                                    })}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <label className="text-muted-foreground text-[10px] font-black tracking-widest uppercase">Deskripsi Modul</label>
+                            <textarea
+                                value={moduleDescription}
+                                onChange={(e) => setModuleDescription(e.target.value)}
+                                placeholder="Contoh: Modul untuk mengelola seluruh dokumen kontrak"
+                                className="border-surface-border bg-muted/30 focus:ring-primary/20 min-h-[80px] w-full rounded-xl border p-4 text-sm font-bold transition-all focus:ring-2 outline-hidden text-foreground resize-none"
+                            />
+                        </div>
                     </div>
                     <DialogFooter>
                         <Button variant="ghost" onClick={() => setIsModuleModalOpen(false)} className="rounded-lg font-bold">

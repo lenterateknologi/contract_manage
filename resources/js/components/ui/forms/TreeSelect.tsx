@@ -66,15 +66,16 @@ export function TreeSelect({
         return groups;
     }, [items]);
 
-    // Find currently selected child and its parent
-    const selectedChild = React.useMemo(() => {
-        return items.find((item) => String(item.id) === value && isChildItem(item));
+    // Find currently selected item and its parent
+    const selectedItem = React.useMemo(() => {
+        // Only allow children to be 'selected' in the display
+        return items.find((item) => String(item.id) === String(value) && isChildItem(item));
     }, [items, value]);
 
     const selectedParent = React.useMemo(() => {
-        if (!selectedChild) return null;
-        return items.find((item) => String(item.id) === String(selectedChild.parent_id));
-    }, [items, selectedChild]);
+        if (!selectedItem || !selectedItem.parent_id) return null;
+        return items.find((item) => String(item.id) === String(selectedItem.parent_id));
+    }, [items, selectedItem]);
 
     // Search and filter logic
     const filteredHierarchy = React.useMemo(() => {
@@ -131,48 +132,6 @@ export function TreeSelect({
         }
     }, [search, filteredHierarchy.parents]);
 
-    // Calculate popup coordinates relative to viewport and scroll offset
-    const updateCoords = React.useCallback(() => {
-        if (buttonRef.current) {
-            const rect = buttonRef.current.getBoundingClientRect();
-            setCoords({
-                top: rect.bottom + window.scrollY,
-                left: rect.left + window.scrollX,
-                width: rect.width,
-            });
-        }
-    }, []);
-
-    React.useEffect(() => {
-        if (open) {
-            updateCoords();
-            // Listen to window size changes and nested scroll movements
-            window.addEventListener('resize', updateCoords);
-            window.addEventListener('scroll', updateCoords, true);
-        }
-        return () => {
-            window.removeEventListener('resize', updateCoords);
-            window.removeEventListener('scroll', updateCoords, true);
-        };
-    }, [open, updateCoords]);
-
-    // Close on outside click
-    React.useEffect(() => {
-        function handler(e: MouseEvent) {
-            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-                // Check if target is inside the portal dropdown container
-                const portalDropdown = document.getElementById('tree-select-portal-dropdown');
-                if (portalDropdown && portalDropdown.contains(e.target as Node)) {
-                    return;
-                }
-                setOpen(false);
-                setSearch('');
-            }
-        }
-        if (open) document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
-    }, [open]);
-
     const toggleParent = (pId: string, e: React.MouseEvent) => {
         e.stopPropagation();
         setExpandedParents(prev => ({
@@ -181,17 +140,10 @@ export function TreeSelect({
         }));
     };
 
-    const dropdownContent = open && isMounted && coords.width > 0 && (
+    const dropdownContent = open && (
         <div
-            id="tree-select-portal-dropdown"
-            style={{
-                position: 'absolute',
-                top: `${coords.top}px`,
-                left: `${coords.left}px`,
-                width: `${coords.width}px`,
-                zIndex: 9999,
-            }}
-            className="border-sidebar-border bg-sidebar mt-1 max-h-[300px] flex flex-col overflow-hidden rounded-lg border shadow-xl animate-in fade-in slide-in-from-top-1 duration-100"
+            id="tree-select-dropdown"
+            className="absolute left-0 right-0 top-full z-50 border-sidebar-border bg-sidebar mt-1 max-h-[300px] flex flex-col overflow-hidden rounded-lg border shadow-xl animate-in fade-in slide-in-from-top-1 duration-100"
         >
             {/* Search input */}
             <div className="relative border-b border-sidebar-border/50 bg-sidebar-accent/10 px-3 py-2">
@@ -218,15 +170,23 @@ export function TreeSelect({
 
                         return (
                             <div key={pId} className="flex flex-col">
-                                {/* Parent row (clickable to expand/collapse) */}
+                                {/* Parent row - Clicking only toggles expansion */}
                                 <button
                                     type="button"
-                                    onClick={(e) => toggleParent(pId, e)}
-                                    className="flex w-full items-center justify-between px-3 py-2 text-left text-[11px] font-bold uppercase tracking-tight text-sidebar-foreground/75 hover:bg-sidebar-accent/40 rounded-md transition-colors"
+                                    onClick={(e) => {
+                                        if (hasChildren) {
+                                            toggleParent(pId, e);
+                                        }
+                                    }}
+                                    className={cn(
+                                        "flex w-full items-center justify-between px-3 py-2 text-left text-[11px] font-bold uppercase tracking-tight transition-colors rounded-md",
+                                        "text-sidebar-foreground/75 hover:bg-sidebar-accent/40",
+                                        !hasChildren && "opacity-50 cursor-not-allowed"
+                                    )}
                                 >
                                     <span>{p.name}</span>
                                     {hasChildren && (
-                                        <span className="p-0.5 rounded-sm hover:bg-sidebar-accent/60">
+                                        <span className="text-sidebar-foreground/40">
                                             {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                                         </span>
                                     )}
@@ -237,7 +197,7 @@ export function TreeSelect({
                                     <div className="mt-0.5 space-y-0.5 pl-4 border-l border-sidebar-border/30 ml-4 mb-1">
                                         {children.map(c => {
                                             const cId = String(c.id);
-                                            const isSelected = String(value) === cId;
+                                            const isChildSelected = String(value) === cId;
                                             return (
                                                 <button
                                                     key={cId}
@@ -249,13 +209,13 @@ export function TreeSelect({
                                                     }}
                                                     className={cn(
                                                         'flex w-full items-center justify-between px-3 py-2 text-left text-[12px] rounded-md transition-all',
-                                                        isSelected
+                                                        isChildSelected
                                                             ? 'bg-sidebar-primary/10 text-sidebar-primary font-semibold'
                                                             : 'text-sidebar-foreground/80 hover:bg-sidebar-accent/30'
                                                     )}
                                                 >
                                                     <span>{c.name}</span>
-                                                    {isSelected && <Check size={12} className="text-sidebar-primary shrink-0 ml-2" />}
+                                                    {isChildSelected && <Check size={12} className="text-sidebar-primary shrink-0 ml-2" />}
                                                 </button>
                                             );
                                         })}
@@ -278,14 +238,6 @@ export function TreeSelect({
                     const nextOpen = !open;
                     setOpen(nextOpen);
                     setSearch('');
-                    if (nextOpen && buttonRef.current) {
-                        const rect = buttonRef.current.getBoundingClientRect();
-                        setCoords({
-                            top: rect.bottom + window.scrollY,
-                            left: rect.left + window.scrollX,
-                            width: rect.width,
-                        });
-                    }
                 }}
                 className={cn(
                     'border-sidebar-border bg-sidebar-accent/20 text-sidebar-foreground focus:ring-sidebar-primary flex min-h-10 w-full items-center justify-between rounded-lg border px-3 py-2.5 text-[12px] font-medium transition-all outline-none focus:ring-1 text-left',
@@ -293,12 +245,16 @@ export function TreeSelect({
                     triggerClassName
                 )}
             >
-                <span className={cn(selectedChild ? 'text-black dark:text-white font-semibold' : 'text-sidebar-foreground/60')}>
-                    {selectedChild && selectedParent ? (
+                <span className={cn(selectedItem ? 'text-black dark:text-white font-semibold' : 'text-sidebar-foreground/60')}>
+                    {selectedItem ? (
                         <span className="flex items-center gap-1.5">
-                            <span className="opacity-60 font-normal">{selectedParent.name}</span>
-                            <span className="opacity-40">/</span>
-                            <span>{selectedChild.name}</span>
+                            {selectedParent && (
+                                <>
+                                    <span className="opacity-60 font-normal">{selectedParent.name}</span>
+                                    <span className="opacity-40">/</span>
+                                </>
+                            )}
+                            <span>{selectedItem.name}</span>
                         </span>
                     ) : (
                         placeholder
@@ -307,7 +263,7 @@ export function TreeSelect({
                 <ChevronDown size={14} className={cn("text-sidebar-foreground/60 shrink-0 ml-2 transition-transform duration-200", open && "rotate-180")} />
             </button>
 
-            {open && isMounted && coords.width > 0 && createPortal(dropdownContent, document.body)}
+            {dropdownContent}
         </div>
     );
 }

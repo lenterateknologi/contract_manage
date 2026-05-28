@@ -243,9 +243,9 @@ class ContractController extends Controller
             'creator:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
             'contractType:id,name',
             'approvals.approver:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
-            'approvals.workflowStep:id,step,role,description,step_category',
-            'workflow.steps:id,workflow_id,step,description,approver_type,department_id,role,step_category,meta',
-            'workflowStep:id,step,role,description,step_category',
+            'approvals.workflowStep:id,step,description,step_category',
+            'workflow.steps:id,workflow_id,step,description,approver_type,step_category,meta',
+            'workflowStep:id,step,description,step_category',
             'versions.uploader:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
             'histories.actor:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
             'messages.user:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
@@ -322,9 +322,9 @@ class ContractController extends Controller
             'statusDetail:code,label,display_mode',
             'approvals.approver:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
             'approvals.approver.department:id,name',
-            'approvals.workflowStep:id,step,role,description,step_category',
-            'workflow.steps:id,workflow_id,step,description,approver_type,department_id,role,step_category,meta',
-            'workflowStep:id,step,role,description,step_category',
+            'approvals.workflowStep:id,step,description,step_category',
+            'workflow.steps:id,workflow_id,step,description,approver_type,step_category,meta',
+            'workflowStep:id,step,description,step_category',
             'versions.uploader:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
             'histories.actor:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
             'messages.user:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
@@ -1367,9 +1367,9 @@ class ContractController extends Controller
             'initiator.department:id,name',
             'versions.uploader:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
             'approvals.approver:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
-            'approvals.workflowStep:id,step,role,description,step_category',
-            'workflow.steps:id,workflow_id,step,description,approver_type,department_id,role,step_category,meta',
-            'workflowStep:id,step,role,description,step_category',
+            'approvals.workflowStep:id,step,description,step_category',
+            'workflow.steps:id,workflow_id,step,description,approver_type,step_category,meta',
+            'workflowStep:id,step,description,step_category',
             'histories.actor:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
             'messages.user:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
             'attachments.uploader:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
@@ -1462,6 +1462,7 @@ class ContractController extends Controller
             'category' => 'nullable|string',
             'project_name' => 'nullable|string',
             'topic' => 'nullable|string',
+            'workflow_id' => 'nullable|uuid|exists:m_workflows,id',
         ]);
 
         $contract = $this->storeAction->execute($validated);
@@ -1558,6 +1559,31 @@ class ContractController extends Controller
 
             return response()->json(['message' => "$count kontrak berhasil dihapus."]);
         });
+    }
+
+    public function export(Request $request)
+    {
+        $query = $this->getFilteredContractsQuery($request, $request->input('view', 'all'));
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\ContractExport($query),
+            'data_kontrak_' . date('Ymd_His') . '.xlsx',
+        );
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv',
+        ]);
+
+        try {
+            \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\ContractImport(), $request->file('file'));
+
+            return back()->with('success', 'Data kontrak berhasil diimpor.');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Gagal mengimpor data: ' . $e->getMessage()]);
+        }
     }
 
     protected function checkBulkPermission($permission)

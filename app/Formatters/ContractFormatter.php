@@ -79,7 +79,7 @@ class ContractFormatter
             'workflow_step' => $c->workflowStep ? [
                 'id' => $c->workflowStep->id,
                 'step' => $c->workflowStep->step,
-                'role' => $c->workflowStep->role,
+                'role' => is_array($c->workflowStep->role) ? implode(', ', $c->workflowStep->role) : $c->workflowStep->role,
                 'description' => $c->workflowStep->description,
                 'step_type' => 'APPROVAL',
                 'step_category' => $c->workflowStep->step_category,
@@ -89,7 +89,8 @@ class ContractFormatter
                 'id' => $nextStep->id,
                 'name' => $nextStep->name,
                 'approver_type' => $nextStep->approver_type,
-                'department_id' => $nextStep->department_id,
+                'department_id' => count($nextStep->department_ids ?? []) > 0 ? $nextStep->department_ids[0] : null,
+                'department_ids' => $nextStep->department_ids,
                 'roles' => $nextStep->role ? (is_array($nextStep->role) ? $nextStep->role : [$nextStep->role]) : [],
                 'step_type' => 'APPROVAL',
                 'step_category' => $nextStep->step_category,

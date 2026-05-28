@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { createPortal } from 'react-dom';
 import { Search, ChevronDown, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -29,15 +28,7 @@ export function PortalSelect({
 }: PortalSelectProps) {
     const [open, setOpen] = React.useState(false);
     const [search, setSearch] = React.useState('');
-    const [isMounted, setIsMounted] = React.useState(false);
-    const [coords, setCoords] = React.useState({ top: 0, left: 0, width: 0 });
-
     const containerRef = React.useRef<HTMLDivElement>(null);
-    const buttonRef = React.useRef<HTMLButtonElement>(null);
-
-    React.useEffect(() => {
-        setIsMounted(true);
-    }, []);
 
     const selectedOption = React.useMemo(() => {
         return options.find(opt => String(opt.value) === String(value));
@@ -49,36 +40,9 @@ export function PortalSelect({
         return options.filter(opt => opt.label.toLowerCase().includes(searchLower));
     }, [options, search]);
 
-    const updateCoords = React.useCallback(() => {
-        if (buttonRef.current) {
-            const rect = buttonRef.current.getBoundingClientRect();
-            setCoords({
-                top: rect.bottom + window.scrollY,
-                left: rect.left + window.scrollX,
-                width: rect.width,
-            });
-        }
-    }, []);
-
-    React.useEffect(() => {
-        if (open) {
-            updateCoords();
-            window.addEventListener('resize', updateCoords);
-            window.addEventListener('scroll', updateCoords, true);
-        }
-        return () => {
-            window.removeEventListener('resize', updateCoords);
-            window.removeEventListener('scroll', updateCoords, true);
-        };
-    }, [open, updateCoords]);
-
     React.useEffect(() => {
         function handler(e: MouseEvent) {
             if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-                const portalDropdown = document.getElementById('portal-select-dropdown');
-                if (portalDropdown && portalDropdown.contains(e.target as Node)) {
-                    return;
-                }
                 setOpen(false);
                 setSearch('');
             }
@@ -87,17 +51,10 @@ export function PortalSelect({
         return () => document.removeEventListener('mousedown', handler);
     }, [open]);
 
-    const dropdownContent = open && isMounted && coords.width > 0 && (
+    const dropdownContent = open && (
         <div
             id="portal-select-dropdown"
-            style={{
-                position: 'absolute',
-                top: `${coords.top}px`,
-                left: `${coords.left}px`,
-                width: `${coords.width}px`,
-                zIndex: 9999,
-            }}
-            className="border-sidebar-border bg-sidebar mt-1 max-h-[250px] flex flex-col overflow-hidden rounded-lg border shadow-xl animate-in fade-in slide-in-from-top-1 duration-100"
+            className="absolute left-0 right-0 top-full z-50 border-sidebar-border bg-sidebar mt-1 max-h-[250px] flex flex-col overflow-hidden rounded-lg border shadow-xl animate-in fade-in slide-in-from-top-1 duration-100"
         >
             <div className="relative border-b border-sidebar-border/50 bg-sidebar-accent/10 px-3 py-2">
                 <Search size={14} className="absolute left-6 top-1/2 -translate-y-1/2 text-sidebar-foreground/40" />
@@ -145,20 +102,10 @@ export function PortalSelect({
     return (
         <div ref={containerRef} className="relative w-full">
             <button
-                ref={buttonRef}
                 type="button"
                 onClick={() => {
-                    const nextOpen = !open;
-                    setOpen(nextOpen);
+                    setOpen(!open);
                     setSearch('');
-                    if (nextOpen && buttonRef.current) {
-                        const rect = buttonRef.current.getBoundingClientRect();
-                        setCoords({
-                            top: rect.bottom + window.scrollY,
-                            left: rect.left + window.scrollX,
-                            width: rect.width,
-                        });
-                    }
                 }}
                 className={cn(
                     'border-sidebar-border bg-sidebar-accent/20 text-sidebar-foreground focus:ring-sidebar-primary flex min-h-10 w-full items-center justify-between rounded-lg border px-3 py-2.5 text-[12px] font-medium transition-all outline-none focus:ring-1 text-left',
@@ -172,7 +119,7 @@ export function PortalSelect({
                 <ChevronDown size={14} className={cn("text-sidebar-foreground/60 shrink-0 ml-2 transition-transform duration-200", open && "rotate-180")} />
             </button>
 
-            {open && isMounted && coords.width > 0 && createPortal(dropdownContent, document.body)}
+            {dropdownContent}
         </div>
     );
 }

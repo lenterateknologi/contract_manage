@@ -49,12 +49,12 @@ export function Modal({
             <DialogContent 
                 className={cn(
                     maxWidthMap[maxWidth],
-                    'p-0 overflow-hidden border-none shadow-2xl bg-surface-base rounded-[24px]',
+                    'p-0 border-none shadow-2xl bg-surface-base rounded-[24px]',
                     className
                 )}
             >
                 {(title || description) && (
-                    <DialogHeader className="p-8 border-b border-surface-border bg-surface-muted/30 text-left">
+                    <DialogHeader className="p-8 border-b border-surface-border bg-surface-muted/30 text-left rounded-t-[24px] overflow-hidden">
                         {title && (
                             <DialogTitle className="text-base font-bold text-text-main">
                                 {title}
@@ -73,7 +73,7 @@ export function Modal({
                 </div>
 
                 {footer && (
-                    <DialogFooter className="p-6 border-t border-surface-border bg-surface-muted/30">
+                    <DialogFooter className="p-6 border-t border-surface-border bg-surface-muted/30 rounded-b-[24px] overflow-hidden">
                         {footer}
                     </DialogFooter>
                 )}

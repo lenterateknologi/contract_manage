@@ -66,6 +66,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/audit', [ContractController::class, 'contractsView'])->defaults('view', 'audit')->name('admin.audit');
 
         Route::get('/contracts-data', [ContractController::class, 'index'])->name('contracts.data');
+        Route::get('/contracts/export', [ContractController::class, 'export'])->name('admin.contracts.export');
+        Route::post('/contracts/import', [ContractController::class, 'import'])->name('admin.contracts.import');
         Route::get('/contracts/workflows', [ContractController::class, 'getWorkflows'])->name('contracts.workflows');
         Route::get('/contracts/users', [ContractController::class, 'getUsers'])->name('contracts.users');
         Route::post('/contracts', [ContractController::class, 'store'])->name('contracts.store');
@@ -167,6 +169,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/master-data-sync', [MasterDataAdminController::class, 'index'])->name('admin.master-data-sync');
         Route::get('/master-data-sync/export', [MasterDataAdminController::class, 'export'])->name('admin.master-data-sync.export');
         Route::post('/master-data-sync/import', [MasterDataAdminController::class, 'import'])->name('admin.master-data-sync.import');
+        Route::post('/master-data-sync/clean', [MasterDataAdminController::class, 'clean'])->name('admin.master-data-sync.clean');
 
         Route::get('/reports/analytics', function () {
             return Inertia::render('admin/reports/analytics', [

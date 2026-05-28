@@ -7,8 +7,63 @@ import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/overlays/Dialog';
 import { usePermissions } from '@/hooks/use-permissions';
 import { router, useForm } from '@inertiajs/react';
-import { Folder, LayoutGrid, Link as LinkIcon, Pencil, Plus, Shield, Trash2 } from 'lucide-react';
+import {
+    LayoutGrid,
+    FileText,
+    Clock,
+    FilePlus,
+    FileEdit,
+    History,
+    Users,
+    ShieldCheck,
+    Settings2,
+    GitBranch,
+    BarChart3,
+    Tags,
+    Building2,
+    Truck,
+    UserCheck,
+    FolderClosed,
+    FileCode,
+    ScanLine,
+    Workflow,
+    UserCog,
+    KeyRound,
+    ShieldAlert,
+    Folder,
+    Link as LinkIcon,
+    Pencil,
+    Plus,
+    Shield,
+    Trash2,
+    type LucideIcon,
+} from 'lucide-react';
 import React, { useMemo } from 'react';
+
+export const SELECTABLE_ICONS: Record<string, LucideIcon> = {
+    LayoutGrid,
+    FileText,
+    Clock,
+    FilePlus,
+    FileEdit,
+    History,
+    Users,
+    ShieldCheck,
+    Settings2,
+    GitBranch,
+    BarChart3,
+    Tags,
+    Building2,
+    Truck,
+    UserCheck,
+    FolderClosed,
+    FileCode,
+    ScanLine,
+    Workflow,
+    UserCog,
+    KeyRound,
+    ShieldAlert,
+};
 
 interface NavigationManagementProps {
     readonly groups: any;
@@ -33,18 +88,31 @@ const ModulesCountCell = ({ count }: Readonly<{ count: number }>) => (
     </div>
 );
 
-const ModuleNameCell = ({ name, identifier }: Readonly<{ name: string; identifier: string }>) => (
-    <div className="group flex flex-col">
-        <div className="flex items-center gap-3">
-            <span className="text-text-main text-[13px] font-semibold tracking-tight uppercase transition-transform group-hover:translate-x-1">
-                {name}
-            </span>
-            <div className="bg-primary/[0.05] border-surface-border text-text-main/40 rounded border px-2 py-0.5 text-[8px] font-semibold uppercase">
-                {identifier}
+const ModuleNameCell = ({ name, identifier, description, icon }: Readonly<{ name: string; identifier: string; description?: string; icon?: string }>) => {
+    const IconComp = icon && SELECTABLE_ICONS[icon] ? SELECTABLE_ICONS[icon] : LayoutGrid;
+    return (
+        <div className="group flex items-start gap-3">
+            <div className="bg-surface-muted border-surface-border text-text-main/40 group-hover:bg-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-all group-hover:text-white mt-0.5">
+                <IconComp size={14} />
+            </div>
+            <div className="flex flex-col gap-0.5">
+                <div className="flex items-center gap-3">
+                    <span className="text-text-main text-[13px] font-semibold tracking-tight uppercase transition-transform group-hover:translate-x-1">
+                        {name}
+                    </span>
+                    <div className="bg-primary/[0.05] border-surface-border text-text-main/40 rounded border px-2 py-0.5 text-[8px] font-semibold uppercase">
+                        {identifier}
+                    </div>
+                </div>
+                {description && (
+                    <span className="text-text-desc text-[11px] leading-relaxed text-muted-foreground whitespace-pre-wrap max-w-md">
+                        {description}
+                    </span>
+                )}
             </div>
         </div>
-    </div>
-);
+    );
+};
 
 const ModuleGroupCell = ({ groupId, groups, route }: Readonly<{ groupId: any; groups: any; route?: string }>) => {
     const grps = groups.data || groups;
@@ -82,6 +150,7 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
         icon: 'LayoutGrid',
         module_group_id: (groups.data || groups)?.[0]?.id || '',
         showed_as_menu: true as boolean,
+        description: '',
     });
 
     const form = isModuleView ? moduleForm : groupForm;
@@ -109,7 +178,7 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
                 header: 'Identitas Modul & Kode',
                 accessorKey: 'name',
                 sortable: true,
-                cell: (row) => <ModuleNameCell name={row.name} identifier={row.identifier} />,
+                cell: (row) => <ModuleNameCell name={row.name} identifier={row.identifier} description={row.description} icon={row.icon} />,
             },
             {
                 header: 'Grup / Endpoint Navigasi',
@@ -140,6 +209,7 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
                 icon: item.icon || 'LayoutGrid',
                 module_group_id: item.module_group_id,
                 showed_as_menu: !!item.showed_as_menu,
+                description: item.description || '',
             });
         } else {
             groupForm.setData({
@@ -325,13 +395,54 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
                                             </Select>
                                         </div>
                                     </div>
-                                    <CompactInput
-                                        label="URL Endpoint / Route"
-                                        value={moduleForm.data.route}
-                                        onChange={(e) => moduleForm.setData('route', e.target.value)}
-                                        placeholder="/admin/vendor-management"
-                                        icon={LinkIcon}
-                                    />
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <CompactInput
+                                            label="URL Endpoint / Route"
+                                            value={moduleForm.data.route}
+                                            onChange={(e) => moduleForm.setData('route', e.target.value)}
+                                            placeholder="/admin/vendor-management"
+                                            icon={LinkIcon}
+                                        />
+                                        <div className="space-y-2">
+                                            <label className="text-text-desc flex items-center gap-2 text-[10px] font-medium uppercase">
+                                                Icon Modul
+                                            </label>
+                                            <Select
+                                                value={moduleForm.data.icon || 'LayoutGrid'}
+                                                onValueChange={(v: string) => moduleForm.setData('icon', v)}
+                                            >
+                                                <SelectTrigger className="border-surface-border bg-primary/5 focus:border-primary h-10 rounded-xl text-xs font-medium transition-all">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent className="border-surface-border max-h-60 rounded-xl bg-card shadow-2xl overflow-y-auto">
+                                                    {Object.keys(SELECTABLE_ICONS).map((iconName) => {
+                                                        const IconComponent = SELECTABLE_ICONS[iconName];
+                                                        return (
+                                                            <SelectItem key={iconName} value={iconName} className="py-2.5 text-xs font-medium uppercase">
+                                                                <div className="flex items-center gap-2">
+                                                                    {IconComponent && <IconComponent size={14} className="text-text-main/50" />}
+                                                                    <span>{iconName}</span>
+                                                                </div>
+                                                            </SelectItem>
+                                                        );
+                                                    })}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1.5 w-full group">
+                                        <div className="flex items-center justify-between px-0.5">
+                                            <label className="text-xs font-bold uppercase transition-colors text-primary/60 dark:text-white/60">
+                                                Deskripsi Modul
+                                            </label>
+                                        </div>
+                                        <textarea
+                                            value={moduleForm.data.description || ''}
+                                            onChange={(e) => moduleForm.setData('description', e.target.value)}
+                                            placeholder="CONTOH: MODUL UNTUK MENGELOLA DATA VENDOR UTAMA"
+                                            className="flex min-h-[80px] w-full rounded-lg border bg-white dark:bg-white/[0.02] px-3 py-2 text-sm font-medium transition-all outline-none border-primary/5 dark:border-white/5 text-black dark:text-white focus:border-primary/20 dark:focus:border-white/20 focus:bg-primary/[0.01] dark:focus:bg-white/[0.01] shadow-sm resize-none"
+                                        />
+                                    </div>
                                 </>
                             ) : (
                                 <CompactInput

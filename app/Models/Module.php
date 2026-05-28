@@ -28,6 +28,7 @@ class Module extends Model
         'module_group_id',
         'showed_as_menu',
         'is_active',
+        'description',
         'created_by',
         'updated_by',
     ];

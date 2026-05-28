@@ -33,7 +33,7 @@ class TemplateController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'parent_id' => 'nullable|exists:template_folders,id',
+            'parent_id' => 'nullable|exists:m_template_folders,id',
         ]);
 
         TemplateFolder::create([
@@ -81,7 +81,7 @@ class TemplateController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'template_folder_id' => 'nullable|exists:template_folders,id',
+            'template_folder_id' => 'nullable|exists:m_template_folders,id',
             'file' => 'required|file|mimes:docx,doc,pdf,xls,xlsx|max:10240', // 10MB max
         ]);
 
@@ -112,7 +112,7 @@ class TemplateController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'template_folder_id' => 'nullable|exists:template_folders,id',
+            'template_folder_id' => 'nullable|exists:m_template_folders,id',
         ]);
 
         $template->update([
@@ -157,7 +157,7 @@ class TemplateController extends Controller
     public function moveFolder(Request $request, TemplateFolder $folder)
     {
         $request->validate([
-            'parent_id' => 'nullable|exists:template_folders,id|different:id',
+            'parent_id' => 'nullable|exists:m_template_folders,id|different:id',
         ]);
 
         $folder->update(['parent_id' => $request->parent_id]);
@@ -171,7 +171,7 @@ class TemplateController extends Controller
     public function moveTemplate(Request $request, ContractTemplate $template)
     {
         $request->validate([
-            'template_folder_id' => 'nullable|exists:template_folders,id',
+            'template_folder_id' => 'nullable|exists:m_template_folders,id',
         ]);
 
         $template->update(['template_folder_id' => $request->template_folder_id]);

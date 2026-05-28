@@ -75,7 +75,7 @@ export const AppSidebarHeader = memo(function AppSidebarHeader({ breadcrumbs = [
                             }
                             return <Breadcrumbs breadcrumbs={currentBreadcrumbs} />;
                         })()}
-                        {(() => {
+                        {/* {(() => {
                             const path = typeof window !== 'undefined' ? window.location.pathname : '';
                             if (path.includes('/admin/contracts'))
                                 return (
@@ -118,7 +118,7 @@ export const AppSidebarHeader = memo(function AppSidebarHeader({ breadcrumbs = [
                                     </span>
                                 );
                             return null;
-                        })()}
+                        })()} */}
                     </div>
                 </div>
 
