@@ -247,6 +247,7 @@ class ContractController extends Controller
             'approvals.workflowStep.workflow:id,name',
             'workflow.steps:id,workflow_id,step,description,approver_type,step_category,meta',
             'workflowStep:id,step,description,step_category',
+            'workflowStep.actions',
             'versions.uploader:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
             'histories.actor:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
             'messages.user:id,name,initials,role,role_id,department_id,email,bg_color,text_color',

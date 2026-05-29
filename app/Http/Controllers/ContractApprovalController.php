@@ -12,6 +12,7 @@ use App\Formatters\ContractFormatter;
 use App\Models\Approval;
 use App\Models\Contract;
 use App\Models\User;
+use App\Models\WorkflowStep;
 use App\Services\ContractWorkflowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -174,7 +175,7 @@ class ContractApprovalController extends Controller
         return response()->json(['message' => "$count kontrak berhasil disetujui."]);
     }
 
-    public function getNextStep(Contract $contract): ?\App\Models\WorkflowStep
+    public function getNextStep(Contract $contract): ?WorkflowStep
     {
         if (! $contract->workflowStep || ! $contract->workflow) {
             return null;

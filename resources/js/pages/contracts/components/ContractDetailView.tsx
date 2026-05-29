@@ -665,7 +665,7 @@ const ContractDetailView = ({
                 isAssign={!!contract.requires_pic_assignment}
                 contract={contract}
                 actionCode={activeActionCode}
-                actionAlias={contract.workflow_step?.actions?.find((a: any) => a.action_code === activeActionCode)?.alias}
+                actionAlias={contract.workflow_step?.actions?.find((a: any) => a.action_code === activeActionCode)?.alias ?? undefined}
             />
 
             <RejectModal
@@ -675,7 +675,7 @@ const ContractDetailView = ({
                     setActiveActionCode(undefined);
                 }}
                 onSubmit={handleReject}
-                actionAlias={contract.workflow_step?.actions?.find((a: any) => a.action_code === activeActionCode)?.alias}
+                actionAlias={contract.workflow_step?.actions?.find((a: any) => a.action_code === activeActionCode)?.alias ?? undefined}
             />
             <AddhocApproverModal
                 open={addhocOpen}
@@ -687,7 +687,7 @@ const ContractDetailView = ({
                 onUpdate={onUpdate}
                 showToast={showToast}
                 actionCode={activeActionCode}
-                actionAlias={contract.workflow_step?.actions?.find((a: any) => a.action_code === activeActionCode)?.alias}
+                actionAlias={contract.workflow_step?.actions?.find((a: any) => a.action_code === activeActionCode)?.alias ?? undefined}
             />
         </div>
     );

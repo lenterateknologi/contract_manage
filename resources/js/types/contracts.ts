@@ -208,6 +208,13 @@ export interface Contract {
         step_type: string;
         step_category: string | null;
         target_approvers?: string | null;
+        actions?: Array<{
+            id: string;
+            action_code: string;
+            alias?: string | null;
+            next_workflow_id?: string | null;
+            next_workflow_step_id?: string | null;
+        }>;
     } | null;
     can_approve?: boolean;
     pending_approval_id?: string;

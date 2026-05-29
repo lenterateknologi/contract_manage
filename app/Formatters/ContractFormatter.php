@@ -84,6 +84,13 @@ class ContractFormatter
                 'step_type' => 'APPROVAL',
                 'step_category' => $c->workflowStep->step_category,
                 'target_approvers' => $c->approvals->where('sequence', $c->workflowStep->step)->whereIn('status', ['pending', 'waiting'])->first()?->target_approvers,
+                'actions' => $c->workflowStep->actions ? $c->workflowStep->actions->map(fn ($action) => [
+                    'id' => $action->id,
+                    'action_code' => $action->action_code instanceof \App\Enums\WorkflowAction ? $action->action_code->value : $action->action_code,
+                    'alias' => $action->alias,
+                    'next_workflow_id' => $action->next_workflow_id,
+                    'next_workflow_step_id' => $action->next_workflow_step_id,
+                ])->toArray() : [],
             ] : null,
             'next_step' => $nextStep ? [
                 'id' => $nextStep->id,
