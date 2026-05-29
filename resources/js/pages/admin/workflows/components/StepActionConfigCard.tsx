@@ -32,9 +32,9 @@ export function StepActionConfigCard({
     removeAction,
 }: StepActionConfigCardProps) {
     return (
-        <div className="relative rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950/40 space-y-3">
+        <div className="relative rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950/40 space-y-2">
             {/* Card Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2 dark:border-slate-800">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-1.5 dark:border-slate-800">
                 <span className="text-[9px] font-black tracking-widest text-slate-400 uppercase">
                     Aksi #{actIdx + 1}
                 </span>
@@ -48,7 +48,7 @@ export function StepActionConfigCard({
             </div>
 
             {/* Grid Input 2x2 */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {/* Cell 1: Nama Aksi */}
                 <div className="space-y-1">
                     <div className="flex items-center justify-between">
@@ -205,10 +205,10 @@ export function StepActionConfigCard({
                                     <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-white text-[10px] font-black uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
                                         <SelectValue placeholder="PILIH WORKFLOW" />
                                     </SelectTrigger>
-                                    <SelectContent className="rounded-lg bg-white dark:bg-slate-950">
+                                    <SelectContent className="rounded-lg bg-white dark:bg-slate-950 z-[9999]">
                                         {allWorkflows.map((w: any) => (
                                             <SelectItem key={w.id} value={String(w.id)} className="text-[9px] font-bold uppercase">
-                                                {w.name}
+                                                {w.name} {w.contract_type ? `[${w.contract_type.name}]` : '[SEMUA JENIS]'}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>

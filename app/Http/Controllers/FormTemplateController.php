@@ -625,6 +625,14 @@ class FormTemplateController extends Controller
      */
     public function updateMetadata(Request $request, FormTemplate $template)
     {
+        // Sanitize input: convert string "null" or empty values to actual null
+        $contractTypeId = $request->input('contract_type_id');
+        if ($contractTypeId === 'null' || $contractTypeId === 'none' || empty($contractTypeId)) {
+            $contractTypeId = null;
+        }
+
+        $request->merge(['contract_type_id' => $contractTypeId]);
+
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',

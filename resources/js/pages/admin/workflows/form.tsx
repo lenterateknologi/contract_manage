@@ -422,7 +422,7 @@ export default function WorkflowEditor({
                                                             idx={idx}
                                                             totalSteps={form.data.steps.length}
                                                             contractStatuses={contractStatuses}
-                                                            allWorkflows={allWorkflows}
+                                                            allWorkflows={allWorkflows.filter((w: any) => !form.data.contract_type_id || w.contract_type_id === form.data.contract_type_id || !w.contract_type_id)}
                                                             allWorkflowSteps={form.data.steps}
                                                             duplicateLocalStep={(i: number) => {
                                                                 const newStep = { ...form.data.steps[i], id: `new-${Date.now()}` };

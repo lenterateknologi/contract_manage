@@ -84,7 +84,7 @@ class WorkflowAdminController extends Controller
             'regions' => Region::all(),
             'companies' => Company::all(),
             'contractStatuses' => ContractStatus::orderBy('label')->get(),
-            'allWorkflows' => Workflow::with('steps')->orderBy('name')->get(),
+            'allWorkflows' => Workflow::with(['steps', 'contractType'])->orderBy('name')->get(),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Alur Kerja (Workflows)', 'href' => route('admin.workflows'), 'icon' => 'GitBranch'],
@@ -139,7 +139,7 @@ class WorkflowAdminController extends Controller
             'regions' => Region::all(),
             'companies' => Company::all(),
             'contractStatuses' => ContractStatus::orderBy('label')->get(),
-            'allWorkflows' => Workflow::with('steps')->orderBy('name')->get(),
+            'allWorkflows' => Workflow::with(['steps', 'contractType'])->orderBy('name')->get(),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Alur Kerja (Workflows)', 'href' => route('admin.workflows'), 'icon' => 'GitBranch'],

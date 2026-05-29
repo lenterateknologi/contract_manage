@@ -219,7 +219,13 @@ class ContractApprovalController extends Controller
                 return response()->json(['message' => 'Harap pilih minimal satu user.'], 422);
             }
 
-            $targetStepId = $request->input('target_step_id') ?: $contract->workflow_step_id;
+            $targetStepId = $request->input('target_step_id');
+            // Sanitize target_step_id: convert "null", "none", "current" or empty to null
+            if ($targetStepId === 'null' || $targetStepId === 'none' || $targetStepId === 'current' || empty($targetStepId)) {
+                $targetStepId = null;
+            }
+            
+            $targetStepId = $targetStepId ?: $contract->workflow_step_id;
             if (! $targetStepId) {
                 return response()->json(['message' => 'Tahap alur kerja tidak aktif saat ini.'], 422);
             }

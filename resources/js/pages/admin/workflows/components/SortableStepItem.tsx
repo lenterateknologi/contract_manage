@@ -188,12 +188,11 @@ export default function SortableStepItem({
             style={style}
             className={cn('group/step flex flex-col gap-0 transition-all duration-300', isExpanded ? 'overflow-visible' : 'overflow-hidden', isDragging && 'z-50 scale-[1.01]')}
         >
-            {/* --- Premium Header Card --- */}
             <div
                 className={cn(
-                    'group/header dark:bg-card relative flex gap-4 rounded-2xl border p-4 transition-all duration-500',
+                    'group/header dark:bg-card relative flex gap-3 rounded-2xl border p-3 transition-all duration-500',
                     isExpanded
-                        ? 'rounded-b-none border-b-0 bg-white shadow-2xl dark:bg-white/[0.02]'
+                        ? 'rounded-b-none border-b-0 bg-white shadow-xl dark:bg-white/[0.02]'
                         : 'bg-white/50 shadow-sm hover:bg-white dark:bg-black/20 dark:hover:bg-white/[0.05]',
                     !step.approver_type && 'border-dashed border-rose-200 bg-rose-50/20',
                     step.approver_type ? 'border-primary/10' : 'border-primary/20',
@@ -350,17 +349,17 @@ export default function SortableStepItem({
 
             {/* --- Premium Expansion Block --- */}
             {isExpanded && (
-                <div className="border-primary/10 animate-in fade-in slide-in-from-top-6 relative overflow-visible rounded-b-3xl border-x border-b bg-white shadow-2xl duration-500 dark:bg-black/40">
-                    <div className="relative z-10 p-6">
-                        <div className="grid grid-cols-12 gap-6">
+                <div className="border-primary/10 animate-in fade-in slide-in-from-top-6 relative overflow-visible rounded-b-3xl border-x border-b bg-white shadow-xl duration-500 dark:bg-black/40">
+                    <div className="relative z-10 p-4">
+                        <div className="grid grid-cols-12 gap-5">
                             {/* --- Section 1: Basic Config --- */}
-                            <div className="col-span-12 space-y-5 lg:col-span-6">
+                            <div className="col-span-12 space-y-4 lg:col-span-6">
                                 <div>
-                                    <h4 className="text-primary/30 mb-4 flex items-center gap-2 text-[11px] font-black uppercase">
+                                    <h4 className="text-primary/30 mb-3 flex items-center gap-2 text-[11px] font-black uppercase">
                                         <Settings2 size={12} /> Konfigurasi Dasar
                                     </h4>
 
-                                    <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+                                    <div className="grid grid-cols-2 gap-x-3 gap-y-3">
                                         <div className="col-span-2 space-y-1.5">
                                             <label className="text-[10px] font-bold text-slate-400 uppercase">Deskripsi Tahap</label>
                                             <input
@@ -814,23 +813,40 @@ export default function SortableStepItem({
                                     Belum ada aksi yang dikonfigurasi. Klik tombol di atas untuk menambah.
                                 </div>
                             ) : (
-                                <div className="space-y-4">
-                                    {actions.map((act: any, actIdx: number) => (
-                                        <StepActionConfigCard
-                                            key={act.id || actIdx}
-                                            act={act}
-                                            actIdx={actIdx}
-                                            idx={idx}
-                                            step={step}
-                                            allWorkflows={allWorkflows}
-                                            allWorkflowSteps={allWorkflowSteps}
-                                            roles={roles}
-                                            departments={departments}
-                                            users={users}
-                                            updateAction={updateAction}
-                                            removeAction={removeAction}
-                                        />
-                                    ))}
+                                <div className="relative ml-2 space-y-3 py-2">
+                                    {/* Vertical branch line for the tree */}
+                                    <div className="absolute left-[11px] top-2 bottom-6 w-0.5 bg-slate-200 dark:bg-slate-700/50" />
+                                    
+                                    {actions.map((act: any, actIdx: number) => {
+                                        const isLast = actIdx === actions.length - 1;
+                                        return (
+                                            <div key={act.id || actIdx} className="relative pl-8 animate-in fade-in duration-300">
+                                                {/* Tree connector branch */}
+                                                <div className="absolute left-[11px] top-0 bottom-0 pointer-events-none">
+                                                    {/* Vertical segment connecting horizontal branch */}
+                                                    <div className={cn(
+                                                        "absolute left-0 top-0 w-0.5 bg-slate-200 dark:bg-slate-700/50",
+                                                        isLast ? "h-[24px]" : "bottom-0"
+                                                    )} />
+                                                    {/* Horizontal branch line segment */}
+                                                    <div className="absolute left-0 top-[24px] w-6 h-0.5 bg-slate-200 dark:bg-slate-700/50" />
+                                                </div>
+                                                <StepActionConfigCard
+                                                    act={act}
+                                                    actIdx={actIdx}
+                                                    idx={idx}
+                                                    step={step}
+                                                    allWorkflows={allWorkflows}
+                                                    allWorkflowSteps={allWorkflowSteps}
+                                                    roles={roles}
+                                                    departments={departments}
+                                                    users={users}
+                                                    updateAction={updateAction}
+                                                    removeAction={removeAction}
+                                                />
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>

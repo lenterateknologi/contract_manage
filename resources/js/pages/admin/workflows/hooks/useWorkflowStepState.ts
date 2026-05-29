@@ -10,7 +10,7 @@ export function useWorkflowStepState({
     idx: number;
     updateLocalStep: (idx: number, data: any) => void;
 }) {
-    const [activeModal, setActiveModal] = useState<'approve' | 'reject' | 'return' | 'assign_pic' | 'upload' | 'review' | 'sign' | null>(null);
+    const [activeModal, setActiveModal] = useState<'approve' | 'reject' | 'return' | 'assign_pic' | 'upload' | 'review' | 'sign' | 'forward' | null>(null);
 
     const parsedCondition = useMemo(() => {
         const key = step.meta?.condition_key ?? '';
