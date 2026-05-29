@@ -11,6 +11,7 @@ enum WorkflowAction: string
     case REVIEW = 'review';
     case RETURN = 'return';
     case SIGN = 'sign';
+    case SIGNATURE = 'signature';
     case FORWARD = 'forward';
 
     public function label(): string
@@ -23,6 +24,7 @@ enum WorkflowAction: string
             self::REVIEW => 'Tinjau',
             self::RETURN => 'Kembalikan',
             self::SIGN => 'Tanda Tangan',
+            self::SIGNATURE => 'Tanda Tangan',
             self::FORWARD => 'Approval Tambahan',
         };
     }

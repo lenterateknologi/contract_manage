@@ -1,7 +1,7 @@
 import { Avatar } from '@/components/contracts/ui';
 import { cn } from '@/lib/utils';
 import { Contract, ContractType } from '@/types/contracts';
-import { Check, ChevronDown, ChevronUp, Info, Loader2 } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, Info, Loader2, ChevronRight, LayoutTemplate, FileText, Zap } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 export interface FormTemplateInfo {
@@ -187,6 +187,75 @@ export function DraftEditableInfoCard({
             </div>
             {!minimized && (
                 <div className="grid grid-cols-1 gap-4 p-4">
+                    {/* --- Visual Mapping & Analysis --- */}
+                    <div className="col-span-full mb-2">
+                        <div className="text-text-desc mb-3 text-[10px] font-bold tracking-widest uppercase opacity-60">Mapping & Analisis Alur</div>
+                        <div className="relative flex items-center justify-between gap-2 rounded-2xl border border-slate-100 bg-slate-50/50 p-4 dark:border-white/5 dark:bg-white/5">
+                            {/* Contract Type */}
+                            <div className="flex flex-1 flex-col items-center gap-2 text-center">
+                                <div className="bg-primary/10 text-primary flex h-10 w-10 items-center justify-center rounded-xl shadow-inner">
+                                    <FileText size={18} />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-text-desc text-[8px] font-black tracking-tighter uppercase">Jenis Kontrak</span>
+                                    <span className="text-text-main max-w-[100px] truncate text-[10px] font-bold">
+                                        {types.find(t => String(t.id) === typeId)?.name || selected.contract_type || 'Unknown'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Arrow 1 */}
+                            <div className="flex shrink-0 items-center text-slate-300">
+                                <ChevronRight size={16} />
+                            </div>
+
+                            {/* Form Builder Template */}
+                            <div className="flex flex-1 flex-col items-center gap-2 text-center">
+                                <div className={cn(
+                                    "flex h-10 w-10 items-center justify-center rounded-xl shadow-inner",
+                                    tpl ? "bg-indigo-500/10 text-indigo-500" : "bg-slate-200 text-slate-400 opacity-40"
+                                )}>
+                                    <LayoutTemplate size={18} />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-text-desc text-[8px] font-black tracking-tighter uppercase">Form Builder</span>
+                                    <span className={cn(
+                                        "max-w-[100px] truncate text-[10px] font-bold",
+                                        tpl ? "text-indigo-600" : "text-text-soft italic"
+                                    )}>
+                                        {tpl?.name || 'No Template'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Arrow 2 */}
+                            <div className="flex shrink-0 items-center text-slate-300">
+                                <ChevronRight size={16} />
+                            </div>
+
+                            {/* Workflow Engine */}
+                            <div className="flex flex-1 flex-col items-center gap-2 text-center">
+                                <div className={cn(
+                                    "flex h-10 w-10 items-center justify-center rounded-xl shadow-inner",
+                                    selected.workflow ? "bg-emerald-500/10 text-emerald-500" : "bg-slate-200 text-slate-400 opacity-40"
+                                )}>
+                                    <Zap size={18} />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-text-desc text-[8px] font-black tracking-tighter uppercase">Workflow Analis</span>
+                                    <span className={cn(
+                                        "max-w-[100px] truncate text-[10px] font-bold",
+                                        selected.workflow ? "text-emerald-600" : "text-text-soft italic"
+                                    )}>
+                                        {selected.workflow?.name || 'Manual Flow'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="border-surface-border col-span-full border-t border-dashed my-1" />
+
                     <div>
                         <div className="text-text-desc mb-1 text-xs font-semibold">No. Pengajuan</div>
                         <span className="bg-surface-muted text-text-main inline-block rounded px-3 py-1.5 font-mono text-sm font-medium shadow-sm">
@@ -313,22 +382,25 @@ export function DraftEditableInfoCard({
 
                     {selected.workflow_step && (
                         <div className="border-surface-border col-span-full border-t pt-4">
-                            <div className="text-text-desc mb-2 text-xs font-semibold">Posisi Kontrak Saat Ini (Workflow)</div>
-                            <div className="animate-in fade-in border-primary/20 bg-primary/5 flex items-center gap-2 rounded-xl border p-3 shadow-sm">
-                                <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-lg">
-                                    <Info size={16} strokeWidth={2.5} />
+                            <div className="text-text-desc mb-2 text-xs font-semibold">Hasil Analisis Workflow</div>
+                            <div className="animate-in fade-in border-emerald-500/20 bg-emerald-500/5 flex items-center gap-2 rounded-xl border p-3 shadow-sm">
+                                <div className="bg-emerald-500/10 text-emerald-600 flex h-8 w-8 items-center justify-center rounded-lg">
+                                    <Check size={16} strokeWidth={3} />
                                 </div>
                                 <div className="flex flex-col gap-0.5">
-                                    <span className="text-primary text-xs font-medium">
-                                        Sedang Di: {selected.workflow_step.description}
+                                    <span className="text-emerald-700 text-xs font-bold">
+                                        Langkah Aktif: {selected.workflow_step.description}
                                     </span>
-                                    <span className="text-primary/70 text-xs font-semibold">
-                                        Peran: {selected.workflow_step.role}
+                                    <span className="text-emerald-600/70 text-[10px] font-semibold uppercase tracking-wider">
+                                        PIC/Role: {selected.workflow_step.role}
                                     </span>
                                     {selected.workflow_step.target_approvers && (
-                                        <span className="text-primary/60 mt-1 text-[10px] font-semibold tracking-tight uppercase">
-                                            Target Penyetuju: {selected.workflow_step.target_approvers}
-                                        </span>
+                                        <div className="mt-1 flex items-center gap-1.5 rounded-md bg-white/50 px-2 py-0.5 dark:bg-black/20">
+                                            <span className="text-emerald-600 text-[9px] font-black tracking-tighter uppercase">Target:</span>
+                                            <span className="text-emerald-700 truncate text-[9px] font-bold">
+                                                {selected.workflow_step.target_approvers}
+                                            </span>
+                                        </div>
                                     )}
                                 </div>
                             </div>

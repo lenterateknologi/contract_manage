@@ -10,13 +10,14 @@ export interface TreeSelectItem {
 }
 
 interface TreeSelectProps {
-    value: string;
-    onValueChange: (value: string, parentId: string) => void;
+    value: string | string[];
+    onValueChange: (value: any, parentId?: string) => void;
     items: TreeSelectItem[];
     placeholder?: string;
     searchPlaceholder?: string;
     emptyText?: string;
     triggerClassName?: string;
+    multiple?: boolean;
 }
 
 export function TreeSelect({
@@ -27,18 +28,26 @@ export function TreeSelect({
     searchPlaceholder = 'Cari...',
     emptyText = 'Tidak ada hasil',
     triggerClassName,
+    multiple = false,
 }: TreeSelectProps) {
     const [open, setOpen] = React.useState(false);
     const [search, setSearch] = React.useState('');
     const [expandedParents, setExpandedParents] = React.useState<Record<string, boolean>>({});
     const [isMounted, setIsMounted] = React.useState(false);
-    const [coords, setCoords] = React.useState({ top: 0, left: 0, width: 0 });
 
     const containerRef = React.useRef<HTMLDivElement>(null);
     const buttonRef = React.useRef<HTMLButtonElement>(null);
 
     React.useEffect(() => {
         setIsMounted(true);
+        // Handle clicking outside to close
+        const handleClickOutside = (event: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+                setOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
     // Helper to identify if an item is a parent
@@ -66,16 +75,95 @@ export function TreeSelect({
         return groups;
     }, [items]);
 
-    // Find currently selected item and its parent
-    const selectedItem = React.useMemo(() => {
-        // Only allow children to be 'selected' in the display
-        return items.find((item) => String(item.id) === String(value) && isChildItem(item));
-    }, [items, value]);
+    // Value handling
+    const selectedIds = React.useMemo(() => {
+        if (Array.isArray(value)) return value.map(String);
+        return value ? [String(value)] : [];
+    }, [value]);
 
-    const selectedParent = React.useMemo(() => {
-        if (!selectedItem || !selectedItem.parent_id) return null;
-        return items.find((item) => String(item.id) === String(selectedItem.parent_id));
-    }, [items, selectedItem]);
+    const isSelected = (id: string | number) => selectedIds.includes(String(id));
+
+    const isParentFullySelected = (pId: string) => {
+        const children = childrenByParent[pId] || [];
+        if (children.length === 0) return isSelected(pId);
+        return children.every(c => isSelected(c.id));
+    };
+
+    const isParentPartiallySelected = (pId: string) => {
+        const children = childrenByParent[pId] || [];
+        if (children.length === 0) return false;
+        const selectedChildren = children.filter(c => isSelected(c.id));
+        return selectedChildren.length > 0 && selectedChildren.length < children.length;
+    };
+
+    // Selection logic
+    const handleSelect = (item: TreeSelectItem) => {
+        const id = String(item.id);
+        const pId = String(item.parent_id);
+
+        if (!multiple) {
+            onValueChange(id, pId);
+            setOpen(false);
+            return;
+        }
+
+        let newSelected = [...selectedIds];
+        const isParent = isParentItem(item);
+
+        if (isParent) {
+            const children = childrenByParent[id] || [];
+            const currentlyFullySelected = isParentFullySelected(id);
+
+            if (currentlyFullySelected) {
+                // Deselect parent and all children
+                newSelected = newSelected.filter(sid => sid !== id && !children.some(c => String(c.id) === sid));
+            } else {
+                // Select parent and all children
+                if (!newSelected.includes(id)) newSelected.push(id);
+                children.forEach(c => {
+                    const cid = String(c.id);
+                    if (!newSelected.includes(cid)) newSelected.push(cid);
+                });
+            }
+        } else {
+            // Child selection
+            if (newSelected.includes(id)) {
+                newSelected = newSelected.filter(sid => sid !== id);
+            } else {
+                newSelected.push(id);
+            }
+        }
+
+        onValueChange(newSelected);
+    };
+
+    // Find currently selected items for display
+    const selectedDisplay = React.useMemo(() => {
+        if (multiple) {
+            if (selectedIds.length === 0) return null;
+            if (selectedIds.length === 1) {
+                const item = items.find(i => String(i.id) === selectedIds[0]);
+                return item ? item.name : `${selectedIds.length} terpilih`;
+            }
+            return `${selectedIds.length} terpilih`;
+        }
+        
+        const item = items.find((item) => String(item.id) === String(value));
+        if (!item) return null;
+        
+        const parent = items.find(p => String(p.id) === String(item.parent_id));
+        return (
+            <span className="flex items-center gap-1.5">
+                {parent && parent.id !== item.id && (
+                    <>
+                        <span className="opacity-60 font-normal">{parent.name}</span>
+                        <span className="opacity-40">/</span>
+                    </>
+                )}
+                <span>{item.name}</span>
+            </span>
+        );
+    }, [items, value, selectedIds, multiple]);
 
     // Search and filter logic
     const filteredHierarchy = React.useMemo(() => {
@@ -132,7 +220,7 @@ export function TreeSelect({
         }
     }, [search, filteredHierarchy.parents]);
 
-    const toggleParent = (pId: string, e: React.MouseEvent) => {
+    const toggleParentExpansion = (pId: string, e: React.MouseEvent) => {
         e.stopPropagation();
         setExpandedParents(prev => ({
             ...prev,
@@ -143,7 +231,7 @@ export function TreeSelect({
     const dropdownContent = open && (
         <div
             id="tree-select-dropdown"
-            className="absolute left-0 right-0 top-full z-50 border-sidebar-border bg-sidebar mt-1 max-h-[300px] flex flex-col overflow-hidden rounded-lg border shadow-xl animate-in fade-in slide-in-from-top-1 duration-100"
+            className="absolute left-0 right-0 top-full z-50 border-sidebar-border bg-sidebar mt-1 max-h-[400px] flex flex-col overflow-hidden rounded-lg border shadow-xl animate-in fade-in slide-in-from-top-1 duration-100"
         >
             {/* Search input */}
             <div className="relative border-b border-sidebar-border/50 bg-sidebar-accent/10 px-3 py-2">
@@ -167,55 +255,72 @@ export function TreeSelect({
                         const isExpanded = !!expandedParents[pId];
                         const children = filteredHierarchy.childrenByParent[pId] || [];
                         const hasChildren = children.length > 0;
+                        
+                        const fullySelected = isParentFullySelected(pId);
+                        const partiallySelected = isParentPartiallySelected(pId);
 
                         return (
                             <div key={pId} className="flex flex-col">
-                                {/* Parent row - Clicking only toggles expansion */}
-                                <button
-                                    type="button"
-                                    onClick={(e) => {
-                                        if (hasChildren) {
-                                            toggleParent(pId, e);
-                                        }
-                                    }}
-                                    className={cn(
-                                        "flex w-full items-center justify-between px-3 py-2 text-left text-[11px] font-bold uppercase tracking-tight transition-colors rounded-md",
-                                        "text-sidebar-foreground/75 hover:bg-sidebar-accent/40",
-                                        !hasChildren && "opacity-50 cursor-not-allowed"
-                                    )}
-                                >
-                                    <span>{p.name}</span>
+                                {/* Parent row */}
+                                <div className="group flex w-full items-center gap-1 rounded-md hover:bg-sidebar-accent/40 pr-2">
+                                    {/* Selection Area */}
+                                    <button
+                                        type="button"
+                                        onClick={() => handleSelect(p)}
+                                        className={cn(
+                                            "flex flex-1 items-center gap-2 px-3 py-2 text-left text-[11px] font-bold uppercase tracking-tight transition-colors",
+                                            fullySelected ? "text-sidebar-primary" : "text-sidebar-foreground/75"
+                                        )}
+                                    >
+                                        <div className={cn(
+                                            "flex h-3.5 w-3.5 items-center justify-center rounded border transition-all",
+                                            fullySelected ? "bg-sidebar-primary border-sidebar-primary text-white" : 
+                                            partiallySelected ? "bg-sidebar-primary/20 border-sidebar-primary text-sidebar-primary" :
+                                            "bg-transparent border-sidebar-border group-hover:border-sidebar-foreground/30"
+                                        )}>
+                                            {fullySelected && <Check size={10} strokeWidth={4} />}
+                                            {!fullySelected && partiallySelected && <div className="h-0.5 w-2 bg-current rounded-full" />}
+                                        </div>
+                                        <span>{p.name}</span>
+                                    </button>
+
+                                    {/* Expansion Toggle */}
                                     {hasChildren && (
-                                        <span className="text-sidebar-foreground/40">
+                                        <button
+                                            type="button"
+                                            onClick={(e) => toggleParentExpansion(pId, e)}
+                                            className="p-1 rounded-md hover:bg-sidebar-accent text-sidebar-foreground/40 transition-all"
+                                        >
                                             {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                                        </span>
+                                        </button>
                                     )}
-                                </button>
+                                </div>
 
                                 {/* Child list */}
                                 {hasChildren && isExpanded && (
-                                    <div className="mt-0.5 space-y-0.5 pl-4 border-l border-sidebar-border/30 ml-4 mb-1">
+                                    <div className="mt-0.5 space-y-0.5 pl-4 border-l border-sidebar-border/30 ml-6 mb-1">
                                         {children.map(c => {
                                             const cId = String(c.id);
-                                            const isChildSelected = String(value) === cId;
+                                            const childSelected = isSelected(cId);
                                             return (
                                                 <button
                                                     key={cId}
                                                     type="button"
-                                                    onClick={() => {
-                                                        onValueChange(cId, pId);
-                                                        setOpen(false);
-                                                        setSearch('');
-                                                    }}
+                                                    onClick={() => handleSelect(c)}
                                                     className={cn(
-                                                        'flex w-full items-center justify-between px-3 py-2 text-left text-[12px] rounded-md transition-all',
-                                                        isChildSelected
+                                                        'flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] rounded-md transition-all group/child',
+                                                        childSelected
                                                             ? 'bg-sidebar-primary/10 text-sidebar-primary font-semibold'
                                                             : 'text-sidebar-foreground/80 hover:bg-sidebar-accent/30'
                                                     )}
                                                 >
+                                                    <div className={cn(
+                                                        "flex h-3 w-3 items-center justify-center rounded border transition-all",
+                                                        childSelected ? "bg-sidebar-primary border-sidebar-primary text-white" : "bg-transparent border-sidebar-border group-hover/child:border-sidebar-foreground/30"
+                                                    )}>
+                                                        {childSelected && <Check size={8} strokeWidth={4} />}
+                                                    </div>
                                                     <span>{c.name}</span>
-                                                    {isChildSelected && <Check size={12} className="text-sidebar-primary shrink-0 ml-2" />}
                                                 </button>
                                             );
                                         })}
@@ -235,8 +340,7 @@ export function TreeSelect({
                 ref={buttonRef}
                 type="button"
                 onClick={() => {
-                    const nextOpen = !open;
-                    setOpen(nextOpen);
+                    setOpen(!open);
                     setSearch('');
                 }}
                 className={cn(
@@ -245,20 +349,8 @@ export function TreeSelect({
                     triggerClassName
                 )}
             >
-                <span className={cn(selectedItem ? 'text-black dark:text-white font-semibold' : 'text-sidebar-foreground/60')}>
-                    {selectedItem ? (
-                        <span className="flex items-center gap-1.5">
-                            {selectedParent && (
-                                <>
-                                    <span className="opacity-60 font-normal">{selectedParent.name}</span>
-                                    <span className="opacity-40">/</span>
-                                </>
-                            )}
-                            <span>{selectedItem.name}</span>
-                        </span>
-                    ) : (
-                        placeholder
-                    )}
+                <span className={cn(selectedDisplay ? 'text-black dark:text-white font-semibold' : 'text-sidebar-foreground/60')}>
+                    {selectedDisplay || placeholder}
                 </span>
                 <ChevronDown size={14} className={cn("text-sidebar-foreground/60 shrink-0 ml-2 transition-transform duration-200", open && "rotate-180")} />
             </button>

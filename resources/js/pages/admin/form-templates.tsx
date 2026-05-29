@@ -22,6 +22,7 @@ import { Copy, Edit2, FileCheck, FileJson, FileText, Filter, Layout, MoreHorizon
 import React, { useMemo, useState } from 'react';
 import { Modal } from '@/components/ui/overlays/Modal';
 import { useToast } from '@/components/contracts/Toast';
+import { TreeSelect, TreeSelectItem } from '@/components/ui/forms/TreeSelect';
 
 interface FormTemplate {
     id: string;
@@ -729,7 +730,7 @@ export default function FormTemplates({ templates, contract_types }: Props) {
 
             {/* Edit Metadata Modal */}
             <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-                <DialogContent className="border-border bg-card text-card-foreground overflow-hidden rounded-xl border p-0 shadow-2xl sm:max-w-[480px]">
+                <DialogContent className="border-border bg-card text-card-foreground overflow-hidden rounded-xl border p-0 shadow-2xl sm:max-w-[650px]">
                     <form onSubmit={handleUpdateMetadata}>
                         <div className="bg-muted text-foreground border-border flex shrink-0 items-center gap-5 border-b p-8">
                             <div className="border-border bg-card text-foreground flex h-11 w-11 items-center justify-center rounded-xl border shadow-inner backdrop-blur-sm">
@@ -743,21 +744,39 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                             </div>
                         </div>
                         <div className="space-y-6 p-8">
-                            <div className="grid gap-2">
-                                <Label className="text-muted-foreground ml-1 text-[10px] font-semibold uppercase">Metadata Name</Label>
-                                <Input
-                                    required
-                                    className="border-border bg-muted focus:border-primary h-11 rounded-xl text-xs font-bold transition-all"
-                                    value={editForm.data.name}
-                                    onChange={(e) => editForm.setData('name', e.target.value)}
-                                />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid gap-2">
+                                    <Label className="text-muted-foreground ml-1 text-[10px] font-semibold uppercase">Metadata Name</Label>
+                                    <Input
+                                        required
+                                        className="border-border bg-muted focus:border-primary h-11 rounded-xl text-xs font-bold transition-all"
+                                        value={editForm.data.name}
+                                        onChange={(e) => editForm.setData('name', e.target.value)}
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label className="text-muted-foreground ml-1 text-[10px] font-semibold uppercase">Status Asset</Label>
+                                    <div className="flex items-center gap-3 h-11 px-4 border border-border bg-muted rounded-xl">
+                                        <input 
+                                            type="checkbox" 
+                                            id="is_active_check"
+                                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                            checked={editForm.data.is_active}
+                                            onChange={(e) => editForm.setData('is_active', e.target.checked)}
+                                        />
+                                        <Label htmlFor="is_active_check" className="text-xs font-bold uppercase cursor-pointer">
+                                            {editForm.data.is_active ? 'Published / Aktif' : 'Draft / Inaktif'}
+                                        </Label>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-5">
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="grid gap-2">
                                     <Label className="text-muted-foreground ml-1 text-[10px] font-semibold uppercase">Classification</Label>
-                                    <Select value={editForm.data.document_type} onValueChange={(v) => editForm.setData('document_type', v)}>
+                                    <Select value={editForm.data.document_type || ''} onValueChange={(v) => editForm.setData('document_type', v)}>
                                         <SelectTrigger className="border-border bg-muted focus:border-primary h-11 rounded-xl text-xs font-bold transition-all">
-                                            <SelectValue />
+                                            <SelectValue placeholder="PILIH KLASIFIKASI" />
                                         </SelectTrigger>
                                         <SelectContent className="border-border bg-card text-card-foreground rounded-xl shadow-2xl">
                                             <SelectItem value="f1" className="py-2.5 text-xs font-bold uppercase">
@@ -777,29 +796,26 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                                 </div>
                                 <div className="grid gap-2">
                                     <Label className="text-muted-foreground ml-1 text-[10px] font-semibold uppercase">Workflow Related</Label>
-                                    <Select value={editForm.data.contract_type_id} onValueChange={(v) => editForm.setData('contract_type_id', v)}>
-                                        <SelectTrigger className="border-border bg-muted focus:border-primary h-11 rounded-xl text-xs font-bold transition-all">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent className="border-border bg-card text-card-foreground max-h-48 rounded-xl shadow-2xl">
-                                            <SelectItem value="none" className="py-2.5 text-[10px] font-bold italic opacity-40">
-                                                Global / Unlinked
-                                            </SelectItem>
-                                            {contract_types.map((ct) => (
-                                                <SelectItem key={ct.id} value={ct.id} className="py-2.5 text-xs font-bold uppercase">
-                                                    {ct.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <TreeSelect
+                                        value={editForm.data.contract_type_id || ''}
+                                        onValueChange={(val) => editForm.setData('contract_type_id', val)}
+                                        items={contract_types.map(ct => ({
+                                            id: ct.id,
+                                            name: ct.name,
+                                            parent_id: (ct as any).parent_id
+                                        }))}
+                                        placeholder="PILIH JENIS KONTRAK"
+                                        triggerClassName="border-border bg-muted focus:border-primary h-11 rounded-xl text-xs font-bold transition-all shadow-none"
+                                    />
                                 </div>
                             </div>
                             <div className="grid gap-2">
-                                <Label className="text-muted-foreground ml-1 text-[10px] font-semibold uppercase">Narrative</Label>
+                                <Label className="text-muted-foreground ml-1 text-[10px] font-semibold uppercase">Narrative / Description</Label>
                                 <Textarea
-                                    className="border-border bg-muted focus:border-primary h-20 resize-none rounded-xl text-xs leading-relaxed font-medium transition-all"
+                                    className="border-border bg-muted focus:border-primary h-24 resize-none rounded-xl text-xs leading-relaxed font-medium transition-all"
                                     value={editForm.data.description}
                                     onChange={(e) => editForm.setData('description', e.target.value)}
+                                    placeholder="Tuliskan keterangan mengenai fungsi template ini..."
                                 />
                             </div>
                         </div>

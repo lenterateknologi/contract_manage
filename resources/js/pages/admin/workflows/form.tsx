@@ -200,9 +200,12 @@ export default function WorkflowEditor({
                                                 autoFocus
                                                 value={form.data.name}
                                                 onChange={(e) => form.setData('name', e.target.value)}
-                                                className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 text-xs font-bold transition-all focus:border-slate-900 focus:bg-white focus:ring-0 dark:border-slate-800 dark:bg-slate-900/50 dark:focus:border-white dark:focus:bg-slate-900"
+                                                className={cn("h-10 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 text-xs font-bold transition-all focus:border-slate-900 focus:bg-white focus:ring-0 dark:border-slate-800 dark:bg-slate-900/50 dark:focus:border-white dark:focus:bg-slate-900", form.errors.name && "border-red-500 focus:border-red-500")}
                                                 placeholder="Contoh: ALUR PERSETUJUAN KONTRAK LOGISTIK"
                                             />
+                                            {form.errors.name && (
+                                                <p className="text-red-500 text-[10px] mt-1 font-bold">{form.errors.name}</p>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="lg:col-span-3">
