@@ -170,7 +170,7 @@ test('it supports sequential ad-hoc approvers', function () {
     $resp = $this->postJson("/api/contracts/{$contract->id}/add-approver", [
         'user_ids' => [$adhoc1->id, $adhoc2->id],
         'is_sequential' => true,
-    ]);
+    ])->dump();
     $resp->assertSuccessful();
 
     // Verify: adhoc1 should be PENDING, adhoc2 should be WAITING
