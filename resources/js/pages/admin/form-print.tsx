@@ -25,10 +25,9 @@ export default function FormPrint({ template, formData }: Props) {
         <div className="min-h-screen bg-white">
             <Head>
                 <title>{`Print: ${template.name}`}</title>
-                <link rel="preconnect" href="https://fonts.googleapis.com" />
-                <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+                <link rel="preconnect" href="https://fonts.bunny.net" />
                 <link
-                    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Roboto:wght@400;500;700;900&display=swap"
+                    href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600|inter:400,500,600,700|lora:400,500,600,700|montserrat:400,500,600,700,800,900|open-sans:400,500,600,700|roboto:400,500,700|lato:400,700|playfair-display:400,700"
                     rel="stylesheet"
                 />
             </Head>

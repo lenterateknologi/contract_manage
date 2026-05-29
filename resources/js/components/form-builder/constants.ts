@@ -34,6 +34,13 @@ export const FIELD_TYPES: any[] = [
                 defaultOptions: { grid_cols: 2, col_sizes: ['1fr', '1fr'] },
             },
             {
+                value: 'grid_y',
+                label: 'Bagi Baris (Grid Vertical)',
+                icon: List,
+                defaultLabel: 'GRID VERTICAL',
+                defaultOptions: { gap: 16 },
+            },
+            {
                 value: 'page_break',
                 label: 'Pemisah Halaman (Page Break)',
                 icon: Scissors,
@@ -84,6 +91,54 @@ export const FIELD_TYPES: any[] = [
                 defaultLabel: 'Menu Pilihan',
                 defaultPlaceholder: 'Pilih...',
                 defaultOptions: { items: [], font_size: 11, font_family: "'Inter', sans-serif" },
+            },
+        ],
+    },
+    {
+        category: 'Kop Surat & Header (Presets)',
+        color: 'bg-primary',
+        items: [
+            {
+                value: 'preset_header_Style_01',
+                label: 'Kop Style 01 (Logo & Detail)',
+                icon: ImageIcon,
+                defaultLabel: 'Kop Style 01',
+            },
+            {
+                value: 'preset_header_Style_02',
+                label: 'Kop Style 02 (Hanya Teks)',
+                icon: Type,
+                defaultLabel: 'Kop Style 02',
+            },
+        ],
+    },
+    {
+        category: 'Blok Isi Surat (Presets)',
+        color: 'bg-emerald-600',
+        items: [
+            {
+                value: 'preset_content_opening',
+                label: 'Pembukaan (Hari/Tgl)',
+                icon: FileText,
+                defaultLabel: 'Pembukaan Kontrak',
+            },
+            {
+                value: 'preset_party_block',
+                label: 'Blok Pihak (Nama, Jabatan, Alamat)',
+                icon: FileText,
+                defaultLabel: 'Blok Pihak',
+            },
+            {
+                value: 'preset_party_block_double',
+                label: 'Blok Dua Pihak (Pihak 1 & 2)',
+                icon: Columns,
+                defaultLabel: 'Blok Dua Pihak',
+            },
+            {
+                value: 'preset_content_commercial',
+                label: 'Detail Komersial & Operasional',
+                icon: List,
+                defaultLabel: 'Detail Komersial',
             },
         ],
     },

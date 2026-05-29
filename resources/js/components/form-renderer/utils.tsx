@@ -65,31 +65,32 @@ export const renderValue = (val: any, field: any, diffStatus?: string, compariso
 export const getTypographyStyle = (field: any, scale = 1, isLabel = false) => {
     const options = field.options || {};
     return {
-        fontSize: options.font_size ? `${options.font_size * scale}px` : `${11 * scale}px`,
-        fontWeight: isLabel ? options.font_weight_label || options.font_weight || 'bold' : options.font_weight || 'bold',
-        fontFamily: options.font_family || "'Inter', sans-serif",
+        fontSize: options.font_size ? `${options.font_size * scale}px` : `${12 * scale}px`,
+        fontWeight: isLabel ? options.font_weight_label || options.font_weight || 'normal' : options.font_weight || 'normal',
+        fontFamily: options.font_family || "'Times New Roman', serif",
         fontStyle: options.font_style || undefined,
         textTransform: options.text_transform || undefined,
         textDecoration: options.text_decoration || undefined,
         textAlign: (options.text_align || options.alignment || undefined) as any,
+        color: options.color || undefined,
     };
 };
 
 export const getPaddingStyle = (field: any) => {
     const isLayout = ['group', 'grid_x', 'grid_y', 'grid_view'].includes(field.type);
+    const options = field.options || {};
 
-    // For non-layout fields, we often want to force 0 padding to keep the UI clean
-    // unless the user really explicitly set it (but even then, for H1 we usually want 0)
-    const isContent = ['static_text', 'image', 'f1_header', 'page_break'].includes(field.type);
+    const getVal = (v: any, fallback = 0) => {
+        if (v === undefined || v === null || v === '') return fallback;
+        const num = Number(v);
+        return isNaN(num) ? fallback : num;
+    };
 
-    const paddingTop = isContent ? 0 : (field.options?.padding_top ?? field.options?.padding_y ?? (isLayout ? field.options?.padding_all : 0) ?? 0);
-    const paddingBottom = isContent
-        ? 0
-        : (field.options?.padding_bottom ?? field.options?.padding_y ?? (isLayout ? field.options?.padding_all : 0) ?? 0);
-    const paddingLeft = isContent ? 0 : (field.options?.padding_left ?? field.options?.padding_x ?? (isLayout ? field.options?.padding_all : 0) ?? 0);
-    const paddingRight = isContent
-        ? 0
-        : (field.options?.padding_right ?? field.options?.padding_x ?? (isLayout ? field.options?.padding_all : 0) ?? 0);
+    // Prioritize individual sides, then axis (x/y), then all sides, then default
+    const paddingTop = getVal(options.padding_top, getVal(options.padding_y, isLayout ? getVal(options.padding_all, 0) : 0));
+    const paddingBottom = getVal(options.padding_bottom, getVal(options.padding_y, isLayout ? getVal(options.padding_all, 0) : 0));
+    const paddingLeft = getVal(options.padding_left, getVal(options.padding_x, isLayout ? getVal(options.padding_all, 0) : 0));
+    const paddingRight = getVal(options.padding_right, getVal(options.padding_x, isLayout ? getVal(options.padding_all, 0) : 0));
 
     return {
         paddingTop: `${paddingTop}mm`,
@@ -98,3 +99,29 @@ export const getPaddingStyle = (field: any) => {
         paddingRight: `${paddingRight}mm`,
     };
 };
+
+export const getMarginStyle = (field: any) => {
+    const options = field.options || {};
+
+    const getVal = (v: any, fallback: number) => {
+        if (v === undefined || v === null || v === '') return fallback;
+        const num = Number(v);
+        return isNaN(num) ? fallback : num;
+    };
+
+    // Default margin-bottom to 2mm if not specified to prevent elements from touching
+    const defaultMB = 2;
+
+    const marginTop = getVal(options.margin_top, getVal(options.margin_y, getVal(options.margin_all, 0)));
+    const marginBottom = getVal(options.margin_bottom, getVal(options.margin_y, getVal(options.margin_all, defaultMB)));
+    const marginLeft = getVal(options.margin_left, getVal(options.margin_x, getVal(options.margin_all, 0)));
+    const marginRight = getVal(options.margin_right, getVal(options.margin_x, getVal(options.margin_all, 0)));
+
+    return {
+        marginTop: `${marginTop}mm`,
+        marginBottom: `${marginBottom}mm`,
+        marginLeft: `${marginLeft}mm`,
+        marginRight: `${marginRight}mm`,
+    };
+};
+

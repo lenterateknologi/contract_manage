@@ -2,14 +2,11 @@
 
 namespace Database\Seeders;
 
-use App\Models\ContractStatus;
 use App\Models\ContractType;
-use App\Models\Department;
 use App\Models\MasterAction;
 use App\Models\Role;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
-use App\Models\WorkflowStepDepartment;
 use App\Models\WorkflowStepRole;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -35,18 +32,18 @@ class TestWorkflowSeeder extends Seeder
             foreach ($actions as $code => $name) {
                 $ma = MasterAction::updateOrCreate(
                     ['code' => $code],
-                    ['name' => $name, 'is_active' => true]
+                    ['name' => $name, 'is_active' => true],
                 );
                 $actionIds[$code] = $ma->id;
             }
 
             // 2. Get Roles
             $roles = Role::pluck('id', 'name')->toArray();
-            
+
             // 3. Create a Test Contract Type
             $testType = ContractType::updateOrCreate(
                 ['code' => 'TEST-WF'],
-                ['name' => 'Testing Workflow Type', 'is_active' => true]
+                ['name' => 'Testing Workflow Type', 'is_active' => true],
             );
 
             // --- WORKFLOW 1: SIMPLE APPROVAL ---
@@ -93,15 +90,15 @@ class TestWorkflowSeeder extends Seeder
             $s2_1 = WorkflowStep::create(['workflow_id' => $wf2->id, 'step' => 1, 'description' => 'Drafting', 'approver_type' => 'initiator', 'step_category' => 'drafting']);
             $s2_2 = WorkflowStep::create(['workflow_id' => $wf2->id, 'step' => 2, 'description' => 'Staff Review', 'approver_type' => 'role']);
             WorkflowStepRole::create(['workflow_step_id' => $s2_2->id, 'role_name' => 'Staff']);
-            
+
             $s2_3 = WorkflowStep::create(['workflow_id' => $wf2->id, 'step' => 3, 'description' => 'VP Approval', 'approver_type' => 'role']);
             WorkflowStepRole::create(['workflow_step_id' => $s2_3->id, 'role_name' => 'VP']);
 
             $this->createAction($s2_1->id, $actionIds['approve'], $s2_2->id);
-            
+
             $this->createAction($s2_2->id, $actionIds['approve'], $s2_3->id);
             $this->createAction($s2_2->id, $actionIds['return'], $s2_1->id);
-            
+
             $this->createAction($s2_3->id, $actionIds['approve'], null);
             $this->createAction($s2_3->id, $actionIds['reject'], $s2_1->id);
 
@@ -117,11 +114,11 @@ class TestWorkflowSeeder extends Seeder
             $s3_1 = WorkflowStep::create(['workflow_id' => $wf3->id, 'step' => 1, 'description' => 'Drafting', 'approver_type' => 'initiator', 'step_category' => 'drafting']);
             $s3_2 = WorkflowStep::create(['workflow_id' => $wf3->id, 'step' => 2, 'description' => 'Legal Manager Assign PIC', 'approver_type' => 'role']);
             WorkflowStepRole::create(['workflow_step_id' => $s3_2->id, 'role_name' => 'Manager']); // Assuming Manager in Legal
-            
+
             $s3_3 = WorkflowStep::create(['workflow_id' => $wf3->id, 'step' => 3, 'description' => 'PIC Legal Review', 'approver_type' => 'assigned_pic']);
 
             $this->createAction($s3_1->id, $actionIds['approve'], $s3_2->id);
-            
+
             // Action Assign
             DB::table('m_workflow_step_actions')->insert([
                 'id' => Str::uuid()->toString(),
@@ -149,19 +146,19 @@ class TestWorkflowSeeder extends Seeder
             $s4_1 = WorkflowStep::create(['workflow_id' => $wf4->id, 'step' => 1, 'description' => 'Drafting', 'approver_type' => 'initiator', 'step_category' => 'drafting']);
             $s4_2 = WorkflowStep::create(['workflow_id' => $wf4->id, 'step' => 2, 'description' => 'CEO Approval', 'approver_type' => 'role']);
             WorkflowStepRole::create(['workflow_step_id' => $s4_2->id, 'role_name' => 'CEO']);
-            
+
             $s4_3 = WorkflowStep::create([
-                'workflow_id' => $wf4->id, 
-                'step' => 3, 
-                'description' => 'Signing Phase', 
+                'workflow_id' => $wf4->id,
+                'step' => 3,
+                'description' => 'Signing Phase',
                 'approver_type' => 'role',
-                'step_category' => 'signing'
+                'step_category' => 'signing',
             ]);
             // Signing step usually handled by Service based on metadata but needs a step entry
 
             $this->createAction($s4_1->id, $actionIds['approve'], $s4_2->id);
             $this->createAction($s4_2->id, $actionIds['approve'], $s4_3->id);
-            
+
             // Action Sign for Step 3
             DB::table('m_workflow_step_actions')->insert([
                 'id' => Str::uuid()->toString(),

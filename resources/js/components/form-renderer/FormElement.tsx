@@ -1,7 +1,6 @@
 import { cn } from '@/lib/utils';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Copy, GripVertical, Trash2 } from 'lucide-react';
 import React from 'react';
 
 // New modular imports
@@ -9,7 +8,7 @@ import { LabeledValueField, TextAreaField, TextField } from './fields/InputField
 import { EmptyDropZone, GridXLayout, GridYLayout, GroupLayout } from './fields/LayoutFields';
 import { CheckboxField, RadioField, SelectField } from './fields/SelectionFields';
 import { ImageField, PageBreakField, SignatureBoxField, StaticTextField } from './fields/VisualFields';
-import { getPaddingStyle } from './utils';
+import { getPaddingStyle, getMarginStyle } from './utils';
 
 export interface FormField {
     id: string;
@@ -39,6 +38,7 @@ interface FormElementProps {
     onSelect?: (id: string, e?: React.MouseEvent) => void;
     onMove?: (id: string, direction: 'up' | 'down') => void;
     isSelected?: boolean;
+    selectedFieldIds?: string[];
     diffStatus?: 'added' | 'removed' | 'modified';
     comparisonValue?: any;
     diffData?: Record<string, 'added' | 'removed' | 'modified'>;
@@ -52,18 +52,19 @@ export const FormElement: React.FC<FormElementProps> = (props) => {
         value,
         onChange,
         previewData = {},
-        updateValue = () => {},
+        updateValue = () => { },
         readOnly = false,
         isBuilder = false,
         onRemove,
         onDuplicate,
         onSelect,
         isSelected = false,
+        selectedFieldIds = [],
         diffData = {},
         comparisonData = {},
     } = props;
 
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging, isOver } = useSortable({
         id: field.id,
         disabled: !isBuilder,
     });
@@ -75,19 +76,39 @@ export const FormElement: React.FC<FormElementProps> = (props) => {
         zIndex: isDragging ? 10 : 1,
     };
 
+    const customWidth = field.options?.width;
+    const customHeight = field.options?.height;
+    const isContainer = ['group', 'grid_x', 'grid_y', 'grid_view'].includes(field.type);
+
     const containerStyle = {
         display: 'inline-block',
         verticalAlign: 'top',
-        [['group', 'grid_x', 'grid_y', 'grid_view'].includes(field.type) ? 'minWidth' : 'width']: `${field.width}%`,
-        marginTop: `${field.options?.margin_top ?? field.options?.spacing_before ?? 0}mm`,
-        marginBottom: `${field.options?.margin_bottom ?? field.options?.spacing_after ?? 0}mm`,
-        marginLeft: `${field.options?.margin_left ?? 0}mm`,
-        marginRight: `${field.options?.margin_right ?? 0}mm`,
+        minWidth: 0,
+        maxWidth: '100%',
+        boxSizing: 'border-box' as const,
+        overflow: isContainer ? undefined : 'hidden',
+        ...(customWidth !== undefined && customWidth !== ''
+            ? {
+                width: typeof customWidth === 'number' || !isNaN(Number(customWidth)) ? `${customWidth}px` : customWidth,
+                ...(isContainer
+                    ? {
+                        minWidth: typeof customWidth === 'number' || !isNaN(Number(customWidth)) ? `${customWidth}px` : customWidth,
+                    }
+                    : {}),
+            }
+            : {
+                [isContainer ? 'minWidth' : 'width']: `${field.width}%`,
+            }),
+        height: customHeight !== undefined && customHeight !== ''
+            ? (typeof customHeight === 'number' || !isNaN(Number(customHeight)) ? `${customHeight}px` : customHeight)
+            : undefined,
+        ...getMarginStyle(field),
         ...getPaddingStyle(field),
         textIndent: field.options?.first_line_indent ? `${field.options.first_line_indent}mm` : undefined,
         gridColumn: field.options?.grid_col_span ? `span ${field.options.grid_col_span}` : undefined,
         gridRow: field.options?.grid_row_span ? `span ${field.options.grid_row_span}` : undefined,
     };
+
 
     const renderChildren = (pid: string) => {
         const children = allFields.filter((f) => f.parent_id === pid).sort((a, b) => (a.order || 0) - (b.order || 0));
@@ -111,7 +132,8 @@ export const FormElement: React.FC<FormElementProps> = (props) => {
                 updateValue={updateValue}
                 readOnly={readOnly}
                 isBuilder={isBuilder}
-                isSelected={isSelected}
+                isSelected={selectedFieldIds?.includes(child.id)}
+                selectedFieldIds={selectedFieldIds}
                 onRemove={onRemove}
                 onDuplicate={onDuplicate}
                 onSelect={onSelect}
@@ -130,9 +152,9 @@ export const FormElement: React.FC<FormElementProps> = (props) => {
                     </GroupLayout>
                 );
             case 'grid_x':
-                return <GridXLayout field={field}>{renderChildren(field.id)}</GridXLayout>;
+                return <GridXLayout field={field} isBuilder={isBuilder}>{renderChildren(field.id)}</GridXLayout>;
             case 'grid_y':
-                return <GridYLayout field={field}>{renderChildren(field.id)}</GridYLayout>;
+                return <GridYLayout field={field} isBuilder={isBuilder}>{renderChildren(field.id)}</GridYLayout>;
             case 'image':
             case 'f1_header':
                 return <ImageField field={field} />;
@@ -171,7 +193,9 @@ export const FormElement: React.FC<FormElementProps> = (props) => {
             className={cn(
                 'group/element form-element-container relative',
                 isBuilder && 'hover:ring-primary/40 rounded-sm transition-all hover:ring-1',
-                isBuilder && isSelected && 'ring-primary shadow-primary/20 shadow-lg ring-2',
+                isBuilder && isSelected && 'ring-primary shadow-primary/20 shadow-lg ring-2 z-30',
+                isBuilder && isOver && !isDragging && ['group', 'grid_x', 'grid_y', 'grid_view'].includes(field.type) && 'ring-primary ring-2 ring-dashed bg-primary/5',
+                isBuilder && ['group', 'grid_x', 'grid_y'].includes(field.type) && 'p-4 border border-dashed border-muted-foreground/10',
             )}
             onClick={(e) => {
                 if (isBuilder) {
@@ -182,20 +206,12 @@ export const FormElement: React.FC<FormElementProps> = (props) => {
         >
             {renderContent()}
 
-            {isBuilder && isSelected && (
-                <div className="bg-primary animate-in fade-in slide-in-from-bottom-1 absolute -top-3 right-0 z-50 flex items-center gap-1 rounded-t-md px-1.5 py-0.5 text-white shadow-sm">
-                    <button onClick={() => onDuplicate?.(field.id)} className="rounded p-0.5 transition-colors hover:bg-white/20">
-                        <Copy size={10} />
-                    </button>
-                    <button onClick={() => onRemove?.(field.id)} className="rounded p-0.5 transition-colors hover:bg-red-500">
-                        <Trash2 size={10} />
-                    </button>
-                    <div className="mx-1 h-3 w-px bg-white/30" />
-                    <div className="cursor-grab p-0.5 active:cursor-grabbing">
-                        <GripVertical size={10} />
-                    </div>
-                </div>
+            {isBuilder && isOver && !isDragging && !['group', 'grid_x', 'grid_y', 'grid_view'].includes(field.type) && (
+                <div className="absolute -bottom-1 left-0 right-0 h-1 bg-primary rounded-full animate-pulse z-40" />
             )}
+
+
+
         </div>
     );
 };

@@ -29,7 +29,7 @@ export const JSONEditorPanel: React.FC<JSONEditorPanelProps> = ({ localJsonStr, 
                     value={localJsonStr}
                     onChange={(e) => onChange(e.target.value)}
                     className={cn(
-                        'focus:ring-primary/20 min-h-[500px] w-full rounded-2xl border-none bg-slate-950 p-6 font-mono text-[10px] leading-relaxed text-primary-muted transition-all focus:ring-2',
+                        'focus:ring-primary/20 min-h-[500px] w-full rounded-2xl border-none bg-muted/20 p-6 font-mono text-[10px] leading-relaxed text-foreground transition-all focus:ring-2',
                         jsonError && 'ring-destructive/50 text-destructive/80 ring-2',
                     )}
                     spellCheck={false}

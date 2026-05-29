@@ -38,6 +38,8 @@ interface Counts {
     roles: number;
     access_mappings: number;
     navigation_mappings: number;
+    form_templates: number;
+    form_fields: number;
 }
 
 interface Props {
@@ -64,6 +66,8 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
         roles: 0,
         access_mappings: 0,
         navigation_mappings: 0,
+        form_templates: 0,
+        form_fields: 0,
     };
 
     const [selectedEntities, setSelectedEntities] = useState<string[]>([]);
@@ -78,8 +82,8 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
         { id: 'workflows', label: 'Alur Kerja (Workflows)', count: activeCounts.workflows, icon: GitBranch, desc: 'Definisi tahapan approval' },
         { id: 'contracts', label: 'Transaksi Kontrak', count: activeCounts.contracts ?? 0, icon: FileText, desc: 'Data kontrak, persetujuan, & riwayat versi' },
         { id: 'roles', label: 'Peran (Roles)', count: activeCounts.roles, icon: ShieldCheck, desc: 'Jabatan & otoritas sistem' },
-        { id: 'access_mappings', label: 'Pemetaan Hak Akses', count: activeCounts.access_mappings, icon: ShieldCheck, desc: 'Konfigurasi hak akses modul per role' },
-        { id: 'navigation_mappings', label: 'Pemetaan Navigasi', count: activeCounts.navigation_mappings, icon: LayoutGrid, desc: 'Urutan dan grup menu navigasi per role' },
+        { id: 'access_mappings', label: 'Hak Akses & Navigasi', count: activeCounts.access_mappings + activeCounts.navigation_mappings, icon: ShieldCheck, desc: 'Konfigurasi hak akses modul dan struktur menu per role' },
+        { id: 'form_templates', label: 'Custom Formulir', count: activeCounts.form_templates, icon: FileJson, desc: 'Template dan field input formulir F1 & F2' },
     ];
 
     const toggleEntity = (id: string) => {
@@ -101,12 +105,22 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
             showToast('Pilih setidaknya satu entitas untuk diekspor', 'danger');
             return;
         }
+
+        // Expand combined entities
+        const expandedEntities = [...selectedEntities];
+        if (selectedEntities.includes('access_mappings')) {
+            if (!expandedEntities.includes('navigation_mappings')) expandedEntities.push('navigation_mappings');
+        }
+        if (selectedEntities.includes('form_templates')) {
+            if (!expandedEntities.includes('form_fields')) expandedEntities.push('form_fields');
+        }
+
         const queryParams = new URLSearchParams({
-            entities: selectedEntities.join(',')
+            entities: expandedEntities.join(',')
         }).toString();
 
         window.location.href = `${route('admin.master-data-sync.export')}?${queryParams}`;
-        showToast(`Mengekspor ${selectedEntities.length} entitas master`, 'success');
+        showToast(`Mengekspor data master terpilih`, 'success');
     };
 
     const handleDrag = (e: React.DragEvent) => {
@@ -178,9 +192,18 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
             return;
         }
 
+        // Expand combined entities
+        const expandedEntities = [...selectedEntities];
+        if (selectedEntities.includes('access_mappings')) {
+            if (!expandedEntities.includes('navigation_mappings')) expandedEntities.push('navigation_mappings');
+        }
+        if (selectedEntities.includes('form_templates')) {
+            if (!expandedEntities.includes('form_fields')) expandedEntities.push('form_fields');
+        }
+
         setLoading(true);
         setError(null);
-        router.post(route('admin.master-data-sync.clean'), { entities: selectedEntities }, {
+        router.post(route('admin.master-data-sync.clean'), { entities: expandedEntities }, {
             onSuccess: () => {
                 showToast('Entitas data terpilih berhasil dibersihkan', 'success');
                 setSelectedEntities([]);

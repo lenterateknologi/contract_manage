@@ -12,8 +12,8 @@ import { closestCenter, DndContext, DragEndEvent, DragOverlay, KeyboardSensor, P
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { Head, Link, useForm } from '@inertiajs/react';
 import axios from 'axios';
-import { ArrowLeft, Download, FileText, Grid, Layout, List, Loader2, Plus, Save } from 'lucide-react';
-import React, { useEffect, useMemo, useState } from 'react';
+import { ArrowLeft, Download, FileText, Grid, Layout, List, Loader2, Plus, Redo, Save, Undo } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { TrashZone } from './form-builder/components/TrashZone';
 
 interface FormField {
@@ -62,6 +62,506 @@ const WIDTH_OPTIONS = Array.from({ length: 20 }, (_, i) => {
     };
 });
 
+const generatePresetFields = (presetType: string, startingOrder: number, parentId: string | null = null, currentFieldCount: number = 0): FormField[] => {
+    const layoutId = Math.random().toString(36).substr(2, 9);
+    const fields: FormField[] = [];
+
+    if (presetType === 'preset_header_Style_01') {
+        const headerRowId = Math.random().toString(36).substr(2, 9);
+        const logoId = Math.random().toString(36).substr(2, 9);
+        const textContainerId = Math.random().toString(36).substr(2, 9);
+        const companyNameId = Math.random().toString(36).substr(2, 9);
+        const companyDetailsId = Math.random().toString(36).substr(2, 9);
+        const dividerId = Math.random().toString(36).substr(2, 9);
+        const docTitleId = Math.random().toString(36).substr(2, 9);
+        const docSubtitleId = Math.random().toString(36).substr(2, 9);
+
+        // Outer Container (grid_y)
+        fields.push({
+            id: layoutId,
+            parent_id: parentId,
+            label: 'Kop Style_01 (Container)',
+            name: `preset_layout_${currentFieldCount + 1}`,
+            type: 'grid_y',
+            placeholder: '',
+            is_required: false,
+            width: '100',
+            order: startingOrder,
+            options: { gap: 8, align_items: 'stretch', border_style: 'none' },
+        });
+
+        // Horizontal Row (grid_x)
+        fields.push({
+            id: headerRowId,
+            parent_id: layoutId,
+            label: 'Header Row',
+            name: `preset_row_${currentFieldCount + 2}`,
+            type: 'grid_x',
+            placeholder: '',
+            is_required: false,
+            width: '100',
+            order: startingOrder + 0.05,
+            options: { grid_cols: 2, col_sizes: ['110px', '1fr'], gap: 16, border_style: 'none' },
+        });
+
+        // Logo Image
+        fields.push({
+            id: logoId,
+            parent_id: headerRowId,
+            label: 'Logo',
+            name: `preset_logo_${currentFieldCount + 3}`,
+            type: 'image',
+            placeholder: '',
+            is_required: false,
+            width: '100',
+            order: startingOrder + 0.1,
+            options: { logo_url: '/storage/fr_logo.png', width: 90, height: 90, alignment: 'center' },
+        });
+
+        // Text Container (grid_y) inside the row
+        fields.push({
+            id: textContainerId,
+            parent_id: headerRowId,
+            label: 'Text Container',
+            name: `preset_text_container_${currentFieldCount + 4}`,
+            type: 'grid_y',
+            placeholder: '',
+            is_required: false,
+            width: '100',
+            order: startingOrder + 0.15,
+            options: { gap: 4, align_items: 'flex-start', justify_content: 'center', border_style: 'none' },
+        });
+
+        // Company Name
+        fields.push({
+            id: companyNameId,
+            parent_id: textContainerId,
+            label: 'KOP Style 1',
+            name: `preset_text_${currentFieldCount + 5}`,
+            type: 'static_text',
+            placeholder: '',
+            is_required: false,
+            width: '100',
+            order: startingOrder + 0.2,
+            options: { font_size: 18, font_weight: 'bold', font_family: "'Inter', sans-serif", color: '#0f3d6b', border_style: 'none' },
+        });
+
+        // Company Details
+        fields.push({
+            id: companyDetailsId,
+            parent_id: textContainerId,
+            label: 'Alamat: Jl. Surya Kencana, Komp. Pamulang Elok, DI\nEmail: Style_01.group@gmail.com | Telp: +62 878-3155-4715\nWebsite: www.Style_01.com',
+            name: `preset_text_${currentFieldCount + 6}`,
+            type: 'static_text',
+            placeholder: '',
+            is_required: false,
+            width: '100',
+            order: startingOrder + 0.25,
+            options: { font_size: 11, font_weight: 'semibold', font_family: "'Inter', sans-serif", color: '#475569', line_height: '1.4', border_style: 'none' },
+        });
+
+        // Thick Divider line
+        fields.push({
+            id: dividerId,
+            parent_id: layoutId,
+            label: ' ',
+            name: `preset_line_${currentFieldCount + 7}`,
+            type: 'static_text',
+            placeholder: '',
+            is_required: false,
+            width: '100',
+            order: startingOrder + 0.3,
+            options: { border_style: 'solid', border_width: 3, border_color: '#000000', margin_top: 8, margin_bottom: 8 },
+        });
+
+        // Document Title (Underlined)
+        fields.push({
+            id: docTitleId,
+            parent_id: layoutId,
+            label: 'SURAT KONTRAK KERJA',
+            name: `preset_title_${currentFieldCount + 8}`,
+            type: 'static_text',
+            placeholder: '',
+            is_required: false,
+            width: '100',
+            order: startingOrder + 0.35,
+            options: { font_size: 14, font_weight: 'bold', font_family: "'Inter', sans-serif", alignment: 'center', text_decoration: 'underline', border_style: 'none' },
+        });
+
+        // Document Number
+        fields.push({
+            id: docSubtitleId,
+            parent_id: layoutId,
+            label: 'Nomor : 14.012/PT.OGD/11/2022',
+            name: `preset_subtitle_${currentFieldCount + 9}`,
+            type: 'static_text',
+            placeholder: '',
+            is_required: false,
+            width: '100',
+            order: startingOrder + 0.4,
+            options: { font_size: 11, font_weight: 'normal', font_family: "'Inter', sans-serif", alignment: 'center', border_style: 'none' },
+        });
+    } else if (presetType === 'preset_header_Style_02') {
+        const textContainerId = Math.random().toString(36).substr(2, 9);
+        const companyNameId = Math.random().toString(36).substr(2, 9);
+        const companyDetailsId = Math.random().toString(36).substr(2, 9);
+        const dividerId = Math.random().toString(36).substr(2, 9);
+        const docTitleId = Math.random().toString(36).substr(2, 9);
+        const docSubtitleId = Math.random().toString(36).substr(2, 9);
+
+        // Outer Container (grid_y)
+        fields.push({
+            id: layoutId,
+            parent_id: parentId,
+            label: 'Kop Style_02 (Container)',
+            name: `preset_layout_${currentFieldCount + 1}`,
+            type: 'grid_y',
+            placeholder: '',
+            is_required: false,
+            width: '100',
+            order: startingOrder,
+            options: { gap: 8, align_items: 'stretch', border_style: 'none' },
+        });
+
+        // Text Container (grid_y)
+        fields.push({
+            id: textContainerId,
+            parent_id: layoutId,
+            label: 'Text Container',
+            name: `preset_text_container_${currentFieldCount + 2}`,
+            type: 'grid_y',
+            placeholder: '',
+            is_required: false,
+            width: '100',
+            order: startingOrder + 0.1,
+            options: { gap: 4, align_items: 'center', justify_content: 'center', border_style: 'none' },
+        });
+
+        // Company Name
+        fields.push({
+            id: companyNameId,
+            parent_id: textContainerId,
+            label: 'KOP Style 2',
+            name: `preset_text_${currentFieldCount + 3}`,
+            type: 'static_text',
+            placeholder: '',
+            is_required: false,
+            width: '100',
+            order: startingOrder + 0.15,
+            options: { font_size: 20, font_weight: 'bold', font_family: "'Inter', sans-serif", color: '#0f3d6b', alignment: 'center', border_style: 'none' },
+        });
+
+        // Company Details
+        fields.push({
+            id: companyDetailsId,
+            parent_id: textContainerId,
+            label: 'Alamat: Jl. Surya Kencana, Komp. Pamulang Elok, DI\nEmail: Style_02.group@gmail.com | Telp: +62 878-3155-4715\nWebsite: www.Style_02.com',
+            name: `preset_text_${currentFieldCount + 4}`,
+            type: 'static_text',
+            placeholder: '',
+            is_required: false,
+            width: '100',
+            order: startingOrder + 0.2,
+            options: { font_size: 11, font_weight: 'semibold', font_family: "'Inter', sans-serif", color: '#475569', alignment: 'center', line_height: '1.4', border_style: 'none' },
+        });
+
+        // Thick Divider line
+        fields.push({
+            id: dividerId,
+            parent_id: layoutId,
+            label: ' ',
+            name: `preset_line_${currentFieldCount + 5}`,
+            type: 'static_text',
+            placeholder: '',
+            is_required: false,
+            width: '100',
+            order: startingOrder + 0.25,
+            options: { border_style: 'solid', border_width: 3, border_color: '#000000', margin_top: 8, margin_bottom: 8 },
+        });
+
+        // Document Title (Underlined)
+        fields.push({
+            id: docTitleId,
+            parent_id: layoutId,
+            label: 'SURAT KONTRAK KERJA',
+            name: `preset_title_${currentFieldCount + 6}`,
+            type: 'static_text',
+            placeholder: '',
+            is_required: false,
+            width: '100',
+            order: startingOrder + 0.3,
+            options: { font_size: 14, font_weight: 'bold', font_family: "'Inter', sans-serif", alignment: 'center', text_decoration: 'underline', border_style: 'none' },
+        });
+
+        // Document Number
+        fields.push({
+            id: docSubtitleId,
+            parent_id: layoutId,
+            label: 'Nomor : 14.012/PT.OGD/11/2022',
+            name: `preset_subtitle_${currentFieldCount + 7}`,
+            type: 'static_text',
+            placeholder: '',
+            is_required: false,
+            width: '100',
+            order: startingOrder + 0.35,
+            options: { font_size: 11, font_weight: 'normal', font_family: "'Inter', sans-serif", alignment: 'center', border_style: 'none' },
+        });
+    } else if (presetType === 'preset_content_opening') {
+        fields.push({
+            id: layoutId,
+            parent_id: parentId,
+            label: 'Pada hari ini Rabu, 23 November 2022 telah ditandatangani Surat Kontrak Kerja antara:',
+            name: `preset_opening_${currentFieldCount + 1}`,
+            type: 'static_text',
+            placeholder: '',
+            is_required: false,
+            width: '100',
+            order: startingOrder,
+            options: { 
+                font_size: 12, 
+                font_weight: 'normal', 
+                font_family: "'Times New Roman', serif", 
+                line_height: '1.6', 
+                margin_top: 10, 
+                margin_bottom: 10,
+                text_align: 'justify'
+            },
+        });
+    } else if (presetType === 'preset_party_block' || presetType === 'preset_party_block_double') {
+        // Helper to build a single party block
+        const buildPartyBlock = (partyNum: number, parentBlockId: string | null, baseOrder: number, baseCount: number): FormField[] => {
+            const partyFields: FormField[] = [];
+            const blockId = Math.random().toString(36).substr(2, 9);
+            const headerRowId = Math.random().toString(36).substr(2, 9);
+            const numberLabelId = Math.random().toString(36).substr(2, 9);
+            const namaId = Math.random().toString(36).substr(2, 9);
+            const jabatanId = Math.random().toString(36).substr(2, 9);
+            const alamatId = Math.random().toString(36).substr(2, 9);
+            const descId = Math.random().toString(36).substr(2, 9);
+
+            // Outer container (grid_y) for the whole party block
+            partyFields.push({
+                id: blockId,
+                parent_id: parentBlockId,
+                label: `Blok Pihak ${partyNum === 1 ? 'Pertama' : partyNum === 2 ? 'Kedua' : partyNum}`,
+                name: `party_block_${baseCount + (partyNum * 10)}`,
+                type: 'grid_y',
+                placeholder: '',
+                is_required: false,
+                width: '100',
+                order: baseOrder + (partyNum * 0.1),
+                options: { gap: 0, align_items: 'stretch', border_style: 'none', margin_bottom: 8 },
+            } as FormField);
+
+            // Header row: number + (first labeled_value Nama in same line)
+            partyFields.push({
+                id: headerRowId,
+                parent_id: blockId,
+                label: `Pihak ${partyNum === 1 ? 'Pertama' : partyNum === 2 ? 'Kedua' : partyNum}`,
+                name: `party_header_${baseCount + (partyNum * 10) + 1}`,
+                type: 'grid_x',
+                placeholder: '',
+                is_required: false,
+                width: '100',
+                order: baseOrder + (partyNum * 0.1) + 0.01,
+                options: { grid_cols: 2, col_sizes: ['28px', '1fr'], gap: 0, border_style: 'none' },
+            } as FormField);
+
+            // Party number label (1. / 2.)
+            partyFields.push({
+                id: numberLabelId,
+                parent_id: headerRowId,
+                label: `${partyNum}.`,
+                name: `party_num_${baseCount + (partyNum * 10) + 2}`,
+                type: 'static_text',
+                placeholder: '',
+                is_required: false,
+                width: '100',
+                order: baseOrder + (partyNum * 0.1) + 0.02,
+                options: { font_size: 12, font_weight: 'normal', font_family: "'Times New Roman', serif", border_style: 'none' },
+            } as FormField);
+
+            // Nama field (labeled_value inside header row)
+            partyFields.push({
+                id: namaId,
+                parent_id: headerRowId,
+                label: 'Nama',
+                name: `party_nama_${baseCount + (partyNum * 10) + 3}`,
+                type: 'labeled_value',
+                placeholder: '',
+                is_required: false,
+                width: '100',
+                order: baseOrder + (partyNum * 0.1) + 0.03,
+                options: {
+                    label_width: '90',
+                    show_colon: true,
+                    field_style: 'none',
+                    font_size: 12,
+                    font_weight: 'normal',
+                    font_family: "'Times New Roman', serif",
+                },
+            } as FormField);
+
+            // Jabatan field (directly in blockId, below header row)
+            partyFields.push({
+                id: jabatanId,
+                parent_id: blockId,
+                label: 'Jabatan',
+                name: `party_jabatan_${baseCount + (partyNum * 10) + 4}`,
+                type: 'labeled_value',
+                placeholder: '',
+                is_required: false,
+                width: '100',
+                order: baseOrder + (partyNum * 0.1) + 0.04,
+                options: {
+                    label_width: '90',
+                    show_colon: true,
+                    field_style: 'none',
+                    font_size: 12,
+                    font_weight: 'normal',
+                    font_family: "'Times New Roman', serif",
+                    margin_left: 28,
+                },
+            } as FormField);
+
+            // Alamat field
+            partyFields.push({
+                id: alamatId,
+                parent_id: blockId,
+                label: 'Alamat',
+                name: `party_alamat_${baseCount + (partyNum * 10) + 5}`,
+                type: 'labeled_value',
+                placeholder: '',
+                is_required: false,
+                width: '100',
+                order: baseOrder + (partyNum * 0.1) + 0.05,
+                options: {
+                    label_width: '90',
+                    show_colon: true,
+                    field_style: 'none',
+                    font_size: 12,
+                    font_weight: 'normal',
+                    font_family: "'Times New Roman', serif",
+                    margin_left: 28,
+                },
+            } as FormField);
+
+            // Description paragraph (selanjutnya disebut PIHAK ...)
+            partyFields.push({
+                id: descId,
+                parent_id: blockId,
+                label: partyNum === 1
+                    ? 'Dalam hal ini bertindak atas nama perusahaan yang berkedudukan sebagai Pemberi Kerja yang selanjutnya disebut **PIHAK PERTAMA.**'
+                    : 'Dalam hal ini bertindak untuk dan atas nama sendiri selanjutnya disebut **PIHAK KEDUA.**',
+                name: `party_desc_${baseCount + (partyNum * 10) + 6}`,
+                type: 'static_text',
+                placeholder: '',
+                is_required: false,
+                width: '100',
+                order: baseOrder + (partyNum * 0.1) + 0.06,
+                options: {
+                    font_size: 12,
+                    font_weight: 'normal',
+                    font_family: "'Times New Roman', serif",
+                    line_height: '1.6',
+                    text_align: 'justify',
+                    border_style: 'none',
+                    margin_left: 28,
+                    margin_top: 2,
+                },
+            } as FormField);
+
+            return partyFields;
+        };
+
+        if (presetType === 'preset_party_block') {
+            // Single party block (e.g. Pihak 1)
+            const singleFields = buildPartyBlock(1, parentId, startingOrder, currentFieldCount);
+            fields.push(...singleFields);
+        } else {
+            // Double party: Pihak 1 and Pihak 2 in sequence under a grid_y wrapper
+            const wrapId = Math.random().toString(36).substr(2, 9);
+            fields.push({
+                id: wrapId,
+                parent_id: parentId,
+                label: 'Blok Para Pihak',
+                name: `parties_wrapper_${currentFieldCount + 1}`,
+                type: 'grid_y',
+                placeholder: '',
+                is_required: false,
+                width: '100',
+                order: startingOrder,
+                options: { gap: 8, align_items: 'stretch', border_style: 'none' },
+            } as FormField);
+
+            const p1Fields = buildPartyBlock(1, wrapId, startingOrder + 0.01, currentFieldCount);
+            const p2Fields = buildPartyBlock(2, wrapId, startingOrder + 0.11, currentFieldCount + 20);
+            fields.push(...p1Fields, ...p2Fields);
+        }
+    } else if (presetType === 'preset_content_commercial') {
+        const titleId = Math.random().toString(36).substr(2, 9);
+            const fieldsToGenerate = [
+                { label: 'MASA BERLAKU / JANGKA WAKTU', name: 'masa_berlaku' },
+                { label: 'LOKASI / AREA PEKERJAAN', name: 'lokasi_pekerjaan' },
+                { label: 'DIMENSI / LUAS (M2)', name: 'dimensi_luas' },
+                { label: 'NILAI TRANSAKSI / IMBALAN JASA', name: 'nilai_transaksi' },
+                { label: 'MEKANISME & SYARAT PEMBAYARAN', name: 'mekanisme_pembayaran' },
+                { label: 'PEMBEBANAN PPN', name: 'beban_ppn' },
+                { label: 'PEMBEBANAN PPH', name: 'beban_pph' },
+                { label: 'RINGKASAN KLAUSUL PENTING', name: 'ringkasan_klausul' },
+            ];
+
+            fields.push({
+                id: layoutId,
+                parent_id: parentId,
+                label: 'Blok Detail Komersial (Container)',
+                name: `preset_commercial_layout_${currentFieldCount + 1}`,
+                type: 'grid_y',
+                placeholder: '',
+                is_required: false,
+                width: '100',
+                order: startingOrder,
+                options: { gap: 4, align_items: 'stretch', margin_top: 15, margin_bottom: 10 },
+            } as FormField);
+
+            fields.push({
+                id: titleId,
+                parent_id: layoutId,
+                label: 'DETAIL KOMERSIAL & OPERASIONAL',
+                name: `preset_commercial_title_${currentFieldCount + 2}`,
+                type: 'static_text',
+                placeholder: '',
+                is_required: false,
+                width: '100',
+                order: startingOrder + 0.01,
+                options: { font_size: 12, font_weight: 'bold', font_family: "'Times New Roman', serif", text_decoration: 'underline', margin_bottom: 8 },
+            } as FormField);
+
+            fieldsToGenerate.forEach((item, idx) => {
+                fields.push({
+                    id: Math.random().toString(36).substr(2, 9),
+                    parent_id: layoutId,
+                    label: item.label,
+                    name: `${item.name}_${currentFieldCount + idx + 3}`,
+                    type: 'labeled_value',
+                    placeholder: '—',
+                    is_required: false,
+                    width: '100',
+                    order: startingOrder + 0.02 + (idx * 0.01),
+                    options: { 
+                        label_width: '220', 
+                        show_colon: true, 
+                        field_style: 'dashed_bottom',
+                        font_size: 11,
+                        font_family: "'Times New Roman', serif"
+                    },
+                } as FormField);
+            });
+    }
+
+    return fields;
+};
+
 function FormBuilder({ template }: Props) {
     const { data, setData, post, processing } = useForm<FormDataType>({
         name: template.name || '',
@@ -69,6 +569,7 @@ function FormBuilder({ template }: Props) {
         has_letterhead: template.has_letterhead || false,
         letterhead_json: template.letterhead_json || {
             margins: { top: 15, bottom: 15, left: 15, right: 15 },
+            palette: { primary: '#0f172a', secondary: '#475569', accent: '#3b82f6' },
         },
         fields: ((template?.fields as any[]) || []).map((f) => {
             // Migrate legacy width strings
@@ -140,6 +641,11 @@ function FormBuilder({ template }: Props) {
     const [pdfJobStatus, setPdfJobStatus] = useState<any>(null);
     const [leftPanelTab, setLeftPanelTab] = useState<'library' | 'structure' | 'json'>('library');
 
+    // Undo / Redo State
+    const [history, setHistory] = useState<FormField[][]>([]);
+    const [historyIndex, setHistoryIndex] = useState(-1);
+    const [isUndoingRedoing, setIsUndoingRedoing] = useState(false);
+
     // Custom Dialog State (replaces native alert/confirm)
     const [dialog, setDialog] = useState<{
         open: boolean;
@@ -153,12 +659,109 @@ function FormBuilder({ template }: Props) {
         title: '',
         description: '',
         variant: 'danger',
-        onConfirm: () => {},
+        onConfirm: () => { },
     });
     const closeDialog = () => setDialog((d) => ({ ...d, open: false }));
     const openDialog = (opts: Omit<typeof dialog, 'open'>) => setDialog({ ...opts, open: true });
 
+    // --- UNDO / REDO LOGIC ---
+    useEffect(() => {
+        if (isUndoingRedoing) {
+            setIsUndoingRedoing(false);
+            return;
+        }
+
+        const currentFields = JSON.stringify(data.fields);
+        const lastSnapshot = historyIndex >= 0 ? JSON.stringify(history[historyIndex]) : null;
+
+        if (currentFields !== lastSnapshot) {
+            const newHistory = history.slice(0, historyIndex + 1);
+            newHistory.push(JSON.parse(currentFields));
+
+            // Limit to last 20 changes
+            if (newHistory.length > 20) {
+                newHistory.shift();
+                setHistory(newHistory);
+                setHistoryIndex(19);
+            } else {
+                setHistory(newHistory);
+                setHistoryIndex(newHistory.length - 1);
+            }
+        }
+    }, [data.fields, history, historyIndex, isUndoingRedoing]);
+
+    const undo = useCallback(() => {
+        if (historyIndex > 0) {
+            setIsUndoingRedoing(true);
+            const prevIndex = historyIndex - 1;
+            setHistoryIndex(prevIndex);
+            setData('fields', JSON.parse(JSON.stringify(history[prevIndex])));
+        }
+    }, [history, historyIndex, setData]);
+
+    const redo = useCallback(() => {
+        if (historyIndex < history.length - 1) {
+            setIsUndoingRedoing(true);
+            const nextIndex = historyIndex + 1;
+            setHistoryIndex(nextIndex);
+            setData('fields', JSON.parse(JSON.stringify(history[nextIndex])));
+        }
+    }, [history, historyIndex, setData]);
+
     // --- ACTIONS & MOVEMENT ---
+    const handleMoveSelected = useCallback((direction: 'up' | 'down') => {
+        if (selectedFieldIds.length === 0) return;
+
+        let newFields = [...data.fields];
+        // Sort selected IDs by their current order in the fields array
+        const sortedSelectedIds = [...selectedFieldIds].sort((a, b) => {
+            const fieldA = newFields.find((f) => f.id === a);
+            const fieldB = newFields.find((f) => f.id === b);
+            return (fieldA?.order || 0) - (fieldB?.order || 0);
+        });
+
+        if (direction === 'up') {
+            const firstId = sortedSelectedIds[0];
+            const firstField = newFields.find((f) => f.id === firstId);
+            if (!firstField) return;
+
+            // Find siblings in the same parent
+            const siblings = newFields.filter((f) => f.parent_id === firstField.parent_id).sort((a, b) => a.order - b.order);
+
+            const firstIndexInSiblings = siblings.findIndex((s) => s.id === firstId);
+            if (firstIndexInSiblings > 0) {
+                const neighbor = siblings[firstIndexInSiblings - 1];
+                // Move selected group items to just before neighbor
+                const neighborOrder = neighbor.order;
+                sortedSelectedIds.forEach((id, i) => {
+                    const f = newFields.find((field) => field.id === id);
+                    if (f) f.order = neighborOrder - 0.5 + i * 0.1;
+                });
+            }
+        } else {
+            const lastId = sortedSelectedIds[sortedSelectedIds.length - 1];
+            const lastField = newFields.find((f) => f.id === lastId);
+            if (!lastField) return;
+
+            const siblings = newFields.filter((f) => f.parent_id === lastField.parent_id).sort((a, b) => a.order - b.order);
+
+            const lastIndexInSiblings = siblings.findIndex((s) => s.id === lastId);
+            if (lastIndexInSiblings < siblings.length - 1) {
+                const neighbor = siblings[lastIndexInSiblings + 1];
+                // Move selected group items to just after neighbor
+                const neighborOrder = neighbor.order;
+                sortedSelectedIds.forEach((id, i) => {
+                    const f = newFields.find((field) => field.id === id);
+                    if (f) f.order = neighborOrder + 0.5 + i * 0.1;
+                });
+            }
+        }
+
+        // Re-normalize all field orders
+        newFields = newFields.sort((a, b) => a.order - b.order).map((f, i) => ({ ...f, order: i }));
+        setData('fields', newFields);
+    }, [data.fields, selectedFieldIds, setData]);
+
     const moveField = (id: string, direction: 'up' | 'down' | 'in' | 'out') => {
         // Redirect simple up/down to the batch handler if multiple selected
         if ((direction === 'up' || direction === 'down') && selectedFieldIds.length > 1) {
@@ -210,59 +813,6 @@ function FormBuilder({ template }: Props) {
         setData('fields', newFields);
     };
 
-    const handleMoveSelected = (direction: 'up' | 'down') => {
-        if (selectedFieldIds.length === 0) return;
-
-        let newFields = [...data.fields];
-        // Sort selected IDs by their current order in the fields array
-        const sortedSelectedIds = [...selectedFieldIds].sort((a, b) => {
-            const fieldA = newFields.find((f) => f.id === a);
-            const fieldB = newFields.find((f) => f.id === b);
-            return (fieldA?.order || 0) - (fieldB?.order || 0);
-        });
-
-        if (direction === 'up') {
-            const firstId = sortedSelectedIds[0];
-            const firstField = newFields.find((f) => f.id === firstId);
-            if (!firstField) return;
-
-            // Find siblings in the same parent
-            const siblings = newFields.filter((f) => f.parent_id === firstField.parent_id).sort((a, b) => a.order - b.order);
-
-            const firstIndexInSiblings = siblings.findIndex((s) => s.id === firstId);
-            if (firstIndexInSiblings > 0) {
-                const neighbor = siblings[firstIndexInSiblings - 1];
-                // Move selected group items to just before neighbor
-                const neighborOrder = neighbor.order;
-                sortedSelectedIds.forEach((id, i) => {
-                    const f = newFields.find((field) => field.id === id);
-                    if (f) f.order = neighborOrder - 0.5 + i * 0.1;
-                });
-            }
-        } else {
-            const lastId = sortedSelectedIds[sortedSelectedIds.length - 1];
-            const lastField = newFields.find((f) => f.id === lastId);
-            if (!lastField) return;
-
-            const siblings = newFields.filter((f) => f.parent_id === lastField.parent_id).sort((a, b) => a.order - b.order);
-
-            const lastIndexInSiblings = siblings.findIndex((s) => s.id === lastId);
-            if (lastIndexInSiblings < siblings.length - 1) {
-                const neighbor = siblings[lastIndexInSiblings + 1];
-                // Move selected group items to just after neighbor
-                const neighborOrder = neighbor.order;
-                sortedSelectedIds.forEach((id, i) => {
-                    const f = newFields.find((field) => field.id === id);
-                    if (f) f.order = neighborOrder + 0.5 + i * 0.1;
-                });
-            }
-        }
-
-        // Re-normalize all field orders
-        newFields = newFields.sort((a, b) => a.order - b.order).map((f, i) => ({ ...f, order: i }));
-        setData('fields', newFields);
-    };
-
     // --- EFFECTS ---
     // Close context menu and handle keyboard shortcuts
     useEffect(() => {
@@ -270,6 +820,41 @@ function FormBuilder({ template }: Props) {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
                 setContextMenu(null);
+            }
+
+            // Delete Shortcuts
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                if (selectedFieldIds.length > 0 && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
+                    e.preventDefault();
+                    removeField(selectedFieldIds);
+                }
+            }
+
+            // Undo / Redo Shortcuts
+            if ((e.ctrlKey || e.metaKey)) {
+                if (e.key === 'z') {
+                    if (e.shiftKey) {
+                        e.preventDefault();
+                        redo();
+                    } else {
+                        e.preventDefault();
+                        undo();
+                    }
+                } else if (e.key === 'y') {
+                    e.preventDefault();
+                    redo();
+                } else if (e.key === 's') {
+                    e.preventDefault();
+                    // We need to trigger the submit, but we don't have a direct reference to the event
+                    // Let's call the same logic as handleSave but without the event
+                    post(route('admin.form-templates.save', template.id));
+                } else if (e.key === 'd') {
+                    // Cmd/Ctrl+D: Duplicate selected
+                    if (selectedFieldIds.length > 0 && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
+                        e.preventDefault();
+                        selectedFieldIds.forEach((id) => duplicateField(id));
+                    }
+                }
             }
 
             // Movement Shortcuts
@@ -289,7 +874,7 @@ function FormBuilder({ template }: Props) {
             window.removeEventListener('click', handleClick);
             window.removeEventListener('keydown', handleKeyDown);
         };
-    }, [selectedFieldIds, handleMoveSelected]);
+    }, [selectedFieldIds, handleMoveSelected, undo, redo]);
 
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
@@ -367,7 +952,13 @@ function FormBuilder({ template }: Props) {
         if (!over) return;
 
         const activeId = active.id.toString();
-        const overId = over.id.toString();
+        let overId = over.id.toString();
+
+        // If over a placeholder, route to the parent grid layout ID
+        if (overId.startsWith('placeholder:')) {
+            const parts = overId.split(':');
+            overId = parts[1];
+        }
 
         // Check if dropped into trash
         if (overId === 'trash-zone') {
@@ -378,11 +969,32 @@ function FormBuilder({ template }: Props) {
         // Check if dragging from library
         if (activeId.startsWith('lib-')) {
             const typeValue = activeId.replace('lib-', '');
-            const typeInfo = (FIELD_TYPES.flatMap((c) => c.items) as any[]).find((t) => t.value === typeValue);
-
             const overField = (data?.fields || []).find((f) => f.id === overId);
             const parentId =
                 overField && ['group', 'grid_view', 'grid_x', 'grid_y'].includes(overField.type) ? overField.id : overField?.parent_id || null;
+
+            if (typeValue.startsWith('preset_')) {
+                const overIndex = (data?.fields || []).findIndex((f) => f.id === overId);
+                const startingOrder = overIndex !== -1 ? overIndex + 0.1 : (data?.fields || []).length;
+
+                const presetFields = generatePresetFields(typeValue, startingOrder, parentId, (data?.fields || []).length);
+                const newFields = [...(data?.fields || [])];
+
+                if (overIndex !== -1) {
+                    newFields.splice(overIndex + 1, 0, ...presetFields);
+                } else {
+                    newFields.push(...presetFields);
+                }
+
+                setData(
+                    'fields',
+                    newFields.map((f, i) => ({ ...f, order: i })),
+                );
+                setSelectedFieldIds([presetFields[0].id]);
+                return;
+            }
+
+            const typeInfo = (FIELD_TYPES.flatMap((c) => c.items) as any[]).find((t) => t.value === typeValue);
 
             const newField: FormField = {
                 id: Math.random().toString(36).substr(2, 9),
@@ -396,15 +1008,15 @@ function FormBuilder({ template }: Props) {
                 options:
                     typeValue === 'kop_surat'
                         ? {
-                              logo_url: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=2117&auto=format&fit=crop',
-                              logo_size: 80,
-                              logo_position: 'left',
-                              description:
-                                  'Jl. Sudirman No. 123, SCBD, Jakarta Selatan, 12190\nTelp: (021) 5088 1234 • Fax: (021) 5088 5678\nEmail: info@company.com • Website: www.company.com',
-                          }
+                            logo_url: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=2117&auto=format&fit=crop',
+                            logo_size: 80,
+                            logo_position: 'left',
+                            description:
+                                'Jl. Sudirman No. 123, SCBD, Jakarta Selatan, 12190\nTelp: (021) 5088 1234 • Fax: (021) 5088 5678\nEmail: info@company.com • Website: www.company.com',
+                        }
                         : typeValue === 'select' || typeValue === 'radio'
-                          ? ['Option 1', 'Option 2']
-                          : null,
+                            ? ['Option 1', 'Option 2']
+                            : null,
                 order: (data?.fields || []).length,
             };
 
@@ -470,6 +1082,14 @@ function FormBuilder({ template }: Props) {
     };
 
     const addField = (typeValue: string) => {
+        if (typeValue.startsWith('preset_')) {
+            const presetFields = generatePresetFields(typeValue, data.fields.length, null, data.fields.length);
+            const newFields = [...data.fields, ...presetFields].map((f, i) => ({ ...f, order: i }));
+            setData('fields', newFields);
+            setSelectedFieldIds([presetFields[0].id]);
+            return;
+        }
+
         const typeInfo = FIELD_TYPES.flatMap((c) => c.items).find((t) => t.value === typeValue);
         const newField: FormField = {
             id: Math.random().toString(36).substr(2, 9),
@@ -486,7 +1106,7 @@ function FormBuilder({ template }: Props) {
             },
             order: data.fields.length,
         };
-        const newFields = [...data.fields, newField];
+        const newFields = [...data.fields, newField].map((f, i) => ({ ...f, order: i }));
         setData('fields', newFields);
         setSelectedFieldIds([newField.id]);
     };
@@ -494,6 +1114,16 @@ function FormBuilder({ template }: Props) {
     const addFieldAfter = (targetId: string, typeValue: string) => {
         const targetField = data.fields.find((f) => f.id === targetId);
         if (!targetField) return;
+
+        if (typeValue.startsWith('preset_')) {
+            const presetFields = generatePresetFields(typeValue, targetField.order + 0.5, targetField.parent_id, data.fields.length);
+            const newFields = [...data.fields, ...presetFields]
+                .sort((a, b) => a.order - b.order)
+                .map((f, i) => ({ ...f, order: i }));
+            setData('fields', newFields);
+            setSelectedFieldIds([presetFields[0].id]);
+            return;
+        }
 
         const typeInfo = FIELD_TYPES.flatMap((c) => c.items).find((t) => t.value === typeValue);
         const newField: FormField = {
@@ -512,7 +1142,9 @@ function FormBuilder({ template }: Props) {
             order: targetField.order + 0.5, // Temp order to facilitate sorting
         };
 
-        const newFields = [...data.fields, newField].sort((a, b) => a.order - b.order).map((f, i) => ({ ...f, order: i }));
+        const newFields = [...data.fields, newField]
+            .sort((a, b) => a.order - b.order)
+            .map((f, i) => ({ ...f, order: i }));
 
         setData('fields', newFields);
         setSelectedFieldIds([newField.id]);
@@ -558,50 +1190,87 @@ function FormBuilder({ template }: Props) {
     const duplicateField = (targetId: string) => {
         const originalFields = [...data.fields];
         const fieldsToDuplicate: FormField[] = [];
-        const idMap = new Map<string, string>();
 
-        const getDuplicateRecursive = (id: string, newParentId: string | null) => {
+        // Helper to find all descendant IDs
+        const getAllDescendantIds = (parentId: string, acc: string[]) => {
+            const children = originalFields.filter((f) => f.parent_id === parentId);
+            children.forEach((child) => {
+                acc.push(child.id);
+                getAllDescendantIds(child.id, acc);
+            });
+        };
+
+        const targetSubtreeIds = [targetId];
+        getAllDescendantIds(targetId, targetSubtreeIds);
+
+        // Find max order in current subtree to place duplicate after it
+        const targetSubtreeFields = originalFields.filter((f) => targetSubtreeIds.includes(f.id));
+        const maxOrderInSubtree = Math.max(...targetSubtreeFields.map((f) => f.order));
+
+        const getDuplicateRecursive = (id: string, newParentId: string | null, orderOffset: number) => {
             const original = originalFields.find((f) => f.id === id);
             if (!original) return;
 
             const newId = Math.random().toString(36).substr(2, 9);
-            idMap.set(id, newId);
 
             const duplicate: FormField = {
                 ...JSON.parse(JSON.stringify(original)), // Deep copy
                 id: newId,
                 parent_id: newParentId,
-                name: `${original.name}_copy`,
-                order: original.order + 0.1,
+                name: `${original.name}_copy_${Math.random().toString(36).substr(2, 4)}`,
+                order: original.order + orderOffset,
             };
             fieldsToDuplicate.push(duplicate);
 
-            // Find children
+            // Find children and duplicate them
             const children = originalFields.filter((f) => f.parent_id === id);
-            children.forEach((child) => getDuplicateRecursive(child.id, newId));
+            children.forEach((child) => getDuplicateRecursive(child.id, newId, orderOffset));
         };
 
-        getDuplicateRecursive(targetId, originalFields.find((f) => f.id === targetId)?.parent_id || null);
+        const targetField = originalFields.find((f) => f.id === targetId);
+        if (!targetField) return;
 
-        const newFields = [...originalFields, ...fieldsToDuplicate].sort((a, b) => a.order - b.order).map((f, i) => ({ ...f, order: i }));
+        // Calculate offset to place duplicate subtree right after original subtree
+        const offset = maxOrderInSubtree - targetField.order + 0.1;
+
+        getDuplicateRecursive(targetId, targetField.parent_id || null, offset);
+
+        const newFields = [...originalFields, ...fieldsToDuplicate]
+            .sort((a, b) => a.order - b.order)
+            .map((f, i) => ({ ...f, order: i }));
 
         setData('fields', newFields);
-        setSelectedFieldIds([fieldsToDuplicate[0].id]);
+        // Select the new root duplicated field
+        if (fieldsToDuplicate.length > 0) {
+            setSelectedFieldIds([fieldsToDuplicate[0].id]);
+        }
     };
 
-    const removeField = (id: string) => {
+    const removeField = (ids: string | string[]) => {
+        const idArray = Array.isArray(ids) ? ids : [ids];
         openDialog({
             title: 'Hapus Elemen',
-            description: 'Yakin ingin menghapus elemen ini? Tindakan ini tidak dapat dibatalkan.',
+            description: idArray.length > 1
+                ? `Yakin ingin menghapus ${idArray.length} elemen terpilih beserta seluruh isinya? Tindakan ini tidak dapat dibatalkan.`
+                : 'Yakin ingin menghapus elemen ini beserta seluruh isinya? Tindakan ini tidak dapat dibatalkan.',
             variant: 'danger',
             confirmText: 'Ya, Hapus',
             onConfirm: () => {
-                const newFields = data.fields.filter((f) => f.id !== id && f.parent_id !== id);
+                const idsToRemove = new Set<string>();
+                const getDescendantIds = (targetId: string, acc: Set<string>) => {
+                    acc.add(targetId);
+                    data.fields
+                        .filter((f) => f.parent_id === targetId)
+                        .forEach((child) => getDescendantIds(child.id, acc));
+                };
+                idArray.forEach((id) => getDescendantIds(id, idsToRemove));
+
+                const newFields = data.fields.filter((f) => !idsToRemove.has(f.id));
                 setData(
                     'fields',
                     newFields.map((f, i) => ({ ...f, order: i })),
                 );
-                if (selectedFieldId === id) setSelectedFieldIds([]);
+                setSelectedFieldIds((prev) => prev.filter((i) => !idsToRemove.has(i)));
                 closeDialog();
             },
         });
@@ -620,8 +1289,25 @@ function FormBuilder({ template }: Props) {
         });
     };
 
-    const updateField = (id: string, key: keyof FormField, value: any) => {
-        const newFields = data.fields.map((f) => (f.id === id ? { ...f, [key]: value } : f));
+    const updateField = (ids: string | string[], key: keyof FormField, value: any) => {
+        const idArray = Array.isArray(ids) ? ids : [ids];
+        const newFields = data.fields.map((f) => (idArray.includes(f.id) ? { ...f, [key]: value } : f));
+        setData('fields', newFields);
+    };
+
+    const bulkUpdateOptions = (ids: string[], optionsUpdate: any) => {
+        const newFields = data.fields.map((f) => {
+            if (ids.includes(f.id)) {
+                return {
+                    ...f,
+                    options: {
+                        ...(f.options || {}),
+                        ...optionsUpdate,
+                    },
+                };
+            }
+            return f;
+        });
         setData('fields', newFields);
     };
 
@@ -685,7 +1371,9 @@ function FormBuilder({ template }: Props) {
         post(route('admin.form-templates.save', template.id));
     };
 
-    const selectedField = (data?.fields || []).find((f) => f.id === selectedFieldId);
+    const selectedFields = useMemo(() => {
+        return (data?.fields || []).filter((f) => selectedFieldIds.includes(f.id));
+    }, [data.fields, selectedFieldIds]);
 
     const fieldTree = useMemo(() => {
         const buildRecursiveTree = (parentId: string | null = null): any[] => {
@@ -752,7 +1440,7 @@ function FormBuilder({ template }: Props) {
                 return res;
             };
 
-            const flatFields = flatten(parsed);
+            const flatFields = flatten(parsed).map((f, i) => ({ ...f, order: i }));
             setData('fields', flatFields);
         } catch (e: any) {
             openDialog({
@@ -794,11 +1482,36 @@ function FormBuilder({ template }: Props) {
                             <h1 className="text-foreground font-sans text-sm font-semibold tracking-tight uppercase">{data.name}</h1>
                             <div className="flex items-center gap-1.5 opacity-60">
                                 <Layout size={10} className="text-primary" />
-                                <span className="text-[9px] font-bold tracking-[0.2em] uppercase">Visual Multi-Block Designer</span>
+                                <span className="text-[9px] font-semibold tracking-[0.2em] uppercase">Visual Multi-Block Designer</span>
                             </div>
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
+                        <div className="mr-2 flex items-center gap-1 border-r pr-3">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={undo}
+                                disabled={historyIndex <= 0}
+                                className="h-8 w-8 transition-all active:scale-90"
+                                title="Undo (Ctrl+Z)"
+                            >
+                                <Undo size={16} />
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={redo}
+                                disabled={historyIndex >= history.length - 1}
+                                className="h-8 w-8 transition-all active:scale-90"
+                                title="Redo (Ctrl+Y)"
+                            >
+                                <Redo size={16} />
+                            </Button>
+                        </div>
+
                         <Button
                             type="button"
                             variant="outline"
@@ -868,6 +1581,9 @@ function FormBuilder({ template }: Props) {
                                             selectedFieldIds={selectedFieldIds}
                                             onSelectField={handleSelectField}
                                             fieldsCount={data.fields.length}
+                                            onRemoveField={removeField}
+                                            onRemoveAll={() => removeField((data.fields || []).map(f => f.id))}
+                                            onRemoveSelected={() => removeField(selectedFieldIds)}
                                         />
                                     )}
 
@@ -908,17 +1624,19 @@ function FormBuilder({ template }: Props) {
                         >
                             <div className="border-border bg-muted/20 flex items-center justify-between border-b px-4 py-3">
                                 <h1 className="text-muted-foreground font-sans text-[10px] font-semibold tracking-[0.2em] uppercase">
-                                    {selectedFieldId ? 'Block Properties' : 'Template Settings'}
+                                    {selectedFieldIds.length > 0 ? 'Block Properties' : 'Template Settings'}
                                 </h1>
                                 <Layout size={12} className="text-primary opacity-50" />
                             </div>
                             <ScrollArea className="flex-1">
                                 <div className="p-5">
                                     <PropertiesPanel
-                                        selectedField={selectedField}
+                                        selectedFields={selectedFields}
                                         updateField={updateField}
+                                        bulkUpdateOptions={bulkUpdateOptions}
                                         templateData={data}
                                         setTemplateData={setData}
+                                        onRemoveField={removeField}
                                     />
                                 </div>
                             </ScrollArea>

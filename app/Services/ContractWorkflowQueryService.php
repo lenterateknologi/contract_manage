@@ -63,7 +63,6 @@ class ContractWorkflowQueryService
             });
         }
 
-
         return $query->where(function ($q) use ($user) {
             // Anyone can initiate if initiator_type is 'all'
             $q->where('initiator_type', 'all')

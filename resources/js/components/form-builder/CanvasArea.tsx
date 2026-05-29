@@ -30,7 +30,7 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
     duplicateField,
 }) => {
     return (
-        <section className="relative flex flex-1 flex-col overflow-hidden bg-slate-50/30">
+        <section className="relative flex flex-1 flex-col overflow-hidden bg-muted/10">
             {/* STICKY VIEW TABS */}
             <div className="border-border bg-card/80 sticky top-0 z-30 flex h-[60px] w-full shrink-0 items-center justify-center border-b shadow-sm backdrop-blur-md">
                 <div className="bg-muted/30 ring-border/20 flex gap-1.5 rounded-2xl p-1.5 ring-1">
@@ -46,7 +46,7 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
                             className={cn(
                                 'flex items-center gap-2.5 rounded-xl px-5 py-2 transition-all duration-300',
                                 viewMode === mode.id
-                                    ? 'bg-card ring-border/50 z-10 scale-105 text-black shadow-lg ring-1'
+                                    ? 'bg-card ring-border/50 z-10 scale-105 text-foreground shadow-lg ring-1'
                                     : 'text-muted-foreground/30 hover:text-foreground/60 hover:bg-muted/20',
                             )}
                         >
@@ -57,9 +57,13 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
                 </div>
             </div>
 
-            <ScrollArea className="flex-1 bg-slate-900/10">
+            <ScrollArea className="flex-1 bg-muted/30">
                 <div
-                    className="flex min-h-full cursor-default items-start justify-center px-12 py-12"
+                    className="flex min-h-full cursor-default items-start justify-center px-12 py-16"
+                    style={{
+                        backgroundImage: 'radial-gradient(hsl(var(--border)) 1px, transparent 1px)',
+                        backgroundSize: '30px 30px'
+                    }}
                     onClick={(e) => {
                         if (e.target === e.currentTarget) {
                             handleSelectField('', e);

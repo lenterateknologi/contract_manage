@@ -8,6 +8,8 @@ use App\Models\CompanyGroup;
 use App\Models\ContractStatus;
 use App\Models\ContractType;
 use App\Models\Department;
+use App\Models\FormField;
+use App\Models\FormTemplate;
 use App\Models\Region;
 use App\Models\Workflow;
 use App\Models\WorkflowInitiatorDepartment;
@@ -45,6 +47,8 @@ class MasterDataAdminController extends Controller
                 'modules' => \App\Models\Module::count(),
                 'access_mappings' => \App\Models\AccessModule::count(),
                 'navigation_mappings' => \App\Models\RoleModuleGroup::count(),
+                'form_templates' => FormTemplate::count(),
+                'form_fields' => FormField::count(),
             ],
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
@@ -329,6 +333,41 @@ class MasterDataAdminController extends Controller
                 })->toArray();
             }
 
+            // 8d. Form Templates & Fields
+            if (! $requestedEntities || in_array('form_templates', $requestedEntities)) {
+                $exportData['form_templates'] = FormTemplate::with('contractType')->get()->map(function ($ft) {
+                    return [
+                        'id' => $ft->id,
+                        'name' => $ft->name,
+                        'description' => $ft->description,
+                        'contract_type_code' => $ft->contractType->code ?? null,
+                        'document_type' => $ft->document_type,
+                        'has_letterhead' => $ft->has_letterhead,
+                        'letterhead_json' => $ft->letterhead_json,
+                        'is_active' => $ft->is_active,
+                    ];
+                })->toArray();
+
+                $exportData['form_fields'] = FormField::all()->map(function ($ff) {
+                    return [
+                        'id' => $ff->id,
+                        'form_template_id' => $ff->form_template_id,
+                        'parent_id' => $ff->parent_id,
+                        'label' => $ff->label,
+                        'name' => $ff->name,
+                        'type' => $ff->type,
+                        'container_type' => $ff->container_type,
+                        'placeholder' => $ff->placeholder,
+                        'is_required' => $ff->is_required,
+                        'use_rich_text' => $ff->use_rich_text,
+                        'width' => $ff->width,
+                        'options' => $ff->options,
+                        'order' => $ff->order,
+                        'validation_rules' => $ff->validation_rules,
+                    ];
+                })->toArray();
+            }
+
             // 9. Contract Types (Dependent on Workflows)
             if (! $requestedEntities || in_array('contract_types', $requestedEntities)) {
                 $exportData['contract_types'] = ContractType::with(['workflow', 'parent'])->get()->map(function ($t) {
@@ -391,6 +430,8 @@ class MasterDataAdminController extends Controller
                 'roles' => 0,
                 'access_mappings' => 0,
                 'role_navigation_mappings' => 0,
+                'form_templates' => 0,
+                'form_fields' => 0,
             ];
 
             \Illuminate\Database\Eloquent\Model::unguard();
@@ -1005,6 +1046,68 @@ class MasterDataAdminController extends Controller
                 }
             }
 
+            // 14.5 Form Templates & Fields
+            if (! empty($data['form_templates']) && is_array($data['form_templates'])) {
+                $typeMap = ContractType::pluck('id', 'code')->all();
+                foreach ($data['form_templates'] as $ft) {
+                    try {
+                        if (empty($ft['id'])) {
+                            continue;
+                        }
+                        $typeId = ! empty($ft['contract_type_code']) ? ($typeMap[$ft['contract_type_code']] ?? null) : null;
+
+                        FormTemplate::updateOrCreate(
+                            ['id' => $ft['id']],
+                            [
+                                'name' => $ft['name'],
+                                'description' => $ft['description'] ?? null,
+                                'contract_type_id' => $typeId,
+                                'document_type' => $ft['document_type'] ?? 'f1',
+                                'has_letterhead' => $ft['has_letterhead'] ?? false,
+                                'letterhead_json' => $ft['letterhead_json'] ?? null,
+                                'is_active' => $ft['is_active'] ?? true,
+                                'created_by' => $admin,
+                                'updated_by' => $admin,
+                            ],
+                        );
+                        $counts['form_templates']++;
+                    } catch (\Exception $e) {
+                        Log::warning('Gagal mengimpor FormTemplate ID ' . ($ft['id'] ?? '') . ': ' . $e->getMessage());
+                    }
+                }
+            }
+
+            if (! empty($data['form_fields']) && is_array($data['form_fields'])) {
+                foreach ($data['form_fields'] as $ff) {
+                    try {
+                        if (empty($ff['id'])) {
+                            continue;
+                        }
+                        FormField::updateOrCreate(
+                            ['id' => $ff['id']],
+                            [
+                                'form_template_id' => $ff['form_template_id'],
+                                'parent_id' => $ff['parent_id'] ?? null,
+                                'label' => $ff['label'] ?? '',
+                                'name' => $ff['name'],
+                                'type' => $ff['type'],
+                                'container_type' => $ff['container_type'] ?? null,
+                                'placeholder' => $ff['placeholder'] ?? null,
+                                'is_required' => $ff['is_required'] ?? false,
+                                'use_rich_text' => $ff['use_rich_text'] ?? false,
+                                'width' => $ff['width'] ?? '100',
+                                'options' => $ff['options'] ?? null,
+                                'order' => $ff['order'] ?? 0,
+                                'validation_rules' => $ff['validation_rules'] ?? null,
+                            ],
+                        );
+                        $counts['form_fields']++;
+                    } catch (\Exception $e) {
+                        Log::warning('Gagal mengimpor FormField ID ' . ($ff['id'] ?? '') . ': ' . $e->getMessage());
+                    }
+                }
+            }
+
             // 15. Contract Types
             if (! empty($data['contract_types']) && is_array($data['contract_types'])) {
                 $workflowMap = Workflow::pluck('id', 'name')->all();
@@ -1140,7 +1243,7 @@ class MasterDataAdminController extends Controller
             }
 
             $successMsg = sprintf(
-                'Data master berhasil diimpor: %d Group, %d Region, %d Company, %d Departemen, %d Status, %d Tipe Kontrak, %d Workflow, %d Role, %d Mapping Akses, %d Mapping Navigasi.',
+                'Data master berhasil diimpor: %d Group, %d Region, %d Company, %d Departemen, %d Status, %d Tipe Kontrak, %d Workflow, %d Form Template, %d Role, %d Mapping Akses, %d Mapping Navigasi.',
                 $counts['company_groups'],
                 $counts['regions'],
                 $counts['companies'],
@@ -1148,6 +1251,7 @@ class MasterDataAdminController extends Controller
                 $counts['contract_statuses'],
                 $counts['contract_types'],
                 $counts['workflows'],
+                $counts['form_templates'],
                 $counts['roles'],
                 $counts['access_mappings'],
                 $counts['role_navigation_mappings'],
@@ -1215,6 +1319,12 @@ class MasterDataAdminController extends Controller
                     // 3. Contract Statuses
                     if (in_array('contract_statuses', $entities)) {
                         DB::table('m_contract_statuses')->delete();
+                    }
+
+                    // 3.5 Form Templates & Fields
+                    if (in_array('form_templates', $entities) || in_array('form_fields', $entities)) {
+                        DB::table('m_form_fields')->delete();
+                        DB::table('m_form_templates')->delete();
                     }
 
                     // 4. Contract Types

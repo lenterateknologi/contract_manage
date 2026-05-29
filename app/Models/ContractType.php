@@ -46,6 +46,16 @@ class ContractType extends Model
         return $this->hasMany(Contract::class);
     }
 
+    public function f1FormTemplate()
+    {
+        return $this->belongsTo(FormTemplate::class, 'f1_form_template_id');
+    }
+
+    public function f2FormTemplate()
+    {
+        return $this->belongsTo(FormTemplate::class, 'f2_form_template_id');
+    }
+
     public function formTemplates()
     {
         return $this->hasMany(FormTemplate::class);

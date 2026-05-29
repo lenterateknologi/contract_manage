@@ -23,7 +23,7 @@ export const CheckboxField: React.FC<FieldProps> = ({ field, value, onChange, re
                 >
                     {value && <i className="fa-solid fa-check text-[10px]" />}
                 </div>
-                <span className="text-foreground text-[11px] font-bold uppercase" style={getTypographyStyle(field, 1, true)}>
+                <span className="text-foreground text-[11px] font-semibold" style={getTypographyStyle(field, 1, true)}>
                     {field.label}
                 </span>
             </div>
@@ -41,11 +41,11 @@ export const CheckboxField: React.FC<FieldProps> = ({ field, value, onChange, re
                 {value && <i className="fa-solid fa-check text-primary-foreground scale-110 text-[10px]" />}
             </div>
             <Label
-                className="text-foreground/70 cursor-pointer text-[11px] font-black tracking-tight uppercase select-none"
+                className="text-foreground/70 cursor-pointer text-[11px] font-semibold tracking-tight select-none"
                 style={getTypographyStyle(field, 1, true)}
             >
                 {field.label}
-                {field.is_required && <span className="text-destructive ml-0.5 font-bold">*</span>}
+                {field.is_required && <span className="text-destructive ml-0.5 font-semibold">*</span>}
             </Label>
         </div>
     );
@@ -56,7 +56,7 @@ export const RadioField: React.FC<FieldProps> = ({ field, value, onChange, readO
     if (readOnly) {
         return (
             <div className="flex flex-col gap-1.5 py-1">
-                {field.label && <div className="text-muted-foreground mb-0.5 text-[10px] font-black tracking-tight uppercase">{field.label}</div>}
+                {field.label && <div className="text-muted-foreground mb-0.5 text-[10px] font-semibold tracking-tight">{field.label}</div>}
                 <div className="flex flex-wrap gap-4">
                     {options.map((opt: any) => (
                         <div key={opt.value} className="flex items-center gap-1.5">
@@ -70,9 +70,10 @@ export const RadioField: React.FC<FieldProps> = ({ field, value, onChange, readO
                             </div>
                             <span
                                 className={cn(
-                                    'text-[10px] font-bold uppercase',
+                                    'text-[10px] font-semibold',
                                     value === opt.value ? 'text-foreground' : 'text-muted-foreground/60',
                                 )}
+                                style={getTypographyStyle(field, 0.9, true)}
                             >
                                 {opt.label}
                             </span>
@@ -86,23 +87,37 @@ export const RadioField: React.FC<FieldProps> = ({ field, value, onChange, readO
     return (
         <div className="flex flex-col gap-2 py-1">
             {field.label && (
-                <Label className="text-foreground/70 text-[10px] font-black tracking-tight uppercase">
+                <Label
+                    className="text-foreground/70 text-[10px] font-semibold tracking-tight"
+                    style={getTypographyStyle(field, 0.8, true)}
+                >
                     {field.label}
-                    {field.is_required && <span className="text-destructive ml-0.5 font-bold">*</span>}
+                    {field.is_required && <span className="text-destructive ml-0.5 font-semibold">*</span>}
                 </Label>
             )}
             <div className="flex flex-wrap gap-4">
                 {options.map((opt: any) => (
-                    <div key={opt.value} className="group flex cursor-pointer items-center gap-2" onClick={() => onChange?.(opt.value)}>
+                    <div
+                        key={opt.value}
+                        className="group flex cursor-pointer items-center gap-2"
+                        onClick={() => onChange?.(opt.value)}
+                    >
                         <div
                             className={cn(
                                 'flex h-4 w-4 items-center justify-center rounded-full border-2 transition-all',
-                                value === opt.value ? 'border-primary bg-white' : 'border-border group-hover:border-primary bg-white',
+                                value === opt.value
+                                    ? 'border-primary bg-card'
+                                    : 'border-border group-hover:border-primary bg-card',
                             )}
                         >
-                            {value === opt.value && <div className="bg-primary animate-in zoom-in-50 h-2 w-2 rounded-full duration-200" />}
+                            {value === opt.value && (
+                                <div className="bg-primary animate-in zoom-in-50 h-2 w-2 rounded-full duration-200" />
+                            )}
                         </div>
-                        <span className="text-foreground/70 group-hover:text-primary text-[11px] font-bold uppercase transition-colors select-none">
+                        <span
+                            className="text-foreground/70 group-hover:text-primary text-[11px] font-semibold transition-colors select-none"
+                            style={getTypographyStyle(field, 0.9)}
+                        >
                             {opt.label}
                         </span>
                     </div>
@@ -122,14 +137,14 @@ export const SelectField: React.FC<FieldProps> = ({ field, value, onChange, read
             <div className="flex w-full items-baseline gap-2 py-0.5">
                 {field.label && (
                     <span
-                        className="text-muted-foreground min-w-[120px] shrink-0 text-[10px] font-black tracking-tight whitespace-nowrap uppercase"
+                        className="text-muted-foreground min-w-[120px] shrink-0 text-[10px] font-semibold tracking-tight whitespace-nowrap"
                         style={getTypographyStyle(field, 0.8, true)}
                     >
                         {field.label} :
                     </span>
                 )}
                 <span
-                    className="text-foreground border-border min-h-[32px] flex-1 border-b border-dotted pb-1.5 text-[11px] font-bold"
+                    className="text-foreground border-border min-h-[32px] flex-1 border-b border-dotted pb-1.5 text-[11px] font-semibold"
                     style={getTypographyStyle(field)}
                 >
                     {renderValue(selectOptions.find((o: any) => o.value === value)?.label || value, field)}
@@ -146,11 +161,11 @@ export const SelectField: React.FC<FieldProps> = ({ field, value, onChange, read
             <div className="relative w-full">
                 {field.label && (
                     <Label
-                        className="text-foreground/70 mb-1 block text-[10px] font-black tracking-tight uppercase"
+                        className="text-foreground/70 mb-1 block text-[10px] font-semibold tracking-tight"
                         style={getTypographyStyle(field, 0.8, true)}
                     >
                         {field.label}
-                        {field.is_required && <span className="text-destructive ml-0.5 font-bold">*</span>}
+                        {field.is_required && <span className="text-destructive ml-0.5 font-semibold">*</span>}
                     </Label>
                 )}
                 <div className="relative">
@@ -185,7 +200,7 @@ export const SelectField: React.FC<FieldProps> = ({ field, value, onChange, read
                                             placeholder="Cari..."
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
-                                            className="bg-muted/50 border-border focus:border-primary w-full rounded-md border py-1.5 pr-3 pl-8 text-[11px] font-bold outline-none"
+                                            className="bg-muted/50 border-border focus:border-primary w-full rounded-md border py-1.5 pr-3 pl-8 text-[11px] font-semibold outline-none"
                                             style={getTypographyStyle(field)}
                                             onClick={(e) => e.stopPropagation()}
                                         />
@@ -202,7 +217,7 @@ export const SelectField: React.FC<FieldProps> = ({ field, value, onChange, read
                                                 setSearchQuery('');
                                             }}
                                             className={cn(
-                                                'flex w-full items-center justify-between px-3 py-1.5 text-left text-[11px] font-bold transition-all',
+                                                'flex w-full items-center justify-between px-3 py-1.5 text-left text-[11px] font-semibold transition-all',
                                                 value === opt.value ? 'bg-primary/10 text-primary' : 'text-foreground/70 hover:bg-muted',
                                             )}
                                             style={getTypographyStyle(field)}
@@ -224,17 +239,17 @@ export const SelectField: React.FC<FieldProps> = ({ field, value, onChange, read
         <div className="relative w-full">
             {field.label && (
                 <Label
-                    className="text-foreground/80 mb-1 block text-[10px] font-black tracking-tight uppercase"
+                    className="text-foreground/80 mb-1 block text-[10px] font-semibold tracking-tight"
                     style={getTypographyStyle(field, 0.8, true)}
                 >
                     {field.label}
-                    {field.is_required && <span className="text-destructive ml-0.5 font-bold">*</span>}
+                    {field.is_required && <span className="text-destructive ml-0.5 font-semibold">*</span>}
                 </Label>
             )}
             <select
                 value={value || ''}
                 onChange={(e) => onChange?.(e.target.value)}
-                className="flex h-9 w-full rounded-lg border border-slate-200 bg-slate-50/30 px-3 text-[11px] font-bold transition-all focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20"
+                className="border-border bg-muted/20 focus:border-primary focus:ring-primary/20 flex h-9 w-full rounded-lg border px-3 text-[11px] font-semibold transition-all focus:ring-1"
                 style={getTypographyStyle(field)}
             >
                 <option value="">{field.placeholder || 'Select option...'}</option>

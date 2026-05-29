@@ -254,7 +254,9 @@ function GenericFormTab({
     const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
 
     const matchingTemplate =
+        formTemplates.find((ft) => selected.contract_type_id && ft.contract_type_id === selected.contract_type_id && ft.document_type === docType) ??
         formTemplates.find((ft) => ft.contract_type_name === selected.contract_type && ft.document_type === docType) ??
+        formTemplates.find((ft) => ft.name.includes('FORMULIR PERMINTAAN PERJANJIAN') && ft.document_type === docType) ??
         formTemplates.find((ft) => !ft.contract_type_id && ft.document_type === docType);
 
     const filteredVersions = versions.filter((v) => {
@@ -408,7 +410,7 @@ function GenericFormTab({
         loadData();
     }, [loadData]);
 
-    const isDraft = selected.status === 'draft';
+    const isDraft = selected.status === 'draft' || selected.status === 'revision';
     const isDirty = JSON.stringify(formData) !== JSON.stringify(originalData);
     const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
     const autoSaveTimerRef = useRef<any>(null);

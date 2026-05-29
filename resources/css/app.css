@@ -120,12 +120,12 @@
     button,
     select,
     textarea {
-        font-family: 'Montserrat', 'Inter', sans-serif !important;
+        font-family: 'Montserrat', 'Inter', sans-serif;
     }
 }
 
 * {
-    font-family: 'Montserrat', 'Inter', sans-serif !important;
+    font-family: 'Montserrat', 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
