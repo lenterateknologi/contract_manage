@@ -246,6 +246,7 @@ class ContractApprovalController extends Controller
                 if ($isSequential) {
                     $hasPending = Approval::where('contract_id', $contract->id)
                         ->where('workflow_step_id', $targetStepId)
+                        ->where('role', 'Persetujuan Tambahan')
                         ->where('status', 'pending')
                         ->exists();
 

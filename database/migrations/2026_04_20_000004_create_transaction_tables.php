@@ -42,7 +42,7 @@ return new class() extends Migration
             $table->string('approver_name')->nullable();
             $table->string('role')->index();
             $table->string('job_title')->nullable();
-            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending')->index();
+            $table->enum('status', ['pending', 'waiting', 'approved', 'rejected'])->default('pending')->index();
             $table->text('comment')->nullable();
             $table->integer('sequence')->default(0);
             $table->timestamp('decided_at')->nullable();
