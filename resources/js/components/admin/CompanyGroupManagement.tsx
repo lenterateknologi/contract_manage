@@ -5,7 +5,7 @@ import { ExcelActions } from '@/components/ui/data/ExcelActions';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { usePermissions } from '@/hooks/use-permissions';
-import { cn } from '@/lib/utils';
+import { cn, groupColor } from '@/lib/utils';
 import { router, useForm } from '@inertiajs/react';
 import { Plus, Trash2, Users } from 'lucide-react';
 import React, { useMemo } from 'react';
@@ -15,20 +15,6 @@ interface CompanyGroupManagementProps {
     groups: any;
     regions: any;
     filters: any;
-}
-
-const GROUP_COLORS = [
-    'bg-primary-muted text-primary',
-    'bg-success/10 text-success',
-    'bg-info/10 text-info',
-    'bg-primary/10 text-primary',
-    'bg-warning/10 text-warning',
-];
-
-function groupColor(name: string) {
-    let h = 0;
-    for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
-    return GROUP_COLORS[Math.abs(h) % GROUP_COLORS.length];
 }
 
 const GroupCell = ({ name }: Readonly<{ name: string }>) => (

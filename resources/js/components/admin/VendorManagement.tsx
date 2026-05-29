@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/base/Button';
 import { Column, DataTable } from '@/components/ui/data/DataTable';
 import { ExcelActions } from '@/components/ui/data/ExcelActions';
 import { usePermissions } from '@/hooks/use-permissions';
-import { cn } from '@/lib/utils';
+import { cn, vendorColor } from '@/lib/utils';
 import { router } from '@inertiajs/react';
 import { Mail, Phone, Trash2, Truck, Plus } from 'lucide-react';
 import React, { useMemo } from 'react';
@@ -11,20 +11,6 @@ import React, { useMemo } from 'react';
 interface VendorManagementProps {
     vendors: any;
     filters: any;
-}
-
-const VENDOR_COLORS = [
-    'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400',
-    'bg-info/10 text-info dark:bg-info/20 dark:text-info',
-    'bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400',
-    'bg-teal-100 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400',
-    'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400',
-];
-
-function vendorColor(name: string) {
-    let h = 0;
-    for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
-    return VENDOR_COLORS[Math.abs(h) % VENDOR_COLORS.length];
 }
 
 const CATEGORY_COLORS: Record<string, string> = {

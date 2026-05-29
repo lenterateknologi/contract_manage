@@ -5,9 +5,10 @@ interface Props {
     open: boolean;
     onClose: () => void;
     onSubmit: (reason: string, attachment?: File) => Promise<void>;
+    actionAlias?: string;
 }
 
-export default function RejectModal({ open, onClose, onSubmit }: Props) {
+export default function RejectModal({ open, onClose, onSubmit, actionAlias }: Props) {
     const [reason, setReason] = useState('');
     const [attachment, setAttachment] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
@@ -36,7 +37,7 @@ export default function RejectModal({ open, onClose, onSubmit }: Props) {
             >
                 <div className="flex items-center justify-between border-b border-black/5 px-5 py-4 dark:border-white/5">
                     <h6 className="flex items-center gap-2 text-[14px] font-black tracking-tight text-black uppercase dark:text-white">
-                        <i className="fa-solid fa-circle-xmark text-[13px]" /> Tolak Kontrak
+                        <i className="fa-solid fa-circle-xmark text-[13px]" /> {actionAlias || 'Tolak Kontrak'}
                     </h6>
                     <button
                         onClick={onClose}
@@ -103,7 +104,7 @@ export default function RejectModal({ open, onClose, onSubmit }: Props) {
                         disabled={loading || !reason.trim()}
                         className="flex items-center gap-1.5 rounded-lg bg-black px-5 py-2 text-[11px] font-black tracking-[0.2em] text-white uppercase shadow-lg transition-all active:scale-95 disabled:opacity-30 dark:bg-white dark:text-black"
                     >
-                        <i className="fa-solid fa-xmark text-[11px]" /> {loading ? 'Mengirim...' : 'Konfirmasi Tolak'}
+                        <i className="fa-solid fa-xmark text-[11px]" /> {loading ? 'Mengirim...' : actionAlias ? `Konfirmasi ${actionAlias}` : 'Konfirmasi Tolak'}
                     </button>
                 </div>
             </div>

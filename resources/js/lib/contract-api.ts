@@ -12,7 +12,7 @@ export const contractApi = {
     create: (data: FormData): Promise<Contract> => api.post('/api/contracts', data).then((r) => r.data),
     getWorkflows: (contractType?: string): Promise<any[]> =>
         api.get('/api/contracts/workflows', { params: { contract_type: contractType } }).then((r) => r.data),
-    getUsers: (): Promise<any[]> => api.get('/api/contracts/users').then((r) => r.data),
+    getUsers: (params?: any): Promise<any[]> => api.get('/api/contracts/users', { params }).then((r) => r.data),
     getRoles: (): Promise<any[]> => api.get('/api/contracts/roles').then((r) => r.data),
     send: (id: string, data?: { workflow_id?: string; custom_steps?: any[] }): Promise<Contract> =>
         api.post(`/api/contracts/${id}/send`, data).then((r) => r.data),
@@ -26,6 +26,7 @@ export const contractApi = {
         executionOrder?: string,
         p1UserId?: string,
         p2UserId?: string,
+        actionCode?: string,
     ): Promise<Contract> => {
         const fd = new FormData();
         fd.append('note', note);
@@ -34,6 +35,7 @@ export const contractApi = {
         if (executionOrder) fd.append('execution_order', executionOrder);
         if (p1UserId) fd.append('p1_user_id', p1UserId);
         if (p2UserId) fd.append('p2_user_id', p2UserId);
+        if (actionCode) fd.append('action_code', actionCode);
         return api.post(`/api/contracts/${id}/approve`, fd).then((r) => r.data);
     },
     reject: (id: string, reason: string, attachment?: File): Promise<Contract> => {
@@ -42,6 +44,27 @@ export const contractApi = {
         if (attachment) fd.append('attachment', attachment);
         return api.post(`/api/contracts/${id}/reject`, fd).then((r) => r.data);
     },
+    addAdhocApprover: (
+        id: string,
+        userIds: string | string[],
+        note?: string,
+        isSequential: boolean = false,
+        targetStepId?: string,
+    ): Promise<Contract> => {
+        const uids = Array.isArray(userIds) ? userIds : [userIds];
+        return api
+            .post(`/api/contracts/${id}/add-approver`, {
+                user_ids: uids,
+                note,
+                is_sequential: isSequential,
+                target_step_id: targetStepId,
+            })
+            .then((r) => r.data);
+    },
+    removeAdhocApprover: (id: string, approvalId: string): Promise<Contract> =>
+        api.delete(`/api/contracts/${id}/approver/${approvalId}`).then((r) => r.data),
+    submitAdhocApprovers: (id: string): Promise<Contract> =>
+        api.post(`/api/contracts/${id}/submit-approvers`).then((r) => r.data),
     uploadRevision: (id: string, data: FormData): Promise<Contract> => api.post(`/api/contracts/${id}/revision`, data).then((r) => r.data),
     changeVersion: (id: string, versionNo: number): Promise<Contract> =>
         api.post(`/api/contracts/${id}/version`, { version_no: versionNo }).then((r) => r.data),

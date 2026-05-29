@@ -41,12 +41,26 @@ export interface ContractApproval {
     target_approvers?: string;
     target_emails?: string;
     sequence: number;
+    sort_order?: number;
     status: 'pending' | 'waiting' | 'approved' | 'rejected';
+    is_active?: boolean;
     comment: string | null;
     decided_at: string | null;
+    created_at?: string;
     step_type?: string;
     step_name?: string;
     step_description?: string;
+    workflow_step_id?: string;
+    workflow_step?: {
+        id: string;
+        step: number;
+        description: string;
+        workflow_id: string;
+        workflow?: {
+            id: string;
+            name: string;
+        };
+    };
     approver: UserProfile;
 }
 
@@ -180,6 +194,12 @@ export interface Contract {
             type: string;
         }>;
     };
+    workflow_id?: string;
+    workflow?: {
+        id: string;
+        name: string;
+    } | null;
+    workflow_step_id?: string;
     workflow_step?: {
         id: string;
         step: number;

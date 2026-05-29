@@ -14,6 +14,7 @@ export default function Visualize({ breadcrumbs }: Props) {
     const [companyGroups, setCompanyGroups] = useState<any[]>([]);
     const [regions, setRegions] = useState<any[]>([]);
     const [companies, setCompanies] = useState<any[]>([]);
+    const [contractStatuses, setContractStatuses] = useState<any[]>([]);
     const [viewMode, setViewMode] = useState<'visual' | 'table'>('visual');
 
     const loadSteps = () => {
@@ -31,6 +32,9 @@ export default function Visualize({ breadcrumbs }: Props) {
 
             const savedCompanies = localStorage.getItem('workflow_master_companies');
             if (savedCompanies) setCompanies(JSON.parse(savedCompanies));
+
+            const savedStatuses = localStorage.getItem('workflow_master_statuses');
+            if (savedStatuses) setContractStatuses(JSON.parse(savedStatuses));
         } catch (e) {
             console.error('Failed to load data from localStorage', e);
         }
@@ -60,14 +64,12 @@ export default function Visualize({ breadcrumbs }: Props) {
         switch (approverType) {
             case 'initiator':
                 return 'INISIATOR';
-            case 'atasan':
-                return 'ATASAN LANGSUNG';
             case 'assigned_pic':
                 return 'PIC DITUGASKAN';
             case 'user':
-                return 'USER POOL';
+                return 'DAFTAR USER SPESIFIK';
             case 'role':
-                return 'ROLE POOL';
+                return 'BERDASARKAN ROLE / UNIT';
             default:
                 return 'BELUM DIATUR';
         }
@@ -162,6 +164,7 @@ export default function Visualize({ breadcrumbs }: Props) {
                                             <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Step</th>
                                             <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Pemeran</th>
                                             <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Kategori</th>
+                                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Status Target</th>
                                             <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Deskripsi</th>
                                         </tr>
                                     </thead>
@@ -169,6 +172,8 @@ export default function Visualize({ breadcrumbs }: Props) {
                                         {steps.length > 0 ? (
                                             steps.map((step, idx) => {
                                                 const Icon = getCategoryIcon(step.step_category);
+                                                const targetStatus = contractStatuses.find(s => s.code === step.meta?.target_status);
+                                                
                                                 return (
                                                     <tr key={idx} className="group transition-colors hover:bg-slate-50/50 dark:hover:bg-white/[0.02]">
                                                         <td className="px-6 py-4">
@@ -190,6 +195,26 @@ export default function Visualize({ breadcrumbs }: Props) {
                                                                     {step.step_category || 'REGULER'}
                                                                 </span>
                                                             </div>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            {targetStatus ? (
+                                                                <div 
+                                                                    className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[9px] font-black uppercase"
+                                                                    style={{ 
+                                                                        backgroundColor: `${targetStatus.color}10`,
+                                                                        borderColor: `${targetStatus.color}30`,
+                                                                        color: targetStatus.color 
+                                                                    }}
+                                                                >
+                                                                    <div 
+                                                                        className="h-1.5 w-1.5 rounded-full" 
+                                                                        style={{ backgroundColor: targetStatus.color }}
+                                                                    />
+                                                                    {targetStatus.label}
+                                                                </div>
+                                                            ) : (
+                                                                <span className="text-[9px] font-bold text-slate-300 italic uppercase">Auto</span>
+                                                            )}
                                                         </td>
                                                         <td className="px-6 py-4">
                                                             <span className="text-xs font-bold text-slate-600 italic dark:text-slate-400">

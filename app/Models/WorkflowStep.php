@@ -65,7 +65,7 @@ class WorkflowStep extends Model
         'filter_company' => 'boolean',
     ];
 
-    protected $with = ['approverRoles', 'approverDepartments', 'approverUsers', 'actions.masterAction'];
+    protected $with = ['approverRoles', 'approverDepartments', 'approverUsers'];
 
     protected $appends = ['role', 'department_ids', 'department_names', 'user_ids', 'name'];
 

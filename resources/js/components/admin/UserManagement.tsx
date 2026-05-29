@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { Modal } from '@/components/ui/overlays/Modal';
 import { usePermissions } from '@/hooks/use-permissions';
-import { cn } from '@/lib/utils';
+import { cn, avatarColor } from '@/lib/utils';
 import { router, useForm } from '@inertiajs/react';
 import { Download, FileSpreadsheet, Fingerprint, Mail, Phone, Plus, ShieldAlert, Trash2, Upload, UserCircle, Check, Loader2 } from 'lucide-react';
 import React, { useMemo } from 'react';
@@ -20,17 +20,6 @@ interface UserManagementProps {
     filters: any;
 }
 
-const AVATAR_COLORS = [
-    'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400',
-    'bg-info/10 text-info dark:bg-info/20 dark:text-info',
-    'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
-    'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-    'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
-    'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
-    'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
-    'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
-];
-
 const ROLE_COLORS: Record<string, string> = {
     Admin: 'bg-role-admin-bg text-role-admin-text border border-role-admin-text/20',
     Manager: 'bg-role-manager-bg text-role-manager-text border border-role-manager-text/20',
@@ -38,12 +27,6 @@ const ROLE_COLORS: Record<string, string> = {
     Reviewer: 'bg-role-reviewer-bg text-role-reviewer-text border border-role-reviewer-text/20',
     Approver: 'bg-role-approver-bg text-role-approver-text border border-role-approver-text/20',
 };
-
-function avatarColor(name: string): string {
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
-}
 
 const UserCell = ({ name, email }: Readonly<{ name: string; email: string }>) => (
     <div className="flex items-center gap-3 select-none">

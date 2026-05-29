@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\ContractType;
-use App\Models\MasterAction;
 use App\Models\Role;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
@@ -30,11 +29,7 @@ class TestWorkflowSeeder extends Seeder
 
             $actionIds = [];
             foreach ($actions as $code => $name) {
-                $ma = MasterAction::updateOrCreate(
-                    ['code' => $code],
-                    ['name' => $name, 'is_active' => true],
-                );
-                $actionIds[$code] = $ma->id;
+                $actionIds[$code] = $code; // Use action_code directly instead of master_action_id
             }
 
             // 2. Get Roles
@@ -123,7 +118,7 @@ class TestWorkflowSeeder extends Seeder
             DB::table('m_workflow_step_actions')->insert([
                 'id' => Str::uuid()->toString(),
                 'workflow_step_id' => $s3_2->id,
-                'master_action_id' => $actionIds['assign'],
+                'action_code' => $actionIds['assign'],
                 'next_step_id' => $s3_3->id,
                 'assignee_config' => json_encode(['type' => 'assigned_pic']),
                 'is_active' => true,
@@ -163,7 +158,7 @@ class TestWorkflowSeeder extends Seeder
             DB::table('m_workflow_step_actions')->insert([
                 'id' => Str::uuid()->toString(),
                 'workflow_step_id' => $s4_3->id,
-                'master_action_id' => $actionIds['sign'],
+                'action_code' => $actionIds['sign'],
                 'next_step_id' => null, // Final
                 'signing_parties' => json_encode(['initiator', 'pic']),
                 'is_active' => true,
@@ -198,12 +193,12 @@ class TestWorkflowSeeder extends Seeder
         });
     }
 
-    private function createAction($stepId, $actionId, $nextStepId = null)
+    private function createAction($stepId, $actionCode, $nextStepId = null)
     {
         DB::table('m_workflow_step_actions')->insert([
             'id' => Str::uuid()->toString(),
             'workflow_step_id' => $stepId,
-            'master_action_id' => $actionId,
+            'action_code' => $actionCode,
             'next_step_id' => $nextStepId,
             'is_active' => true,
             'created_at' => now(),

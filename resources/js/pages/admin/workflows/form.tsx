@@ -23,6 +23,7 @@ import {
 import React, { useEffect, useState } from 'react';
 import OrgScopeSelector from './components/OrgScopeSelector';
 import SortableStepItem from './components/SortableStepItem';
+import { MASTER_ACTIONS } from './constants';
 
 // --- Sortable Step Item (Compact) ---
 
@@ -38,7 +39,6 @@ export default function WorkflowEditor({
     companyGroups = [],
     regions = [],
     companies = [],
-    masterActions = [],
     allWorkflows = [],
 }: any) {
     const { showToast } = useToast();
@@ -90,6 +90,7 @@ export default function WorkflowEditor({
         localStorage.setItem('workflow_master_groups', JSON.stringify(companyGroups));
         localStorage.setItem('workflow_master_regions', JSON.stringify(regions));
         localStorage.setItem('workflow_master_companies', JSON.stringify(companies));
+        localStorage.setItem('workflow_master_statuses', JSON.stringify(contractStatuses));
         window.open(route('admin.workflows.visualize'), '_blank');
     };
 
@@ -103,8 +104,8 @@ export default function WorkflowEditor({
     };
 
     const addLocalStep = () => {
-        const approveMaster = (masterActions || []).find((ma: any) => ma.code === 'approve');
-        const rejectMaster = (masterActions || []).find((ma: any) => ma.code === 'reject');
+        const approveMaster = MASTER_ACTIONS.find((ma: any) => ma.code === 'approve');
+        const rejectMaster = MASTER_ACTIONS.find((ma: any) => ma.code === 'reject');
         form.setData('steps', [
             ...form.data.steps,
             {
@@ -418,7 +419,6 @@ export default function WorkflowEditor({
                                                             idx={idx}
                                                             totalSteps={form.data.steps.length}
                                                             contractStatuses={contractStatuses}
-                                                            masterActions={masterActions}
                                                             allWorkflows={allWorkflows}
                                                             allWorkflowSteps={form.data.steps}
                                                             duplicateLocalStep={(i: number) => {

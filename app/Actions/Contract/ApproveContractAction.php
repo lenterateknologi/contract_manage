@@ -28,7 +28,7 @@ class ApproveContractAction
             $attachmentPath,
             $assignedPicId,
             $executionOrder,
-            $actionCode,
+            $actionCode ?? 'approve',
         );
     }
 

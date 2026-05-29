@@ -21,7 +21,6 @@ interface Props {
 
 export default function ApprovalSteps({ contract, approvals, creator, submittedAt, meId, onApprove }: Props) {
     const { showToast, showProgress, hideProgress } = useToast();
-    // Filter open state is handled internally by FilterPopover
     const [statusFilter, setStatusFilter] = useState<string>('');
     const [roleFilter, setRoleFilter] = useState<string>('');
     const [deptFilter, setDeptFilter] = useState<string>('');
@@ -40,7 +39,6 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
 
     const handleSigningAction = async (action: 'download' | 'upload', file?: File) => {
         if (action === 'download') {
-            // Trigger actual download from the latest agreement version
             const versions = contract.versions?.filter((v) => v.document_type === 'agreement') || [];
             if (versions.length === 0) {
                 showToast('Tidak ada dokumen agreement yang ditemukan.', 'danger');
@@ -49,7 +47,6 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
             const latest = versions.sort((a, b) => b.version_no - a.version_no)[0];
             window.open(`/api/contracts/versions/${latest.id}/download`, '_blank');
 
-            // Mark as downloaded in metadata (local update then refresh)
             const newMeta = { ...contract.metadata };
             if (!newMeta.signing_state) newMeta.signing_state = {};
             const key = isP1 ? 'p1_downloaded_at' : 'p2_downloaded_at';
@@ -58,9 +55,6 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
             try {
                 await axios.patch(`/api/contracts/${contract.id}`, { metadata: newMeta });
                 showToast('Dokumen berhasil diunduh.', 'success');
-                // Component will refresh via parent's onUpdate if we emit it,
-                // but for now let's hope the user refreshes or we find a way.
-                // Actually we should probably call a refresh function.
             } catch (e) {
                 console.error(e);
             }
@@ -72,25 +66,6 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                 setUploading(false);
             }
         }
-    };
-
-    const iconMap: Record<string, string> = {
-        approved: 'fa-check',
-        pending: 'fa-ellipsis',
-        rejected: 'fa-xmark',
-        waiting: 'fa-minus',
-    };
-    const dotCls: Record<string, string> = {
-        approved: 'bg-success border-success text-white shadow-md',
-        pending: 'bg-warning border-warning text-white shadow-md animate-pulse',
-        rejected: 'bg-danger border-danger text-white shadow-md',
-        waiting: 'bg-muted text-text-desc border-border shadow-sm',
-    };
-    const noteCls: Record<string, string> = {
-        approved: 'border-l-success bg-success/10 text-foreground',
-        rejected: 'border-l-danger bg-danger/10 text-foreground font-semibold',
-        pending: 'border-l-warning bg-warning/10 text-foreground',
-        waiting: 'border-l-border bg-muted/20 text-text-desc/80',
     };
 
     const roles = useMemo(
@@ -120,8 +95,51 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                     a.role?.toLowerCase().includes(s) || a.department_name?.toLowerCase().includes(s) || a.approver?.name?.toLowerCase().includes(s),
             );
         }
-        return result.sort((a, b) => a.sequence - b.sequence);
+        // Sort chronologically by created_at or id, but primary sort by id/creation time
+        return result.sort((a, b) => {
+            if (a.created_at && b.created_at) {
+                return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+            }
+            return a.id.localeCompare(b.id);
+        });
     }, [approvals, statusFilter, roleFilter, deptFilter, debouncedSearch]);
+
+    // Build a hierarchical tree of steps
+    const stepTree = useMemo(() => {
+        const blocks: any[] = [];
+        let currentBlock: any = null;
+
+        filteredSteps.forEach((a) => {
+            const wfId = a.workflow_step?.workflow_id || contract.workflow_id;
+            const wfName = a.workflow_step?.workflow?.name || contract.workflow?.name || 'Alur Kerja';
+
+            if (!currentBlock || currentBlock.workflowId !== wfId) {
+                currentBlock = {
+                    workflowId: wfId,
+                    workflowName: wfName,
+                    isSubWorkflow: wfId !== contract.workflow_id,
+                    groups: [],
+                };
+                blocks.push(currentBlock);
+            }
+
+            const seq = a.sequence;
+            let group = currentBlock.groups.find((g: any) => g.sequence === seq);
+            if (!group) {
+                const stepName = a.step_name || a.role || 'Persetujuan';
+                group = {
+                    sequence: seq,
+                    stepName,
+                    stepDescription: a.step_description,
+                    items: [],
+                };
+                currentBlock.groups.push(group);
+            }
+            group.items.push(a);
+        });
+
+        return blocks;
+    }, [filteredSteps, contract.workflow_id, contract.workflow?.name]);
 
     const showProjectedManager = approvals.length === 0 && creator.role?.toLowerCase() === 'staff';
 
@@ -200,239 +218,287 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
 
     const activeCount = (statusFilter ? 1 : 0) + (roleFilter ? 1 : 0) + (deptFilter ? 1 : 0);
 
-    const renderStep = (a: ContractApproval, i: number, isLast: boolean) => (
-        <div key={a.id} className={cn('flex gap-3', !isLast ? 'relative pb-5' : '')}>
-            {!isLast && <div className="bg-border/60 absolute top-7 bottom-0 left-[11.5px] w-0.5" />}
+    const renderApprovalCard = (a: ContractApproval, stepNumber: string) => {
+        const isStaged = !a.is_active;
+        const isApproved = a.status === 'approved';
+        const isRejected = a.status === 'rejected';
+        const isPending = a.status === 'pending' && a.is_active;
+        const isWaiting = a.status === 'waiting';
+
+        return (
             <div
+                key={a.id}
                 className={cn(
-                    'relative z-10 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border-2 transition-transform duration-300',
-                    dotCls[a.status] ?? dotCls.waiting,
-                    a.status === 'pending' && 'scale-105 shadow-md ring-2 ring-warning/20',
+                    'group relative rounded-xl border p-3 transition-all duration-300 bg-surface-base shadow-xs',
+                    isApproved && 'border-emerald-500/20 bg-emerald-50/10 dark:bg-emerald-500/5 hover:border-emerald-500/40',
+                    isRejected && 'border-rose-500/20 bg-rose-50/10 dark:bg-rose-500/5 hover:border-rose-500/40',
+                    isPending && 'border-amber-500/30 bg-amber-50/10 dark:bg-amber-500/5 shadow-md ring-1 ring-amber-500/10 hover:border-amber-500/50',
+                    isWaiting && 'border-slate-200 bg-slate-50/50 opacity-70 dark:border-slate-800 dark:bg-slate-900/50',
+                    isStaged && 'border-slate-300 border-dashed bg-slate-50/30 opacity-60 grayscale dark:border-slate-700 dark:bg-slate-900/20',
+                    'hover:shadow-sm'
                 )}
             >
-                {a.status === 'approved' ? (
-                    <Check size={10} strokeWidth={4} />
-                ) : a.status === 'rejected' ? (
-                    <X size={10} strokeWidth={4} />
-                ) : (
-                    <Clock size={10} strokeWidth={3} />
-                )}
-            </div>
-            <div
-                className={cn(
-                    'flex-1 rounded-xl border p-2.5 px-3 transition-all duration-300',
-                    a.status === 'approved' && 'border-success/30 bg-success/5',
-                    a.status === 'pending' && 'border-warning/40 bg-warning/5 shadow-sm ring-1 ring-warning/10',
-                    a.status === 'rejected' && 'border-danger/30 bg-danger/5',
-                    a.status === 'waiting' && 'border-border/50 bg-muted/5 opacity-60',
-                )}
-            >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex flex-col gap-0">
-                        <span className={cn(
-                            "text-[11px] font-black tracking-tight uppercase leading-tight",
-                            a.status === 'pending' ? "text-warning-foreground" : "text-foreground"
-                        )}>
-                            {a.sequence === 1 ? 'PENGIRIMAN AWAL' : a.step_name || a.role || 'Unnamed Step'}
-                        </span>
-                        {a.step_description && a.step_description !== a.step_name && (
-                            <span className="text-muted-foreground text-[9px] font-medium italic leading-none opacity-80">{a.step_description}</span>
+                {/* Visual indicator bar on the left */}
+                <div className={cn(
+                    "absolute left-0 top-3 bottom-3 w-1 rounded-r-full transition-all",
+                    isApproved && "bg-emerald-500",
+                    isRejected && "bg-rose-500",
+                    isPending && "bg-amber-500 animate-pulse",
+                    (isWaiting || isStaged) && "bg-slate-300 dark:bg-slate-700"
+                )} />
+
+                <div className="flex flex-col gap-2.5">
+                    {/* Header: Step & Role */}
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                            <div className={cn(
+                                "flex h-5 min-w-8 items-center justify-center rounded-md px-1.5 text-[9px] font-black tracking-tighter transition-colors",
+                                isApproved ? "bg-emerald-500 text-white" :
+                                    isRejected ? "bg-rose-500 text-white" :
+                                        isPending ? "bg-amber-500 text-white" :
+                                            "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                            )}>
+                                {stepNumber}
+                            </div>
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-text-main">
+                                {a.role || 'Reviewer'}
+                            </span>
+                        </div>
+                        <div className="flex items-center shrink-0">
+                            {isStaged ? (
+                                <div className="flex items-center gap-1 rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 text-[8px] font-black text-slate-500 uppercase tracking-wider dark:border-slate-700 dark:bg-slate-800">
+                                    <Clock size={8} /> Draft
+                                </div>
+                            ) : (
+                                <StatusBadge status={a.status} />
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Approver Details */}
+                    <div className={cn(
+                        "flex items-center gap-3 rounded-lg border p-2 transition-all",
+                        a.approver
+                            ? "bg-white/60 border-slate-100 dark:bg-slate-950/40 dark:border-slate-800/50"
+                            : "bg-slate-50/50 border-dashed border-slate-200 dark:bg-slate-900/30 dark:border-slate-800"
+                    )}>
+                        {a.approver ? (
+                            <>
+                                <Avatar user={a.approver} size="sm" className="ring-2 ring-white dark:ring-slate-900 shadow-sm h-6 w-6" />
+                                <div className="flex flex-col overflow-hidden">
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-text-main text-[10px] font-black leading-tight truncate">{a.approver.name}</span>
+                                        {isApproved && <Check size={10} className="text-emerald-500 shrink-0" strokeWidth={4} />}
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                        <span className="text-text-soft text-[8.5px] font-medium leading-none truncate">
+                                            {a.approver.email}
+                                        </span>
+                                        {a.decided_at && (
+                                            <>
+                                                <div className="h-0.5 w-0.5 rounded-full bg-slate-300 dark:bg-slate-600 shrink-0" />
+                                                <span className="text-text-soft text-[8.5px] font-bold leading-none flex items-center gap-1 shrink-0">
+                                                    <Clock size={8} /> {a.decided_at}
+                                                </span>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div className="bg-slate-200/50 text-slate-400 flex h-6 w-6 items-center justify-center rounded-full dark:bg-slate-800/50 dark:text-slate-600">
+                                    <Clock size={12} strokeWidth={2.5} />
+                                </div>
+                                <div className="flex flex-col overflow-hidden">
+                                    <span className="text-text-soft text-[10px] font-bold leading-tight uppercase tracking-tight">
+                                        Menunggu Keputusan
+                                    </span>
+                                    <span className="text-text-muted text-[8.5px] font-medium leading-none mt-1 truncate">
+                                        Target: {a.target_approvers || `Semua ${a.role || 'Approver'}`}
+                                    </span>
+                                </div>
+                            </>
                         )}
                     </div>
-                    <div className="flex items-center">
-                        <StatusBadge status={a.status} className="scale-90 origin-right" />
-                    </div>
-                </div>
 
-                <div className={cn(
-                    "mt-2 flex items-center gap-2 rounded-lg border border-transparent py-1.5 px-2 transition-colors",
-                    a.approver ? "bg-background/40 border-border/20" : "bg-muted/20 border-dashed border-border/40"
-                )}>
-                    {a.approver ? (
-                        <>
-                            <Avatar user={a.approver} size="xs" className="ring-1 ring-background shadow-sm h-5 w-5" />
-                            <div className="flex flex-col">
-                                <span className="text-foreground text-[10px] font-bold leading-none">{a.approver.name}</span>
-                                <span className="text-muted-foreground text-[9px] font-medium leading-tight">
-                                    {a.decided_at || a.approver.email}
-                                </span>
+                    {/* Comment Section */}
+                    {a.comment && (
+                        <div className="relative mt-0.5">
+                            <div className="absolute -left-1 top-2 w-2 h-2 bg-indigo-50 dark:bg-indigo-950/20 rotate-45 border-l border-b border-indigo-100 dark:border-indigo-900/30" />
+                            <div className="bg-indigo-50/50 text-indigo-700/90 dark:bg-indigo-950/20 dark:text-indigo-300 border-indigo-100 dark:border-indigo-900/30 rounded-lg border px-3 py-2 text-[9px] font-medium leading-relaxed shadow-xs italic">
+                                <span className="text-[12px] font-serif leading-none mr-1 opacity-50">"</span>
+                                {a.comment}
+                                <span className="text-[12px] font-serif leading-none ml-1 opacity-50">"</span>
                             </div>
-                        </>
-                    ) : (
-                        <>
-                            <div className="bg-muted-foreground/10 text-muted-foreground flex h-5 w-5 items-center justify-center rounded-full">
-                                <i className="fa-solid fa-user-clock text-[8px]" />
+                        </div>
+                    )}
+
+                    {/* Signing Progress Block */}
+                    {a.step_type === 'SIGNING' && a.status === 'pending' && (
+                        <div className="mt-1 space-y-3 rounded-xl border border-blue-100 bg-blue-50/50 p-3 dark:border-blue-900/20 dark:bg-blue-950/10 text-foreground">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500 text-white shadow-md shadow-blue-500/10">
+                                        <i className="fa-solid fa-pen-nib text-xs" />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-[10px] font-black tracking-widest text-blue-700 uppercase dark:text-blue-400">
+                                            Progres Penandatanganan
+                                        </h4>
+                                        <p className="text-[9px] font-bold text-blue-600/70 dark:text-blue-400/60 leading-none mt-0.5">Fase: {signingPhase.replace('_', ' ')}</p>
+                                    </div>
+                                </div>
+                                <span className="text-xs font-black text-blue-600 dark:text-blue-400">{signingState?.progress || 0}%</span>
                             </div>
-                            <div className="flex flex-col">
-                                <span className="text-muted-foreground text-[10px] font-bold leading-none">
-                                    {a.target_approvers || `Menunggu ${a.role || 'Approver'}`}
-                                </span>
+
+                            <div className="h-1.5 w-full overflow-hidden rounded-full bg-blue-200/50 dark:bg-blue-900/20">
+                                <div className="h-full bg-blue-500 transition-all duration-700 ease-out" style={{ width: `${signingState?.progress || 0}%` }} />
                             </div>
-                        </>
+
+                            <div className="space-y-1.5">
+                                {signingPhase === 'SETUP' && (
+                                    <div className="text-blue-600/60 flex items-center gap-1.5 text-[9px] italic">
+                                        <Loader2 size={10} className="animate-spin" />
+                                        <span>Menunggu Staff Legal melakukan konfigurasi delegasi...</span>
+                                    </div>
+                                )}
+
+                                {signingPhase === 'P1_PENDING' && (
+                                    <>
+                                        {!isP1 ? (
+                                            <p className="text-blue-600/60 text-[9px] italic">
+                                                Menunggu Pihak 1 mengunggah dokumen yang telah ditandatangani.
+                                            </p>
+                                        ) : (
+                                            <div className="flex flex-col gap-1.5">
+                                                <p className="text-blue-700 text-[9px] font-black uppercase tracking-wider">Aksi Pihak 1:</p>
+                                                <div className="flex gap-1.5">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => handleSigningAction('download')}
+                                                        className="border-blue-200 text-blue-700 hover:bg-blue-100 gap-1.5 text-[9px] font-bold shadow-xs py-1 h-7"
+                                                    >
+                                                        <Download size={10} /> Unduh Draft
+                                                    </Button>
+                                                    <div className="relative">
+                                                        <input
+                                                            type="file"
+                                                            id="p1-upload"
+                                                            className="hidden"
+                                                            onChange={(e) => {
+                                                                const f = e.target.files?.[0];
+                                                                if (f) handleSigningAction('upload', f);
+                                                            }}
+                                                            disabled={!p1Downloaded || uploading}
+                                                        />
+                                                        <Button
+                                                            size="sm"
+                                                            variant="primary"
+                                                            onClick={() => document.getElementById('p1-upload')?.click()}
+                                                            disabled={!p1Downloaded || uploading}
+                                                            className="bg-blue-600 hover:bg-blue-700 gap-1.5 text-[9px] font-bold shadow-sm shadow-blue-500/10 py-1 h-7"
+                                                        >
+                                                            {uploading ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
+                                                            Unggah TTD P1
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                                {!p1Downloaded && (
+                                                    <p className="text-red-500 text-[8px] font-bold italic">* Anda wajib mengunduh draft terlebih dahulu.</p>
+                                                )}
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+
+                                {signingPhase === 'P2_PENDING' && (
+                                    <>
+                                        {!isP2 ? (
+                                            <p className="text-blue-600/60 text-[9px] italic">
+                                                Menunggu Pihak 2 melakukan finalisasi penandatanganan.
+                                            </p>
+                                        ) : (
+                                            <div className="flex flex-col gap-1.5">
+                                                <p className="text-blue-700 text-[9px] font-black uppercase tracking-wider">Aksi Pihak 2:</p>
+                                                <div className="flex gap-1.5">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => handleSigningAction('download')}
+                                                        className="border-blue-200 text-blue-700 hover:bg-blue-100 gap-1.5 text-[9px] font-bold shadow-xs py-1 h-7"
+                                                    >
+                                                        <Download size={10} /> Unduh Draft
+                                                    </Button>
+                                                    <div className="relative">
+                                                        <input
+                                                            type="file"
+                                                            id="p2-upload"
+                                                            className="hidden"
+                                                            onChange={(e) => {
+                                                                const f = e.target.files?.[0];
+                                                                if (f) handleSigningAction('upload', f);
+                                                            }}
+                                                            disabled={!p2Downloaded || uploading}
+                                                        />
+                                                        <Button
+                                                            size="sm"
+                                                            variant="primary"
+                                                            onClick={() => document.getElementById('p2-upload')?.click()}
+                                                            disabled={!p2Downloaded || uploading}
+                                                            className="bg-blue-600 hover:bg-blue-700 gap-1.5 text-[9px] font-bold shadow-sm shadow-blue-500/10 py-1 h-7"
+                                                        >
+                                                            {uploading ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
+                                                            Unggah TTD P2
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                                {!p2Downloaded && (
+                                                    <p className="text-red-500 text-[8px] font-bold italic">* Anda wajib mengunduh draft terlebih dahulu.</p>
+                                                )}
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        </div>
                     )}
                 </div>
-
-                {a.comment && (
-                    <div className="bg-muted/30 text-muted-foreground border-border/40 mt-2 rounded-lg border p-2 text-[9px] font-medium italic leading-snug">
-                        "{a.comment}"
-                    </div>
-                )}
-
-                {a.step_type === 'SIGNING' && a.status === 'pending' && (
-                    <div className="mt-4 space-y-4 rounded-2xl border border-blue-100 bg-blue-50/50 p-4 dark:border-blue-900/20 dark:bg-blue-950/10 text-foreground">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500 text-white shadow-lg shadow-blue-500/20">
-                                    <i className="fa-solid fa-pen-nib text-sm" />
-                                </div>
-                                <div>
-                                    <h4 className="text-[11px] font-black tracking-widest text-blue-700 uppercase dark:text-blue-400">
-                                        Progres Penandatanganan
-                                    </h4>
-                                    <p className="text-[10px] font-bold text-blue-600/70 dark:text-blue-400/60">Fase: {signingPhase.replace('_', ' ')}</p>
-                                </div>
-                            </div>
-                            <span className="text-sm font-black text-blue-600 dark:text-blue-400">{signingState?.progress || 0}%</span>
-                        </div>
-
-                        <div className="h-2 w-full overflow-hidden rounded-full bg-blue-200/50 dark:bg-blue-900/20">
-                            <div className="h-full bg-blue-500 transition-all duration-700 ease-out" style={{ width: `${signingState?.progress || 0}%` }} />
-                        </div>
-
-                        <div className="space-y-2">
-                            {signingPhase === 'SETUP' && (
-                                <div className="text-blue-600/60 flex items-center gap-2 text-[10px] italic">
-                                    <Loader2 size={12} className="animate-spin" />
-                                    <span>Menunggu Staff Legal melakukan konfigurasi delegasi...</span>
-                                </div>
-                            )}
-
-                            {signingPhase === 'P1_PENDING' && (
-                                <>
-                                    {!isP1 ? (
-                                        <p className="text-blue-600/60 text-[10px] italic">
-                                            Menunggu Pihak 1 mengunggah dokumen yang telah ditandatangani.
-                                        </p>
-                                    ) : (
-                                        <div className="flex flex-col gap-2">
-                                            <p className="text-blue-700 text-[10px] font-black uppercase tracking-wider">Aksi Pihak 1:</p>
-                                            <div className="flex gap-2">
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() => handleSigningAction('download')}
-                                                    className="border-blue-200 text-blue-700 hover:bg-blue-100 gap-2 text-[10px] font-bold shadow-sm"
-                                                >
-                                                    <Download size={12} /> Unduh Draft
-                                                </Button>
-                                                <div className="relative">
-                                                    <input
-                                                        type="file"
-                                                        id="p1-upload"
-                                                        className="hidden"
-                                                        onChange={(e) => {
-                                                            const f = e.target.files?.[0];
-                                                            if (f) handleSigningAction('upload', f);
-                                                        }}
-                                                        disabled={!p1Downloaded || uploading}
-                                                    />
-                                                    <Button
-                                                        size="sm"
-                                                        variant="primary"
-                                                        onClick={() => document.getElementById('p1-upload')?.click()}
-                                                        disabled={!p1Downloaded || uploading}
-                                                        className="bg-blue-600 hover:bg-blue-700 gap-2 text-[10px] font-bold shadow-md shadow-blue-500/20"
-                                                    >
-                                                        {uploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
-                                                        Unggah TTD P1
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                            {!p1Downloaded && (
-                                                <p className="text-red-500 text-[9px] font-bold italic">* Anda wajib mengunduh draft terlebih dahulu.</p>
-                                            )}
-                                        </div>
-                                    )}
-                                </>
-                            )}
-
-                            {signingPhase === 'P2_PENDING' && (
-                                <>
-                                    {!isP2 ? (
-                                        <p className="text-blue-600/60 text-[10px] italic">
-                                            Menunggu Pihak 2 melakukan finalisasi penandatanganan.
-                                        </p>
-                                    ) : (
-                                        <div className="flex flex-col gap-2">
-                                            <p className="text-blue-700 text-[10px] font-black uppercase tracking-wider">Aksi Pihak 2:</p>
-                                            <div className="flex gap-2">
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() => handleSigningAction('download')}
-                                                    className="border-blue-200 text-blue-700 hover:bg-blue-100 gap-2 text-[10px] font-bold shadow-sm"
-                                                >
-                                                    <Download size={12} /> Unduh TTD P1
-                                                </Button>
-                                                <div className="relative">
-                                                    <input
-                                                        type="file"
-                                                        id="p2-upload"
-                                                        className="hidden"
-                                                        onChange={(e) => {
-                                                            const f = e.target.files?.[0];
-                                                            if (f) handleSigningAction('upload', f);
-                                                        }}
-                                                        disabled={!p2Downloaded || uploading}
-                                                    />
-                                                    <Button
-                                                        size="sm"
-                                                        variant="primary"
-                                                        onClick={() => document.getElementById('p2-upload')?.click()}
-                                                        disabled={!p2Downloaded || uploading}
-                                                        className="bg-blue-600 hover:bg-blue-700 gap-2 text-[10px] font-bold shadow-md shadow-blue-500/20"
-                                                    >
-                                                        {uploading ? <Loader2 size={12} className="animate-spin" /> : <FileText size={12} />}
-                                                        Unggah Final Agreement
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                            {!p2Downloaded && (
-                                                <p className="text-red-500 text-[9px] font-bold italic">
-                                                    * Anda wajib mengunduh dokumen TTD Pihak 1 terlebih dahulu.
-                                                </p>
-                                            )}
-                                        </div>
-                                    )}
-                                </>
-                            )}
-                        </div>
-                    </div>
-                )}
             </div>
-        </div>
-    );
+        );
+    };
 
     const renderInitiator = (isOnly: boolean) => (
-        <div key="initiator" className={cn('flex gap-3', !isOnly ? 'relative pb-5' : '')}>
-            {!isOnly && <div className="bg-border/60 absolute top-7 bottom-0 left-[11.5px] w-0.5" />}
-            <div className="relative z-10 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border-2 border-success bg-success text-white shadow-md transition-transform duration-300">
-                <Send size={10} strokeWidth={3} />
+        <div key="initiator" className={cn('flex gap-3', !isOnly ? 'relative pb-4' : '')}>
+            {!isOnly && <div className="bg-border/60 absolute top-6 bottom-0 left-[9.5px] w-0.5" />}
+            <div className="relative z-10 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border border-emerald-500 bg-emerald-500 text-white shadow-xs transition-transform duration-300">
+                <Send size={9} strokeWidth={3} />
             </div>
-            <div className="flex-1 rounded-xl border border-success/20 bg-success/5 p-2.5 px-3 shadow-sm transition-all duration-300">
-                <div className="flex flex-wrap items-center justify-between gap-2 text-foreground">
-                    <span className="text-[11px] font-black tracking-tight uppercase leading-tight">Pengajuan Awal</span>
-                    <span className="rounded-full bg-success/20 px-2 py-0.5 text-[9px] font-black tracking-wider text-success uppercase">
-                        SELESAI
-                    </span>
-                </div>
-                <div className="mt-2 flex items-center gap-2 rounded-lg border border-border/20 bg-background/40 py-1.5 px-2">
-                    <Avatar user={creator} size="xs" className="ring-1 ring-background shadow-sm h-5 w-5" />
-                    <div className="flex flex-col">
-                        <span className="text-foreground text-[10px] font-bold leading-none">{creator?.name}</span>
-                        <span className="text-muted-foreground text-[9px] font-medium">
-                            {submittedAt || 'Sudah Diajukan'}
-                        </span>
+            <div className="flex-1 group relative rounded-xl border border-emerald-500/20 bg-emerald-50/10 dark:bg-emerald-500/5 p-3 shadow-xs transition-all duration-300 hover:border-emerald-500/40">
+                <div className="absolute left-0 top-3 bottom-3 w-1 bg-emerald-500 rounded-r-full" />
+
+                <div className="flex flex-col gap-2.5">
+                    <div className="flex flex-wrap items-center justify-between gap-1.5 text-foreground pl-1">
+                        <span className="text-[10px] font-black tracking-widest uppercase leading-tight text-text-main">Pengajuan Awal</span>
+                        <div className="flex items-center scale-85 origin-right">
+                            <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[8px] font-black tracking-wider text-emerald-600 dark:text-emerald-400 uppercase">
+                                SELESAI
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 rounded-lg border border-emerald-100 dark:border-emerald-900/30 bg-white/60 dark:bg-slate-950/40 p-2 transition-all">
+                        <Avatar user={creator} size="sm" className="ring-2 ring-white dark:ring-slate-900 shadow-sm h-6 w-6" />
+                        <div className="flex flex-col overflow-hidden">
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-text-main text-[10px] font-black leading-tight truncate">{creator?.name}</span>
+                                <Check size={10} className="text-emerald-500 shrink-0" strokeWidth={4} />
+                            </div>
+                            <span className="text-text-soft text-[8.5px] font-bold leading-none mt-0.5 flex items-center gap-1">
+                                <Clock size={8} /> {submittedAt || 'Sudah Diajukan'}
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -440,32 +506,48 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
     );
 
     const renderProjected = () => (
-        <div key="projected" className="relative flex gap-3 pb-5">
-            <div className="bg-border/60 absolute top-7 bottom-0 left-[11.5px] w-0.5" />
-            <div className="relative z-10 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border-2 border-border bg-muted text-muted-foreground shadow-sm">
-                <Info size={10} strokeWidth={3} />
+        <div key="projected" className="relative flex gap-3 pb-4">
+            <div className="bg-border/60 absolute top-6 bottom-0 left-[9.5px] w-0.5" />
+            <div className="relative z-10 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border border-slate-300 bg-slate-100 text-slate-500 shadow-2xs dark:border-slate-700 dark:bg-slate-800">
+                <Info size={9} strokeWidth={3} />
             </div>
-            <div className="flex-1 rounded-xl border border-dashed border-border/40 bg-muted/5 p-2.5 px-3 transition-all">
-                <div className="flex items-center justify-between text-foreground">
-                    <span className="text-[11px] font-black tracking-tight text-foreground/40 uppercase leading-tight">Atasan Langsung</span>
-                    <span className="rounded-full bg-muted-foreground/10 px-2 py-0.5 text-[9px] font-black tracking-wider text-muted-foreground uppercase">
-                        Estimasi
-                    </span>
+            <div className="flex-1 group relative rounded-xl border border-dashed border-slate-300 bg-slate-50/50 dark:bg-slate-900/20 p-3 transition-all hover:border-slate-400">
+                <div className="absolute left-0 top-3 bottom-3 w-1 bg-slate-300 dark:bg-slate-700 rounded-r-full" />
+
+                <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between text-foreground pl-1">
+                        <span className="text-[10px] font-black tracking-widest text-slate-400 uppercase leading-tight">Atasan Langsung</span>
+                        <div className="flex items-center scale-85 origin-right">
+                            <span className="rounded-full bg-slate-200/50 px-2 py-0.5 text-[8px] font-black tracking-wider text-slate-500 uppercase dark:bg-slate-800">
+                                Estimasi
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 rounded-lg border border-dashed border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-slate-950/20 p-2">
+                        <div className="bg-slate-100 text-slate-300 flex h-6 w-6 items-center justify-center rounded-full dark:bg-slate-800 dark:text-slate-700">
+                            <i className="fa-solid fa-user-clock text-[10px]" />
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-slate-400 text-[9px] font-bold leading-none italic uppercase tracking-tighter">
+                                {creator.department_id ? 'Pemeriksa Otomatis' : 'Departemen Belum Diatur'}
+                            </span>
+                        </div>
+                    </div>
                 </div>
-                <div className="mt-1 text-[9px] font-semibold text-muted-foreground/60 italic">Status: {creator.department_id ? 'Pemeriksa Tersedia' : 'Dept Belum Diatur'}</div>
             </div>
         </div>
     );
 
     return (
-        <div className="animate-in fade-in relative flex flex-col gap-6 duration-500">
-            <div className="mb-2 flex items-center gap-4">
+        <div className="animate-in fade-in relative flex flex-col gap-4 duration-500">
+            <div className="mb-1 flex items-center gap-3">
                 <div className="flex-1">
                     <SearchInput
                         placeholder="CARI NAMA / ROLE..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="h-10 text-[10px] uppercase"
+                        className="h-8.5 text-[9px] uppercase"
                     />
                 </div>
 
@@ -494,14 +576,14 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                             variant="outline"
                             size="sm"
                             className={cn(
-                                'border-surface-border text-text-main hover:bg-surface-muted h-10 gap-2 px-4 transition-all',
+                                'border-surface-border text-text-main hover:bg-surface-muted h-8.5 gap-1.5 px-3 transition-all',
                                 activeCount > 0 && 'border-primary bg-primary text-primary-foreground',
                             )}
                         >
-                            <ListFilter size={14} strokeWidth={3} />
-                            <span className="text-[10px] uppercase">Filter</span>
+                            <ListFilter size={12} strokeWidth={3} />
+                            <span className="text-[9px] uppercase">Filter</span>
                             {activeCount > 0 && (
-                                <span className="text-primary ml-1 flex h-4 w-4 items-center justify-center rounded-md bg-white text-[8px] font-bold">
+                                <span className="text-primary ml-1 flex h-3.5 w-3.5 items-center justify-center rounded-md bg-white text-[8px] font-bold">
                                     {activeCount}
                                 </span>
                             )}
@@ -513,22 +595,115 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                         size="sm"
                         onClick={handleExportPdf}
                         disabled={isExporting}
-                        className="dark:bg-sidebar border-surface-border bg-surface-base text-text-desc hover:text-text-main h-10 w-10 p-0 transition-all disabled:opacity-20"
+                        className="dark:bg-sidebar border-surface-border bg-surface-base text-text-desc hover:text-text-main h-8.5 w-8.5 p-0 transition-all disabled:opacity-20 animate-in fade-in"
                     >
-                        {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} strokeWidth={2.5} />}
+                        {isExporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} strokeWidth={2.5} />}
                     </Button>
                 </div>
             </div>
 
-            {/* FilterPopover trigger wraps the button above */}
-
-            <div className="relative px-2">
+            <div className="relative px-1 space-y-8">
                 {!activeCount &&
                     !search &&
                     !approvals.some((a) => a.sequence === 1) &&
-                    renderInitiator(filteredSteps.length === 0 && !showProjectedManager)}
+                    renderInitiator(stepTree.length === 0 && !showProjectedManager)}
                 {!activeCount && !search && showProjectedManager && renderProjected()}
-                {filteredSteps.map((a, i) => renderStep(a, i, i === filteredSteps.length - 1))}
+
+                {stepTree.map((block, bIdx) => {
+                    const isLastBlock = bIdx === stepTree.length - 1;
+
+                    return (
+                        <div key={block.workflowId + bIdx} className={cn(
+                            "relative space-y-6",
+                            block.isSubWorkflow && "ml-4 border-l-2 border-dashed border-indigo-200 pl-4 py-2 bg-indigo-50/20 rounded-r-xl dark:border-indigo-900/40 dark:bg-indigo-950/5"
+                        )}>
+                            {block.isSubWorkflow && (
+                                <div className="flex items-center gap-2 mb-4">
+                                    <div className="bg-indigo-500 h-1.5 w-1.5 rounded-full animate-pulse" />
+                                    <span className="text-[10px] font-black uppercase tracking-tighter text-indigo-600 dark:text-indigo-400">
+                                        Sub-Workflow: {block.workflowName}
+                                    </span>
+                                </div>
+                            )}
+
+                            {block.groups.map((group: { sequence: number; stepName: string; stepDescription?: string; items: ContractApproval[] }, idx: number) => {
+                                const isLastGroup = idx === block.groups.length - 1 && isLastBlock;
+                                return (
+                                    <div key={group.sequence + idx} className="relative pl-7 pb-1.5">
+                                        {/* Step connector line */}
+                                        {!(idx === block.groups.length - 1 && isLastBlock) && (
+                                            <div className="absolute left-[9px] top-5 bottom-0 w-0.5 bg-slate-200 dark:bg-slate-800" />
+                                        )}
+
+                                        {/* Step Sequence Number Indicator */}
+                                        <div className={cn(
+                                            "absolute left-0 top-0.5 z-10 flex h-5 w-5 items-center justify-center rounded-full border font-extrabold text-[9px] shadow-2xs",
+                                            block.isSubWorkflow
+                                                ? "border-indigo-300 bg-indigo-100 text-indigo-600 dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-400"
+                                                : "border-slate-300 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
+                                        )}>
+                                            {group.sequence}
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            {/* Step Group Title & Details */}
+                                            <div className="flex flex-col">
+                                                <h3 className="text-[11px] font-black uppercase tracking-wider text-text-main">
+                                                    {group.stepName === 'Persetujuan Tambahan' ? 'Persetujuan Tambahan' : `Tahap ${group.sequence}: ${group.stepName}`}
+                                                </h3>
+                                                {group.stepDescription && group.stepDescription !== group.stepName && (
+                                                    <p className="text-[9px] font-medium text-text-soft italic mt-0.5 leading-relaxed">
+                                                        {group.stepDescription}
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            {/* Approvals listed under this group with L-shaped tree branches for ad-hoc items */}
+                                            <div className="space-y-1.5">
+                                                {(() => {
+                                                    const adhocItems = group.items.filter((item: ContractApproval) => item.role === 'Persetujuan Tambahan');
+                                                    return group.items.map((a: ContractApproval) => {
+                                                        const isAdhoc = a.role === 'Persetujuan Tambahan';
+                                                        if (!isAdhoc) {
+                                                            return (
+                                                                <div key={a.id} className="relative">
+                                                                    {/* Line down to adhoc items if they exist */}
+                                                                    {adhocItems.length > 0 && (
+                                                                        <div className="absolute left-[9px] top-6 bottom-0 w-0.5 bg-slate-200 dark:bg-slate-800" />
+                                                                    )}
+                                                                    {renderApprovalCard(a, `${group.sequence}`)}
+                                                                </div>
+                                                            );
+                                                        } else {
+                                                            const adhocIdx = adhocItems.indexOf(a);
+                                                            const isLastAdhoc = adhocIdx === adhocItems.length - 1;
+                                                            const stepNumber = `${group.sequence}.${adhocIdx + 1}`;
+                                                            return (
+                                                                <div key={a.id} className="relative pl-6 animate-in fade-in duration-300">
+                                                                    {/* Tree connector branch */}
+                                                                    <div className="absolute left-[9px] top-0 bottom-0 pointer-events-none">
+                                                                        {/* Vertical line segment */}
+                                                                        <div className={cn(
+                                                                            "absolute left-0 top-0 w-0.5 bg-slate-200 dark:bg-slate-800",
+                                                                            isLastAdhoc ? "h-[16px]" : "bottom-0"
+                                                                        )} />
+                                                                        {/* Horizontal branch line segment */}
+                                                                        <div className="absolute left-0 top-[16px] w-3.5 h-0.5 bg-slate-200 dark:bg-slate-800" />
+                                                                    </div>
+                                                                    {renderApprovalCard(a, stepNumber)}
+                                                                </div>
+                                                            );
+                                                        }
+                                                    });
+                                                })()}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );

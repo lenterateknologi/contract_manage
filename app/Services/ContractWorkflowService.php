@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\WorkflowAction;
 use App\Models\Approval;
 use App\Models\Contract;
 use App\Models\ContractStatus;
@@ -116,7 +117,6 @@ class ContractWorkflowService
             'workflow_id' => $workflow->id,
             'origin_workflow_id' => $originWorkflowId,
             'workflow_step_id' => $firstStep->id,
-            'status_id' => $nextStatus?->id ?: $contract->status_id,
             'status' => $nextStatus?->code ?: $statusStr,
             'submitted_at' => $firstStep->step === 1 ? $contract->submitted_at : now(),
         ]);
@@ -283,8 +283,11 @@ class ContractWorkflowService
     /**
      * Approve a contract (handles approval and moves to next step if all approved)
      */
-    public function approveContract(Contract $contract, Approval $approval, ?string $comment = null, ?string $attachmentPath = null, ?string $assignedPicId = null, ?string $executionOrder = null, ?string $actionCode = 'approve'): Contract
+    public function approveContract(Contract $contract, Approval $approval, ?string $comment = null, ?string $attachmentPath = null, ?string $assignedPicId = null, ?string $executionOrder = null, string|WorkflowAction $actionCode = WorkflowAction::APPROVE): Contract
     {
+        if ($actionCode instanceof WorkflowAction) {
+            $actionCode = $actionCode->value;
+        }
 
         if (! in_array($approval->status, ['pending', 'waiting'])) {
             return $contract;
@@ -292,9 +295,10 @@ class ContractWorkflowService
 
         $isRoleBased = $approval->workflowStep->approver_type === 'role';
 
-        if ($isRoleBased) {
+        if ($isRoleBased && $approval->role !== 'Persetujuan Tambahan') {
             $alreadyApproved = $contract->approvals()
                 ->where('workflow_step_id', $approval->workflow_step_id)
+                ->where('role', '!=', 'Persetujuan Tambahan')
                 ->where('status', 'approved')
                 ->exists();
 
@@ -309,6 +313,22 @@ class ContractWorkflowService
         $approval->approve($comment, $attachmentPath);
 
         $this->queryService->logHistory($contract, 'APPROVAL_APPROVED', "Disetujui oleh {$approval->approver_name} ({$approval->role})", Auth::id());
+
+        // Sequential Ad-Hoc Approvers: Trigger next one if any
+        if ($approval->role === 'Persetujuan Tambahan') {
+            $nextAdhoc = Approval::where('contract_id', $contract->id)
+                ->where('workflow_step_id', $approval->workflow_step_id)
+                ->where('role', 'Persetujuan Tambahan')
+                ->where('is_active', true)
+                ->where('status', 'waiting')
+                ->orderBy('sort_order')
+                ->first();
+
+            if ($nextAdhoc) {
+                $nextAdhoc->update(['status' => 'pending']);
+                $this->queryService->logHistory($contract, 'APPROVAL_PENDING', "Persetujuan dialihkan ke approver tambahan berikutnya: {$nextAdhoc->approver_name}", Auth::id());
+            }
+        }
 
         if ($assignedPicId) {
             $metadata = $contract->metadata ?? [];
@@ -327,13 +347,25 @@ class ContractWorkflowService
 
         $currentStepApprovals = $contract->approvals()
             ->where('workflow_step_id', $approval->workflow_step_id)
+            ->where('is_active', true)
             ->get();
+
+        $regularApprovals = $currentStepApprovals->filter(fn ($a) => $a->role !== 'Persetujuan Tambahan');
+        $adhocApprovals = $currentStepApprovals->filter(fn ($a) => $a->role === 'Persetujuan Tambahan');
 
         $isRoleBased = $approval->workflowStep->approver_type === 'role';
 
-        $allApproved = $isRoleBased
-            ? $currentStepApprovals->contains(fn ($a) => $a->status === 'approved')
-            : $currentStepApprovals->every(fn ($a) => $a->status === 'approved');
+        $adhocApproved = $adhocApprovals->every(fn ($a) => $a->status === 'approved');
+
+        if ($regularApprovals->isEmpty()) {
+            $regularApproved = true;
+        } else {
+            $regularApproved = $isRoleBased
+                ? $regularApprovals->contains(fn ($a) => $a->status === 'approved')
+                : $regularApprovals->every(fn ($a) => $a->status === 'approved');
+        }
+
+        $allApproved = $adhocApproved && $regularApproved;
 
         if ($approval->workflowStep->step_category === 'joint_upload') {
             $metadata = $contract->metadata ?? [];
@@ -438,6 +470,7 @@ class ContractWorkflowService
             if ($isRoleBased) {
                 $contract->approvals()
                     ->where('workflow_step_id', $approval->workflow_step_id)
+                    ->where('role', '!=', 'Persetujuan Tambahan')
                     ->whereIn('status', ['pending', 'waiting'])
                     ->delete();
             }
@@ -454,9 +487,8 @@ class ContractWorkflowService
 
             $actionCode = $actionCode ?? 'approve';
             $stepAction = $approval->workflowStep->actions()
-                ->whereHas('masterAction', function ($query) use ($actionCode) {
-                    $query->where('code', $actionCode);
-                })->first();
+                ->where('action_code', $actionCode)
+                ->first();
 
             // Apply autofill fields
             if ($stepAction && ! empty($stepAction->autofilled_fields)) {
@@ -506,7 +538,6 @@ class ContractWorkflowService
 
                 $contract->update([
                     'workflow_step_id' => $nextStep->id,
-                    'status_id' => $nextStatus?->id ?: $contract->status_id,
                     'status' => $nextStatus?->code ?: $statusStr,
                 ]);
 
@@ -519,7 +550,6 @@ class ContractWorkflowService
                 $archivedStatus = ContractStatus::where('code', 'archived')->first();
                 if ($approval->workflowStep->step_category === 'closing' && $archivedStatus) {
                     $contract->update([
-                        'status_id' => $archivedStatus->id,
                         'status' => $archivedStatus->code,
                         'workflow_step_id' => null,
                     ]);
@@ -528,7 +558,6 @@ class ContractWorkflowService
                     $approvedStatus = ContractStatus::where('code', 'approved')->first();
                     $contract->update([
                         'status' => 'approved',
-                        'status_id' => $approvedStatus?->id,
                         'workflow_step_id' => null,
                     ]);
                     $this->queryService->logHistory($contract, 'CONTRACT_APPROVED', 'Seluruh persetujuan selesai. Kontrak disetujui.', Auth::id());
@@ -554,9 +583,8 @@ class ContractWorkflowService
 
         // Look up custom reject action config
         $stepAction = $approval->workflowStep->actions()
-            ->whereHas('masterAction', function ($query) {
-                $query->where('code', 'reject');
-            })->first();
+            ->where('action_code', 'reject')
+            ->first();
 
         $targetStep = null;
         if ($stepAction) {
@@ -588,7 +616,6 @@ class ContractWorkflowService
         $revisionStatus = ContractStatus::where('code', $statusStr)->first();
         $contract->update([
             'status' => $revisionStatus?->code ?: $statusStr,
-            'status_id' => $revisionStatus?->id,
             'workflow_step_id' => $targetStep ? $targetStep->id : null,
         ]);
 
@@ -617,5 +644,37 @@ class ContractWorkflowService
     public function resolveHierarchyApprover(Contract $contract, int $level = 1)
     {
         return $this->queryService->resolveHierarchyApprover($contract, $level);
+    }
+
+    /**
+     * Handles automatic approval if the current user is also an approver for the next step(s).
+     */
+    private function handleAutoApproval(Contract $contract, ?User $user): void
+    {
+        if (! $user) {
+            return;
+        }
+
+        $pendingApprovals = $contract->approvals()
+            ->where('workflow_step_id', $contract->workflow_step_id)
+            ->where('status', 'pending')
+            ->where('is_active', true)
+            ->where('user_id', $user->id)
+            ->get();
+
+        foreach ($pendingApprovals as $approval) {
+            $step = $approval->workflowStep;
+
+            // BUGFIX: Remove auto-approve for Step 1 (Drafting)
+            // Even if the creator is the same as Step 1 approver, they must manually trigger it.
+            if ($step->step === 1) {
+                continue;
+            }
+
+            $skipCategories = ['signing', 'upload', 'joint_upload'];
+            if (! in_array(strtolower($step->step_category ?? ''), $skipCategories)) {
+                $this->approveContract($contract, $approval, 'Sistem Auto-Approve (Pemeriksa yang sama)');
+            }
+        }
     }
 }

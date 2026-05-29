@@ -61,20 +61,10 @@ test('admin can export master data including workflow tables', function () {
         'step_category' => 'approval',
         'is_active' => true,
     ]);
-
-    $masterAction = App\Models\MasterAction::where('code', 'approve')->first()
-        ?: App\Models\MasterAction::create([
-            'id' => (string) Str::uuid(),
-            'name' => 'Approve',
-            'code' => 'approve',
-            'is_active' => true,
-        ]);
-
     $action = WorkflowStepAction::create([
         'id' => (string) Str::uuid(),
         'workflow_step_id' => $step->id,
-        'master_action_id' => $masterAction->id,
-        'master_action_id' => $masterAction->id,
+        'action_code' => 'approve',
         'is_active' => true,
     ]);
 
@@ -105,14 +95,6 @@ test('admin can import master data using id as key for createorupdate', function
     $uuidWorkflow = (string) Str::uuid();
     $uuidStep = (string) Str::uuid();
     $uuidAction = (string) Str::uuid();
-
-    $masterAction = App\Models\MasterAction::where('code', 'request_change')->first()
-        ?: App\Models\MasterAction::create([
-            'id' => (string) Str::uuid(),
-            'name' => 'Request Change',
-            'code' => 'request_change',
-            'is_active' => true,
-        ]);
 
     $payload = [
         'company_groups' => [],
@@ -147,8 +129,7 @@ test('admin can import master data using id as key for createorupdate', function
             [
                 'id' => $uuidAction,
                 'workflow_step_id' => $uuidStep,
-                'master_action_id' => $masterAction->id,
-                'master_action_id' => $masterAction->id,
+                'action_code' => 'return',
                 'is_active' => true,
             ],
         ],
@@ -182,7 +163,7 @@ test('admin can import master data using id as key for createorupdate', function
     $this->assertDatabaseHas('m_workflow_step_actions', [
         'id' => $uuidAction,
         'workflow_step_id' => $uuidStep,
-        'master_action_id' => $masterAction->id,
+        'action_code' => 'return',
     ]);
 
     // Now test importing again with the same UUIDs but updated values (replace scenario)
@@ -219,7 +200,7 @@ test('admin can import master data using id as key for createorupdate', function
             [
                 'id' => $uuidAction,
                 'workflow_step_id' => $uuidStep,
-                'master_action_id' => $masterAction->id,
+                'action_code' => 'return',
                 'is_active' => false,
             ],
         ],
@@ -381,6 +362,7 @@ test('admin can clean master and transactional data', function () {
 
     // 2. Perform the clean POST request
     $response = $this->actingAs($this->admin)
+        ->withoutMiddleware()
         ->post(route('admin.master-data-sync.clean'), [
             'entities' => ['workflows', 'company_groups', 'navigation_mappings'],
         ]);

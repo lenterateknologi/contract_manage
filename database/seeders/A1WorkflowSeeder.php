@@ -196,8 +196,6 @@ class A1WorkflowSeeder extends Seeder
                 ],
             ];
 
-            $masterActions = DB::table('m_master_actions')->pluck('id', 'code')->toArray();
-
             foreach ($steps as $s) {
                 $actions = [];
                 switch (strtoupper($s['type'])) {
@@ -243,24 +241,10 @@ class A1WorkflowSeeder extends Seeder
                 ]);
 
                 foreach ($actions as $actCode) {
-                    $masterActionId = $masterActions[$actCode] ?? null;
-                    if (! $masterActionId) {
-                        $masterActionId = \Illuminate\Support\Str::uuid()->toString();
-                        DB::table('m_master_actions')->insert([
-                            'id' => $masterActionId,
-                            'name' => ucfirst($actCode),
-                            'code' => $actCode,
-                            'is_active' => true,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-                        $masterActions[$actCode] = $masterActionId;
-                    }
-
                     DB::table('m_workflow_step_actions')->insert([
                         'id' => \Illuminate\Support\Str::uuid()->toString(),
                         'workflow_step_id' => $step->id,
-                        'master_action_id' => $masterActionId,
+                        'action_code' => $actCode,
                         'required_fields' => json_encode([]),
                         'autofilled_fields' => json_encode($actCode === 'approve' && ($s['category'] ?? null) === 'closing' ? ['closed_at'] : []),
                         'signing_parties' => json_encode($actCode === 'sign' ? ['initiator', 'pic'] : []),
@@ -299,17 +283,14 @@ class A1WorkflowSeeder extends Seeder
                     ->get();
 
                 foreach ($stepActions as $sa) {
-                    $masterAction = DB::table('m_master_actions')->where('id', $sa->master_action_id)->first();
-                    if ($masterAction) {
-                        if ($masterAction->code === 'approve') {
-                            DB::table('m_workflow_step_actions')
-                                ->where('id', $sa->id)
-                                ->update(['next_step_id' => $nextStepId]);
-                        } elseif ($masterAction->code === 'reject') {
-                            DB::table('m_workflow_step_actions')
-                                ->where('id', $sa->id)
-                                ->update(['next_step_id' => $firstStepId]);
-                        }
+                    if ($sa->action_code === 'approve') {
+                        DB::table('m_workflow_step_actions')
+                            ->where('id', $sa->id)
+                            ->update(['next_step_id' => $nextStepId]);
+                    } elseif ($sa->action_code === 'reject') {
+                        DB::table('m_workflow_step_actions')
+                            ->where('id', $sa->id)
+                            ->update(['next_step_id' => $firstStepId]);
                     }
                 }
             }

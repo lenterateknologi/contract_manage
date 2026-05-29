@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Enums\WorkflowAction;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class WorkflowStepAction extends Model
@@ -20,6 +22,7 @@ class WorkflowStepAction extends Model
     protected $fillable = [
         'workflow_step_id',
         'master_action_id',
+        'action_code',
         'next_step_id',
         'next_workflow_id',
         'next_workflow_step_id',
@@ -35,6 +38,7 @@ class WorkflowStepAction extends Model
     ];
 
     protected $casts = [
+        'action_code' => WorkflowAction::class,
         'required_fields' => 'array',
         'autofilled_fields' => 'array',
         'signing_parties' => 'array',
@@ -45,11 +49,6 @@ class WorkflowStepAction extends Model
     public function step(): BelongsTo
     {
         return $this->belongsTo(WorkflowStep::class, 'workflow_step_id');
-    }
-
-    public function masterAction(): BelongsTo
-    {
-        return $this->belongsTo(MasterAction::class, 'master_action_id');
     }
 
     public function nextStep(): BelongsTo

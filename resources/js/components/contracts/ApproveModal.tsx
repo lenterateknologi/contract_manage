@@ -17,12 +17,15 @@ interface Props {
         executionOrder?: string,
         p1UserId?: string,
         p2UserId?: string,
+        actionCode?: string,
     ) => Promise<void>;
     isAssign?: boolean;
     contract: any;
+    actionCode?: string;
+    actionAlias?: string;
 }
 
-export default function ApproveModal({ open, onClose, onSubmit, isAssign, contract }: Props) {
+export default function ApproveModal({ open, onClose, onSubmit, isAssign, contract, actionCode, actionAlias }: Props) {
     const [note, setNote] = useState('');
     const [attachment, setAttachment] = useState<File | null>(null);
     const [assignedPicId, setAssignedPicId] = useState<string>('');
@@ -125,6 +128,7 @@ export default function ApproveModal({ open, onClose, onSubmit, isAssign, contra
                 executionOrder || undefined,
                 p1UserId || undefined,
                 p2UserId || undefined,
+                actionCode,
             );
             onClose();
             setNote('');
@@ -139,6 +143,7 @@ export default function ApproveModal({ open, onClose, onSubmit, isAssign, contra
     };
 
     const renderTitle = () => {
+        if (actionAlias) return <><CheckCircle2 size={18} className="text-primary" /> {actionAlias}</>;
         if (isAssign) return <><UserCheck size={18} className="text-primary" /> Tugaskan & Setujui</>;
         if (contract?.workflow_step?.step === 1) return <><Send size={18} className="text-primary" /> Kirim Persetujuan</>;
         if (contract?.next_step?.step_type === 'SIGNING' && (contract?.metadata?.signing_state?.phase === 'SETUP' || !contract?.metadata?.signing_state)) {

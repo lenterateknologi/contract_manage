@@ -243,7 +243,8 @@ class ContractController extends Controller
             'creator:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
             'contractType:id,name',
             'approvals.approver:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
-            'approvals.workflowStep:id,step,description,step_category',
+            'approvals.workflowStep:id,step,description,step_category,workflow_id',
+            'approvals.workflowStep.workflow:id,name',
             'workflow.steps:id,workflow_id,step,description,approver_type,step_category,meta',
             'workflowStep:id,step,description,step_category',
             'versions.uploader:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
@@ -322,7 +323,8 @@ class ContractController extends Controller
             'statusDetail:code,label,display_mode',
             'approvals.approver:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
             'approvals.approver.department:id,name',
-            'approvals.workflowStep:id,step,description,step_category',
+            'approvals.workflowStep:id,step,description,step_category,workflow_id',
+            'approvals.workflowStep.workflow:id,name',
             'workflow.steps:id,workflow_id,step,description,approver_type,step_category,meta',
             'workflowStep:id,step,description,step_category',
             'versions.uploader:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
@@ -1367,7 +1369,8 @@ class ContractController extends Controller
             'initiator.department:id,name',
             'versions.uploader:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
             'approvals.approver:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
-            'approvals.workflowStep:id,step,description,step_category',
+            'approvals.workflowStep:id,step,description,step_category,workflow_id',
+            'approvals.workflowStep.workflow:id,name',
             'workflow.steps:id,workflow_id,step,description,approver_type,step_category,meta',
             'workflowStep:id,step,description,step_category',
             'histories.actor:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
@@ -1398,10 +1401,12 @@ class ContractController extends Controller
         return response()->json($workflows);
     }
 
-    public function getUsers(): JsonResponse
+    public function getUsers(Request $request): JsonResponse
     {
+        $all = $request->boolean('all', false);
+
         $users = User::with('department')
-            ->when(Auth::user()->role === 'Manager', function ($q) {
+            ->when(! $all && Auth::user()->role === 'Manager', function ($q) {
                 return $q->where('department_id', Auth::user()->department_id);
             })
             ->orderBy('name')

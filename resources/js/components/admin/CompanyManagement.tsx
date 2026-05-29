@@ -6,7 +6,7 @@ import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { usePermissions } from '@/hooks/use-permissions';
-import { cn } from '@/lib/utils';
+import { cn, companyColor } from '@/lib/utils';
 import { router, useForm } from '@inertiajs/react';
 import { Building2, Plus, Trash2 } from 'lucide-react';
 import React, { useMemo } from 'react';
@@ -17,19 +17,6 @@ interface CompanyManagementProps {
     regions: any;
     groups: any;
     filters: any;
-}
-
-const COMPANY_COLORS = [
-    'bg-primary-muted text-primary',
-    'bg-info/10 text-info',
-    'bg-primary/10 text-primary',
-    'bg-primary/20 text-primary',
-];
-
-function companyColor(name: string) {
-    let h = 0;
-    for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
-    return COMPANY_COLORS[Math.abs(h) % COMPANY_COLORS.length];
 }
 
 const CompanyCell = ({ name }: Readonly<{ name: string }>) => (

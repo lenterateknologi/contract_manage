@@ -28,6 +28,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/contracts/{id}/send', [ContractApprovalController::class, 'send']);
     Route::post('/contracts/{id}/approve', [ContractApprovalController::class, 'approve']);
     Route::post('/contracts/{id}/reject', [ContractApprovalController::class, 'reject']);
+    Route::post('/contracts/{id}/add-approver', [ContractApprovalController::class, 'addAdhocApprover']);
+    Route::post('/contracts/{id}/submit-approvers', [ContractApprovalController::class, 'submitAdhocApprovers']);
+    Route::delete('/contracts/{id}/approver/{approvalId}', [ContractApprovalController::class, 'removeAdhocApprover']);
     Route::post('/contracts/{id}/revision', [ContractFileController::class, 'uploadRevision']);
     Route::post('/contracts/{id}/version', [ContractFileController::class, 'changeVersion']);
     Route::post('/contracts/{id}/attachments', [ContractFileController::class, 'uploadAttachment']);

@@ -236,15 +236,18 @@ class ContractFormatter
                 $targetEmails = $approvers->pluck('email')->implode(', ');
             }
 
-            if ($approvals->isNotEmpty()) {
-                $isRoleBased = $step->approver_type === 'role';
-                $hasDecision = $approvals->contains(fn ($a) => in_array($a->status, ['approved', 'rejected']));
-                $isAllPending = $approvals->every(fn ($a) => $a->status === 'pending');
+            $regularApprovals = $approvals->filter(fn ($a) => $a->role !== 'Persetujuan Tambahan');
+            $adhocApprovals = $approvals->filter(fn ($a) => $a->role === 'Persetujuan Tambahan');
 
-                if ($isAllPending && $approvals->count() > 1) {
-                    $first = $approvals->first();
-                    $candidateNames = $approvals->map(fn ($a) => $a->approver?->name ?? $a->approver_name)->implode(', ');
-                    $candidateEmails = $approvals->map(fn ($a) => $a->approver?->email)->filter()->implode(', ');
+            if ($regularApprovals->isNotEmpty()) {
+                $isRoleBased = $step->approver_type === 'role';
+                $hasDecision = $regularApprovals->contains(fn ($a) => in_array($a->status, ['approved', 'rejected']));
+                $isAllPending = $regularApprovals->every(fn ($a) => $a->status === 'pending');
+
+                if ($isAllPending && $regularApprovals->count() > 1) {
+                    $first = $regularApprovals->first();
+                    $candidateNames = $regularApprovals->map(fn ($a) => $a->approver?->name ?? $a->approver_name)->implode(', ');
+                    $candidateEmails = $regularApprovals->map(fn ($a) => $a->approver?->email)->filter()->implode(', ');
 
                     $timeline[] = [
                         'id' => 'step-group-' . $step->id,
@@ -264,9 +267,9 @@ class ContractFormatter
                         'approver' => null,
                     ];
                 } else {
-                    $approvalsToDisplay = $approvals;
+                    $approvalsToDisplay = $regularApprovals;
                     if ($isRoleBased && $hasDecision) {
-                        $approvalsToDisplay = $approvals->filter(fn ($a) => in_array($a->status, ['approved', 'rejected']));
+                        $approvalsToDisplay = $regularApprovals->filter(fn ($a) => in_array($a->status, ['approved', 'rejected']));
                     }
 
                     foreach ($approvalsToDisplay as $a) {
@@ -284,6 +287,8 @@ class ContractFormatter
                             'status' => $a->status,
                             'comment' => $a->comment,
                             'decided_at' => $a->decided_at?->format('d/m/Y H:i'),
+                            'created_at' => $a->created_at?->toIso8601String(),
+                            'is_active' => $a->is_active,
                             'step_type' => 'APPROVAL',
                             'step_name' => $step->name,
                             'step_description' => $step->description,
@@ -314,6 +319,28 @@ class ContractFormatter
                     'note' => null,
                     'approved_at' => null,
                     'approver' => null,
+                ];
+            }
+
+            foreach ($adhocApprovals as $a) {
+                $timeline[] = [
+                    'id' => $a->id,
+                    'user_id' => $a->user_id,
+                    'approver_name' => $a->approver_name,
+                    'role' => 'Persetujuan Tambahan',
+                    'department_name' => $a->approver?->department?->name ?? $deptName,
+                    'target_approvers' => $a->approver_name,
+                    'target_emails' => $a->approver?->email,
+                    'sequence' => $step->step,
+                    'status' => $a->status,
+                    'comment' => $a->comment,
+                    'decided_at' => $a->decided_at?->format('d/m/Y H:i'),
+                    'created_at' => $a->created_at?->toIso8601String(),
+                    'is_active' => $a->is_active,
+                    'step_type' => 'APPROVAL',
+                    'step_name' => 'Persetujuan Tambahan',
+                    'step_description' => 'Persetujuan tambahan di luar alur kerja template',
+                    'approver' => self::formatUser($a->approver),
                 ];
             }
         }

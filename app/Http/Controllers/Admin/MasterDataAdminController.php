@@ -238,12 +238,12 @@ class MasterDataAdminController extends Controller
                     ];
                 })->toArray();
 
-                $exportData['workflow_step_actions'] = WorkflowStepAction::with('masterAction')->get()->map(function ($a) {
+                $exportData['workflow_step_actions'] = WorkflowStepAction::all()->map(function ($a) {
                     return [
                         'id' => $a->id,
                         'workflow_step_id' => $a->workflow_step_id,
                         'master_action_id' => $a->master_action_id,
-                        'master_action_code' => $a->masterAction->code ?? null,
+                        'action_code' => $a->action_code ? $a->action_code->value : null,
                         'next_step_id' => $a->next_step_id,
                         'next_workflow_id' => $a->next_workflow_id,
                         'next_workflow_step_id' => $a->next_workflow_step_id,
@@ -1004,7 +1004,6 @@ class MasterDataAdminController extends Controller
             }
 
             // 14. Workflow Step Actions
-            $masterActionMap = DB::table('m_master_actions')->pluck('id', 'code')->all();
             if (! empty($data['workflow_step_actions']) && is_array($data['workflow_step_actions'])) {
                 foreach ($data['workflow_step_actions'] as $a) {
                     try {
@@ -1013,10 +1012,6 @@ class MasterDataAdminController extends Controller
                         }
 
                         $stepId = $workflowStepIdMap[$a['workflow_step_id']] ?? $a['workflow_step_id'];
-                        $masterActionId = $a['master_action_id'];
-                        if (! empty($a['master_action_code'])) {
-                            $masterActionId = $masterActionMap[$a['master_action_code']] ?? $masterActionId;
-                        }
 
                         $nextStepId = ! empty($a['next_step_id']) ? ($workflowStepIdMap[$a['next_step_id']] ?? $a['next_step_id']) : null;
                         $nextWorkflowId = ! empty($a['next_workflow_id']) ? ($workflowIdMap[$a['next_workflow_id']] ?? $a['next_workflow_id']) : null;
@@ -1025,7 +1020,7 @@ class MasterDataAdminController extends Controller
                         $model = WorkflowStepAction::firstOrNew(['id' => $a['id']]);
                         $model->forceFill([
                             'workflow_step_id' => $stepId,
-                            'master_action_id' => $masterActionId,
+                            'action_code' => $a['action_code'] ?? ($a['master_action_code'] ?? null),
                             'next_step_id' => $nextStepId,
                             'next_workflow_id' => $nextWorkflowId,
                             'next_workflow_step_id' => $nextWorkflowStepId,

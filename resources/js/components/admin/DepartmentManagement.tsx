@@ -6,7 +6,7 @@ import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { CompactSwitch } from '@/components/ui/forms/CompactSwitch';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { usePermissions } from '@/hooks/use-permissions';
-import { cn } from '@/lib/utils';
+import { cn, deptColor } from '@/lib/utils';
 import { router, useForm } from '@inertiajs/react';
 import { Building2, Plus, Trash2 } from 'lucide-react';
 import React, { useMemo } from 'react';
@@ -15,20 +15,6 @@ import { FormSection, ManagementForm } from './ManagementForm';
 interface DepartmentManagementProps {
     departments: any;
     filters: any;
-}
-
-const DEPT_COLORS = [
-    'bg-primary-muted text-primary',
-    'bg-success/10 text-success',
-    'bg-info/10 text-info',
-    'bg-primary/10 text-primary',
-    'bg-warning/10 text-warning',
-];
-
-function deptColor(name: string) {
-    let h = 0;
-    for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
-    return DEPT_COLORS[Math.abs(h) % DEPT_COLORS.length];
 }
 
 const DeptCell = ({ name, code }: Readonly<{ name: string; code: string }>) => (

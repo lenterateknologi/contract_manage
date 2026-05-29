@@ -5,7 +5,7 @@ import { ExcelActions } from '@/components/ui/data/ExcelActions';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { usePermissions } from '@/hooks/use-permissions';
-import { cn } from '@/lib/utils';
+import { cn, regionColor } from '@/lib/utils';
 import { router, useForm } from '@inertiajs/react';
 import { GitBranch, Plus, Trash2 } from 'lucide-react';
 import React, { useMemo } from 'react';
@@ -14,19 +14,6 @@ import { FormSection, ManagementForm } from './ManagementForm';
 interface RegionManagementProps {
     regions: any;
     filters: any;
-}
-
-const REGION_COLORS = [
-    'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400',
-    'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400',
-    'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400',
-    'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400',
-];
-
-function regionColor(name: string) {
-    let h = 0;
-    for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
-    return REGION_COLORS[Math.abs(h) % REGION_COLORS.length];
 }
 
 const RegionCell = ({ name, description }: Readonly<{ name: string; description?: string }>) => (

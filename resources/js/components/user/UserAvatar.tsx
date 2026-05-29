@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as AvatarPrimitive from '@radix-ui/react-avatar';
-import { cn } from '@/lib/utils';
+import { cn, avatarColor } from '@/lib/utils';
 import { UserProfile } from '@/types/contracts';
 
 interface UserAvatarProps extends React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root> {
@@ -15,26 +15,9 @@ const sizeMap = {
     xl: 'h-12 w-12 text-base',
 };
 
-const AVATAR_COLORS = [
-    'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
-    'bg-primary/10 text-primary border border-primary/20',
-    'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-    'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
-    'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
-    'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
-    'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
-];
-
-function getAvatarColor(name: string): string {
-    if (!name) return AVATAR_COLORS[0];
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
-}
-
 export function UserAvatar({ user, size = 'md', className, ...props }: UserAvatarProps) {
     const initials = user?.initials || user?.name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || '?';
-    const colorClass = getAvatarColor(user?.name || '');
+    const colorClass = avatarColor(user?.name || '');
 
     return (
         <AvatarPrimitive.Root

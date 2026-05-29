@@ -6,9 +6,10 @@ import { contractApi } from '@/lib/contract-api';
 import { cn } from '@/lib/utils';
 import { Contract, ContractType } from '@/types/contracts';
 import axios from 'axios';
-import { AlertCircle, Archive, CheckCircle2, ChevronLeft, Clock, FileText, MoreVertical, Save, Trash2, UserPlus, Zap } from 'lucide-react';
-import { useState, useCallback } from 'react';
+import { AlertCircle, Archive, CheckCircle2, ChevronLeft, Clock, FileText, MoreVertical, Save, Send, Trash2, UserPlus, X, Zap, UserCheck, Upload, PenTool, Users } from 'lucide-react';
+import { useState } from 'react';
 
+import AddhocApproverModal from '@/components/contracts/AddhocApproverModal';
 import AgreementView from '@/components/contracts/AgreementView';
 import ApprovalSteps from '@/components/contracts/ApprovalSteps';
 import ApproveModal from '@/components/contracts/ApproveModal';
@@ -20,6 +21,7 @@ import { ContractReferenceCard } from '@/components/contracts/ContractReferenceC
 import { DraftEditableInfoCard } from '@/components/contracts/DraftEditableInfoCard';
 import { FormSubmissionTab } from '@/components/contracts/FormSubmissionTab';
 import RejectModal from '@/components/contracts/RejectModal';
+import { UserAvatar } from '@/components/user/UserAvatar';
 
 const ContractDetailView = ({
     contract,
@@ -67,6 +69,7 @@ const ContractDetailView = ({
     const { showProgress, hideProgress } = useToast();
     const [approveOpen, setApproveOpen] = useState(false);
     const [rejectOpen, setRejectOpen] = useState(false);
+    const [addhocOpen, setAddhocOpen] = useState(false);
 
     // Export Logic
     const [isExportingTimeline, setIsExportingTimeline] = useState(false);
@@ -160,6 +163,8 @@ const ContractDetailView = ({
         }
     };
 
+    const [activeActionCode, setActiveActionCode] = useState<string | undefined>(undefined);
+
     const handleApprove = async (
         note: string,
         attachment?: File,
@@ -167,9 +172,10 @@ const ContractDetailView = ({
         executionOrder?: string,
         p1UserId?: string,
         p2UserId?: string,
+        actionCode?: string,
     ) => {
         try {
-            const c = await contractApi.approve(contract.id, note, attachment, assignedPicId, executionOrder, p1UserId, p2UserId);
+            const c = await contractApi.approve(contract.id, note, attachment, assignedPicId, executionOrder, p1UserId, p2UserId, actionCode || activeActionCode);
             onUpdate(c);
 
             let msg = 'Kontrak disetujui.';
@@ -177,6 +183,7 @@ const ContractDetailView = ({
             if (p1UserId || p2UserId) msg = 'Delegasi penandatanganan berhasil dikonfigurasi.';
 
             showToast(msg, 'success');
+            setActiveActionCode(undefined);
         } catch {
             showToast('Gagal approve.', 'danger');
         }
@@ -184,15 +191,40 @@ const ContractDetailView = ({
 
     const handleReject = async (reason: string, attachment?: File) => {
         try {
-            const c = await contractApi.reject(contract.id, reason, attachment);
-            onUpdate(c);
+            const updated = await contractApi.reject(contract.id, reason, attachment);
+            onUpdate(updated);
             showToast('Kontrak ditolak.', 'info');
         } catch {
             showToast('Gagal reject.', 'danger');
         }
     };
 
+    const handleDeleteAdhoc = async (approvalId: string) => {
+        try {
+            const updated = await contractApi.removeAdhocApprover(contract.id, approvalId);
+            onUpdate(updated);
+            showToast('Persetujuan tambahan dihapus.', 'success');
+        } catch {
+            showToast('Gagal menghapus persetujuan.', 'danger');
+        }
+    };
+
+    const handleSubmitAdhoc = async () => {
+        try {
+            const updated = await contractApi.submitAdhocApprovers(contract.id);
+            onUpdate(updated);
+            showToast('Persetujuan tambahan diajukan.', 'success');
+        } catch (e: any) {
+            showToast(e.response?.data?.message || 'Gagal mengajukan persetujuan.', 'danger');
+        }
+    };
+
     const canApprove = !!contract.can_approve;
+
+    const currentStepSequence = contract.workflow_step?.step;
+    const currentStepAdhocApprovals = (contract.approvals || [])
+        .filter((a: any) => a.role === 'Persetujuan Tambahan' && Number(a.sequence) === Number(currentStepSequence))
+        .sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0));
 
     return (
         <div className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-6 p-4">
@@ -201,19 +233,19 @@ const ContractDetailView = ({
                     <Button
                         variant="ghost"
                         onClick={onClose}
-                        className="flex h-auto items-center gap-2 px-0 text-text-main transition-all hover:bg-transparent hover:opacity-70 active:scale-95"
+                        className="text-text-main flex h-auto items-center gap-2 px-0 transition-all hover:bg-transparent hover:opacity-70 active:scale-95"
                     >
                         <ChevronLeft size={20} strokeWidth={2.5} />
                         <span className="text-[10px] font-semibold uppercase">Kembali</span>
                     </Button>
-                    <div className="h-10 w-px bg-surface-border" />
+                    <div className="bg-surface-border h-10 w-px" />
                     <div className="flex flex-col">
                         <div className="flex items-center gap-3">
-                            <h2 className="text-lg leading-none font-semibold tracking-tight text-text-main uppercase italic">{contract.title}</h2>
+                            <h2 className="text-text-main text-lg leading-none font-semibold tracking-tight uppercase italic">{contract.title}</h2>
                             <StatusBadge status={contract.status} />
                         </div>
                         <div className="mt-1.5 flex flex-wrap items-center gap-3">
-                            <span className="text-[10px] font-semibold tracking-[0.2em] text-text-soft uppercase">
+                            <span className="text-text-soft text-[10px] font-semibold tracking-[0.2em] uppercase">
                                 #{contract.contract_no || 'NO-REQ'}
                             </span>
                         </div>
@@ -222,30 +254,34 @@ const ContractDetailView = ({
                 <div className="flex items-center gap-2">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="icon" className="h-10 w-10 border-surface-border bg-surface-base active:scale-95 shadow-sm">
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                className="border-surface-border bg-surface-base h-10 w-10 shadow-sm active:scale-95"
+                            >
                                 <MoreVertical size={18} className="text-text-soft" />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent
                             align="end"
-                            className="border-surface-border w-56 rounded-xl bg-surface-base p-1.5 shadow-2xl backdrop-blur-xl"
+                            className="border-surface-border bg-surface-base w-56 rounded-xl p-1.5 shadow-2xl backdrop-blur-xl"
                         >
                             <div className="mb-1 px-2 py-1.5">
-                                <p className="text-[10px] font-semibold text-text-soft uppercase tracking-wider">Opsi Kontrak</p>
+                                <p className="text-text-soft text-[10px] font-semibold tracking-wider uppercase">Opsi Kontrak</p>
                             </div>
                             <DropdownMenuItem
                                 onClick={() => handleUpdate({}, true)}
-                                className="flex cursor-pointer items-center gap-2 rounded-xl text-[11px] font-semibold tracking-tight text-text-main uppercase transition-all"
+                                className="text-text-main flex cursor-pointer items-center gap-2 rounded-xl text-[11px] font-semibold tracking-tight uppercase transition-all"
                             >
                                 <Save size={14} className="text-primary" /> Paksa Simpan (Force Sync)
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="flex cursor-pointer items-center gap-2 rounded-xl text-[11px] font-semibold tracking-tight text-text-main uppercase transition-all">
+                            <DropdownMenuItem className="text-text-main flex cursor-pointer items-center gap-2 rounded-xl text-[11px] font-semibold tracking-tight uppercase transition-all">
                                 <Archive size={14} className="text-text-soft" /> Arsipkan Kontrak
                             </DropdownMenuItem>
-                            <div className="my-1.5 h-px bg-surface-border/40" />
+                            <div className="bg-surface-border/40 my-1.5 h-px" />
                             <DropdownMenuItem
                                 onClick={() => setDeleteOpen(true)}
-                                className="flex cursor-pointer items-center gap-2 rounded-xl text-[11px] font-semibold tracking-tight text-danger uppercase transition-all focus:bg-danger/5 focus:text-danger"
+                                className="text-danger focus:bg-danger/5 focus:text-danger flex cursor-pointer items-center gap-2 rounded-xl text-[11px] font-semibold tracking-tight uppercase transition-all"
                             >
                                 <Trash2 size={14} /> Hapus Kontrak
                             </DropdownMenuItem>
@@ -256,9 +292,9 @@ const ContractDetailView = ({
 
             <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[1fr_400px]">
                 <div className="flex flex-col gap-6">
-                    <div className="overflow-hidden rounded-2xl bg-surface-base border border-surface-border shadow-sm">
-                        <div className="bg-primary flex h-12 items-center justify-between border-b border-surface-border px-4">
-                            <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-primary-foreground">
+                    <div className="bg-surface-base border-surface-border overflow-hidden rounded-2xl border shadow-sm">
+                        <div className="bg-primary border-surface-border flex h-12 items-center justify-between border-b px-4">
+                            <div className="text-primary-foreground flex items-center gap-2 text-sm font-semibold tracking-wider uppercase">
                                 <FileText size={16} className="text-primary-foreground/70" /> Detail Dokumen & Alur Kerja
                             </div>
                             <div className="flex items-center gap-2">
@@ -267,13 +303,16 @@ const ContractDetailView = ({
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="h-7 w-7 text-primary-foreground/40 hover:bg-white/10 hover:text-white active:scale-95"
+                                            className="text-primary-foreground/40 h-7 w-7 hover:bg-white/10 hover:text-white active:scale-95"
                                         >
                                             <MoreVertical size={14} />
                                         </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="border-surface-border w-56 rounded-xl bg-surface-base p-1.5 shadow-2xl backdrop-blur-xl">
-                                        <div className="mb-1 px-2 py-1.5 text-[10px] font-semibold tracking-wider text-text-soft uppercase">
+                                    <DropdownMenuContent
+                                        align="end"
+                                        className="border-surface-border bg-surface-base w-56 rounded-xl p-1.5 shadow-2xl backdrop-blur-xl"
+                                    >
+                                        <div className="text-text-soft mb-1 px-2 py-1.5 text-[10px] font-semibold tracking-wider uppercase">
                                             Menu Tambahan
                                         </div>
                                         <DropdownMenuItem
@@ -285,10 +324,7 @@ const ContractDetailView = ({
                                                     : 'text-text-main hover:bg-surface-muted',
                                             )}
                                         >
-                                            <Clock
-                                                size={14}
-                                                className={cn(detailTab === 'audit' ? 'text-primary-foreground' : 'text-text-soft')}
-                                            />{' '}
+                                            <Clock size={14} className={cn(detailTab === 'audit' ? 'text-primary-foreground' : 'text-text-soft')} />{' '}
                                             Audit Trail
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
@@ -315,18 +351,22 @@ const ContractDetailView = ({
                                                     : 'text-text-main hover:bg-surface-muted',
                                             )}
                                         >
-                                            <UserPlus size={14} className={cn(detailTab === 'members' ? 'text-primary-foreground' : 'text-text-soft')} /> Daftar
-                                            Member
+                                            <UserPlus
+                                                size={14}
+                                                className={cn(detailTab === 'members' ? 'text-primary-foreground' : 'text-text-soft')}
+                                            />{' '}
+                                            Daftar Member
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </div>
                         </div>
-                        <div className="border-b border-surface-border bg-surface-muted/30 flex flex-wrap gap-1.5 px-4 py-2">
+                        <div className="border-surface-border bg-surface-muted/30 flex flex-wrap gap-1.5 border-b px-4 py-2">
                             {[
                                 { id: 'form_template', label: 'F1 (Permohonan)' },
                                 { id: 'f2', label: 'F2 (Ringkasan)' },
                                 { id: 'agreement', label: 'Draft Perjanjian' },
+                                { id: 'timeline', label: 'Alur Persetujuan' },
                                 { id: 'attachments', label: 'Lampiran' },
                                 { id: 'chat', label: 'Chat' },
                                 { id: 'references', label: 'Kontrak Referensi' },
@@ -398,40 +438,203 @@ const ContractDetailView = ({
 
                 <div className="sticky top-6 flex flex-col gap-4 self-start">
                     {canApprove && (
-                        <div className="flex flex-col gap-4 overflow-hidden rounded-2xl border border-primary/20 bg-surface-base p-6 shadow-xl ring-1 ring-primary/5">
+                        <div className="border-primary/20 bg-surface-base ring-primary/5 flex flex-col gap-4 overflow-hidden rounded-2xl border p-6 shadow-xl ring-1">
                             <div className="flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-inner">
+                                <div className="bg-primary/10 text-primary flex h-10 w-10 items-center justify-center rounded-xl shadow-inner">
                                     <Zap size={20} />
                                 </div>
                                 <div className="flex flex-col gap-0.5">
-                                    <h3 className="text-sm font-semibold text-text-main uppercase tracking-tight">Approval Dibutuhkan</h3>
-                                    <p className="text-[10px] font-medium text-text-soft uppercase tracking-wide">
+                                    <h3 className="text-text-main text-sm font-semibold tracking-tight uppercase">Approval Dibutuhkan</h3>
+                                    <p className="text-text-soft text-[10px] font-medium tracking-wide uppercase">
                                         Anda terdaftar sebagai salah satu reviewer
                                     </p>
                                 </div>
                             </div>
                             <div className="flex flex-col gap-2 pt-2">
-                                <Button
-                                    variant="primary"
-                                    onClick={() => setApproveOpen(true)}
-                                    className="w-full uppercase text-xs tracking-wider shadow-lg shadow-primary/20"
-                                >
-                                    <CheckCircle2 size={16} />{' '}
-                                    {contract.workflow_step?.step === 1
-                                        ? 'Kirim Persetujuan'
-                                        : contract.requires_pic_assignment
-                                            ? 'Tugaskan PIC'
-                                            : contract.workflow_step?.step_type === 'UPLOAD'
-                                                ? 'Upload Dokumen TTD'
-                                                : 'Setujui Kontrak'}
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    onClick={() => setRejectOpen(true)}
-                                    className="w-full border-danger/20 uppercase text-xs tracking-wider hover:bg-danger hover:text-white transition-all shadow-sm"
-                                >
-                                    <AlertCircle size={16} /> Tolak Kontrak
-                                </Button>
+                                {(contract.workflow_step?.actions || []).map((action: any) => {
+                                    const isApproveType = ['approve', 'assign', 'upload', 'review', 'sign', 'signature'].includes(
+                                        action.action_code?.toLowerCase(),
+                                    );
+                                    const isRejectType = ['reject', 'return'].includes(action.action_code?.toLowerCase());
+                                    const isForwardType = ['forward', 'add_adhoc'].includes(action.action_code?.toLowerCase());
+
+                                    let variant: 'primary' | 'outline' | 'ghost' = 'outline';
+                                    let Icon = CheckCircle2;
+
+                                    if (isApproveType) {
+                                        variant = 'primary';
+                                        Icon = CheckCircle2;
+                                        if (action.action_code === 'assign') Icon = UserCheck;
+                                        if (action.action_code === 'upload') Icon = Upload;
+                                        if (['sign', 'signature'].includes(action.action_code)) Icon = PenTool;
+                                    } else if (isRejectType) {
+                                        variant = 'outline';
+                                        Icon = AlertCircle;
+                                    } else if (isForwardType) {
+                                        variant = 'ghost';
+                                        Icon = UserPlus;
+                                    }
+
+                                    return (
+                                        <Button
+                                            key={action.id}
+                                            variant={variant}
+                                            onClick={() => {
+                                                setActiveActionCode(action.action_code);
+                                                if (isApproveType) setApproveOpen(true);
+                                                else if (isRejectType) setRejectOpen(true);
+                                                else if (isForwardType) setAddhocOpen(true);
+                                            }}
+                                            className={cn(
+                                                'w-full text-xs tracking-wider uppercase shadow-sm transition-all',
+                                                isApproveType && 'shadow-primary/20 shadow-lg',
+                                                isRejectType && 'border-danger/20 hover:bg-danger hover:text-white',
+                                                isForwardType && 'border-indigo-500/20 text-indigo-600 hover:bg-indigo-500/10 border',
+                                            )}
+                                        >
+                                            <Icon size={16} />{' '}
+                                            {action.alias ||
+                                                (action.action_code === 'approve'
+                                                    ? contract.workflow_step?.step === 1
+                                                        ? 'Kirim Persetujuan'
+                                                        : contract.requires_pic_assignment
+                                                          ? 'Tugaskan PIC'
+                                                          : contract.workflow_step?.step_type === 'UPLOAD'
+                                                            ? 'Upload Dokumen TTD'
+                                                            : 'Setujui Kontrak'
+                                                    : action.action_code === 'forward'
+                                                      ? 'Approval Tambahan'
+                                                      : action.action_code === 'reject'
+                                                        ? 'Tolak Kontrak'
+                                                        : action.action_code)}
+                                        </Button>
+                                    );
+                                })}
+
+                                {/* Fallback if no actions defined (Backward compatibility or safety) */}
+                                {(!contract.workflow_step?.actions || contract.workflow_step.actions.length === 0) && (
+                                    <>
+                                        <Button
+                                            variant="primary"
+                                            onClick={() => {
+                                                setActiveActionCode('approve');
+                                                setApproveOpen(true);
+                                            }}
+                                            className="shadow-primary/20 w-full text-xs tracking-wider uppercase shadow-lg"
+                                        >
+                                            <CheckCircle2 size={16} />{' '}
+                                            {contract.workflow_step?.step === 1
+                                                ? 'Kirim Persetujuan'
+                                                : contract.requires_pic_assignment
+                                                  ? 'Tugaskan PIC'
+                                                  : contract.workflow_step?.step_type === 'UPLOAD'
+                                                    ? 'Upload Dokumen TTD'
+                                                    : 'Setujui Kontrak'}
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => {
+                                                setActiveActionCode('reject');
+                                                setRejectOpen(true);
+                                            }}
+                                            className="border-danger/20 hover:bg-danger w-full text-xs tracking-wider uppercase shadow-sm transition-all hover:text-white"
+                                        >
+                                            <AlertCircle size={16} /> Tolak Kontrak
+                                        </Button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Show current step ad-hoc approvers list if any */}
+                    {['draft', 'in_review', 'revision'].includes(contract.status) && currentStepAdhocApprovals.length > 0 && (
+                        <div className="border-surface-border bg-surface-base flex flex-col gap-4 overflow-hidden rounded-2xl border p-6 shadow-sm">
+                            <div className="flex items-center gap-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-500 shadow-inner dark:bg-indigo-500/20">
+                                    <Users size={20} />
+                                </div>
+                                <div className="flex flex-col gap-0.5">
+                                    <h3 className="text-text-main text-sm font-semibold tracking-tight uppercase">Persetujuan Tambahan</h3>
+                                    <p className="text-text-soft text-[10px] font-medium tracking-wide uppercase">
+                                        Reviewer aktif di luar alur kerja utama
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div className="border-surface-border/60 space-y-2 border-t pt-3">
+                                <div className="flex items-center justify-between px-1">
+                                    <h4 className="text-text-soft text-[10px] font-black tracking-wider uppercase">
+                                        Reviewer Aktif ({currentStepAdhocApprovals.length})
+                                    </h4>
+                                    {currentStepAdhocApprovals.some((a: any) => !a.is_active) && (
+                                        <Button
+                                            size="sm"
+                                            variant="primary"
+                                            onClick={handleSubmitAdhoc}
+                                            className="h-6 gap-1 px-2 text-[9px] uppercase tracking-tighter"
+                                        >
+                                            <Send size={10} /> Ajukan
+                                        </Button>
+                                    )}
+                                </div>
+                                <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+                                    {currentStepAdhocApprovals.map((a: any, idx: number) => (
+                                        <div
+                                            key={a.id}
+                                            className="border-surface-border/50 bg-surface-muted/20 flex items-center justify-between gap-3 rounded-xl border p-2.5"
+                                        >
+                                            <div className="flex items-center gap-2.5 overflow-hidden">
+                                                <span className="flex h-5 w-7 shrink-0 items-center justify-center rounded-md border border-indigo-100/50 bg-indigo-50 px-1 text-[9px] font-black text-indigo-600 dark:border-indigo-900/50 dark:bg-indigo-950/40 dark:text-indigo-400">
+                                                    {currentStepSequence}.{idx + 1}
+                                                </span>
+                                                <UserAvatar user={a.approver || { name: a.approver_name }} size="sm" />
+                                                <div className="flex flex-col overflow-hidden">
+                                                    <span className="text-text-main truncate text-[11px] leading-tight font-bold">
+                                                        {a.approver_name}
+                                                    </span>
+                                                    <span className="text-text-soft mt-0.5 truncate text-[9px] leading-none font-medium">
+                                                        {a.approver?.role || 'VP'}
+                                                        {a.department_name ? ` - ${a.department_name}` : ''}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="flex shrink-0 items-center gap-2">
+                                                {!a.is_active ? (
+                                                    <span className="rounded-full border border-slate-500/20 bg-slate-500/10 px-2 py-0.5 text-[8px] font-black tracking-wider text-slate-500 uppercase dark:text-slate-400">
+                                                        Inactive
+                                                    </span>
+                                                ) : a.status === 'approved' ? (
+                                                    <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[8px] font-black tracking-wider text-emerald-600 uppercase dark:text-emerald-400">
+                                                        Setuju
+                                                    </span>
+                                                ) : a.status === 'rejected' ? (
+                                                    <span className="rounded-full border border-rose-500/20 bg-rose-500/10 px-2 py-0.5 text-[8px] font-black tracking-wider text-rose-600 uppercase dark:text-rose-400">
+                                                        Ditolak
+                                                    </span>
+                                                ) : a.status === 'waiting' ? (
+                                                    <span className="rounded-full border border-slate-500/20 bg-slate-500/10 px-2 py-0.5 text-[8px] font-black tracking-wider text-slate-500 uppercase dark:text-slate-400">
+                                                        Menunggu
+                                                    </span>
+                                                ) : (
+                                                    <span className="animate-pulse rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[8px] font-black tracking-wider text-amber-600 uppercase dark:text-amber-400">
+                                                        Pending
+                                                    </span>
+                                                )}
+
+                                                {['pending', 'waiting'].includes(a.status) && (
+                                                    <button
+                                                        onClick={() => handleDeleteAdhoc(a.id)}
+                                                        className="hover:bg-danger/10 hover:text-danger text-text-soft flex h-5 w-5 items-center justify-center rounded-md transition-colors"
+                                                        title="Hapus Approver Tambahan"
+                                                    >
+                                                        <X size={12} strokeWidth={3} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     )}
@@ -454,12 +657,38 @@ const ContractDetailView = ({
 
             <ApproveModal
                 open={approveOpen}
-                onClose={() => setApproveOpen(false)}
+                onClose={() => {
+                    setApproveOpen(false);
+                    setActiveActionCode(undefined);
+                }}
                 onSubmit={handleApprove}
                 isAssign={!!contract.requires_pic_assignment}
                 contract={contract}
+                actionCode={activeActionCode}
+                actionAlias={contract.workflow_step?.actions?.find((a: any) => a.action_code === activeActionCode)?.alias}
             />
-            <RejectModal open={rejectOpen} onClose={() => setRejectOpen(false)} onSubmit={handleReject} />
+
+            <RejectModal
+                open={rejectOpen}
+                onClose={() => {
+                    setRejectOpen(false);
+                    setActiveActionCode(undefined);
+                }}
+                onSubmit={handleReject}
+                actionAlias={contract.workflow_step?.actions?.find((a: any) => a.action_code === activeActionCode)?.alias}
+            />
+            <AddhocApproverModal
+                open={addhocOpen}
+                onClose={() => {
+                    setAddhocOpen(false);
+                    setActiveActionCode(undefined);
+                }}
+                contract={contract}
+                onUpdate={onUpdate}
+                showToast={showToast}
+                actionCode={activeActionCode}
+                actionAlias={contract.workflow_step?.actions?.find((a: any) => a.action_code === activeActionCode)?.alias}
+            />
         </div>
     );
 };

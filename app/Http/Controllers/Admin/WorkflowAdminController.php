@@ -9,7 +9,6 @@ use App\Models\CompanyGroup;
 use App\Models\ContractStatus;
 use App\Models\ContractType;
 use App\Models\Department;
-use App\Models\MasterAction;
 use App\Models\Region;
 use App\Models\Role;
 use App\Models\User;
@@ -85,7 +84,6 @@ class WorkflowAdminController extends Controller
             'regions' => Region::all(),
             'companies' => Company::all(),
             'contractStatuses' => ContractStatus::orderBy('label')->get(),
-            'masterActions' => MasterAction::where('is_active', true)->orderBy('name')->get(),
             'allWorkflows' => Workflow::with('steps')->orderBy('name')->get(),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
@@ -97,7 +95,7 @@ class WorkflowAdminController extends Controller
 
     public function edit(Workflow $workflow)
     {
-        $workflow->load(['steps.approverRoles', 'steps.approverDepartments', 'steps.approverUsers', 'steps.actions.masterAction', 'initiatorRolesData', 'initiatorDepartmentsData', 'initiatorUsersData']);
+        $workflow->load(['steps.approverRoles', 'steps.approverDepartments', 'steps.approverUsers', 'steps.actions', 'initiatorRolesData', 'initiatorDepartmentsData', 'initiatorUsersData']);
 
         $workflowData = $workflow->toArray();
         $workflowData['initiator_roles'] = $workflow->initiatorRolesData->pluck('role_name')->toArray();
@@ -112,9 +110,9 @@ class WorkflowAdminController extends Controller
             $sd['actions'] = $s->actions->map(function ($action) {
                 return [
                     'id' => $action->id,
-                    'master_action_id' => $action->master_action_id,
-                    'master_action_name' => $action->masterAction->name ?? '',
-                    'master_action' => $action->masterAction,
+                    'master_action_id' => $action->action_code ? $action->action_code->value : null,
+                    'master_action_name' => $action->action_code ? $action->action_code->label() : ($action->alias ?: 'Action'),
+                    'master_action' => null,
                     'next_step_id' => $action->next_step_id,
                     'next_workflow_id' => $action->next_workflow_id,
                     'next_workflow_step_id' => $action->next_workflow_step_id,
@@ -141,7 +139,6 @@ class WorkflowAdminController extends Controller
             'regions' => Region::all(),
             'companies' => Company::all(),
             'contractStatuses' => ContractStatus::orderBy('label')->get(),
-            'masterActions' => MasterAction::where('is_active', true)->orderBy('name')->get(),
             'allWorkflows' => Workflow::with('steps')->orderBy('name')->get(),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
@@ -375,61 +372,6 @@ class WorkflowAdminController extends Controller
         return back()->with('success', count($ids) . ' alur kerja berhasil dihapus.');
     }
 
-    public function storeMasterAction(Request $request): \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
-    {
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-        ]);
-
-        $name = trim($data['name']);
-        $code = strtolower(str_replace(' ', '_', $name));
-
-        $masterAction = MasterAction::firstOrCreate(
-            ['code' => $code],
-            [
-                'id' => (string) \Illuminate\Support\Str::uuid(),
-                'name' => $name,
-                'is_active' => true,
-                'created_by' => \Illuminate\Support\Facades\Auth::id(),
-            ],
-        );
-
-        if ($request->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'master_action' => $masterAction,
-            ]);
-        }
-
-        return back()->with('success', 'Master Aksi berhasil didaftarkan.');
-    }
-
-    public function updateMasterAction(Request $request, $id)
-    {
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-        ]);
-
-        $masterAction = MasterAction::findOrFail($id);
-        $code = strtolower(str_replace(' ', '_', trim($data['name'])));
-
-        $masterAction->update([
-            'name' => trim($data['name']),
-            'code' => $code,
-            'updated_by' => \Illuminate\Support\Facades\Auth::id(),
-        ]);
-
-        return back()->with('success', 'Master Aksi berhasil diperbarui.');
-    }
-
-    public function destroyMasterAction($id)
-    {
-        $masterAction = MasterAction::findOrFail($id);
-        $masterAction->delete();
-
-        return back()->with('success', 'Master Aksi berhasil dihapus.');
-    }
-
     public function export(Request $request)
     {
         $ids = $request->input('ids');
@@ -441,7 +383,7 @@ class WorkflowAdminController extends Controller
             'steps.approverRoles',
             'steps.approverDepartments.department',
             'steps.approverUsers.user',
-            'steps.actions.masterAction',
+            'steps.actions',
             'initiatorRolesData',
             'initiatorDepartmentsData.department',
             'initiatorUsersData.user',
@@ -535,7 +477,7 @@ class WorkflowAdminController extends Controller
                         'next_workflow_step_id',
                     ])->toArray();
 
-                    $actionData['master_action_name'] = $action->masterAction->name ?? null;
+                    $actionData['master_action_name'] = $action->action_code ? $action->action_code->label() : null;
                     if ($action->next_step_id && isset($stepIdMap[$action->next_step_id])) {
                         $actionData['next_step_id'] = $stepIdMap[$action->next_step_id];
                     } else {

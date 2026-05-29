@@ -2,7 +2,6 @@
 
 namespace App\Actions\Admin;
 
-use App\Models\MasterAction;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
 use App\Models\WorkflowStepAction;
@@ -385,28 +384,14 @@ class WorkflowAction
             WorkflowStepAction::whereIn('id', $actionsToDelete)->forceDelete();
         }
 
-        $masterActions = MasterAction::pluck('id', 'code')->toArray();
-
         foreach ($actionsData as $actData) {
-            $masterActionId = $actData['master_action_id'] ?? null;
+            $code = $actData['action_code'] ?? $actData['master_action_id'] ?? null; // master_action_id field from frontend is now actually sending the action_code enum value
 
-            // If no master action ID, try using code or name
-            if (! $masterActionId && ! empty($actData['master_action_name'])) {
+            if (! $code && ! empty($actData['master_action_name'])) {
                 $code = strtolower(str_replace(' ', '_', trim($actData['master_action_name'])));
-                if (isset($masterActions[$code])) {
-                    $masterActionId = $masterActions[$code];
-                } else {
-                    $newMaster = MasterAction::create([
-                        'name' => trim($actData['master_action_name']),
-                        'code' => $code,
-                        'is_active' => true,
-                    ]);
-                    $masterActionId = $newMaster->id;
-                    $masterActions[$code] = $masterActionId;
-                }
             }
 
-            if (! $masterActionId) {
+            if (! $code) {
                 continue;
             }
 
@@ -422,7 +407,7 @@ class WorkflowAction
             }
 
             $actionFields = [
-                'master_action_id' => $masterActionId,
+                'action_code' => $code,
                 'next_step_id' => $nextStepId,
                 'next_workflow_id' => $actData['next_workflow_id'] ?? null,
                 'next_workflow_step_id' => $actData['next_workflow_step_id'] ?? null,
