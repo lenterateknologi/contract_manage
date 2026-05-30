@@ -32,7 +32,7 @@ export default function RejectModal({ open, onClose, onSubmit, actionAlias }: Pr
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={(e) => e.target === e.currentTarget && onClose()}>
             <div
-                className="dark:bg-sidebar w-[400px] max-w-[95vw] rounded-xl border border-black/10 bg-white shadow-2xl dark:border-white/10"
+                className="dark:bg-sidebar w-[800px] max-w-[95vw] rounded-xl border border-black/10 bg-white shadow-2xl dark:border-white/10"
                 style={{ animation: 'modal-in .18s ease' }}
             >
                 <div className="flex items-center justify-between border-b border-black/5 px-5 py-4 dark:border-white/5">

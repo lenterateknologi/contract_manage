@@ -13,29 +13,46 @@ interface ForwardModalProps {
     idx: number;
     userOptions: any[];
     showToast: (message: string, type?: 'success' | 'danger' | 'info') => void;
+    allWorkflowSteps?: any[];
 }
 
-export function ForwardModal({ isOpen, onClose, step, idx, userOptions, showToast }: ForwardModalProps) {
+export function ForwardModal({ isOpen, onClose, step, idx, userOptions, showToast, allWorkflowSteps = [] }: ForwardModalProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
     const [note, setNote] = useState('');
     const [isSequential, setIsSequential] = useState(false);
+    const [selectedTargetStepId, setSelectedTargetStepId] = useState<string | null>(null);
 
-    // Get the forward action from the step to read its configuration
     const activeAction = (step?.actions || []).find((a: any) => 
         (a.master_action?.code?.toLowerCase() === 'forward') || 
-        (a.action_code === 'forward')
+        (a.action_code === 'forward') ||
+        (a.master_action_id === 'forward')
     );
     const config = activeAction?.assignee_config || {};
     const targetStepId = activeAction?.next_step_id;
-    const targetStepLabel = targetStepId 
-        ? `Ke Langkah ${idx + 1}` // Simplification for simulation
-        : 'Ke Langkah Saat Ini';
+    const defaultTargetStepId = targetStepId || step?.id;
+    const resolvedTargetStepId = selectedTargetStepId || String(defaultTargetStepId);
+    
+    // For visual display of selected target
+    const getTargetStepLabel = () => {
+        if (!config.allow_user_select_step) {
+            return targetStepId ? `Ke Langkah ${idx + 1}` : 'Ke Langkah Saat Ini';
+        }
+        if (resolvedTargetStepId === String(step?.id)) return 'Ke Langkah Saat Ini';
+        const targetWfStep = allWorkflowSteps.find(s => String(s.id) === resolvedTargetStepId);
+        return targetWfStep ? `Ke Tahap ${targetWfStep.step}` : 'Ke Langkah Saat Ini';
+    };
 
     // Filter userOptions based on the simulation config
     const filteredOptions = userOptions.filter(u => {
+        // If no specific config type is set, or if it's set to 'all', allow any user
+        if (!config.type || config.type === 'all') {
+            return true;
+        }
+
         // 1. Direct User Pool
-        if (config.type === 'user' && config.user_ids?.length > 0) {
+        if (config.type === 'user') {
+            if (!config.user_ids || config.user_ids.length === 0) return false;
             return config.user_ids.map(String).includes(String(u.value));
         }
 
@@ -44,19 +61,25 @@ export function ForwardModal({ isOpen, onClose, step, idx, userOptions, showToas
             const targetRoles = config.roles || [];
             const targetDeptIds = config.department_ids || [];
             
-            // In simulation, we check the label which usually contains role/dept info
-            const matchesRole = targetRoles.length === 0 || targetRoles.some(r => u.label.toLowerCase().includes(r.toLowerCase()));
+            // u.label usually contains role info: "Name (Role)"
+            // userOptions might not have department_id in simulation if it only has value/label
+            // but if it does, we can check it. Let's rely on label matching for role at least.
+            const matchesRole = targetRoles.length === 0 || targetRoles.some((r: string) => u.label.toLowerCase().includes(r.toLowerCase()));
             
-            return matchesRole;
+            // Require strict department match if targetDeptIds are configured
+            const matchesDept = targetDeptIds.length === 0 || (u.department_id && targetDeptIds.map(String).includes(String(u.department_id)));
+
+            return matchesRole && matchesDept;
         }
 
-        return true;
+        return false;
     });
 
     const handleClose = () => {
         setSelectedUserIds([]);
         setNote('');
         setIsSequential(false);
+        setSelectedTargetStepId(null);
         onClose();
     };
 
@@ -75,7 +98,7 @@ export function ForwardModal({ isOpen, onClose, step, idx, userOptions, showToas
                     </div>
                     <div>
                         <h3 className="text-sm font-bold tracking-wider text-slate-900 uppercase dark:text-white">Simulasi Approval Tambahan</h3>
-                        <p className="mt-0.5 text-[10px] font-medium text-slate-400 uppercase">Tahap {idx + 1} • {targetStepLabel}</p>
+                        <p className="mt-0.5 text-[10px] font-medium text-slate-400 uppercase">Tahap {idx + 1} • {getTargetStepLabel()}</p>
                     </div>
                 </div>
             }
@@ -102,6 +125,27 @@ export function ForwardModal({ isOpen, onClose, step, idx, userOptions, showToas
                         placeholder="-- Cari & Pilih User --"
                     />
                 </div>
+
+                {config.allow_user_select_step && allWorkflowSteps && allWorkflowSteps.length > 0 && (
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                            Sisipkan Ke Langkah
+                        </label>
+                        <select
+                            value={resolvedTargetStepId}
+                            onChange={(e) => setSelectedTargetStepId(e.target.value)}
+                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-medium text-slate-700 shadow-sm transition-all focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300"
+                        >
+                            <option value={String(step?.id)}>Langkah Saat Ini</option>
+                            {allWorkflowSteps
+                                .filter((s: any) => s.step_category !== 'condition')
+                                .map((s: any) => (
+                                <option key={s.id} value={String(s.id)}>Tahap {s.step}: {s.label || s.description || s.name}</option>
+                            ))}
+                        </select>
+                        <p className="text-[9px] text-slate-400 italic">Pilih langkah tujuan untuk approver tambahan ini.</p>
+                    </div>
+                )}
 
                 {selectedUserIds.length > 1 && (
                     <div className="animate-in fade-in slide-in-from-top-2 duration-300">

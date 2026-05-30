@@ -75,6 +75,12 @@ class ContractFormatter
                 'id' => $c->workflow->id,
                 'name' => $c->workflow->name,
                 'contract_type' => $c->workflow->contract_type,
+                'steps' => $c->workflow->relationLoaded('steps') ? $c->workflow->steps->map(fn($s) => [
+                    'id' => $s->id,
+                    'step' => $s->step,
+                    'description' => $s->description,
+                    'step_category' => $s->step_category,
+                ]) : [],
             ] : null,
             'workflow_step' => $c->workflowStep ? [
                 'id' => $c->workflowStep->id,
@@ -90,6 +96,10 @@ class ContractFormatter
                     'alias' => $action->alias,
                     'next_workflow_id' => $action->next_workflow_id,
                     'next_workflow_step_id' => $action->next_workflow_step_id,
+                    'assignee_config' => $action->assignee_config,
+                    'required_fields' => $action->required_fields,
+                    'autofilled_fields' => $action->autofilled_fields,
+                    'signing_parties' => $action->signing_parties,
                 ])->toArray() : [],
             ] : null,
             'next_step' => $nextStep ? [

@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/base/Button';
 import { CompactSwitch } from '@/components/ui/forms/CompactSwitch';
 import { FormTextarea } from '@/components/ui/forms/FormTextarea';
 import { SearchableMultiSelect } from '@/components/ui/forms/SearchableMultiSelect';
+import { SearchableSelect } from '@/components/ui/forms/SearchableSelect';
 import { Modal } from '@/components/ui/overlays/Modal';
 import { contractApi } from '@/lib/contract-api';
 import { CheckCircle2, Loader2, UserPlus, Users, X } from 'lucide-react';
@@ -24,6 +25,7 @@ export default function AddhocApproverModal({ open, onClose, contract, onUpdate,
     const [loading, setLoading] = useState(false);
     const [users, setUsers] = useState<any[]>([]);
     const [fetchingUsers, setFetchingUsers] = useState(false);
+    const [selectedTargetStepId, setSelectedTargetStepId] = useState<string | null>(null);
 
     useEffect(() => {
         if (open) {
@@ -31,6 +33,7 @@ export default function AddhocApproverModal({ open, onClose, contract, onUpdate,
             setSelectedUserIds([]);
             setNote('');
             setIsSequential(false);
+            setSelectedTargetStepId(null);
         }
     }, [open, contract?.id]);
 
@@ -49,7 +52,7 @@ export default function AddhocApproverModal({ open, onClose, contract, onUpdate,
             // Scoped Selection: Filter based on current workflow step or specific action configuration
             const currentStep = contract?.workflow_step;
             const activeAction = (currentStep?.actions || []).find((a: any) => a.action_code === actionCode);
-            
+
             // Priority: action-level assignee_config -> step-level requirements
             const config = activeAction?.assignee_config || {};
             const requirements = currentStep;
@@ -57,25 +60,32 @@ export default function AddhocApproverModal({ open, onClose, contract, onUpdate,
             const availableUsers = allUsers.filter((u: any) => {
                 if (existingUserIds.has(u.id)) return false;
 
-                // 1. Direct User Pool (specific user IDs)
-                if (config.type === 'user' && config.user_ids?.length > 0) {
-                    return config.user_ids.includes(String(u.id));
+                // If no specific config type is set, or if it's set to 'all', allow any user
+                if (!config.type || config.type === 'all') {
+                    return true;
                 }
 
-                // 2. Role filter (action config or step default)
-                const targetRoles = config.type === 'role' ? (config.roles || []) : (requirements?.roles || (requirements?.role ? [requirements.role] : []));
-                const matchesRole = targetRoles.length === 0 || targetRoles.some((r: string) => r.toLowerCase() === u.role?.toLowerCase());
+                // 1. Direct User Pool (specific user IDs)
+                if (config.type === 'user') {
+                    if (!config.user_ids || config.user_ids.length === 0) return false;
+                    const allowedUserIds = config.user_ids.map(String);
+                    return allowedUserIds.includes(String(u.id));
+                }
 
-                // 3. Department filter (action config or step default)
-                const targetDeptIds = config.type === 'role' 
-                    ? (config.department_ids || []) 
-                    : (requirements?.department_ids || (requirements?.department_id ? [requirements.department_id] : []));
-                
-                // Helper to normalize IDs for comparison
-                const currentUDeptId = String(u.department_id);
-                const matchesDept = targetDeptIds.length === 0 || targetDeptIds.map(String).includes(currentUDeptId);
+                // 2. Role/Dept filter
+                if (config.type === 'role') {
+                    const targetRoles = config.roles || [];
+                    const matchesRole = targetRoles.length === 0 || targetRoles.some((r: string) => r.toLowerCase() === u.role?.toLowerCase());
 
-                return matchesDept && matchesRole;
+                    const targetDeptIds = config.department_ids || [];
+                    const currentUDeptId = String(u.department_id);
+                    const matchesDept = targetDeptIds.length === 0 || targetDeptIds.map(String).includes(currentUDeptId);
+
+                    return matchesDept && matchesRole;
+                }
+
+                // Fallback for any other type
+                return false;
             });
 
             // Ensure uniqueness by ID to prevent duplicate key errors in UI
@@ -103,10 +113,16 @@ export default function AddhocApproverModal({ open, onClose, contract, onUpdate,
         try {
             // Get the target step ID from the action configuration
             const currentStep = contract?.workflow_step;
-            const activeAction = (currentStep?.actions || []).find((a: any) => a.action_code === actionCode);
-            const targetStepId = activeAction?.next_step_id || contract.workflow_step_id;
+            const activeAction = (currentStep?.actions || []).find((a: any) =>
+                (a.action_code === actionCode) ||
+                (a.master_action?.code?.toLowerCase() === 'forward') ||
+                (a.action_code === 'forward')
+            );
+            const config = activeAction?.assignee_config || {};
+            const defaultTargetStepId = activeAction?.next_step_id || contract.workflow_step_id;
+            const finalTargetStepId = (config.allow_user_select_step && selectedTargetStepId) ? Number(selectedTargetStepId) : defaultTargetStepId;
 
-            const updatedContract = await contractApi.addAdhocApprover(contract.id, selectedUserIds, note, isSequential, targetStepId);
+            const updatedContract = await contractApi.addAdhocApprover(contract.id, selectedUserIds, note, isSequential, finalTargetStepId);
             onUpdate(updatedContract);
             showToast('Persetujuan tambahan berhasil dikaitkan.', 'success');
             onClose();
@@ -122,6 +138,7 @@ export default function AddhocApproverModal({ open, onClose, contract, onUpdate,
         <Modal
             isOpen={open}
             onClose={onClose}
+            maxWidth="3xl"
             title={
                 <div className="flex items-center gap-2.5">
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-500 dark:bg-indigo-500/20">
@@ -177,6 +194,54 @@ export default function AddhocApproverModal({ open, onClose, contract, onUpdate,
                     )}
                 </div>
 
+                {(() => {
+                    const currentStep = contract?.workflow_step;
+                    const activeAction = (currentStep?.actions || []).find((a: any) => {
+                        if (actionCode) return a.action_code === actionCode;
+                        return (a.master_action?.code?.toLowerCase() === 'forward') || (a.action_code === 'forward');
+                    });
+                    const config = activeAction?.assignee_config || {};
+                    const defaultTargetStepId = activeAction?.next_step_id || contract?.workflow_step_id;
+                    const resolvedTargetStepId = selectedTargetStepId || String(defaultTargetStepId);
+
+                    return (
+                        <>
+                            {config.allow_user_select_step && contract?.workflow?.steps && contract.workflow.steps.length > 0 && (
+                                <div className="space-y-2">
+                                    <label className="text-text-soft text-[10px] font-bold tracking-wider uppercase">
+                                        Sisipkan Ke Langkah
+                                    </label>
+                                    <SearchableSelect
+                                        value={resolvedTargetStepId}
+                                        onValueChange={setSelectedTargetStepId}
+                                        placeholder="Pilih Langkah Target"
+                                        options={[
+                                            {
+                                                value: String(contract?.workflow_step_id),
+                                                label: `(Step Saat Ini) ${contract?.workflow_step?.step} - ${contract?.workflow_step?.description}`,
+                                            },
+                                            ...(contract?.workflow?.steps || [])
+                                                .filter(
+                                                    (step: any) =>
+                                                        step.id !== contract?.workflow_step_id && step.step_category !== 'Condition'
+                                                )
+                                                .map((step: any) => ({
+                                                    value: String(step.id),
+                                                    label: `Step ${step.step} - ${step.description}`,
+                                                })),
+                                        ].filter(opt => {
+                                            if (config.selectable_steps && config.selectable_steps.length > 0) {
+                                                return config.selectable_steps.includes(opt.value);
+                                            }
+                                            return true;
+                                        })}
+                                    />
+                                </div>
+                            )}
+                        </>
+                    );
+                })()}
+
                 {selectedUserIds.length > 1 && (
                     <div className="animate-in fade-in slide-in-from-top-2 duration-300">
                         <CompactSwitch
@@ -196,8 +261,8 @@ export default function AddhocApproverModal({ open, onClose, contract, onUpdate,
                 {selectedUserIds.length > 0 && (
                     <div className="animate-in fade-in slide-in-from-top-1 space-y-2.5 duration-200">
                         <div className="text-text-soft flex items-center gap-1.5 text-[10px] font-bold tracking-wider uppercase">
-                            <Users size={12} />
-                            <span>Reviewer Terpilih ({selectedUserIds.length})</span>
+                            <Users size={12} />Persetujuan Tambahan
+                            <span>Approver Terpilih ({selectedUserIds.length})</span>
                         </div>
                         <div className="border-surface-border bg-surface-muted/30 flex flex-wrap gap-2 rounded-xl border p-3">
                             {selectedUserIds.map((uid) => {

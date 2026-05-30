@@ -96,6 +96,7 @@ export default function SortableStepItem({
         return (users || []).map((u: any) => ({
             value: String(u.id),
             label: `${u.name.toUpperCase()} (${(u.role || 'Staff').toUpperCase()})`,
+            department_id: u.department_id,
         }));
     }, [users]);
 
@@ -231,16 +232,16 @@ export default function SortableStepItem({
 
                             {/* Target Status Badge */}
                             {selectedStatus && (
-                                <div 
+                                <div
                                     className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[9px] font-black uppercase"
-                                    style={{ 
+                                    style={{
                                         backgroundColor: `${selectedStatus.color}10`,
                                         borderColor: `${selectedStatus.color}30`,
-                                        color: selectedStatus.color 
+                                        color: selectedStatus.color
                                     }}
                                 >
-                                    <div 
-                                        className="h-1.5 w-1.5 rounded-full" 
+                                    <div
+                                        className="h-1.5 w-1.5 rounded-full"
                                         style={{ backgroundColor: selectedStatus.color }}
                                     />
                                     {selectedStatus.label}
@@ -386,8 +387,8 @@ export default function SortableStepItem({
                                                 <SelectTrigger className="h-9 rounded-xl border-slate-200 bg-white text-[11px] font-bold transition-all focus:border-slate-900 dark:border-slate-800 dark:bg-black/50">
                                                     <div className="flex items-center gap-2">
                                                         {selectedStatus && (
-                                                            <div 
-                                                                className="h-2 w-2 rounded-full" 
+                                                            <div
+                                                                className="h-2 w-2 rounded-full"
                                                                 style={{ backgroundColor: selectedStatus.color || '#cbd5e1' }}
                                                             />
                                                         )}
@@ -401,8 +402,8 @@ export default function SortableStepItem({
                                                     {contractStatuses.map((status: any) => (
                                                         <SelectItem key={status.id} value={status.code} className="py-2 text-[10px] font-bold uppercase">
                                                             <div className="flex items-center gap-2">
-                                                                <div 
-                                                                    className="h-2 w-2 rounded-full" 
+                                                                <div
+                                                                    className="h-2 w-2 rounded-full"
                                                                     style={{ backgroundColor: status.color || '#cbd5e1' }}
                                                                 />
                                                                 <span>
@@ -816,7 +817,7 @@ export default function SortableStepItem({
                                 <div className="relative ml-2 space-y-3 py-2">
                                     {/* Vertical branch line for the tree */}
                                     <div className="absolute left-[11px] top-2 bottom-6 w-0.5 bg-slate-200 dark:bg-slate-700/50" />
-                                    
+
                                     {actions.map((act: any, actIdx: number) => {
                                         const isLast = actIdx === actions.length - 1;
                                         return (
@@ -892,6 +893,7 @@ export default function SortableStepItem({
                 idx={idx}
                 userOptions={userOptions}
                 showToast={showToast}
+                allWorkflowSteps={allWorkflowSteps}
             />
         </div>
     );

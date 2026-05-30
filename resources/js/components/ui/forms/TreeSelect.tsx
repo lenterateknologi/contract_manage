@@ -266,21 +266,29 @@ export function TreeSelect({
                                     {/* Selection Area */}
                                     <button
                                         type="button"
-                                        onClick={() => handleSelect(p)}
+                                        onClick={(e) => {
+                                            if (!multiple && hasChildren) {
+                                                toggleParentExpansion(pId, e);
+                                            } else {
+                                                handleSelect(p);
+                                            }
+                                        }}
                                         className={cn(
                                             "flex flex-1 items-center gap-2 px-3 py-2 text-left text-[11px] font-bold uppercase tracking-tight transition-colors",
-                                            fullySelected ? "text-sidebar-primary" : "text-sidebar-foreground/75"
+                                            fullySelected && (multiple || !hasChildren) ? "text-sidebar-primary" : "text-sidebar-foreground/75"
                                         )}
                                     >
-                                        <div className={cn(
-                                            "flex h-3.5 w-3.5 items-center justify-center rounded border transition-all",
-                                            fullySelected ? "bg-sidebar-primary border-sidebar-primary text-white" : 
-                                            partiallySelected ? "bg-sidebar-primary/20 border-sidebar-primary text-sidebar-primary" :
-                                            "bg-transparent border-sidebar-border group-hover:border-sidebar-foreground/30"
-                                        )}>
-                                            {fullySelected && <Check size={10} strokeWidth={4} />}
-                                            {!fullySelected && partiallySelected && <div className="h-0.5 w-2 bg-current rounded-full" />}
-                                        </div>
+                                        {!(!multiple && hasChildren) && (
+                                            <div className={cn(
+                                                "flex h-3.5 w-3.5 items-center justify-center rounded border transition-all",
+                                                fullySelected ? "bg-sidebar-primary border-sidebar-primary text-white" : 
+                                                partiallySelected ? "bg-sidebar-primary/20 border-sidebar-primary text-sidebar-primary" :
+                                                "bg-transparent border-sidebar-border group-hover:border-sidebar-foreground/30"
+                                            )}>
+                                                {fullySelected && <Check size={10} strokeWidth={4} />}
+                                                {!fullySelected && partiallySelected && <div className="h-0.5 w-2 bg-current rounded-full" />}
+                                            </div>
+                                        )}
                                         <span>{p.name}</span>
                                     </button>
 

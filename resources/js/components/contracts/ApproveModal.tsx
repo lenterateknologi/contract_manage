@@ -156,6 +156,7 @@ export default function ApproveModal({ open, onClose, onSubmit, isAssign, contra
         <Modal
             isOpen={open}
             onClose={onClose}
+            maxWidth="3xl"
             title={renderTitle()}
             footer={
                 <div className="flex w-full gap-3">

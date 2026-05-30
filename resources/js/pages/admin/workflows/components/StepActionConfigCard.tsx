@@ -2,6 +2,7 @@ import React from 'react';
 import { Trash2, FileSignature, Users as UsersIcon } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
 import { SearchableMultiSelect } from '@/components/ui/forms/SearchableMultiSelect';
+import { CompactSwitch } from '@/components/ui/forms/CompactSwitch';
 import { MASTER_ACTIONS, AVAILABLE_FIELDS, AUTOFILLED_PARAMS } from '../constants';
 
 interface StepActionConfigCardProps {
@@ -101,6 +102,8 @@ export function StepActionConfigCard({
                                 if (act.next_workflow_id) return 'cross_workflow';
                                 if (act.next_step_id) {
                                     const prevStep = allWorkflowSteps[idx - 1];
+                                    const firstStep = allWorkflowSteps[0];
+                                    if (firstStep && act.next_step_id === firstStep.id && idx > 0) return 'initial';
                                     if (prevStep && act.next_step_id === prevStep.id) return 'back';
                                     return 'jump_step';
                                 }
@@ -122,8 +125,9 @@ export function StepActionConfigCard({
                                     });
                                 }
                                 else if (val === 'initial') {
+                                    const firstStep = allWorkflowSteps[0];
                                     updateAction(actIdx, {
-                                        next_step_id: null,
+                                        next_step_id: firstStep?.id || null,
                                         next_workflow_id: null,
                                         next_workflow_step_id: null
                                     });
@@ -271,7 +275,7 @@ export function StepActionConfigCard({
                 </div>
 
                 {/* Cell 5: Signers (Conditional) */}
-                {(act.master_action?.code?.toLowerCase() === 'signature') && (
+                {((act.master_action?.code?.toLowerCase() || act.action_code?.toLowerCase() || act.master_action_id?.toLowerCase()) === 'signature') && (
                     <div className="space-y-2 col-span-1 sm:col-span-2 bg-amber-50/50 p-3 rounded-xl border border-amber-100/50 dark:bg-amber-900/10 dark:border-amber-800/30">
                         <div className="flex items-center gap-1.5">
                             <FileSignature size={12} className="text-amber-500" />
@@ -297,16 +301,16 @@ export function StepActionConfigCard({
                 )}
 
                 {/* Cell 6: Assignee Config (Conditional) */}
-                {(['assign', 'forward'].includes(act.master_action?.code?.toLowerCase())) && (
+                {(['assign', 'forward'].includes(act.master_action?.code?.toLowerCase() || act.action_code?.toLowerCase() || act.master_action_id?.toLowerCase())) && (
                     <div className="space-y-3 col-span-1 sm:col-span-2 bg-indigo-50/50 p-3 rounded-xl border border-indigo-100/50 dark:bg-indigo-900/10 dark:border-indigo-800/30">
                         <div className="flex items-center gap-1.5">
                             <UsersIcon size={12} className="text-indigo-500" />
                             <label className="text-[9px] font-bold text-indigo-600 uppercase tracking-tight dark:text-indigo-500">
-                                {act.master_action?.code?.toLowerCase() === 'forward' ? 'Lingkup Reviewer Tambahan' : 'Konfigurasi Penugasan (Assignee)'}
+                                {(act.master_action?.code?.toLowerCase() || act.action_code?.toLowerCase() || act.master_action_id?.toLowerCase()) === 'forward' ? 'Lingkup Reviewer Tambahan' : 'Konfigurasi Penugasan (Assignee)'}
                             </label>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {act.master_action?.code?.toLowerCase() === 'forward' && (
+                            {(act.master_action?.code?.toLowerCase() || act.action_code?.toLowerCase() || act.master_action_id?.toLowerCase()) === 'forward' && (
                                 <div className="space-y-1 md:col-span-2">
                                     <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Target Langkah (Insert To)</label>
                                     <Select
@@ -329,13 +333,57 @@ export function StepActionConfigCard({
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    <p className="text-[9px] text-slate-400 italic">Tentukan pada langkah mana approver tambahan ini akan disisipkan.</p>
+                                    <p className="text-[9px] text-slate-400 italic">Tentukan pada langkah mana approver tambahan ini akan disisipkan secara default.</p>
+
+                                    <div className="pt-2">
+                                        <CompactSwitch
+                                            label="Izinkan user memilih target langkah"
+                                            description="Jika aktif, user dapat memilih langkah target secara spesifik saat proses approval tambahan."
+                                            checked={act.assignee_config?.allow_user_select_step || false}
+                                            onCheckedChange={(checked) => {
+                                                updateAction(actIdx, {
+                                                    assignee_config: {
+                                                        ...(act.assignee_config || {}),
+                                                        allow_user_select_step: checked,
+                                                        selectable_steps: checked ? (act.assignee_config?.selectable_steps || []) : []
+                                                    }
+                                                });
+                                            }}
+                                        />
+                                        
+                                        {act.assignee_config?.allow_user_select_step && (
+                                            <div className="mt-3 space-y-1 pl-4 border-l-2 border-slate-100 dark:border-slate-800">
+                                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">
+                                                    Pilihan Langkah yang Diizinkan
+                                                </label>
+                                                <SearchableMultiSelect
+                                                    values={act.assignee_config?.selectable_steps || []}
+                                                    onValuesChange={(vals) => {
+                                                        updateAction(actIdx, {
+                                                            assignee_config: {
+                                                                ...(act.assignee_config || {}),
+                                                                selectable_steps: vals
+                                                            }
+                                                        });
+                                                    }}
+                                                    options={allWorkflowSteps.map((s: any, sIdx: number) => ({
+                                                        value: String(s.id),
+                                                        label: `TAHAP ${sIdx + 1}: ${s.label || 'Langkah ' + (sIdx + 1)}`
+                                                    }))}
+                                                    placeholder="Pilih langkah..."
+                                                />
+                                                <p className="text-[9px] text-slate-400 italic">
+                                                    Jika dikosongkan, user dapat memilih semua langkah (kecuali condition).
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             )}
 
                             <div className="space-y-1">
                                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">
-                                    {act.master_action?.code?.toLowerCase() === 'forward' ? 'Kategori Reviewer' : 'Tipe Assignee'}
+                                    {(act.master_action?.code?.toLowerCase() || act.action_code?.toLowerCase() || act.master_action_id?.toLowerCase()) === 'forward' ? 'Kategori Reviewer' : 'Tipe Assignee'}
                                 </label>
                                 <Select
                                     value={act.assignee_config?.type || ''}
@@ -349,10 +397,10 @@ export function StepActionConfigCard({
                                     }}
                                 >
                                     <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-white text-[10px] font-black uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
-                                        <SelectValue placeholder={act.master_action?.code?.toLowerCase() === 'forward' ? "PILIH KATEGORI" : "PILIH TIPE ASSIGNEE"} />
+                                        <SelectValue placeholder={(act.master_action?.code?.toLowerCase() || act.action_code?.toLowerCase() || act.master_action_id?.toLowerCase()) === 'forward' ? "PILIH KATEGORI" : "PILIH TIPE ASSIGNEE"} />
                                     </SelectTrigger>
                                     <SelectContent className="rounded-lg bg-white dark:bg-slate-950">
-                                        {act.master_action?.code?.toLowerCase() === 'forward' ? (
+                                        {(act.master_action?.code?.toLowerCase() || act.action_code?.toLowerCase() || act.master_action_id?.toLowerCase()) === 'forward' ? (
                                             <>
                                                 <SelectItem value="role" className="text-[9px] font-bold uppercase">BERDASARKAN ROLE / UNIT</SelectItem>
                                                 <SelectItem value="user" className="text-[9px] font-bold uppercase">DAFTAR USER SPESIFIK</SelectItem>
@@ -395,7 +443,7 @@ export function StepActionConfigCard({
                             {act.assignee_config?.type === 'user' && (
                                 <div className="space-y-1 md:col-span-2">
                                     <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">
-                                        {act.master_action?.code?.toLowerCase() === 'forward' ? 'Pilih User Khusus' : 'User Tujuan'}
+                                        {(act.master_action?.code?.toLowerCase() || act.action_code?.toLowerCase() || act.master_action_id?.toLowerCase()) === 'forward' ? 'Pilih User Khusus' : 'User Tujuan'}
                                     </label>
                                     <SearchableMultiSelect
                                         values={act.assignee_config?.user_ids || []}
@@ -407,7 +455,7 @@ export function StepActionConfigCard({
                             )}
                         </div>
                         <p className="text-[9px] text-indigo-600/70 italic leading-tight dark:text-indigo-500/70">
-                            {act.master_action?.code?.toLowerCase() === 'forward' 
+                            {(act.master_action?.code?.toLowerCase() || act.action_code?.toLowerCase() || act.master_action_id?.toLowerCase()) === 'forward'
                                 ? 'Tentukan siapa saja yang boleh dipilih untuk memberikan approval tambahan.'
                                 : 'Konfigurasi siapa yang dapat dipilih atau ditugaskan pada saat aksi ini dijalankan.'}
                         </p>
