@@ -1,25 +1,16 @@
 import { FormSection, ManagementForm } from '@/components/admin/ManagementForm';
-import { SearchableMultiSelect } from '@/components/ui/forms/SearchableMultiSelect';
 import { WorkflowVisualizer } from '@/components/admin/WorkflowVisualizer';
 import { useToast } from '@/components/contracts/Toast';
 import { Button } from '@/components/ui/base/Button';
 import { Checkbox } from '@/components/ui/base/Checkbox';
+import { SearchableMultiSelect } from '@/components/ui/forms/SearchableMultiSelect';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
 import { cn } from '@/lib/utils';
 import { closestCenter, DndContext, DragEndEvent, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Head, router, useForm } from '@inertiajs/react';
-import {
-    CheckCircle2,
-    Edit3,
-    ExternalLink,
-    GitBranch,
-    LayoutTemplate,
-    PlusCircle,
-    Shield,
-    Users as UsersIcon,
-} from 'lucide-react';
+import { CheckCircle2, Edit3, ExternalLink, GitBranch, LayoutTemplate, PlusCircle, Shield, Users as UsersIcon } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import OrgScopeSelector from './components/OrgScopeSelector';
 import SortableStepItem from './components/SortableStepItem';
@@ -45,6 +36,7 @@ export default function WorkflowEditor({
     const [isOrgExpanded, setIsOrgExpanded] = useState(false);
 
     const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
+    const [mainTab, setMainTab] = useState<'settings' | 'steps'>('settings');
     const [activeTab, setActiveTab] = useState<'list' | 'visual'>('list');
 
     const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
@@ -69,6 +61,7 @@ export default function WorkflowEditor({
         company_group_ids: workflow?.company_group_ids || [],
         region_ids: workflow?.region_ids || [],
         company_ids: workflow?.company_ids || [],
+        meta: workflow?.meta || {},
     });
 
     useEffect(() => {
@@ -122,7 +115,7 @@ export default function WorkflowEditor({
                         next_workflow_id: null,
                         next_workflow_step_id: null,
                         required_fields: [],
-                        autofilled_fields: []
+                        autofilled_fields: [],
                     },
                     {
                         id: `new-action-reject-${Date.now()}`,
@@ -132,8 +125,8 @@ export default function WorkflowEditor({
                         next_workflow_id: null,
                         next_workflow_step_id: null,
                         required_fields: [],
-                        autofilled_fields: []
-                    }
+                        autofilled_fields: [],
+                    },
                 ],
                 condition_expression: null,
                 role: [],
@@ -186,288 +179,406 @@ export default function WorkflowEditor({
                         </Button>
                     }
                 >
+                    {/* Main Tabs */}
+                    <div className="mb-6 flex border-b border-slate-200 dark:border-slate-800">
+                        <button
+                            type="button"
+                            onClick={() => setMainTab('settings')}
+                            className={cn(
+                                'border-b-2 px-6 py-3 text-[11px] font-black tracking-wider uppercase transition-all',
+                                mainTab === 'settings'
+                                    ? 'border-primary text-primary dark:text-white'
+                                    : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300',
+                            )}
+                        >
+                            Pengaturan Workflow
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setMainTab('steps')}
+                            className={cn(
+                                'flex items-center gap-2 border-b-2 px-6 py-3 text-[11px] font-black tracking-wider uppercase transition-all',
+                                mainTab === 'steps'
+                                    ? 'border-primary text-primary dark:text-white'
+                                    : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300',
+                            )}
+                        >
+                            Tahapan Workflow
+                            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] dark:bg-slate-800">{form.data.steps.length}</span>
+                        </button>
+                    </div>
+
                     <div className="space-y-8">
-                        <FormSection>
-                            <div className="space-y-6">
-                                <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-                                    <div className="lg:col-span-6">
-                                        <div className="space-y-2">
-                                            <label className="flex items-center gap-2 text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase dark:text-slate-500">
-                                                <Edit3 size={10} /> Nama Alur Kerja
-                                            </label>
-                                            <input
-                                                type="text"
-                                                autoFocus
-                                                value={form.data.name}
-                                                onChange={(e) => form.setData('name', e.target.value)}
-                                                className={cn("h-10 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 text-xs font-bold transition-all focus:border-slate-900 focus:bg-white focus:ring-0 dark:border-slate-800 dark:bg-slate-900/50 dark:focus:border-white dark:focus:bg-slate-900", form.errors.name && "border-red-500 focus:border-red-500")}
-                                                placeholder="Contoh: ALUR PERSETUJUAN KONTRAK LOGISTIK"
-                                            />
-                                            {form.errors.name && (
-                                                <p className="text-red-500 text-[10px] mt-1 font-bold">{form.errors.name}</p>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div className="lg:col-span-3">
-                                        <div className="space-y-2">
-                                            <label className="flex items-center gap-2 text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase dark:text-slate-500">
-                                                <LayoutTemplate size={10} /> Jenis Kontrak
-                                            </label>
-                                            <Select
-                                                value={form.data.contract_type_id || 'all'}
-                                                onValueChange={(v) => form.setData('contract_type_id', v === 'all' ? '' : String(v))}
-                                            >
-                                                <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-black tracking-tight uppercase transition-all focus:border-slate-900 dark:border-slate-800 dark:bg-slate-900/50 dark:focus:border-white">
-                                                    <SelectValue placeholder="SEMUA JENIS" />
-                                                </SelectTrigger>
-                                                <SelectContent className="rounded-xl border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
-                                                    <SelectItem value="all" className="py-2.5 text-[10px] font-black uppercase">
-                                                        SEMUA JENIS
-                                                    </SelectItem>
-                                                    {contractTypes.map((t: any) => (
-                                                        <SelectItem key={t.id} value={t.id} className="py-2.5 text-[10px] font-black uppercase">
-                                                            {t.name}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </div>
-                                    <div className="lg:col-span-3">
-                                        <div className="space-y-2">
-                                            <label className="flex items-center gap-2 text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase dark:text-slate-500">
-                                                Status Alur
-                                            </label>
-                                            <div className="border-slate-200 bg-slate-50/50 flex h-10 w-full items-center gap-3 rounded-xl border px-4 dark:border-slate-800 dark:bg-slate-900/50">
-                                                <Checkbox
-                                                    id="is_default"
-                                                    checked={form.data.is_default}
-                                                    onCheckedChange={(c) => form.setData('is_default', !!c)}
-                                                    className="h-4 w-4"
-                                                />
-                                                <label htmlFor="is_default" className="text-primary cursor-pointer text-[10px] font-bold uppercase dark:text-white">
-                                                    Alur Default
+                        {mainTab === 'settings' && (
+                            <FormSection>
+                                <div className="space-y-6">
+                                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+                                        <div className="lg:col-span-6">
+                                            <div className="space-y-2">
+                                                <label className="flex items-center gap-2 text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase dark:text-slate-500">
+                                                    <Edit3 size={10} /> Nama Alur Kerja
                                                 </label>
+                                                <input
+                                                    type="text"
+                                                    autoFocus
+                                                    value={form.data.name}
+                                                    onChange={(e) => form.setData('name', e.target.value)}
+                                                    className={cn(
+                                                        'h-10 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 text-xs font-bold transition-all focus:border-slate-900 focus:bg-white focus:ring-0 dark:border-slate-800 dark:bg-slate-900/50 dark:focus:border-white dark:focus:bg-slate-900',
+                                                        form.errors.name && 'border-red-500 focus:border-red-500',
+                                                    )}
+                                                    placeholder="Contoh: ALUR PERSETUJUAN KONTRAK LOGISTIK"
+                                                />
+                                                {form.errors.name && <p className="mt-1 text-[10px] font-bold text-red-500">{form.errors.name}</p>}
+                                            </div>
+                                        </div>
+                                        <div className="lg:col-span-3">
+                                            <div className="space-y-2">
+                                                <label className="flex items-center gap-2 text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase dark:text-slate-500">
+                                                    <LayoutTemplate size={10} /> Jenis Kontrak
+                                                </label>
+                                                <Select
+                                                    value={form.data.contract_type_id || 'all'}
+                                                    onValueChange={(v) => form.setData('contract_type_id', v === 'all' ? '' : String(v))}
+                                                >
+                                                    <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-black tracking-tight uppercase transition-all focus:border-slate-900 dark:border-slate-800 dark:bg-slate-900/50 dark:focus:border-white">
+                                                        <SelectValue placeholder="SEMUA JENIS" />
+                                                    </SelectTrigger>
+                                                    <SelectContent className="rounded-xl border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
+                                                        <SelectItem value="all" className="py-2.5 text-[10px] font-black uppercase">
+                                                            SEMUA JENIS
+                                                        </SelectItem>
+                                                        {contractTypes.map((t: any) => (
+                                                            <SelectItem key={t.id} value={t.id} className="py-2.5 text-[10px] font-black uppercase">
+                                                                {t.name}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+                                        <div className="lg:col-span-3">
+                                            <div className="space-y-2">
+                                                <label className="flex items-center gap-2 text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase dark:text-slate-500">
+                                                    Status Alur
+                                                </label>
+                                                <div className="flex h-10 w-full items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/50 px-4 dark:border-slate-800 dark:bg-slate-900/50">
+                                                    <Checkbox
+                                                        id="is_default"
+                                                        checked={form.data.is_default}
+                                                        onCheckedChange={(c) => form.setData('is_default', !!c)}
+                                                        className="h-4 w-4"
+                                                    />
+                                                    <label
+                                                        htmlFor="is_default"
+                                                        className="text-primary cursor-pointer text-[10px] font-bold uppercase dark:text-white"
+                                                    >
+                                                        Alur Default
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* --- Input Mechanism Config --- */}
+                                        <div className="mt-2 border-t border-slate-100 pt-6 lg:col-span-12 dark:border-slate-800">
+                                            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                                                <div className="space-y-2">
+                                                    <label className="flex items-center gap-2 text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase dark:text-slate-500">
+                                                        MODE F1
+                                                    </label>
+                                                    <Select
+                                                        value={form.data.meta?.f1_mode || 'upload'}
+                                                        onValueChange={(v) => form.setData('meta', { ...form.data.meta, f1_mode: v })}
+                                                    >
+                                                        <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-black tracking-tight uppercase transition-all focus:border-slate-900 dark:border-slate-800 dark:bg-slate-900/50 dark:focus:border-white">
+                                                            <SelectValue placeholder="UPLOAD FORM" />
+                                                        </SelectTrigger>
+                                                        <SelectContent className="rounded-xl border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
+                                                            <SelectItem value="upload" className="py-2.5 text-[10px] font-black uppercase">
+                                                                UPLOAD FORM
+                                                            </SelectItem>
+                                                            <SelectItem value="interactive" className="py-2.5 text-[10px] font-black uppercase">
+                                                                FORM BUILDER
+                                                            </SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="flex items-center gap-2 text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase dark:text-slate-500">
+                                                        MODE F2
+                                                    </label>
+                                                    <Select
+                                                        value={form.data.meta?.f2_mode || 'upload'}
+                                                        onValueChange={(v) => form.setData('meta', { ...form.data.meta, f2_mode: v })}
+                                                    >
+                                                        <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-black tracking-tight uppercase transition-all focus:border-slate-900 dark:border-slate-800 dark:bg-slate-900/50 dark:focus:border-white">
+                                                            <SelectValue placeholder="UPLOAD FORM" />
+                                                        </SelectTrigger>
+                                                        <SelectContent className="rounded-xl border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
+                                                            <SelectItem value="upload" className="py-2.5 text-[10px] font-black uppercase">
+                                                                UPLOAD FORM
+                                                            </SelectItem>
+                                                            <SelectItem value="interactive" className="py-2.5 text-[10px] font-black uppercase">
+                                                                FORM BUILDER
+                                                            </SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="flex items-center gap-2 text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase dark:text-slate-500">
+                                                        MODE KONTRAK AGREEMENT
+                                                    </label>
+                                                    <Select
+                                                        value={form.data.meta?.contract_mode || 'upload'}
+                                                        onValueChange={(v) => form.setData('meta', { ...form.data.meta, contract_mode: v })}
+                                                    >
+                                                        <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-black tracking-tight uppercase transition-all focus:border-slate-900 dark:border-slate-800 dark:bg-slate-900/50 dark:focus:border-white">
+                                                            <SelectValue placeholder="UPLOAD FORM" />
+                                                        </SelectTrigger>
+                                                        <SelectContent className="rounded-xl border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
+                                                            <SelectItem value="upload" className="py-2.5 text-[10px] font-black uppercase">
+                                                                UPLOAD FORM
+                                                            </SelectItem>
+                                                            <SelectItem value="interactive" className="py-2.5 text-[10px] font-black uppercase">
+                                                                FORM BUILDER
+                                                            </SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* --- Configuration Grid (Org Scope & Authority) --- */}
+                                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                                        {/* Column 1: Ruang Lingkup Organisasi */}
+                                        <OrgScopeSelector
+                                            form={form}
+                                            companyGroups={companyGroups}
+                                            regions={regions}
+                                            companies={companies}
+                                            isOrgExpanded={isOrgExpanded}
+                                            setIsOrgExpanded={setIsOrgExpanded}
+                                        />
+
+                                        {/* Column 2: Otoritas Akses (Initiator) */}
+                                        <div className="lg:col-span-1">
+                                            <div className="flex h-full flex-col rounded-2xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900/50">
+                                                <div className="mb-4 flex items-center gap-3">
+                                                    <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-xl">
+                                                        <Shield size={16} />
+                                                    </div>
+                                                    <span className="text-[11px] font-black text-slate-900 uppercase dark:text-white">
+                                                        Otoritas Inisiator
+                                                    </span>
+                                                </div>
+
+                                                <div className="space-y-4">
+                                                    {/* Selector 1: Role */}
+                                                    <div className="space-y-1.5">
+                                                        <label className="flex items-center gap-1.5 text-[9px] font-bold tracking-tight text-slate-400 uppercase">
+                                                            <Shield size={10} /> Role
+                                                        </label>
+                                                        <SearchableMultiSelect
+                                                            values={form.data.initiator_roles || []}
+                                                            onValuesChange={(vals: string[]) => form.setData('initiator_roles', vals)}
+                                                            options={roles.map((r: any) => ({ value: r.name, label: r.name }))}
+                                                            placeholder="Semua Role..."
+                                                            triggerClassName="min-h-8 h-auto py-1 text-[10px] font-black uppercase bg-slate-50/50 border-slate-200 focus:border-slate-900 dark:bg-slate-900/50 dark:border-slate-800"
+                                                        />
+                                                    </div>
+
+                                                    {/* Selector 2: Unit / Department */}
+                                                    <div className="space-y-1.5">
+                                                        <label className="flex items-center gap-1.5 text-[9px] font-bold tracking-tight text-slate-400 uppercase">
+                                                            <UsersIcon size={10} /> Unit / Department
+                                                        </label>
+                                                        <SearchableMultiSelect
+                                                            values={form.data.initiator_departments?.map(String) || []}
+                                                            onValuesChange={(vals: string[]) => form.setData('initiator_departments', vals)}
+                                                            options={departments.map((d: any) => ({ value: String(d.id), label: d.name }))}
+                                                            placeholder="Semua Unit..."
+                                                            triggerClassName="min-h-8 h-auto py-1 text-[10px] font-black uppercase bg-slate-50/50 border-slate-200 focus:border-slate-900 dark:bg-slate-900/50 dark:border-slate-800"
+                                                        />
+                                                    </div>
+
+                                                    {/* Selector 3: User */}
+                                                    <div className="space-y-1.5">
+                                                        <label className="flex items-center gap-1.5 text-[9px] font-bold tracking-tight text-slate-400 uppercase">
+                                                            <UsersIcon size={10} /> User
+                                                        </label>
+                                                        <SearchableMultiSelect
+                                                            values={form.data.initiator_users?.map(String) || []}
+                                                            onValuesChange={(vals: string[]) => form.setData('initiator_users', vals)}
+                                                            options={users.map((u: any) => ({ value: String(u.id), label: `${u.name} (${u.role})` }))}
+                                                            placeholder="Semua User..."
+                                                            triggerClassName="min-h-8 h-auto py-1 text-[10px] font-black uppercase bg-slate-50/50 border-slate-200 focus:border-slate-900 dark:bg-slate-900/50 dark:border-slate-800"
+                                                        />
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-
-                                {/* --- Configuration Grid (Org Scope & Authority) --- */}
-                                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                                    {/* Column 1: Ruang Lingkup Organisasi */}
-                                    <OrgScopeSelector
-                                        form={form}
-                                        companyGroups={companyGroups}
-                                        regions={regions}
-                                        companies={companies}
-                                        isOrgExpanded={isOrgExpanded}
-                                        setIsOrgExpanded={setIsOrgExpanded}
-                                    />
-
-                                    {/* Column 2: Otoritas Akses (Initiator) */}
-                                    <div className="lg:col-span-1">
-                                        <div className="flex h-full flex-col rounded-2xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900/50">
-                                            <div className="mb-4 flex items-center gap-3">
-                                                <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-xl">
-                                                    <Shield size={16} />
-                                                </div>
-                                                <span className="text-[11px] font-black text-slate-900 uppercase dark:text-white">
-                                                    Otoritas Inisiator
-                                                </span>
+                            </FormSection>
+                        )}
+                        {mainTab === 'steps' && (
+                            <>
+                                {/* --- Workflow Steps & Visualization Section --- */}
+                                <div className="space-y-6">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-xl">
+                                                <GitBranch size={16} />
                                             </div>
-
-                                            <div className="space-y-4">
-                                                {/* Selector 1: Role */}
-                                                <div className="space-y-1.5">
-                                                    <label className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-tight">
-                                                        <Shield size={10} /> Role
-                                                    </label>
-                                                    <SearchableMultiSelect
-                                                        values={form.data.initiator_roles || []}
-                                                        onValuesChange={(vals: string[]) => form.setData('initiator_roles', vals)}
-                                                        options={roles.map((r: any) => ({ value: r.name, label: r.name }))}
-                                                        placeholder="Semua Role..."
-                                                        triggerClassName="min-h-8 h-auto py-1 text-[10px] font-black uppercase bg-slate-50/50 border-slate-200 focus:border-slate-900 dark:bg-slate-900/50 dark:border-slate-800"
-                                                    />
-                                                </div>
-
-                                                {/* Selector 2: Unit / Department */}
-                                                <div className="space-y-1.5">
-                                                    <label className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-tight">
-                                                        <UsersIcon size={10} /> Unit / Department
-                                                    </label>
-                                                    <SearchableMultiSelect
-                                                        values={form.data.initiator_departments?.map(String) || []}
-                                                        onValuesChange={(vals: string[]) => form.setData('initiator_departments', vals)}
-                                                        options={departments.map((d: any) => ({ value: String(d.id), label: d.name }))}
-                                                        placeholder="Semua Unit..."
-                                                        triggerClassName="min-h-8 h-auto py-1 text-[10px] font-black uppercase bg-slate-50/50 border-slate-200 focus:border-slate-900 dark:bg-slate-900/50 dark:border-slate-800"
-                                                    />
-                                                </div>
-
-                                                {/* Selector 3: User */}
-                                                <div className="space-y-1.5">
-                                                    <label className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-tight">
-                                                        <UsersIcon size={10} /> User
-                                                    </label>
-                                                    <SearchableMultiSelect
-                                                        values={form.data.initiator_users?.map(String) || []}
-                                                        onValuesChange={(vals: string[]) => form.setData('initiator_users', vals)}
-                                                        options={users.map((u: any) => ({ value: String(u.id), label: `${u.name} (${u.role})` }))}
-                                                        placeholder="Semua User..."
-                                                        triggerClassName="min-h-8 h-auto py-1 text-[10px] font-black uppercase bg-slate-50/50 border-slate-200 focus:border-slate-900 dark:bg-slate-900/50 dark:border-slate-800"
-                                                    />
-                                                </div>
+                                            <div>
+                                                <h4 className="text-[11px] font-black text-slate-900 uppercase dark:text-white">
+                                                    Tahapan Alur Kerja
+                                                </h4>
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase">
+                                                    Konfigurasi Urutan Approval & Penugasan
+                                                </p>
                                             </div>
                                         </div>
+                                        <div className="flex items-center rounded-lg border border-slate-200 bg-slate-100 p-0.5 dark:border-slate-800 dark:bg-slate-900">
+                                            <button
+                                                type="button"
+                                                onClick={() => setActiveTab('list')}
+                                                className={cn(
+                                                    'rounded-md px-4 py-1.5 text-[9px] font-bold uppercase transition-all',
+                                                    activeTab === 'list'
+                                                        ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white'
+                                                        : 'text-slate-400',
+                                                )}
+                                            >
+                                                Daftar Langkah
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setActiveTab('visual')}
+                                                className={cn(
+                                                    'rounded-md px-4 py-1.5 text-[9px] font-bold uppercase transition-all',
+                                                    activeTab === 'visual'
+                                                        ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white'
+                                                        : 'text-slate-400',
+                                                )}
+                                            >
+                                                Visualisasi
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-                        </FormSection>
 
-                        {/* --- Workflow Steps & Visualization Section --- */}
-                        <div className="space-y-6">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-xl">
-                                        <GitBranch size={16} />
-                                    </div>
-                                    <div>
-                                        <h4 className="text-[11px] font-black text-slate-900 uppercase dark:text-white">Tahapan Alur Kerja</h4>
-                                        <p className="text-[9px] font-bold text-slate-400 uppercase">Konfigurasi Urutan Approval & Penugasan</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center rounded-lg border border-slate-200 bg-slate-100 p-0.5 dark:border-slate-800 dark:bg-slate-900">
-                                    <button
-                                        type="button"
-                                        onClick={() => setActiveTab('list')}
-                                        className={cn(
-                                            'rounded-md px-4 py-1.5 text-[9px] font-bold uppercase transition-all',
-                                            activeTab === 'list'
-                                                ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white'
-                                                : 'text-slate-400',
-                                        )}
-                                    >
-                                        Daftar Langkah
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setActiveTab('visual')}
-                                        className={cn(
-                                            'rounded-md px-4 py-1.5 text-[9px] font-bold uppercase transition-all',
-                                            activeTab === 'visual'
-                                                ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white'
-                                                : 'text-slate-400',
-                                        )}
-                                    >
-                                        Visualisasi
-                                    </button>
-                                </div>
-                            </div>
-
-                            {activeTab === 'visual' ? (
-                                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-                                    <WorkflowVisualizer
-                                        steps={form.data.steps}
-                                        companyGroups={companyGroups}
-                                        regions={regions}
-                                        companies={companies}
-                                        className="h-[600px]"
-                                    />
-                                    <div className="mt-4 flex justify-end">
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={handleOpenVisualizer}
-                                            className="h-8 rounded-lg px-4 text-[10px] font-black tracking-wider uppercase"
-                                        >
-                                            <ExternalLink size={12} className="mr-2" />
-                                            Buka di Tab Baru
-                                        </Button>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    {form.data.steps.length === 0 ? (
-                                        <div className="border-primary/5 bg-primary/[0.01] flex flex-col items-center justify-center rounded-3xl border-2 border-dashed py-24 text-center dark:border-white/5 dark:bg-white/[0.01]">
-                                            <div className="bg-primary/5 mb-4 rounded-2xl p-4">
-                                                <PlusCircle size={32} className="text-primary/20" />
+                                    {activeTab === 'visual' ? (
+                                        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                                            <WorkflowVisualizer
+                                                steps={form.data.steps}
+                                                companyGroups={companyGroups}
+                                                regions={regions}
+                                                companies={companies}
+                                                className="h-[600px]"
+                                            />
+                                            <div className="mt-4 flex justify-end">
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={handleOpenVisualizer}
+                                                    className="h-8 rounded-lg px-4 text-[10px] font-black tracking-wider uppercase"
+                                                >
+                                                    <ExternalLink size={12} className="mr-2" />
+                                                    Buka di Tab Baru
+                                                </Button>
                                             </div>
-                                            <span className="text-primary/30 text-xs font-black tracking-[0.2em] uppercase">
-                                                Belum Ada Tahapan Terdefinisi
-                                            </span>
-                                            <p className="mt-2 text-[10px] font-bold tracking-tight text-slate-400 uppercase">
-                                                Klik tombol "Tambah Tahap" di header untuk memulai
-                                            </p>
                                         </div>
                                     ) : (
-                                        <DndContext
-                                            sensors={sensors}
-                                            collisionDetection={closestCenter}
-                                            onDragEnd={handleDragEnd}
-                                            modifiers={[restrictToVerticalAxis]}
-                                        >
-                                            <SortableContext items={form.data.steps.map((s: any) => s.id)} strategy={verticalListSortingStrategy}>
-                                                <div className="relative grid gap-4">
-                                                    <div className="absolute top-12 bottom-12 left-[19.5px] z-0 w-px bg-slate-100 dark:bg-slate-800" />
-                                                    {form.data.steps.map((step: any, idx: number) => (
-                                                        <SortableStepItem
-                                                            key={step.id}
-                                                            roles={roles}
-                                                            departments={departments}
-                                                            users={users}
-                                                            step={step}
-                                                            idx={idx}
-                                                            totalSteps={form.data.steps.length}
-                                                            contractStatuses={contractStatuses}
-                                                            allWorkflows={allWorkflows.filter((w: any) => !form.data.contract_type_id || w.contract_type_id === form.data.contract_type_id || !w.contract_type_id)}
-                                                            allWorkflowSteps={form.data.steps}
-                                                            duplicateLocalStep={(i: number) => {
-                                                                const newStep = { ...form.data.steps[i], id: `new-${Date.now()}` };
-                                                                const s = [...form.data.steps];
-                                                                s.splice(i + 1, 0, newStep);
-                                                                form.setData('steps', s);
-                                                            }}
-                                                            moveLocalStep={(i: number, direction: 'up' | 'down') => {
-                                                                if (direction === 'up' && i > 0) {
-                                                                    form.setData('steps', arrayMove(form.data.steps, i, i - 1));
-                                                                } else if (direction === 'down' && i < form.data.steps.length - 1) {
-                                                                    form.setData('steps', arrayMove(form.data.steps, i, i + 1));
-                                                                }
-                                                            }}
-                                                            updateLocalStep={(i, data) => {
-                                                                const s = [...form.data.steps];
-                                                                s[i] = { ...s[i], ...data };
-                                                                form.setData('steps', s);
-                                                            }}
-                                                            removeLocalStep={(i: number) =>
-                                                                form.setData(
-                                                                    'steps',
-                                                                    form.data.steps.filter((_: any, index: number) => index !== i),
-                                                                )
-                                                            }
-                                                            isExpanded={expandedStepId === step.id}
-                                                            setIsExpanded={(expanded) => setExpandedStepId(expanded ? step.id : null)}
-                                                        />
-                                                    ))}
+                                        <div className="space-y-4">
+                                            {form.data.steps.length === 0 ? (
+                                                <div className="border-primary/5 bg-primary/[0.01] flex flex-col items-center justify-center rounded-3xl border-2 border-dashed py-24 text-center dark:border-white/5 dark:bg-white/[0.01]">
+                                                    <div className="bg-primary/5 mb-4 rounded-2xl p-4">
+                                                        <PlusCircle size={32} className="text-primary/20" />
+                                                    </div>
+                                                    <span className="text-primary/30 text-xs font-black tracking-[0.2em] uppercase">
+                                                        Belum Ada Tahapan Terdefinisi
+                                                    </span>
+                                                    <p className="mt-2 text-[10px] font-bold tracking-tight text-slate-400 uppercase">
+                                                        Klik tombol "Tambah Tahap" di header untuk memulai
+                                                    </p>
                                                 </div>
-                                            </SortableContext>
-                                        </DndContext>
+                                            ) : (
+                                                <DndContext
+                                                    sensors={sensors}
+                                                    collisionDetection={closestCenter}
+                                                    onDragEnd={handleDragEnd}
+                                                    modifiers={[restrictToVerticalAxis]}
+                                                >
+                                                    <SortableContext
+                                                        items={form.data.steps.map((s: any) => s.id)}
+                                                        strategy={verticalListSortingStrategy}
+                                                    >
+                                                        <div className="relative grid gap-4">
+                                                            <div className="absolute top-12 bottom-12 left-[19.5px] z-0 w-px bg-slate-100 dark:bg-slate-800" />
+                                                            {form.data.steps.map((step: any, idx: number) => (
+                                                                <SortableStepItem
+                                                                    key={step.id}
+                                                                    roles={roles}
+                                                                    departments={departments}
+                                                                    users={users}
+                                                                    step={step}
+                                                                    idx={idx}
+                                                                    totalSteps={form.data.steps.length}
+                                                                    contractStatuses={contractStatuses}
+                                                                    allWorkflows={allWorkflows.filter(
+                                                                        (w: any) =>
+                                                                            !form.data.contract_type_id ||
+                                                                            w.contract_type_id === form.data.contract_type_id ||
+                                                                            !w.contract_type_id,
+                                                                    )}
+                                                                    allWorkflowSteps={form.data.steps}
+                                                                    duplicateLocalStep={(i: number) => {
+                                                                        const newStep = { ...form.data.steps[i], id: `new-${Date.now()}` };
+                                                                        const s = [...form.data.steps];
+                                                                        s.splice(i + 1, 0, newStep);
+                                                                        form.setData('steps', s);
+                                                                    }}
+                                                                    moveLocalStep={(i: number, direction: 'up' | 'down') => {
+                                                                        if (direction === 'up' && i > 0) {
+                                                                            form.setData('steps', arrayMove(form.data.steps, i, i - 1));
+                                                                        } else if (direction === 'down' && i < form.data.steps.length - 1) {
+                                                                            form.setData('steps', arrayMove(form.data.steps, i, i + 1));
+                                                                        }
+                                                                    }}
+                                                                    updateLocalStep={(i, data) => {
+                                                                        const s = [...form.data.steps];
+                                                                        s[i] = { ...s[i], ...data };
+                                                                        form.setData('steps', s);
+                                                                    }}
+                                                                    removeLocalStep={(i: number) =>
+                                                                        form.setData(
+                                                                            'steps',
+                                                                            form.data.steps.filter((_: any, index: number) => index !== i),
+                                                                        )
+                                                                    }
+                                                                    isExpanded={expandedStepId === step.id}
+                                                                    setIsExpanded={(expanded) => setExpandedStepId(expanded ? step.id : null)}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    </SortableContext>
+                                                </DndContext>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
-                            )}
-                        </div>
-
-                        {form.data.steps.length > 0 && (
-                            <div className="flex items-center gap-4 py-8">
-                                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent dark:via-slate-800" />
-                                <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-6 py-2.5 text-[9px] font-black tracking-[0.3em] text-slate-400 uppercase dark:border-white/5 dark:bg-white/[0.02]">
-                                    <CheckCircle2 size={12} className="opacity-50" /> AKHIR ALUR KERJA
-                                </div>
-                                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent dark:via-slate-800" />
-                            </div>
+                                {form.data.steps.length > 0 && (
+                                    <div className="flex items-center gap-4 py-8">
+                                        <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent dark:via-slate-800" />
+                                        <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-6 py-2.5 text-[9px] font-black tracking-[0.3em] text-slate-400 uppercase dark:border-white/5 dark:bg-white/[0.02]">
+                                            <CheckCircle2 size={12} className="opacity-50" /> AKHIR ALUR KERJA
+                                        </div>
+                                        <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent dark:via-slate-800" />
+                                    </div>
+                                )}
+                            </>
                         )}
                     </div>
                 </ManagementForm>
