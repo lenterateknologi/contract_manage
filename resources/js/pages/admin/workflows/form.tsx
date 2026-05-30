@@ -363,7 +363,7 @@ export default function WorkflowEditor({
 
                                         {/* Column 2: Otoritas Akses (Initiator) */}
                                         <div className="lg:col-span-1">
-                                            <div className="flex h-full flex-col rounded-2xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900/50">
+                                            <div className="flex h-full flex-col">
                                                 <div className="mb-4 flex items-center gap-3">
                                                     <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-xl">
                                                         <Shield size={16} />

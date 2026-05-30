@@ -57,7 +57,7 @@ export default function OrgScopeSelector({
 
     return (
         <div className="lg:col-span-1">
-            <div className="flex h-full flex-col rounded-2xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900/50">
+            <div className="flex h-full flex-col">
                 <div className="mb-4 flex items-center gap-3">
                     <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20">
                         <Building2 size={16} />
