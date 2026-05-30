@@ -224,8 +224,8 @@ export default function WorkflowEditor({
                                                     value={form.data.name}
                                                     onChange={(e) => form.setData('name', e.target.value)}
                                                     className={cn(
-                                                        'h-10 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 text-xs font-bold transition-all focus:border-slate-900 focus:bg-white focus:ring-0 dark:border-slate-800 dark:bg-slate-900/50 dark:focus:border-white dark:focus:bg-slate-900',
-                                                        form.errors.name && 'border-red-500 focus:border-red-500',
+                                                        'h-10 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 text-xs font-bold transition-all focus:border-primary focus:bg-white focus:ring-1 focus:ring-primary dark:border-slate-800 dark:bg-slate-900/50 dark:focus:border-primary dark:focus:bg-slate-900',
+                                                        form.errors.name && 'border-red-500 focus:border-red-500 focus:ring-red-500',
                                                     )}
                                                     placeholder="Contoh: ALUR PERSETUJUAN KONTRAK LOGISTIK"
                                                 />
@@ -241,7 +241,7 @@ export default function WorkflowEditor({
                                                     value={form.data.contract_type_id || 'all'}
                                                     onValueChange={(v) => form.setData('contract_type_id', v === 'all' ? '' : String(v))}
                                                 >
-                                                    <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-black tracking-tight uppercase transition-all focus:border-slate-900 dark:border-slate-800 dark:bg-slate-900/50 dark:focus:border-white">
+                                                    <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-black tracking-tight uppercase transition-all focus:border-primary focus:ring-1 focus:ring-primary dark:border-slate-800 dark:bg-slate-900/50 dark:focus:border-primary">
                                                         <SelectValue placeholder="SEMUA JENIS" />
                                                     </SelectTrigger>
                                                     <SelectContent className="rounded-xl border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
@@ -290,7 +290,7 @@ export default function WorkflowEditor({
                                                         value={form.data.meta?.f1_mode || 'upload'}
                                                         onValueChange={(v) => form.setData('meta', { ...form.data.meta, f1_mode: v })}
                                                     >
-                                                        <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-black tracking-tight uppercase transition-all focus:border-slate-900 dark:border-slate-800 dark:bg-slate-900/50 dark:focus:border-white">
+                                                        <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-black tracking-tight uppercase transition-all focus:border-primary focus:ring-1 focus:ring-primary dark:border-slate-800 dark:bg-slate-900/50 dark:focus:border-primary">
                                                             <SelectValue placeholder="UPLOAD FORM" />
                                                         </SelectTrigger>
                                                         <SelectContent className="rounded-xl border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
@@ -311,7 +311,7 @@ export default function WorkflowEditor({
                                                         value={form.data.meta?.f2_mode || 'upload'}
                                                         onValueChange={(v) => form.setData('meta', { ...form.data.meta, f2_mode: v })}
                                                     >
-                                                        <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-black tracking-tight uppercase transition-all focus:border-slate-900 dark:border-slate-800 dark:bg-slate-900/50 dark:focus:border-white">
+                                                        <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-black tracking-tight uppercase transition-all focus:border-primary focus:ring-1 focus:ring-primary dark:border-slate-800 dark:bg-slate-900/50 dark:focus:border-primary">
                                                             <SelectValue placeholder="UPLOAD FORM" />
                                                         </SelectTrigger>
                                                         <SelectContent className="rounded-xl border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
@@ -332,7 +332,7 @@ export default function WorkflowEditor({
                                                         value={form.data.meta?.contract_mode || 'upload'}
                                                         onValueChange={(v) => form.setData('meta', { ...form.data.meta, contract_mode: v })}
                                                     >
-                                                        <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-black tracking-tight uppercase transition-all focus:border-slate-900 dark:border-slate-800 dark:bg-slate-900/50 dark:focus:border-white">
+                                                        <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-black tracking-tight uppercase transition-all focus:border-primary focus:ring-1 focus:ring-primary dark:border-slate-800 dark:bg-slate-900/50 dark:focus:border-primary">
                                                             <SelectValue placeholder="UPLOAD FORM" />
                                                         </SelectTrigger>
                                                         <SelectContent className="rounded-xl border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
@@ -384,7 +384,7 @@ export default function WorkflowEditor({
                                                             onValuesChange={(vals: string[]) => form.setData('initiator_roles', vals)}
                                                             options={roles.map((r: any) => ({ value: r.name, label: r.name }))}
                                                             placeholder="Semua Role..."
-                                                            triggerClassName="min-h-8 h-auto py-1 text-[10px] font-black uppercase bg-slate-50/50 border-slate-200 focus:border-slate-900 dark:bg-slate-900/50 dark:border-slate-800"
+                                                            triggerClassName="min-h-10 h-auto py-2 px-3 rounded-xl text-[10px] font-black uppercase bg-slate-50/50 border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-slate-900/50 dark:border-slate-800 dark:focus:border-primary"
                                                         />
                                                     </div>
 
@@ -398,7 +398,7 @@ export default function WorkflowEditor({
                                                             onValuesChange={(vals: string[]) => form.setData('initiator_departments', vals)}
                                                             options={departments.map((d: any) => ({ value: String(d.id), label: d.name }))}
                                                             placeholder="Semua Unit..."
-                                                            triggerClassName="min-h-8 h-auto py-1 text-[10px] font-black uppercase bg-slate-50/50 border-slate-200 focus:border-slate-900 dark:bg-slate-900/50 dark:border-slate-800"
+                                                            triggerClassName="min-h-10 h-auto py-2 px-3 rounded-xl text-[10px] font-black uppercase bg-slate-50/50 border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-slate-900/50 dark:border-slate-800 dark:focus:border-primary"
                                                         />
                                                     </div>
 
@@ -412,7 +412,7 @@ export default function WorkflowEditor({
                                                             onValuesChange={(vals: string[]) => form.setData('initiator_users', vals)}
                                                             options={users.map((u: any) => ({ value: String(u.id), label: `${u.name} (${u.role})` }))}
                                                             placeholder="Semua User..."
-                                                            triggerClassName="min-h-8 h-auto py-1 text-[10px] font-black uppercase bg-slate-50/50 border-slate-200 focus:border-slate-900 dark:bg-slate-900/50 dark:border-slate-800"
+                                                            triggerClassName="min-h-10 h-auto py-2 px-3 rounded-xl text-[10px] font-black uppercase bg-slate-50/50 border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-slate-900/50 dark:border-slate-800 dark:focus:border-primary"
                                                         />
                                                     </div>
                                                 </div>

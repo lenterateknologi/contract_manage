@@ -83,7 +83,7 @@ export default function OrgScopeSelector({
                             }}
                             options={groupOptions}
                             placeholder="Semua Group..."
-                            triggerClassName="min-h-8 h-auto py-1 text-[10px] font-black uppercase bg-slate-50/50 border-slate-200 focus:border-slate-900 dark:bg-slate-900/50 dark:border-slate-800"
+                            triggerClassName="min-h-10 h-auto py-2 px-3 rounded-xl text-[10px] font-black uppercase bg-slate-50/50 border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-slate-900/50 dark:border-slate-800 dark:focus:border-primary"
                         />
                     </div>
 
@@ -108,7 +108,7 @@ export default function OrgScopeSelector({
                                     : "Semua Region..."
                             }
                             disabled={!form.data.company_group_ids || form.data.company_group_ids.length === 0}
-                            triggerClassName="min-h-8 h-auto py-1 text-[10px] font-black uppercase bg-slate-50/50 border-slate-200 focus:border-slate-900 dark:bg-slate-900/50 dark:border-slate-800"
+                            triggerClassName="min-h-10 h-auto py-2 px-3 rounded-xl text-[10px] font-black uppercase bg-slate-50/50 border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-slate-900/50 dark:border-slate-800 dark:focus:border-primary"
                         />
                     </div>
 
@@ -129,7 +129,7 @@ export default function OrgScopeSelector({
                                     : "Semua Perusahaan..."
                             }
                             disabled={!form.data.region_ids || form.data.region_ids.length === 0}
-                            triggerClassName="min-h-8 h-auto py-1 text-[10px] font-black uppercase bg-slate-50/50 border-slate-200 focus:border-slate-900 dark:bg-slate-900/50 dark:border-slate-800"
+                            triggerClassName="min-h-10 h-auto py-2 px-3 rounded-xl text-[10px] font-black uppercase bg-slate-50/50 border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-slate-900/50 dark:border-slate-800 dark:focus:border-primary"
                         />
                     </div>
                 </div>
