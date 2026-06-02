@@ -31,6 +31,11 @@ class ContractPolicy
             return true;
         }
 
+        // Approvers can view
+        if ($contract->approvals()->where('user_id', $user->id)->exists()) {
+            return true;
+        }
+
         // Only allow viewing drafts if you are the creator or admin
         if ($contract->status === 'draft') {
             return false;
@@ -38,11 +43,6 @@ class ContractPolicy
 
         // Pic or Manager can view
         if ($contract->assigned_pic_id === $user->id || $contract->manager_id === $user->id) {
-            return true;
-        }
-
-        // Approvers can view
-        if ($contract->approvals()->where('user_id', $user->id)->exists()) {
             return true;
         }
 
@@ -60,31 +60,106 @@ class ContractPolicy
     }
 
     /**
-     * Determine whether the user can update the model.
+     * Determine whether the user can update the model's main info.
      */
     public function update(User $user, Contract $contract): bool
     {
-        // Admin can always update
-        if ($user->role === Role::ADMIN || $user->role === Role::SUPER_ADMIN) {
+        // If no workflow step is active, default to allowing creator
+        if (! $contract->workflow_step_id) {
+            return $contract->created_by === $user->id;
+        }
+
+        $canEdit = (bool) data_get($contract->workflowStep?->meta, 'allow_info_edit', true);
+
+        return $canEdit && $this->isActor($user, $contract);
+    }
+
+    /**
+     * Determine whether the user can update F1 form.
+     */
+    public function updateF1(User $user, Contract $contract): bool
+    {
+        if (! $contract->workflow_step_id) {
+            return $contract->created_by === $user->id;
+        }
+
+        $canEdit = (bool) data_get($contract->workflowStep?->meta, 'allow_f1_edit', true);
+
+        return $canEdit && $this->isActor($user, $contract);
+    }
+
+    /**
+     * Determine whether the user can update F2 form.
+     */
+    public function updateF2(User $user, Contract $contract): bool
+    {
+        if (! $contract->workflow_step_id) {
+            return $contract->created_by === $user->id;
+        }
+
+        $canEdit = (bool) data_get($contract->workflowStep?->meta, 'allow_f2_edit', true);
+
+        return $canEdit && $this->isActor($user, $contract);
+    }
+
+    /**
+     * Determine whether the user can update agreement/contract document.
+     */
+    public function updateAgreement(User $user, Contract $contract): bool
+    {
+        if (! $contract->workflow_step_id) {
+            return $contract->created_by === $user->id;
+        }
+
+        $canEdit = (bool) data_get($contract->workflowStep?->meta, 'allow_agreement_edit', true);
+
+        return $canEdit && $this->isActor($user, $contract);
+    }
+
+    /**
+     * Determine whether the user can update attachments.
+     */
+    public function updateAttachment(User $user, Contract $contract): bool
+    {
+        if (! $contract->workflow_step_id) {
+            return $contract->created_by === $user->id;
+        }
+
+        $canEdit = (bool) data_get($contract->workflowStep?->meta, 'allow_attachment_edit', true);
+
+        return $canEdit && $this->isActor($user, $contract);
+    }
+
+    /**
+     * Determine whether the user can update contract references.
+     */
+    public function updateReference(User $user, Contract $contract): bool
+    {
+        if (! $contract->workflow_step_id) {
+            return $contract->created_by === $user->id;
+        }
+
+        $canEdit = (bool) data_get($contract->workflowStep?->meta, 'allow_reference', true);
+
+        return $canEdit && $this->isActor($user, $contract);
+    }
+
+    /**
+     * Check if user is the creator or an active approver for the current step.
+     */
+    private function isActor(User $user, Contract $contract): bool
+    {
+        // Creator can always act if it's their own contract and it's in a state they can act on
+        if ($contract->created_by === $user->id) {
             return true;
         }
 
-        // If no workflow step is active, default to allowing creator if still draft
-        if (! $contract->workflow_step_id) {
-            return $contract->created_by === $user->id && $contract->status === 'draft';
-        }
-
-        // Use granular permissions from workflow step
-        // We assume the user is authorized to perform the update if the workflow step says so,
-        // but typically we should also check if the user is an active approver or the creator.
-
-        $canEditInfo = (bool) data_get($contract->workflowStep?->meta, 'allow_info_edit', true);
-
-        // Basic check: Must be the creator OR an active approver for this step
-        $isCreator = $contract->created_by === $user->id;
-        $isApprover = $contract->approvals()->where('user_id', $user->id)->where('workflow_step_id', $contract->workflow_step_id)->where('status', 'pending')->exists();
-
-        return $canEditInfo && ($isCreator || $isApprover);
+        // Active approver for the current step
+        return $contract->approvals()
+            ->where('user_id', $user->id)
+            ->where('workflow_step_id', $contract->workflow_step_id)
+            ->where('status', 'pending')
+            ->exists();
     }
 
     /**

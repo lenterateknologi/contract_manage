@@ -154,6 +154,10 @@ export interface Contract {
     status: ContractStatus;
     display_mode?: 'interactive' | 'pdf';
     allow_info_edit?: boolean;
+    allow_f1_edit?: boolean;
+    allow_f2_edit?: boolean;
+    allow_agreement_edit?: boolean;
+    allow_attachment_edit?: boolean;
     allow_reference?: boolean;
     current_version: number;
     requires_pic_assignment?: boolean;

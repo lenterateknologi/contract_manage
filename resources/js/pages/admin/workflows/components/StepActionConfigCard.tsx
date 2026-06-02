@@ -38,6 +38,19 @@ export function StepActionConfigCard({
     const isAssignOrForwardAction = ['assign', 'forward'].includes(actionCode);
 
     const transitionType = (() => {
+        if (act.transition_config?.type) {
+            if (act.transition_config.type === 'relative') {
+                if (act.transition_config.offset === 1) return 'sequential';
+                if (act.transition_config.offset === -1) return 'back';
+            }
+            if (act.transition_config.type === 'absolute') {
+                if (act.transition_config.sequence === 1) return 'initial';
+                return 'jump_step';
+            }
+            if (act.transition_config.type === 'cross_workflow') return 'cross_workflow';
+        }
+        
+        // Fallback for backward compatibility
         if (act.next_workflow_id) return 'cross_workflow';
         if (act.next_step_id) {
             const prevStep = allWorkflowSteps[idx - 1];
@@ -49,7 +62,8 @@ export function StepActionConfigCard({
         return 'sequential';
     })();
 
-    const showLocalTargetSelector = !act.next_workflow_id && act.next_step_id && act.next_step_id !== allWorkflowSteps[idx - 1]?.id;
+    const showLocalTargetSelector = transitionType === 'jump_step';
+    const showCrossWorkflowSelector = transitionType === 'cross_workflow';
 
     return (
         <div className="relative rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950/40 space-y-2">
@@ -121,38 +135,40 @@ export function StepActionConfigCard({
                             onValueChange={(val) => {
                                 if (val === 'sequential') {
                                     updateAction(actIdx, {
+                                        transition_config: { type: 'relative', offset: 1 },
                                         next_step_id: null,
                                         next_workflow_id: null,
                                         next_workflow_step_id: null
                                     });
                                 } else if (val === 'back') {
-                                    const prevStep = allWorkflowSteps[idx - 1];
                                     updateAction(actIdx, {
-                                        next_step_id: prevStep?.id || null,
+                                        transition_config: { type: 'relative', offset: -1 },
+                                        next_step_id: null,
                                         next_workflow_id: null,
                                         next_workflow_step_id: null
                                     });
                                 }
                                 else if (val === 'initial') {
-                                    const firstStep = allWorkflowSteps[0];
                                     updateAction(actIdx, {
-                                        next_step_id: firstStep?.id || null,
+                                        transition_config: { type: 'absolute', sequence: 1 },
+                                        next_step_id: null,
                                         next_workflow_id: null,
                                         next_workflow_step_id: null
                                     });
                                 }
                                 else if (val === 'jump_step') {
                                     updateAction(actIdx, {
-                                        next_step_id: allWorkflowSteps.find((s: any) => s.id !== step.id)?.id || null,
+                                        transition_config: { type: 'absolute', sequence: act.transition_config?.sequence || 1 },
+                                        next_step_id: null,
                                         next_workflow_id: null,
                                         next_workflow_step_id: null
                                     });
                                 } else if (val === 'cross_workflow') {
-                                    const targetWf = allWorkflows.find((w: any) => w.id !== step.workflow_id) || allWorkflows[0];
                                     updateAction(actIdx, {
+                                        transition_config: { type: 'cross_workflow', workflow_id: '', sequence: 1 },
                                         next_step_id: null,
-                                        next_workflow_id: targetWf?.id || null,
-                                        next_workflow_step_id: targetWf?.steps?.[0]?.id || null
+                                        next_workflow_id: null,
+                                        next_workflow_step_id: null
                                     });
                                 }
                             }}
@@ -162,19 +178,19 @@ export function StepActionConfigCard({
                             </SelectTrigger>
                             <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
                                 <SelectItem value="sequential" className="text-[9px] font-bold uppercase">
-                                    LANGKAH BERIKUTNYA (DEFAULT)
+                                    LANGKAH + 1 (DEFAULT)
                                 </SelectItem>
                                 <SelectItem value="back" className="text-[9px] font-bold uppercase">
-                                    LANGKAH SEBELUMNYA (BACK)
+                                    LANGKAH - 1 (BACK)
                                 </SelectItem>
                                 <SelectItem value="initial" className="text-[9px] font-bold uppercase">
-                                    LANGKAH AWAL (INTIAL STEP)
+                                    LANGKAH AWAL (INITIAL STEP)
                                 </SelectItem>
                                 <SelectItem value="jump_step" className="text-[9px] font-bold uppercase">
-                                    LOMPAT LANGKAH (INTERNAL)
+                                    LANGKAH KE N (INTERNAL)
                                 </SelectItem>
                                 <SelectItem value="cross_workflow" className="text-[9px] font-bold uppercase">
-                                    LINTAS ALUR KERJA (CROSS WORKFLOW)
+                                    LANGKAH KE WORKFLOW N & STEP N
                                 </SelectItem>
                             </SelectContent>
                         </Select>
@@ -184,16 +200,19 @@ export function StepActionConfigCard({
                         <div className="space-y-1 bg-slate-50/40 p-2.5 rounded-xl border border-slate-100 dark:bg-slate-900/10 dark:border-slate-800">
                             <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Pilih Target Langkah (Alur Ini)</label>
                             <Select
-                                value={String(act.next_step_id)}
-                                onValueChange={(val) => updateAction(actIdx, { next_step_id: val })}
+                                value={String(act.transition_config?.sequence || '')}
+                                onValueChange={(val) => updateAction(actIdx, { 
+                                    transition_config: { type: 'absolute', sequence: Number(val) },
+                                    next_step_id: null 
+                                })}
                             >
                                 <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-white text-[10px] font-black uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
                                     <SelectValue placeholder="PILIH TAHAP TARGET" />
                                 </SelectTrigger>
                                 <SelectContent className="rounded-lg bg-white dark:bg-slate-950">
                                     {allWorkflowSteps.map((s: any, sIdx: number) => (
-                                        <SelectItem key={s.id} value={String(s.id)} className="text-[9px] font-bold uppercase">
-                                            TAHAP {sIdx + 1}: {s.label || `Langkah ${sIdx + 1}`}
+                                        <SelectItem key={s.id} value={String(s.step || sIdx + 1)} className="text-[9px] font-bold uppercase">
+                                            TAHAP {s.step || sIdx + 1}: {s.label || `Langkah ${sIdx + 1}`}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -201,17 +220,22 @@ export function StepActionConfigCard({
                         </div>
                     )}
 
-                    {act.next_workflow_id && (
+                    {showCrossWorkflowSelector && (
                         <div className="space-y-3 bg-slate-50/40 p-2.5 rounded-xl border border-slate-100 dark:bg-slate-900/10 dark:border-slate-800">
                             <div className="space-y-1">
                                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Target Alur Kerja</label>
                                 <Select
-                                    value={String(act.next_workflow_id)}
+                                    value={act.transition_config?.workflow_id || act.next_workflow_id || ''}
                                     onValueChange={(val) => {
                                         const targetWf = allWorkflows.find((w: any) => String(w.id) === val);
                                         updateAction(actIdx, {
-                                            next_workflow_id: val,
-                                            next_workflow_step_id: targetWf?.steps?.[0]?.id || null
+                                            transition_config: { 
+                                                type: 'cross_workflow', 
+                                                workflow_id: val, 
+                                                sequence: targetWf?.steps?.[0]?.step || 1 
+                                            },
+                                            next_workflow_id: null,
+                                            next_workflow_step_id: null
                                         });
                                     }}
                                 >
@@ -230,16 +254,19 @@ export function StepActionConfigCard({
                             <div className="space-y-1">
                                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Mulai Dari Langkah</label>
                                 <Select
-                                    value={act.next_workflow_step_id ? String(act.next_workflow_step_id) : ''}
-                                    onValueChange={(val) => updateAction(actIdx, { next_workflow_step_id: val })}
+                                    value={String(act.transition_config?.sequence || '')}
+                                    onValueChange={(val) => updateAction(actIdx, { 
+                                        transition_config: { ...act.transition_config, type: 'cross_workflow', sequence: Number(val) },
+                                        next_workflow_step_id: null
+                                    })}
                                 >
                                     <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-white text-[10px] font-black uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
                                         <SelectValue placeholder="PILIH TAHAP TARGET" />
                                     </SelectTrigger>
                                     <SelectContent className="rounded-lg bg-white dark:bg-slate-950">
-                                        {(allWorkflows.find((w: any) => String(w.id) === String(act.next_workflow_id))?.steps || []).map((s: any, sIdx: number) => (
-                                            <SelectItem key={s.id} value={String(s.id)} className="text-[9px] font-bold uppercase">
-                                                TAHAP {sIdx + 1}: {s.label || `Langkah ${sIdx + 1}`}
+                                        {(allWorkflows.find((w: any) => String(w.id) === (act.transition_config?.workflow_id || act.next_workflow_id))?.steps || []).map((s: any, sIdx: number) => (
+                                            <SelectItem key={s.id} value={String(s.step || sIdx + 1)} className="text-[9px] font-bold uppercase">
+                                                TAHAP {s.step || sIdx + 1}: {s.label || `Langkah ${sIdx + 1}`}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>

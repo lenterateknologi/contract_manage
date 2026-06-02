@@ -89,17 +89,25 @@ trait EvaluatesWorkflowSteps
         // Rules 5 & 6: Skip Tax Review under certain conditions
         $queryService = property_exists($this, 'queryService') ? $this->queryService : app(\App\Services\ContractWorkflowQueryService::class);
         if ($queryService && $queryService->isTaxStep($step)) {
-            // Rule 5: Skip Tax Review if Contract Price < 1,000,000 IDR
-            $priceStr = $contract->f2_price ?? '';
-            $price = $this->parsePrice($priceStr);
-            if ($price < 1000000) {
-                return false;
-            }
+            $metadata = $contract->metadata ?? [];
+            $taxToggle = $metadata['tax_required'] ?? ($metadata['contract.has_tax'] ?? null);
 
-            // Rule 6: Skip Tax Review for Specific Entities
-            $companyCode = $contract->initiator?->company()->first()?->code;
-            if (in_array(strtoupper($companyCode), ['LTI', 'LTX', 'LTS'])) {
-                return false;
+            // If explicitly toggled ON, bypass automatic skip rules
+            if (in_array($taxToggle, [true, 'true', 1, '1', 'on', 'yes'], true)) {
+                // Continue to check other conditions (like condition_expression)
+            } else {
+                // Rule 5: Skip Tax Review if Contract Price < 1,000,000 IDR
+                $priceStr = $contract->f2_price ?? '';
+                $price = $this->parsePrice($priceStr);
+                if ($price < 1000000) {
+                    return false;
+                }
+
+                // Rule 6: Skip Tax Review for Specific Entities
+                $companyCode = $contract->initiator?->company()->first()?->code;
+                if (in_array(strtoupper($companyCode), ['LTI', 'LTX', 'LTS'])) {
+                    return false;
+                }
             }
         }
 

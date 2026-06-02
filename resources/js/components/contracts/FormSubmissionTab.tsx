@@ -1,6 +1,6 @@
+import { UnifiedFormViewer } from '@/components/form-renderer/UnifiedFormViewer';
 import { useToast } from '@/components/contracts/Toast';
 import { FormField } from '@/components/form-renderer/FormElement';
-import { InteractiveForm } from '@/components/form-renderer/InteractiveForm';
 import { Button } from '@/components/ui/base/Button';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
 import { SearchInput } from '@/components/ui/forms/SearchInput';
@@ -274,18 +274,9 @@ function GenericFormTab({
                     if (f.type !== 'kop_surat' && f.type !== 'form_title') {
                         const val = getAutofillValue(f, selected, docType, users);
                         if (val !== null) {
-                            // Date fields marked as meta_tgl_dibuat/tanggal are always updated to current time
-                            // Other fields use the "Smart Sync" logic to preserve manual edits.
+
                             const currentVal = synced[f.name];
                             const serverVal = originalData[f.name];
-
-                            // A field is safe to auto-sync if:
-                            // 1. It's a manual sync trigger.
-                            // 2. The field has never been manually edited by the user in this session (manualFields).
-                            // 3. The current value still matches the last known server state (isUntouched).
-
-                            // Auto-sync is aggressive: if the user hasn't manually edited
-                            // the field IN THIS SESSION, we pull the latest from contract info.
                             const isManualEdit = manualFields.has(f.name);
                             const isDateField =
                                 f.name === 'meta_tgl_dibuat' ||
@@ -294,11 +285,9 @@ function GenericFormTab({
                                 (f.options as any)?.value_type === 'date';
 
                             if (isManual || !isManualEdit) {
-                                // For dates, we only auto-update on manual sync or if empty
                                 if (!isManual && isDateField && currentVal) {
                                     return;
                                 }
-
                                 if (currentVal !== val) {
                                     synced[f.name] = val;
                                     hasChanged = true;
@@ -315,8 +304,6 @@ function GenericFormTab({
         },
         [fields, selected, originalData, showToast, manualFields, docType, users],
     );
-
-    // Auto-sync whenever contract metadata changes
     useEffect(() => {
         if (!loading && fields.length > 0) {
             handleSync(false);
@@ -328,7 +315,6 @@ function GenericFormTab({
             setLoading(false);
             return;
         }
-        // Only show spinner if we don't have fields yet
         if (fields.length === 0) setLoading(true);
         try {
             const [tplRes, subRes] = await Promise.all([
@@ -337,13 +323,12 @@ function GenericFormTab({
             ]);
             const tplFields: FormField[] = tplRes.data.fields ?? [];
             setFields(tplFields);
-            setManualFields(new Set()); // Reset tracking on fresh load
+            setManualFields(new Set());
 
             if (subRes.submission && subRes.versions?.length > 0) {
                 const latest = subRes.versions[0];
                 const savedData = latest.form_data ?? {};
 
-                // Generate full autofill set
                 const autofilled: Record<string, any> = {};
                 tplFields.forEach((f) => {
                     if (f.type !== 'kop_surat' && f.type !== 'form_title') {
@@ -351,9 +336,6 @@ function GenericFormTab({
                         if (val !== null) autofilled[f.name] = val;
                     }
                 });
-
-                // Merge: savedData wins for most fields, but ONLY if they are not empty.
-                // This ensures newly added metadata features populate even on old saved forms.
                 const finalData = { ...autofilled, ...(subRes.prefill_data || {}) };
                 Object.keys(savedData).forEach((key) => {
                     if (savedData[key] !== null && savedData[key] !== '') {
@@ -365,7 +347,6 @@ function GenericFormTab({
                 setOriginalData(savedData);
                 setVersions(subRes.versions);
             } else {
-                // No submission yet
                 const initial: Record<string, any> = {};
                 tplFields.forEach((f) => {
                     if (f.type !== 'kop_surat' && f.type !== 'form_title') {
@@ -410,14 +391,33 @@ function GenericFormTab({
         loadData();
     }, [loadData]);
 
-    const canEdit =
+    const isCreator = selected.created_by === meUser?.id;
+    const isApprover = (selected as any).can_approve;
+
+    const allowFlag =
         docType === 'f1'
-            ? (selected as any).allow_f1_edit
+            ? selected.allow_f1_edit
             : docType === 'f2'
-              ? (selected as any).allow_f2_edit
-              : docType === 'contract'
-                ? (selected as any).allow_agreement_edit
-                : (selected as any).allow_info_edit;
+                ? selected.allow_f2_edit
+                : docType === 'contract'
+                    ? selected.allow_agreement_edit
+                    : selected.allow_info_edit;
+
+    // Strict enforcement: permissions follow workflow flags and participant status ONLY.
+    const canEdit = allowFlag !== false && (isCreator || isApprover);
+
+    // DEBUG LOG
+    console.log(`[FormSubmissionTab] Debug for ${docType}:`, {
+        docType,
+        allowFlag,
+        isCreator,
+        isApprover,
+        canEdit,
+        meUserId: meUser?.id,
+        contractCreatorId: selected.created_by,
+        workflowStepId: selected.workflow_step_id
+    });
+
     const isDirty = JSON.stringify(formData) !== JSON.stringify(originalData);
     const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
     const autoSaveTimerRef = useRef<any>(null);
@@ -891,29 +891,29 @@ function GenericFormTab({
             </div>
 
             <div className="dark:bg-sidebar force-light custom-scrollbar relative flex-1 overflow-y-auto bg-white/50">
+                {/* Visual Debug Banner */}
+                {/* <div className="flex justify-center pt-6 px-6">
+                    <div className={cn(
+                        "flex items-center gap-3 px-4 py-2 rounded-full border text-[10px] font-bold uppercase tracking-wider shadow-sm",
+                        canEdit ? "bg-green-50 border-green-200 text-green-700" : "bg-amber-50 border-amber-200 text-amber-700"
+                    )}>
+                        <div className={cn("h-2 w-2 rounded-full animate-pulse", canEdit ? "bg-green-500" : "bg-amber-500")} />
+                        MODE: {canEdit ? "EDIT (Interactive Form)" : "VIEW (PDF Preview)"}
+                        <span className="opacity-30">|</span>
+                        REASON: {allowFlag === false ? "Workflow Locked" : (!isCreator && !isApprover ? "Not Your Turn" : "Allowed")}
+                    </div>
+                </div> */}
+
                 <div className="flex justify-center px-6 py-12">
-                    {(selected as any).display_mode === 'pdf' ? (
-                        <InteractiveForm
-                            template={templateForRenderer}
-                            formData={formData}
-                            readOnly={true}
-                            className={cn('shadow-2xl transition-all duration-300', 'ring-1 shadow-black/20 ring-black/5')}
-                        />
-                    ) : (
-                        <InteractiveForm
-                            template={templateForRenderer}
-                            formData={formData}
-                            onChange={(name, val) => {
-                                setManualFields((prev) => new Set(prev).add(name));
-                                setFormData((prev) => ({ ...prev, [name]: val }));
-                            }}
-                            readOnly={!canEdit}
-                            className={cn(
-                                'shadow-2xl transition-all duration-500',
-                                !canEdit ? 'ring-1 shadow-black/20 ring-black/5' : 'shadow-black/10',
-                            )}
-                        />
-                    )}
+                    <UnifiedFormViewer
+                        template={templateForRenderer}
+                        formData={formData}
+                        onChange={(name, val) => {
+                            setManualFields((prev) => new Set(prev).add(name));
+                            setFormData((prev) => ({ ...prev, [name]: val }));
+                        }}
+                        mode={canEdit ? 'interactive-form' : 'pdf-preview'}
+                    />
                 </div>
             </div>
         </div>

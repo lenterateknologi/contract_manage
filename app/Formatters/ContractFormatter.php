@@ -181,7 +181,7 @@ class ContractFormatter
                 'submitted_by' => $fs->submitted_by,
                 'updated_at' => $fs->updated_at->format('Y-m-d H:i'),
             ]),
-            'can_approve' => $c->approvals->where('status', 'pending')->where('user_id', Auth::id())->isNotEmpty() && ($c->status === 'in_review' || $c->status === 'revision' || $c->status === 'draft'),
+            'can_approve' => $c->approvals->where('status', 'pending')->where('user_id', Auth::id())->isNotEmpty(),
             'pending_approval_id' => $c->approvals->where('status', 'pending')->where('user_id', Auth::id())->first()?->id,
         ];
     }
@@ -265,7 +265,7 @@ class ContractFormatter
                 $targetApprovers = $step->users->pluck('name')->implode(', ');
                 $targetEmails = $step->users->pluck('email')->implode(', ');
             } elseif ($step->approver_type === 'atasan') {
-                $approvers = $workflowService->resolveHierarchyApprover($c, $step->hierarchy_level ?: 1);
+                $approvers = $workflowService->resolveHierarchyApprover($c, $step);
                 $targetApprovers = $approvers->pluck('name')->implode(', ');
                 $targetEmails = $approvers->pluck('email')->implode(', ');
             } elseif ($step->approver_type === 'initiator') {
@@ -282,12 +282,41 @@ class ContractFormatter
                 $roles = (array) $step->role;
                 $targetDeptIds = ! empty($step->department_ids) ? $step->department_ids : ($step->department_id ? [$step->department_id] : []);
                 $query = User::whereIn('role', $roles);
-                if (! empty($targetDeptIds)) {
+
+                if ($step->filter_department) {
+                    // Prioritize initiator department filter
+                    $query->where('department_id', $c->initiator?->department_id ?? '00000000-0000-0000-0000-000000000000');
+                } elseif (! empty($targetDeptIds)) {
+                    // Fallback to manual department pool
                     $query->whereIn('department_id', $targetDeptIds);
                 }
+
+                $initiatorCompany = $c->initiator?->company;
+
+                if ($step->filter_company_group) {
+                    $companyGroupId = $initiatorCompany?->company_group_id ?? '00000000-0000-0000-0000-000000000000';
+                    $query->whereHas('company', function ($q) use ($companyGroupId) {
+                        $q->where('company_group_id', $companyGroupId);
+                    });
+                }
+                if ($step->filter_region) {
+                    $regionId = $initiatorCompany?->region_id ?? '00000000-0000-0000-0000-000000000000';
+                    $query->whereHas('company', function ($q) use ($regionId) {
+                        $q->where('region_id', $regionId);
+                    });
+                }
+                if ($step->filter_company) {
+                    $query->where('company_id', $c->initiator?->company_id ?? '00000000-0000-0000-0000-000000000000');
+                }
+
                 $approvers = $query->get();
-                if ($approvers->isEmpty()) {
-                    $approvers = User::whereIn('role', $roles)->get();
+                if (str_contains($step->description, 'Manager') || str_contains($step->description, 'Atasan')) {
+                    \Illuminate\Support\Facades\Log::info('DEBUGLOG: Raw Attributes ' . $step->step, [
+                        'step_id' => $step->id,
+                        'raw_filter_dept' => $step->getAttributes()['filter_department'] ?? 'NOT_IN_ATTRIBUTES',
+                        'cast_filter_dept' => $step->filter_department,
+                        'all_keys' => array_keys($step->getAttributes()),
+                    ]);
                 }
                 $targetApprovers = $approvers->pluck('name')->implode(', ');
                 $targetEmails = $approvers->pluck('email')->implode(', ');
@@ -334,6 +363,7 @@ class ContractFormatter
 
                         $timeline[] = [
                             'id' => $a->id,
+                            'workflow_step_id' => $a->workflow_step_id,
                             'user_id' => $a->user_id,
                             'approver_name' => $a->approver_name,
                             'role' => $a->role,
@@ -386,6 +416,7 @@ class ContractFormatter
             foreach ($adhocApprovals as $a) {
                 $timeline[] = [
                     'id' => $a->id,
+                    'workflow_step_id' => $a->workflow_step_id,
                     'user_id' => $a->user_id,
                     'approver_name' => $a->approver_name,
                     'role' => Role::ADHOC_APPROVER,

@@ -469,10 +469,11 @@ class ContractExportController extends Controller
         }
     }
 
-    public function exportFormSubmissionPdf(string $id, string $type, string $disposition = 'attachment'): mixed
+    public function exportFormSubmissionPdf(string $id, string $type, Request $request): mixed
     {
         set_time_limit(120);
 
+        $disposition = $request->query('disposition', 'attachment');
         $contract = Contract::findOrFail($id);
 
         $template = FormTemplate::where('document_type', $type)

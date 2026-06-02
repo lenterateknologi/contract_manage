@@ -60,17 +60,17 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
 
     useEffect(() => {
         if (typeId) {
-            fetchWorkflows(typeId);
+            fetchWorkflows(typeId, initiatedById);
         } else {
             setWorkflows([]);
             setWorkflowId('');
         }
-    }, [typeId]);
+    }, [typeId, initiatedById]);
 
-    const fetchWorkflows = async (tId: string) => {
+    const fetchWorkflows = async (tId: string, initId?: string) => {
         setFetchingWorkflows(true);
         try {
-            const data = await contractApi.getWorkflows(tId);
+            const data = await contractApi.getWorkflows(tId, initId);
             setWorkflows(data);
 
             if (data.length === 1) {
@@ -100,6 +100,10 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
         }
         if (!typeId) {
             setErrors((prev) => ({ ...prev, contract_type_id: 'Tipe kontrak harus dipilih' }));
+            return;
+        }
+        if (workflows.length > 0 && !workflowId) {
+            setErrors((prev) => ({ ...prev, workflow_id: 'Alur kerja harus dipilih' }));
             return;
         }
 
@@ -226,7 +230,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                             value={typeId}
                             onValueChange={(childId, parentId) => {
                                 setTypeId(childId);
-                                setParentTypeId(parentId);
+                                setParentTypeId(parentId ?? '');
                                 const selectedType = Array.isArray(types) ? types.find((t) => String(t.id) === childId) : undefined;
                                 if (selectedType) setTitle(selectedType.name);
                             }}
@@ -239,7 +243,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                     </div>
                 </div>
 
-                {workflows.length > 1 && (
+                {workflows.length > 0 && (
                     <div className="animate-in fade-in slide-in-from-top-2 space-y-1.5 rounded-2xl border border-primary/10 bg-primary/[0.02] p-4">
                         <label className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-primary">
                             <ShieldCheck size={14} /> Pilih Alur Kerja (Workflow) <span className="text-rose-500">*</span>
@@ -251,7 +255,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                             placeholder="Pilih Alur Kerja"
                         />
                         <p className="text-muted-foreground text-[9px] font-medium leading-relaxed italic">
-                            Terdapat lebih dari satu alur kerja yang tersedia untuk tipe kontrak ini. Silakan pilih alur yang sesuai.
+                            Silakan pilih alur kerja (workflow) yang sesuai untuk tipe kontrak ini.
                         </p>
                         {errors.workflow_id && (
                             <div className="mt-1 text-[10px] font-medium text-rose-500">{errors.workflow_id}</div>

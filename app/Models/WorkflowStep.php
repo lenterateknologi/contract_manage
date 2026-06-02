@@ -17,6 +17,13 @@ class WorkflowStep extends Model
 
     use HasUuids, SoftDeletes;
 
+    protected static function booted()
+    {
+        static::addGlobalScope('order', function ($builder) {
+            $builder->orderBy('step', 'asc');
+        });
+    }
+
     public $incrementing = false;
 
     protected $keyType = 'string';

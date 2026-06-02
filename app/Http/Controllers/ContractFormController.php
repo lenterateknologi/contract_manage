@@ -69,6 +69,14 @@ class ContractFormController extends Controller
         ]);
 
         $docType = $request->document_type;
+
+        // Apply Policy Check
+        if ($docType === 'f1') {
+            \Illuminate\Support\Facades\Gate::authorize('updateF1', $contract);
+        } else {
+            \Illuminate\Support\Facades\Gate::authorize('updateF2', $contract);
+        }
+
         $formData = $request->form_data;
 
         $isNewVersion = $request->input('is_new_version', true);

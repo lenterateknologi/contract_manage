@@ -84,11 +84,20 @@ export function SharedApproveModal({ open, onClose, onSubmit, isAssign, contract
             }
 
             // Filter users based on next step requirements (Department and Roles)
-            const requirements = contract.next_step;
+            let requirements = contract.next_step;
+            
+            const actionAssigneeConfig = activeAction?.assignee_config;
+            if (actionAssigneeConfig && actionAssigneeConfig.type === 'role') {
+                requirements = {
+                    department_ids: actionAssigneeConfig.department_ids || [],
+                    roles: actionAssigneeConfig.roles || []
+                };
+            }
+
             const filtered = allUsers.filter((u: any) => {
-                // Backend returns department_id (singular) for the next step requirement
-                const nextDeptId = requirements?.department_id;
-                const matchesDept = !nextDeptId || u.department_id === nextDeptId;
+                // Backend returns department_ids array or department_id singular
+                const nextDeptIds = requirements?.department_ids || (requirements?.department_id ? [requirements.department_id] : []);
+                const matchesDept = nextDeptIds.length === 0 || nextDeptIds.includes(u.department_id);
 
                 // Backend returns roles as an array of role names
                 const nextRoles = requirements?.roles || [];
@@ -270,7 +279,7 @@ export function SharedApproveModal({ open, onClose, onSubmit, isAssign, contract
                 <div className="space-y-6">
                     <p className="text-text-desc text-sm font-medium leading-relaxed">
                         {isAssign
-                          ? 'Harap pilih PIC Staff Legal yang akan mengerjakan drafting agreement ini.'
+                          ? `Harap pilih ${actionAlias || 'Assignee'} yang akan mengerjakan tugas ini.`
                           : contract?.workflow_step?.step === 1
                             ? 'Konfirmasi untuk mengirim draft kontrak ini ke tahap persetujuan berikutnya. Pastikan dokumen sudah lengkap.'
                             : 'Apakah Anda yakin ingin menyetujui kontrak ini? Anda dapat memberikan catatan approval dan lampiran (opsional).'}
@@ -279,14 +288,14 @@ export function SharedApproveModal({ open, onClose, onSubmit, isAssign, contract
                     {isAssign && (
                         <div className="space-y-1.5">
                             <label className="text-[11px] font-bold uppercase tracking-wider text-text-desc">
-                                Pilih PIC Staff Legal <span className="text-danger">*</span>
+                                Pilih {actionAlias || 'Assignee'} <span className="text-danger">*</span>
                             </label>
                             {fetchingUsers ? (
                                 <div className="flex items-center gap-2 text-text-desc animate-pulse text-[10px]">
-                                    <Loader2 size={10} className="animate-spin" /> Memuat daftar staff...
+                                    <Loader2 size={10} className="animate-spin" /> Memuat daftar assignee...
                                 </div>
                             ) : users.length === 0 ? (
-                                <p className="text-[10px] font-medium text-danger">Tidak ada staff legal ditemukan.</p>
+                                <p className="text-[10px] font-medium text-danger">Tidak ada assignee ditemukan.</p>
                             ) : (
                                 <SearchableSelect
                                     value={assignedPicId}
@@ -295,7 +304,7 @@ export function SharedApproveModal({ open, onClose, onSubmit, isAssign, contract
                                         value: u.id,
                                         label: `${u.name} (${u.email})`,
                                     }))}
-                                    placeholder="-- Pilih Staff Legal --"
+                                    placeholder={`-- Pilih ${actionAlias || 'Assignee'} --`}
                                 />
                             )}
                         </div>

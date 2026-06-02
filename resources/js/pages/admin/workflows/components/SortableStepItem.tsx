@@ -859,20 +859,25 @@ export default function SortableStepItem({
                                                     </div>
 
                                                     {/* Unit Pool (multi-select) */}
-                                                    <div className="space-y-3 border-l border-slate-100 pl-6 dark:border-slate-800 md:col-span-6">
+                                                    <div className={cn("space-y-3 border-l border-slate-100 pl-6 dark:border-slate-800 md:col-span-6 transition-opacity", step.filter_department && "opacity-50")}>
                                                         <div className="flex items-center gap-2 px-1">
                                                             <Briefcase size={12} className="text-slate-400" />
-                                                            <span className="text-[10px] font-black text-slate-500 uppercase">UNIT POOL</span>
+                                                            <span className="text-[10px] font-black text-slate-500 uppercase">DEPARTEMEN POOL</span>
+                                                            {step.filter_department && (
+                                                                <span className="text-[8px] font-bold text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded italic">TERKUNCI KE DEPT. INISIATOR</span>
+                                                            )}
                                                         </div>
                                                         <div className="flex items-center gap-2 px-1">
                                                             <button
                                                                 type="button"
+                                                                disabled={step.filter_department}
                                                                 onClick={() => updateLocalStep(idx, { department_ids: [] })}
                                                                 className={cn(
                                                                     'rounded-lg px-2 py-1 text-[10px] font-bold uppercase transition-all',
-                                                                    !step.department_ids || step.department_ids.length === 0
+                                                                    (!step.department_ids || step.department_ids.length === 0)
                                                                         ? 'border-slate-900 bg-slate-900 text-white shadow-lg'
                                                                         : 'border-transparent text-slate-400 italic hover:bg-slate-100',
+                                                                    step.filter_department && "cursor-not-allowed opacity-50"
                                                                 )}
                                                             >
                                                                 SEMUA UNIT
@@ -880,9 +885,10 @@ export default function SortableStepItem({
                                                             <div className="flex-1">
                                                                 <SearchableMultiSelect
                                                                     values={step.department_ids || []}
-                                                                    onValuesChange={(vals: string[]) => updateLocalStep(idx, { department_ids: vals })}
+                                                                    onValuesChange={(vals: string[]) => !step.filter_department && updateLocalStep(idx, { department_ids: vals })}
                                                                     options={departments.map((d: any) => ({ value: String(d.id), label: d.name }))}
-                                                                    placeholder="Pilih Unit..."
+                                                                    placeholder={step.filter_department ? "Departemen Terkunci..." : "Pilih Unit..."}
+                                                                    disabled={step.filter_department}
                                                                 />
                                                             </div>
                                                         </div>

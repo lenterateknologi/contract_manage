@@ -5,36 +5,36 @@ import { cn } from '@/lib/utils';
 import { Contract, ContractAttachment } from '@/types/contracts';
 import axios from 'axios';
 import { renderAsync } from 'docx-preview';
-import { ArrowLeft, Download, FileCheck, File as FileIcon, Loader2, Plus, Trash2 } from 'lucide-react';
-import React, { useEffect, useRef, useState } from 'react';
+import {
+    ArrowLeft,
+    Download,
+    FileCheck,
+    FileIcon,
+    FolderOpen,
+    Loader2,
+    Plus,
+    Trash2,
+} from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useToast } from './Toast';
 
 interface Props {
     contract: Contract;
     onUpdated: (c: Contract) => void;
-    showToast: (msg: string, type: 'success' | 'danger') => void;
+    showToast: (msg: string, type: any) => void;
 }
 
 const DOCX_STYLES = `
-    .docx-wrapper {
-        background: white !important;
-        padding: 20px !important;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
+    .docx-wrapper { background-color: transparent !important; padding: 0 !important; }
+    .docx { 
+        box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1) !important; 
+        margin-bottom: 40px !important; 
+        border: 1px solid #e2e8f0 !important;
+        background-color: white !important;
     }
-    .docx-wrapper > section.docx {
-        box-shadow: none !important;
-        margin-bottom: 0 !important;
-        padding: 0 !important;
-        background: white !important;
-        width: 100% !important;
-    }
-    .docx { background: white !important; }
 `;
 
-// Dynamic categories are now handled within the component based on vendor data
-
-export default function ContractAttachments({ contract, onUpdated, showToast }: Props) {
+export default function ContractAttachments({ contract, onUpdated, showToast, meId }: Props & { meId?: string }) {
     const [uploading, setUploading] = useState<string | null>(null);
     const fileRef = useRef<HTMLInputElement>(null);
     const [activeLabel, setActiveLabel] = useState<string | null>(null);
@@ -44,28 +44,8 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
     const previewContainerRef = useRef<HTMLDivElement>(null);
     const [confirmDelete, setConfirmDelete] = useState<{ id: string; label: string } | null>(null);
 
-    // Auto-detect category based on vendor type
-    const vendorType = (contract.vendor as any)?.vendor_type?.toLowerCase() === 'perorangan' ? 'perorangan' : 'perusahaan';
-    const [activeCategory, setActiveCategory] = useState<'perusahaan' | 'perorangan'>(vendorType);
-
-    // Dynamic Categories based on Vendor Data
-    const vendorItems = (contract.vendor as any)?.documents?.map((d: any) => d.name) || [];
-    const DYNAMIC_CATEGORIES = [
-        {
-            id: vendorType,
-            label: `Lampiran (${vendorType === 'perorangan' ? 'Perorangan' : 'Perusahaan'})`,
-            items: vendorItems,
-        },
-    ];
-
-    const canEdit = (contract as any).allow_attachment_edit;
-
-    // Update active category when vendor changes
-    useEffect(() => {
-        if (contract.vendor) {
-            setActiveCategory((contract.vendor as any).vendor_type?.toLowerCase() === 'perorangan' ? 'perorangan' : 'perusahaan');
-        }
-    }, [contract.vendor?.id]);
+    const isActor = (contract as any).can_approve || contract.created_by === meId;
+    const canEdit = isActor && (contract as any).allow_attachment_edit !== false;
 
     // Reactive Preview Logic
     useEffect(() => {
@@ -80,7 +60,7 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                 try {
                     const url = (previewAt as any).is_vendor_doc
                         ? contractApi.vendorDocumentPdfPreviewUrl(contract.id, previewAt.id)
-                        : `/api/contracts/${contract.id}/attachment/${previewAt.id}`; // Original doc endpoint for conversion logic
+                        : `/api/contracts/${contract.id}/attachment/${previewAt.id}`;
 
                     const res = await axios.get(url, {
                         responseType: 'blob',
@@ -103,8 +83,18 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
     const [manualLabel, setManualLabel] = useState('');
     const [showManualUpload, setShowManualUpload] = useState(false);
 
-    // Filter attachments that are not part of the dynamic vendor categories
-    const additionalAttachments = contract.attachments?.filter(at => !vendorItems.includes(at.label)) || [];
+    // Combined list of attachments for the main grid
+    const vendorDocuments = (contract.vendor as any)?.documents?.map((d: any) => ({
+        id: d.id,
+        label: d.name,
+        category: 'Vendor Document',
+        file_name: d.name,
+        is_vendor_doc: true,
+        created_at: 'Master Vendor',
+    })) || [];
+
+    const contractAttachments = contract.attachments || [];
+    const allItems = [...vendorDocuments, ...contractAttachments];
 
     const handleManualUploadClick = () => {
         if (!manualLabel.trim()) {
@@ -157,46 +147,6 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
         }
     };
 
-    const getAttachment = (label: string) => {
-        // 1. Direct contract attachments
-        const direct = contract.attachments?.find((a) => a.label === label);
-        if (direct) return direct;
-
-        // 2. Virtual vendor documents (mapping by common keywords)
-        if (contract.vendor?.documents) {
-            const normalizedLabel = label.toLowerCase();
-            const vendorDoc = contract.vendor.documents.find((d) => {
-                const name = (d.name || '').toLowerCase();
-                const type = (d.type || '').toLowerCase();
-
-                // Smart mapping for common legal docs
-                if (normalizedLabel.includes('akte') && (name.includes('akte') || type.includes('akte'))) return true;
-                if (normalizedLabel.includes('tdp') && (name.includes('tdp') || type.includes('tdp'))) return true;
-                if (normalizedLabel.includes('siup') && (name.includes('siup') || type.includes('siup'))) return true;
-                if (normalizedLabel.includes('npwp') && (name.includes('npwp') || type.includes('npwp'))) return true;
-                if (normalizedLabel.includes('domicile') && (name.includes('domisili') || type.includes('domisili') || name.includes('domicile')))
-                    return true;
-                if (normalizedLabel.includes('ktp') && (name.includes('ktp') || name.includes('identitas'))) return true;
-
-                return name === normalizedLabel || type === normalizedLabel;
-            });
-
-            if (vendorDoc) {
-                return {
-                    id: vendorDoc.id,
-                    label: label,
-                    category: 'Vendor Document',
-                    file_name: vendorDoc.name,
-                    file_path: '', // Not used for virtuals
-                    is_vendor_doc: true, // Marker
-                    created_at: 'Synced from Vendor',
-                } as any;
-            }
-        }
-
-        return null;
-    };
-
     if (!contract.vendor) {
         return (
             <div className="animate-in fade-in flex flex-1 flex-col items-center justify-center p-20 text-center duration-500">
@@ -212,19 +162,33 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
     }
 
     if (previewAt) {
-        // ... (keep current preview return block)
+        const fileName = (previewAt.file_name || '').toLowerCase();
+        const isPdf = fileName.endsWith('.pdf');
+        const isDocx = fileName.endsWith('.docx');
+        const isImage = /\.(jpe?g|png|gif|webp)$/i.test(fileName);
+
+        const downloadUrl = (previewAt as any).is_vendor_doc
+            ? contractApi.vendorDocumentDownloadUrl(contract.id, previewAt.id)
+            : contractApi.attachmentDownloadUrl(contract.id, previewAt.id);
+
+        const previewUrl = (previewAt as any).is_vendor_doc
+            ? contractApi.vendorDocumentPdfPreviewUrl(contract.id, previewAt.id)
+            : `/api/contracts/${contract.id}/attachment/${previewAt.id}/preview`;
+
         return (
             <div className="bg-card animate-in fade-in flex flex-1 flex-col overflow-hidden duration-500">
                 <style>{DOCX_STYLES}</style>
-                {/* High-Fidelity HUD for Attachment Preview */}
                 <div className="border-surface-border flex h-[72px] shrink-0 items-center justify-between border-b bg-surface-base/80 px-6 backdrop-blur-xl">
                     <div className="flex items-center gap-4">
                         <div className="flex flex-col">
                             <div className="flex items-center gap-2">
                                 <div className="bg-primary h-4 w-1 rounded-full" />
                                 <h4 className="text-text-main text-[11px] font-bold leading-none uppercase">{previewAt.label}</h4>
-                                <span className="bg-primary rounded px-2 py-0.5 text-[8px] font-bold text-white uppercase">
-                                    {previewAt.category || 'Attachment'}
+                                <span className={cn(
+                                    "rounded px-2 py-0.5 text-[8px] font-bold text-white uppercase",
+                                    (previewAt as any).is_vendor_doc ? "bg-amber-600" : "bg-indigo-600"
+                                )}>
+                                    {(previewAt as any).is_vendor_doc ? 'Vendor Doc' : 'Attachment'}
                                 </span>
                             </div>
                             <span className="text-text-desc mt-1.5 text-[9px] font-bold tracking-[0.2em] uppercase">
@@ -242,37 +206,39 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                         </button>
 
                         <a
-                            href={
-                                (previewAt as any).is_vendor_doc
-                                    ? contractApi.vendorDocumentDownloadUrl(contract.id, previewAt.id)
-                                    : contractApi.attachmentDownloadUrl(contract.id, previewAt.id)
-                            }
+                            href={downloadUrl}
                             download
-                            className="bg-surface-base border-surface-border text-text-main flex h-8 items-center gap-2 rounded-lg border px-4 text-[10px] font-bold uppercase transition-all hover:bg-surface-muted active:scale-95"
+                            className="bg-primary text-primary-foreground flex h-8 items-center gap-2 rounded-lg px-4 text-[10px] font-bold uppercase transition-all hover:opacity-90 active:scale-95"
                         >
-                            <Download size={14} className="opacity-40" /> DOWNLOAD
+                            <Download size={14} /> DOWNLOAD
                         </a>
                     </div>
                 </div>
 
-                <div className="bg-surface-muted flex flex-1 justify-center p-8">
-                    <div className="border-surface-border relative mb-20 min-h-[80vh] w-full max-w-[210mm] overflow-hidden rounded-sm bg-white shadow-2xl ring-1">
+                <div className="relative flex-1 overflow-y-auto bg-slate-100/50 p-8 custom-scrollbar">
+                    <div className="mx-auto max-w-[900px]">
                         {previewLoading && (
-                            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-surface-base/80 backdrop-blur-sm">
-                                <LoadingLottie width={100} height={100} />
-                                <span className="text-text-soft text-[10px] font-black uppercase">Menyiapkan Preview...</span>
+                            <div className="flex h-64 flex-col items-center justify-center gap-3">
+                                <Loader2 className="text-primary animate-spin" size={32} />
+                                <span className="text-text-soft text-[10px] font-bold uppercase tracking-widest">Generating Preview...</span>
                             </div>
                         )}
 
-                        {previewAt.file_name.toLowerCase().endsWith('.docx') ? (
-                            <div ref={previewContainerRef} className="docx-container contract-doc w-full p-12 text-left" />
-                        ) : (
+                        {isDocx && <div ref={previewContainerRef} className="docx-preview-container" />}
+
+                        {isImage && (
+                            <div className="flex justify-center">
+                                <img
+                                    src={previewUrl}
+                                    alt="Preview"
+                                    className="max-w-full rounded-xl border border-slate-200 bg-white shadow-2xl"
+                                />
+                            </div>
+                        )}
+
+                        {isPdf && (
                             <iframe
-                                src={
-                                    (previewAt as any).is_vendor_doc
-                                        ? `${contractApi.vendorDocumentPdfPreviewUrl(contract.id, previewAt.id)}#toolbar=0&navpanes=0&view=FitH`
-                                        : `${contractApi.attachmentPdfPreviewUrl(contract.id, previewAt.id)}#toolbar=0&navpanes=0&view=FitH`
-                                }
+                                src={`${previewUrl}#toolbar=0`}
                                 className="absolute top-0 left-[-3%] h-full w-[106%] border-none bg-white"
                                 title="Attachment Preview"
                                 style={{ backgroundColor: 'white' }}
@@ -285,205 +251,135 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
     }
 
     return (
-        <div className="animate-in fade-in flex flex-col gap-5 p-5 duration-500">
+        <div className="bg-surface-muted/30 flex flex-1 flex-col overflow-y-auto px-6 py-8 custom-scrollbar">
             <input type="file" ref={fileRef} className="hidden" onChange={handleFileChange} />
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                {DYNAMIC_CATEGORIES[0].items.map((label: string) => {
-                    const at = getAttachment(label);
-                    const isUp = uploading === label;
+            <div className="mb-6 px-1 flex items-center justify-between">
+                <div>
+                    <h4 className="text-text-main text-[11px] font-black uppercase tracking-[0.3em]">Dokumen & Lampiran</h4>
+                    <p className="text-text-soft mt-1 text-[9px] font-bold uppercase tracking-wider">Daftar kelengkapan dokumen dari Vendor dan Kontrak</p>
+                </div>
+                {canEdit && !showManualUpload && (
+                    <button
+                        onClick={() => setShowManualUpload(true)}
+                        className="bg-indigo-600 text-white shadow-indigo-200 flex h-9 items-center gap-2 rounded-xl px-5 text-[10px] font-bold uppercase shadow-lg transition-all hover:bg-indigo-700 active:scale-95"
+                    >
+                        <Plus size={14} /> Tambah Lampiran
+                    </button>
+                )}
+            </div>
 
+            {canEdit && showManualUpload && (
+                <div className="mb-8 animate-in slide-in-from-top-2 duration-300">
+                    <div className="bg-indigo-50 border-indigo-100 flex items-center gap-3 rounded-2xl border p-4 backdrop-blur-sm">
+                        <div className="flex-1">
+                            <input
+                                type="text"
+                                placeholder="Nama lampiran tambahan..."
+                                value={manualLabel}
+                                onChange={(e) => setManualLabel(e.target.value)}
+                                className="w-full bg-white border-indigo-100 rounded-xl px-4 py-2.5 text-sm font-medium text-text-main outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all shadow-sm"
+                                onKeyDown={(e) => e.key === 'Enter' && handleManualUploadClick()}
+                            />
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => {
+                                    setShowManualUpload(false);
+                                    setManualLabel('');
+                                }}
+                                className="text-text-soft hover:bg-black/5 flex h-10 w-10 items-center justify-center rounded-xl transition-all"
+                            >
+                                <Trash2 size={18} />
+                            </button>
+                            <button
+                                onClick={handleManualUploadClick}
+                                className="bg-indigo-600 text-white shadow-indigo-200 flex h-10 items-center gap-2 rounded-xl px-6 text-[10px] font-bold uppercase shadow-lg transition-all hover:bg-indigo-700 active:scale-95"
+                            >
+                                <Plus size={14} /> Upload Berkas
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {allItems.map((at) => {
+                    const isUp = uploading === at.label;
                     return (
                         <div
-                            key={label}
-                            onClick={() => at && setPreviewAt(at)}
+                            key={at.id + at.label}
+                            onClick={() => setPreviewAt(at)}
                             className={cn(
-                                'group relative flex items-center justify-between rounded-xl border p-4 transition-all duration-300 outline-none',
-                                at
-                                    ? 'bg-surface-base border-surface-border cursor-pointer hover:-translate-y-1 hover:border-text-main hover:shadow-xl'
-                                    : 'bg-surface-muted/30 border-surface-border/50',
+                                'group relative flex flex-col justify-between rounded-2xl border p-5 transition-all duration-300 outline-none',
+                                'bg-white border-surface-border cursor-pointer hover:-translate-y-1 hover:border-text-main hover:shadow-2xl'
                             )}
                         >
-                            <div className="flex min-w-0 items-center gap-4">
+                            <div className="flex items-start justify-between mb-4">
                                 <div
                                     className={cn(
-                                        'flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl transition-all duration-300',
-                                        at
-                                            ? 'bg-surface-muted text-text-desc shadow-inner group-hover:bg-text-main group-hover:text-surface-base'
-                                            : 'bg-surface-muted/50 text-text-soft/20',
+                                        'flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl transition-all duration-300',
+                                        at.is_vendor_doc ? 'bg-amber-50 text-amber-600' : 'bg-indigo-50 text-indigo-600',
+                                        'group-hover:scale-110'
                                     )}
                                 >
-                                    {at ? <FileCheck size={20} strokeWidth={2.5} /> : <FileIcon size={20} strokeWidth={2.5} />}
+                                    <FileCheck size={24} strokeWidth={2.5} />
                                 </div>
-                                <div className="min-w-0">
-                                    <div
-                                        className={cn(
-                                            'truncate text-[12px] font-bold tracking-tight',
-                                            at ? 'text-text-main uppercase' : 'text-text-soft/40 uppercase',
-                                        )}
-                                        title={label}
+                                <div className="flex items-center gap-2">
+                                    <a
+                                        href={
+                                            at.is_vendor_doc
+                                                ? contractApi.vendorDocumentDownloadUrl(contract.id, at.id)
+                                                : contractApi.attachmentDownloadUrl(contract.id, at.id)
+                                        }
+                                        download
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="text-text-soft hover:text-text-main transition-colors"
+                                        title="Download"
                                     >
-                                        {label}
-                                    </div>
-                                    {at ? (
-                                        <div className="text-text-soft mt-1 truncate text-[9px] font-bold tracking-[0.1em] uppercase">
-                                            {at.file_name} · <span className="text-text-main">READY</span>
-                                        </div>
-                                    ) : (
-                                        <div className="text-text-soft/20 mt-1 text-[9px] font-bold uppercase italic">Kosong</div>
+                                        <Download size={16} />
+                                    </a>
+                                    {!at.is_vendor_doc && canEdit && (
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDelete(at.id, at.label);
+                                            }}
+                                            className="text-text-soft hover:text-rose-600 transition-colors"
+                                            title="Delete"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
                                     )}
                                 </div>
                             </div>
 
-                            <div className="ml-3 flex flex-shrink-0 items-center gap-1.5">
-                                {at ? (
-                                    <>
-                                        <a
-                                            href={
-                                                (at as any).is_vendor_doc
-                                                    ? contractApi.vendorDocumentDownloadUrl(contract.id, at.id)
-                                                    : contractApi.attachmentDownloadUrl(contract.id, at.id)
-                                            }
-                                            download
-                                            onClick={(e) => e.stopPropagation()}
-                                            className="bg-surface-base border-surface-border text-text-main flex h-8 w-8 items-center justify-center rounded-lg border shadow-sm transition-all hover:bg-text-main hover:text-surface-base active:scale-95"
-                                            title="Download"
-                                        >
-                                            <Download size={14} strokeWidth={2.5} />
-                                        </a>
-                                        {!(at as any).is_vendor_doc && canEdit && (
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleDelete(at.id, label);
-                                                }}
-                                                className="bg-surface-base border-surface-border text-text-main flex h-8 w-8 items-center justify-center rounded-lg border shadow-sm transition-all hover:bg-text-main hover:text-surface-base active:scale-95"
-                                                title="Delete"
-                                            >
-                                                <Trash2 size={14} strokeWidth={2.5} />
-                                            </button>
-                                        )}
-                                    </>
-                                ) : (
-                                    canEdit && (
-                                        <button
-                                            disabled={!!uploading}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setActiveLabel(label);
-                                                setActiveCat(vendorType);
-                                                fileRef.current?.click();
-                                            }}
-                                            className="bg-surface-base border-surface-border text-text-desc flex h-8 items-center gap-2 rounded-lg border px-4 text-[10px] font-bold uppercase transition-all hover:bg-text-main hover:text-surface-base active:scale-95 disabled:opacity-20"
-                                        >
-                                            {isUp ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
-                                            Upload
-                                        </button>
-                                    )
-                                )}
+                            <div className="min-w-0">
+                                <div className="truncate text-[12px] font-black tracking-tight text-text-main uppercase" title={at.label}>
+                                    {at.label}
+                                </div>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <span className={cn(
+                                        "px-1.5 py-0.5 rounded text-[8px] font-black uppercase",
+                                        at.is_vendor_doc ? "bg-amber-100 text-amber-700" : "bg-indigo-100 text-indigo-700"
+                                    )}>
+                                        {at.is_vendor_doc ? 'VENDOR' : 'CONTRACT'}
+                                    </span>
+                                    <span className="text-text-soft/40 text-[9px] font-bold truncate">
+                                        {at.file_name}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     );
                 })}
-            </div>
 
-            {/* Additional Manual Attachments Section */}
-            <div className="mt-8">
-                <div className="flex items-center justify-between mb-4 px-1">
-                    <div className="flex items-center gap-2">
-                        <h4 className="text-text-main text-[11px] font-black uppercase tracking-widest">Lampiran Tambahan</h4>
-                    </div>
-                    {!showManualUpload && canEdit && (
-                        <button
-                            onClick={() => setShowManualUpload(true)}
-                            className="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 flex h-8 items-center gap-2 rounded-lg px-4 text-[10px] font-bold uppercase transition-all active:scale-95"
-                        >
-                            <Plus size={14} /> Tambah Lampiran
-                        </button>
-                    )}
-                </div>
-
-                {showManualUpload && (
-                    <div className="mb-6 animate-in slide-in-from-top-2 duration-300">
-                        <div className="bg-indigo-50/50 border-indigo-100 flex items-center gap-3 rounded-2xl border p-4 backdrop-blur-sm">
-                            <div className="flex-1">
-                                <input
-                                    type="text"
-                                    placeholder="Nama lampiran (contoh: Proposal Teknis, Brosur, dll)"
-                                    value={manualLabel}
-                                    onChange={(e) => setManualLabel(e.target.value)}
-                                    className="w-full bg-white border-indigo-100 rounded-xl px-4 py-2 text-sm font-medium text-text-main outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all shadow-sm"
-                                    onKeyDown={(e) => e.key === 'Enter' && handleManualUploadClick()}
-                                />
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => {
-                                        setShowManualUpload(false);
-                                        setManualLabel('');
-                                    }}
-                                    className="text-text-soft hover:bg-black/5 flex h-10 w-10 items-center justify-center rounded-xl transition-all"
-                                >
-                                    <Trash2 size={18} />
-                                </button>
-                                <button
-                                    onClick={handleManualUploadClick}
-                                    className="bg-indigo-600 text-white shadow-indigo-200 flex h-10 items-center gap-2 rounded-xl px-6 text-[10px] font-bold uppercase shadow-lg transition-all hover:bg-indigo-700 active:scale-95"
-                                >
-                                    <Plus size={14} /> Upload Berkas
-                                </button>
-                            </div>
-                        </div>
+                {allItems.length === 0 && (
+                    <div className="col-span-full py-20 flex flex-col items-center justify-center text-center opacity-40">
+                        <FolderOpen size={48} className="mb-4" />
+                        <p className="text-xs font-black uppercase tracking-widest">Belum ada lampiran</p>
                     </div>
                 )}
-
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    {additionalAttachments.map((at) => (
-                        <div
-                            key={at.id}
-                            onClick={() => setPreviewAt(at)}
-                            className="bg-surface-base border-surface-border group relative flex cursor-pointer items-center justify-between rounded-xl border p-4 transition-all duration-300 hover:-translate-y-1 hover:border-indigo-500 hover:shadow-xl outline-none"
-                        >
-                            <div className="flex min-w-0 items-center gap-4">
-                                <div className="bg-indigo-50 text-indigo-500 group-hover:bg-indigo-600 group-hover:text-white flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl shadow-inner transition-all duration-300">
-                                    <FileCheck size={20} strokeWidth={2.5} />
-                                </div>
-                                <div className="min-w-0">
-                                    <div className="text-text-main truncate text-[12px] font-bold tracking-tight uppercase" title={at.label}>
-                                        {at.label}
-                                    </div>
-                                    <div className="text-text-soft mt-1 truncate text-[9px] font-bold tracking-[0.1em] uppercase">
-                                        {at.file_name} · <span className="text-indigo-600">ADDITIONAL</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="ml-3 flex flex-shrink-0 items-center gap-1.5">
-                                <a
-                                    href={contractApi.attachmentDownloadUrl(contract.id, at.id)}
-                                    download
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="bg-surface-base border-surface-border text-text-main flex h-8 w-8 items-center justify-center rounded-lg border shadow-sm transition-all hover:bg-indigo-600 hover:text-white active:scale-95"
-                                    title="Download"
-                                >
-                                    <Download size={14} strokeWidth={2.5} />
-                                </a>
-                                {canEdit && (
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleDelete(at.id, at.label);
-                                        }}
-                                        className="bg-surface-base border-surface-border text-text-main flex h-8 w-8 items-center justify-center rounded-lg border shadow-sm transition-all hover:bg-rose-600 hover:text-white active:scale-95"
-                                        title="Delete"
-                                    >
-                                        <Trash2 size={14} strokeWidth={2.5} />
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    ))}
-                </div>
             </div>
 
             <ConfirmationModal
@@ -494,6 +390,6 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                 description={`Apakah Anda yakin ingin menghapus lampiran "${confirmDelete?.label}"? Berkas yang telah dihapus tidak dapat dipulihkan.`}
                 confirmText="Hapus Berkas"
             />
-        </div >
+        </div>
     );
 }

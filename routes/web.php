@@ -162,6 +162,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/workflows/{workflow}', [WorkflowAdminController::class, 'update'])->name('admin.workflows.update');
         Route::delete('/workflows/{workflow}', [WorkflowAdminController::class, 'destroy'])->name('admin.workflows.destroy');
         Route::post('/workflows/bulk-delete', [WorkflowAdminController::class, 'bulkDestroy'])->name('admin.workflows.bulk-destroy');
+        Route::post('/workflows/{workflow}/duplicate', [WorkflowAdminController::class, 'duplicate'])->name('admin.workflows.duplicate');
         Route::get('/workflows/visualize', [WorkflowAdminController::class, 'visualize'])->name('admin.workflows.visualize');
         Route::get('/workflows/{workflow}/steps', [WorkflowAdminController::class, 'steps'])->name('admin.workflows.steps');
         Route::post('/workflows/{workflow}/steps', [WorkflowAdminController::class, 'updateSteps'])->name('admin.workflows.steps.update');

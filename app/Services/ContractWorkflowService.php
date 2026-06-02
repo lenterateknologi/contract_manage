@@ -9,6 +9,7 @@ use App\Models\ContractStatus;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
+use App\Models\WorkflowStepAction;
 use App\Services\Traits\EvaluatesWorkflowSteps;
 use Illuminate\Support\Facades\Auth;
 
@@ -39,9 +40,23 @@ class ContractWorkflowService
         }
 
         if (! $workflow) {
-            $taxRequired = $metadata['tax_required'] ?? ($contract->metadata['tax_required'] ?? false);
-            $typeStr = $contract->contract_type_id ?: ($contract->contract_type ?: ($contract->contractType ? $contract->contractType->code : 'General'));
-            $workflow = Workflow::getDefaultByContractType($typeStr, (bool) $taxRequired);
+            $taxRequired = (bool) ($metadata['tax_required'] ?? ($contract->metadata['tax_required'] ?? false));
+            $typeStr = $contract->contract_type_id ?: ($contract->contractType?->code ?? 'General');
+
+            // 1. Try specific match
+            $workflow = Workflow::getDefaultByContractType($typeStr, $taxRequired);
+
+            // 2. Fallback: Try any default workflow regardless of tax if specific fails
+            if (! $workflow) {
+                $workflow = Workflow::where('is_active', true)
+                    ->where('is_default', true)
+                    ->first();
+            }
+
+            // 3. Last Resort: Just take any active workflow
+            if (! $workflow) {
+                $workflow = Workflow::where('is_active', true)->first();
+            }
         }
 
         if (! $workflow) {
@@ -212,15 +227,12 @@ class ContractWorkflowService
 
         if ($approvers->isEmpty()) {
             if ($step->approver_type === 'atasan') {
-
-                $approvers = $this->queryService->resolveHierarchyApprover($contract, $step->hierarchy_level ?: 1);
+                $approvers = $this->queryService->resolveHierarchyApprover($contract, $step);
             } elseif ($step->approver_type === 'user') {
                 $approvers = $step->users;
             } elseif ($step->approver_type === 'initiator' || in_array('initiator', $lowerRoles)) {
-
                 $approvers = collect([$contract->initiator]);
             } else {
-
                 $metadata = $contract->metadata ?? [];
                 $picId = $contract->assigned_pic_id ?? ($metadata['assigned_pic_id'] ?? null);
 
@@ -232,20 +244,35 @@ class ContractWorkflowService
                 }
 
                 if ($approvers->isEmpty()) {
-
                     $query = User::whereIn('role', $roles);
 
                     $targetDeptIds = ! empty($step->department_ids) ? $step->department_ids : ($step->department_id ? [$step->department_id] : []);
 
-                    if (! empty($targetDeptIds)) {
+                    if ($step->filter_department && $contract->initiator?->department_id) {
+                        $query->where('department_id', $contract->initiator->department_id);
+                    } elseif (! empty($targetDeptIds)) {
                         $query->whereIn('department_id', $targetDeptIds);
                     }
 
-                    $approvers = $query->get();
+                    $initiatorCompany = $contract->initiator?->company;
 
-                    if ($approvers->isEmpty()) {
-                        $approvers = User::whereIn('role', $roles)->get();
+                    if ($step->filter_company_group && $initiatorCompany?->company_group_id) {
+                        $companyGroupId = $initiatorCompany->company_group_id;
+                        $query->whereHas('company', function ($q) use ($companyGroupId) {
+                            $q->where('company_group_id', $companyGroupId);
+                        });
                     }
+                    if ($step->filter_region && $initiatorCompany?->region_id) {
+                        $regionId = $initiatorCompany->region_id;
+                        $query->whereHas('company', function ($q) use ($regionId) {
+                            $q->where('region_id', $regionId);
+                        });
+                    }
+                    if ($step->filter_company && $contract->initiator?->company_id) {
+                        $query->where('company_id', $contract->initiator->company_id);
+                    }
+
+                    $approvers = $query->get();
                 }
             }
         }
@@ -258,7 +285,7 @@ class ContractWorkflowService
             ->whereIn('role', ['Persetujuan Tambahan', 'Pihak 1', 'Pihak 2'])
             ->whereIn('status', ['pending', 'waiting'])
             ->exists();
-            
+
         $initialStatus = $hasAdhoc ? 'waiting' : 'pending';
 
         foreach ($approvers as $approver) {
@@ -437,24 +464,29 @@ class ContractWorkflowService
                 $p1UserIds = request()->input('p1_user_id');
                 $p2UserIds = request()->input('p2_user_id');
 
-                if (!is_array($p1UserIds)) $p1UserIds = $p1UserIds ? [$p1UserIds] : [];
-                if (!is_array($p2UserIds)) $p2UserIds = $p2UserIds ? [$p2UserIds] : [];
+                if (! is_array($p1UserIds)) {
+                    $p1UserIds = $p1UserIds ? [$p1UserIds] : [];
+                }
+                if (! is_array($p2UserIds)) {
+                    $p2UserIds = $p2UserIds ? [$p2UserIds] : [];
+                }
 
                 if (count($p1UserIds) > 0 && count($p2UserIds) > 0) {
-                    $signingAction = $approval->workflowStep->actions->filter(function($act) use ($actionCode) {
+                    $signingAction = $approval->workflowStep->actions->filter(function ($act) use ($actionCode) {
                         $code = $act->action_code ?? $act->masterAction?->code;
+
                         return strtolower($code) === strtolower($actionCode) || in_array(strtolower($code), ['signature', 'sign']);
                     })->first();
 
                     $targetStepId = $signingAction?->assignee_config['signature_target_step'] ?? $approval->workflow_step_id;
-                    $targetStep = $targetStepId == $approval->workflow_step_id 
-                                    ? $approval->workflowStep 
-                                    : \App\Models\WorkflowStep::find($targetStepId);
+                    $targetStep = $targetStepId == $approval->workflow_step_id
+                                    ? $approval->workflowStep
+                                    : WorkflowStep::find($targetStepId);
 
                     $maxSort = Approval::where('contract_id', $contract->id)
                         ->where('workflow_step_id', $targetStepId)
                         ->max('sort_order') ?: 0;
-                        
+
                     $maxSubStep = Approval::where('contract_id', $contract->id)
                         ->where('workflow_step_id', $targetStepId)
                         ->max('sub_step') ?: 0;
@@ -566,22 +598,9 @@ class ContractWorkflowService
             // Determine next step
             $nextStep = null;
             if ($stepAction) {
-                if ($stepAction->next_workflow_id) {
-                    // Cross-workflow transition!
-                    $contract->update(['workflow_id' => $stepAction->next_workflow_id]);
-                    if ($stepAction->next_workflow_step_id) {
-                        $nextStep = WorkflowStep::find($stepAction->next_workflow_step_id);
-                    } else {
-                        $nextStep = WorkflowStep::where('workflow_id', $stepAction->next_workflow_id)
-                            ->orderBy('step')
-                            ->first();
-                    }
-                } elseif ($stepAction->next_step_id) {
-                    $nextStep = WorkflowStep::find($stepAction->next_step_id);
-                } else {
-                    $nextStep = $this->findNextValidStep($contract, $approval->workflowStep);
-                }
-            } else {
+                $nextStep = $this->evaluateTransition($contract, $approval->workflowStep, $stepAction);
+            }
+            if (! $nextStep) {
                 $nextStep = $this->findNextValidStep($contract, $approval->workflowStep);
             }
 
@@ -652,18 +671,7 @@ class ContractWorkflowService
 
         $targetStep = null;
         if ($stepAction) {
-            if ($stepAction->next_workflow_id) {
-                $contract->update(['workflow_id' => $stepAction->next_workflow_id]);
-                if ($stepAction->next_workflow_step_id) {
-                    $targetStep = WorkflowStep::find($stepAction->next_workflow_step_id);
-                } else {
-                    $targetStep = WorkflowStep::where('workflow_id', $stepAction->next_workflow_id)
-                        ->orderBy('step')
-                        ->first();
-                }
-            } elseif ($stepAction->next_step_id) {
-                $targetStep = WorkflowStep::find($stepAction->next_step_id);
-            }
+            $targetStep = $this->evaluateTransition($contract, $approval->workflowStep, $stepAction);
         }
 
         if (! $targetStep) {
@@ -705,9 +713,9 @@ class ContractWorkflowService
         return $this->queryService->getAvailableWorkflows($user, $contractType);
     }
 
-    public function resolveHierarchyApprover(Contract $contract, int $level = 1)
+    public function resolveHierarchyApprover(Contract $contract, WorkflowStep|int $stepOrLevel = 1)
     {
-        return $this->queryService->resolveHierarchyApprover($contract, $level);
+        return $this->queryService->resolveHierarchyApprover($contract, $stepOrLevel);
     }
 
     /**
@@ -740,5 +748,80 @@ class ContractWorkflowService
                 $this->approveContract($contract, $approval, 'Sistem Auto-Approve (Pemeriksa yang sama)');
             }
         }
+    }
+
+    public function evaluateTransition(Contract $contract, WorkflowStep $currentStep, WorkflowStepAction $stepAction): ?WorkflowStep
+    {
+        $transition = is_string($stepAction->transition_config)
+            ? json_decode($stepAction->transition_config, true)
+            : $stepAction->transition_config;
+
+        if (is_array($transition) && isset($transition['type'])) {
+            switch ($transition['type']) {
+                case 'relative':
+                    $offset = (int) ($transition['offset'] ?? 1);
+                    if ($offset === 1) {
+                        return $this->findNextValidStep($contract, $currentStep);
+                    } elseif ($offset > 1) {
+                        $targetSequence = $currentStep->step + $offset;
+                        $allSteps = WorkflowStep::where('workflow_id', $contract->workflow_id)
+                            ->where('step', '>=', $targetSequence)
+                            ->orderBy('step')
+                            ->get();
+                        foreach ($allSteps as $step) {
+                            if ($this->shouldExecuteStep($contract, $step)) {
+                                return $step;
+                            }
+                        }
+
+                        return null;
+                    } elseif ($offset < 0) {
+                        $targetSequence = max(1, $currentStep->step + $offset);
+
+                        return WorkflowStep::where('workflow_id', $contract->workflow_id)
+                            ->where('step', '<=', $targetSequence)
+                            ->orderBy('step', 'desc')
+                            ->first();
+                    }
+
+                    break;
+
+                case 'absolute':
+                    $targetSequence = max(1, (int) ($transition['sequence'] ?? 1));
+
+                    return WorkflowStep::where('workflow_id', $contract->workflow_id)
+                        ->where('step', $targetSequence)
+                        ->first();
+
+                case 'cross_workflow':
+                    $workflowId = $transition['workflow_id'] ?? null;
+                    if ($workflowId) {
+                        $contract->update(['workflow_id' => $workflowId]);
+                        $targetSequence = max(1, (int) ($transition['sequence'] ?? 1));
+
+                        return WorkflowStep::where('workflow_id', $workflowId)
+                            ->where('step', $targetSequence)
+                            ->first();
+                    }
+
+                    break;
+            }
+        }
+
+        // Fallback to old behavior
+        if ($stepAction->next_workflow_id) {
+            $contract->update(['workflow_id' => $stepAction->next_workflow_id]);
+            if ($stepAction->next_workflow_step_id) {
+                return WorkflowStep::find($stepAction->next_workflow_step_id);
+            } else {
+                return WorkflowStep::where('workflow_id', $stepAction->next_workflow_id)
+                    ->orderBy('step')
+                    ->first();
+            }
+        } elseif ($stepAction->next_step_id) {
+            return WorkflowStep::find($stepAction->next_step_id);
+        }
+
+        return null;
     }
 }

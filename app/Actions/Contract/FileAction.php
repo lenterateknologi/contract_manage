@@ -47,6 +47,15 @@ class FileAction
 
         $type = $request->input('document_type', 'contract');
 
+        // Apply Policy Check
+        if ($type === 'f1') {
+            \Illuminate\Support\Facades\Gate::authorize('updateF1', $contract);
+        } elseif ($type === 'f2') {
+            \Illuminate\Support\Facades\Gate::authorize('updateF2', $contract);
+        } else {
+            \Illuminate\Support\Facades\Gate::authorize('updateAgreement', $contract);
+        }
+
         // Find latest version for this type
         $lastVer = ContractVersion::where('contract_id', $contract->id)
             ->where('document_type', $type)
@@ -328,6 +337,8 @@ class FileAction
 
     public function uploadAttachment(Contract $contract, Request $request): JsonResponse
     {
+        \Illuminate\Support\Facades\Gate::authorize('updateAttachment', $contract);
+
         $request->validate([
             'label' => 'required|string|max:255',
             'category' => 'nullable|string|max:255',
@@ -363,6 +374,8 @@ class FileAction
 
     public function deleteAttachment(Contract $contract, string $atId): JsonResponse
     {
+        \Illuminate\Support\Facades\Gate::authorize('updateAttachment', $contract);
+
         $attachment = $contract->attachments()->findOrFail($atId);
 
         if (Storage::disk('local')->exists($attachment->file_path)) {
@@ -409,6 +422,8 @@ class FileAction
 
     public function uploadAgreement(Contract $contract, Request $request): JsonResponse
     {
+        \Illuminate\Support\Facades\Gate::authorize('updateAgreement', $contract);
+
         $request->validate([
             'file' => 'required|file|mimes:docx|max:10240',
             'change_log' => 'nullable|string',

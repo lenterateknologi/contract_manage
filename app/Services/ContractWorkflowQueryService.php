@@ -48,13 +48,15 @@ class ContractWorkflowQueryService
             $query->where(function ($q) use ($contractType, $isUuid) {
                 if ($isUuid) {
                     $q->where('contract_type_id', $contractType)
+                        ->orWhereNull('contract_type_id')
                         ->orWhere('is_default', true);
                 } else {
                     $typeId = \App\Models\ContractType::where('code', $contractType)
                         ->orWhere('name', $contractType)
                         ->value('id');
                     if ($typeId) {
-                        $q->where('contract_type_id', $typeId);
+                        $q->where('contract_type_id', $typeId)
+                            ->orWhereNull('contract_type_id');
                     } else {
                         $q->whereNull('contract_type_id');
                     }
@@ -89,11 +91,19 @@ class ContractWorkflowQueryService
     /**
      * Resolve hierarchical approver (Manager -> VP -> Director)
      */
-    public function resolveHierarchyApprover(Contract $contract, int $level = 1): Collection
+    public function resolveHierarchyApprover(Contract $contract, WorkflowStep|int $stepOrLevel): Collection
     {
         $initiator = $contract->initiator;
         if (! $initiator) {
             return collect();
+        }
+
+        $step = null;
+        if ($stepOrLevel instanceof WorkflowStep) {
+            $step = $stepOrLevel;
+            $level = $step->hierarchy_level ?: 1;
+        } else {
+            $level = (int) $stepOrLevel;
         }
 
         $currentDeptId = $initiator->department_id;
@@ -110,7 +120,6 @@ class ContractWorkflowQueryService
         }
 
         // Target level is relative to current role or absolute hierarchy level
-        // For level 1: if staff, target is manager. if manager, target is vp.
         $targetIndex = $currentIndex + $level;
         if ($targetIndex >= count($hierarchy)) {
             $targetIndex = count($hierarchy) - 1;
@@ -119,14 +128,74 @@ class ContractWorkflowQueryService
         $targetRole = ucfirst($hierarchy[$targetIndex]);
         $targetRoleLower = strtolower($targetRole);
 
-        $approvers = User::where(DB::raw('LOWER(role)'), $targetRoleLower)
-            ->where('department_id', $currentDeptId)
-            ->where('is_active', true)
-            ->get();
+        $query = User::where(DB::raw('LOWER(role)'), $targetRoleLower)
+            ->where('is_active', true);
 
-        // If no one in current department, maybe search in parent department or management
-        if ($approvers->isEmpty() && $targetIndex > 1) {
-            $approvers = User::where('role', $targetRole)->where('is_active', true)->get();
+        if ($step) {
+            // Apply Organizational Filters from Step
+            if ($step->filter_department && $initiator->department_id) {
+                $query->where('department_id', $initiator->department_id);
+            }
+
+            if ($step->filter_company && $initiator->company_id) {
+                $query->where('company_id', $initiator->company_id);
+            }
+
+            if ($step->filter_company_group || $step->filter_region) {
+                $initiatorCompany = $initiator->company;
+                if ($initiatorCompany) {
+                    if ($step->filter_company_group && $initiatorCompany->company_group_id) {
+                        $query->whereHas('company', function ($q) use ($initiatorCompany) {
+                            $q->where('company_group_id', $initiatorCompany->company_group_id);
+                        });
+                    }
+                    if ($step->filter_region && $initiatorCompany->region_id) {
+                        $query->whereHas('company', function ($q) use ($initiatorCompany) {
+                            $q->where('region_id', $initiatorCompany->region_id);
+                        });
+                    }
+                }
+            }
+
+            // If specific roles are defined for this step, ensure the target role is within that set
+            $allowedRoles = $step->role;
+            if (! empty($allowedRoles)) {
+                $query->whereIn(DB::raw('LOWER(role)'), array_map('strtolower', $allowedRoles));
+            }
+
+            // "alur workflow yang tersedia" - restrict pool to users allowed by the workflow's global configuration
+            $workflow = $step->workflow;
+            if ($workflow) {
+                // 1. Global Approver Roles
+                if (! empty($workflow->approver_roles)) {
+                    $query->whereIn(DB::raw('LOWER(role)'), array_map('strtolower', $workflow->approver_roles));
+                }
+
+                // 2. Global Approver Departments
+                if (! empty($workflow->approver_departments)) {
+                    $query->whereIn('department_id', $workflow->approver_departments);
+                }
+
+                // 3. Global Approver Users
+                if (! empty($workflow->approver_users)) {
+                    $query->whereIn('id', $workflow->approver_users);
+                }
+            }
+        }
+
+        $approvers = $query->get();
+
+        // Fallback: If no one in specific department/filters, search more broadly but keep the role
+        if ($approvers->isEmpty() && $targetIndex > 0) {
+            $fallbackQuery = User::where(DB::raw('LOWER(role)'), $targetRoleLower)
+                ->where('is_active', true);
+
+            // Keep company-level filters if possible for fallback
+            if ($step && $step->filter_company && $initiator->company_id) {
+                $fallbackQuery->where('company_id', $initiator->company_id);
+            }
+
+            $approvers = $fallbackQuery->get();
         }
 
         return $approvers;

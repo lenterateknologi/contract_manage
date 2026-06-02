@@ -14,9 +14,16 @@ interface ContractReferenceCardProps {
     processing: boolean;
 }
 
-export function ContractReferenceCard({ selected, canUpdate, onUpdate, processing }: ContractReferenceCardProps) {
+export function ContractReferenceCard({ 
+    selected, 
+    canUpdate, 
+    onUpdate, 
+    processing,
+    meId
+}: ContractReferenceCardProps & { meId?: string }) {
     const parent = selected.parent;
-    const canModifyRef = selected.allow_reference && canUpdate;
+    const isActor = (selected as any).can_approve || selected.created_by === meId;
+    const canModifyRef = selected.allow_reference !== false && isActor;
     const [isEditing, setIsEditing] = useState(false);
     const [search, setSearch] = useState('');
     const debouncedSearch = useDebounce(search, 500);

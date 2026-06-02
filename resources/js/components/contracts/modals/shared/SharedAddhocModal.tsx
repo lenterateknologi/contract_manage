@@ -29,36 +29,44 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
 
     useEffect(() => {
         if (open) {
-            fetchUsers();
-            setSelectedUserIds([]);
+            setSelectedTargetStepId(null);
             setNote('');
             setIsSequential(false);
-            setSelectedTargetStepId(null);
+            fetchUsers(null);
         }
     }, [open, contract?.id]);
 
-    const fetchUsers = async () => {
+    const fetchUsers = async (targetStepIdVal: string | null) => {
         setFetchingUsers(true);
         try {
             // Get all active users
             const allUsers = await contractApi.getUsers({ all: true });
 
-            // Filter out users who are already part of the approvals on the current step
-            const currentStepId = contract?.workflow_step_id;
-            const existingUserIds = new Set(
-                (contract?.approvals || []).filter((a: any) => a.workflow_step_id === currentStepId).map((a: any) => a.user_id),
-            );
-
             // Scoped Selection: Filter based on current workflow step or specific action configuration
             const currentStep = contract?.workflow_step;
-            const activeAction = (currentStep?.actions || []).find((a: any) => a.action_code === actionCode);
-
-            // Priority: action-level assignee_config -> step-level requirements
+            const activeAction = (currentStep?.actions || []).find((a: any) => {
+                if (actionCode) return (a.action_code === actionCode) || (a.master_action_code === actionCode) || (a.master_action?.code === actionCode);
+                return (a.master_action_code?.toLowerCase() === 'forward') || (a.action_code?.toLowerCase() === 'forward') || (a.master_action?.code?.toLowerCase() === 'forward');
+            });
+            
             const config = activeAction?.assignee_config || {};
-            const requirements = currentStep;
+            const defaultTargetStepId = activeAction?.next_step_id || config.default_target_step || contract?.workflow_step_id;
+            const finalTargetStepId = targetStepIdVal || defaultTargetStepId;
+
+            // Existing main approvers should be filtered out
+            const existingMainUserIds = new Set(
+                (contract?.approvals || [])
+                    .filter((a: any) => String(a.workflow_step_id) === String(finalTargetStepId) && a.role !== 'Persetujuan Tambahan')
+                    .map((a: any) => String(a.user_id)),
+            );
+
+            // Existing ad-hoc approvers should be pre-selected
+            const existingAdhocUserIds = (contract?.approvals || [])
+                .filter((a: any) => String(a.workflow_step_id) === String(finalTargetStepId) && a.role === 'Persetujuan Tambahan')
+                .map((a: any) => String(a.user_id));
 
             const availableUsers = allUsers.filter((u: any) => {
-                if (existingUserIds.has(u.id)) return false;
+                if (existingMainUserIds.has(String(u.id))) return false;
 
                 // If no specific config type is set, or if it's set to 'all', allow any user
                 if (!config.type || config.type === 'all') {
@@ -92,6 +100,9 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
             const uniqueUsers = Array.from(new Map(availableUsers.map((u: any) => [u.id, u])).values());
 
             setUsers(uniqueUsers);
+            
+            // Set initial selected users based on existing ad-hoc approvers
+            setSelectedUserIds(existingAdhocUserIds);
         } catch (error) {
             console.error('Failed to fetch users:', error);
         } finally {
@@ -104,22 +115,17 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
     };
 
     const handleSubmit = async () => {
-        if (selectedUserIds.length === 0) {
-            alert('Harap pilih minimal satu user.');
-            return;
-        }
 
         setLoading(true);
         try {
             // Get the target step ID from the action configuration
             const currentStep = contract?.workflow_step;
-            const activeAction = (currentStep?.actions || []).find((a: any) =>
-                (a.action_code === actionCode) ||
-                (a.master_action?.code?.toLowerCase() === 'forward') ||
-                (a.action_code === 'forward')
-            );
+            const activeAction = (currentStep?.actions || []).find((a: any) => {
+                if (actionCode) return (a.action_code === actionCode) || (a.master_action_code === actionCode) || (a.master_action?.code === actionCode);
+                return (a.master_action_code?.toLowerCase() === 'forward') || (a.action_code?.toLowerCase() === 'forward') || (a.master_action?.code?.toLowerCase() === 'forward');
+            });
             const config = activeAction?.assignee_config || {};
-            const defaultTargetStepId = config.default_target_step || contract.workflow_step_id;
+            const defaultTargetStepId = activeAction?.next_step_id || config.default_target_step || contract.workflow_step_id;
             const finalTargetStepId = config.allow_user_select_step && selectedTargetStepId ? selectedTargetStepId : defaultTargetStepId;
 
             const updatedContract = await contractApi.addAdhocApprover(contract.id, selectedUserIds, note, isSequential, finalTargetStepId);
@@ -154,7 +160,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                     </Button>
                     <Button
                         onClick={handleSubmit}
-                        disabled={loading || selectedUserIds.length === 0}
+                        disabled={loading}
                         className="flex-1 bg-indigo-600 text-[10px] tracking-wider text-white uppercase transition-all duration-200 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
                     >
                         {loading ? <Loader2 size={14} className="mr-2 animate-spin" /> : <CheckCircle2 size={14} className="mr-2" />}
@@ -213,7 +219,10 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                                     </label>
                                     <SearchableSelect
                                         value={resolvedTargetStepId}
-                                        onValueChange={setSelectedTargetStepId}
+                                        onValueChange={(val) => {
+                                            setSelectedTargetStepId(val);
+                                            fetchUsers(val);
+                                        }}
                                         placeholder="Pilih Langkah Target"
                                         options={[
                                             {

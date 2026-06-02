@@ -24,5 +24,5 @@ export const F2Tab = ({ contract, formTemplates, vendors, meUser, onUpdate }: F2
         );
     }
 
-    return <AgreementView contract={contract} onUpdate={onUpdate} docType="f2" />;
+    return <AgreementView contract={contract} onUpdate={onUpdate} docType="f2" meId={meUser?.id} />;
 };

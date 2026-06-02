@@ -24,5 +24,5 @@ export const AgreementTab = ({ contract, formTemplates, vendors, meUser, onUpdat
         );
     }
 
-    return <AgreementView contract={contract} onUpdate={onUpdate} />;
+    return <AgreementView contract={contract} onUpdate={onUpdate} meId={meUser?.id} />;
 };

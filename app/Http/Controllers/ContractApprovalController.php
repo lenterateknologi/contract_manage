@@ -210,15 +210,6 @@ class ContractApprovalController extends Controller
                 return response()->json(['message' => 'Persetujuan tambahan hanya dapat ditambahkan pada kontrak yang sedang berjalan.'], 422);
             }
 
-            $userIds = $request->input('user_ids');
-            if (empty($userIds) && $request->input('user_id')) {
-                $userIds = [$request->input('user_id')];
-            }
-
-            if (empty($userIds)) {
-                return response()->json(['message' => 'Harap pilih minimal satu user.'], 422);
-            }
-
             $targetStepId = $request->input('target_step_id');
             // Sanitize target_step_id: convert "null", "none", "current" or empty to null
             if ($targetStepId === 'null' || $targetStepId === 'none' || $targetStepId === 'current' || empty($targetStepId)) {
@@ -230,9 +221,49 @@ class ContractApprovalController extends Controller
                 return response()->json(['message' => 'Tahap alur kerja tidak aktif saat ini.'], 422);
             }
 
+            $userIds = $request->input('user_ids', []);
+            $singleUserId = $request->input('user_id');
+            if (empty($userIds) && $singleUserId) {
+                $userIds = [$singleUserId];
+
+                $existing = Approval::where('contract_id', $contract->id)
+                    ->where('workflow_step_id', $targetStepId)
+                    ->where('user_id', $singleUserId)
+                    ->exists();
+                if ($existing) {
+                    return response()->json(['message' => 'User sudah terdaftar sebagai approver tambahan.'], 422);
+                }
+            }
+
             $targetStep = WorkflowStep::findOrFail($targetStepId);
             $isSequential = $request->boolean('is_sequential', false);
             $isCurrentStep = $targetStepId === $contract->workflow_step_id;
+
+            // Validate that we are not removing any non-pending/waiting approvers
+            $existingNonPendingUserIds = Approval::where('contract_id', $contract->id)
+                ->where('workflow_step_id', $targetStepId)
+                ->where('role', \App\Models\Role::ADHOC_APPROVER)
+                ->whereNotIn('status', ['pending', 'waiting'])
+                ->pluck('user_id')
+                ->toArray();
+
+            $removedNonPending = array_diff($existingNonPendingUserIds, $userIds);
+            if (! empty($removedNonPending)) {
+                return response()->json(['message' => 'Tidak dapat menghapus approver yang sudah memberikan keputusan.'], 422);
+            }
+
+            // Remove unselected pending/waiting ad-hoc approvers
+            $query = Approval::where('contract_id', $contract->id)
+                ->where('workflow_step_id', $targetStepId)
+                ->where('role', \App\Models\Role::ADHOC_APPROVER)
+                ->whereIn('status', ['pending', 'waiting']);
+
+            if (empty($userIds)) {
+                $query->delete();
+            } else {
+                $query->whereNotIn('user_id', $userIds)->delete();
+            }
+
             $addedUsers = [];
 
             foreach ($userIds as $index => $userId) {
@@ -298,18 +329,16 @@ class ContractApprovalController extends Controller
                 $addedUsers[] = $user->name;
             }
 
-            if (empty($addedUsers)) {
-                return response()->json(['message' => 'Semua user yang dipilih sudah terdaftar sebagai approver pada tahap ini.'], 422);
+            if (! empty($addedUsers)) {
+                // Log history only if new users were added
+                $actorName = Auth::user()->name;
+                $count = count($addedUsers);
+                $contract->histories()->create([
+                    'action' => 'ADHOC_APPROVER_ADDED',
+                    'description' => "{$count} persetujuan tambahan ditambahkan oleh {$actorName}. Catatan: " . $request->input('note'),
+                    'actor_id' => Auth::id(),
+                ]);
             }
-
-            // Log history
-            $actorName = Auth::user()->name;
-            $count = count($addedUsers);
-            $contract->histories()->create([
-                'action' => 'ADHOC_APPROVER_ADDED',
-                'description' => "{$count} persetujuan tambahan ditambahkan oleh {$actorName}. Catatan: " . $request->input('note'),
-                'actor_id' => Auth::id(),
-            ]);
 
             $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'approvals.workflowStep', 'workflow.steps', 'histories.actor', 'messages.user', 'workflow', 'workflowStep']);
 

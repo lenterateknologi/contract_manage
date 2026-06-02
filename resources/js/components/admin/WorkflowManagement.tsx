@@ -6,6 +6,7 @@ import {
     GitBranch,
     UserCircle,
     CheckCircle2,
+    Copy,
 } from 'lucide-react';
 import { Button } from '@/components/ui/base/Button';
 import { DataTable, Column } from '@/components/ui/data/DataTable';
@@ -123,6 +124,23 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                     >
                         <GitBranch size={14} />
                     </Button>
+                    {canCreate && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                                if (confirm('Apakah Anda yakin ingin menduplikasi alur kerja ini?')) {
+                                    router.post(route('admin.workflows.duplicate', row.id), {}, {
+                                        onSuccess: () => showToast('Alur kerja berhasil diduplikasi', 'success'),
+                                    });
+                                }
+                            }}
+                            className="text-text-main/20 hover:text-text-main hover:bg-primary/[0.05] h-9 w-9 rounded-xl transition-all"
+                            title="Duplikat Alur"
+                        >
+                            <Copy size={14} />
+                        </Button>
+                    )}
                     {canDelete && (
                         <Button
                             variant="ghost"

@@ -66,7 +66,6 @@ class Contract extends Model
         'description',
         'contract_date',
         'end_date',
-        'contract_type',
         'contract_type_id',
         'contract_type_parent_id',
         'submission_type_id',

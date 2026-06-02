@@ -6,15 +6,17 @@ interface ReferencesTabProps {
     canUpdate: boolean;
     onUpdate: (data: any) => void;
     processing: boolean;
+    meId?: string;
 }
 
-export const ReferencesTab = ({ contract, canUpdate, onUpdate, processing }: ReferencesTabProps) => {
+export const ReferencesTab = ({ contract, canUpdate, onUpdate, processing, meId }: ReferencesTabProps) => {
     return (
         <ContractReferenceCard
             selected={contract}
             canUpdate={canUpdate}
             onUpdate={onUpdate}
             processing={processing}
+            meId={meId}
         />
     );
 };

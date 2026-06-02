@@ -10,8 +10,8 @@ export const contractApi = {
     list: (params?: any): Promise<PaginatedData<Contract>> => api.get('/api/contracts', { params }).then((r) => r.data),
     get: (id: string): Promise<Contract> => api.get(`/api/contracts/${id}`).then((r) => r.data),
     create: (data: FormData): Promise<Contract> => api.post('/api/contracts', data).then((r) => r.data),
-    getWorkflows: (contractType?: string): Promise<any[]> =>
-        api.get('/api/contracts/workflows', { params: { contract_type: contractType } }).then((r) => r.data),
+    getWorkflows: (contractType?: string, userId?: string): Promise<any[]> =>
+        api.get('/api/contracts/workflows', { params: { contract_type: contractType, user_id: userId } }).then((r) => r.data),
     getUsers: (params?: any): Promise<any[]> => api.get('/api/contracts/users', { params }).then((r) => r.data),
     getRoles: (): Promise<any[]> => api.get('/api/contracts/roles').then((r) => r.data),
     send: (id: string, data?: { workflow_id?: string; custom_steps?: any[] }): Promise<Contract> =>

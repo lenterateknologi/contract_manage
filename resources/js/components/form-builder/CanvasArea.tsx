@@ -1,12 +1,12 @@
-import { InteractiveForm } from '@/components/form-renderer/InteractiveForm';
+import { UnifiedFormViewer } from '../form-renderer/UnifiedFormViewer';
 import { ScrollArea } from '@/components/ui/base/ScrollArea';
 import { cn } from '@/lib/utils';
 import { Edit3, Eye, Play } from 'lucide-react';
 import React from 'react';
 
 interface CanvasAreaProps {
-    viewMode: 'editor' | 'filling' | 'pdf';
-    setViewMode: (mode: 'editor' | 'filling' | 'pdf') => void;
+    viewMode: 'visual-editor' | 'interactive-form' | 'pdf-preview';
+    setViewMode: (mode: 'visual-editor' | 'interactive-form' | 'pdf-preview') => void;
     data: any;
     previewData: any;
     updatePreviewData: (name: string, value: any) => void;
@@ -35,9 +35,9 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
             <div className="border-border bg-card/80 sticky top-0 z-30 flex h-[60px] w-full shrink-0 items-center justify-center border-b shadow-sm backdrop-blur-md">
                 <div className="bg-muted/30 ring-border/20 flex gap-1.5 rounded-2xl p-1.5 ring-1">
                     {[
-                        { id: 'editor', label: 'Visual Editor', icon: Edit3 },
-                        { id: 'filling', label: 'Interactive Form', icon: Play },
-                        { id: 'pdf', label: 'PDF Preview', icon: Eye },
+                        { id: 'visual-editor', label: 'Visual Editor', icon: Edit3 },
+                        { id: 'interactive-form', label: 'Interactive Form', icon: Play },
+                        { id: 'pdf-preview', label: 'PDF Preview', icon: Eye },
                     ].map((mode) => (
                         <button
                             key={mode.id}
@@ -70,25 +70,17 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
                         }
                     }}
                 >
-                    <div
-                        className={cn(
-                            'animate-in fade-in zoom-in-95 relative w-full max-w-[210mm] transition-all duration-500',
-                            viewMode === 'pdf' ? '' : 'drop-shadow-2xl',
-                        )}
-                    >
-                        <InteractiveForm
-                            template={data as any}
-                            formData={previewData}
-                            onChange={updatePreviewData}
-                            selectedFieldIds={selectedFieldIds}
-                            onSelect={(id, e) => handleSelectField(id, e)}
-                            onMove={(id, dir) => moveField(id, dir)}
-                            onRemove={(id) => removeField(id)}
-                            onDuplicate={(id) => duplicateField(id)}
-                            isBuilder={viewMode === 'editor'}
-                            readOnly={viewMode === 'pdf'}
-                        />
-                    </div>
+                    <UnifiedFormViewer
+                        template={data as any}
+                        formData={previewData}
+                        onChange={updatePreviewData}
+                        mode={viewMode}
+                        selectedFieldIds={selectedFieldIds}
+                        onSelect={(id, e) => handleSelectField(id, e)}
+                        onMove={(id, dir) => moveField(id, dir)}
+                        onRemove={(id) => removeField(id)}
+                        onDuplicate={(id) => duplicateField(id)}
+                    />
                 </div>
             </ScrollArea>
         </section>

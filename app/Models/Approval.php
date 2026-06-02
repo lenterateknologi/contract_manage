@@ -33,6 +33,8 @@ class Approval extends Model
         'created_by',
         'updated_by',
         'sequence',
+        'sub_step',
+        'sort_order',
     ];
 
     protected $casts = [

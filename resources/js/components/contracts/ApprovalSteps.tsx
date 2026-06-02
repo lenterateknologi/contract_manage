@@ -625,7 +625,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                             const isLastSubStep = subStepIdx === subStepItems.length - 1;
                                                             const stepNumber = `${group.sequence}.${a.sub_step}`;
                                                             return (
-                                                                <div key={a.id} className="relative pl-6 animate-in fade-in duration-300">
+                                                                <div key={a.id} className="relative pl-12 animate-in fade-in duration-300 mt-2">
                                                                     {/* Tree connector branch */}
                                                                     <div className="absolute left-[9px] top-0 bottom-0 pointer-events-none">
                                                                         {/* Vertical line segment */}
@@ -634,7 +634,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                                             isLastSubStep ? "h-[16px]" : "bottom-0"
                                                                         )} />
                                                                         {/* Horizontal branch line segment */}
-                                                                        <div className="absolute left-0 top-[16px] w-3.5 h-0.5 bg-slate-200 dark:bg-slate-800" />
+                                                                        <div className="absolute left-0 top-[16px] w-[39px] h-0.5 bg-slate-200 dark:bg-slate-800" />
                                                                     </div>
                                                                     {renderApprovalCard(a, stepNumber)}
                                                                 </div>

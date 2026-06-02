@@ -114,7 +114,7 @@ class Workflow extends Model
 
     public function steps(): HasMany
     {
-        return $this->hasMany(WorkflowStep::class);
+        return $this->hasMany(WorkflowStep::class)->orderBy('step');
     }
 
     public function contracts(): HasMany

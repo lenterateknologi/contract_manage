@@ -616,7 +616,7 @@ function FormBuilder({ template }: Props) {
     );
 
     const [selectedFieldIds, setSelectedFieldIds] = useState<string[]>([]);
-    const [viewMode, setViewMode] = useState<'editor' | 'filling' | 'pdf'>('editor');
+    const [viewMode, setViewMode] = useState<'visual-editor' | 'interactive-form' | 'pdf-preview'>('visual-editor');
     const [previewData, setPreviewData] = useState<Record<string, any>>({});
 
     // Helper to update preview data

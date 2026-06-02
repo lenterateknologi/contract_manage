@@ -311,7 +311,8 @@ function ContractPage({
 
     const updateContract = useCallback(
         (c: Contract, silent = false) => {
-            if (!silent) router.reload({ preserveScroll: true, preserveState: true } as any);
+            // Always reload to sync Inertia props, but preserve state/scroll for smoothness
+            router.reload({ preserveScroll: true, preserveState: true } as any);
             if (selected?.id === c.id) setSelected(c);
         },
         [selected?.id],

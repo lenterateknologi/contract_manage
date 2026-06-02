@@ -23,11 +23,13 @@ interface AgreementVersion {
 export default function AgreementView({ 
     contract, 
     onUpdate,
-    docType = 'agreement'
+    docType = 'agreement',
+    meId
 }: { 
     contract: Contract; 
     onUpdate: (c: Contract) => void;
     docType?: 'agreement' | 'contract' | 'f1' | 'f2';
+    meId?: string;
 }) {
     // Normalize 'contract' to 'agreement' for internal logic if needed, but we keep docType intact.
     const effectiveDocType = docType === 'contract' ? 'agreement' : docType;
@@ -83,14 +85,21 @@ export default function AgreementView({
         loadVersions();
     }, [loadVersions]);
 
-    const canEdit =
-        effectiveDocType === 'f1'
-            ? (contract as any).allow_f1_edit
-            : effectiveDocType === 'f2'
-              ? (contract as any).allow_f2_edit
-              : (contract as any).allow_agreement_edit;
+    const isCreator = contract.created_by === meId;
+    const isApprover = (contract as any).can_approve;
 
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const allowFlag =
+        effectiveDocType === 'f1'
+            ? contract.allow_f1_edit
+            : effectiveDocType === 'f2'
+              ? contract.allow_f2_edit
+              : contract.allow_agreement_edit;
+
+    // We allow edit if user is Creator or Approver, AND the flag is not explicitly false.
+    // (Admins who are neither will be read-only on frontend unless we pass their role)
+    const canEdit = (isCreator || isApprover) && allowFlag !== false;
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
@@ -308,7 +317,7 @@ export default function AgreementView({
                             )}
                         >
                             <label className="cursor-pointer">
-                                <input type="file" className="hidden" accept={isRevision ? ".pdf,.doc,.docx" : ".docx"} onChange={handleFileUpload} disabled={uploading} />
+                                <input type="file" className="hidden" accept={isRevision ? ".pdf,.doc,.docx" : ".docx"} onChange={handleFileChange} disabled={uploading} />
                                 {uploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
                                 Upload Versi Baru
                             </label>

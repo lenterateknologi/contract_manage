@@ -245,8 +245,8 @@ class ContractController extends Controller
             'approvals.approver:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
             'approvals.workflowStep:id,step,description,step_category,workflow_id',
             'approvals.workflowStep.workflow:id,name',
-            'workflow.steps:id,workflow_id,step,description,approver_type,step_category,meta',
-            'workflowStep:id,step,description,step_category',
+            'workflow.steps:id,workflow_id,step,description,approver_type,step_category,meta,filter_department,filter_company_group,filter_region,filter_company',
+            'workflowStep:id,step,description,step_category,meta',
             'workflowStep.actions',
             'versions.uploader:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
             'histories.actor:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
@@ -323,8 +323,8 @@ class ContractController extends Controller
             'approvals.approver.department:id,name',
             'approvals.workflowStep:id,step,description,step_category,workflow_id',
             'approvals.workflowStep.workflow:id,name',
-            'workflow.steps:id,workflow_id,step,description,approver_type,step_category,meta',
-            'workflowStep:id,step,description,step_category',
+            'workflow.steps:id,workflow_id,step,description,approver_type,step_category,meta,filter_department,filter_company_group,filter_region,filter_company',
+            'workflowStep:id,step,description,step_category,meta',
             'versions.uploader:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
             'histories.actor:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
             'messages.user:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
@@ -1369,8 +1369,8 @@ class ContractController extends Controller
             'approvals.approver:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
             'approvals.workflowStep:id,step,description,step_category,workflow_id',
             'approvals.workflowStep.workflow:id,name',
-            'workflow.steps:id,workflow_id,step,description,approver_type,step_category,meta',
-            'workflowStep:id,step,description,step_category',
+            'workflow.steps:id,workflow_id,step,description,approver_type,step_category,meta,filter_department,filter_company_group,filter_region,filter_company',
+            'workflowStep:id,step,description,step_category,meta',
             'workflowStep.actions',
             'histories.actor:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
             'messages.user:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
@@ -1395,6 +1395,15 @@ class ContractController extends Controller
     public function getWorkflows(Request $request): JsonResponse
     {
         $user = $request->user();
+        $targetUserId = $request->query('user_id');
+
+        if ($targetUserId && ($user->role === 'Admin' || ($user->department && str_contains(strtolower($user->department->name), 'legal')) || str_contains(strtolower($user->role), 'legal'))) {
+            $targetUser = User::find($targetUserId);
+            if ($targetUser) {
+                $user = $targetUser;
+            }
+        }
+
         $contractType = $request->query('contract_type');
         $workflows = $this->workflowService->getAvailableWorkflows($user, $contractType);
 
@@ -1480,7 +1489,18 @@ class ContractController extends Controller
     {
         $contract = Contract::findOrFail($id);
 
-        \Illuminate\Support\Facades\Gate::authorize('update', $contract);
+        // Granular permission check
+        $payload = $request->all();
+        $isUpdatingReference = array_key_exists('parent_id', $payload);
+        $isUpdatingInfo = collect($payload)->except(['parent_id'])->isNotEmpty();
+
+        if ($isUpdatingInfo) {
+            \Illuminate\Support\Facades\Gate::authorize('update', $contract);
+        }
+
+        if ($isUpdatingReference) {
+            \Illuminate\Support\Facades\Gate::authorize('updateReference', $contract);
+        }
 
         $validated = $request->validate([
             'title' => 'sometimes|required|string|max:255',
@@ -1510,7 +1530,22 @@ class ContractController extends Controller
 
         $contract = $this->updateAction->execute($contract, $validated);
 
-        return response()->json(ContractFormatter::formatContract($contract->fresh(['contractType', 'submissionType', 'vendor', 'creator', 'initiator', 'parent'])));
+        return response()->json(ContractFormatter::formatContract($contract->fresh([
+            'contractType',
+            'submissionType',
+            'vendor',
+            'creator',
+            'initiator',
+            'parent',
+            'workflow.steps',
+            'workflowStep.actions',
+            'versions.uploader',
+            'approvals.approver',
+            'approvals.workflowStep',
+            'histories.actor',
+            'messages.user',
+            'formSubmissions',
+        ])));
     }
 
     public function destroy(string $id): JsonResponse

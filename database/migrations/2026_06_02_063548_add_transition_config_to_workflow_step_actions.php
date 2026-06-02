@@ -11,8 +11,8 @@ return new class() extends Migration
      */
     public function up(): void
     {
-        Schema::table('t_approvals', function (Blueprint $table) {
-            $table->integer('sub_step')->nullable()->after('sequence');
+        Schema::table('m_workflow_step_actions', function (Blueprint $table) {
+            $table->json('transition_config')->nullable()->after('next_workflow_step_id');
         });
     }
 
@@ -21,8 +21,8 @@ return new class() extends Migration
      */
     public function down(): void
     {
-        Schema::table('t_approvals', function (Blueprint $table) {
-            $table->dropColumn('sub_step');
+        Schema::table('m_workflow_step_actions', function (Blueprint $table) {
+            $table->dropColumn('transition_config');
         });
     }
 };

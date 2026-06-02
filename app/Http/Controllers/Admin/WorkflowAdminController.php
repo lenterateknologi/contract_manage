@@ -204,6 +204,7 @@ class WorkflowAdminController extends Controller
             'steps.*.actions.*.next_workflow_step_id' => 'nullable|string',
             'steps.*.actions.*.required_fields' => 'nullable|array',
             'steps.*.actions.*.autofilled_fields' => 'nullable|array',
+            'steps.*.actions.*.transition_config' => 'nullable|array',
             'steps.*.actions.*.signing_parties' => 'nullable|array',
             'steps.*.actions.*.assignee_config' => 'nullable|array',
             'steps.*.actions.*.alias' => 'nullable|string',
@@ -278,6 +279,7 @@ class WorkflowAdminController extends Controller
             'steps.*.actions.*.next_workflow_step_id' => 'nullable|string',
             'steps.*.actions.*.required_fields' => 'nullable|array',
             'steps.*.actions.*.autofilled_fields' => 'nullable|array',
+            'steps.*.actions.*.transition_config' => 'nullable|array',
             'steps.*.actions.*.signing_parties' => 'nullable|array',
             'steps.*.actions.*.assignee_config' => 'nullable|array',
             'steps.*.actions.*.alias' => 'nullable|string',
@@ -301,6 +303,21 @@ class WorkflowAdminController extends Controller
         $action->destroy($workflow);
 
         return redirect()->back();
+    }
+
+    public function duplicate(Workflow $workflow, WorkflowAction $action)
+    {
+        try {
+            $newWorkflow = $action->duplicate($workflow);
+
+            return redirect()->route('admin.workflows')->with('success', "Alur kerja '{$workflow->name}' berhasil diduplikasi sebagai '{$newWorkflow->name}'.");
+        } catch (\Exception $e) {
+            Log::error('Workflow Duplicate Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return back()->withErrors(['error' => 'Gagal menduplikasi alur kerja: ' . $e->getMessage()]);
+        }
     }
 
     public function steps(Workflow $workflow)
@@ -353,6 +370,7 @@ class WorkflowAdminController extends Controller
             'steps.*.actions.*.next_workflow_step_id' => 'nullable|string',
             'steps.*.actions.*.required_fields' => 'nullable|array',
             'steps.*.actions.*.autofilled_fields' => 'nullable|array',
+            'steps.*.actions.*.transition_config' => 'nullable|array',
             'steps.*.actions.*.signing_parties' => 'nullable|array',
             'steps.*.actions.*.assignee_config' => 'nullable|array',
             'steps.*.actions.*.alias' => 'nullable|string',
@@ -474,6 +492,7 @@ class WorkflowAdminController extends Controller
                     $actionData = collect($action->toArray())->only([
                         'required_fields',
                         'autofilled_fields',
+                        'transition_config',
                         'signing_parties',
                         'assignee_config',
                         'alias',
