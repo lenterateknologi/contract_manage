@@ -24,16 +24,11 @@ class ContractStatus extends Model
         'icon',
         'description',
         'is_active',
-        'display_mode',
-        'allow_info_edit',
-        'allow_reference',
         'created_by',
         'updated_by',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
-        'allow_info_edit' => 'boolean',
-        'allow_reference' => 'boolean',
     ];
 }

@@ -48,6 +48,18 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
     const vendorType = (contract.vendor as any)?.vendor_type?.toLowerCase() === 'perorangan' ? 'perorangan' : 'perusahaan';
     const [activeCategory, setActiveCategory] = useState<'perusahaan' | 'perorangan'>(vendorType);
 
+    // Dynamic Categories based on Vendor Data
+    const vendorItems = (contract.vendor as any)?.documents?.map((d: any) => d.name) || [];
+    const DYNAMIC_CATEGORIES = [
+        {
+            id: vendorType,
+            label: `Lampiran (${vendorType === 'perorangan' ? 'Perorangan' : 'Perusahaan'})`,
+            items: vendorItems,
+        },
+    ];
+
+    const canEdit = (contract as any).allow_attachment_edit;
+
     // Update active category when vendor changes
     useEffect(() => {
         if (contract.vendor) {
@@ -88,6 +100,22 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
         }
     }, [previewAt, contract.id]);
 
+    const [manualLabel, setManualLabel] = useState('');
+    const [showManualUpload, setShowManualUpload] = useState(false);
+
+    // Filter attachments that are not part of the dynamic vendor categories
+    const additionalAttachments = contract.attachments?.filter(at => !vendorItems.includes(at.label)) || [];
+
+    const handleManualUploadClick = () => {
+        if (!manualLabel.trim()) {
+            showToast('Silakan isi nama lampiran terlebih dahulu', 'danger');
+            return;
+        }
+        setActiveLabel(manualLabel.trim());
+        setActiveCat('Additional');
+        fileRef.current?.click();
+    };
+
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file || !activeLabel || !activeCat) return;
@@ -102,6 +130,8 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
             const updated = await contractApi.uploadAttachment(contract.id, fd);
             onUpdated(updated);
             showToast(`Berhasil mengupload ${activeLabel}`, 'success');
+            setManualLabel('');
+            setShowManualUpload(false);
         } catch {
             showToast(`Gagal mengupload ${activeLabel}`, 'danger');
         } finally {
@@ -180,15 +210,6 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
             </div>
         );
     }
-
-    // Dynamic Categories based on Vendor Data
-    const DYNAMIC_CATEGORIES = [
-        {
-            id: vendorType,
-            label: `Lampiran (${vendorType === 'perorangan' ? 'Perorangan' : 'Perusahaan'})`,
-            items: (contract.vendor as any).documents?.map((d: any) => d.name) || [],
-        },
-    ];
 
     if (previewAt) {
         // ... (keep current preview return block)
@@ -330,7 +351,7 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                                         >
                                             <Download size={14} strokeWidth={2.5} />
                                         </a>
-                                        {!(at as any).is_vendor_doc && (
+                                        {!(at as any).is_vendor_doc && canEdit && (
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
@@ -344,24 +365,125 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                                         )}
                                     </>
                                 ) : (
-                                    <button
-                                        disabled={!!uploading}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setActiveLabel(label);
-                                            setActiveCat(vendorType);
-                                            fileRef.current?.click();
-                                        }}
-                                        className="bg-surface-base border-surface-border text-text-desc flex h-8 items-center gap-2 rounded-lg border px-4 text-[10px] font-bold uppercase transition-all hover:bg-text-main hover:text-surface-base active:scale-95 disabled:opacity-20"
-                                    >
-                                        {isUp ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
-                                        Upload
-                                    </button>
+                                    canEdit && (
+                                        <button
+                                            disabled={!!uploading}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setActiveLabel(label);
+                                                setActiveCat(vendorType);
+                                                fileRef.current?.click();
+                                            }}
+                                            className="bg-surface-base border-surface-border text-text-desc flex h-8 items-center gap-2 rounded-lg border px-4 text-[10px] font-bold uppercase transition-all hover:bg-text-main hover:text-surface-base active:scale-95 disabled:opacity-20"
+                                        >
+                                            {isUp ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
+                                            Upload
+                                        </button>
+                                    )
                                 )}
                             </div>
                         </div>
                     );
                 })}
+            </div>
+
+            {/* Additional Manual Attachments Section */}
+            <div className="mt-8">
+                <div className="flex items-center justify-between mb-4 px-1">
+                    <div className="flex items-center gap-2">
+                        <h4 className="text-text-main text-[11px] font-black uppercase tracking-widest">Lampiran Tambahan</h4>
+                    </div>
+                    {!showManualUpload && canEdit && (
+                        <button
+                            onClick={() => setShowManualUpload(true)}
+                            className="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 flex h-8 items-center gap-2 rounded-lg px-4 text-[10px] font-bold uppercase transition-all active:scale-95"
+                        >
+                            <Plus size={14} /> Tambah Lampiran
+                        </button>
+                    )}
+                </div>
+
+                {showManualUpload && (
+                    <div className="mb-6 animate-in slide-in-from-top-2 duration-300">
+                        <div className="bg-indigo-50/50 border-indigo-100 flex items-center gap-3 rounded-2xl border p-4 backdrop-blur-sm">
+                            <div className="flex-1">
+                                <input
+                                    type="text"
+                                    placeholder="Nama lampiran (contoh: Proposal Teknis, Brosur, dll)"
+                                    value={manualLabel}
+                                    onChange={(e) => setManualLabel(e.target.value)}
+                                    className="w-full bg-white border-indigo-100 rounded-xl px-4 py-2 text-sm font-medium text-text-main outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all shadow-sm"
+                                    onKeyDown={(e) => e.key === 'Enter' && handleManualUploadClick()}
+                                />
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => {
+                                        setShowManualUpload(false);
+                                        setManualLabel('');
+                                    }}
+                                    className="text-text-soft hover:bg-black/5 flex h-10 w-10 items-center justify-center rounded-xl transition-all"
+                                >
+                                    <Trash2 size={18} />
+                                </button>
+                                <button
+                                    onClick={handleManualUploadClick}
+                                    className="bg-indigo-600 text-white shadow-indigo-200 flex h-10 items-center gap-2 rounded-xl px-6 text-[10px] font-bold uppercase shadow-lg transition-all hover:bg-indigo-700 active:scale-95"
+                                >
+                                    <Plus size={14} /> Upload Berkas
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    {additionalAttachments.map((at) => (
+                        <div
+                            key={at.id}
+                            onClick={() => setPreviewAt(at)}
+                            className="bg-surface-base border-surface-border group relative flex cursor-pointer items-center justify-between rounded-xl border p-4 transition-all duration-300 hover:-translate-y-1 hover:border-indigo-500 hover:shadow-xl outline-none"
+                        >
+                            <div className="flex min-w-0 items-center gap-4">
+                                <div className="bg-indigo-50 text-indigo-500 group-hover:bg-indigo-600 group-hover:text-white flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl shadow-inner transition-all duration-300">
+                                    <FileCheck size={20} strokeWidth={2.5} />
+                                </div>
+                                <div className="min-w-0">
+                                    <div className="text-text-main truncate text-[12px] font-bold tracking-tight uppercase" title={at.label}>
+                                        {at.label}
+                                    </div>
+                                    <div className="text-text-soft mt-1 truncate text-[9px] font-bold tracking-[0.1em] uppercase">
+                                        {at.file_name} · <span className="text-indigo-600">ADDITIONAL</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="ml-3 flex flex-shrink-0 items-center gap-1.5">
+                                <a
+                                    href={contractApi.attachmentDownloadUrl(contract.id, at.id)}
+                                    download
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="bg-surface-base border-surface-border text-text-main flex h-8 w-8 items-center justify-center rounded-lg border shadow-sm transition-all hover:bg-indigo-600 hover:text-white active:scale-95"
+                                    title="Download"
+                                >
+                                    <Download size={14} strokeWidth={2.5} />
+                                </a>
+                                {canEdit && (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDelete(at.id, at.label);
+                                        }}
+                                        className="bg-surface-base border-surface-border text-text-main flex h-8 w-8 items-center justify-center rounded-lg border shadow-sm transition-all hover:bg-rose-600 hover:text-white active:scale-95"
+                                        title="Delete"
+                                    >
+                                        <Trash2 size={14} strokeWidth={2.5} />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
 
             <ConfirmationModal
@@ -372,6 +494,6 @@ export default function ContractAttachments({ contract, onUpdated, showToast }: 
                 description={`Apakah Anda yakin ingin menghapus lampiran "${confirmDelete?.label}"? Berkas yang telah dihapus tidak dapat dipulihkan.`}
                 confirmText="Hapus Berkas"
             />
-        </div>
+        </div >
     );
 }

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Actions\Admin\RoleAccessAction;
 
+use App\Http\Requests\Admin\StoreUserRequest;
+use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Models\Department;
 use App\Models\Module;
 use App\Models\ModuleGroup;
@@ -322,19 +324,9 @@ class AdminController extends Controller
         return back();
     }
 
-    public function storeUser(Request $request)
+    public function storeUser(StoreUserRequest $request)
     {
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:m_users,email',
-            'username' => 'required|string|max:20|unique:m_users,username',
-            'password' => 'required|string|min:8',
-            'role' => 'required|string',
-            'position' => 'nullable|string',
-            'phone' => 'nullable|string',
-            'department_id' => 'nullable|uuid|exists:m_departments,id',
-            'is_active' => 'boolean',
-        ]);
+        $data = $request->validated();
 
         $data['password'] = bcrypt($data['password']);
         $data['initials'] = collect(explode(' ', $data['name']))->map(fn ($n) => strtoupper(substr($n, 0, 1)))->take(2)->join('');
@@ -351,21 +343,11 @@ class AdminController extends Controller
     /**
      * Update user details.
      *
-     * @return \Illuminate\Http\RedirectResponse
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
      */
-    public function updateUser(Request $request, User $user)
+    public function updateUser(UpdateUserRequest $request, User $user)
     {
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:m_users,email,' . $user->id,
-            'username' => 'required|string|max:20|unique:m_users,username,' . $user->id,
-            'role' => 'required|string',
-            'position' => 'nullable|string',
-            'phone' => 'nullable|string',
-            'department_id' => 'nullable|uuid|exists:m_departments,id',
-            'is_active' => 'boolean',
-            'password' => 'nullable|string|min:8',
-        ]);
+        $data = $request->validated();
 
         if (empty($data['password'])) {
             unset($data['password']);

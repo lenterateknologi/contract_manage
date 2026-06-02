@@ -16,34 +16,48 @@ class DepartmentSeeder extends Seeder
         $admin = User::firstWhere('email', 'admin@example.com') ?? User::first();
         $adminId = $admin ? $admin->id : null;
 
-        // Get a default company to link departments to
-        $defaultCompany = \App\Models\Company::where('code', 'LTI')->first();
-        $companyId = $defaultCompany ? $defaultCompany->id : null;
+        $jsonPath = base_path('data_json/tipe-kontrak.json');
+        if (! file_exists($jsonPath)) {
+            $this->command->warn('tipe-kontrak.json not found!');
 
-        $departments = [
-            ['code' => 'LGL', 'name' => 'Legal & Compliance', 'description' => 'Departemen Hukum dan Kepatuhan'],
-            ['code' => 'TAX', 'name' => 'Tax', 'description' => 'Departemen Perpajakan'],
-            ['code' => 'FIN', 'name' => 'Finance & Accounting', 'description' => 'Departemen Keuangan dan Akuntansi'],
-            ['code' => 'HRD', 'name' => 'Human Resources', 'description' => 'Departemen Sumber Daya Manusia'],
-            ['code' => 'ITC', 'name' => 'Information Technology', 'description' => 'Departemen Teknologi Informasi'],
-            ['code' => 'PRC', 'name' => 'Procurement', 'description' => 'Departemen Pengadaan'],
-            ['code' => 'MKT', 'name' => 'Sales & Marketing', 'description' => 'Departemen Penjualan dan Pemasaran'],
-            ['code' => 'OPS', 'name' => 'Operations', 'description' => 'Departemen Operasional'],
-            ['code' => 'MGT', 'name' => 'Management / Direksi', 'description' => 'Jajaran Manajemen dan Direksi'],
-        ];
+            return;
+        }
+
+        $data = json_decode(file_get_contents($jsonPath), true);
+        $departments = $data['departments'] ?? [];
 
         foreach ($departments as $dept) {
+            $companyId = null;
+            if (isset($dept['company_code'])) {
+                $company = \App\Models\Company::where('code', $dept['company_code'])->first();
+                if ($company) {
+                    $companyId = $company->id;
+                }
+            }
+
             Department::withTrashed()->updateOrCreate(
                 ['code' => $dept['code']],
                 [
                     'name' => $dept['name'],
                     'company_id' => $companyId,
-                    'description' => $dept['description'],
+                    'description' => "Departemen {$dept['name']}",
                     'created_by' => $adminId,
                     'updated_by' => $adminId,
                     'deleted_at' => null,
                 ],
             );
         }
+
+        // Ensure Legal department exists for system logic
+        Department::withTrashed()->firstOrCreate(
+            ['code' => Department::CODE_LEGAL],
+            [
+                'name' => 'Legal & Compliance',
+                'description' => 'Departemen Hukum dan Kepatuhan',
+                'created_by' => $adminId,
+                'updated_by' => $adminId,
+                'deleted_at' => null,
+            ],
+        );
     }
 }

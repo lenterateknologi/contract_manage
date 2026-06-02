@@ -31,6 +31,7 @@ export default function WorkflowEditor({
     regions = [],
     companies = [],
     allWorkflows = [],
+    formTemplates = [],
 }: any) {
     const { showToast } = useToast();
     const [isOrgExpanded, setIsOrgExpanded] = useState(false);
@@ -211,147 +212,213 @@ export default function WorkflowEditor({
                     <div className="space-y-8">
                         {mainTab === 'settings' && (
                             <FormSection>
-                                <div className="space-y-6">
-                                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-                                        <div className="lg:col-span-6">
-                                            <div className="space-y-2">
-                                                <label className="flex items-center gap-2 text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase dark:text-slate-500">
-                                                    <Edit3 size={10} /> Nama Alur Kerja
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    autoFocus
-                                                    value={form.data.name}
-                                                    onChange={(e) => form.setData('name', e.target.value)}
-                                                    className={cn(
-                                                        'h-10 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 text-xs font-bold transition-all focus:border-primary focus:bg-white focus:ring-1 focus:ring-primary dark:border-slate-800 dark:bg-slate-900/50 dark:focus:border-primary dark:focus:bg-slate-900',
-                                                        form.errors.name && 'border-red-500 focus:border-red-500 focus:ring-red-500',
-                                                    )}
-                                                    placeholder="Contoh: ALUR PERSETUJUAN KONTRAK LOGISTIK"
-                                                />
-                                                {form.errors.name && <p className="mt-1 text-[10px] font-bold text-red-500">{form.errors.name}</p>}
-                                            </div>
+                                <div className="space-y-10">
+                                    {/* --- Section 1: Informasi Dasar --- */}
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-2 border-b border-slate-100 pb-2 dark:border-slate-800">
+                                            <Edit3 size={14} className="text-primary" />
+                                            <h3 className="text-[11px] font-black text-slate-900 uppercase dark:text-white">Informasi Dasar</h3>
                                         </div>
-                                        <div className="lg:col-span-3">
-                                            <div className="space-y-2">
-                                                <label className="flex items-center gap-2 text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase dark:text-slate-500">
-                                                    <LayoutTemplate size={10} /> Jenis Kontrak
-                                                </label>
-                                                <Select
-                                                    value={form.data.contract_type_id || 'all'}
-                                                    onValueChange={(v) => form.setData('contract_type_id', v === 'all' ? '' : String(v))}
-                                                >
-                                                    <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-black tracking-tight uppercase transition-all focus:border-primary focus:ring-1 focus:ring-primary dark:border-slate-800 dark:bg-slate-900/50 dark:focus:border-primary">
-                                                        <SelectValue placeholder="SEMUA JENIS" />
-                                                    </SelectTrigger>
-                                                    <SelectContent className="rounded-xl border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
-                                                        <SelectItem value="all" className="py-2.5 text-[10px] font-black uppercase">
-                                                            SEMUA JENIS
-                                                        </SelectItem>
-                                                        {contractTypes.map((t: any) => (
-                                                            <SelectItem key={t.id} value={t.id} className="py-2.5 text-[10px] font-black uppercase">
-                                                                {t.name}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                        </div>
-                                        <div className="lg:col-span-3">
-                                            <div className="space-y-2">
-                                                <label className="flex items-center gap-2 text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase dark:text-slate-500">
-                                                    Status Alur
-                                                </label>
-                                                <div className="flex h-10 w-full items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/50 px-4 dark:border-slate-800 dark:bg-slate-900/50">
-                                                    <Checkbox
-                                                        id="is_default"
-                                                        checked={form.data.is_default}
-                                                        onCheckedChange={(c) => form.setData('is_default', !!c)}
-                                                        className="h-4 w-4"
+                                        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+                                            <div className="lg:col-span-6">
+                                                <div className="space-y-2">
+                                                    <label className="flex items-center gap-2 text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase dark:text-slate-500">
+                                                        <Edit3 size={10} /> Nama Alur Kerja
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        autoFocus
+                                                        value={form.data.name}
+                                                        onChange={(e) => form.setData('name', e.target.value)}
+                                                        className={cn(
+                                                            'focus:border-primary focus:ring-primary dark:focus:border-primary h-10 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 text-xs font-bold transition-all focus:bg-white focus:ring-1 dark:border-slate-800 dark:bg-slate-900/50 dark:focus:bg-slate-900',
+                                                            form.errors.name && 'border-red-500 focus:border-red-500 focus:ring-red-500',
+                                                        )}
+                                                        placeholder="Contoh: ALUR PERSETUJUAN KONTRAK LOGISTIK"
                                                     />
-                                                    <label
-                                                        htmlFor="is_default"
-                                                        className="text-primary cursor-pointer text-[10px] font-bold uppercase dark:text-white"
-                                                    >
-                                                        Alur Default
-                                                    </label>
+                                                    {form.errors.name && (
+                                                        <p className="mt-1 text-[10px] font-bold text-red-500">{form.errors.name}</p>
+                                                    )}
                                                 </div>
                                             </div>
-                                        </div>
-
-                                        {/* --- Input Mechanism Config --- */}
-                                        <div className="mt-2 border-t border-slate-100 pt-6 lg:col-span-12 dark:border-slate-800">
-                                            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                                            <div className="lg:col-span-3">
                                                 <div className="space-y-2">
                                                     <label className="flex items-center gap-2 text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase dark:text-slate-500">
-                                                        MODE F1
+                                                        <LayoutTemplate size={10} /> Jenis Kontrak
                                                     </label>
                                                     <Select
-                                                        value={form.data.meta?.f1_mode || 'upload'}
-                                                        onValueChange={(v) => form.setData('meta', { ...form.data.meta, f1_mode: v })}
+                                                        value={form.data.contract_type_id || 'all'}
+                                                        onValueChange={(v) => form.setData('contract_type_id', v === 'all' ? '' : String(v))}
                                                     >
-                                                        <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-black tracking-tight uppercase transition-all focus:border-primary focus:ring-1 focus:ring-primary dark:border-slate-800 dark:bg-slate-900/50 dark:focus:border-primary">
-                                                            <SelectValue placeholder="UPLOAD FORM" />
+                                                        <SelectTrigger className="focus:border-primary focus:ring-primary dark:focus:border-primary h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-black tracking-tight uppercase transition-all focus:ring-1 dark:border-slate-800 dark:bg-slate-900/50">
+                                                            <SelectValue placeholder="SEMUA JENIS" />
                                                         </SelectTrigger>
                                                         <SelectContent className="rounded-xl border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
-                                                            <SelectItem value="upload" className="py-2.5 text-[10px] font-black uppercase">
-                                                                UPLOAD FORM
+                                                            <SelectItem value="all" className="py-2.5 text-[10px] font-black uppercase">
+                                                                SEMUA JENIS
                                                             </SelectItem>
-                                                            <SelectItem value="interactive" className="py-2.5 text-[10px] font-black uppercase">
-                                                                FORM BUILDER
-                                                            </SelectItem>
+                                                            {contractTypes.map((t: any) => (
+                                                                <SelectItem
+                                                                    key={t.id}
+                                                                    value={t.id}
+                                                                    className="py-2.5 text-[10px] font-black uppercase"
+                                                                >
+                                                                    {t.name}
+                                                                </SelectItem>
+                                                            ))}
                                                         </SelectContent>
                                                     </Select>
                                                 </div>
+                                            </div>
+                                            <div className="lg:col-span-3">
                                                 <div className="space-y-2">
                                                     <label className="flex items-center gap-2 text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase dark:text-slate-500">
-                                                        MODE F2
+                                                        Status Alur
                                                     </label>
-                                                    <Select
-                                                        value={form.data.meta?.f2_mode || 'upload'}
-                                                        onValueChange={(v) => form.setData('meta', { ...form.data.meta, f2_mode: v })}
-                                                    >
-                                                        <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-black tracking-tight uppercase transition-all focus:border-primary focus:ring-1 focus:ring-primary dark:border-slate-800 dark:bg-slate-900/50 dark:focus:border-primary">
-                                                            <SelectValue placeholder="UPLOAD FORM" />
-                                                        </SelectTrigger>
-                                                        <SelectContent className="rounded-xl border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
-                                                            <SelectItem value="upload" className="py-2.5 text-[10px] font-black uppercase">
-                                                                UPLOAD FORM
-                                                            </SelectItem>
-                                                            <SelectItem value="interactive" className="py-2.5 text-[10px] font-black uppercase">
-                                                                FORM BUILDER
-                                                            </SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <label className="flex items-center gap-2 text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase dark:text-slate-500">
-                                                        MODE KONTRAK AGREEMENT
-                                                    </label>
-                                                    <Select
-                                                        value={form.data.meta?.contract_mode || 'upload'}
-                                                        onValueChange={(v) => form.setData('meta', { ...form.data.meta, contract_mode: v })}
-                                                    >
-                                                        <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-black tracking-tight uppercase transition-all focus:border-primary focus:ring-1 focus:ring-primary dark:border-slate-800 dark:bg-slate-900/50 dark:focus:border-primary">
-                                                            <SelectValue placeholder="UPLOAD FORM" />
-                                                        </SelectTrigger>
-                                                        <SelectContent className="rounded-xl border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
-                                                            <SelectItem value="upload" className="py-2.5 text-[10px] font-black uppercase">
-                                                                UPLOAD FORM
-                                                            </SelectItem>
-                                                            <SelectItem value="interactive" className="py-2.5 text-[10px] font-black uppercase">
-                                                                FORM BUILDER
-                                                            </SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
+                                                    <div className="flex h-10 w-full items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/50 px-4 dark:border-slate-800 dark:bg-slate-900/50">
+                                                        <Checkbox
+                                                            id="is_default"
+                                                            checked={form.data.is_default}
+                                                            onCheckedChange={(c) => form.setData('is_default', !!c)}
+                                                            className="h-4 w-4"
+                                                        />
+                                                        <label
+                                                            htmlFor="is_default"
+                                                            className="text-primary cursor-pointer text-[10px] font-bold uppercase dark:text-white"
+                                                        >
+                                                            Alur Default
+                                                        </label>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* --- Configuration Grid (Org Scope & Authority) --- */}
-                                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                                        {/* Column 1: Ruang Lingkup Organisasi */}
+                                    {/* --- Advanced Workflow Configurations (1x3 Grid) --- */}
+                                    <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+                                        {/* Column 1: Pengaturan Mode Dokumen */}
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-2 border-b border-slate-100 pb-2 dark:border-slate-800">
+                                                <LayoutTemplate size={14} className="text-primary" />
+                                                <h3 className="text-[11px] font-black text-slate-900 uppercase dark:text-white">
+                                                    Mode Dokumen
+                                                </h3>
+                                            </div>
+                                            <div className="space-y-3">
+                                                {/* MODE F1 */}
+                                                <div className="space-y-1.5">
+                                                    <label className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase">
+                                                        <LayoutTemplate size={10} /> Mode F1
+                                                    </label>
+                                                    <Select
+                                                        value={form.data.meta?.f1_mode || 'upload'}
+                                                        onValueChange={(v) => form.setData('meta', { ...form.data.meta, f1_mode: v, ...(v !== 'interactive' && { f1_form_template_id: null }) })}
+                                                    >
+                                                        <SelectTrigger className="focus:border-primary focus:ring-primary dark:focus:border-primary h-9 rounded-xl border-slate-200 bg-white text-[11px] font-bold uppercase transition-all focus:ring-1 dark:border-slate-800 dark:bg-black/50">
+                                                            <SelectValue placeholder="UPLOAD FORM" />
+                                                        </SelectTrigger>
+                                                        <SelectContent className="rounded-xl border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
+                                                            <SelectItem value="upload" className="py-2 text-[10px] font-bold uppercase">UPLOAD FORM</SelectItem>
+                                                            <SelectItem value="interactive" className="py-2 text-[10px] font-bold uppercase">FORM BUILDER</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    {form.data.meta?.f1_mode === 'interactive' && (
+                                                        <div className="space-y-1.5 rounded-xl border border-primary/20 bg-primary/5 p-3">
+                                                            <label className="text-[9px] font-bold tracking-widest text-primary uppercase">Template Form F1</label>
+                                                            <Select
+                                                                value={form.data.meta?.f1_form_template_id || ''}
+                                                                onValueChange={(v) => form.setData('meta', { ...form.data.meta, f1_form_template_id: v })}
+                                                            >
+                                                                <SelectTrigger className="focus:border-primary focus:ring-primary h-9 rounded-xl border-primary/30 bg-white text-[11px] font-bold uppercase transition-all focus:ring-1 dark:border-primary/20 dark:bg-slate-900">
+                                                                    <SelectValue placeholder="Pilih Template..." />
+                                                                </SelectTrigger>
+                                                                <SelectContent className="rounded-xl border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
+                                                                    {formTemplates.map((t: any) => (
+                                                                        <SelectItem key={t.id} value={t.id} className="py-2 text-[10px] font-bold uppercase">{t.name}</SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* MODE F2 */}
+                                                <div className="space-y-1.5">
+                                                    <label className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase">
+                                                        <LayoutTemplate size={10} /> Mode F2
+                                                    </label>
+                                                    <Select
+                                                        value={form.data.meta?.f2_mode || 'upload'}
+                                                        onValueChange={(v) => form.setData('meta', { ...form.data.meta, f2_mode: v, ...(v !== 'interactive' && { f2_form_template_id: null }) })}
+                                                    >
+                                                        <SelectTrigger className="focus:border-primary focus:ring-primary dark:focus:border-primary h-9 rounded-xl border-slate-200 bg-white text-[11px] font-bold uppercase transition-all focus:ring-1 dark:border-slate-800 dark:bg-black/50">
+                                                            <SelectValue placeholder="UPLOAD FORM" />
+                                                        </SelectTrigger>
+                                                        <SelectContent className="rounded-xl border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
+                                                            <SelectItem value="upload" className="py-2 text-[10px] font-bold uppercase">UPLOAD FORM</SelectItem>
+                                                            <SelectItem value="interactive" className="py-2 text-[10px] font-bold uppercase">FORM BUILDER</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    {form.data.meta?.f2_mode === 'interactive' && (
+                                                        <div className="space-y-1.5 rounded-xl border border-primary/20 bg-primary/5 p-3">
+                                                            <label className="text-[9px] font-bold tracking-widest text-primary uppercase">Template Form F2</label>
+                                                            <Select
+                                                                value={form.data.meta?.f2_form_template_id || ''}
+                                                                onValueChange={(v) => form.setData('meta', { ...form.data.meta, f2_form_template_id: v })}
+                                                            >
+                                                                <SelectTrigger className="focus:border-primary focus:ring-primary h-9 rounded-xl border-primary/30 bg-white text-[11px] font-bold uppercase transition-all focus:ring-1 dark:border-primary/20 dark:bg-slate-900">
+                                                                    <SelectValue placeholder="Pilih Template..." />
+                                                                </SelectTrigger>
+                                                                <SelectContent className="rounded-xl border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
+                                                                    {formTemplates.map((t: any) => (
+                                                                        <SelectItem key={t.id} value={t.id} className="py-2 text-[10px] font-bold uppercase">{t.name}</SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* MODE KONTRAK AGREEMENT */}
+                                                <div className="space-y-1.5">
+                                                    <label className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase">
+                                                        <LayoutTemplate size={10} /> Mode Agreement
+                                                    </label>
+                                                    <Select
+                                                        value={form.data.meta?.contract_mode || 'upload'}
+                                                        onValueChange={(v) => form.setData('meta', { ...form.data.meta, contract_mode: v, ...(v !== 'interactive' && { contract_form_template_id: null }) })}
+                                                    >
+                                                        <SelectTrigger className="focus:border-primary focus:ring-primary dark:focus:border-primary h-9 rounded-xl border-slate-200 bg-white text-[11px] font-bold uppercase transition-all focus:ring-1 dark:border-slate-800 dark:bg-black/50">
+                                                            <SelectValue placeholder="UPLOAD FORM" />
+                                                        </SelectTrigger>
+                                                        <SelectContent className="rounded-xl border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
+                                                            <SelectItem value="upload" className="py-2 text-[10px] font-bold uppercase">UPLOAD FORM</SelectItem>
+                                                            <SelectItem value="interactive" className="py-2 text-[10px] font-bold uppercase">FORM BUILDER</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    {form.data.meta?.contract_mode === 'interactive' && (
+                                                        <div className="space-y-1.5 rounded-xl border border-primary/20 bg-primary/5 p-3">
+                                                            <label className="text-[9px] font-bold tracking-widest text-primary uppercase">Template Agreement</label>
+                                                            <Select
+                                                                value={form.data.meta?.contract_form_template_id || ''}
+                                                                onValueChange={(v) => form.setData('meta', { ...form.data.meta, contract_form_template_id: v })}
+                                                            >
+                                                                <SelectTrigger className="focus:border-primary focus:ring-primary h-9 rounded-xl border-primary/30 bg-white text-[11px] font-bold uppercase transition-all focus:ring-1 dark:border-primary/20 dark:bg-slate-900">
+                                                                    <SelectValue placeholder="Pilih Template..." />
+                                                                </SelectTrigger>
+                                                                <SelectContent className="rounded-xl border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
+                                                                    {formTemplates.map((t: any) => (
+                                                                        <SelectItem key={t.id} value={t.id} className="py-2 text-[10px] font-bold uppercase">{t.name}</SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Column 2: Ruang Lingkup Organisasi */}
                                         <OrgScopeSelector
                                             form={form}
                                             companyGroups={companyGroups}
@@ -361,60 +428,59 @@ export default function WorkflowEditor({
                                             setIsOrgExpanded={setIsOrgExpanded}
                                         />
 
-                                        {/* Column 2: Otoritas Akses (Initiator) */}
-                                        <div className="lg:col-span-1">
-                                            <div className="flex h-full flex-col">
-                                                <div className="mb-4 flex items-center gap-3">
-                                                    <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-xl">
-                                                        <Shield size={16} />
-                                                    </div>
-                                                    <span className="text-[11px] font-black text-slate-900 uppercase dark:text-white">
-                                                        Otoritas Inisiator
-                                                    </span>
+                                        {/* Column 3: Otoritas Akses (Initiator) */}
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-2 border-b border-slate-100 pb-2 dark:border-slate-800">
+                                                <Shield size={14} className="text-primary" />
+                                                <h3 className="text-[11px] font-black text-slate-900 uppercase dark:text-white">
+                                                    Otoritas Inisiator
+                                                </h3>
+                                            </div>
+
+                                            <div className="space-y-3">
+                                                {/* Selector 1: Role */}
+                                                <div className="space-y-1.5">
+                                                    <label className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase">
+                                                        <Shield size={10} /> Role
+                                                    </label>
+                                                    <SearchableMultiSelect
+                                                        values={form.data.initiator_roles || []}
+                                                        onValuesChange={(vals: string[]) => form.setData('initiator_roles', vals)}
+                                                        options={roles.map((r: any) => ({ value: r.name, label: r.name }))}
+                                                        placeholder="Semua Role..."
+                                                        triggerClassName="min-h-9 h-auto py-1.5 px-3 rounded-xl text-[11px] font-bold uppercase bg-white border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-slate-900/50 dark:border-slate-800 dark:focus:border-primary"
+                                                    />
                                                 </div>
 
-                                                <div className="space-y-4">
-                                                    {/* Selector 1: Role */}
-                                                    <div className="space-y-1.5">
-                                                        <label className="flex items-center gap-1.5 text-[9px] font-bold tracking-tight text-slate-400 uppercase">
-                                                            <Shield size={10} /> Role
-                                                        </label>
-                                                        <SearchableMultiSelect
-                                                            values={form.data.initiator_roles || []}
-                                                            onValuesChange={(vals: string[]) => form.setData('initiator_roles', vals)}
-                                                            options={roles.map((r: any) => ({ value: r.name, label: r.name }))}
-                                                            placeholder="Semua Role..."
-                                                            triggerClassName="min-h-10 h-auto py-2 px-3 rounded-xl text-[10px] font-black uppercase bg-slate-50/50 border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-slate-900/50 dark:border-slate-800 dark:focus:border-primary"
-                                                        />
-                                                    </div>
+                                                {/* Selector 2: Unit / Department */}
+                                                <div className="space-y-1.5">
+                                                    <label className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase">
+                                                        <UsersIcon size={10} /> Unit / Department
+                                                    </label>
+                                                    <SearchableMultiSelect
+                                                        values={form.data.initiator_departments?.map(String) || []}
+                                                        onValuesChange={(vals: string[]) => form.setData('initiator_departments', vals)}
+                                                        options={departments.map((d: any) => ({ value: String(d.id), label: d.name }))}
+                                                        placeholder="Semua Unit..."
+                                                        triggerClassName="min-h-9 h-auto py-1.5 px-3 rounded-xl text-[11px] font-bold uppercase bg-white border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-slate-900/50 dark:border-slate-800 dark:focus:border-primary"
+                                                    />
+                                                </div>
 
-                                                    {/* Selector 2: Unit / Department */}
-                                                    <div className="space-y-1.5">
-                                                        <label className="flex items-center gap-1.5 text-[9px] font-bold tracking-tight text-slate-400 uppercase">
-                                                            <UsersIcon size={10} /> Unit / Department
-                                                        </label>
-                                                        <SearchableMultiSelect
-                                                            values={form.data.initiator_departments?.map(String) || []}
-                                                            onValuesChange={(vals: string[]) => form.setData('initiator_departments', vals)}
-                                                            options={departments.map((d: any) => ({ value: String(d.id), label: d.name }))}
-                                                            placeholder="Semua Unit..."
-                                                            triggerClassName="min-h-10 h-auto py-2 px-3 rounded-xl text-[10px] font-black uppercase bg-slate-50/50 border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-slate-900/50 dark:border-slate-800 dark:focus:border-primary"
-                                                        />
-                                                    </div>
-
-                                                    {/* Selector 3: User */}
-                                                    <div className="space-y-1.5">
-                                                        <label className="flex items-center gap-1.5 text-[9px] font-bold tracking-tight text-slate-400 uppercase">
-                                                            <UsersIcon size={10} /> User
-                                                        </label>
-                                                        <SearchableMultiSelect
-                                                            values={form.data.initiator_users?.map(String) || []}
-                                                            onValuesChange={(vals: string[]) => form.setData('initiator_users', vals)}
-                                                            options={users.map((u: any) => ({ value: String(u.id), label: `${u.name} (${u.role})` }))}
-                                                            placeholder="Semua User..."
-                                                            triggerClassName="min-h-10 h-auto py-2 px-3 rounded-xl text-[10px] font-black uppercase bg-slate-50/50 border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-slate-900/50 dark:border-slate-800 dark:focus:border-primary"
-                                                        />
-                                                    </div>
+                                                {/* Selector 3: User */}
+                                                <div className="space-y-1.5">
+                                                    <label className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase">
+                                                        <UsersIcon size={10} /> User
+                                                    </label>
+                                                    <SearchableMultiSelect
+                                                        values={form.data.initiator_users?.map(String) || []}
+                                                        onValuesChange={(vals: string[]) => form.setData('initiator_users', vals)}
+                                                        options={users.map((u: any) => ({
+                                                            value: String(u.id),
+                                                            label: `${u.name} (${u.role})`,
+                                                        }))}
+                                                        placeholder="Semua User..."
+                                                        triggerClassName="min-h-9 h-auto py-1.5 px-3 rounded-xl text-[11px] font-bold uppercase bg-white border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-slate-900/50 dark:border-slate-800 dark:focus:border-primary"
+                                                    />
                                                 </div>
                                             </div>
                                         </div>

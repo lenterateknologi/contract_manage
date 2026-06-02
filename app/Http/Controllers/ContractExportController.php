@@ -8,6 +8,7 @@ use App\Actions\Contract\FileAction;
 use App\Actions\Contract\RejectContractAction;
 use App\Actions\Contract\StoreContractAction;
 use App\Actions\Contract\UpdateContractAction;
+use App\Formatters\ContractFormatter;
 use App\Jobs\GeneratePdfJob;
 use App\Models\Contract;
 use App\Models\ContractFormSubmission;
@@ -368,7 +369,7 @@ class ContractExportController extends Controller
         $histories = $query->orderBy('created_at', 'asc')->get();
 
         return Inertia::render('contracts/AuditTrailDocument', [
-            'contract' => $this->formatContract($contract),
+            'contract' => ContractFormatter::formatContract($contract),
             'histories' => $histories,
             'filters' => $request->only(['search', 'actor_id', 'date_from', 'date_to']),
         ]);
@@ -419,7 +420,7 @@ class ContractExportController extends Controller
             $latestF1 = $f1Submission ? $f1Submission->versions()->orderByDesc('version_no')->first() : null;
             $f1Data = $latestF1 ? ($latestF1->form_data ?? []) : [];
 
-            $formData = $this->applyInheritance($f1Data, $contract, $formData);
+            $formData = $this->exportAction->applyInheritance($f1Data, $contract, $formData);
         }
 
         try {
@@ -497,7 +498,7 @@ class ContractExportController extends Controller
             $latestF1 = $f1Submission ? $f1Submission->versions()->orderByDesc('version_no')->first() : null;
             $f1Data = $latestF1 ? ($latestF1->form_data ?? []) : [];
 
-            $formData = $this->applyInheritance($f1Data, $contract, $formData);
+            $formData = $this->exportAction->applyInheritance($f1Data, $contract, $formData);
         }
 
         if (! $formData && $type === 'f1') {

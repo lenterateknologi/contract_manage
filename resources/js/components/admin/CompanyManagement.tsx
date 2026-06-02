@@ -8,7 +8,7 @@ import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { usePermissions } from '@/hooks/use-permissions';
 import { cn, companyColor } from '@/lib/utils';
 import { router, useForm } from '@inertiajs/react';
-import { Building2, Plus, Trash2 } from 'lucide-react';
+import { Building2, MapPin, Plus, Tags, Trash2 } from 'lucide-react';
 import React, { useMemo } from 'react';
 import { FormSection, ManagementForm } from './ManagementForm';
 
@@ -46,53 +46,43 @@ export function CompanyManagement({ companies, regions, groups, filters }: Reado
         name: '',
         code: '',
         alias: '',
+        address: '',
         company_group_id: '',
         region_id: '',
-        address: '',
     });
 
-    // --- Deep Linking Support ---
+    // Deep Linking
     React.useEffect(() => {
         if (filters.action === 'create') {
             openCreate();
-            if (filters.region_id) {
-                form.setData('region_id', filters.region_id.toString());
-            }
-            if (filters.company_group_id) {
-                form.setData('company_group_id', filters.company_group_id.toString());
-            }
         } else if (filters.action === 'edit' && filters.id) {
-            const company = (Array.isArray(companies) ? companies : companies?.data || []).find((c: any) => c.id === filters.id);
-            if (company) openEdit(company);
+            const comp = (Array.isArray(companies) ? companies : companies?.data || []).find((c: any) => c.id === filters.id);
+            if (comp) openEdit(comp);
         }
-    }, [filters.action, filters.id, filters.region_id, filters.company_group_id]);
+    }, [filters.action, filters.id, companies]);
 
     const filterConfig = useMemo(
         () => [
+            {
+                label: 'Grup Perusahaan',
+                key: 'company_group_id',
+                type: 'searchable',
+                options: (groups || []).map((g: any) => ({ label: g.name, value: g.id })),
+            },
             {
                 label: 'Wilayah / Region',
                 key: 'region_id',
                 type: 'searchable',
                 options: (regions || []).map((r: any) => ({ label: r.name, value: r.id })),
             },
-            {
-                label: 'Grup Perusahaan / Group',
-                key: 'company_group_id',
-                type: 'searchable',
-                options: (groups || []).map((g: any) => ({ label: g.name, value: g.id })),
-            },
         ],
-        [regions, groups],
+        [groups, regions],
     );
 
     const handleFilterChange = (newFilters: Record<string, any>) => {
         router.get(
             globalThis.location.pathname,
-            {
-                ...filters,
-                ...newFilters,
-                page: 1,
-            },
+            { ...filters, ...newFilters, page: 1 },
             { preserveState: true, replace: true },
         );
     };
@@ -100,32 +90,27 @@ export function CompanyManagement({ companies, regions, groups, filters }: Reado
     const columns = useMemo<Column<any>[]>(
         () => [
             {
-                header: 'Nama Company',
+                header: 'Nama Perusahaan',
                 accessorKey: 'name',
                 cell: (row) => <CompanyCell name={row.name} />,
             },
             {
-                header: 'Kode',
+                header: 'Kode & Alias',
                 accessorKey: 'code',
-                cell: (row) => <span className="text-text-desc text-sm font-medium tracking-wide">{row.code}</span>,
-            },
-            {
-                header: 'Region',
-                accessorKey: 'region.name',
                 cell: (row) => (
-                    <div className="flex flex-col gap-0.5">
-                        <span className="text-sm font-semibold tracking-wide text-text-main">{row.region?.name || '—'}</span>
-                        <span className="text-text-desc/60 text-[10px] font-medium uppercase">{row.region?.code || '—'}</span>
+                    <div className="flex flex-col">
+                        <span className="text-text-main text-sm font-semibold">{row.code}</span>
+                        <span className="text-text-soft text-[10px] font-medium uppercase tracking-tight">{row.alias || '—'}</span>
                     </div>
                 ),
             },
             {
-                header: 'Group Perusahaan',
-                accessorKey: 'group.name',
+                header: 'Group & Region',
+                accessorKey: 'company_group_id',
                 cell: (row) => (
-                    <div className="flex flex-col gap-0.5">
-                        <span className="text-sm font-semibold tracking-wide text-text-main">{row.group?.name || '—'}</span>
-                        <span className="text-text-desc/60 text-[10px] font-medium uppercase">{row.group?.code || '—'}</span>
+                    <div className="flex flex-col">
+                        <span className="text-text-main text-xs font-semibold uppercase">{row.group?.name || '—'}</span>
+                        <span className="text-text-desc text-[10px] font-medium uppercase">{row.region?.name || 'GLOBAL'}</span>
                     </div>
                 ),
             },
@@ -139,15 +124,15 @@ export function CompanyManagement({ companies, regions, groups, filters }: Reado
         setIsFormView(true);
     };
 
-    const openEdit = (company: any) => {
-        setEditingCompany(company);
+    const openEdit = (comp: any) => {
+        setEditingCompany(comp);
         form.setData({
-            name: company.name,
-            code: company.code,
-            alias: company.alias || '',
-            company_group_id: company.company_group_id?.toString() || '',
-            region_id: company.region_id?.toString() || '',
-            address: company.address || '',
+            name: comp.name,
+            code: comp.code,
+            alias: comp.alias || '',
+            address: comp.address || '',
+            company_group_id: String(comp.company_group_id || ''),
+            region_id: String(comp.region_id || ''),
         });
         setIsFormView(true);
     };
@@ -156,13 +141,8 @@ export function CompanyManagement({ companies, regions, groups, filters }: Reado
         setIsFormView(false);
         setEditingCompany(null);
         form.reset();
-        // Clear filters if we were in a deep-linked state
-        if (filters.action || filters.id || filters.region_id || filters.company_group_id) {
-            router.get(
-                globalThis.location.pathname,
-                { ...filters, action: undefined, id: undefined, region_id: undefined, company_group_id: undefined },
-                { preserveState: true, replace: true },
-            );
+        if (filters.action || filters.id) {
+            router.get(globalThis.location.pathname, { ...filters, action: undefined, id: undefined }, { preserveState: true, replace: true });
         }
     };
 
@@ -171,7 +151,7 @@ export function CompanyManagement({ companies, regions, groups, filters }: Reado
         const options = {
             onSuccess: () => {
                 closeForm();
-                showToast(editingCompany ? 'Company diperbarui' : 'Company baru ditambahkan', 'success');
+                showToast(editingCompany ? 'Data perusahaan diperbarui' : 'Perusahaan baru didaftarkan', 'success');
             },
         };
         if (editingCompany) form.put(`/admin/companies/${editingCompany.id}`, options);
@@ -181,8 +161,8 @@ export function CompanyManagement({ companies, regions, groups, filters }: Reado
     if (isFormView) {
         return (
             <ManagementForm
-                title={editingCompany ? 'Update Data Company' : 'Registrasi Data Company'}
-                subtitle={editingCompany ? 'Pengaturan detail entitas perusahaan' : 'Registrasi entitas bisnis atau perusahaan baru'}
+                title={editingCompany ? 'Profil Perusahaan' : 'Registrasi Perusahaan'}
+                subtitle={editingCompany ? 'Manajemen detail identitas unit bisnis' : 'Pendaftaran unit bisnis baru dalam sistem'}
                 onClose={closeForm}
                 onSave={handleSubmit}
                 processing={form.processing}
@@ -195,7 +175,7 @@ export function CompanyManagement({ companies, regions, groups, filters }: Reado
                             type="button"
                             variant="ghost"
                             onClick={() => setIsConfirmOpen(true)}
-                            className="border-danger/20 px-4 text-xs text-danger transition-all duration-200 hover:bg-danger hover:text-white"
+                            className="border-danger/20 text-danger hover:bg-danger hover:text-white px-4 text-xs transition-all"
                         >
                             <Trash2 size={15} className="mr-2" /> Hapus
                         </Button>
@@ -210,110 +190,111 @@ export function CompanyManagement({ companies, regions, groups, filters }: Reado
                         router.delete(`/admin/companies/${editingCompany.id}`, {
                             onSuccess: () => {
                                 closeForm();
-                                showToast('Company telah dihapus', 'success');
+                                showToast('Perusahaan telah dihapus', 'success');
                             },
                         });
                     }}
                     title="Konfirmasi Penghapusan"
-                    description={`Apakah Anda yakin ingin menghapus company ${editingCompany?.name}? Tindakan ini tidak dapat dibatalkan.`}
-                    confirmText="Hapus Company"
+                    description={`Apakah Anda yakin ingin menghapus ${editingCompany?.name}? Data operasional terkait akan terdampak.`}
+                    confirmText="Hapus Perusahaan"
                 />
-                <div className="animate-in fade-in grid grid-cols-1 gap-8 duration-200 select-none md:grid-cols-12">
-                    <div className="space-y-8 md:col-span-8">
-                        <FormSection title="Informasi Company" subtitle="Nama dan pemetaan wilayah operasional perusahaan">
-                            <div className="grid grid-cols-1 gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-text-desc flex items-center gap-2 text-[10px] font-bold uppercase">
-                                        Grup Perusahaan / Group
-                                    </label>
-                                    <Select value={form.data.company_group_id} onValueChange={(v: string) => form.setData('company_group_id', v)}>
-                                        <SelectTrigger className="border-surface-border bg-surface-muted focus:border-primary h-10 rounded-xl text-xs font-bold transition-all">
-                                            <SelectValue placeholder="PILIH GRUP..." />
-                                        </SelectTrigger>
-                                        <SelectContent className="border-surface-border rounded-xl bg-surface-base shadow-2xl">
-                                            {(groups || []).map((g: any) => (
-                                                <SelectItem key={g.id} value={g.id.toString()} className="py-2.5 text-xs font-bold uppercase">
-                                                    {g.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    {form.errors.company_group_id && (
-                                        <p className="mt-1 text-[10px] font-bold tracking-tight text-danger uppercase">
-                                            {form.errors.company_group_id}
-                                        </p>
-                                    )}
+                <div className="animate-in fade-in grid grid-cols-1 gap-16 duration-300 select-none lg:grid-cols-2 w-full">
+                    {/* Side 1: Core Configuration */}
+                    <div className="space-y-12">
+                        <FormSection title="Identitas Korporasi" subtitle="Parameter dasar yang mendefinisikan entitas perusahaan">
+                            <div className="grid grid-cols-1 gap-y-10">
+                                <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+                                    <div className="space-y-2.5">
+                                        <label className="text-primary/60 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest dark:text-white/60">
+                                            Grup Perusahaan / Group
+                                        </label>
+                                        <Select value={form.data.company_group_id} onValueChange={(v: string) => form.setData('company_group_id', v)}>
+                                            <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-11 rounded-xl text-xs font-bold transition-all shadow-sm ring-1 ring-black/[0.03]">
+                                                <SelectValue placeholder="PILIH GRUP..." />
+                                            </SelectTrigger>
+                                            <SelectContent className="border-surface-border rounded-xl bg-surface-base shadow-2xl">
+                                                {(groups || []).map((g: any) => (
+                                                    <SelectItem key={g.id} value={g.id.toString()} className="py-2.5 text-xs font-bold uppercase text-black dark:text-white">
+                                                        {g.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        {form.errors.company_group_id && (
+                                            <p className="mt-1.5 text-[10px] font-bold tracking-tight text-danger uppercase">
+                                                {form.errors.company_group_id}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div className="space-y-2.5">
+                                        <label className="text-primary/60 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest dark:text-white/60">
+                                            Wilayah / Region
+                                        </label>
+                                        <Select value={form.data.region_id} onValueChange={(v: string) => form.setData('region_id', v)}>
+                                            <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-11 rounded-xl text-xs font-bold transition-all shadow-sm ring-1 ring-black/[0.03]">
+                                                <SelectValue placeholder="PILIH REGION..." />
+                                            </SelectTrigger>
+                                            <SelectContent className="border-surface-border rounded-xl bg-surface-base shadow-2xl">
+                                                {(regions || []).map((r: any) => (
+                                                    <SelectItem key={r.id} value={r.id.toString()} className="py-2.5 text-xs font-bold uppercase text-black dark:text-white">
+                                                        {r.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        {form.errors.region_id && (
+                                            <p className="mt-1.5 text-[10px] font-bold tracking-tight text-danger uppercase">{form.errors.region_id}</p>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-text-desc flex items-center gap-2 text-[10px] font-bold uppercase">
-                                        Wilayah / Region
-                                    </label>
-                                    <Select value={form.data.region_id} onValueChange={(v: string) => form.setData('region_id', v)}>
-                                        <SelectTrigger className="border-surface-border bg-surface-muted focus:border-primary h-10 rounded-xl text-xs font-bold transition-all">
-                                            <SelectValue placeholder="PILIH REGION..." />
-                                        </SelectTrigger>
-                                        <SelectContent className="border-surface-border rounded-xl bg-surface-base shadow-2xl">
-                                            {(regions || []).map((r: any) => (
-                                                <SelectItem key={r.id} value={r.id.toString()} className="py-2.5 text-xs font-bold uppercase">
-                                                    {r.name}
-                                                </SelectItem>
-                                            ))}
-                                            {(regions || []).length === 0 && (
-                                                <div className="text-text-desc p-4 text-center text-[10px] font-bold uppercase">
-                                                    TIDAK ADA DATA REGION
-                                                </div>
-                                            )}
-                                        </SelectContent>
-                                    </Select>
-                                    {form.errors.region_id && (
-                                        <p className="mt-1 text-[10px] font-bold tracking-tight text-danger uppercase">{form.errors.region_id}</p>
-                                    )}
-                                </div>
+
                                 <CompactInput
-                                    label="Nama Perusahaan"
+                                    label="Nama Resmi Perusahaan"
                                     value={form.data.name}
                                     onChange={(e) => form.setData('name', e.target.value)}
                                     placeholder="CONTOH: PT. SEJAHTERA BERSAMA"
                                     error={form.errors.name}
+                                    icon={Building2}
                                 />
-                                <CompactInput
-                                    label="Kode Perusahaan"
-                                    value={form.data.code}
-                                    onChange={(e) => form.setData('code', e.target.value)}
-                                    placeholder="CONTOH: COMP-SB"
-                                    error={form.errors.code}
-                                />
-                                <CompactInput
-                                    label="Alias"
-                                    value={form.data.alias}
-                                    onChange={(e) => form.setData('alias', e.target.value)}
-                                    placeholder="CONTOH: PSB"
-                                    error={form.errors.alias}
-                                />
-                                <CompactInput
-                                    label="Alamat"
-                                    value={form.data.address}
-                                    onChange={(e) => form.setData('address', e.target.value)}
-                                    placeholder="ALAMAT LENGKAP PERUSAHAAN..."
-                                    error={form.errors.address}
-                                />
+                                
+                                <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+                                    <CompactInput
+                                        label="Kode Entitas"
+                                        value={form.data.code}
+                                        onChange={(e) => form.setData('code', e.target.value)}
+                                        placeholder="CONTOH: COMP-SB"
+                                        error={form.errors.code}
+                                        icon={Tags}
+                                    />
+                                    <CompactInput
+                                        label="Alias Visual"
+                                        value={form.data.alias}
+                                        onChange={(e) => form.setData('alias', e.target.value)}
+                                        placeholder="CONTOH: PSB"
+                                        error={form.errors.alias}
+                                    />
+                                </div>
                             </div>
                         </FormSection>
                     </div>
 
-                    <div className="flex flex-col gap-8 md:col-span-4">
-                        <div className="border-surface-border bg-surface-muted/40 group relative overflow-hidden rounded-2xl border p-6 shadow-sm backdrop-blur-sm transition-all duration-200 select-none">
-                            <div className="absolute top-0 right-0 p-4 opacity-5 transition-opacity duration-200 group-hover:opacity-10">
-                                <Building2 size={80} strokeWidth={1} />
-                            </div>
-                            <div className="relative z-10 mb-4 flex items-center gap-3">
-                                <span className="text-xs font-bold tracking-wider text-text-main uppercase">
-                                    Master Hierarchy
-                                </span>
-                            </div>
-                            <p className="text-text-desc relative z-10 text-xs leading-relaxed font-medium">
-                                Company adalah level unit bisnis operasional. Ini adalah level paling granular dalam hirarki Master Data yang akan
-                                digunakan untuk penentuan otoritas penyetuju.
+                    {/* Side 2: Logistics & Metadata */}
+                    <div className="space-y-12">
+                        <FormSection title="Domisili & Lokasi" subtitle="Alamat resmi untuk keperluan korespondensi kontrak">
+                            <CompactInput
+                                label="Alamat Lengkap Kantor"
+                                value={form.data.address}
+                                onChange={(e) => form.setData('address', e.target.value)}
+                                placeholder="ALAMAT LENGKAP PERUSAHAAN..."
+                                error={form.errors.address}
+                                icon={MapPin}
+                            />
+                        </FormSection>
+
+                        <div className="animate-in fade-in flex gap-4 rounded-2xl border border-primary/20 bg-primary/5 p-6 backdrop-blur-sm duration-300 dark:bg-primary/10">
+                            <Building2 size={24} className="mt-0.5 shrink-0 text-primary" />
+                            <p className="text-[11px] leading-relaxed font-semibold text-primary/80 uppercase tracking-tight">
+                                Company adalah level unit bisnis operasional paling granular dalam hirarki Master Data yang akan digunakan untuk penentuan otoritas penyetuju dan penomoran kontrak otomatis.
                             </p>
                         </div>
                     </div>
@@ -324,11 +305,11 @@ export function CompanyManagement({ companies, regions, groups, filters }: Reado
 
     return (
         <DataTable
-            title="Database Entitas Perusahaan"
+            title="Direktori Unit Bisnis (Company)"
             columns={columns}
             borderless={true}
             data={Array.isArray(companies) ? companies : companies?.data || []}
-            searchPlaceholder="Cari company..."
+            searchPlaceholder="Cari perusahaan..."
             searchValue={filters.search || ''}
             onSearchChange={(v: string) =>
                 router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })
@@ -348,7 +329,7 @@ export function CompanyManagement({ companies, regions, groups, filters }: Reado
                             variant="white"
                             onClick={openCreate}
                         >
-                            <Plus size={15} className="text-primary" /> Tambah Company
+                            <Plus size={15} className="text-primary" /> Registrasi Company
                         </Button>
                     )}
                 </div>
@@ -362,12 +343,12 @@ export function CompanyManagement({ companies, regions, groups, filters }: Reado
                               icon: Trash2,
                               variant: 'destructive',
                               onClick: (ids: string[] | number[]) => {
-                                  if (confirm(`Hapus ${ids.length} company terpilih?`)) {
+                                  if (confirm(`Hapus ${ids.length} perusahaan terpilih?`)) {
                                       router.post(
                                           '/admin/companies/bulk-delete',
                                           { ids },
                                           {
-                                              onSuccess: () => showToast(`${ids.length} company telah dihapus`, 'success'),
+                                              onSuccess: () => showToast(`${ids.length} perusahaan telah dihapus`, 'success'),
                                           },
                                       );
                                   }

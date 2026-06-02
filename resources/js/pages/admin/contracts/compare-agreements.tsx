@@ -1,5 +1,5 @@
 import { Head } from '@inertiajs/react';
-import { ArrowLeftRight, Download, Loader2 } from 'lucide-react';
+import { ArrowLeftRight, CalendarDays, Download, Loader2, User } from 'lucide-react';
 import React, { useState } from 'react';
 
 interface VersionItem {
@@ -17,152 +17,151 @@ interface CompareAgreementsProps {
     versions: VersionItem[];
     initialV1?: number;
     initialV2?: number;
+    documentType?: 'agreement' | 'f1' | 'f2';
 }
 
-export default function CompareAgreements({ contract, versions, initialV1, initialV2 }: CompareAgreementsProps) {
-    const [v1, setV1] = useState<number>(initialV1 || (versions.length > 0 ? versions[0].version_no : 0));
-    const [v2, setV2] = useState<number>(initialV2 || (versions.length > 0 ? versions[versions.length - 1].version_no : 0));
+export default function CompareAgreements({ contract, versions, initialV1, initialV2, documentType = 'agreement' }: CompareAgreementsProps) {
+    const sortedVersions = [...versions].sort((a, b) => b.version_no - a.version_no);
+
+    const [v1, setV1] = useState<number>(initialV1 || (versions.length > 1 ? versions[versions.length - 1].version_no : versions[0]?.version_no || 0));
+    const [v2, setV2] = useState<number>(initialV2 || (versions.length > 0 ? versions[0].version_no : 0));
 
     const meta1 = versions.find((v) => v.version_no === v1);
     const meta2 = versions.find((v) => v.version_no === v2);
 
-    const pdfUrl1 = v1 ? `/api/contracts/${contract.id}/pdf/${v1}?type=agreement#view=FitH` : null;
-    const pdfUrl2 = v2 ? `/api/contracts/${contract.id}/pdf/${v2}?type=agreement#view=FitH` : null;
+    const pdfUrl1 = v1 ? `/api/contracts/${contract.id}/pdf/${v1}?type=${documentType}#view=FitH` : null;
+    const pdfUrl2 = v2 ? `/api/contracts/${contract.id}/pdf/${v2}?type=${documentType}#view=FitH` : null;
+
+    const labelMapping: Record<string, string> = {
+        f1: 'Dokumen F1',
+        f2: 'Dokumen F2',
+        agreement: 'Draft Perjanjian'
+    };
+    const titleLabel = labelMapping[documentType] || 'Persetujuan';
 
     return (
-        <div className="flex h-screen min-h-screen flex-col overflow-hidden bg-slate-50 font-sans antialiased">
-            <Head title={`Compare Agreement - ${contract.contract_no}`} />
+        <div className="flex h-screen min-h-screen flex-col overflow-hidden bg-white font-sans antialiased selection:bg-indigo-100">
+            <Head title={`Audit ${titleLabel} - ${contract.contract_no}`} />
 
-            {/* Global Header */}
-            <div className="z-[100] flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-8 py-3.5 shadow-sm">
-                <div className="flex items-center gap-4">
-                    <div className="text-slate-900">
-                        <ArrowLeftRight className="h-5 w-5 text-indigo-600" />
-                    </div>
+            {/* Main Header */}
+            <div className="z-[100] flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-6 py-3">
+                <div className="flex items-center gap-3">
+                    <ArrowLeftRight className="h-5 w-5 text-indigo-600" />
                     <div className="flex flex-col">
-                        <h2 className="flex items-center gap-2 text-sm font-bold text-black">
-                            Perbandingan Persetujuan
-                            <span className="rounded border border-black bg-black px-1.5 py-0.5 text-[9px] font-bold text-white">Mode Audit</span>
-                        </h2>
-                        <p className="mt-0.5 text-xs font-bold text-black">
+                        <h1 className="text-sm font-bold font-montserrat text-slate-900">
+                            Audit {titleLabel}
+                        </h1>
+                        <p className="text-[11px] font-medium text-slate-500">
                             {contract.contract_no} &bull; {contract.title}
                         </p>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <button
-                        onClick={() => window.close()}
-                        className="rounded-lg bg-black px-6 py-2 text-xs font-bold text-white shadow-lg transition-all hover:opacity-90 active:scale-95"
-                    >
-                        Tutup Perbandingan
-                    </button>
-                </div>
+                <button
+                    onClick={() => window.close()}
+                    className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-bold text-white transition-all hover:bg-slate-800 active:scale-95"
+                >
+                    Tutup Audit
+                </button>
             </div>
 
-            {/* Split Screen Container */}
-            <div className="flex flex-1 divide-x divide-slate-200 overflow-hidden bg-slate-100">
-                {/* SIDE A */}
-                <div className="relative flex flex-1 flex-col overflow-hidden">
-                    <div className="z-40 flex items-center justify-between border-b border-black/5 bg-white/95 px-8 py-5 backdrop-blur-md">
+            {/* Split PDF Viewer */}
+            <div className="flex flex-1 overflow-hidden bg-slate-100">
+                {/* PANEL A */}
+                <div className="flex flex-1 flex-col border-r border-slate-200 bg-white">
+                    <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-4 py-2.5">
                         <div className="flex items-center gap-4">
-                            <div className="h-10 w-[3px] rounded-full bg-black" />
                             <div className="flex flex-col">
-                                <span className="text-[10px] font-bold text-black">Versi Referensi</span>
-                                <h3 className="text-sm font-bold text-black">VERSI {v1}</h3>
+                                <span className="text-xs font-bold text-slate-900">Versi {v1}</span>
+                            </div>
+                            <div className="hidden items-center gap-3 text-[10px] text-slate-500 lg:flex border-l border-slate-200 pl-4">
+                                <div className="flex items-center gap-1.5">
+                                    <User size={12} className="text-slate-400" />
+                                    <span>{meta1?.uploader?.name || 'System'}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <CalendarDays size={12} className="text-slate-400" />
+                                    <span>{meta1?.created_at?.split(' ')[0] || '-'}</span>
+                                </div>
                             </div>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
                             <select
                                 value={v1}
                                 onChange={(e) => setV1(Number(e.target.value))}
-                                className="cursor-pointer rounded-lg border-2 border-black bg-white px-4 py-2 text-xs font-bold text-black transition-all outline-none hover:bg-black hover:text-white"
+                                className="rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs font-bold text-slate-700 outline-none focus:border-indigo-500"
                             >
-                                {[...versions]
-                                    .sort((a, b) => b.version_no - a.version_no)
-                                    .map((v) => (
-                                        <option key={v.id} value={v.version_no}>
-                                            V{v.version_no} - {v.uploader?.name || 'System'}
-                                        </option>
-                                    ))}
+                                {sortedVersions.map((v) => (
+                                    <option key={v.id} value={v.version_no}>V{v.version_no}</option>
+                                ))}
                             </select>
                             <a
-                                href={`/api/contracts/${contract.id}/download?version=${v1}&type=agreement`}
-                                className="flex h-9 w-9 items-center justify-center rounded-lg border-2 border-black bg-white text-black transition-all hover:bg-black hover:text-white active:scale-95"
-                                title="Download Word file"
+                                href={`/api/contracts/${contract.id}/download?version=${v1}&type=${documentType}`}
+                                className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                             >
-                                <Download size={16} />
+                                <Download size={14} />
                             </a>
                         </div>
                     </div>
-
-                    <div className="flex-1 bg-slate-200 p-2 lg:p-8">
+                    <div className="flex-1 bg-slate-100">
                         {pdfUrl1 ? (
-                            <iframe src={pdfUrl1} className="h-full w-full border-none shadow-2xl ring-1 ring-slate-300" title="V1 Preview" />
+                            <iframe src={pdfUrl1} className="h-full w-full border-none" title="V1 Preview" />
                         ) : (
                             <div className="flex h-full items-center justify-center">
-                                <Loader2 size={32} className="animate-spin text-slate-300" />
+                                <Loader2 size={24} className="animate-spin text-slate-300" />
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* SIDE B */}
-                <div className="relative flex flex-1 flex-col overflow-hidden">
-                    <div className="z-40 flex items-center justify-between border-b border-black/5 bg-white/95 px-8 py-5 backdrop-blur-md">
+                {/* PANEL B */}
+                <div className="flex flex-1 flex-col bg-white">
+                    <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-4 py-2.5">
                         <div className="flex items-center gap-4">
-                            <div className="h-10 w-[3px] rounded-full bg-black" />
                             <div className="flex flex-col">
-                                <span className="text-[10px] font-bold text-black">Target Perbandingan</span>
-                                <h3 className="text-sm font-bold text-black">VERSI {v2}</h3>
+                                <span className="text-xs font-bold text-slate-900">Versi {v2}</span>
+                            </div>
+                            <div className="hidden items-center gap-3 text-[10px] text-slate-500 lg:flex border-l border-slate-200 pl-4">
+                                <div className="flex items-center gap-1.5">
+                                    <User size={12} className="text-slate-400" />
+                                    <span>{meta2?.uploader?.name || 'System'}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <CalendarDays size={12} className="text-slate-400" />
+                                    <span>{meta2?.created_at?.split(' ')[0] || '-'}</span>
+                                </div>
                             </div>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
                             <select
                                 value={v2}
                                 onChange={(e) => setV2(Number(e.target.value))}
-                                className="cursor-pointer rounded-lg border-2 border-black bg-white px-4 py-2 text-xs font-bold text-black transition-all outline-none hover:bg-black hover:text-white"
+                                className="rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs font-bold text-slate-700 outline-none focus:border-indigo-500"
                             >
-                                {[...versions]
-                                    .sort((a, b) => b.version_no - a.version_no)
-                                    .map((v) => (
-                                        <option key={v.id} value={v.version_no} className="text-black">
-                                            V{v.version_no} - {v.uploader?.name || 'System'}
-                                        </option>
-                                    ))}
+                                {sortedVersions.map((v) => (
+                                    <option key={v.id} value={v.version_no}>V{v.version_no}</option>
+                                ))}
                             </select>
                             <a
-                                href={`/api/contracts/${contract.id}/download?version=${v2}&type=agreement`}
-                                className="flex h-9 w-9 items-center justify-center rounded-lg border-2 border-black bg-white text-black transition-all hover:bg-black hover:text-white active:scale-95"
-                                title="Download Word file"
+                                href={`/api/contracts/${contract.id}/download?version=${v2}&type=${documentType}`}
+                                className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                             >
-                                <Download size={16} />
+                                <Download size={14} />
                             </a>
                         </div>
                     </div>
-
-                    <div className="flex-1 bg-slate-300 p-2 lg:p-8">
+                    <div className="flex-1 bg-slate-100">
                         {pdfUrl2 ? (
-                            <iframe src={pdfUrl2} className="h-full w-full border-none shadow-2xl ring-1 ring-slate-400" title="V2 Preview" />
+                            <iframe src={pdfUrl2} className="h-full w-full border-none" title="V2 Preview" />
                         ) : (
                             <div className="flex h-full items-center justify-center">
-                                <Loader2 size={32} className="animate-spin text-indigo-300" />
+                                <Loader2 size={24} className="animate-spin text-slate-300" />
                             </div>
                         )}
                     </div>
                 </div>
             </div>
 
-            {/* Status Footer */}
-            <div className="z-50 flex shrink-0 items-center justify-center gap-8 border-t border-black/5 bg-white px-10 py-4">
-                <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-black">High-Fidelity PDF Engine</span>
-                </div>
-                <div className="h-4 w-px bg-black/10" />
-                <div className="flex items-center gap-2 text-black">
-                    <span className="text-[10px] font-bold">Mode Perbandingan</span>
-                </div>
-            </div>
         </div>
     );
 }

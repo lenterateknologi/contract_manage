@@ -1,118 +1,17 @@
 import { useToast } from '@/components/contracts/Toast';
 import { Button } from '@/components/ui/base/Button';
 import { Column, DataTable } from '@/components/ui/data/DataTable';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
 import { usePermissions } from '@/hooks/use-permissions';
 import { router } from '@inertiajs/react';
-import { Plus, ShieldCheck, Trash2, ChevronDown } from 'lucide-react';
-import { useMemo, useState, useEffect } from 'react';
+import { ChevronDown, Plus, ShieldCheck, Trash2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 interface ContractTypeManagementProps {
     readonly contractTypes: any;
-    readonly formTemplates?: any[] | null;
-    readonly contractTemplates?: any[] | null;
     readonly filters: any;
 }
 
-const MechanismCell = ({ mechanism }: Readonly<{ mechanism: string }>) => (
-    <div className="flex items-center gap-2">
-        <div className="bg-primary/20 h-1.5 w-1.5 rounded-full" />
-        <span className="text-text-desc text-[10px] font-medium uppercase">
-            {mechanism === 'digital' ? 'Formulir Digital' : mechanism === 'folder' ? 'Folder Kontrak' : 'Unggah Manual'}
-        </span>
-    </div>
-);
-
-const TypeDescriptionCell = ({ description }: Readonly<{ description?: string }>) => (
-    <span className="text-text-soft max-w-[200px] truncate text-[10px] font-medium tracking-tight uppercase">
-        {description || '—'}
-    </span>
-);
-
-const MechanismOptions = ({
-    mechanism,
-    formTemplateId,
-    setFormTemplateId,
-    contractTemplateId,
-    setContractTemplateId,
-    templates,
-    physTemplates,
-    type,
-}: {
-    mechanism: string;
-    formTemplateId: string;
-    setFormTemplateId: (id: string | number) => void;
-    contractTemplateId: string;
-    setContractTemplateId: (id: string | number) => void;
-    templates: any[];
-    physTemplates: any[];
-    type: 'F1' | 'F2';
-}) => {
-    if (mechanism === 'digital') {
-        return (
-            <div className="animate-in fade-in slide-in-from-top-2">
-                <div className="animate-in fade-in slide-in-from-top-2">
-                    <div className="space-y-2">
-                        <label className="text-primary/60 flex items-center gap-2 text-[10px] font-medium uppercase dark:text-white/60">
-                            Tautan Templat Digital {type}
-                        </label>
-                        <Select value={String(formTemplateId)} onValueChange={(v: string) => setFormTemplateId(String(v))}>
-                            <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-10 rounded-xl text-xs font-medium transition-all">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="border-primary/10 rounded-xl bg-white shadow-2xl dark:bg-black">
-                                <SelectItem value="none" className="py-2.5 text-xs font-medium uppercase">
-                                    -- TANPA TEMPLAT TERPAUT --
-                                </SelectItem>
-                                {templates.map((t: any) => (
-                                    <SelectItem key={t.id} value={String(t.id)} className="py-2.5 text-xs font-medium uppercase">
-                                        {t.name} ({t.document_type || 'ADHOC'})
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-    if (mechanism === 'folder') {
-        return (
-            <div className="animate-in fade-in slide-in-from-top-2">
-                <div className="animate-in fade-in slide-in-from-top-2">
-                    <div className="space-y-2">
-                        <label className="text-primary/60 flex items-center gap-2 text-[10px] font-medium uppercase dark:text-white/60">
-                            Tautan Templat Folder ({type})
-                        </label>
-                        <Select value={String(contractTemplateId)} onValueChange={(v: string) => setContractTemplateId(String(v))}>
-                            <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-10 rounded-xl text-xs font-medium transition-all">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="border-primary/10 rounded-xl bg-white shadow-2xl dark:bg-black">
-                                <SelectItem value="none" className="py-2.5 text-xs font-medium uppercase">
-                                    -- TIDAK ADA TEMPLAT TERPILIH --
-                                </SelectItem>
-                                {physTemplates.map((t: any) => (
-                                    <SelectItem key={t.id} value={String(t.id)} className="py-2.5 text-xs font-medium uppercase">
-                                        {t.name} ({t.file_type || 'PDF'})
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-    return (
-        <div className="animate-in fade-in border-primary/10 bg-primary/[0.01] rounded-2xl border border-dashed p-6 text-center dark:border-white/10 dark:bg-white/[0.01]">
-            <p className="text-primary/30 text-[10px] font-medium tracking-[0.2em] uppercase italic dark:text-white/30">
-                {type === 'F1' ? 'PENGGUNA INTERNAL' : 'VENDOR'} AKAN MENGUNGGAH PDF MANUAL UNTUK {type}
-            </p>
-        </div>
-    );
-};
 
 export function ContractTypeManagement({ contractTypes, filters }: Readonly<ContractTypeManagementProps>) {
     const { showToast } = useToast();
@@ -121,42 +20,37 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
     const data = contractTypes?.data || [];
 
     // 1. Build parent-child mapping for the current page dataset
+    // Since backend now paginates only parents, we map children from the 'children' relation
     const { rootItems, childrenMap } = useMemo(() => {
         const map: Record<string, any[]> = {};
         const roots: any[] = [];
-        const idsInPage = new Set(data.map((item: any) => item.id));
 
         data.forEach((item: any) => {
-            const parentId = item.parent_id;
-            if (parentId && idsInPage.has(parentId)) {
-                if (!map[parentId]) {
-                    map[parentId] = [];
-                }
-                map[parentId].push(item);
-            } else {
-                roots.push(item);
+            roots.push(item);
+            if (item.children && item.children.length > 0) {
+                map[item.id] = item.children;
             }
         });
 
         return { rootItems: roots, childrenMap: map };
     }, [data]);
 
-    // 2. Track expanded/collapsed state of parent nodes (defaults to expanded/true)
+    // 2. Track expanded/collapsed state (defaults to empty/collapsed as requested)
     const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
     const allParentIds = useMemo(() => Object.keys(childrenMap), [childrenMap]);
     
-    const isAllCollapsed = useMemo(() => {
-        return allParentIds.length > 0 && allParentIds.every(id => expanded[id] === false);
+    const isAllExpanded = useMemo(() => {
+        return allParentIds.length > 0 && allParentIds.every(id => expanded[id] === true);
     }, [allParentIds, expanded]);
 
     const toggleAll = () => {
-        if (isAllCollapsed) {
+        if (isAllExpanded) {
             setExpanded({});
         } else {
             const nextState: Record<string, boolean> = {};
             allParentIds.forEach((id) => {
-                nextState[id] = false;
+                nextState[id] = true;
             });
             setExpanded(nextState);
         }
@@ -170,16 +64,28 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
             const children = childrenMap[parentId] || [];
             children.forEach((child) => {
                 list.push({ ...child, _depth: depth });
-                const isChildExpanded = expanded[child.id] !== false;
-                if (isChildExpanded) {
-                    addChildren(child.id, depth + 1);
+                // Check if this child itself has nested children and is expanded
+                if (expanded[child.id] === true && child.children && child.children.length > 0) {
+                    // Recursive call for nested children if needed
+                    // (Currently backend might only load 1 level, but logic supports more)
+                    const nestedMap: Record<string, any[]> = { [child.id]: child.children };
+                    const addNested = (pId: string, d: number) => {
+                         const subChildren = nestedMap[pId] || [];
+                         subChildren.forEach(sc => {
+                             list.push({ ...sc, _depth: d });
+                             if (expanded[sc.id] === true && sc.children) {
+                                 // Continue recursion if data exists
+                             }
+                         });
+                    };
+                    addNested(child.id, depth + 1);
                 }
             });
         };
 
         rootItems.forEach((root) => {
             list.push({ ...root, _depth: 0 });
-            const isRootExpanded = expanded[root.id] !== false;
+            const isRootExpanded = expanded[root.id] === true;
             if (isRootExpanded) {
                 addChildren(root.id, 1);
             }
@@ -195,7 +101,7 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
                 accessorKey: 'name',
                 sortable: true,
                 cell: (row) => {
-                    const isParent = childrenMap[row.id]?.length > 0;
+                    const isParent = (childrenMap[row.id]?.length || row.children?.length) > 0;
                     const depth = row._depth || 0;
                     const hasDepth = depth > 0;
 
@@ -216,7 +122,7 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
                                         size="icon"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            const isCurrentlyExpanded = expanded[row.id] !== false;
+                                            const isCurrentlyExpanded = expanded[row.id] === true;
                                             setExpanded((prev) => ({
                                                 ...prev,
                                                 [row.id]: !isCurrentlyExpanded,
@@ -228,7 +134,7 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
                                             size={12}
                                             className={cn(
                                                 "transition-transform duration-200",
-                                                expanded[row.id] === false && "-rotate-90"
+                                                expanded[row.id] !== true && "-rotate-90"
                                             )}
                                         />
                                     </Button>
@@ -245,7 +151,7 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
                             <div className="mt-1 flex items-center gap-2" style={{ paddingLeft: hasDepth ? '20px' : '20px' }}>
                                 <ShieldCheck size={10} className="text-primary/20" />
                                 <span className="text-text-soft text-[9px] font-medium uppercase italic">
-                                    Aset Administratif Terpantau
+                                    {depth > 0 ? 'Sub-Klasifikasi Terdaftar' : 'Aset Administratif Terpantau'}
                                 </span>
                             </div>
                         </div>
@@ -253,28 +159,22 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
                 },
             },
             {
-                header: 'Klasifikasi Induk',
-                accessorKey: 'parent.name',
+                header: 'Kode Sistem',
+                accessorKey: 'code',
                 cell: (row) => (
-                    <span className="text-primary/60 text-[11px] font-medium tracking-tight uppercase dark:text-white/60">
-                        {row.parent?.name || '—'}
+                    <span className="font-mono text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                        {row.code}
                     </span>
                 ),
             },
             {
-                header: 'Mekanisme F1 (Internal)',
-                accessorKey: 'f1_input_mechanism',
-                cell: (row) => <MechanismCell mechanism={row.f1_input_mechanism} />,
-            },
-            {
-                header: 'Mekanisme F2 (Eksternal)',
-                accessorKey: 'f2_input_mechanism',
-                cell: (row) => <MechanismCell mechanism={row.f2_input_mechanism} />,
-            },
-            {
                 header: 'Keterangan Konten',
                 accessorKey: 'description',
-                cell: (row) => <TypeDescriptionCell description={row.description} />,
+                cell: (row) => (
+                    <span className="text-text-soft max-w-[300px] truncate text-[10px] font-medium tracking-tight uppercase">
+                        {row.description || '—'}
+                    </span>
+                ),
             },
         ],
         [childrenMap, expanded],
@@ -300,30 +200,8 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
             onSearchChange={(v: string) =>
                 router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })
             }
-            filters={[
-                {
-                    label: 'Mekanisme F1',
-                    key: 'f1_input_mechanism',
-                    options: [
-                        { label: 'Formulir Digital', value: 'digital' },
-                        { label: 'Folder Kontrak', value: 'folder' },
-                        { label: 'Manual', value: 'manual' },
-                    ],
-                },
-                {
-                    label: 'Mekanisme F2',
-                    key: 'f2_input_mechanism',
-                    options: [
-                        { label: 'Formulir Digital', value: 'digital' },
-                        { label: 'Folder Kontrak', value: 'folder' },
-                        { label: 'Manual', value: 'manual' },
-                    ],
-                },
-            ]}
-            activeFilters={{
-                f1_input_mechanism: filters.f1_input_mechanism ? [filters.f1_input_mechanism] : [],
-                f2_input_mechanism: filters.f2_input_mechanism ? [filters.f2_input_mechanism] : [],
-            }}
+            filters={[]}
+            activeFilters={{}}
             onFilterChange={(updatedFilters: any) => {
                 const newFilters: Record<string, any> = { ...filters, page: 1 };
                 Object.keys(updatedFilters).forEach((key) => {
@@ -337,15 +215,17 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
                         <Button
                             variant="white"
                             onClick={toggleAll}
+                            className="text-[10px] font-black uppercase tracking-widest"
                         >
-                            <ChevronDown size={14} className={cn("transition-transform duration-200", isAllCollapsed && "-rotate-90")} />
-                            {isAllCollapsed ? 'Expand Semua' : 'Minimize Semua'}
+                            <ChevronDown size={14} className={cn("transition-transform duration-200", !isAllExpanded && "-rotate-90")} />
+                            {isAllExpanded ? 'Minimize Semua' : 'Expand Semua'}
                         </Button>
                     )}
                     {canCreate && (
                         <Button
                             variant="white"
                             onClick={openCreate}
+                            className="text-[10px] font-black uppercase tracking-widest"
                         >
                             <Plus size={14} className="mr-2 text-primary" /> Registrasi Klasifikasi
                         </Button>

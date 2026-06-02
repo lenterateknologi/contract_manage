@@ -28,7 +28,9 @@ return new class() extends Migration
     public function down(): void
     {
         Schema::table('m_contract_statuses', function (Blueprint $table) {
-            $table->dropColumn('allow_info_edit');
+            if (Schema::hasColumn('m_contract_statuses', 'allow_info_edit')) {
+                $table->dropColumn('allow_info_edit');
+            }
         });
     }
 };

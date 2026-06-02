@@ -8,7 +8,7 @@ interface Props {
     actionAlias?: string;
 }
 
-export default function RejectModal({ open, onClose, onSubmit, actionAlias }: Props) {
+export function SharedRejectModal({ open, onClose, onSubmit, actionAlias }: Props) {
     const [reason, setReason] = useState('');
     const [attachment, setAttachment] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);

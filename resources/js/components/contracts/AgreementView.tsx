@@ -20,7 +20,18 @@ interface AgreementVersion {
     created_at: string;
 }
 
-export default function AgreementView({ contract, onUpdate }: { contract: Contract; onUpdate: (c: Contract) => void }) {
+export default function AgreementView({ 
+    contract, 
+    onUpdate,
+    docType = 'agreement'
+}: { 
+    contract: Contract; 
+    onUpdate: (c: Contract) => void;
+    docType?: 'agreement' | 'contract' | 'f1' | 'f2';
+}) {
+    // Normalize 'contract' to 'agreement' for internal logic if needed, but we keep docType intact.
+    const effectiveDocType = docType === 'contract' ? 'agreement' : docType;
+    const isRevision = effectiveDocType === 'f1' || effectiveDocType === 'f2';
     const { showToast } = useToast();
     const [versions, setVersions] = useState<AgreementVersion[]>([]);
     const [loading, setLoading] = useState(true);
@@ -50,7 +61,10 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
         async (forceLatest = false) => {
             setLoading(true);
             try {
-                const res = await axios.get(`/api/contracts/${contract.id}/agreement/versions`);
+                const url = isRevision 
+                    ? `/api/contracts/${contract.id}/revision/versions?type=${effectiveDocType}`
+                    : `/api/contracts/${contract.id}/agreement/versions`;
+                const res = await axios.get(url);
                 setVersions(res.data);
 
                 if (res.data.length > 0 && (forceLatest || !selectedVno)) {
@@ -62,31 +76,44 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
                 setLoading(false);
             }
         },
-        [contract.id, selectedVno],
+        [contract.id, selectedVno, isRevision, effectiveDocType],
     );
 
     useEffect(() => {
         loadVersions();
     }, [loadVersions]);
 
-    const isDraft = contract.status === 'draft';
+    const canEdit =
+        effectiveDocType === 'f1'
+            ? (contract as any).allow_f1_edit
+            : effectiveDocType === 'f2'
+              ? (contract as any).allow_f2_edit
+              : (contract as any).allow_agreement_edit;
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (!file.name.endsWith('.docx')) {
-            showToast('Hanya file .docx yang diijinkan.', 'danger');
+        if (!isRevision && !file.name.endsWith('.docx')) {
+            showToast('Hanya file .docx yang diijinkan untuk Draft Perjanjian.', 'danger');
             return;
         }
 
         setUploading(true);
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('change_log', uploadNote);
+        if (isRevision) {
+            formData.append('changelog', uploadNote || 'Revisi Dokumen');
+            formData.append('document_type', effectiveDocType);
+        } else {
+            formData.append('change_log', uploadNote);
+        }
 
         try {
-            const res = await axios.post(`/api/contracts/${contract.id}/agreement`, formData);
+            const url = isRevision 
+                ? `/api/contracts/${contract.id}/revision` 
+                : `/api/contracts/${contract.id}/agreement`;
+            const res = await axios.post(url, formData);
             setUploadNote('');
             if (onUpdate && res.data) onUpdate(res.data);
             await loadVersions(true);
@@ -106,7 +133,12 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
     const handleCompare = () => {
         const v1 = versions.length > 1 ? versions[1].version_no : selectedVno;
         const v2 = selectedVno;
-        window.open(`/admin/contracts/${contract.id}/agreement/compare?v1=${v1}&v2=${v2}`, '_blank');
+        
+        const url = isRevision
+            ? `/admin/contracts/${contract.id}/form-submissions/${effectiveDocType}/compare?v1=${v1}&v2=${v2}`
+            : `/admin/contracts/${contract.id}/agreement/compare?v1=${v1}&v2=${v2}`;
+            
+        window.open(url, '_blank');
     };
 
     const filteredVersions = React.useMemo(() => {
@@ -122,7 +154,14 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
     }, [versions, debouncedSearch]);
 
     // PDF Preview URL targeting the backend conversion endpoint
-    const pdfUrl = selectedVno ? `/api/contracts/${contract.id}/pdf/${selectedVno}?type=agreement#view=FitH` : null;
+    const pdfUrl = selectedVno ? `/api/contracts/${contract.id}/pdf/${selectedVno}?type=${effectiveDocType}#view=FitH` : null;
+
+    const labelMapping: Record<string, string> = {
+        f1: 'Dokumen F1',
+        f2: 'Dokumen F2',
+        agreement: 'Persetujuan'
+    };
+    const titleLabel = labelMapping[effectiveDocType] || 'Persetujuan';
 
     return (
         <div className="bg-card animate-in fade-in custom-scrollbar flex flex-1 flex-col overflow-hidden duration-300">
@@ -131,7 +170,7 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
                 <div className="flex items-center gap-4">
                     <div className="flex flex-col">
                         <div className="flex items-center gap-2">
-                            <h4 className="text-xs font-medium tracking-tight text-black uppercase dark:text-white">Preview Persetujuan</h4>
+                            <h4 className="text-xs font-medium tracking-tight text-black uppercase dark:text-white">Preview {titleLabel}</h4>
                             {selectedVno && (
                                 <span className="rounded bg-black/5 px-1.5 py-0.5 text-[9px] font-medium text-black/60 dark:bg-white/10 dark:text-white/60">
                                     V{selectedVno}
@@ -260,7 +299,7 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
                         )}
                     </div>
 
-                    {isDraft && (
+                    {canEdit && (
                         <Button
                             asChild
                             className={cn(
@@ -269,7 +308,7 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
                             )}
                         >
                             <label className="cursor-pointer">
-                                <input type="file" className="hidden" accept=".docx" onChange={handleFileUpload} disabled={uploading} />
+                                <input type="file" className="hidden" accept={isRevision ? ".pdf,.doc,.docx" : ".docx"} onChange={handleFileUpload} disabled={uploading} />
                                 {uploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
                                 Upload Versi Baru
                             </label>
@@ -292,7 +331,7 @@ export default function AgreementView({ contract, onUpdate }: { contract: Contra
                         </div>
                         <h4 className="mb-2 text-xs font-medium text-black dark:text-white">Dokumen Tidak Tersedia</h4>
                         <p className="max-w-sm text-[11px] font-medium text-black/40 dark:text-white/40">
-                            Upload draf final persetujuan Anda (.docx) untuk mulai melacak versi dan melakukan audit per poin.
+                            Upload draf final {titleLabel.toLowerCase()} Anda ({isRevision ? '.pdf, .docx' : '.docx'}) untuk mulai melacak versi secara dinamis.
                         </p>
                     </div>
                 ) : (

@@ -23,7 +23,7 @@ class MasterConfigController extends Controller
         $sortDir = $request->input('sort_dir', 'asc');
 
         // Whitelist columns to ensure query safety
-        $allowedSortColumns = ['name', 'parent_id', 'f1_input_mechanism', 'f2_input_mechanism', 'description'];
+        $allowedSortColumns = ['name', 'parent_id', 'description'];
         if (! in_array($sortBy, $allowedSortColumns)) {
             $sortBy = 'name';
         }
@@ -32,7 +32,8 @@ class MasterConfigController extends Controller
         }
 
         $query = ContractType::query()
-            ->with('parent')
+            ->with(['parent', 'children']) // Load children to show them in the tree
+            ->whereNull('parent_id') // Only paginate root-level items
             ->when(
                 $request->search,
                 function ($q, $s) {
@@ -59,18 +60,16 @@ class MasterConfigController extends Controller
     public function createContractType()
     {
         return Inertia::render('admin/contract-types/form', [
-            'formTemplates' => \App\Models\FormTemplate::where('is_active', true)->orderBy('name')->get(),
-            'contractTemplates' => \App\Models\ContractTemplate::orderBy('name')->get(),
             'parentTypes' => ContractType::orderBy('name')->get(),
         ]);
     }
 
     public function editContractType(ContractType $type)
     {
+        $type->load('children');
+
         return Inertia::render('admin/contract-types/form', [
             'contractType' => $type,
-            'formTemplates' => \App\Models\FormTemplate::where('is_active', true)->orderBy('name')->get(),
-            'contractTemplates' => \App\Models\ContractTemplate::orderBy('name')->get(),
             'parentTypes' => ContractType::where('id', '!=', $type->id)->orderBy('name')->get(),
         ]);
     }
@@ -82,10 +81,10 @@ class MasterConfigController extends Controller
             'name' => 'required|string|max:255|unique:m_contract_types,name',
             'description' => 'nullable|string',
             'parent_id' => 'nullable|uuid|exists:m_contract_types,id',
-            'f1_input_mechanism' => 'required|string|in:manual,digital,folder',
+            'f1_input_mechanism' => 'nullable|string|in:manual,digital,folder',
             'f1_form_template_id' => 'nullable|uuid|exists:m_form_templates,id',
             'f1_contract_template_id' => 'nullable|uuid|exists:m_contract_templates,id',
-            'f2_input_mechanism' => 'required|string|in:manual,digital,folder',
+            'f2_input_mechanism' => 'nullable|string|in:manual,digital,folder',
             'f2_form_template_id' => 'nullable|uuid|exists:m_form_templates,id',
             'f2_contract_template_id' => 'nullable|uuid|exists:m_contract_templates,id',
         ]);
@@ -101,10 +100,10 @@ class MasterConfigController extends Controller
             'name' => 'required|string|max:255|unique:m_contract_types,name,' . $type->id,
             'description' => 'nullable|string',
             'parent_id' => 'nullable|uuid|exists:m_contract_types,id|not_in:' . $type->id,
-            'f1_input_mechanism' => 'required|string|in:manual,digital,folder',
+            'f1_input_mechanism' => 'nullable|string|in:manual,digital,folder',
             'f1_form_template_id' => 'nullable|uuid|exists:m_form_templates,id',
             'f1_contract_template_id' => 'nullable|uuid|exists:m_contract_templates,id',
-            'f2_input_mechanism' => 'required|string|in:manual,digital,folder',
+            'f2_input_mechanism' => 'nullable|string|in:manual,digital,folder',
             'f2_form_template_id' => 'nullable|uuid|exists:m_form_templates,id',
             'f2_contract_template_id' => 'nullable|uuid|exists:m_contract_templates,id',
         ]);
@@ -167,9 +166,6 @@ class MasterConfigController extends Controller
             'icon' => 'nullable|string|max:50',
             'description' => 'nullable|string',
             'is_active' => 'boolean',
-            'display_mode' => 'nullable|string|in:interactive,pdf',
-            'allow_info_edit' => 'boolean',
-            'allow_reference' => 'boolean',
         ]);
         ContractStatus::create($data);
 
@@ -186,9 +182,6 @@ class MasterConfigController extends Controller
             'icon' => 'nullable|string|max:50',
             'description' => 'nullable|string',
             'is_active' => 'boolean',
-            'display_mode' => 'nullable|string|in:interactive,pdf',
-            'allow_info_edit' => 'boolean',
-            'allow_reference' => 'boolean',
         ]);
         $status->update($data);
 

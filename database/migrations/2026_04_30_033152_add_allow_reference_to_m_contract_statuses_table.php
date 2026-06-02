@@ -22,7 +22,9 @@ return new class() extends Migration
     public function down(): void
     {
         Schema::table('m_contract_statuses', function (Blueprint $table) {
-            $table->dropColumn('allow_reference');
+            if (Schema::hasColumn('m_contract_statuses', 'allow_reference')) {
+                $table->dropColumn('allow_reference');
+            }
         });
     }
 };

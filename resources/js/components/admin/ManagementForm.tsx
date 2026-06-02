@@ -101,9 +101,20 @@ export function FormSection({
     className?: string;
     headerAction?: React.ReactNode;
 }) {
-    const hasHeader = title || headerAction;
-
-    return <>{children}</>;
+    return (
+        <div className={cn('space-y-6', className)}>
+            {(title || subtitle || headerAction) && (
+                <div className="flex items-center justify-between gap-4 border-b border-black/[0.03] pb-4 dark:border-white/[0.03]">
+                    <div className="space-y-1">
+                        {title && <h3 className="text-text-main text-xs font-black uppercase tracking-widest">{title}</h3>}
+                        {subtitle && <p className="text-text-desc text-[10px] font-medium leading-relaxed italic">{subtitle}</p>}
+                    </div>
+                    {headerAction}
+                </div>
+            )}
+            <div className="animate-in fade-in duration-500">{children}</div>
+        </div>
+    );
 }
 
 export function FormDangerZone({

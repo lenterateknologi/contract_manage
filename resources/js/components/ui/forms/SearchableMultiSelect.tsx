@@ -55,6 +55,20 @@ export function SearchableMultiSelect({
         return mergedOptions.filter(o => o.label.toLowerCase().includes(search.toLowerCase()));
     }, [mergedOptions, search]);
 
+    const toggleOption = (val: string) => {
+        if (values.includes(val)) {
+            onValuesChange(values.filter(v => v !== val));
+        } else {
+            onValuesChange([...values, val]);
+        }
+    };
+
+    const removeOption = (e: React.MouseEvent, val: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onValuesChange(values.filter(v => v !== val));
+    };
+
     // Close on outside click
     React.useEffect(() => {
         function handler(e: MouseEvent) {
@@ -67,23 +81,16 @@ export function SearchableMultiSelect({
         return () => document.removeEventListener('mousedown', handler);
     }, [open]);
 
-    const toggleOption = (val: string) => {
-        if (values.includes(val)) {
-            onValuesChange(values.filter(v => v !== val));
-        } else {
-            onValuesChange([...values, val]);
-        }
-    };
-
-    const removeOption = (e: React.MouseEvent, val: string) => {
-        e.stopPropagation();
-        onValuesChange(values.filter(v => v !== val));
-    };
-
     return (
-        <div ref={containerRef} className={cn("relative w-full", open && "z-50", disabled && "opacity-60 cursor-not-allowed", className)}>
+        <div ref={containerRef} className={cn("relative w-full", disabled && "opacity-60 cursor-not-allowed", open && "z-50", className)}>
             <div
-                onClick={() => { if (!disabled) { setOpen(o => !o); setSearch(''); } }}
+                onClick={(e) => {
+                    if (disabled) e.preventDefault();
+                    else {
+                        setOpen(!open);
+                        setSearch('');
+                    }
+                }}
                 className={cn(
                     'flex min-h-10 w-full items-center justify-between border border-slate-200 bg-white px-3 py-1.5 text-left text-[11px] font-bold uppercase tracking-tight transition-colors rounded-lg',
                     !disabled && 'cursor-pointer hover:border-slate-400',
@@ -94,20 +101,21 @@ export function SearchableMultiSelect({
             >
                 <div className="flex flex-wrap gap-1.5 pr-2">
                     {values.length === 0 ? (
-                        <span className="text-slate-400 py-0.5">{placeholder}</span>
+                        <span className="text-slate-800 dark:text-slate-200 py-0.5">{placeholder}</span>
                     ) : (
                         values.map(val => {
                             const option = options.find(o => o.value === val);
                             return (
                                 <span
                                     key={val}
-                                    className="inline-flex items-center gap-1 bg-slate-100 text-slate-800 px-2 py-0.5 rounded text-[10px] hover:bg-slate-200 transition-colors"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="inline-flex items-center gap-1 bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 px-2 py-0.5 rounded text-[10px] hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors"
                                 >
                                     {option ? option.label : val}
                                     <button
                                         type="button"
                                         onClick={(e) => removeOption(e, val)}
-                                        className="text-slate-400 hover:text-slate-600 focus:outline-none"
+                                        className="text-white/70 hover:text-white dark:text-slate-900/70 dark:hover:text-slate-900 focus:outline-none"
                                     >
                                         <X size={10} />
                                     </button>
@@ -120,7 +128,7 @@ export function SearchableMultiSelect({
             </div>
 
             {open && (
-                <div className="absolute left-0 right-0 top-full z-50 mt-1 border border-slate-200 bg-white shadow-xl rounded-xl overflow-hidden dark:border-slate-800 dark:bg-slate-950">
+                <div className="absolute left-0 right-0 top-full z-[9999] mt-1 border border-slate-200 bg-white shadow-xl rounded-xl overflow-hidden dark:border-slate-800 dark:bg-slate-950">
                     {/* Search input */}
                     <div className="relative border-b border-slate-100 dark:border-slate-800">
                         <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -141,37 +149,41 @@ export function SearchableMultiSelect({
                         {filtered.map(opt => {
                             const isSelected = values.includes(opt.value);
                             return (
-                                <button
+                                <div
                                     key={opt.value}
-                                    type="button"
-                                    onClick={() => toggleOption(opt.value)}
+                                    role="button"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        toggleOption(opt.value);
+                                    }}
                                     className={cn(
-                                        'flex w-full items-center justify-between px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-tight transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/50',
+                                        'flex w-full cursor-pointer items-center justify-between px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-tight transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/50',
                                         isSelected 
                                             ? 'bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200' 
-                                            : 'text-slate-700 dark:text-slate-300',
-                                        opt.italic && 'italic text-slate-400 dark:text-slate-600'
+                                            : 'text-slate-900 dark:text-slate-100',
+                                        opt.italic && 'italic text-slate-500 dark:text-slate-500'
                                     )}
                                 >
                                     {opt.label}
                                     {isSelected && <Check size={11} className="shrink-0" />}
-                                </button>
+                                </div>
                             );
                         })}
                         {search && !mergedOptions.some(o => o.value.toLowerCase() === search.toLowerCase() || o.label.toLowerCase() === search.toLowerCase()) && (
-                            <button
-                                type="button"
-                                onClick={() => {
+                            <div
+                                role="button"
+                                onClick={(e) => {
+                                    e.preventDefault();
                                     const val = search.trim();
                                     if (val) {
                                         toggleOption(val);
                                         setSearch('');
                                     }
                                 }}
-                                className="flex w-full items-center justify-between px-3 py-2.5 text-left text-[11px] font-black uppercase tracking-tight text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30 transition-colors"
+                                className="flex w-full cursor-pointer items-center justify-between px-3 py-2.5 text-left text-[11px] font-black uppercase tracking-tight text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30 transition-colors"
                             >
                                 <span>+ Tambah Kustom: "{search}"</span>
-                            </button>
+                            </div>
                         )}
                     </div>
                 </div>

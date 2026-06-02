@@ -173,7 +173,7 @@ export const SelectField: React.FC<FieldProps> = ({ field, value, onChange, read
                         type="button"
                         onClick={() => setIsOpen(!isOpen)}
                         className={cn(
-                            'border-border bg-muted/20 hover:bg-muted/30 focus:ring-primary/20 flex h-9 w-full items-center justify-between rounded-lg border px-3 transition-all focus:ring-1 focus:outline-none',
+                            'border-border bg-surface-base hover:bg-muted/30 focus:ring-primary/20 flex h-9 w-full items-center justify-between rounded-lg border px-3 transition-all focus:ring-1 focus:outline-none',
                             !value && 'opacity-80',
                         )}
                         style={getTypographyStyle(field)}
@@ -249,7 +249,7 @@ export const SelectField: React.FC<FieldProps> = ({ field, value, onChange, read
             <select
                 value={value || ''}
                 onChange={(e) => onChange?.(e.target.value)}
-                className="border-border bg-muted/20 focus:border-primary focus:ring-primary/20 flex h-9 w-full rounded-lg border px-3 text-[11px] font-semibold transition-all focus:ring-1"
+                className="border-border bg-surface-base focus:border-primary focus:ring-primary/20 flex h-9 w-full rounded-lg border px-3 text-[11px] font-semibold transition-all focus:ring-1"
                 style={getTypographyStyle(field)}
             >
                 <option value="">{field.placeholder || 'Select option...'}</option>

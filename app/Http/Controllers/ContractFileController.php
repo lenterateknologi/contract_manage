@@ -56,6 +56,13 @@ class ContractFileController extends Controller
         return $this->fileAction->uploadRevision($contract, $request);
     }
 
+    public function getRevisionVersions(Request $request, string $id): JsonResponse
+    {
+        $contract = Contract::findOrFail($id);
+
+        return $this->fileAction->getRevisionVersions($contract, $request);
+    }
+
     public function download(string $id): mixed
     {
         $contract = Contract::findOrFail($id);
@@ -144,6 +151,13 @@ class ContractFileController extends Controller
     {
         $contract = Contract::findOrFail($id);
 
-        return $this->fileAction->compareAgreementVersions($contract, $request);
+        return $this->fileAction->compareVersions($contract, 'agreement', $request);
+    }
+
+    public function compareFormVersions(Request $request, string $id, string $type): Response
+    {
+        $contract = Contract::findOrFail($id);
+
+        return $this->fileAction->compareVersions($contract, $type, $request);
     }
 }

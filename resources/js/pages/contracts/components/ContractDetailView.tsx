@@ -1,27 +1,29 @@
-import { useToast } from '@/components/contracts/Toast';
 import { Button } from '@/components/ui/base/Button';
 import { StatusBadge } from '@/components/ui/data/StatusBadge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/overlays/DropdownMenu';
 import { contractApi } from '@/lib/contract-api';
 import { cn } from '@/lib/utils';
 import { Contract, ContractType } from '@/types/contracts';
-import axios from 'axios';
-import { AlertCircle, Archive, CheckCircle2, ChevronLeft, Clock, FileText, MoreVertical, Save, Send, Trash2, UserPlus, X, Zap, UserCheck, Upload, PenTool, Users } from 'lucide-react';
-import { useState } from 'react';
+import { router } from '@inertiajs/react';
+import { AlertCircle, Archive, CheckCircle2, ChevronLeft, Clock, FileText, MoreVertical, Save, Trash2, UserPlus, X, Zap, UserCheck, Upload, PenTool, Users, Send } from 'lucide-react';
+import { useState, useMemo } from 'react';
 
-import AddhocApproverModal from '@/components/contracts/AddhocApproverModal';
-import AgreementView from '@/components/contracts/AgreementView';
-import ApprovalSteps from '@/components/contracts/ApprovalSteps';
-import ApproveModal from '@/components/contracts/ApproveModal';
-import ContractAttachments from '@/components/contracts/ContractAttachments';
-import ContractAuditTrail from '@/components/contracts/ContractAuditTrail';
-import ContractChat from '@/components/contracts/ContractChat';
-import { ContractMembersTab } from '@/components/contracts/ContractMembersTab';
-import { ContractReferenceCard } from '@/components/contracts/ContractReferenceCard';
+import { SharedApproveModal } from '@/components/contracts/modals/shared/SharedApproveModal';
+import { SharedRejectModal } from '@/components/contracts/modals/shared/SharedRejectModal';
+import { SharedAddhocModal } from '@/components/contracts/modals/shared/SharedAddhocModal';
 import { DraftEditableInfoCard } from '@/components/contracts/DraftEditableInfoCard';
-import { FormSubmissionTab } from '@/components/contracts/FormSubmissionTab';
-import RejectModal from '@/components/contracts/RejectModal';
 import { UserAvatar } from '@/components/user/UserAvatar';
+
+// Tab Components
+import { F1Tab } from '../show/tabs/F1Tab';
+import { F2Tab } from '../show/tabs/F2Tab';
+import { AgreementTab } from '../show/tabs/AgreementTab';
+import { TimelineTab } from '../show/tabs/TimelineTab';
+import { AttachmentsTab } from '../show/tabs/AttachmentsTab';
+import { ChatTab } from '../show/tabs/ChatTab';
+import { ReferencesTab } from '../show/tabs/ReferencesTab';
+import { MembersTab } from '../show/tabs/MembersTab';
+import { AuditTrailTab } from '../show/tabs/AuditTrailTab';
 
 const ContractDetailView = ({
     contract,
@@ -34,7 +36,6 @@ const ContractDetailView = ({
     onClose,
     onUpdate,
     showToast,
-    setSendOpen,
     setDeleteOpen,
     setPreviewTitle,
     setPreviewUrl,
@@ -54,7 +55,6 @@ const ContractDetailView = ({
     onClose: () => void;
     onUpdate: (c: Contract, silent?: boolean) => void;
     showToast: (msg: string, type: any) => void;
-    setSendOpen: (open: boolean) => void;
     setDeleteOpen: (open: boolean) => void;
     setPreviewTitle: (title: string) => void;
     setPreviewUrl: (url: string) => void;
@@ -62,93 +62,23 @@ const ContractDetailView = ({
     setPreviewOpen: (open: boolean) => void;
     users: any[];
 }) => {
-    const [detailTab, setDetailTab] = useState<
-        'form_template' | 'f2' | 'agreement' | 'attachments' | 'audit' | 'chat' | 'timeline' | 'references' | 'members'
-    >('form_template');
+    const params = new URLSearchParams(window.location.search);
+    const detailTab = (params.get('tab') as any) || 'form_template';
+
+    const setDetailTab = (tab: string) => {
+        const newParams = new URLSearchParams(window.location.search);
+        newParams.set('tab', tab);
+        router.get(`${window.location.pathname}?${newParams.toString()}`, {}, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        });
+    };
+
     const [processing, setProcessing] = useState(false);
-    const { showProgress, hideProgress } = useToast();
     const [approveOpen, setApproveOpen] = useState(false);
     const [rejectOpen, setRejectOpen] = useState(false);
     const [addhocOpen, setAddhocOpen] = useState(false);
-
-    // Export Logic
-    const [isExportingTimeline, setIsExportingTimeline] = useState(false);
-
-    const handleExportTimelinePdf = async () => {
-        setIsExportingTimeline(true);
-
-        const win = globalThis.window.open('about:blank', '_blank');
-        if (win) {
-            win.document.writeln(`
-                <html>
-                    <head>
-                        <title>Mempersiapkan Alur Approval...</title>
-                        <style>
-                            body { font-family: 'Inter', sans-serif; background: #f8fafc; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; color: #1e293b; }
-                            .card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); text-align: center; border: 1px solid #e2e8f0; max-width: 400px; }
-                            .loader { width: 48px; height: 48px; border: 5px solid #f1f5f9; border-top: 5px solid #0f172a; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 24px; }
-                            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-                            h2 { font-size: 14px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin: 0 0 12px; }
-                            p { font-size: 11px; color: #64748b; font-weight: 500; line-height: 1.6; }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="card">
-                            <div class="loader"></div>
-                            <h2>Mempersiapkan Laporan Approval</h2>
-                            <p>Mohon tunggu sebentar, data alur approval sedang dikonversi menjadi PDF. Halaman ini akan otomatis beralih ke dokumen setelah siap.</p>
-                        </div>
-                    </body>
-                </html>
-            `);
-            win.document.close();
-        }
-
-        try {
-            const res = await axios.get(`/api/contracts/${contract.id}/approval/pdf/queue`, {
-                headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' },
-                withCredentials: true,
-            });
-
-            const jobId = res.data.job_id;
-
-            const interval = setInterval(async () => {
-                try {
-                    const statusRes = await axios.get(`/admin/form-templates/pdf-status/${jobId}`, {
-                        headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' },
-                        withCredentials: true,
-                    });
-                    const statusData = statusRes.data;
-
-                    showProgress(jobId, 'Mempersiapkan Laporan Approval...', statusData.progress || 0);
-
-                    if (statusData.status === 'completed') {
-                        clearInterval(interval);
-                        if (win) {
-                            win.location.href = statusData.url;
-                        } else {
-                            globalThis.window.open(statusData.url, '_blank');
-                        }
-                        hideProgress(jobId);
-                        setIsExportingTimeline(false);
-                    } else if (statusData.status === 'failed') {
-                        clearInterval(interval);
-                        hideProgress(jobId);
-                        showToast('Export PDF gagal: ' + (statusData.error || 'Unknown error'), 'danger');
-                        if (win) win.close();
-                        setIsExportingTimeline(false);
-                    }
-                } catch (pollErr) {
-                    console.error('Polling error', pollErr);
-                }
-            }, 2000);
-        } catch (err: any) {
-            console.error('Export failed', err);
-            showToast('Gagal mengekspor PDF.', 'danger');
-            setIsExportingTimeline(false);
-            if (win) win.close();
-        }
-    };
 
     const handleUpdate = async (data: any, silent = false) => {
         if (!silent) setProcessing(true);
@@ -170,17 +100,19 @@ const ContractDetailView = ({
         attachment?: File,
         assignedPicId?: string,
         executionOrder?: string,
-        p1UserId?: string,
-        p2UserId?: string,
+        p1UserId?: string | string[],
+        p2UserId?: string | string[],
         actionCode?: string,
+        isFinal?: boolean,
     ) => {
         try {
-            const c = await contractApi.approve(contract.id, note, attachment, assignedPicId, executionOrder, p1UserId, p2UserId, actionCode || activeActionCode);
+            const c = await contractApi.approve(contract.id, note, attachment, assignedPicId, executionOrder, p1UserId, p2UserId, actionCode || activeActionCode, isFinal);
             onUpdate(c);
 
             let msg = 'Kontrak disetujui.';
             if (assignedPicId) msg = 'PIC ditugaskan dan kontrak disetujui.';
             if (p1UserId || p2UserId) msg = 'Delegasi penandatanganan berhasil dikonfigurasi.';
+            if (isFinal) msg = 'Penandatanganan selesai dikonfigurasi sebagai final.';
 
             showToast(msg, 'success');
             setActiveActionCode(undefined);
@@ -222,9 +154,19 @@ const ContractDetailView = ({
     const canApprove = !!contract.can_approve;
 
     const currentStepSequence = contract.workflow_step?.step;
-    const currentStepAdhocApprovals = (contract.approvals || [])
+    const currentStepAdhocApprovals = useMemo(() => (contract.approvals || [])
         .filter((a: any) => a.role === 'Persetujuan Tambahan' && Number(a.sequence) === Number(currentStepSequence))
-        .sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0));
+        .sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0)), [contract.approvals, currentStepSequence]);
+
+    const tabs = useMemo(() => [
+        { id: 'form_template', label: 'F1 (Permohonan)', mode: (contract as any).f1_mode || 'upload' },
+        { id: 'f2', label: 'F2 (Ringkasan)', mode: (contract as any).f2_mode || 'upload' },
+        { id: 'agreement', label: 'Draft Perjanjian', mode: (contract as any).contract_mode || 'upload' },
+        { id: 'timeline', label: 'Alur Persetujuan', mode: 'always' },
+        { id: 'attachments', label: 'Lampiran', mode: 'always' },
+        { id: 'chat', label: 'Chat', mode: 'always' },
+        { id: 'references', label: 'Kontrak Referensi', mode: 'always' },
+    ].filter((tab) => tab.mode !== 'none'), [contract]);
 
     return (
         <div className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-6 p-4">
@@ -362,19 +304,11 @@ const ContractDetailView = ({
                             </div>
                         </div>
                         <div className="border-surface-border bg-surface-muted/30 flex flex-wrap gap-1.5 border-b px-4 py-2">
-                            {[
-                                { id: 'form_template', label: 'F1 (Permohonan)' },
-                                { id: 'f2', label: 'F2 (Ringkasan)' },
-                                { id: 'agreement', label: 'Draft Perjanjian' },
-                                { id: 'timeline', label: 'Alur Persetujuan' },
-                                { id: 'attachments', label: 'Lampiran' },
-                                { id: 'chat', label: 'Chat' },
-                                { id: 'references', label: 'Kontrak Referensi' },
-                            ].map((tab) => (
+                            {tabs.map((tab) => (
                                 <Button
                                     key={tab.id}
                                     variant={detailTab === tab.id ? 'primary' : 'ghost'}
-                                    onClick={() => setDetailTab(tab.id as any)}
+                                    onClick={() => setDetailTab(tab.id)}
                                     className={cn(
                                         'h-8 px-3 text-[11px] font-semibold uppercase transition-all',
                                         detailTab === tab.id
@@ -388,50 +322,72 @@ const ContractDetailView = ({
                         </div>
                         <div className={cn('flex min-h-[600px] flex-1 flex-col')}>
                             {detailTab === 'form_template' && (
-                                <FormSubmissionTab
-                                    docType="f1"
-                                    selected={contract}
+                                <F1Tab
+                                    contract={contract}
                                     formTemplates={formTemplates}
-                                    onContractUpdated={onUpdate}
-                                    users={vendors}
+                                    vendors={vendors}
                                     meUser={meUser}
+                                    onUpdate={onUpdate}
                                 />
                             )}
                             {detailTab === 'f2' && (
-                                <FormSubmissionTab
-                                    docType="f2"
-                                    selected={contract}
+                                <F2Tab
+                                    contract={contract}
                                     formTemplates={formTemplates}
-                                    onContractUpdated={onUpdate}
-                                    users={vendors}
+                                    vendors={vendors}
                                     meUser={meUser}
+                                    onUpdate={onUpdate}
                                 />
                             )}
-                            {detailTab === 'agreement' && <AgreementView contract={contract} onUpdate={onUpdate} />}
-                            {detailTab === 'attachments' && <ContractAttachments contract={contract} onUpdated={onUpdate} showToast={showToast} />}
-                            {detailTab === 'audit' && <ContractAuditTrail contract={contract} />}
+                            {detailTab === 'agreement' && (
+                                <AgreementTab
+                                    contract={contract}
+                                    formTemplates={formTemplates}
+                                    vendors={vendors}
+                                    meUser={meUser}
+                                    onUpdate={onUpdate}
+                                />
+                            )}
+                            {detailTab === 'attachments' && (
+                                <AttachmentsTab
+                                    contract={contract}
+                                    onUpdate={onUpdate}
+                                    showToast={showToast}
+                                />
+                            )}
+                            {detailTab === 'audit' && (
+                                <AuditTrailTab contract={contract} />
+                            )}
                             {detailTab === 'timeline' && (
-                                <div className="mb-10 flex flex-col gap-8 p-5">
-                                    <ApprovalSteps
-                                        contract={contract}
-                                        approvals={contract.approvals}
-                                        creator={contract.creator}
-                                        submittedAt={contract.submitted_at ?? undefined}
-                                        meId={meId}
-                                        onApprove={(note, file) => handleApprove(note, file)}
-                                    />
-                                </div>
+                                <TimelineTab
+                                    contract={contract}
+                                    meId={meId}
+                                    onApprove={(note, file) => handleApprove(note, file)}
+                                    showToast={showToast}
+                                />
                             )}
                             {detailTab === 'references' && (
-                                <ContractReferenceCard
-                                    selected={contract}
+                                <ReferencesTab
+                                    contract={contract}
                                     canUpdate={canUpdate}
                                     onUpdate={(d) => handleUpdate(d, true)}
                                     processing={processing}
                                 />
                             )}
-                            {detailTab === 'chat' && <ContractChat contract={contract} meId={meId} users={vendors} onNewMessage={onUpdate} />}
-                            {detailTab === 'members' && <ContractMembersTab contract={contract} users={users} />}
+                            {detailTab === 'chat' && (
+                                <ChatTab
+                                    contract={contract}
+                                    meId={meId}
+                                    users={vendors}
+                                    onUpdate={onUpdate}
+                                />
+                            )}
+                            {detailTab === 'members' && (
+                                <MembersTab
+                                    contract={contract}
+                                    users={users}
+                                />
+                            )}
                         </div>
                     </div>
                 </div>
@@ -506,7 +462,9 @@ const ContractDetailView = ({
                                                       ? 'Approval Tambahan'
                                                       : action.action_code === 'reject'
                                                         ? 'Tolak Kontrak'
-                                                        : action.action_code)}
+                                                        : ['signature', 'sign'].includes(action.action_code?.toLowerCase())
+                                                          ? 'Tanda Tangan'
+                                                          : action.action_code)}
                                         </Button>
                                     );
                                 })}
@@ -651,11 +609,12 @@ const ContractDetailView = ({
                         setPreviewUrl={setPreviewUrl}
                         setPreviewHasFile={setPreviewHasFile}
                         setPreviewOpen={setPreviewOpen}
+                        meId={meId}
                     />
                 </div>
             </div>
 
-            <ApproveModal
+            <SharedApproveModal
                 open={approveOpen}
                 onClose={() => {
                     setApproveOpen(false);
@@ -668,7 +627,7 @@ const ContractDetailView = ({
                 actionAlias={contract.workflow_step?.actions?.find((a: any) => a.action_code === activeActionCode)?.alias ?? undefined}
             />
 
-            <RejectModal
+            <SharedRejectModal
                 open={rejectOpen}
                 onClose={() => {
                     setRejectOpen(false);
@@ -677,7 +636,7 @@ const ContractDetailView = ({
                 onSubmit={handleReject}
                 actionAlias={contract.workflow_step?.actions?.find((a: any) => a.action_code === activeActionCode)?.alias ?? undefined}
             />
-            <AddhocApproverModal
+            <SharedAddhocModal
                 open={addhocOpen}
                 onClose={() => {
                     setAddhocOpen(false);

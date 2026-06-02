@@ -76,40 +76,46 @@ class ReportController extends Controller
             ->get();
 
         // Contract Registry List
+        $contractsPage = $request->input('contracts_page', 1);
+        $contractsPerPage = $request->input('per_page', 10);
+
         $contractsList = (clone $query)->with(['creator', 'contractType', 'submissionType', 'approvals.approver'])
             ->orderByDesc('created_at')
-            ->get()
-            ->map(function ($c) {
-                return [
-                    'id' => $c->id,
-                    'contract_no' => $c->contract_no,
-                    'title' => $c->title,
-                    'type' => $c->contractType?->name,
-                    'submission_type' => $c->submissionType?->name ?? '—',
-                    'status' => $c->status,
-                    'creator' => $c->creator?->name,
-                    'created_at' => $c->created_at->toIso8601String(),
-                    'age_days' => $c->created_at->diffInDays(now()),
-                    'current_step' => $c->approvals->where('status', 'pending')->first()?->role ?? '—',
-                ];
-            });
+            ->paginate($contractsPerPage, ['*'], 'contracts_page', $contractsPage);
+
+        $contractsList->getCollection()->transform(function ($c) {
+            return [
+                'id' => $c->id,
+                'contract_no' => $c->contract_no,
+                'title' => $c->title,
+                'type' => $c->contractType?->name,
+                'submission_type' => $c->submissionType?->name ?? '—',
+                'status' => $c->status,
+                'creator' => $c->creator?->name,
+                'created_at' => $c->created_at->toIso8601String(),
+                'age_days' => $c->created_at->diffInDays(now()),
+                'current_step' => $c->approvals->where('status', 'pending')->first()?->role ?? '—',
+            ];
+        });
 
         // Audit Trail (Histories)
+        $auditPage = $request->input('audit_page', 1);
         $histories = ContractHistory::whereIn('contract_id', $contractIds)
             ->with(['contract', 'actor'])
             ->orderByDesc('created_at')
-            ->get()
-            ->map(function ($h) {
-                return [
-                    'id' => $h->id,
-                    'contract_no' => $h->contract->contract_no,
-                    'contract_title' => $h->contract->title,
-                    'action' => $h->action,
-                    'description' => $h->description,
-                    'actor' => $h->actor?->name,
-                    'created_at' => $h->created_at->toIso8601String(),
-                ];
-            });
+            ->paginate($contractsPerPage, ['*'], 'audit_page', $auditPage);
+
+        $histories->getCollection()->transform(function ($h) {
+            return [
+                'id' => $h->id,
+                'contract_no' => $h->contract->contract_no,
+                'contract_title' => $h->contract->title,
+                'action' => $h->action,
+                'description' => $h->description,
+                'actor' => $h->actor?->name,
+                'created_at' => $h->created_at->toIso8601String(),
+            ];
+        });
 
         // Monthly Trend
         $monthExpression = DB::getDriverName() === 'sqlite'

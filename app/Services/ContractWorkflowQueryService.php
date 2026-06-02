@@ -39,7 +39,7 @@ class ContractWorkflowQueryService
     /**
      * Get workflows available for a specific user to initiate
      */
-    public function getAvailableWorkflows(User $user, ?string $contractType = null): Collection
+    public function getAvailableWorkflows(?User $user, ?string $contractType = null): Collection
     {
         $query = Workflow::where('is_active', true);
 
@@ -65,19 +65,22 @@ class ContractWorkflowQueryService
 
         return $query->where(function ($q) use ($user) {
             // Anyone can initiate if initiator_type is 'all'
-            $q->where('initiator_type', 'all')
+            $q->where('initiator_type', 'all');
+
+            if ($user) {
                 // Check by Role
-                ->orWhereHas('initiatorRolesData', function ($sq) use ($user) {
+                $q->orWhereHas('initiatorRolesData', function ($sq) use ($user) {
                     $sq->where('role_name', $user->role);
                 })
                 // Check by Department
-                ->orWhereHas('initiatorDepartmentsData', function ($sq) use ($user) {
-                    $sq->where('department_id', $user->department_id);
-                })
+                    ->orWhereHas('initiatorDepartmentsData', function ($sq) use ($user) {
+                        $sq->where('department_id', $user->department_id);
+                    })
                 // Check by specific User
-                ->orWhereHas('initiatorUsersData', function ($sq) use ($user) {
-                    $sq->where('user_id', $user->id);
-                });
+                    ->orWhereHas('initiatorUsersData', function ($sq) use ($user) {
+                        $sq->where('user_id', $user->id);
+                    });
+            }
         })
             ->with(['steps', 'initiatorRolesData', 'initiatorDepartmentsData', 'initiatorUsersData'])
             ->get();

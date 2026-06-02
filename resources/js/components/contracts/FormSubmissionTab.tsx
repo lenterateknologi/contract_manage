@@ -410,7 +410,14 @@ function GenericFormTab({
         loadData();
     }, [loadData]);
 
-    const isDraft = selected.status === 'draft' || selected.status === 'revision';
+    const canEdit =
+        docType === 'f1'
+            ? (selected as any).allow_f1_edit
+            : docType === 'f2'
+              ? (selected as any).allow_f2_edit
+              : docType === 'contract'
+                ? (selected as any).allow_agreement_edit
+                : (selected as any).allow_info_edit;
     const isDirty = JSON.stringify(formData) !== JSON.stringify(originalData);
     const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
     const autoSaveTimerRef = useRef<any>(null);
@@ -420,7 +427,7 @@ function GenericFormTab({
 
     // Debounced Auto-Save
     useEffect(() => {
-        if (!loading && isDirty && matchingTemplate && isDraft) {
+        if (!loading && isDirty && matchingTemplate && canEdit) {
             setAutoSaveStatus('saving');
 
             if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
@@ -643,10 +650,10 @@ function GenericFormTab({
                 </div>
             )}
 
-            {isF2 && (meUser?.department === 'Legal' || meUser?.role === 'PIC Legal' || meUser?.role === 'Admin') && (
+            {isF2 && ((selected as any).can_fill_crown_no || (selected as any).can_set_digital_signature) && (
                 <div className="bg-primary/5 border-surface-border border-b px-6 py-4">
                     <div className="flex flex-wrap items-end gap-6">
-                        {(meUser?.role === 'Legal Staff' || meUser?.role === 'Admin' || meUser?.role === 'PIC Legal') && (
+                        {(selected as any).can_fill_crown_no && (
                             <div className="min-w-[200px] flex-1 space-y-1.5">
                                 <label className="text-primary/60 flex items-center gap-1.5 text-[10px] font-semibold uppercase">
                                     <span className="font-mono">#</span> No. Kontrak (F2)
@@ -671,7 +678,7 @@ function GenericFormTab({
                             </div>
                         )}
 
-                        {(meUser?.role === 'PIC Legal' || meUser?.role === 'Admin') && (
+                        {(selected as any).can_set_digital_signature && (
                             <div className="border-surface-border bg-surface-base flex h-10 items-center gap-4 rounded-lg border px-4 shadow-sm">
                                 <label className="text-text-soft flex items-center gap-1.5 text-[10px] font-semibold uppercase">
                                     <Download size={12} className="opacity-40" /> Digital Signature
@@ -874,7 +881,7 @@ function GenericFormTab({
 
                     <div className="mx-1 h-8 w-px bg-black/10 dark:bg-white/10" />
 
-                    {isDraft && (
+                    {canEdit && (
                         <Button onClick={() => setShowNoteModal(true)} disabled={saving} className="shadow-primary/20">
                             <PlusCircle size={16} />
                             Update Versi
@@ -900,10 +907,10 @@ function GenericFormTab({
                                 setManualFields((prev) => new Set(prev).add(name));
                                 setFormData((prev) => ({ ...prev, [name]: val }));
                             }}
-                            readOnly={!isDraft}
+                            readOnly={!canEdit}
                             className={cn(
                                 'shadow-2xl transition-all duration-500',
-                                !isDraft ? 'ring-1 shadow-black/20 ring-black/5' : 'shadow-black/10',
+                                !canEdit ? 'ring-1 shadow-black/20 ring-black/5' : 'shadow-black/10',
                             )}
                         />
                     )}

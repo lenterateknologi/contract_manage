@@ -3,6 +3,7 @@
 namespace App\Formatters;
 
 use App\Models\Contract;
+use App\Models\Role;
 use App\Models\User;
 use App\Models\WorkflowStep;
 use App\Services\ContractWorkflowService;
@@ -47,9 +48,24 @@ class ContractFormatter
             ] : null,
             'status' => $c->status,
             'metadata' => $c->metadata ?? [],
-            'display_mode' => $c->statusDetail?->display_mode ?? 'interactive',
-            'allow_info_edit' => $c->workflowStep?->step === 1 || $c->status === 'draft',
-            'allow_reference' => $c->workflowStep?->step === 1 || $c->status === 'draft',
+            'display_mode' => data_get($c->workflow?->meta, 'display_mode', 'pdf'),
+            'f1_mode' => self::getEffectiveMode($c, 'f1', data_get($c->workflow?->meta, 'f1_mode', 'upload')),
+            'f1_form_template_id' => data_get($c->workflow?->meta, 'f1_form_template_id'),
+            'f2_mode' => self::getEffectiveMode($c, 'f2', data_get($c->workflow?->meta, 'f2_mode', 'upload')),
+            'f2_form_template_id' => data_get($c->workflow?->meta, 'f2_form_template_id'),
+            'contract_mode' => self::getEffectiveMode($c, 'contract', data_get($c->workflow?->meta, 'contract_mode', 'upload')),
+            'contract_form_template_id' => data_get($c->workflow?->meta, 'contract_form_template_id'),
+            'allow_info_edit' => (bool) data_get($c->workflowStep?->meta, 'allow_info_edit', true),
+            'allow_f1_edit' => (bool) data_get($c->workflowStep?->meta, 'allow_f1_edit', true),
+            'allow_f2_edit' => (bool) data_get($c->workflowStep?->meta, 'allow_f2_edit', true),
+            'allow_agreement_edit' => (bool) data_get($c->workflowStep?->meta, 'allow_agreement_edit', true),
+            'allow_attachment_edit' => (bool) data_get($c->workflowStep?->meta, 'allow_attachment_edit', true),
+            'allow_reference' => (bool) data_get($c->workflowStep?->meta, 'allow_reference', true),
+
+            // Specialized permissions
+            'can_fill_crown_no' => Auth::user()?->role === Role::ADMIN || Auth::user()?->role === 'Legal Staff' || Auth::user()?->role === 'PIC Legal',
+            'can_set_digital_signature' => Auth::user()?->role === Role::ADMIN || Auth::user()?->role === 'PIC Legal',
+
             'current_version' => $c->current_version,
             'created_at' => $c->created_at->format('d/m/Y'),
             'submitted_at' => $c->submitted_at ? $c->submitted_at->format('d/m/Y H:i') : null,
@@ -75,7 +91,8 @@ class ContractFormatter
                 'id' => $c->workflow->id,
                 'name' => $c->workflow->name,
                 'contract_type' => $c->workflow->contract_type,
-                'steps' => $c->workflow->relationLoaded('steps') ? $c->workflow->steps->map(fn($s) => [
+                'meta' => $c->workflow->meta ?? [],
+                'steps' => $c->workflow->relationLoaded('steps') ? $c->workflow->steps->map(fn ($s) => [
                     'id' => $s->id,
                     'step' => $s->step,
                     'description' => $s->description,
@@ -196,6 +213,27 @@ class ContractFormatter
         ];
     }
 
+    private static function getEffectiveMode(Contract $c, string $type, string $default): string
+    {
+        // 1. Check if interactive data exists (form submissions)
+        // Ensure relation is loaded or check DB
+        $hasInteractive = $c->formSubmissions->where('document_type', $type)->isNotEmpty();
+        if ($hasInteractive) {
+            return 'interactive';
+        }
+
+        // 2. Check if uploaded files exist (versions)
+        // Normalize 'contract' to 'agreement' document_type in versions table
+        $docType = $type === 'contract' ? 'agreement' : $type;
+        $hasUpload = $c->versions->where('document_type', $docType)->isNotEmpty();
+        if ($hasUpload) {
+            return 'upload';
+        }
+
+        // 3. Fallback to current workflow setting (for new data)
+        return $default;
+    }
+
     public static function mapApprovalTimeline($c): array
     {
         if (! $c->workflow) {
@@ -253,8 +291,8 @@ class ContractFormatter
                 $targetEmails = $approvers->pluck('email')->implode(', ');
             }
 
-            $regularApprovals = $approvals->filter(fn ($a) => $a->role !== 'Persetujuan Tambahan');
-            $adhocApprovals = $approvals->filter(fn ($a) => $a->role === 'Persetujuan Tambahan');
+            $regularApprovals = $approvals->filter(fn ($a) => $a->role !== Role::ADHOC_APPROVER);
+            $adhocApprovals = $approvals->filter(fn ($a) => $a->role === Role::ADHOC_APPROVER);
 
             if ($regularApprovals->isNotEmpty()) {
                 $isRoleBased = $step->approver_type === 'role';
@@ -344,7 +382,7 @@ class ContractFormatter
                     'id' => $a->id,
                     'user_id' => $a->user_id,
                     'approver_name' => $a->approver_name,
-                    'role' => 'Persetujuan Tambahan',
+                    'role' => Role::ADHOC_APPROVER,
                     'department_name' => $a->approver?->department?->name ?? $deptName,
                     'target_approvers' => $a->approver_name,
                     'target_emails' => $a->approver?->email,
@@ -355,7 +393,7 @@ class ContractFormatter
                     'created_at' => $a->created_at?->toIso8601String(),
                     'is_active' => $a->is_active,
                     'step_type' => 'APPROVAL',
-                    'step_name' => 'Persetujuan Tambahan',
+                    'step_name' => Role::ADHOC_APPROVER,
                     'step_description' => 'Persetujuan tambahan di luar alur kerja template',
                     'approver' => self::formatUser($a->approver),
                 ];

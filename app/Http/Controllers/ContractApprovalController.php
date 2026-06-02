@@ -224,7 +224,7 @@ class ContractApprovalController extends Controller
             if ($targetStepId === 'null' || $targetStepId === 'none' || $targetStepId === 'current' || empty($targetStepId)) {
                 $targetStepId = null;
             }
-            
+
             $targetStepId = $targetStepId ?: $contract->workflow_step_id;
             if (! $targetStepId) {
                 return response()->json(['message' => 'Tahap alur kerja tidak aktif saat ini.'], 422);
@@ -232,6 +232,7 @@ class ContractApprovalController extends Controller
 
             $targetStep = WorkflowStep::findOrFail($targetStepId);
             $isSequential = $request->boolean('is_sequential', false);
+            $isCurrentStep = $targetStepId === $contract->workflow_step_id;
             $addedUsers = [];
 
             foreach ($userIds as $index => $userId) {
@@ -247,12 +248,19 @@ class ContractApprovalController extends Controller
 
                 $user = User::findOrFail($userId);
 
-                // Sequential logic: if there is already a pending approval on this step, others wait.
+                // Initial status logic:
+                // 1. If it's not the current active step of the contract, it must be 'waiting'.
+                // 2. If it is the current step:
+                //    - If parallel (not sequential), it's 'pending'.
+                //    - If sequential, it's 'pending' only if it's the first in the batch AND no other adhoc is already pending.
                 $status = 'pending';
-                if ($isSequential) {
+
+                if (! $isCurrentStep) {
+                    $status = 'waiting';
+                } elseif ($isSequential) {
                     $hasPending = Approval::where('contract_id', $contract->id)
                         ->where('workflow_step_id', $targetStepId)
-                        ->where('role', 'Persetujuan Tambahan')
+                        ->where('role', \App\Models\Role::ADHOC_APPROVER)
                         ->where('status', 'pending')
                         ->exists();
 
@@ -270,7 +278,7 @@ class ContractApprovalController extends Controller
                     'workflow_step_id' => $targetStepId,
                     'user_id' => $user->id,
                     'approver_name' => $user->name,
-                    'role' => 'Persetujuan Tambahan',
+                    'role' => \App\Models\Role::ADHOC_APPROVER,
                     'job_title' => $user->job_title ?? null,
                     'status' => $status,
                     'sequence' => $targetStep->step,
@@ -313,7 +321,7 @@ class ContractApprovalController extends Controller
             // Activate any inactive (draft/staged) ad-hoc approvals for the current step
             Approval::where('contract_id', $contract->id)
                 ->where('workflow_step_id', $contract->workflow_step_id)
-                ->where('role', 'Persetujuan Tambahan')
+                ->where('role', \App\Models\Role::ADHOC_APPROVER)
                 ->where('is_active', false)
                 ->update(['is_active' => true, 'status' => 'pending']);
 
@@ -331,7 +339,7 @@ class ContractApprovalController extends Controller
             $contract = Contract::findOrFail($id);
             $approval = Approval::where('contract_id', $id)->findOrFail($approvalId);
 
-            if ($approval->role !== 'Persetujuan Tambahan') {
+            if ($approval->role !== \App\Models\Role::ADHOC_APPROVER) {
                 return response()->json(['message' => 'Hanya persetujuan tambahan yang dapat dihapus.'], 403);
             }
 

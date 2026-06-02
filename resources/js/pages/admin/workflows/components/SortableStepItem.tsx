@@ -354,249 +354,473 @@ export default function SortableStepItem({
                     <div className="relative z-10 p-4">
                         <div className="grid grid-cols-12 gap-5">
                             {/* --- Section 1: Basic Config --- */}
-                            <div className="col-span-12 space-y-4 lg:col-span-6">
+                            <div className="col-span-12 space-y-4 lg:col-span-12">
                                 <div>
                                     <h4 className="text-primary/30 mb-3 flex items-center gap-2 text-[11px] font-black uppercase">
                                         <Settings2 size={12} /> Konfigurasi Dasar
                                     </h4>
-
-                                    <div className="grid grid-cols-2 gap-x-3 gap-y-3">
-                                        <div className="col-span-2 space-y-1.5">
-                                            <label className="text-[10px] font-bold text-slate-400 uppercase">Deskripsi Tahap</label>
-                                            <input
-                                                value={step.description || step.label || ''}
-                                                onChange={(e) => updateLocalStep(idx, { description: e.target.value, label: e.target.value })}
-                                                placeholder="Contoh: Review Legal Staff"
-                                                className="h-9 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-[11px] font-bold outline-none transition-all focus:border-slate-900 focus:bg-white dark:border-slate-800 dark:bg-slate-900/50 dark:focus:bg-slate-900"
-                                            />
+                                    {/* --- Section 3: Actor Pools (Per-Step) --- */}
+                                    <div className="col-span-12 mt-2 border-t border-slate-100 pt-6 dark:border-slate-800">
+                                        <div className="mb-4 flex items-center gap-2">
+                                            <UsersIcon size={14} className="text-primary/40" />
+                                            <h4 className="text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase">Pool Otoritas Langkah</h4>
                                         </div>
-
-                                        <div className="col-span-2 space-y-1.5">
-                                            <label className="text-[10px] font-bold text-slate-400 uppercase">Status Kontrak Target</label>
-                                            <Select
-                                                value={step.meta?.target_status || 'default'}
-                                                onValueChange={(v) => {
-                                                    updateLocalStep(idx, {
-                                                        meta: {
-                                                            ...(step.meta || {}),
-                                                            target_status: v === 'default' ? null : v
+                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-bold text-slate-400 uppercase">Pemeran (Actor)</label>
+                                                <Select
+                                                    value={step.approver_type || 'initiator'}
+                                                    onValueChange={(v) => {
+                                                        const approverType = String(v);
+                                                        const updates: any = { approver_type: approverType };
+                                                        if (approverType !== 'role') {
+                                                            updates.role = [];
+                                                            updates.department_ids = [];
+                                                            updates.filter_department = false;
+                                                            updates.filter_company_group = false;
+                                                            updates.filter_region = false;
+                                                            updates.filter_company = false;
                                                         }
-                                                    });
-                                                }}
-                                            >
-                                                <SelectTrigger className="h-9 rounded-xl border-slate-200 bg-white text-[11px] font-bold transition-all focus:border-slate-900 dark:border-slate-800 dark:bg-black/50">
-                                                    <div className="flex items-center gap-2">
-                                                        {selectedStatus && (
-                                                            <div
-                                                                className="h-2 w-2 rounded-full"
-                                                                style={{ backgroundColor: selectedStatus.color || '#cbd5e1' }}
-                                                            />
-                                                        )}
-                                                        <SelectValue placeholder="Pilih Status" />
-                                                    </div>
-                                                </SelectTrigger>
-                                                <SelectContent className="rounded-xl">
-                                                    <SelectItem value="default" className="py-2 text-[10px] font-bold uppercase text-slate-500">
-                                                        DEFAULT (OTOMATIS)
-                                                    </SelectItem>
-                                                    {contractStatuses.map((status: any) => (
-                                                        <SelectItem key={status.id} value={status.code} className="py-2 text-[10px] font-bold uppercase">
-                                                            <div className="flex items-center gap-2">
+                                                        if (approverType !== 'user') {
+                                                            updates.user_ids = [];
+                                                        }
+                                                        updateLocalStep(idx, updates);
+                                                    }}
+                                                >
+                                                    <SelectTrigger className="h-9 rounded-xl border-slate-200 bg-white text-[11px] font-bold transition-all focus:border-slate-900 dark:border-slate-800 dark:bg-black/50">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent className="rounded-xl">
+                                                        <SelectItem value="initiator" className="py-2 text-[10px] font-bold uppercase">
+                                                            INISIATOR
+                                                        </SelectItem>
+                                                        <SelectItem value="assigned_pic" className="py-2 text-[10px] font-bold uppercase">
+                                                            PIC DITUGASKAN
+                                                        </SelectItem>
+                                                        <SelectItem value="role" className="py-2 text-[10px] font-bold uppercase">
+                                                            BERDASARKAN ROLE / UNIT
+                                                        </SelectItem>
+                                                        <SelectItem value="user" className="py-2 text-[10px] font-bold uppercase">
+                                                            DAFTAR USER SPESIFIK
+                                                        </SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-bold text-slate-400 uppercase">Status Kontrak Target</label>
+                                                <Select
+                                                    value={step.meta?.target_status || 'default'}
+                                                    onValueChange={(v) => {
+                                                        updateLocalStep(idx, {
+                                                            meta: {
+                                                                ...(step.meta || {}),
+                                                                target_status: v === 'default' ? null : v
+                                                            }
+                                                        });
+                                                    }}
+                                                >
+                                                    <SelectTrigger className="h-9 rounded-xl border-slate-200 bg-white text-[11px] font-bold transition-all focus:border-slate-900 dark:border-slate-800 dark:bg-black/50">
+                                                        <div className="flex items-center gap-2">
+                                                            {selectedStatus && (
                                                                 <div
                                                                     className="h-2 w-2 rounded-full"
-                                                                    style={{ backgroundColor: status.color || '#cbd5e1' }}
+                                                                    style={{ backgroundColor: selectedStatus.color || '#cbd5e1' }}
                                                                 />
-                                                                <span>
-                                                                    {(status.label || status.name || status.code || '').toUpperCase()} ({status.code?.toUpperCase()})
-                                                                </span>
-                                                            </div>
+                                                            )}
+                                                            <SelectValue placeholder="Pilih Status" />
+                                                        </div>
+                                                    </SelectTrigger>
+                                                    <SelectContent className="rounded-xl">
+                                                        <SelectItem value="default" className="py-2 text-[10px] font-bold uppercase text-slate-500">
+                                                            DEFAULT (OTOMATIS)
                                                         </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            <p className="text-[9px] text-slate-400 leading-tight">
-                                                Status kontrak yang akan diterapkan secara otomatis saat langkah ini mulai aktif.
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* --- Section 2: Logika Eksekusi --- */}
-                            <div className="col-span-12 space-y-6 lg:col-span-6">
-                                <div className="grid grid-cols-1 gap-6">
-                                    {/* Metadata Logic (Visibility) */}
-                                    <div className="space-y-4">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <GitBranch size={16} className="text-slate-400" />
-                                                <h4 className="text-[10px] font-black text-slate-500 uppercase">Ekspresi Kondisi (Metadata)</h4>
+                                                        {contractStatuses.map((status: any) => (
+                                                            <SelectItem key={status.id} value={status.code} className="py-2 text-[10px] font-bold uppercase">
+                                                                <div className="flex items-center gap-2">
+                                                                    <div
+                                                                        className="h-2 w-2 rounded-full"
+                                                                        style={{ backgroundColor: status.color || '#cbd5e1' }}
+                                                                    />
+                                                                    <span>
+                                                                        {(status.label || status.name || status.code || '').toUpperCase()} ({status.code?.toUpperCase()})
+                                                                    </span>
+                                                                </div>
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                <p className="text-[9px] text-slate-400 leading-tight">
+                                                    Status otomatis jika langkah ini aktif.
+                                                </p>
                                             </div>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    if (step.condition_expression !== null) {
-                                                        updateLocalStep(idx, {
-                                                            condition_expression: null,
-                                                            meta: {
-                                                                ...(step.meta || {}),
-                                                                condition_key: null,
-                                                                condition_operator: null,
-                                                                condition_value: null,
-                                                            }
-                                                        });
-                                                    } else {
-                                                        updateLocalStep(idx, {
-                                                            condition_expression: 'METADATA_KEY',
-                                                            meta: {
-                                                                ...(step.meta || {}),
-                                                                condition_key: 'METADATA_KEY',
-                                                                condition_operator: 'truthy',
-                                                                condition_value: '',
-                                                            }
-                                                        });
-                                                    }
-                                                }}
-                                                className={cn(
-                                                    'flex h-6 items-center gap-2 rounded-full px-3 text-[9px] font-black uppercase transition-all cursor-pointer',
-                                                    step.condition_expression !== null
-                                                        ? 'bg-slate-900 text-white shadow-sm'
-                                                        : 'bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-500',
-                                                )}
-                                            >
-                                                {step.condition_expression !== null ? 'AKTIF' : 'NON-AKTIF'}
-                                            </button>
+
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-bold text-slate-400 uppercase">Deskripsi Tahap</label>
+                                                <input
+                                                    value={step.description || step.label || ''}
+                                                    onChange={(e) => updateLocalStep(idx, { description: e.target.value, label: e.target.value })}
+                                                    placeholder="Contoh: Review Legal Staff"
+                                                    className="h-9 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-[11px] font-bold outline-none transition-all focus:border-slate-900 focus:bg-white dark:border-slate-800 dark:bg-slate-900/50 dark:focus:bg-slate-900"
+                                                />
+                                                <p className="text-[9px] text-slate-400 leading-tight">
+                                                    Nama atau penjelasan tahap ini.
+                                                </p>
+                                            </div>
                                         </div>
 
-                                        <div className="min-h-[140px]">
-                                            {step.condition_expression !== null ? (
-                                                <div className="grid grid-cols-12 gap-3 animate-in zoom-in-95 duration-200">
-                                                    {/* Key Input */}
-                                                    <div className="col-span-12 space-y-1">
-                                                        <label className="text-[9px] font-bold text-slate-400 uppercase">Metadata Key</label>
-                                                        <div className="relative">
-                                                            <Key className="absolute top-1/2 left-3 -translate-y-1/2 text-slate-400" size={12} />
-                                                            <input
-                                                                value={parsedCondition.key}
-                                                                onChange={(e) => handleConditionChange({ key: e.target.value })}
-                                                                placeholder="Contoh: contract.has_tax atau initiator_is_staff"
-                                                                className="h-9 w-full rounded-xl border border-slate-200 bg-slate-50/50 pr-3 pl-9 text-[11px] font-bold outline-none transition-all focus:border-slate-900 focus:bg-white dark:border-slate-800 dark:bg-slate-900/50 dark:focus:bg-slate-900"
-                                                            />
+                                        <div className="grid grid-cols-1 gap-x-3 gap-y-3">
+                                            {/* Initiator Organizational Filters */}
+                                            <div className="col-span-2 space-y-2 mt-4 border-t border-slate-100 pt-4 dark:border-slate-800 animate-in fade-in duration-200">
+                                                <label className="text-[10px] font-bold text-slate-400 uppercase">Filter Organisasi</label>
+                                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                                                    <div className="flex flex-row items-center justify-between rounded-md border border-slate-200 px-3 py-2 dark:border-slate-800 bg-white/50 hover:bg-slate-50/50 transition-colors">
+                                                        <div className="space-y-0.5">
+                                                            <label htmlFor={`filter_department_${step.id}`} className="text-[10px] font-bold uppercase text-slate-700 dark:text-slate-300 cursor-pointer block">
+                                                                Departemen
+                                                            </label>
+                                                            <p className="text-[9px] text-slate-500 leading-tight">
+                                                                Sesuai inisiator
+                                                            </p>
                                                         </div>
+                                                        <Checkbox
+                                                            id={`filter_department_${step.id}`}
+                                                            className="h-4 w-4 rounded-[4px]"
+                                                            checked={!!step.filter_department}
+                                                            onCheckedChange={(checked) => updateLocalStep(idx, { filter_department: !!checked })}
+                                                        />
                                                     </div>
 
-                                                    {/* Operator Input */}
-                                                    <div className={cn("space-y-1", parsedCondition.operator === 'truthy' ? "col-span-12" : "col-span-5")}>
-                                                        <label className="text-[9px] font-bold text-slate-400 uppercase">Operator</label>
-                                                        <Select
-                                                            value={parsedCondition.operator}
-                                                            onValueChange={(v) => handleConditionChange({ operator: v })}
-                                                        >
-                                                            <SelectTrigger className="h-9 rounded-xl border-slate-200 bg-white text-[11px] font-bold transition-all focus:border-slate-900 dark:border-slate-800 dark:bg-black/50">
-                                                                <SelectValue />
-                                                            </SelectTrigger>
-                                                            <SelectContent className="rounded-xl">
-                                                                <SelectItem value="truthy" className="py-2 text-[10px] font-bold uppercase">
-                                                                    TRUTHY (AKTIF/YES)
-                                                                </SelectItem>
-                                                                <SelectItem value="==" className="py-2 text-[10px] font-bold uppercase">
-                                                                    == (SAMA DENGAN)
-                                                                </SelectItem>
-                                                                <SelectItem value="!=" className="py-2 text-[10px] font-bold uppercase">
-                                                                    != (TIDAK SAMA DENGAN)
-                                                                </SelectItem>
-                                                                <SelectItem value=">" className="py-2 text-[10px] font-bold uppercase">
-                                                                    &gt; (LEBIH BESAR DARI)
-                                                                </SelectItem>
-                                                                <SelectItem value="<" className="py-2 text-[10px] font-bold uppercase">
-                                                                    &lt; (LEBIH KECIL DARI)
-                                                                </SelectItem>
-                                                                <SelectItem value="contains" className="py-2 text-[10px] font-bold uppercase">
-                                                                    CONTAINS (MENGANDUNG)
-                                                                </SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
+                                                    <div className="flex flex-row items-center justify-between rounded-md border border-slate-200 px-3 py-2 dark:border-slate-800 bg-white/50 hover:bg-slate-50/50 transition-colors">
+                                                        <div className="space-y-0.5">
+                                                            <label htmlFor={`filter_company_group_${step.id}`} className="text-[10px] font-bold uppercase text-slate-700 dark:text-slate-300 cursor-pointer block">
+                                                                Grup Perusahaan
+                                                            </label>
+                                                            <p className="text-[9px] text-slate-500 leading-tight">
+                                                                Sesuai inisiator
+                                                            </p>
+                                                        </div>
+                                                        <Checkbox
+                                                            id={`filter_company_group_${step.id}`}
+                                                            className="h-4 w-4 rounded-[4px]"
+                                                            checked={!!step.filter_company_group}
+                                                            onCheckedChange={(checked) => updateLocalStep(idx, { filter_company_group: !!checked })}
+                                                        />
                                                     </div>
 
-                                                    {/* Expected Value Input */}
-                                                    {parsedCondition.operator !== 'truthy' && (
-                                                        <div className="col-span-7 space-y-1 animate-in slide-in-from-left-2 duration-200">
-                                                            <label className="text-[9px] font-bold text-slate-400 uppercase">Expected Value</label>
-                                                            <input
-                                                                value={parsedCondition.value}
-                                                                onChange={(e) => handleConditionChange({ value: e.target.value })}
-                                                                placeholder="Nilai pembanding"
-                                                                className="h-9 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-[11px] font-bold outline-none transition-all focus:border-slate-900 focus:bg-white dark:border-slate-800 dark:bg-slate-900/50 dark:focus:bg-slate-900"
-                                                            />
+                                                    <div className="flex flex-row items-center justify-between rounded-md border border-slate-200 px-3 py-2 dark:border-slate-800 bg-white/50 hover:bg-slate-50/50 transition-colors">
+                                                        <div className="space-y-0.5">
+                                                            <label htmlFor={`filter_region_${step.id}`} className="text-[10px] font-bold uppercase text-slate-700 dark:text-slate-300 cursor-pointer block">
+                                                                Wilayah
+                                                            </label>
+                                                            <p className="text-[9px] text-slate-500 leading-tight">
+                                                                Sesuai inisiator
+                                                            </p>
                                                         </div>
-                                                    )}
+                                                        <Checkbox
+                                                            id={`filter_region_${step.id}`}
+                                                            className="h-4 w-4 rounded-[4px]"
+                                                            checked={!!step.filter_region}
+                                                            onCheckedChange={(checked) => updateLocalStep(idx, { filter_region: !!checked })}
+                                                        />
+                                                    </div>
 
-                                                    {/* Live Preview (read-only for clarity) */}
-                                                    <div className="col-span-12 mt-1">
-                                                        <p className="text-[9px] text-slate-400">
-                                                            Sinkronisasi Ekspresi Kontrak (Read-Only Preview):{' '}
-                                                            <code className="rounded bg-slate-100 px-1 py-0.5 text-[10px] font-mono text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                                                                {step.condition_expression || '-'}
-                                                            </code>
-                                                        </p>
+                                                    <div className="flex flex-row items-center justify-between rounded-md border border-slate-200 px-3 py-2 dark:border-slate-800 bg-white/50 hover:bg-slate-50/50 transition-colors">
+                                                        <div className="space-y-0.5">
+                                                            <label htmlFor={`filter_company_${step.id}`} className="text-[10px] font-bold uppercase text-slate-700 dark:text-slate-300 cursor-pointer block">
+                                                                Perusahaan
+                                                            </label>
+                                                            <p className="text-[9px] text-slate-500 leading-tight">
+                                                                Sesuai inisiator
+                                                            </p>
+                                                        </div>
+                                                        <Checkbox
+                                                            id={`filter_company_${step.id}`}
+                                                            className="h-4 w-4 rounded-[4px]"
+                                                            checked={!!step.filter_company}
+                                                            onCheckedChange={(checked) => updateLocalStep(idx, { filter_company: !!checked })}
+                                                        />
                                                     </div>
                                                 </div>
-                                            ) : (
-                                                <div className="flex h-[140px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-100 bg-slate-50/30 dark:border-slate-800/50 dark:bg-black/10">
-                                                    <p className="text-[9px] font-bold text-slate-300 uppercase">Selalu Diproses (Tanpa Kondisi)</p>
+                                            </div>
+
+
+                                            <div className="col-span-2 space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                                                <label className="text-[10px] font-bold text-slate-400 uppercase">Kontrol Perilaku & Hak Akses</label>
+                                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                                                    <div className="flex flex-row items-center justify-between rounded-md border border-slate-200 px-3 py-2 dark:border-slate-800 bg-white/50 hover:bg-slate-50/50 transition-colors">
+                                                        <div className="space-y-0.5">
+                                                            <label className="text-[10px] font-bold uppercase text-slate-700 dark:text-slate-300 cursor-pointer block">
+                                                                Edit Info
+                                                            </label>
+                                                            <p className="text-[9px] text-slate-500 leading-tight">
+                                                                Data utama kontrak
+                                                            </p>
+                                                        </div>
+                                                        <Checkbox
+                                                            className="h-4 w-4 rounded-[4px]"
+                                                            checked={step.meta?.allow_info_edit !== false}
+                                                            onCheckedChange={(checked) => {
+                                                                updateLocalStep(idx, {
+                                                                    meta: {
+                                                                        ...(step.meta || {}),
+                                                                        allow_info_edit: !!checked
+                                                                    }
+                                                                });
+                                                            }}
+                                                        />
+                                                    </div>
+
+                                                    <div className="flex flex-row items-center justify-between rounded-md border border-slate-200 px-3 py-2 dark:border-slate-800 bg-white/50 hover:bg-slate-50/50 transition-colors">
+                                                        <div className="space-y-0.5">
+                                                            <label className="text-[10px] font-bold uppercase text-slate-700 dark:text-slate-300 cursor-pointer block">
+                                                                Edit F1
+                                                            </label>
+                                                            <p className="text-[9px] text-slate-500 leading-tight">
+                                                                Form permohonan
+                                                            </p>
+                                                        </div>
+                                                        <Checkbox
+                                                            className="h-4 w-4 rounded-[4px]"
+                                                            checked={step.meta?.allow_f1_edit !== false}
+                                                            onCheckedChange={(checked) => {
+                                                                updateLocalStep(idx, {
+                                                                    meta: {
+                                                                        ...(step.meta || {}),
+                                                                        allow_f1_edit: !!checked
+                                                                    }
+                                                                });
+                                                            }}
+                                                        />
+                                                    </div>
+
+                                                    <div className="flex flex-row items-center justify-between rounded-md border border-slate-200 px-3 py-2 dark:border-slate-800 bg-white/50 hover:bg-slate-50/50 transition-colors">
+                                                        <div className="space-y-0.5">
+                                                            <label className="text-[10px] font-bold uppercase text-slate-700 dark:text-slate-300 cursor-pointer block">
+                                                                Edit F2
+                                                            </label>
+                                                            <p className="text-[9px] text-slate-500 leading-tight">
+                                                                Form ringkasan
+                                                            </p>
+                                                        </div>
+                                                        <Checkbox
+                                                            className="h-4 w-4 rounded-[4px]"
+                                                            checked={step.meta?.allow_f2_edit !== false}
+                                                            onCheckedChange={(checked) => {
+                                                                updateLocalStep(idx, {
+                                                                    meta: {
+                                                                        ...(step.meta || {}),
+                                                                        allow_f2_edit: !!checked
+                                                                    }
+                                                                });
+                                                            }}
+                                                        />
+                                                    </div>
+
+                                                    <div className="flex flex-row items-center justify-between rounded-md border border-slate-200 px-3 py-2 dark:border-slate-800 bg-white/50 hover:bg-slate-50/50 transition-colors">
+                                                        <div className="space-y-0.5">
+                                                            <label className="text-[10px] font-bold uppercase text-slate-700 dark:text-slate-300 cursor-pointer block">
+                                                                Edit Draft
+                                                            </label>
+                                                            <p className="text-[9px] text-slate-500 leading-tight">
+                                                                Draft perjanjian
+                                                            </p>
+                                                        </div>
+                                                        <Checkbox
+                                                            className="h-4 w-4 rounded-[4px]"
+                                                            checked={step.meta?.allow_agreement_edit !== false}
+                                                            onCheckedChange={(checked) => {
+                                                                updateLocalStep(idx, {
+                                                                    meta: {
+                                                                        ...(step.meta || {}),
+                                                                        allow_agreement_edit: !!checked
+                                                                    }
+                                                                });
+                                                            }}
+                                                        />
+                                                    </div>
+
+                                                    <div className="flex flex-row items-center justify-between rounded-md border border-slate-200 px-3 py-2 dark:border-slate-800 bg-white/50 hover:bg-slate-50/50 transition-colors">
+                                                        <div className="space-y-0.5">
+                                                            <label className="text-[10px] font-bold uppercase text-slate-700 dark:text-slate-300 cursor-pointer block">
+                                                                Lampiran
+                                                            </label>
+                                                            <p className="text-[9px] text-slate-500 leading-tight">
+                                                                Kelola lampiran
+                                                            </p>
+                                                        </div>
+                                                        <Checkbox
+                                                            className="h-4 w-4 rounded-[4px]"
+                                                            checked={step.meta?.allow_attachment_edit !== false}
+                                                            onCheckedChange={(checked) => {
+                                                                updateLocalStep(idx, {
+                                                                    meta: {
+                                                                        ...(step.meta || {}),
+                                                                        allow_attachment_edit: !!checked
+                                                                    }
+                                                                });
+                                                            }}
+                                                        />
+                                                    </div>
+
+                                                    <div className="flex flex-row items-center justify-between rounded-md border border-slate-200 px-3 py-2 dark:border-slate-800 bg-white/50 hover:bg-slate-50/50 transition-colors">
+                                                        <div className="space-y-0.5">
+                                                            <label className="text-[10px] font-bold uppercase text-slate-700 dark:text-slate-300 cursor-pointer block">
+                                                                Referensi
+                                                            </label>
+                                                            <p className="text-[9px] text-slate-500 leading-tight">
+                                                                Kontrak referensi
+                                                            </p>
+                                                        </div>
+                                                        <Checkbox
+                                                            className="h-4 w-4 rounded-[4px]"
+                                                            checked={step.meta?.allow_reference !== false}
+                                                            onCheckedChange={(checked) => {
+                                                                updateLocalStep(idx, {
+                                                                    meta: {
+                                                                        ...(step.meta || {}),
+                                                                        allow_reference: !!checked
+                                                                    }
+                                                                });
+                                                            }}
+                                                        />
+                                                    </div>
                                                 </div>
-                                            )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            {/* --- Section 3: Actor Pools (Per-Step) --- */}
-                            <div className="col-span-12 mt-2 border-t border-slate-100 pt-6 dark:border-slate-800">
-                                <div className="mb-4 flex items-center gap-2">
-                                    <UsersIcon size={14} className="text-primary/40" />
-                                    <h4 className="text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase">Pool Otoritas Langkah</h4>
+                                {/* --- Section 2: Logika Eksekusi --- */}
+                                <div className="col-span-12 space-y-6 lg:col-span-6">
+                                    <div className="grid grid-cols-1 gap-6">
+                                        {/* Metadata Logic (Visibility) */}
+                                        <div className="space-y-4">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <GitBranch size={16} className="text-slate-400" />
+                                                    <h4 className="text-[10px] font-black text-slate-500 uppercase">Ekspresi Kondisi (Metadata)</h4>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        if (step.condition_expression !== null) {
+                                                            updateLocalStep(idx, {
+                                                                condition_expression: null,
+                                                                meta: {
+                                                                    ...(step.meta || {}),
+                                                                    condition_key: null,
+                                                                    condition_operator: null,
+                                                                    condition_value: null,
+                                                                }
+                                                            });
+                                                        } else {
+                                                            updateLocalStep(idx, {
+                                                                condition_expression: 'METADATA_KEY',
+                                                                meta: {
+                                                                    ...(step.meta || {}),
+                                                                    condition_key: 'METADATA_KEY',
+                                                                    condition_operator: 'truthy',
+                                                                    condition_value: '',
+                                                                }
+                                                            });
+                                                        }
+                                                    }}
+                                                    className={cn(
+                                                        'flex h-6 items-center gap-2 rounded-full px-3 text-[9px] font-black uppercase transition-all cursor-pointer',
+                                                        step.condition_expression !== null
+                                                            ? 'bg-slate-900 text-white shadow-sm'
+                                                            : 'bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-500',
+                                                    )}
+                                                >
+                                                    {step.condition_expression !== null ? 'AKTIF' : 'NON-AKTIF'}
+                                                </button>
+                                            </div>
+
+                                            <div>
+                                                {step.condition_expression !== null ? (
+                                                    <div className="grid grid-cols-12 gap-2 animate-in zoom-in-95 duration-200">
+                                                        {/* Key Input */}
+                                                        <div className={cn("space-y-1", parsedCondition.operator === 'truthy' ? "col-span-8" : "col-span-5")}>
+                                                            <label className="text-[9px] font-bold text-slate-400 uppercase">Metadata Key</label>
+                                                            <div className="relative">
+                                                                <Key className="absolute top-1/2 left-2.5 -translate-y-1/2 text-slate-400" size={10} />
+                                                                <input
+                                                                    value={parsedCondition.key}
+                                                                    onChange={(e) => handleConditionChange({ key: e.target.value })}
+                                                                    placeholder="Contoh: contract.has_tax"
+                                                                    className="h-8 w-full rounded-lg border border-slate-200 bg-slate-50/50 pr-2 pl-7 text-[10px] font-bold outline-none transition-all focus:border-slate-900 focus:bg-white dark:border-slate-800 dark:bg-slate-900/50 dark:focus:bg-slate-900"
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Operator Input */}
+                                                        <div className={cn("space-y-1", parsedCondition.operator === 'truthy' ? "col-span-4" : "col-span-3")}>
+                                                            <label className="text-[9px] font-bold text-slate-400 uppercase">Operator</label>
+                                                            <Select
+                                                                value={parsedCondition.operator}
+                                                                onValueChange={(v) => handleConditionChange({ operator: v })}
+                                                            >
+                                                                <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-white text-[10px] font-bold transition-all focus:border-slate-900 dark:border-slate-800 dark:bg-black/50">
+                                                                    <SelectValue />
+                                                                </SelectTrigger>
+                                                                <SelectContent className="rounded-xl">
+                                                                    <SelectItem value="truthy" className="py-2 text-[10px] font-bold uppercase">
+                                                                        TRUTHY
+                                                                    </SelectItem>
+                                                                    <SelectItem value="==" className="py-2 text-[10px] font-bold uppercase">
+                                                                        == (SAMA)
+                                                                    </SelectItem>
+                                                                    <SelectItem value="!=" className="py-2 text-[10px] font-bold uppercase">
+                                                                        != (BEDA)
+                                                                    </SelectItem>
+                                                                    <SelectItem value=">" className="py-2 text-[10px] font-bold uppercase">
+                                                                        &gt; (LEBIH)
+                                                                    </SelectItem>
+                                                                    <SelectItem value="<" className="py-2 text-[10px] font-bold uppercase">
+                                                                        &lt; (KURANG)
+                                                                    </SelectItem>
+                                                                    <SelectItem value="contains" className="py-2 text-[10px] font-bold uppercase">
+                                                                        CONTAINS
+                                                                    </SelectItem>
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+
+                                                        {/* Expected Value Input */}
+                                                        {parsedCondition.operator !== 'truthy' && (
+                                                            <div className="col-span-4 space-y-1 animate-in slide-in-from-left-2 duration-200">
+                                                                <label className="text-[9px] font-bold text-slate-400 uppercase">Expected Value</label>
+                                                                <input
+                                                                    value={parsedCondition.value}
+                                                                    onChange={(e) => handleConditionChange({ value: e.target.value })}
+                                                                    placeholder="Nilai"
+                                                                    className="h-8 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-2 text-[10px] font-bold outline-none transition-all focus:border-slate-900 focus:bg-white dark:border-slate-800 dark:bg-slate-900/50 dark:focus:bg-slate-900"
+                                                                />
+                                                            </div>
+                                                        )}
+
+                                                        {/* Live Preview (read-only for clarity) */}
+                                                        <div className="col-span-12 mt-1">
+                                                            <p className="text-[9px] text-slate-400">
+                                                                Sinkronisasi Ekspresi Kontrak (Read-Only Preview):{' '}
+                                                                <code className="rounded bg-slate-100 px-1 py-0.5 text-[10px] font-mono text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                                                                    {step.condition_expression || '-'}
+                                                                </code>
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex h-[40px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-100 bg-slate-50/30 dark:border-slate-800/50 dark:bg-black/10">
+                                                        <p className="text-[9px] font-bold text-slate-300 uppercase">Selalu Diproses (Tanpa Kondisi)</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="col-span-2 space-y-1.5 sm:col-span-1">
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase">Pemeran (Actor)</label>
-                                    <Select
-                                        value={step.approver_type || 'initiator'}
-                                        onValueChange={(v) => {
-                                            const approverType = String(v);
-                                            const updates: any = { approver_type: approverType };
-                                            if (approverType !== 'role') {
-                                                updates.role = [];
-                                                updates.department_ids = [];
-                                                updates.filter_department = false;
-                                                updates.filter_company_group = false;
-                                                updates.filter_region = false;
-                                                updates.filter_company = false;
-                                            }
-                                            if (approverType !== 'user') {
-                                                updates.user_ids = [];
-                                            }
-                                            updateLocalStep(idx, updates);
-                                        }}
-                                    >
-                                        <SelectTrigger className="h-9 rounded-xl border-slate-200 bg-white text-[11px] font-bold transition-all focus:border-slate-900 dark:border-slate-800 dark:bg-black/50">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent className="rounded-xl">
-                                            <SelectItem value="initiator" className="py-2 text-[10px] font-bold uppercase">
-                                                INISIATOR
-                                            </SelectItem>
-                                            <SelectItem value="assigned_pic" className="py-2 text-[10px] font-bold uppercase">
-                                                PIC DITUGASKAN
-                                            </SelectItem>
-                                            <SelectItem value="role" className="py-2 text-[10px] font-bold uppercase">
-                                                BERDASARKAN ROLE / UNIT
-                                            </SelectItem>
-                                            <SelectItem value="user" className="py-2 text-[10px] font-bold uppercase">
-                                                DAFTAR USER SPESIFIK
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+
+
 
                                 {(step.approver_type === 'role' || step.approver_type === 'user') && (
                                     <>
@@ -664,49 +888,7 @@ export default function SortableStepItem({
                                                         </div>
                                                     </div>
 
-                                                    {/* Initiator Organizational Filters */}
-                                                    <div className="md:col-span-12 mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 border-t border-slate-100 pt-4 dark:border-slate-800 animate-in fade-in duration-200">
-                                                        <div className="flex items-center gap-2 px-1">
-                                                            <Checkbox
-                                                                id={`filter_department_${step.id}`}
-                                                                checked={!!step.filter_department}
-                                                                onCheckedChange={(checked) => updateLocalStep(idx, { filter_department: !!checked })}
-                                                            />
-                                                            <label htmlFor={`filter_department_${step.id}`} className="text-[10px] font-bold uppercase cursor-pointer text-slate-500 hover:text-slate-900 transition-colors dark:text-slate-400 dark:hover:text-white">
-                                                                Filter Sesuai Departemen Inisiator
-                                                            </label>
-                                                        </div>
-                                                        <div className="flex items-center gap-2 px-1">
-                                                            <Checkbox
-                                                                id={`filter_company_group_${step.id}`}
-                                                                checked={!!step.filter_company_group}
-                                                                onCheckedChange={(checked) => updateLocalStep(idx, { filter_company_group: !!checked })}
-                                                            />
-                                                            <label htmlFor={`filter_company_group_${step.id}`} className="text-[10px] font-bold uppercase cursor-pointer text-slate-500 hover:text-slate-900 transition-colors dark:text-slate-400 dark:hover:text-white">
-                                                                Filter Sesuai Grup Perusahaan
-                                                            </label>
-                                                        </div>
-                                                        <div className="flex items-center gap-2 px-1">
-                                                            <Checkbox
-                                                                id={`filter_region_${step.id}`}
-                                                                checked={!!step.filter_region}
-                                                                onCheckedChange={(checked) => updateLocalStep(idx, { filter_region: !!checked })}
-                                                            />
-                                                            <label htmlFor={`filter_region_${step.id}`} className="text-[10px] font-bold uppercase cursor-pointer text-slate-500 hover:text-slate-900 transition-colors dark:text-slate-400 dark:hover:text-white">
-                                                                Filter Sesuai Wilayah Inisiator
-                                                            </label>
-                                                        </div>
-                                                        <div className="flex items-center gap-2 px-1">
-                                                            <Checkbox
-                                                                id={`filter_company_${step.id}`}
-                                                                checked={!!step.filter_company}
-                                                                onCheckedChange={(checked) => updateLocalStep(idx, { filter_company: !!checked })}
-                                                            />
-                                                            <label htmlFor={`filter_company_${step.id}`} className="text-[10px] font-bold uppercase cursor-pointer text-slate-500 hover:text-slate-900 transition-colors dark:text-slate-400 dark:hover:text-white">
-                                                                Filter Sesuai Perusahaan Inisiator
-                                                            </label>
-                                                        </div>
-                                                    </div>
+
                                                 </>
                                             )}
                                             {step.approver_type === 'user' && (
@@ -814,24 +996,10 @@ export default function SortableStepItem({
                                     Belum ada aksi yang dikonfigurasi. Klik tombol di atas untuk menambah.
                                 </div>
                             ) : (
-                                <div className="relative ml-2 space-y-3 py-2">
-                                    {/* Vertical branch line for the tree */}
-                                    <div className="absolute left-[11px] top-2 bottom-6 w-0.5 bg-slate-200 dark:bg-slate-700/50" />
-
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-2">
                                     {actions.map((act: any, actIdx: number) => {
-                                        const isLast = actIdx === actions.length - 1;
                                         return (
-                                            <div key={act.id || actIdx} className="relative pl-8 animate-in fade-in duration-300">
-                                                {/* Tree connector branch */}
-                                                <div className="absolute left-[11px] top-0 bottom-0 pointer-events-none">
-                                                    {/* Vertical segment connecting horizontal branch */}
-                                                    <div className={cn(
-                                                        "absolute left-0 top-0 w-0.5 bg-slate-200 dark:bg-slate-700/50",
-                                                        isLast ? "h-[24px]" : "bottom-0"
-                                                    )} />
-                                                    {/* Horizontal branch line segment */}
-                                                    <div className="absolute left-0 top-[24px] w-6 h-0.5 bg-slate-200 dark:bg-slate-700/50" />
-                                                </div>
+                                            <div key={act.id || actIdx} className="relative animate-in fade-in duration-300">
                                                 <StepActionConfigCard
                                                     act={act}
                                                     actIdx={actIdx}
@@ -872,7 +1040,7 @@ export default function SortableStepItem({
             <AssignModal
                 isOpen={activeModal === 'assign_pic'}
                 onClose={() => setActiveModal(null)}
-                assigneeOptions={assigneeOptions}
+                assigneeOptions={assigneeOptions || []}
                 showToast={showToast}
             />
 
@@ -883,17 +1051,17 @@ export default function SortableStepItem({
             <SignerModal
                 isOpen={activeModal === 'sign'}
                 onClose={() => setActiveModal(null)}
+                step={step}
+                idx={idx}
                 showToast={showToast}
-                signerOptions={signerOptions}
+                userOptions={signerOptions || []}
             />
             <ForwardModal
                 isOpen={activeModal === 'forward'}
                 onClose={() => setActiveModal(null)}
                 step={step}
                 idx={idx}
-                userOptions={userOptions}
                 showToast={showToast}
-                allWorkflowSteps={allWorkflowSteps}
             />
         </div>
     );

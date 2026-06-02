@@ -5,7 +5,7 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
 import { Contract, ContractApproval, UserProfile } from '@/types/contracts';
 import axios from 'axios';
-import { Check, Clock, Download, FileText, Info, ListFilter, Loader2, Send, Upload, X } from 'lucide-react';
+import { Check, CheckCircle2, Clock, Download, FileText, Info, ListFilter, Loader2, Send, Upload, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useToast } from './Toast';
 import { Avatar, StatusBadge } from './ui';
@@ -30,12 +30,10 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
     const [jobStatus, setJobStatus] = useState<any>(null);
     const [uploading, setUploading] = useState(false);
 
-    const signingState = contract.metadata?.signing_state;
-    const signingPhase = signingState?.phase || 'SETUP';
-    const isP1 = signingState?.p1_user_id === meId;
-    const isP2 = signingState?.p2_user_id === meId;
-    const p1Downloaded = signingState?.p1_downloaded_at;
-    const p2Downloaded = signingState?.p2_downloaded_at;
+    const isP1 = useMemo(() => approvals.some(a => a.role === 'Pihak 1' && a.user_id === meId), [approvals, meId]);
+    const isP2 = useMemo(() => approvals.some(a => a.role === 'Pihak 2' && a.user_id === meId), [approvals, meId]);
+    const p1Downloaded = contract.metadata?.p1_downloaded_at;
+    const p2Downloaded = contract.metadata?.p2_downloaded_at;
 
     const handleSigningAction = async (action: 'download' | 'upload', file?: File) => {
         if (action === 'download') {
@@ -48,9 +46,8 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
             window.open(`/api/contracts/versions/${latest.id}/download`, '_blank');
 
             const newMeta = { ...contract.metadata };
-            if (!newMeta.signing_state) newMeta.signing_state = {};
             const key = isP1 ? 'p1_downloaded_at' : 'p2_downloaded_at';
-            newMeta.signing_state[key] = new Date().toISOString();
+            newMeta[key] = new Date().toISOString();
 
             try {
                 await axios.patch(`/api/contracts/${contract.id}`, { metadata: newMeta });
@@ -95,8 +92,11 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                     a.role?.toLowerCase().includes(s) || a.department_name?.toLowerCase().includes(s) || a.approver?.name?.toLowerCase().includes(s),
             );
         }
-        // Sort chronologically by created_at or id, but primary sort by id/creation time
+        // Sort primarily by sort_order if available, then by creation time or id
         return result.sort((a, b) => {
+            if (a.sort_order !== undefined && b.sort_order !== undefined && a.sort_order !== b.sort_order) {
+                return (a.sort_order || 0) - (b.sort_order || 0);
+            }
             if (a.created_at && b.created_at) {
                 return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
             }
@@ -334,134 +334,53 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                         </div>
                     )}
 
-                    {/* Signing Progress Block */}
-                    {a.step_type === 'SIGNING' && a.status === 'pending' && (
-                        <div className="mt-1 space-y-3 rounded-xl border border-blue-100 bg-blue-50/50 p-3 dark:border-blue-900/20 dark:bg-blue-950/10 text-foreground">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2.5">
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500 text-white shadow-md shadow-blue-500/10">
-                                        <i className="fa-solid fa-pen-nib text-xs" />
-                                    </div>
-                                    <div>
-                                        <h4 className="text-[10px] font-black tracking-widest text-blue-700 uppercase dark:text-blue-400">
-                                            Progres Penandatanganan
-                                        </h4>
-                                        <p className="text-[9px] font-bold text-blue-600/70 dark:text-blue-400/60 leading-none mt-0.5">Fase: {signingPhase.replace('_', ' ')}</p>
-                                    </div>
+                    {/* Action Block for Pihak 1 / Pihak 2 */}
+                    {a.status === 'pending' && a.user_id === meId && (a.role === 'Pihak 1' || a.role === 'Pihak 2') && (
+                        <div className="mt-2 flex flex-col gap-2.5 rounded-xl border border-blue-100 bg-blue-50/50 p-3 dark:border-blue-900/20 dark:bg-blue-950/10">
+                            <p className="text-blue-700 text-[10px] font-black uppercase tracking-wider dark:text-blue-400">
+                                Aksi Anda ({a.role}):
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleSigningAction('download')}
+                                    className="border-blue-200 text-blue-700 hover:bg-blue-100 gap-1.5 text-[9px] font-bold shadow-xs py-1 h-8 flex-1"
+                                >
+                                    <Download size={12} /> Unduh Draft
+                                </Button>
+                                
+                                <div className="flex-[2] flex gap-2">
+                                    <input
+                                        type="file"
+                                        id={`upload-${a.id}`}
+                                        className="hidden"
+                                        onChange={(e) => {
+                                            const f = e.target.files?.[0];
+                                            if (f) handleSigningAction('upload', f);
+                                        }}
+                                        disabled={!(a.role === 'Pihak 1' ? p1Downloaded : p2Downloaded) || uploading}
+                                    />
+                                    <Button
+                                        size="sm"
+                                        variant="primary"
+                                        onClick={() => document.getElementById(`upload-${a.id}`)?.click()}
+                                        disabled={!(a.role === 'Pihak 1' ? p1Downloaded : p2Downloaded) || uploading}
+                                        className="bg-blue-600 hover:bg-blue-700 gap-1.5 text-[9px] font-bold shadow-sm shadow-blue-500/10 py-1 h-8 w-full"
+                                    >
+                                        {uploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+                                        Unggah & Selesaikan
+                                    </Button>
                                 </div>
-                                <span className="text-xs font-black text-blue-600 dark:text-blue-400">{signingState?.progress || 0}%</span>
                             </div>
-
-                            <div className="h-1.5 w-full overflow-hidden rounded-full bg-blue-200/50 dark:bg-blue-900/20">
-                                <div className="h-full bg-blue-500 transition-all duration-700 ease-out" style={{ width: `${signingState?.progress || 0}%` }} />
-                            </div>
-
-                            <div className="space-y-1.5">
-                                {signingPhase === 'SETUP' && (
-                                    <div className="text-blue-600/60 flex items-center gap-1.5 text-[9px] italic">
-                                        <Loader2 size={10} className="animate-spin" />
-                                        <span>Menunggu Staff Legal melakukan konfigurasi delegasi...</span>
-                                    </div>
-                                )}
-
-                                {signingPhase === 'P1_PENDING' && (
-                                    <>
-                                        {!isP1 ? (
-                                            <p className="text-blue-600/60 text-[9px] italic">
-                                                Menunggu Pihak 1 mengunggah dokumen yang telah ditandatangani.
-                                            </p>
-                                        ) : (
-                                            <div className="flex flex-col gap-1.5">
-                                                <p className="text-blue-700 text-[9px] font-black uppercase tracking-wider">Aksi Pihak 1:</p>
-                                                <div className="flex gap-1.5">
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        onClick={() => handleSigningAction('download')}
-                                                        className="border-blue-200 text-blue-700 hover:bg-blue-100 gap-1.5 text-[9px] font-bold shadow-xs py-1 h-7"
-                                                    >
-                                                        <Download size={10} /> Unduh Draft
-                                                    </Button>
-                                                    <div className="relative">
-                                                        <input
-                                                            type="file"
-                                                            id="p1-upload"
-                                                            className="hidden"
-                                                            onChange={(e) => {
-                                                                const f = e.target.files?.[0];
-                                                                if (f) handleSigningAction('upload', f);
-                                                            }}
-                                                            disabled={!p1Downloaded || uploading}
-                                                        />
-                                                        <Button
-                                                            size="sm"
-                                                            variant="primary"
-                                                            onClick={() => document.getElementById('p1-upload')?.click()}
-                                                            disabled={!p1Downloaded || uploading}
-                                                            className="bg-blue-600 hover:bg-blue-700 gap-1.5 text-[9px] font-bold shadow-sm shadow-blue-500/10 py-1 h-7"
-                                                        >
-                                                            {uploading ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
-                                                            Unggah TTD P1
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                                {!p1Downloaded && (
-                                                    <p className="text-red-500 text-[8px] font-bold italic">* Anda wajib mengunduh draft terlebih dahulu.</p>
-                                                )}
-                                            </div>
-                                        )}
-                                    </>
-                                )}
-
-                                {signingPhase === 'P2_PENDING' && (
-                                    <>
-                                        {!isP2 ? (
-                                            <p className="text-blue-600/60 text-[9px] italic">
-                                                Menunggu Pihak 2 melakukan finalisasi penandatanganan.
-                                            </p>
-                                        ) : (
-                                            <div className="flex flex-col gap-1.5">
-                                                <p className="text-blue-700 text-[9px] font-black uppercase tracking-wider">Aksi Pihak 2:</p>
-                                                <div className="flex gap-1.5">
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        onClick={() => handleSigningAction('download')}
-                                                        className="border-blue-200 text-blue-700 hover:bg-blue-100 gap-1.5 text-[9px] font-bold shadow-xs py-1 h-7"
-                                                    >
-                                                        <Download size={10} /> Unduh Draft
-                                                    </Button>
-                                                    <div className="relative">
-                                                        <input
-                                                            type="file"
-                                                            id="p2-upload"
-                                                            className="hidden"
-                                                            onChange={(e) => {
-                                                                const f = e.target.files?.[0];
-                                                                if (f) handleSigningAction('upload', f);
-                                                            }}
-                                                            disabled={!p2Downloaded || uploading}
-                                                        />
-                                                        <Button
-                                                            size="sm"
-                                                            variant="primary"
-                                                            onClick={() => document.getElementById('p2-upload')?.click()}
-                                                            disabled={!p2Downloaded || uploading}
-                                                            className="bg-blue-600 hover:bg-blue-700 gap-1.5 text-[9px] font-bold shadow-sm shadow-blue-500/10 py-1 h-7"
-                                                        >
-                                                            {uploading ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
-                                                            Unggah TTD P2
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                                {!p2Downloaded && (
-                                                    <p className="text-red-500 text-[8px] font-bold italic">* Anda wajib mengunduh draft terlebih dahulu.</p>
-                                                )}
-                                            </div>
-                                        )}
-                                    </>
-                                )}
-                            </div>
+                            {!(a.role === 'Pihak 1' ? p1Downloaded : p2Downloaded) && (
+                                <div className="flex items-center gap-1.5 px-2 py-1.5 rounded bg-rose-50 border border-rose-100 mt-1">
+                                    <Info size={10} className="text-rose-500 shrink-0" />
+                                    <p className="text-rose-600 text-[8px] font-bold italic">
+                                        Anda wajib mengunduh draft terlebih dahulu sebelum mengunggah hasil TTD.
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

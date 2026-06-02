@@ -14,13 +14,13 @@ class SLAService
     /**
      * Calculate a deadline based on business days (Mon-Fri) and dynamic cut-off.
      *
-     * @param Carbon $startTime The time the request was submitted.
+     * @param \Carbon\CarbonInterface $startTime The time the request was submitted.
      * @param int $businessHours The number of hours to add (e.g., 72 for 3 days).
      * @param int $cutoffHour The hour at which submission counts for next day (default 16).
      */
-    public function calculateBusinessDeadline(Carbon $startTime, int $businessHours, int $cutoffHour = 16): Carbon
+    public function calculateBusinessDeadline(\Carbon\CarbonInterface $startTime, int $businessHours, int $cutoffHour = 16): Carbon
     {
-        $date = $startTime->copy();
+        $date = Carbon::instance($startTime);
 
         // Convert hours to days for the current business logic (assuming 24h = 1 business day cycle)
         // If the user wants real hour-by-hour business time (e.g. 9-17), that's different.

@@ -178,24 +178,25 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                     description={`Apakah Anda yakin ingin menghapus role ${editingRole?.name}? Seluruh mapping hak akses untuk role ini akan dihapus permanen.`}
                     confirmText="Hapus Role"
                 />
-                <div className="animate-in fade-in grid grid-cols-1 gap-8 duration-200 select-none md:grid-cols-12">
-                    {/* Main Column: 8 Columns */}
-                    <div className="space-y-8 md:col-span-8">
-                        <FormSection title="Identitas Role" subtitle="Nama jabatan dan penjelasan otoritas sistem">
-                            <div className="grid grid-cols-1 gap-6">
+                <div className="animate-in fade-in grid grid-cols-1 gap-16 duration-300 select-none lg:grid-cols-2 w-full">
+                    {/* Side 1: Primary Configuration */}
+                    <div className="space-y-12">
+                        <FormSection title="Identitas Otoritas" subtitle="Nama jabatan dan penjelasan peran dalam ekosistem sistem">
+                            <div className="grid grid-cols-1 gap-y-10">
                                 <CompactInput
                                     label="Nama Jabatan / Role"
                                     value={form.data.name}
                                     onChange={(e) => form.setData('name', e.target.value)}
                                     placeholder="CONTOH: LEGAL MANAGER"
                                     error={form.errors.name}
+                                    icon={ShieldCheck}
                                 />
                                 <div className="space-y-1.5">
                                     <CompactInput
                                         label="Penjelasan Fungsi"
                                         value={form.data.description}
                                         onChange={(e) => form.setData('description', e.target.value)}
-                                        placeholder="TULISKAN DESKRIPSI TANGGUNG JAWAB ROLE INI..."
+                                        placeholder="TULISKAN DESKRIPSI TANGGUNG JAWAB ROLE INI SECARA MENDALAM..."
                                         error={form.errors.description}
                                     />
                                 </div>
@@ -203,30 +204,28 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                         </FormSection>
                     </div>
 
-                    {/* Side Column: 4 Columns */}
-                    <div className="flex flex-col pt-6 md:col-span-4 md:pt-0">
-                        <div className="border-surface-border/80 bg-surface-muted/20 group relative overflow-hidden rounded-2xl border p-6 shadow-sm backdrop-blur-sm transition-all duration-200 select-none">
-                            <div className="absolute top-0 right-0 p-4 opacity-5 transition-opacity duration-200 group-hover:opacity-10">
-                                <ShieldCheck size={80} strokeWidth={1} />
+                    {/* Side 2: Information & Authority Hub */}
+                    <div className="space-y-12">
+                        <div className="border-black/[0.03] dark:border-white/[0.03] group relative overflow-hidden rounded-[2rem] border-2 border-dashed p-10 transition-all duration-200 select-none hover:bg-black/[0.01] dark:hover:bg-white/[0.01]">
+                            <div className="absolute top-0 right-0 p-8 opacity-5 transition-opacity duration-200 group-hover:opacity-10">
+                                <ShieldCheck size={100} strokeWidth={1} />
                             </div>
 
-                            <div className="relative z-10 mb-4 flex items-center gap-3">
-                                <span className="text-text-main text-xs font-bold tracking-wider uppercase">Pusat Otoritas</span>
+                            <div className="relative z-10 mb-6 flex items-center gap-3">
+                                <span className="text-[10px] font-black tracking-widest text-text-main uppercase opacity-60">Authority Architecture</span>
                             </div>
 
-                            <div className="border-surface-border/60 relative z-10 mb-4 space-y-3 border-y border-dashed py-4">
-                                <span className="text-text-main block text-sm leading-tight font-bold tracking-tight">
-                                    {form.data.name || 'Nama Role'}
-                                </span>
-                                <p className="text-text-desc text-xs leading-relaxed font-medium tracking-wide">
-                                    {form.data.description || 'Deskripsi belum diatur untuk role ini...'}
+                            <div className="relative z-10 space-y-4">
+                                <p className="text-text-desc text-[11px] leading-relaxed font-semibold">
+                                    Role ini menentukan hak akses dasar pengguna terhadap modul-modul sistem. Gunakan menu 
+                                    <span className="text-primary font-bold"> Pemetaan Hak Akses </span> 
+                                    untuk mengatur konfigurasi izin (Read, Create, Update, Delete) secara spesifik sesuai tanggung jawab struktural.
                                 </p>
+                                <div className="flex items-center gap-2 rounded-xl bg-primary/5 px-4 py-2 border border-primary/10 w-fit">
+                                    <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                                    <span className="text-[9px] font-black text-primary uppercase tracking-widest">Parameter Otoritas Aktif</span>
+                                </div>
                             </div>
-
-                            <p className="text-text-desc/60 relative z-10 text-[11px] leading-normal font-medium tracking-tight">
-                                Role menentukan hak akses pengguna terhadap modul-modul sistem. Gunakan menu Pemetaan Hak Akses dan Pemetaan Navigasi
-                                di menu Data Master untuk mengatur konfigurasi hak akses per modul secara spesifik.
-                            </p>
                         </div>
                     </div>
                 </div>

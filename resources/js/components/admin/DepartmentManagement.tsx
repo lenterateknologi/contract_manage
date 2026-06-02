@@ -29,86 +29,72 @@ const DeptCell = ({ name, code }: Readonly<{ name: string; code: string }>) => (
         </div>
         <div className="flex min-w-0 flex-col">
             <span className="mb-0.5 truncate text-sm leading-tight font-semibold tracking-wide text-text-main">{name}</span>
-            <div className="text-text-desc flex items-center gap-1.5 font-mono text-xs leading-none font-medium">
-                {code}
-            </div>
+            <span className="text-text-desc font-mono text-[10px] font-medium tracking-widest uppercase">{code}</span>
         </div>
-    </div>
-);
-
-const DescriptionCell = ({ description }: Readonly<{ description?: string }>) => (
-    <span className="text-text-desc line-clamp-1 max-w-[300px] text-sm font-medium tracking-wide">
-        {description || '—'}
-    </span>
-);
-
-const VisibilityCell = ({ isActive }: Readonly<{ isActive: boolean }>) => (
-    <div className="flex items-center gap-2 select-none">
-        <div className={cn('h-2 w-2 shrink-0 rounded-full', isActive ? 'animate-pulse bg-success' : 'bg-danger/40')} />
-        <span
-            className={cn(
-                'text-xs font-semibold tracking-wide',
-                isActive ? 'text-success' : 'text-danger',
-            )}
-        >
-            {isActive ? 'Aktif' : 'Nonaktif'}
-        </span>
     </div>
 );
 
 export function DepartmentManagement({ departments, filters }: Readonly<DepartmentManagementProps>) {
     const { showToast } = useToast();
-    const { canCreate, canUpdate, canDelete } = usePermissions('ADMIN_DEPTS');
+    const { canUpdate, canDelete } = usePermissions('ADMIN_DEPTS');
     const [isFormView, setIsFormView] = React.useState(false);
     const [editingDept, setEditingDept] = React.useState<any>(null);
     const [isConfirmOpen, setIsConfirmOpen] = React.useState(false);
 
     const form = useForm({
-        code: '',
         name: '',
+        code: '',
         description: '',
         is_active: true as boolean,
     });
 
-    const filterConfig = useMemo(
-        () => [
-            {
-                label: 'Status Visibilitas',
-                key: 'is_active',
-                options: [
-                    { label: 'Visible (Aktif)', value: 'true' },
-                    { label: 'Hidden (Nonaktif)', value: 'false' },
-                ],
-            },
-        ],
-        [],
-    );
-
-    const handleFilterChange = (newFilters: Record<string, any>) => {
-        router.get(
-            globalThis.location.pathname,
-            {
-                ...filters,
-                ...newFilters,
-                page: 1,
-            },
-            { preserveState: true, replace: true },
-        );
-    };
+    // Deep Linking Support
+    React.useEffect(() => {
+        if (filters.action === 'create') {
+            openCreate();
+        } else if (filters.action === 'edit' && filters.id) {
+            const dept = (Array.isArray(departments) ? departments : departments?.data || []).find((d: any) => d.id === filters.id);
+            if (dept) openEdit(dept);
+        }
+    }, [filters.action, filters.id]);
 
     const columns = useMemo<Column<any>[]>(
         () => [
             {
-                header: 'Departemen / Unit',
+                header: 'Unit Struktural',
                 accessorKey: 'name',
+                sortable: true,
                 cell: (row) => <DeptCell name={row.name} code={row.code} />,
             },
             {
-                header: 'Deskripsi',
+                header: 'Keterangan Fungsi',
                 accessorKey: 'description',
-                cell: (row) => <DescriptionCell description={row.description} />,
+                cell: (row) => (
+                    <span className="text-text-desc line-clamp-1 max-w-[400px] text-xs font-medium tracking-wide">
+                        {row.description || '—'}
+                    </span>
+                ),
             },
-
+            {
+                header: 'Status',
+                accessorKey: 'is_active',
+                className: 'text-right',
+                cell: (row) => (
+                    <div className="flex items-center justify-end gap-2 select-none">
+                        <div
+                            className={cn('h-2 w-2 rounded-full', row.is_active ? 'animate-pulse bg-success' : 'bg-surface-muted')}
+                        />
+                        <span
+                            className={cn(
+                                'text-xs font-semibold tracking-wide transition-colors duration-200 select-none',
+                                row.is_active ? 'text-text-main' : 'text-text-desc',
+                            )}
+                        >
+                            {row.is_active ? 'Aktif' : 'Non-aktif'}
+                        </span>
+                    </div>
+                ),
+            },
         ],
         [],
     );
@@ -119,13 +105,13 @@ export function DepartmentManagement({ departments, filters }: Readonly<Departme
         setIsFormView(true);
     };
 
-    const openEdit = (dept: any) => {
-        setEditingDept(dept);
+    const openEdit = (d: any) => {
+        setEditingDept(d);
         form.setData({
-            code: dept.code || '',
-            name: dept.name,
-            description: dept.description || '',
-            is_active: !!dept.is_active,
+            name: d.name,
+            code: d.code,
+            description: d.description || '',
+            is_active: !!d.is_active,
         });
         setIsFormView(true);
     };
@@ -134,6 +120,9 @@ export function DepartmentManagement({ departments, filters }: Readonly<Departme
         setIsFormView(false);
         setEditingDept(null);
         form.reset();
+        if (filters.action || filters.id) {
+            router.get(globalThis.location.pathname, { ...filters, action: undefined, id: undefined }, { preserveState: true, replace: true });
+        }
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -141,18 +130,28 @@ export function DepartmentManagement({ departments, filters }: Readonly<Departme
         const options = {
             onSuccess: () => {
                 closeForm();
-                showToast(editingDept ? 'Departemen diperbarui' : 'Departemen baru ditambahkan', 'success');
+                showToast(editingDept ? 'Unit diperbarui' : 'Unit baru ditambahkan', 'success');
             },
         };
         if (editingDept) form.put(`/admin/departments/${editingDept.id}`, options);
         else form.post('/admin/departments', options);
     };
 
+    const handleFilterChange = (newFilters: Record<string, any>) => {
+        router.get(
+            globalThis.location.pathname,
+            { ...filters, ...newFilters, page: 1 },
+            { preserveState: true, replace: true },
+        );
+    };
+
+    const filterConfig = useMemo(() => [], []);
+
     if (isFormView) {
         return (
             <ManagementForm
-                title={editingDept ? 'Update Master Departemen' : 'Registrasi Master Departemen'}
-                subtitle={editingDept ? 'Pengaturan detail unit organisasi' : 'Registrasi divisi atau unit organisasi'}
+                title={editingDept ? 'Update Unit Struktural' : 'Registrasi Unit Baru'}
+                subtitle={editingDept ? 'Mengatur parameter organisasi unit' : 'Menambahkan departemen baru ke dalam hirarki'}
                 onClose={closeForm}
                 onSave={handleSubmit}
                 processing={form.processing}
@@ -165,7 +164,7 @@ export function DepartmentManagement({ departments, filters }: Readonly<Departme
                             type="button"
                             variant="ghost"
                             onClick={() => setIsConfirmOpen(true)}
-                            className="border-danger/20 text-danger hover:bg-danger hover:text-white"
+                            className="border-danger/20 px-4 text-xs text-danger transition-all duration-200 hover:bg-danger hover:text-white"
                         >
                             <Trash2 size={15} className="mr-2" /> Hapus
                         </Button>
@@ -180,69 +179,64 @@ export function DepartmentManagement({ departments, filters }: Readonly<Departme
                         router.delete(`/admin/departments/${editingDept.id}`, {
                             onSuccess: () => {
                                 closeForm();
-                                showToast('Departemen telah dihapus', 'success');
+                                showToast('Unit telah dihapus', 'success');
                             },
                         });
                     }}
                     title="Konfirmasi Penghapusan"
-                    description={`Apakah Anda yakin ingin menghapus departemen ${editingDept?.name}? Tindakan ini tidak dapat dibatalkan.`}
-                    confirmText="Hapus Departemen"
+                    description={`Apakah Anda yakin ingin menghapus unit ${editingDept?.name}? Tindakan ini tidak dapat dibatalkan.`}
+                    confirmText="Hapus Unit"
                 />
-                <div className="animate-in fade-in grid grid-cols-1 gap-8 duration-200 select-none md:grid-cols-12">
-                    {/* Main Column: 8 Columns */}
-                    <div className="space-y-8 md:col-span-8">
+                <div className="animate-in fade-in grid grid-cols-1 gap-16 duration-300 select-none lg:grid-cols-2 w-full">
+                    {/* Side 1: Primary Configuration */}
+                    <div className="space-y-12">
                         <FormSection title="Data Organisasi" subtitle="Identitas unik dan deskripsi unit kerja">
-                            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                                <CompactInput
-                                    label="Kode / Singkatan"
-                                    value={form.data.code}
-                                    onChange={(e) => form.setData('code', e.target.value)}
-                                    placeholder="CONTOH: IT"
-                                    error={form.errors.code}
-                                />
-                                <CompactInput
-                                    label="Nama Unit Struktural"
-                                    value={form.data.name}
-                                    onChange={(e) => form.setData('name', e.target.value)}
-                                    placeholder="NAMA LENGKAP DIVISI"
-                                    error={form.errors.name}
-                                    containerClassName="md:col-span-2"
-                                />
+                            <div className="grid grid-cols-1 gap-y-10">
+                                <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+                                    <CompactInput
+                                        label="Kode / Singkatan"
+                                        value={form.data.code}
+                                        onChange={(e) => form.setData('code', e.target.value)}
+                                        placeholder="CONTOH: IT"
+                                        error={form.errors.code}
+                                        icon={Building2}
+                                    />
+                                    <CompactInput
+                                        label="Nama Unit Struktural"
+                                        value={form.data.name}
+                                        onChange={(e) => form.setData('name', e.target.value)}
+                                        placeholder="NAMA LENGKAP DIVISI"
+                                        error={form.errors.name}
+                                        containerClassName="md:col-span-2"
+                                        icon={Building2}
+                                    />
+                                </div>
                                 <CompactInput
                                     label="Keterangan Fungsi"
                                     value={form.data.description}
                                     onChange={(e) => form.setData('description', e.target.value)}
-                                    placeholder="TULISKAN DESKRIPSI UNIT KERJA INI..."
+                                    placeholder="TULISKAN DESKRIPSI UNIT KERJA INI SECARA MENDALAM..."
                                     error={form.errors.description}
-                                    containerClassName="md:col-span-3"
                                 />
                             </div>
                         </FormSection>
                     </div>
 
-                    {/* Side Column: 4 Columns */}
-                    <div className="flex flex-col gap-8 md:col-span-4">
-                        <FormSection title="Status Visibilitas">
+                    {/* Side 2: Visibility & Metadata */}
+                    <div className="space-y-12">
+                        <FormSection title="Status Visibilitas" subtitle="Mengatur kemunculan unit dalam sistem">
                             <CompactSwitch
                                 label="Unit Terlihat"
-                                description="Tampilkan unit ini di seluruh aplikasi"
+                                description="Tampilkan unit ini di seluruh aplikasi dan mesin alur kerja"
                                 checked={form.data.is_active}
                                 onCheckedChange={(c) => form.setData('is_active', c)}
                             />
                         </FormSection>
 
-                        <div className="border-surface-border bg-surface-muted/40 group relative overflow-hidden rounded-2xl border p-6 shadow-sm backdrop-blur-sm transition-all duration-200 select-none">
-                            <div className="absolute top-0 right-0 p-4 opacity-5 transition-opacity duration-200 group-hover:opacity-10">
-                                <Building2 size={80} strokeWidth={1} />
-                            </div>
-
-                            <div className="relative z-10 mb-4 flex items-center gap-3">
-                                <span className="text-xs font-bold tracking-wider text-text-main uppercase">Arsitektur Unit</span>
-                            </div>
-
-                            <p className="text-text-desc relative z-10 text-xs leading-relaxed font-medium">
-                                Departemen digunakan untuk mengelompokkan pengguna dan menentukan keterlibatan dalam alur persetujuan (Workflow)
-                                secara otomatis.
+                        <div className="animate-in fade-in flex gap-4 rounded-2xl border border-indigo-500/20 bg-indigo-500/5 p-6 backdrop-blur-sm duration-300 dark:bg-indigo-500/10">
+                            <Building2 size={24} className="mt-0.5 shrink-0 text-indigo-500" />
+                            <p className="text-[11px] leading-relaxed font-semibold text-indigo-700/80 uppercase tracking-tight">
+                                Departemen digunakan untuk mengelompokkan pengguna dan menentukan keterlibatan dalam alur persetujuan (Workflow) secara otomatis berdasarkan struktur organisasi.
                             </p>
                         </div>
                     </div>

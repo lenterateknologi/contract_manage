@@ -18,7 +18,7 @@ interface Props {
     actionAlias?: string;
 }
 
-export default function AddhocApproverModal({ open, onClose, contract, onUpdate, showToast, actionCode, actionAlias }: Props) {
+export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast, actionCode, actionAlias }: Props) {
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
     const [note, setNote] = useState('');
     const [isSequential, setIsSequential] = useState(false);
@@ -120,7 +120,7 @@ export default function AddhocApproverModal({ open, onClose, contract, onUpdate,
             );
             const config = activeAction?.assignee_config || {};
             const defaultTargetStepId = activeAction?.next_step_id || contract.workflow_step_id;
-            const finalTargetStepId = (config.allow_user_select_step && selectedTargetStepId) ? Number(selectedTargetStepId) : defaultTargetStepId;
+            const finalTargetStepId = config.allow_user_select_step && selectedTargetStepId ? selectedTargetStepId : defaultTargetStepId;
 
             const updatedContract = await contractApi.addAdhocApprover(contract.id, selectedUserIds, note, isSequential, finalTargetStepId);
             onUpdate(updatedContract);

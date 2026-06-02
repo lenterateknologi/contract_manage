@@ -22,7 +22,9 @@ return new class() extends Migration
     public function down(): void
     {
         Schema::table('m_contract_statuses', function (Blueprint $table) {
-            $table->dropColumn('display_mode');
+            if (Schema::hasColumn('m_contract_statuses', 'display_mode')) {
+                $table->dropColumn('display_mode');
+            }
         });
     }
 };

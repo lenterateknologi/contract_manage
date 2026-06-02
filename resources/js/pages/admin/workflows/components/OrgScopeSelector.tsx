@@ -58,17 +58,17 @@ export default function OrgScopeSelector({
     return (
         <div className="lg:col-span-1">
             <div className="flex h-full flex-col">
-                <div className="mb-4 flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20">
-                        <Building2 size={16} />
-                    </div>
-                    <span className="text-[11px] font-black text-slate-900 uppercase dark:text-white">Ruang Lingkup Organisasi</span>
+                <div className="flex items-center gap-2 border-b border-slate-100 pb-2 dark:border-slate-800 mb-4">
+                    <Building2 size={14} className="text-primary" />
+                    <h3 className="text-[11px] font-black text-slate-900 uppercase dark:text-white">
+                        Ruang Lingkup Organisasi
+                    </h3>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3">
                     {/* Selector 1: Group */}
                     <div className="space-y-1.5">
-                        <label className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-tight">
+                        <label className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase">
                             <Landmark size={10} /> Group
                         </label>
                         <SearchableMultiSelect
@@ -83,13 +83,13 @@ export default function OrgScopeSelector({
                             }}
                             options={groupOptions}
                             placeholder="Semua Group..."
-                            triggerClassName="min-h-10 h-auto py-2 px-3 rounded-xl text-[10px] font-black uppercase bg-slate-50/50 border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-slate-900/50 dark:border-slate-800 dark:focus:border-primary"
+                            triggerClassName="min-h-9 h-auto py-1.5 px-3 rounded-xl text-[11px] font-bold uppercase bg-white border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-slate-900/50 dark:border-slate-800 dark:focus:border-primary"
                         />
                     </div>
 
                     {/* Selector 2: Region */}
                     <div className="space-y-1.5">
-                        <label className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-tight">
+                        <label className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase">
                             <Globe size={10} /> Region
                         </label>
                         <SearchableMultiSelect
@@ -108,13 +108,13 @@ export default function OrgScopeSelector({
                                     : "Semua Region..."
                             }
                             disabled={!form.data.company_group_ids || form.data.company_group_ids.length === 0}
-                            triggerClassName="min-h-10 h-auto py-2 px-3 rounded-xl text-[10px] font-black uppercase bg-slate-50/50 border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-slate-900/50 dark:border-slate-800 dark:focus:border-primary"
+                            triggerClassName="min-h-9 h-auto py-1.5 px-3 rounded-xl text-[11px] font-bold uppercase bg-white border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-slate-900/50 dark:border-slate-800 dark:focus:border-primary"
                         />
                     </div>
 
                     {/* Selector 3: Perusahaan */}
                     <div className="space-y-1.5">
-                        <label className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-tight">
+                        <label className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase">
                             <Building2 size={10} /> Perusahaan
                         </label>
                         <SearchableMultiSelect
@@ -129,7 +129,7 @@ export default function OrgScopeSelector({
                                     : "Semua Perusahaan..."
                             }
                             disabled={!form.data.region_ids || form.data.region_ids.length === 0}
-                            triggerClassName="min-h-10 h-auto py-2 px-3 rounded-xl text-[10px] font-black uppercase bg-slate-50/50 border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-slate-900/50 dark:border-slate-800 dark:focus:border-primary"
+                            triggerClassName="min-h-9 h-auto py-1.5 px-3 rounded-xl text-[11px] font-bold uppercase bg-white border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-slate-900/50 dark:border-slate-800 dark:focus:border-primary"
                         />
                     </div>
                 </div>

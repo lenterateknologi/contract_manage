@@ -16,73 +16,30 @@ class ContractStatusSeeder extends Seeder
         $admin = User::firstWhere('email', 'admin@example.com') ?? User::first();
         $adminId = $admin ? $admin->id : null;
 
-        $statuses = [
-            [
-                'code' => 'draft',
-                'label' => 'Draft',
-                'color' => '#64748b',
-                'bg_color' => '#f1f5f9',
-                'icon' => 'file-text',
-                'description' => 'Kontrak baru yang masih dalam tahap awal.',
-            ],
-            [
-                'code' => 'in_review',
-                'label' => 'Dalam Review',
-                'color' => '#3b82f6',
-                'bg_color' => '#eff6ff',
-                'icon' => 'clock',
-                'description' => 'Kontrak sedang dalam proses persetujuan (approval).',
-            ],
-            [
-                'code' => 'revision',
-                'label' => 'Revisi',
-                'color' => '#f59e0b',
-                'bg_color' => '#fffbeb',
-                'icon' => 'edit-3',
-                'description' => 'Kontrak dikembalikan untuk perbaikan.',
-            ],
-            [
-                'code' => 'approved',
-                'label' => 'Disetujui',
-                'color' => '#10b981',
-                'bg_color' => '#ecfdf5',
-                'icon' => 'check-circle',
-                'description' => 'Kontrak telah disetujui oleh seluruh pihak.',
-            ],
-            [
-                'code' => 'locked',
-                'label' => 'Terkunci',
-                'color' => '#6366f1',
-                'bg_color' => '#eef2ff',
-                'icon' => 'lock',
-                'description' => 'Kontrak telah difinalisasi dan tidak dapat diubah.',
-            ],
-            [
-                'code' => 'archived',
-                'label' => 'Arsip',
-                'color' => '#94a3b8',
-                'bg_color' => '#f8fafc',
-                'icon' => 'archive',
-                'description' => 'Kontrak yang sudah tidak aktif atau selesai.',
-            ],
-            [
-                'code' => 'rejected',
-                'label' => 'Rejected',
-                'color' => '#ef4444',
-                'bg_color' => '#fef2f2',
-                'icon' => 'x-circle',
-                'description' => 'Kontrak ditolak.',
-            ],
-        ];
+        $jsonPath = base_path('data_json/tipe-kontrak.json');
+        if (! file_exists($jsonPath)) {
+            $this->command->warn('tipe-kontrak.json not found!');
+
+            return;
+        }
+
+        $data = json_decode(file_get_contents($jsonPath), true);
+        $statuses = $data['contract_statuses'] ?? [];
 
         foreach ($statuses as $status) {
             ContractStatus::withTrashed()->updateOrCreate(
                 ['code' => $status['code']],
-                array_merge($status, [
+                [
+                    'label' => $status['label'],
+                    'color' => $status['color'],
+                    'bg_color' => $status['bg_color'],
+                    'icon' => $status['icon'],
+                    'description' => $status['description'],
+                    'is_active' => filter_var($status['is_active'] ?? true, FILTER_VALIDATE_BOOLEAN),
                     'created_by' => $adminId,
                     'updated_by' => $adminId,
                     'deleted_at' => null,
-                ]),
+                ],
             );
         }
     }

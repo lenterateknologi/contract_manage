@@ -257,10 +257,7 @@ class ContractController extends Controller
             'meta:contract_id,kop_topik,kop_sub_topik,p1_entity,p1_signer,p1_signer_position,p1_address,p2_entity,p2_signer,p2_signer_position,p2_address,f2_scope,f2_price,f2_payment,f2_tenure,f2_location',
         ])->findOrFail($id);
 
-        // Authorization: Only Admin or Creator can view drafts
-        if ($contract->status === 'draft' && $contract->created_by !== Auth::id() && Auth::user()->role !== 'Admin') {
-            abort(403, 'Halaman tidak tersedia');
-        }
+        \Illuminate\Support\Facades\Gate::authorize('view', $contract);
 
         $contracts = $this->getFilteredContractsQuery($request, 'contracts')
             ->paginate($request->integer('per_page', 10))
@@ -321,7 +318,7 @@ class ContractController extends Controller
             'contractType:id,name',
             'contractTypeParent:id,name',
             'submissionType:id,name',
-            'statusDetail:code,label,display_mode',
+            'statusDetail:code,label',
             'approvals.approver:id,name,initials,role,role_id,department_id,email,bg_color,text_color',
             'approvals.approver.department:id,name',
             'approvals.workflowStep:id,step,description,step_category,workflow_id',
@@ -1397,8 +1394,9 @@ class ContractController extends Controller
 
     public function getWorkflows(Request $request): JsonResponse
     {
+        $user = $request->user();
         $contractType = $request->query('contract_type');
-        $workflows = $this->workflowService->getAvailableWorkflows(Auth::user(), $contractType);
+        $workflows = $this->workflowService->getAvailableWorkflows($user, $contractType);
 
         return response()->json($workflows);
     }
@@ -1406,10 +1404,11 @@ class ContractController extends Controller
     public function getUsers(Request $request): JsonResponse
     {
         $all = $request->boolean('all', false);
+        $user = $request->user();
 
         $users = User::with('department')
-            ->when(! $all && Auth::user()->role === 'Manager', function ($q) {
-                return $q->where('department_id', Auth::user()->department_id);
+            ->when($user && ! $all && $user->role === 'Manager', function ($q) use ($user) {
+                return $q->where('department_id', $user->department_id);
             })
             ->orderBy('name')
             ->get()
@@ -1481,15 +1480,7 @@ class ContractController extends Controller
     {
         $contract = Contract::findOrFail($id);
 
-        if ($contract->status !== 'draft') {
-            if ($request->has('metadata') && count($request->except(['_method'])) === 1) {
-                $contract->update(['metadata' => $request->input('metadata')]);
-
-                return response()->json(ContractFormatter::formatContract($contract));
-            }
-
-            return response()->json(['message' => 'Hanya kontrak berstatus draft yang dapat diedit.'], 422);
-        }
+        \Illuminate\Support\Facades\Gate::authorize('update', $contract);
 
         $validated = $request->validate([
             'title' => 'sometimes|required|string|max:255',
@@ -1576,6 +1567,20 @@ class ContractController extends Controller
             new \App\Exports\ContractExport($query),
             'data_kontrak_' . date('Ymd_His') . '.xlsx',
         );
+    }
+
+    public function compareAgreementVersions(string $id, Request $request): Response
+    {
+        $contract = Contract::findOrFail($id);
+
+        return $this->fileAction->compareVersions($contract, 'agreement', $request);
+    }
+
+    public function compareFormVersions(string $id, string $type, Request $request): Response
+    {
+        $contract = Contract::findOrFail($id);
+
+        return $this->fileAction->compareVersions($contract, $type, $request);
     }
 
     public function import(Request $request)

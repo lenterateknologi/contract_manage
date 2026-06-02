@@ -42,6 +42,12 @@ Route::get('/api/contracts/{id}/audit-trail/document/print', [ContractController
     ->name('contracts.audit.document.print')
     ->middleware('signed');
 
+Route::get('/admin/contracts/workflows', [ContractController::class, 'getWorkflows'])->name('contracts.workflows');
+Route::get('/admin/contracts/users', [ContractController::class, 'getUsers'])->name('contracts.users');
+Route::get('/admin/contracts/types', [ContractController::class, 'getTypes'])->name('contracts.types');
+Route::get('/admin/contracts/submission-types', [ContractController::class, 'getSubmissionTypes'])->name('contracts.submission-types');
+Route::get('/admin/contracts/roles', [ContractController::class, 'getRoles'])->name('contracts.roles');
+
 Route::middleware(['auth'])->group(function () {
 
     Route::get('dashboard', [ContractController::class, 'contractsView'])->defaults('view', 'dashboard')->name('dashboard');
@@ -68,8 +74,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/contracts-data', [ContractController::class, 'index'])->name('contracts.data');
         Route::get('/contracts/export', [ContractController::class, 'export'])->name('admin.contracts.export');
         Route::post('/contracts/import', [ContractController::class, 'import'])->name('admin.contracts.import');
-        Route::get('/contracts/workflows', [ContractController::class, 'getWorkflows'])->name('contracts.workflows');
-        Route::get('/contracts/users', [ContractController::class, 'getUsers'])->name('contracts.users');
         Route::post('/contracts', [ContractController::class, 'store'])->name('contracts.store');
 
         Route::get('/users', [AdminController::class, 'users'])->name('admin.users');

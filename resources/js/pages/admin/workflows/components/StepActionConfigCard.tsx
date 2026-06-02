@@ -32,6 +32,25 @@ export function StepActionConfigCard({
     updateAction,
     removeAction,
 }: StepActionConfigCardProps) {
+    const actionCode = (act.master_action?.code || act.action_code || act.master_action_id || '').toLowerCase();
+    const isForwardAction = actionCode === 'forward';
+    const isSignatureAction = ['signature', 'sign'].includes(actionCode);
+    const isAssignOrForwardAction = ['assign', 'forward'].includes(actionCode);
+
+    const transitionType = (() => {
+        if (act.next_workflow_id) return 'cross_workflow';
+        if (act.next_step_id) {
+            const prevStep = allWorkflowSteps[idx - 1];
+            const firstStep = allWorkflowSteps[0];
+            if (firstStep && act.next_step_id === firstStep.id && idx > 0) return 'initial';
+            if (prevStep && act.next_step_id === prevStep.id) return 'back';
+            return 'jump_step';
+        }
+        return 'sequential';
+    })();
+
+    const showLocalTargetSelector = !act.next_workflow_id && act.next_step_id && act.next_step_id !== allWorkflowSteps[idx - 1]?.id;
+
     return (
         <div className="relative rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950/40 space-y-2">
             {/* Card Header */}
@@ -98,17 +117,7 @@ export function StepActionConfigCard({
                     <div className="space-y-1">
                         <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Transisi Ke</label>
                         <Select
-                            value={(() => {
-                                if (act.next_workflow_id) return 'cross_workflow';
-                                if (act.next_step_id) {
-                                    const prevStep = allWorkflowSteps[idx - 1];
-                                    const firstStep = allWorkflowSteps[0];
-                                    if (firstStep && act.next_step_id === firstStep.id && idx > 0) return 'initial';
-                                    if (prevStep && act.next_step_id === prevStep.id) return 'back';
-                                    return 'jump_step';
-                                }
-                                return 'sequential';
-                            })()}
+                            value={transitionType}
                             onValueChange={(val) => {
                                 if (val === 'sequential') {
                                     updateAction(actIdx, {
@@ -148,7 +157,7 @@ export function StepActionConfigCard({
                                 }
                             }}
                         >
-                            <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-slate-50/50 text-[10px] font-black uppercase tracking-tight focus:border-slate-900 dark:border-slate-800 dark:bg-slate-900">
+                            <SelectTrigger className="h-8 text-left rounded-lg border-slate-200 bg-slate-50/50 text-[10px] font-black uppercase tracking-tight focus:border-slate-900 dark:border-slate-800 dark:bg-slate-900 [&>span]:w-full [&>span]:text-left">
                                 <SelectValue placeholder="PILIH TRANSISI" />
                             </SelectTrigger>
                             <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
@@ -171,7 +180,7 @@ export function StepActionConfigCard({
                         </Select>
                     </div>
 
-                    {(!act.next_workflow_id && act.next_step_id && (() => { const prev = allWorkflowSteps[idx - 1]; return !prev || act.next_step_id !== prev.id; })()) && (
+                    {showLocalTargetSelector && (
                         <div className="space-y-1 bg-slate-50/40 p-2.5 rounded-xl border border-slate-100 dark:bg-slate-900/10 dark:border-slate-800">
                             <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Pilih Target Langkah (Alur Ini)</label>
                             <Select
@@ -275,43 +284,73 @@ export function StepActionConfigCard({
                 </div>
 
                 {/* Cell 5: Signers (Conditional) */}
-                {((act.master_action?.code?.toLowerCase() || act.action_code?.toLowerCase() || act.master_action_id?.toLowerCase()) === 'signature') && (
-                    <div className="space-y-2 col-span-1 sm:col-span-2 bg-amber-50/50 p-3 rounded-xl border border-amber-100/50 dark:bg-amber-900/10 dark:border-amber-800/30">
+                {isSignatureAction && (
+                    <div className="space-y-3 col-span-1 sm:col-span-2 bg-amber-50/50 p-3 rounded-xl border border-amber-100/50 dark:bg-amber-900/10 dark:border-amber-800/30">
                         <div className="flex items-center gap-1.5">
                             <FileSignature size={12} className="text-amber-500" />
-                            <label className="text-[9px] font-bold text-amber-600 uppercase tracking-tight dark:text-amber-500">Pilihan Penandatangan (Signers)</label>
+                            <label className="text-[9px] font-bold text-amber-600 uppercase tracking-tight dark:text-amber-500">Konfigurasi Tanda Tangan</label>
                         </div>
-                        <SearchableMultiSelect
-                            values={act.signing_parties || []}
-                            onValuesChange={(vals: string[]) => updateAction(actIdx, { signing_parties: vals })}
-                            options={[
-                                { value: 'initiator', label: 'INISIATOR (PIC / PEMBUAT)' },
-                                { value: 'pic', label: 'PIC DITUGASKAN' },
-                                { value: 'legal', label: 'LEGAL STAFF' },
-                                { value: 'manager_legal', label: 'MANAGER LEGAL' },
-                                { value: 'vp_legal', label: 'VP LEGAL / MANAGEMENT' },
-                                { value: 'vendor', label: 'VENDOR / PIHAK LUAR' }
-                            ]}
-                            placeholder="Pilih Pemeran Penandatangan..."
-                        />
-                        <p className="text-[9px] text-amber-600/70 italic leading-tight dark:text-amber-500/70">
-                            Pilih peran yang diizinkan untuk menandatangani dokumen pada aksi ini.
-                        </p>
+                        
+                        <div className="space-y-4">
+                            <div className="space-y-1">
+                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Pilihan Penandatangan (Signers)</label>
+                                <SearchableMultiSelect
+                                    values={act.signing_parties || []}
+                                    onValuesChange={(vals: string[]) => updateAction(actIdx, { signing_parties: vals })}
+                                    options={[
+                                        { value: 'initiator', label: 'INISIATOR (PIC / PEMBUAT)' },
+                                        { value: 'pic', label: 'PIC DITUGASKAN' },
+                                        { value: 'legal', label: 'LEGAL STAFF' },
+                                        { value: 'manager_legal', label: 'MANAGER LEGAL' },
+                                        { value: 'vp_legal', label: 'VP LEGAL / MANAGEMENT' },
+                                        { value: 'vendor', label: 'VENDOR / PIHAK LUAR' }
+                                    ]}
+                                    placeholder="Pilih Pemeran Penandatangan..."
+                                />
+                                <p className="text-[9px] text-amber-600/70 italic leading-tight dark:text-amber-500/70">
+                                    Pilih peran yang diizinkan untuk menandatangani dokumen pada aksi ini.
+                                </p>
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Target Langkah (Sub-Step)</label>
+                                <Select
+                                    value={act.signature_target_step ? String(act.signature_target_step) : ''}
+                                    onValueChange={(val) => {
+                                        updateAction(actIdx, { signature_target_step: val });
+                                    }}
+                                >
+                                    <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-white text-[10px] font-black uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
+                                        <SelectValue placeholder="PILIH TAHAP TARGET" />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-lg bg-white dark:bg-slate-950">
+                                        {allWorkflowSteps.map((s: any, sIdx: number) => (
+                                            <SelectItem key={s.id} value={String(s.id)} className="text-[9px] font-bold uppercase">
+                                                TAHAP {sIdx + 1}: {s.label || `Langkah ${sIdx + 1}`}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <p className="text-[9px] text-amber-600/70 italic leading-tight dark:text-amber-500/70">
+                                    Penandatangan akan dimasukkan sebagai sub-step pada langkah yang dipilih ini.
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 )}
 
                 {/* Cell 6: Assignee Config (Conditional) */}
-                {(['assign', 'forward'].includes(act.master_action?.code?.toLowerCase() || act.action_code?.toLowerCase() || act.master_action_id?.toLowerCase())) && (
+                {isAssignOrForwardAction && (
                     <div className="space-y-3 col-span-1 sm:col-span-2 bg-indigo-50/50 p-3 rounded-xl border border-indigo-100/50 dark:bg-indigo-900/10 dark:border-indigo-800/30">
                         <div className="flex items-center gap-1.5">
                             <UsersIcon size={12} className="text-indigo-500" />
                             <label className="text-[9px] font-bold text-indigo-600 uppercase tracking-tight dark:text-indigo-500">
-                                {(act.master_action?.code?.toLowerCase() || act.action_code?.toLowerCase() || act.master_action_id?.toLowerCase()) === 'forward' ? 'Lingkup Reviewer Tambahan' : 'Konfigurasi Penugasan (Assignee)'}
+                                {isForwardAction ? 'Lingkup Reviewer Tambahan' : 'Konfigurasi Penugasan (Assignee)'}
                             </label>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {(act.master_action?.code?.toLowerCase() || act.action_code?.toLowerCase() || act.master_action_id?.toLowerCase()) === 'forward' && (
-                                <div className="space-y-1 md:col-span-2">
+                        <div className="space-y-4">
+                            {isForwardAction && (
+                                <div className="space-y-1">
                                     <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Target Langkah (Insert To)</label>
                                     <Select
                                         value={act.next_step_id || 'current'}
@@ -383,7 +422,7 @@ export function StepActionConfigCard({
 
                             <div className="space-y-1">
                                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">
-                                    {(act.master_action?.code?.toLowerCase() || act.action_code?.toLowerCase() || act.master_action_id?.toLowerCase()) === 'forward' ? 'Kategori Reviewer' : 'Tipe Assignee'}
+                                    {isForwardAction ? 'Kategori Reviewer' : 'Tipe Assignee'}
                                 </label>
                                 <Select
                                     value={act.assignee_config?.type || ''}
@@ -397,10 +436,10 @@ export function StepActionConfigCard({
                                     }}
                                 >
                                     <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-white text-[10px] font-black uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
-                                        <SelectValue placeholder={(act.master_action?.code?.toLowerCase() || act.action_code?.toLowerCase() || act.master_action_id?.toLowerCase()) === 'forward' ? "PILIH KATEGORI" : "PILIH TIPE ASSIGNEE"} />
+                                        <SelectValue placeholder={isForwardAction ? "PILIH KATEGORI" : "PILIH TIPE ASSIGNEE"} />
                                     </SelectTrigger>
                                     <SelectContent className="rounded-lg bg-white dark:bg-slate-950">
-                                        {(act.master_action?.code?.toLowerCase() || act.action_code?.toLowerCase() || act.master_action_id?.toLowerCase()) === 'forward' ? (
+                                        {isForwardAction ? (
                                             <>
                                                 <SelectItem value="role" className="text-[9px] font-bold uppercase">BERDASARKAN ROLE / UNIT</SelectItem>
                                                 <SelectItem value="user" className="text-[9px] font-bold uppercase">DAFTAR USER SPESIFIK</SelectItem>
@@ -443,7 +482,7 @@ export function StepActionConfigCard({
                             {act.assignee_config?.type === 'user' && (
                                 <div className="space-y-1 md:col-span-2">
                                     <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">
-                                        {(act.master_action?.code?.toLowerCase() || act.action_code?.toLowerCase() || act.master_action_id?.toLowerCase()) === 'forward' ? 'Pilih User Khusus' : 'User Tujuan'}
+                                        {isForwardAction ? 'Pilih User Khusus' : 'User Tujuan'}
                                     </label>
                                     <SearchableMultiSelect
                                         values={act.assignee_config?.user_ids || []}
@@ -455,7 +494,7 @@ export function StepActionConfigCard({
                             )}
                         </div>
                         <p className="text-[9px] text-indigo-600/70 italic leading-tight dark:text-indigo-500/70">
-                            {(act.master_action?.code?.toLowerCase() || act.action_code?.toLowerCase() || act.master_action_id?.toLowerCase()) === 'forward'
+                            {isForwardAction
                                 ? 'Tentukan siapa saja yang boleh dipilih untuk memberikan approval tambahan.'
                                 : 'Konfigurasi siapa yang dapat dipilih atau ditugaskan pada saat aksi ini dijalankan.'}
                         </p>

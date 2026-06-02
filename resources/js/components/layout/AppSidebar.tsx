@@ -121,7 +121,7 @@ export const AppSidebar = memo(function AppSidebar() {
             <SidebarHeader className="p-0">
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild tooltip="Dashboard">
+                        <SidebarMenuButton size="lg" asChild tooltip="Dashboard" className="group-data-[collapsible=icon]:!size-12 group-data-[collapsible=icon]:!p-0">
                             <Link href="/dashboard" className="flex h-full w-full items-center justify-center">
                                 <AppLogo />
                             </Link>

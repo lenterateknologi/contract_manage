@@ -10,6 +10,8 @@ class Department extends Model
 {
     protected $table = 'm_departments';
 
+    const CODE_LEGAL = 'LGL';
+
     use HasUuids, SoftDeletes;
 
     protected $fillable = [

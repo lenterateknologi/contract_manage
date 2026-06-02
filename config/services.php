@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'libreoffice' => [
+        'path' => env('LIBREOFFICE_PATH', '/usr/bin/soffice'),
+    ],
+
 ];

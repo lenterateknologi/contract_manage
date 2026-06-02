@@ -7,7 +7,7 @@ import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { usePermissions } from '@/hooks/use-permissions';
 import { cn, regionColor } from '@/lib/utils';
 import { router, useForm } from '@inertiajs/react';
-import { GitBranch, Plus, Trash2 } from 'lucide-react';
+import { GitBranch, Plus, Tags, Trash2 } from 'lucide-react';
 import React, { useMemo } from 'react';
 import { FormSection, ManagementForm } from './ManagementForm';
 
@@ -176,115 +176,111 @@ export function RegionManagement({ regions, filters }: Readonly<RegionManagement
                     description={`Apakah Anda yakin ingin menghapus region ${editingRegion?.name}? Tindakan ini tidak dapat dibatalkan.`}
                     confirmText="Hapus Region"
                 />
-                <div className="animate-in fade-in grid grid-cols-1 gap-8 duration-200 select-none md:grid-cols-12">
-                    <div className="space-y-8 md:col-span-8">
-                        <FormSection title="Informasi Region" subtitle="Nama dan identitas wilayah operasional">
-                            <div className="grid grid-cols-1 gap-6">
+                <div className="animate-in fade-in grid grid-cols-1 gap-16 duration-300 select-none lg:grid-cols-2 w-full">
+                    {/* Side 1: Primary Configuration */}
+                    <div className="space-y-12">
+                        <FormSection title="Parameter Wilayah" subtitle="Nama dan identitas unik wilayah operasional">
+                            <div className="grid grid-cols-1 gap-y-10">
                                 <CompactInput
-                                    label="Nama Region"
+                                    label="Nama Wilayah (Region)"
                                     value={form.data.name}
                                     onChange={(e) => form.setData('name', e.target.value)}
                                     placeholder="CONTOH: JAWA BARAT"
                                     error={form.errors.name}
+                                    icon={GitBranch}
                                 />
+                                <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+                                    <CompactInput
+                                        label="Kode Region"
+                                        value={form.data.code}
+                                        onChange={(e) => form.setData('code', e.target.value)}
+                                        placeholder="CONTOH: REG-JABAR"
+                                        error={form.errors.code}
+                                        icon={Tags}
+                                    />
+                                    <CompactInput
+                                        label="Alias Visual"
+                                        value={form.data.alias}
+                                        onChange={(e) => form.setData('alias', e.target.value)}
+                                        placeholder="CONTOH: JABAR"
+                                        error={form.errors.alias}
+                                    />
+                                </div>
                                 <CompactInput
-                                    label="Kode Region"
-                                    value={form.data.code}
-                                    onChange={(e) => form.setData('code', e.target.value)}
-                                    placeholder="CONTOH: REG-JABAR"
-                                    error={form.errors.code}
-                                />
-                                <CompactInput
-                                    label="Alias"
-                                    value={form.data.alias}
-                                    onChange={(e) => form.setData('alias', e.target.value)}
-                                    placeholder="CONTOH: JABAR"
-                                    error={form.errors.alias}
-                                />
-                                <CompactInput
-                                    label="ID Portal Master"
+                                    label="ID Portal Master (Sync)"
                                     value={form.data.id_portal_master}
                                     onChange={(e) => form.setData('id_portal_master', e.target.value)}
-                                    placeholder="CONTOH: 14"
+                                    placeholder="NOMOR ID DARI MASTER DATA"
                                     error={form.errors.id_portal_master}
                                 />
                                 <CompactInput
-                                    label="Deskripsi"
+                                    label="Deskripsi Wilayah"
                                     value={form.data.description}
                                     onChange={(e) => form.setData('description', e.target.value)}
-                                    placeholder="TULISKAN DESKRIPSI REGION..."
+                                    placeholder="TULISKAN CAKUPAN ATAU KETERANGAN WILAYAH..."
                                     error={form.errors.description}
                                 />
                             </div>
                         </FormSection>
-
-                        {editingRegion && (
-                            <>
-                                <FormSection
-                                    title="Daftar Company"
-                                    subtitle="Entitas perusahaan yang terdaftar dalam wilayah ini"
-                                    headerAction={
-                                        <Button
-                                            type="button"
-                                            variant="white"
-                                            size="sm"
-                                            onClick={() => router.get('/admin/companies', { action: 'create', region_id: editingRegion.id })}
-                                            className="border-surface-border bg-surface-muted text-primary hover:bg-primary h-8 gap-2 rounded-lg border text-[10px] font-bold transition-all hover:text-white"
-                                        >
-                                            <Plus size={12} /> Tambah Company
-                                        </Button>
-                                    }
-                                >
-                                    <div className="divide-surface-border border-surface-border bg-surface-muted/30 divide-y rounded-xl border">
-                                        {editingRegion.companies?.length > 0 ? (
-                                            editingRegion.companies.map((company: any) => (
-                                                <div
-                                                    key={company.id}
-                                                    className="hover:bg-primary/5 flex items-center justify-between p-4 transition-colors"
-                                                >
-                                                    <div className="flex flex-col">
-                                                        <span className="text-text-main text-xs font-bold tracking-wide uppercase">
-                                                            {company.name}
-                                                        </span>
-                                                        <span className="text-text-soft text-[10px] font-medium uppercase">
-                                                            {company.code} • {company.alias || company.code}
-                                                        </span>
-                                                    </div>
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => router.get('/admin/companies', { action: 'edit', id: company.id })}
-                                                        className="text-text-desc hover:text-primary h-8 rounded-lg text-[10px] font-bold uppercase"
-                                                    >
-                                                        Kelola
-                                                    </Button>
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <div className="flex flex-col items-center justify-center py-10 opacity-40">
-                                                <p className="text-[10px] font-bold uppercase text-text-soft">Belum ada company terdaftar</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </FormSection>
-                            </>
-                        )}
                     </div>
 
-                    <div className="flex flex-col gap-8 md:col-span-4">
-                        <div className="border-surface-border bg-surface-muted/40 group relative overflow-hidden rounded-2xl border p-6 shadow-sm backdrop-blur-sm transition-all duration-200 select-none">
-                            <div className="absolute top-0 right-0 p-4 opacity-5 transition-opacity duration-200 group-hover:opacity-10">
-                                <GitBranch size={80} strokeWidth={1} />
-                            </div>
-                            <div className="relative z-10 mb-4 flex items-center gap-3">
-                                <span className="text-xs font-bold tracking-wider text-text-main uppercase">
-                                    Master Hierarchy
-                                </span>
-                            </div>
-                            <p className="text-text-desc relative z-10 text-xs leading-relaxed font-medium">
-                                Region adalah level menengah dalam hirarki organisasi. Region bersifat global dan dapat digunakan oleh berbagai Group
-                                Perusahaan.
+                    {/* Side 2: Associated Entities & Metadata */}
+                    <div className="space-y-12">
+                        {editingRegion && (
+                            <FormSection
+                                title="Entitas Terkait"
+                                subtitle="Daftar perusahaan yang beroperasi di wilayah ini"
+                                headerAction={
+                                    <Button
+                                        type="button"
+                                        variant="white"
+                                        size="sm"
+                                        onClick={() => router.get('/admin/companies', { action: 'create', region_id: editingRegion.id })}
+                                        className="h-8 rounded-lg border-primary/20 text-[9px] font-black uppercase tracking-widest text-primary hover:bg-primary hover:text-white transition-all"
+                                    >
+                                        <Plus size={12} className="mr-1.5" /> Tambah Company
+                                    </Button>
+                                }
+                            >
+                                {editingRegion.companies?.length > 0 ? (
+                                    <div className="flex flex-col gap-3">
+                                        {editingRegion.companies.map((company: any) => (
+                                            <div
+                                                key={company.id}
+                                                className="group flex items-center justify-between rounded-xl border border-black/[0.03] dark:border-white/[0.03] bg-black/[0.01] dark:bg-white/[0.01] p-4 transition-all hover:border-primary/30 hover:bg-white dark:hover:bg-black"
+                                            >
+                                                <div className="flex flex-col">
+                                                    <span className="text-[12px] font-bold text-slate-700 tracking-tight dark:text-slate-300">
+                                                        {company.name}
+                                                    </span>
+                                                    <span className="text-text-soft text-[10px] font-medium uppercase mt-0.5">
+                                                        {company.code} • {company.alias || company.code}
+                                                    </span>
+                                                </div>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => router.get('/admin/companies', { action: 'edit', id: company.id })}
+                                                    className="text-text-desc hover:text-primary h-8 rounded-lg text-[10px] font-black uppercase tracking-widest opacity-0 transition-opacity group-hover:opacity-100"
+                                                >
+                                                    Kelola
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-black/[0.03] dark:border-white/[0.03] rounded-xl bg-black/[0.01] dark:bg-white/[0.01]">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-300">Belum ada company terdaftar</p>
+                                    </div>
+                                )}
+                            </FormSection>
+                        )}
+
+                        <div className="animate-in fade-in flex gap-4 rounded-2xl border border-primary/20 bg-primary/5 p-6 backdrop-blur-sm duration-300 dark:bg-primary/10">
+                            <GitBranch size={24} className="mt-0.5 shrink-0 text-primary" />
+                            <p className="text-[11px] leading-relaxed font-semibold text-primary/80 uppercase tracking-tight">
+                                Region adalah level menengah dalam hirarki organisasi. Region bersifat global dan dapat digunakan oleh berbagai Group Perusahaan untuk pemetaan wilayah hukum dan pajak.
                             </p>
                         </div>
                     </div>

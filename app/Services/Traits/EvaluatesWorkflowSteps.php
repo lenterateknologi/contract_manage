@@ -3,6 +3,8 @@
 namespace App\Services\Traits;
 
 use App\Models\Contract;
+use App\Models\Department;
+use App\Models\Role;
 use App\Models\User;
 use App\Models\WorkflowStep;
 use Illuminate\Support\Facades\Auth;
@@ -47,7 +49,14 @@ trait EvaluatesWorkflowSteps
             $initiator = $contract->initiator;
             if ($initiator) {
                 $roleName = strtolower($initiator->role ?: ($initiator->role()->first()->name ?? ''));
-                $exemptRoles = ['manager', 'supervisor', 'vp', 'ceo', 'director', 'admin'];
+                $exemptRoles = [
+                    strtolower(Role::MANAGER),
+                    'supervisor',
+                    strtolower(Role::VP),
+                    strtolower(Role::CEO),
+                    strtolower(Role::DIRECTOR),
+                    strtolower(Role::ADMIN),
+                ];
                 if (in_array($roleName, $exemptRoles)) {
                     return false;
                 }
@@ -57,11 +66,17 @@ trait EvaluatesWorkflowSteps
         // Rule 4: Skip Department Manager Review if Initiator is Manager/Head
         $roles = (array) $step->role;
         $lowerRoles = array_map('strtolower', $roles);
-        if (in_array('manager', $lowerRoles)) {
+        if (in_array(strtolower(Role::MANAGER), $lowerRoles)) {
             $initiator = $contract->initiator;
             if ($initiator) {
                 $initiatorRole = strtolower($initiator->role ?: ($initiator->role()->first()->name ?? ''));
-                $exemptRoles = ['manager', 'vp', 'ceo', 'director', 'admin'];
+                $exemptRoles = [
+                    strtolower(Role::MANAGER),
+                    strtolower(Role::VP),
+                    strtolower(Role::CEO),
+                    strtolower(Role::DIRECTOR),
+                    strtolower(Role::ADMIN),
+                ];
                 if (in_array($initiatorRole, $exemptRoles)) {
                     $targetDeptIds = $step->department_ids;
                     if (empty($targetDeptIds) || in_array($initiator->department_id, $targetDeptIds)) {
@@ -221,26 +236,32 @@ trait EvaluatesWorkflowSteps
 
             // Bypass logic: Skip Step 1 if submitted by Legal/Admin for others (Helper Mode)
             $creator = Auth::user();
-            $isLegal = $creator && ($creator->department?->code === 'LGL' || $creator->role === 'Admin');
+            $isLegal = $creator && ($creator->department?->code === Department::CODE_LEGAL || $creator->role === Role::ADMIN);
             $isHelper = $contract->initiated_by_id && $contract->initiated_by_id !== $contract->created_by;
 
             if ($isLegal && $isHelper) {
                 return false; // Bypass departmental review
             }
 
-            return strtolower($roleName) === 'staff';
+            return strtolower($roleName) === strtolower(Role::STAFF);
         }
 
         // Condition: Skip if initiator is Legal (used for Manager step)
         if (str_contains($condition, 'initiator_not_legal')) {
-            return $contract->initiator->department?->code !== 'LGL';
+            return $contract->initiator->department?->code !== Department::CODE_LEGAL;
         }
 
         // Condition: Skip Management if Initiator is already Management/Direksi
         if (str_contains($condition, 'initiator_not_manager')) {
             $initiatorRoleName = $contract->initiator->getAttribute('role') ?: ($contract->initiator->role()->first()->name ?? '');
             $roleName = strtolower($initiatorRoleName);
-            $exemptRoles = ['manager', 'director', 'direktur', 'direksi', 'admin'];
+            $exemptRoles = [
+                strtolower(Role::MANAGER),
+                strtolower(Role::DIRECTOR),
+                'direktur',
+                'direksi',
+                strtolower(Role::ADMIN),
+            ];
 
             return ! in_array($roleName, $exemptRoles);
         }

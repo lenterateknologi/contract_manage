@@ -28,6 +28,13 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
         date_from: '',
         date_to: '',
         creator_ids: [],
+        audit_page: 1,
+    });
+    
+    const [pagination, setPagination] = useState({
+        current_page: 1,
+        last_page: 1,
+        total: 0,
     });
 
     const fetchData = (currentFilters = filters) => {
@@ -36,8 +43,13 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
             .post('/admin/api/reports/data', currentFilters)
             .then((res) => {
                 setData({
-                    histories: res.data.histories,
+                    histories: res.data.histories.data || [],
                     users: res.data.users,
+                });
+                setPagination({
+                    current_page: res.data.histories.current_page || 1,
+                    last_page: res.data.histories.last_page || 1,
+                    total: res.data.histories.total || 0,
                 });
                 setLoading(false);
             })
@@ -214,10 +226,38 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
 
                     <div className="border-border bg-muted/30 flex items-center justify-between border-t p-4">
                         <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                            Showing {data?.histories.length || 0} transaction records
+                            Showing {data?.histories.length || 0} of {pagination.total} transaction records
                         </p>
-                        <div className="flex items-center gap-4">
-                            <span className="text-muted-foreground/40 text-xs font-bold uppercase">SYSTEM_V2.0_AUDIT_LOG_END</span>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={pagination.current_page <= 1}
+                                onClick={() => {
+                                    const nextFilters = { ...filters, audit_page: pagination.current_page - 1 };
+                                    setFilters(nextFilters);
+                                    fetchData(nextFilters);
+                                }}
+                                className="h-8 text-[10px] font-bold uppercase"
+                            >
+                                Prev
+                            </Button>
+                            <span className="text-muted-foreground text-[10px] font-bold mx-2">
+                                {pagination.current_page} / {pagination.last_page}
+                            </span>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={pagination.current_page >= pagination.last_page}
+                                onClick={() => {
+                                    const nextFilters = { ...filters, audit_page: pagination.current_page + 1 };
+                                    setFilters(nextFilters);
+                                    fetchData(nextFilters);
+                                }}
+                                className="h-8 text-[10px] font-bold uppercase"
+                            >
+                                Next
+                            </Button>
                         </div>
                     </div>
                 </div>

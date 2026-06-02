@@ -185,7 +185,18 @@ class A1WorkflowSeeder extends Seeder
                 ],
                 [
                     'step' => 15,
-                    'name' => 'Closing & Arsip',
+                    'name' => 'Proses Tanda Tangan Perjanjian',
+                    'type' => 'SIGNING',
+                    'category' => 'signing',
+                    'actor' => 'assigned_pic', // The PIC Legal sets up the P1/P2 delegation
+                    'roles' => ['Staff'],
+                    'dept_id' => $legalDeptId,
+                    'reject_target' => 10,
+                    'status' => 'locked',
+                ],
+                [
+                    'step' => 16,
+                    'name' => 'Validasi Akhir & Arsip',
                     'type' => 'CLOSING',
                     'category' => 'closing',
                     'actor' => 'assigned_pic',

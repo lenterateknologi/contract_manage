@@ -9,6 +9,7 @@ use App\Models\CompanyGroup;
 use App\Models\ContractStatus;
 use App\Models\ContractType;
 use App\Models\Department;
+use App\Models\FormTemplate;
 use App\Models\Region;
 use App\Models\Role;
 use App\Models\User;
@@ -21,7 +22,7 @@ class WorkflowAdminController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Workflow::with(['contractType', 'steps.approverRoles', 'steps.approverDepartments', 'steps.approverUsers', 'initiatorRolesData', 'initiatorDepartmentsData', 'initiatorUsersData'])
+        $query = Workflow::withCount('steps')->with(['contractType', 'steps.approverRoles', 'steps.approverDepartments', 'steps.approverUsers', 'initiatorRolesData', 'initiatorDepartmentsData', 'initiatorUsersData'])
             ->when($request->search, function ($q, $search) {
                 $search = strtolower($search);
                 $q->where(function ($qq) use ($search) {
@@ -85,6 +86,7 @@ class WorkflowAdminController extends Controller
             'companies' => Company::all(),
             'contractStatuses' => ContractStatus::orderBy('label')->get(),
             'allWorkflows' => Workflow::with(['steps', 'contractType'])->orderBy('name')->get(),
+            'formTemplates' => FormTemplate::select('id', 'name')->orderBy('name')->get(),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Alur Kerja (Workflows)', 'href' => route('admin.workflows'), 'icon' => 'GitBranch'],
@@ -140,6 +142,7 @@ class WorkflowAdminController extends Controller
             'companies' => Company::all(),
             'contractStatuses' => ContractStatus::orderBy('label')->get(),
             'allWorkflows' => Workflow::with(['steps', 'contractType'])->orderBy('name')->get(),
+            'formTemplates' => FormTemplate::select('id', 'name')->orderBy('name')->get(),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Alur Kerja (Workflows)', 'href' => route('admin.workflows'), 'icon' => 'GitBranch'],
@@ -166,6 +169,7 @@ class WorkflowAdminController extends Controller
             'initiator_roles' => 'nullable|array',
             'initiator_users' => 'nullable|array',
             'initiator_departments' => 'nullable|array',
+            'meta' => 'nullable|array',
             'steps' => 'nullable|array',
             'steps.*.id' => 'nullable|string',
             'steps.*.label' => 'nullable|string',
@@ -238,6 +242,7 @@ class WorkflowAdminController extends Controller
             'initiator_roles' => 'nullable|array',
             'initiator_users' => 'nullable|array',
             'initiator_departments' => 'nullable|array',
+            'meta' => 'nullable|array',
             'steps' => 'nullable|array',
             'steps.*.id' => 'nullable|string',
             'steps.*.role' => 'nullable',
@@ -415,6 +420,7 @@ class WorkflowAdminController extends Controller
                 'legal_roles',
                 'legal_departments',
                 'legal_users',
+                'meta',
             ])->toArray();
 
             $workflowData['initiator_roles'] = $workflow->initiatorRolesData->pluck('role_name')->toArray();

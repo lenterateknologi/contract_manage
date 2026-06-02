@@ -78,12 +78,15 @@ class FileAction
             $contract->update(['current_version' => $newVer]);
         }
 
-        // Reset status and approvals regardless of doc type (any revision restarts process)
-        $contract->update(['status' => 'in_review']);
+        // Only reset status and approvals if the contract is already in an active review process.
+        // If it is still in 'draft' or 'revision' (rejected), it should stay in that status until explicitly sent/resubmitted.
+        if (! in_array($contract->status, ['draft', 'revision'])) {
+            $contract->update(['status' => 'in_review']);
 
-        $approvals = $contract->approvals()->orderBy('sequence')->get();
-        foreach ($approvals as $i => $a) {
-            $a->update(['status' => $i === 0 ? 'pending' : 'waiting', 'note' => null, 'approved_at' => null]);
+            $approvals = $contract->approvals()->orderBy('sequence')->get();
+            foreach ($approvals as $i => $a) {
+                $a->update(['status' => $i === 0 ? 'pending' : 'waiting', 'note' => null, 'approved_at' => null]);
+            }
         }
 
         ContractHistory::create([
@@ -129,17 +132,10 @@ class FileAction
         $attachment = $contract->attachments()->findOrFail($atId);
 
         if ($attachment->file_path && Storage::disk('local')->exists($attachment->file_path)) {
-            $path = Storage::disk('local')->path($attachment->file_path);
-            $mime = match (strtolower(pathinfo($path, PATHINFO_EXTENSION))) {
-                'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                'doc' => 'application/msword',
-                'pdf' => 'application/pdf',
-                default => 'application/octet-stream'
-            };
-
-            return response()->file($path, [
-                'Content-Type' => $mime,
-            ]);
+            return response()->download(
+                Storage::disk('local')->path($attachment->file_path),
+                $attachment->file_name,
+            );
         }
 
         return response()->json(['message' => 'File not found.'], 404);
@@ -169,15 +165,19 @@ class FileAction
     {
         $type = $request->query('type', 'contract');
 
-        // UNIFIED EXPORT: If type is F1 or F2, use the high-fidelity form-based generation logic
-        if ($type === 'f1' || $type === 'f2') {
-            return $this->exportAction->exportFormSubmissionPdf($contract, $type, 'inline');
-        }
-
         $version = $contract->versions()
             ->where('document_type', $type)
             ->where('version_no', $versionNo)
-            ->firstOrFail();
+            ->first();
+
+        // UNIFIED EXPORT: Fallback to form-based generation if no uploaded version found
+        if (! $version && ($type === 'f1' || $type === 'f2')) {
+            return $this->exportAction->exportFormSubmissionPdf($contract, $type, 'inline');
+        }
+
+        if (! $version) {
+            return response()->json(['message' => 'Source file not found.'], 404);
+        }
 
         if (! $version->file_path || ! Storage::disk('local')->exists($version->file_path)) {
             return response()->json(['message' => 'Source file not found.'], 404);
@@ -192,7 +192,7 @@ class FileAction
         }
 
         if (! file_exists($pdfPath)) {
-            $soffice = '/Applications/LibreOffice.app/Contents/MacOS/soffice';
+            $soffice = config('services.libreoffice.path');
             $userDir = 'file://' . sys_get_temp_dir() . '/soffice_user_' . md5($contract->id);
 
             $safeSoffice = escapeshellarg($soffice);
@@ -215,14 +215,10 @@ class FileAction
             }
         }
 
-        if (file_exists($pdfPath)) {
-            return response()->file($pdfPath, [
-                'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="' . basename($pdfPath) . '"',
-            ]);
-        }
-
-        return response()->json(['message' => 'Failed to generate PDF.'], 500);
+        return response()->file($pdfPath, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . basename($pdfPath) . '"',
+        ]);
     }
 
     public function attachmentPdfPreview(Contract $contract, string $atId): mixed
@@ -245,7 +241,7 @@ class FileAction
             if (strtolower(pathinfo($attachment->file_path, PATHINFO_EXTENSION)) === 'pdf') {
                 copy($sourcePath, $pdfPath);
             } else {
-                $soffice = '/Applications/LibreOffice.app/Contents/MacOS/soffice';
+                $soffice = config('services.libreoffice.path');
                 $userDir = 'file://' . sys_get_temp_dir() . '/soffice_user_at_' . md5($atId);
 
                 $safeSoffice = escapeshellarg($soffice);
@@ -307,7 +303,7 @@ class FileAction
             if (strtolower(pathinfo($document->file_url, PATHINFO_EXTENSION)) === 'pdf') {
                 copy($sourcePath, $pdfPath);
             } else {
-                $soffice = '/Applications/LibreOffice.app/Contents/MacOS/soffice';
+                $soffice = config('services.libreoffice.path');
                 $userDir = 'file://' . sys_get_temp_dir() . '/soffice_user_vendor_' . md5($docId);
 
                 $safeSoffice = escapeshellarg($soffice);
@@ -387,6 +383,30 @@ class FileAction
         return response()->json($this->formatter->formatContract($contract));
     }
 
+    public function getRevisionVersions(Contract $contract, Request $request): JsonResponse
+    {
+        $type = $request->query('type', 'f1');
+
+        $versions = $contract->versions()
+            ->where('document_type', $type)
+            ->orderByDesc('version_no')
+            ->with('uploader')
+            ->get()
+            ->map(fn ($v) => [
+                'id' => $v->id,
+                'version_no' => $v->version_no,
+                'file_name' => $v->file_name,
+                'file_path' => $v->file_path,
+                'change_log' => $v->change_log,
+                'uploaded_by' => $v->uploaded_by,
+                'uploader' => $v->uploader ? ['name' => $v->uploader->name] : null,
+                'created_at' => $v->created_at->format('Y-m-d H:i:s'),
+                'is_final' => $v->is_final,
+            ]);
+
+        return response()->json($versions);
+    }
+
     public function uploadAgreement(Contract $contract, Request $request): JsonResponse
     {
         $request->validate([
@@ -436,10 +456,10 @@ class FileAction
         return response()->json($versions);
     }
 
-    public function compareAgreementVersions(Contract $contract, Request $request): \Inertia\Response
+    public function compareVersions(Contract $contract, string $type, Request $request): \Inertia\Response
     {
         $versions = $contract->versions()
-            ->where('document_type', 'agreement')
+            ->where('document_type', $type)
             ->orderByDesc('version_no')
             ->get()
             ->map(fn ($v) => [
@@ -448,7 +468,7 @@ class FileAction
                 'file_name' => $v->file_name,
                 'created_at' => $v->created_at->format('Y-m-d H:i'),
                 'uploader' => [
-                    'name' => $v->uploader ? $v->uploader->name : $v->created_by,
+                    'name' => $v->uploader ? $v->uploader->name : 'System',
                 ],
             ]);
 
@@ -457,6 +477,7 @@ class FileAction
             'versions' => $versions,
             'initialV1' => (int) $request->v1,
             'initialV2' => (int) $request->v2,
+            'documentType' => $type,
         ]);
     }
 

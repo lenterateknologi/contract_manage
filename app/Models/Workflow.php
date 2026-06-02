@@ -45,6 +45,7 @@ class Workflow extends Model
         'legal_users',
         'created_by',
         'updated_by',
+        'meta',
     ];
 
     protected $casts = [
@@ -59,11 +60,12 @@ class Workflow extends Model
         'legal_roles' => 'array',
         'legal_departments' => 'array',
         'legal_users' => 'array',
+        'meta' => 'array',
     ];
 
     protected $with = ['initiatorRolesData', 'initiatorDepartmentsData', 'initiatorUsersData'];
 
-    protected $appends = ['initiator_roles', 'initiator_users', 'initiator_departments'];
+    protected $appends = ['initiator_roles', 'initiator_users', 'initiator_departments', 'contract_type_name'];
 
     public function initiatorRolesData(): HasMany
     {
@@ -93,6 +95,11 @@ class Workflow extends Model
     public function getInitiatorUsersAttribute()
     {
         return $this->initiatorUsersData->pluck('user_id')->toArray();
+    }
+
+    public function getContractTypeNameAttribute()
+    {
+        return $this->contractType?->name;
     }
 
     public function contractType(): BelongsTo

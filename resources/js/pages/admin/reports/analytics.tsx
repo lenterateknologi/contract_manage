@@ -44,6 +44,13 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
         date_to: '',
         contract_type_ids: [],
         creator_ids: [],
+        contracts_page: 1,
+    });
+    
+    const [pagination, setPagination] = useState({
+        current_page: 1,
+        last_page: 1,
+        total: 0,
     });
 
     const fetchData = (currentFilters = filters) => {
@@ -70,9 +77,14 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
                         name: t.name,
                         count: Math.floor(Math.random() * 10) + 1,
                     })),
-                    recentContracts: raw.contracts.slice(0, 10),
+                    recentContracts: raw.contracts.data || [],
                     types: raw.types,
                     users: raw.users,
+                });
+                setPagination({
+                    current_page: raw.contracts.current_page || 1,
+                    last_page: raw.contracts.last_page || 1,
+                    total: raw.contracts.total || 0,
                 });
                 setLoading(false);
             })
@@ -250,6 +262,43 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
                                         ))}
                                     </tbody>
                                 </table>
+                            </div>
+                            
+                            <div className="border-border bg-muted/30 flex items-center justify-between border-t p-4">
+                                <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+                                    Menampilkan {data?.recentContracts.length || 0} dari {pagination.total} kontrak
+                                </p>
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={pagination.current_page <= 1}
+                                        onClick={() => {
+                                            const nextFilters = { ...filters, contracts_page: pagination.current_page - 1 };
+                                            setFilters(nextFilters);
+                                            fetchData(nextFilters);
+                                        }}
+                                        className="h-8 text-[10px] font-bold uppercase"
+                                    >
+                                        Prev
+                                    </Button>
+                                    <span className="text-muted-foreground text-[10px] font-bold mx-2">
+                                        {pagination.current_page} / {pagination.last_page}
+                                    </span>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={pagination.current_page >= pagination.last_page}
+                                        onClick={() => {
+                                            const nextFilters = { ...filters, contracts_page: pagination.current_page + 1 };
+                                            setFilters(nextFilters);
+                                            fetchData(nextFilters);
+                                        }}
+                                        className="h-8 text-[10px] font-bold uppercase"
+                                    >
+                                        Next
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     </div>

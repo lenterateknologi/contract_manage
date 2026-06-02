@@ -7,7 +7,7 @@ import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { usePermissions } from '@/hooks/use-permissions';
 import { cn, groupColor } from '@/lib/utils';
 import { router, useForm } from '@inertiajs/react';
-import { Plus, Trash2, Users } from 'lucide-react';
+import { Plus, Tags, Trash2, Users } from 'lucide-react';
 import React, { useMemo } from 'react';
 import { FormSection, ManagementForm } from './ManagementForm';
 
@@ -192,16 +192,18 @@ export function CompanyGroupManagement({ groups, regions, filters }: Readonly<Co
                     description={`Apakah Anda yakin ingin menghapus group ${editingGroup?.name}? Tindakan ini tidak dapat dibatalkan.`}
                     confirmText="Hapus Group"
                 />
-                <div className="animate-in fade-in grid grid-cols-1 gap-8 duration-200 select-none md:grid-cols-12">
-                    <div className="space-y-8 md:col-span-8">
-                        <FormSection title="Informasi Group" subtitle="Nama dan deskripsi entitas grup">
-                            <div className="grid grid-cols-1 gap-6">
+                <div className="animate-in fade-in grid grid-cols-1 gap-16 duration-300 select-none lg:grid-cols-2 w-full">
+                    {/* Side 1: Primary Configuration */}
+                    <div className="space-y-12">
+                        <FormSection title="Informasi Group" subtitle="Nama dan identitas unik entitas grup perusahaan">
+                            <div className="grid grid-cols-1 gap-y-10">
                                 <CompactInput
                                     label="Nama Group Perusahaan"
                                     value={form.data.name}
                                     onChange={(e) => form.setData('name', e.target.value)}
                                     placeholder="CONTOH: HOLDING ABC"
                                     error={form.errors.name}
+                                    icon={Users}
                                 />
                                 <CompactInput
                                     label="Kode Group"
@@ -209,46 +211,50 @@ export function CompanyGroupManagement({ groups, regions, filters }: Readonly<Co
                                     onChange={(e) => form.setData('code', e.target.value)}
                                     placeholder="CONTOH: HOLD-ABC"
                                     error={form.errors.code}
+                                    icon={Tags}
                                 />
                                 <CompactInput
                                     label="Deskripsi"
                                     value={form.data.description}
                                     onChange={(e) => form.setData('description', e.target.value)}
-                                    placeholder="TULISKAN DESKRIPSI GRUP INI..."
+                                    placeholder="TULISKAN DESKRIPSI GRUP INI SECARA MENDALAM..."
                                     error={form.errors.description}
                                 />
                             </div>
                         </FormSection>
+                    </div>
 
+                    {/* Side 2: Associated Companies & Metadata */}
+                    <div className="space-y-12">
                         {editingGroup && (
-                            <>
-                                <FormSection
-                                    title="Daftar Perusahaan"
-                                    subtitle="Daftar unit bisnis yang terdaftar dalam grup ini"
-                                    headerAction={
-                                        <Button
-                                            type="button"
-                                            variant="white"
-                                            size="sm"
-                                            onClick={() => router.get('/admin/companies', { action: 'create', company_group_id: editingGroup.id })}
-                                            className="border-surface-border bg-surface-muted text-primary hover:bg-primary gap-2 border text-[10px] transition-all hover:text-white"
-                                        >
-                                            <Plus size={12} /> Tambah Company
-                                        </Button>
-                                    }
-                                >
-                                    <div className="divide-surface-border border-surface-border bg-surface-muted/50 divide-y rounded-xl border">
-                                        {editingGroup.companies?.length > 0 ? (
-                                            editingGroup.companies.map((company: any) => (
+                            <FormSection
+                                title="Unit Bisnis Terdaftar"
+                                subtitle="Daftar perusahaan yang berada di bawah naungan grup ini"
+                                headerAction={
+                                    <Button
+                                        type="button"
+                                        variant="white"
+                                        size="sm"
+                                        onClick={() => router.get('/admin/companies', { action: 'create', company_group_id: editingGroup.id })}
+                                        className="h-8 rounded-lg border-primary/20 text-[9px] font-black uppercase tracking-widest text-primary hover:bg-primary hover:text-white transition-all"
+                                    >
+                                        <Plus size={12} className="mr-1.5" /> Tambah Company
+                                    </Button>
+                                }
+                            >
+                                <div className="border-black/[0.03] dark:border-white/[0.03] rounded-2xl border-2 border-dashed p-6 transition-all duration-200 overflow-hidden">
+                                    {editingGroup.companies?.length > 0 ? (
+                                        <div className="flex flex-col gap-3">
+                                            {editingGroup.companies.map((company: any) => (
                                                 <div
                                                     key={company.id}
-                                                    className="hover:bg-primary/5 flex items-center justify-between p-4 transition-colors"
+                                                    className="group flex items-center justify-between rounded-xl border border-black/[0.03] dark:border-white/[0.03] bg-black/[0.01] dark:bg-white/[0.01] p-4 transition-all hover:border-primary/30 hover:bg-white dark:hover:bg-black"
                                                 >
                                                     <div className="flex flex-col">
-                                                        <span className="text-text-main text-xs font-bold tracking-wide uppercase">
+                                                        <span className="text-[12px] font-bold text-slate-700 tracking-tight dark:text-slate-300">
                                                             {company.name}
                                                         </span>
-                                                        <span className="text-text-desc text-[10px] font-medium uppercase">
+                                                        <span className="text-text-soft text-[10px] font-medium uppercase mt-0.5">
                                                             {company.code} • {company.region?.name || 'GLOBAL'}
                                                         </span>
                                                     </div>
@@ -257,36 +263,26 @@ export function CompanyGroupManagement({ groups, regions, filters }: Readonly<Co
                                                         variant="ghost"
                                                         size="sm"
                                                         onClick={() => router.get('/admin/companies', { action: 'edit', id: company.id })}
-                                                        className="text-text-desc hover:text-primary text-[10px]"
+                                                        className="text-text-desc hover:text-primary h-8 rounded-lg text-[10px] font-black uppercase tracking-widest opacity-0 transition-opacity group-hover:opacity-100"
                                                     >
                                                         Kelola
                                                     </Button>
                                                 </div>
-                                            ))
-                                        ) : (
-                                            <div className="flex flex-col items-center justify-center py-10 opacity-40">
-                                                <p className="text-[10px] font-bold uppercase">Belum ada company terdaftar</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </FormSection>
-                            </>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center py-12 bg-black/[0.01] dark:bg-white/[0.01] rounded-xl">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-300">Belum ada unit bisnis terdaftar</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </FormSection>
                         )}
-                    </div>
 
-                    <div className="flex flex-col gap-8 md:col-span-4">
-                        <div className="border-surface-border bg-surface-muted/40 group relative overflow-hidden rounded-2xl border p-6 shadow-sm backdrop-blur-sm transition-all duration-200 select-none">
-                            <div className="absolute top-0 right-0 p-4 opacity-5 transition-opacity duration-200 group-hover:opacity-10">
-                                <Users size={80} strokeWidth={1} />
-                            </div>
-                            <div className="relative z-10 mb-4 flex items-center gap-3">
-                                <span className="text-xs font-bold tracking-wider text-text-main uppercase">
-                                    Master Hierarchy
-                                </span>
-                            </div>
-                            <p className="text-text-desc relative z-10 text-xs leading-relaxed font-medium">
-                                Company Group adalah level tertinggi dalam hirarki organisasi. Satu Group dapat membawahi beberapa Perusahaan (PT) di
-                                berbagai wilayah.
+                        <div className="animate-in fade-in flex gap-4 rounded-2xl border border-primary/20 bg-primary/5 p-6 backdrop-blur-sm duration-300 dark:bg-primary/10">
+                            <Users size={24} className="mt-0.5 shrink-0 text-primary" />
+                            <p className="text-[11px] leading-relaxed font-semibold text-primary/80 uppercase tracking-tight">
+                                Company Group adalah level tertinggi dalam hirarki organisasi. Satu Group dapat membawahi beberapa Perusahaan (PT) di berbagai wilayah untuk konsolidasi data dan pelaporan.
                             </p>
                         </div>
                     </div>

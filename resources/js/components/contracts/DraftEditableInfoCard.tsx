@@ -27,6 +27,7 @@ interface DraftEditableInfoCardProps {
     setPreviewUrl: (v: string) => void;
     setPreviewHasFile: (v: boolean) => void;
     setPreviewOpen: (v: boolean) => void;
+    meId?: string;
 }
 
 export function DraftEditableInfoCard({
@@ -42,8 +43,9 @@ export function DraftEditableInfoCard({
     setPreviewUrl,
     setPreviewHasFile,
     setPreviewOpen,
+    meId,
 }: DraftEditableInfoCardProps) {
-    const isDraft = selected.allow_info_edit && canUpdate;
+    const isDraft = (selected as any).allow_info_edit && (canUpdate || selected.created_by === meId);
     const [title, setTitle] = useState(selected.title);
     const [description, setDescription] = useState(selected.description || '');
     const [typeId, setTypeId] = useState(() => {
@@ -136,7 +138,7 @@ export function DraftEditableInfoCard({
     }, [title, description, typeId, vendorId, submissionTypeId, kopSubTopik, taxRequired, isDraft, onUpdate]);
 
     const inputCls =
-        'w-full bg-surface-muted border-surface-border rounded-lg px-3 py-1.5 text-sm text-text-main outline-none focus:bg-surface-base transition-all shadow-sm';
+        'w-full bg-surface-base border-surface-border rounded-lg px-3 py-2 text-sm font-medium text-text-main outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all shadow-xs placeholder:text-text-soft/30';
 
     const f2Version = selected.versions?.filter((x) => x.document_type === 'f2').sort((a, b) => b.version_no - a.version_no)[0];
 
@@ -186,106 +188,35 @@ export function DraftEditableInfoCard({
                 </div>
             </div>
             {!minimized && (
-                <div className="grid grid-cols-1 gap-4 p-4">
-                    {/* --- Visual Mapping & Analysis --- */}
-                    <div className="col-span-full mb-2">
-                        <div className="text-text-desc mb-3 text-[10px] font-bold tracking-widest uppercase opacity-60">Mapping & Analisis Alur</div>
-                        <div className="relative flex items-center justify-between gap-2 rounded-2xl border border-slate-100 bg-slate-50/50 p-4 dark:border-white/5 dark:bg-white/5">
-                            {/* Contract Type */}
-                            <div className="flex flex-1 flex-col items-center gap-2 text-center">
-                                <div className="bg-primary/10 text-primary flex h-10 w-10 items-center justify-center rounded-xl shadow-inner">
-                                    <FileText size={18} />
-                                </div>
-                                <div className="flex flex-col">
-                                    <span className="text-text-desc text-[8px] font-black tracking-tighter uppercase">Jenis Kontrak</span>
-                                    <span className="text-text-main max-w-[100px] truncate text-[10px] font-bold">
-                                        {types.find(t => String(t.id) === typeId)?.name || selected.contract_type || 'Unknown'}
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Arrow 1 */}
-                            <div className="flex shrink-0 items-center text-slate-300">
-                                <ChevronRight size={16} />
-                            </div>
-
-                            {/* Form Builder Template */}
-                            <div className="flex flex-1 flex-col items-center gap-2 text-center">
-                                <div className={cn(
-                                    "flex h-10 w-10 items-center justify-center rounded-xl shadow-inner",
-                                    tpl ? "bg-indigo-500/10 text-indigo-500" : "bg-slate-200 text-slate-400 opacity-40"
-                                )}>
-                                    <LayoutTemplate size={18} />
-                                </div>
-                                <div className="flex flex-col">
-                                    <span className="text-text-desc text-[8px] font-black tracking-tighter uppercase">Form Builder</span>
-                                    <span className={cn(
-                                        "max-w-[100px] truncate text-[10px] font-bold",
-                                        tpl ? "text-indigo-600" : "text-text-soft italic"
-                                    )}>
-                                        {tpl?.name || 'No Template'}
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Arrow 2 */}
-                            <div className="flex shrink-0 items-center text-slate-300">
-                                <ChevronRight size={16} />
-                            </div>
-
-                            {/* Workflow Engine */}
-                            <div className="flex flex-1 flex-col items-center gap-2 text-center">
-                                <div className={cn(
-                                    "flex h-10 w-10 items-center justify-center rounded-xl shadow-inner",
-                                    selected.workflow ? "bg-emerald-500/10 text-emerald-500" : "bg-slate-200 text-slate-400 opacity-40"
-                                )}>
-                                    <Zap size={18} />
-                                </div>
-                                <div className="flex flex-col">
-                                    <span className="text-text-desc text-[8px] font-black tracking-tighter uppercase">Workflow Analis</span>
-                                    <span className={cn(
-                                        "max-w-[100px] truncate text-[10px] font-bold",
-                                        selected.workflow ? "text-emerald-600" : "text-text-soft italic"
-                                    )}>
-                                        {selected.workflow?.name || 'Manual Flow'}
-                                    </span>
-                                </div>
-                            </div>
+                <div className="grid grid-cols-1 gap-5 p-5">
+                    <div className="flex flex-col gap-1">
+                        <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">No. Pengajuan</div>
+                        <div className="text-text-main font-mono text-sm font-semibold">
+                            {selected.contract_no}
                         </div>
                     </div>
 
-                    <div className="border-surface-border col-span-full border-t border-dashed my-1" />
-
-                    <div>
-                        <div className="text-text-desc mb-1 text-xs font-semibold">No. Pengajuan</div>
-                        <span className="bg-surface-muted text-text-main inline-block rounded px-3 py-1.5 font-mono text-sm font-medium shadow-sm">
-                            {selected.contract_no}
-                        </span>
-                    </div>
-
-                    <div>
-                        <div className="text-text-desc mb-1 text-xs font-semibold">No. Kontrak (F2)</div>
-                        <div className="bg-primary/5 border-primary/10 text-primary flex h-9 items-center rounded-lg border px-3 text-sm font-semibold">
-                            {(selected as any).crown_no || 'Belum diisi di F2'}
+                    <div className="flex flex-col gap-1">
+                        <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">No. Kontrak (F2)</div>
+                        <div className="text-primary text-sm font-bold">
+                            {(selected as any).crown_no || <span className="text-text-soft/40 italic font-medium text-xs">Belum diisi di F2</span>}
                         </div>
                     </div>
 
                     {isDraft ? (
-                        <>
-                            <div className="col-span-full">
-                                <div className="text-text-desc mb-1 text-xs font-semibold">Judul Kontrak</div>
-                                <input
-                                    value={title}
-                                    onChange={(e) => setTitle(e.target.value)}
-                                    placeholder="Nama kontrak..."
-                                    className={inputCls + ' text-sm font-medium'}
-                                />
-                            </div>
-                        </>
+                        <div className="flex flex-col gap-1.5">
+                            <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Judul Kontrak</div>
+                            <input
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
+                                placeholder="Masukkan nama kontrak..."
+                                className={inputCls}
+                            />
+                        </div>
                     ) : null}
 
-                    <div>
-                        <div className="text-text-desc mb-1 text-xs font-semibold">Jenis Kontrak</div>
+                    <div className="flex flex-col gap-1.5">
+                        <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Jenis Kontrak</div>
                         {isDraft ? (
                             <select value={typeId} onChange={(e) => setTypeId(e.target.value)} className={inputCls}>
                                 <option value="">Pilih Tipe</option>
@@ -297,14 +228,14 @@ export function DraftEditableInfoCard({
                                     ))}
                             </select>
                         ) : (
-                            <span className="bg-primary/10 text-primary rounded-full px-3 py-1 text-xs font-semibold shadow-sm">
+                            <div className="text-text-main text-sm font-semibold">
                                 {selected.contract_type}
-                            </span>
+                            </div>
                         )}
                     </div>
 
-                    <div>
-                        <div className="text-text-desc mb-1 text-xs font-semibold">Perjanjian</div>
+                    <div className="flex flex-col gap-1.5">
+                        <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Perjanjian</div>
                         {isDraft ? (
                             <select value={submissionTypeId} onChange={(e) => setSubmissionTypeId(e.target.value)} className={inputCls}>
                                 <option value="">Pilih Tipe</option>
@@ -316,12 +247,12 @@ export function DraftEditableInfoCard({
                                     ))}
                             </select>
                         ) : (
-                            <span className="text-text-main text-sm font-medium">{selected.submission_type || '—'}</span>
+                            <div className="text-text-main text-sm font-semibold">{selected.submission_type || '—'}</div>
                         )}
                     </div>
 
-                    <div>
-                        <div className="text-text-desc mb-1 text-xs font-semibold">Pihak Kedua (Vendor)</div>
+                    <div className="flex flex-col gap-1.5">
+                        <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Pihak Kedua (Vendor)</div>
                         {isDraft ? (
                             <select value={vendorId} onChange={(e) => setVendorId(e.target.value)} className={inputCls}>
                                 <option value="">Pilih Vendor</option>
@@ -333,48 +264,48 @@ export function DraftEditableInfoCard({
                                     ))}
                             </select>
                         ) : (
-                            <span className="bg-surface-muted text-text-main rounded-full px-3 py-1 text-xs font-semibold shadow-sm">
+                            <div className="text-text-main text-sm font-semibold">
                                 {(selected as any).vendor?.name || '-'}
-                            </span>
+                            </div>
                         )}
                     </div>
 
-                    <div>
-                        <div className="text-text-desc mb-1 text-xs font-semibold">Dibuat Oleh</div>
-                        <div className="flex items-center gap-1.5">
+                    <div className="flex flex-col gap-1">
+                        <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Dibuat Oleh</div>
+                        <div className="flex items-center gap-2">
                             <Avatar user={selected.creator} size="sm" />
-                            <span className="text-text-main text-sm font-medium">{selected.creator?.name}</span>
+                            <span className="text-text-main text-sm font-semibold">{selected.creator?.name}</span>
                         </div>
                     </div>
 
-                    <div>
-                        <div className="text-text-desc mb-1 text-xs font-semibold">Tgl Dibuat</div>
-                        <span className="text-text-main text-sm font-medium">{selected.created_at}</span>
+                    <div className="flex flex-col gap-1">
+                        <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Tgl Dibuat</div>
+                        <span className="text-text-main text-sm font-semibold">{selected.created_at}</span>
                     </div>
 
-                    <div className="border-surface-border col-span-full mt-2 border-t pt-4">
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            <div>
-                                <div className="text-text-desc mb-1.5 text-xs font-semibold">Disetujui Oleh</div>
+                    <div className="border-surface-border mt-2 border-t pt-5">
+                        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                            <div className="flex flex-col gap-1.5">
+                                <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Disetujui Oleh</div>
                                 {selected.assigned_by ? (
                                     <div className="flex items-center gap-2">
-                                        <Avatar user={selected.assigned_by} size="sm" className="ring-surface-muted ring-1" />
-                                        <span className="text-text-main text-sm font-semibold">{selected.assigned_by.name}</span>
+                                        <Avatar user={selected.assigned_by} size="sm" />
+                                        <span className="text-text-main text-sm font-bold">{selected.assigned_by.name}</span>
                                     </div>
                                 ) : (
-                                    <span className="text-text-soft text-xs italic">Belum disetujui manager</span>
+                                    <span className="text-text-soft text-xs italic opacity-50">Belum disetujui manager</span>
                                 )}
                             </div>
 
-                            <div>
-                                <div className="text-text-desc mb-1.5 text-xs font-semibold">Ditugaskan</div>
+                            <div className="flex flex-col gap-1.5">
+                                <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Ditugaskan</div>
                                 {selected.assigned_pic ? (
                                     <div className="flex items-center gap-2">
-                                        <Avatar user={selected.assigned_pic} size="sm" className="ring-surface-muted ring-1" />
-                                        <span className="text-text-main text-sm font-semibold">{selected.assigned_pic.name}</span>
+                                        <Avatar user={selected.assigned_pic} size="sm" />
+                                        <span className="text-text-main text-sm font-bold">{selected.assigned_pic.name}</span>
                                     </div>
                                 ) : (
-                                    <span className="text-text-soft text-xs italic">Belum ditugaskan</span>
+                                    <span className="text-text-soft text-xs italic opacity-50">Belum ditugaskan</span>
                                 )}
                             </div>
                         </div>

@@ -137,9 +137,6 @@ class MasterDataAdminController extends Controller
                         'icon' => $s->icon,
                         'description' => $s->description,
                         'is_active' => $s->is_active,
-                        'display_mode' => $s->display_mode,
-                        'allow_info_edit' => $s->allow_info_edit,
-                        'allow_reference' => $s->allow_reference,
                     ];
                 })->toArray();
             }
@@ -691,9 +688,6 @@ class MasterDataAdminController extends Controller
                                 'icon' => $s['icon'] ?? null,
                                 'description' => $s['description'] ?? null,
                                 'is_active' => $s['is_active'] ?? true,
-                                'display_mode' => $s['display_mode'] ?? 'badge',
-                                'allow_info_edit' => $s['allow_info_edit'] ?? false,
-                                'allow_reference' => $s['allow_reference'] ?? false,
                                 'created_by' => $admin,
                                 'updated_by' => $admin,
                             ],
