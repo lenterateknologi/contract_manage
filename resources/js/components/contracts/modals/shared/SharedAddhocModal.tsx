@@ -119,7 +119,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                 (a.action_code === 'forward')
             );
             const config = activeAction?.assignee_config || {};
-            const defaultTargetStepId = activeAction?.next_step_id || contract.workflow_step_id;
+            const defaultTargetStepId = config.default_target_step || contract.workflow_step_id;
             const finalTargetStepId = config.allow_user_select_step && selectedTargetStepId ? selectedTargetStepId : defaultTargetStepId;
 
             const updatedContract = await contractApi.addAdhocApprover(contract.id, selectedUserIds, note, isSequential, finalTargetStepId);
@@ -197,16 +197,16 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                 {(() => {
                     const currentStep = contract?.workflow_step;
                     const activeAction = (currentStep?.actions || []).find((a: any) => {
-                        if (actionCode) return a.action_code === actionCode;
-                        return (a.master_action?.code?.toLowerCase() === 'forward') || (a.action_code === 'forward');
+                        if (actionCode) return (a.action_code === actionCode) || (a.master_action_code === actionCode);
+                        return (a.master_action_code?.toLowerCase() === 'forward') || (a.action_code?.toLowerCase() === 'forward');
                     });
                     const config = activeAction?.assignee_config || {};
-                    const defaultTargetStepId = activeAction?.next_step_id || contract?.workflow_step_id;
+                    const defaultTargetStepId = activeAction?.next_step_id || config.default_target_step || contract?.workflow_step_id;
                     const resolvedTargetStepId = selectedTargetStepId || String(defaultTargetStepId);
 
                     return (
                         <>
-                            {config.allow_user_select_step && contract?.workflow?.steps && contract.workflow.steps.length > 0 && (
+                            {config.allow_user_select_step && contract?.workflow?.steps && contract.workflow.steps.length > 0 ? (
                                 <div className="space-y-2">
                                     <label className="text-text-soft text-[10px] font-bold tracking-wider uppercase">
                                         Sisipkan Ke Langkah
@@ -236,6 +236,24 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                                             return true;
                                         })}
                                     />
+                                </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    <label className="text-text-soft text-[10px] font-bold tracking-wider uppercase">
+                                        Disisipkan Ke Langkah
+                                    </label>
+                                    <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-400">
+                                        {(() => {
+                                            if (defaultTargetStepId === contract?.workflow_step_id) {
+                                                return `(Step Saat Ini) Tahap ${contract?.workflow_step?.step} - ${contract?.workflow_step?.description || contract?.workflow_step?.label || ''}`;
+                                            }
+                                            const targetStep = contract?.workflow?.steps?.find((s: any) => s.id === defaultTargetStepId);
+                                            if (targetStep) {
+                                                return `Tahap ${targetStep.step} - ${targetStep.description || targetStep.label || ''}`;
+                                            }
+                                            return 'Tahap Saat Ini (Default)';
+                                        })()}
+                                    </div>
                                 </div>
                             )}
                         </>

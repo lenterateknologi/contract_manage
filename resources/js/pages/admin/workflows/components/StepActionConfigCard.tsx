@@ -315,10 +315,15 @@ export function StepActionConfigCard({
                             <div className="space-y-1">
                                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Target Langkah (Sub-Step)</label>
                                 <Select
-                                    value={act.signature_target_step ? String(act.signature_target_step) : ''}
-                                    onValueChange={(val) => {
-                                        updateAction(actIdx, { signature_target_step: val });
-                                    }}
+                                    value={act.assignee_config?.signature_target_step ? String(act.assignee_config?.signature_target_step) : ''}
+                                    onValueChange={(val) =>
+                                        updateAction(actIdx, {
+                                            assignee_config: {
+                                                ...act.assignee_config,
+                                                signature_target_step: val
+                                            }
+                                        })
+                                    }
                                 >
                                     <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-white text-[10px] font-black uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
                                         <SelectValue placeholder="PILIH TAHAP TARGET" />
@@ -349,6 +354,39 @@ export function StepActionConfigCard({
                             </label>
                         </div>
                         <div className="space-y-4">
+                            {isSignatureAction && (
+                                <div className="space-y-1 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">
+                                        Target Langkah Tanda Tangan (Insert To)
+                                    </label>
+                                    <Select
+                                        value={act.assignee_config?.signature_target_step ? String(act.assignee_config?.signature_target_step) : ''}
+                                        onValueChange={(val) =>
+                                            updateAction(actIdx, {
+                                                assignee_config: {
+                                                    ...act.assignee_config,
+                                                    signature_target_step: val
+                                                }
+                                            })
+                                        }
+                                    >
+                                        <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-white text-[10px] font-black uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
+                                            <SelectValue placeholder="PILIH TAHAP TARGET" />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-lg bg-white dark:bg-slate-950">
+                                            {allWorkflowSteps.map((s: any, sIdx: number) => (
+                                                <SelectItem key={s.id} value={String(s.id)} className="text-[9px] font-bold uppercase">
+                                                    TAHAP {sIdx + 1}: {s.label || `Langkah ${sIdx + 1}`}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <p className="text-[9px] text-slate-400 italic">
+                                        Langkah di mana Pihak 1 & 2 akan disisipkan sebagai sub-step (contoh: 2.1, 2.2).
+                                    </p>
+                                </div>
+                            )}
+
                             {isForwardAction && (
                                 <div className="space-y-1">
                                     <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Target Langkah (Insert To)</label>
@@ -413,6 +451,39 @@ export function StepActionConfigCard({
                                                 />
                                                 <p className="text-[9px] text-slate-400 italic">
                                                     Jika dikosongkan, user dapat memilih semua langkah (kecuali condition).
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {!act.assignee_config?.allow_user_select_step && (
+                                            <div className="mt-3 space-y-1 pl-4 border-l-2 border-slate-100 dark:border-slate-800">
+                                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">
+                                                    Default Target Langkah (Mode Admin)
+                                                </label>
+                                                <Select
+                                                    value={act.assignee_config?.default_target_step ? String(act.assignee_config?.default_target_step) : ''}
+                                                    onValueChange={(val) => {
+                                                        updateAction(actIdx, {
+                                                            assignee_config: {
+                                                                ...(act.assignee_config || {}),
+                                                                default_target_step: val
+                                                            }
+                                                        });
+                                                    }}
+                                                >
+                                                    <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-white text-[10px] font-black uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
+                                                        <SelectValue placeholder="PILIH TAHAP TARGET" />
+                                                    </SelectTrigger>
+                                                    <SelectContent className="rounded-lg bg-white dark:bg-slate-950">
+                                                        {allWorkflowSteps.map((s: any, sIdx: number) => (
+                                                            <SelectItem key={s.id} value={String(s.id)} className="text-[9px] font-bold uppercase">
+                                                                TAHAP {sIdx + 1}: {s.label || `Langkah ${sIdx + 1}`}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                <p className="text-[9px] text-slate-400 italic">
+                                                    Pilih langkah mana persetujuan tambahan ini akan disisipkan.
                                                 </p>
                                             </div>
                                         )}

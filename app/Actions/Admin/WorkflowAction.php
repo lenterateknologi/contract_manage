@@ -406,6 +406,21 @@ class WorkflowAction
                 }
             }
 
+            $assigneeConfig = $actData['assignee_config'] ?? [];
+            if (isset($assigneeConfig['default_target_step']) && isset($stepIdMap[$assigneeConfig['default_target_step']])) {
+                $assigneeConfig['default_target_step'] = $stepIdMap[$assigneeConfig['default_target_step']];
+            }
+            if (isset($assigneeConfig['signature_target_step']) && isset($stepIdMap[$assigneeConfig['signature_target_step']])) {
+                $assigneeConfig['signature_target_step'] = $stepIdMap[$assigneeConfig['signature_target_step']];
+            }
+            
+            // Map selectable_steps if present
+            if (isset($assigneeConfig['selectable_steps']) && is_array($assigneeConfig['selectable_steps'])) {
+                $assigneeConfig['selectable_steps'] = array_map(function($stepId) use ($stepIdMap) {
+                    return $stepIdMap[$stepId] ?? $stepId;
+                }, $assigneeConfig['selectable_steps']);
+            }
+
             $actionFields = [
                 'action_code' => $code,
                 'next_step_id' => $nextStepId,
@@ -414,7 +429,7 @@ class WorkflowAction
                 'required_fields' => $actData['required_fields'] ?? [],
                 'autofilled_fields' => $actData['autofilled_fields'] ?? [],
                 'signing_parties' => $actData['signing_parties'] ?? [],
-                'assignee_config' => $actData['assignee_config'] ?? [],
+                'assignee_config' => $assigneeConfig,
                 'alias' => $actData['alias'] ?? null,
                 'description' => $actData['description'] ?? null,
                 'is_active' => $actData['is_active'] ?? true,

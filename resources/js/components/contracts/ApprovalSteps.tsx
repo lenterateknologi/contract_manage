@@ -126,16 +126,44 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
             const seq = a.sequence;
             let group = currentBlock.groups.find((g: any) => g.sequence === seq);
             if (!group) {
-                const stepName = a.step_name || a.role || 'Persetujuan';
                 group = {
                     sequence: seq,
-                    stepName,
-                    stepDescription: a.step_description,
+                    stepName: '',
+                    stepDescription: '',
                     items: [],
                 };
                 currentBlock.groups.push(group);
             }
             group.items.push(a);
+        });
+        
+        // After grouping, ensure each group is named correctly and items are sorted properly
+        blocks.forEach(block => {
+            block.groups.forEach((group: any) => {
+                // Find the main step (the one that is not a sub-step, i.e., sub_step is null)
+                const mainStep = group.items.find((a: any) => a.sub_step == null) || group.items[0];
+                group.stepName = mainStep.step_name || mainStep.role || 'Persetujuan';
+                group.stepDescription = mainStep.step_description;
+                
+                // Sort items so the main step (sub_step == null) is ALWAYS FIRST
+                group.items.sort((a: any, b: any) => {
+                    if (a.sub_step == null && b.sub_step != null) return -1;
+                    if (a.sub_step != null && b.sub_step == null) return 1;
+                    
+                    if (a.sub_step != null && b.sub_step != null) {
+                        return Number(a.sub_step) - Number(b.sub_step);
+                    }
+                    
+                    // Fallback to ID or created_at if both are main steps (shouldn't happen)
+                    if (a.created_at && b.created_at) {
+                        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+                    }
+                    return a.id.localeCompare(b.id);
+                });
+            });
+            
+            // Also ensure groups are sorted by sequence
+            block.groups.sort((a: any, b: any) => Number(a.sequence) - Number(b.sequence));
         });
 
         return blocks;
@@ -580,23 +608,22 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                             {/* Approvals listed under this group with L-shaped tree branches for ad-hoc items */}
                                             <div className="space-y-1.5">
                                                 {(() => {
-                                                    const adhocItems = group.items.filter((item: ContractApproval) => item.role === 'Persetujuan Tambahan');
+                                                    const subStepItems = group.items.filter((item: ContractApproval) => item.sub_step != null);
                                                     return group.items.map((a: ContractApproval) => {
-                                                        const isAdhoc = a.role === 'Persetujuan Tambahan';
-                                                        if (!isAdhoc) {
+                                                        const isSubStep = a.sub_step != null;
+                                                        if (!isSubStep) {
                                                             return (
                                                                 <div key={a.id} className="relative">
-                                                                    {/* Line down to adhoc items if they exist */}
-                                                                    {adhocItems.length > 0 && (
+                                                                    {subStepItems.length > 0 && (
                                                                         <div className="absolute left-[9px] top-6 bottom-0 w-0.5 bg-slate-200 dark:bg-slate-800" />
                                                                     )}
                                                                     {renderApprovalCard(a, `${group.sequence}`)}
                                                                 </div>
                                                             );
                                                         } else {
-                                                            const adhocIdx = adhocItems.indexOf(a);
-                                                            const isLastAdhoc = adhocIdx === adhocItems.length - 1;
-                                                            const stepNumber = `${group.sequence}.${adhocIdx + 1}`;
+                                                            const subStepIdx = subStepItems.indexOf(a);
+                                                            const isLastSubStep = subStepIdx === subStepItems.length - 1;
+                                                            const stepNumber = `${group.sequence}.${a.sub_step}`;
                                                             return (
                                                                 <div key={a.id} className="relative pl-6 animate-in fade-in duration-300">
                                                                     {/* Tree connector branch */}
@@ -604,7 +631,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                                         {/* Vertical line segment */}
                                                                         <div className={cn(
                                                                             "absolute left-0 top-0 w-0.5 bg-slate-200 dark:bg-slate-800",
-                                                                            isLastAdhoc ? "h-[16px]" : "bottom-0"
+                                                                            isLastSubStep ? "h-[16px]" : "bottom-0"
                                                                         )} />
                                                                         {/* Horizontal branch line segment */}
                                                                         <div className="absolute left-0 top-[16px] w-3.5 h-0.5 bg-slate-200 dark:bg-slate-800" />

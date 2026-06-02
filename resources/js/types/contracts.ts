@@ -41,6 +41,7 @@ export interface ContractApproval {
     target_approvers?: string;
     target_emails?: string;
     sequence: number;
+    sub_step?: number | null;
     sort_order?: number;
     status: 'pending' | 'waiting' | 'approved' | 'rejected';
     is_active?: boolean;

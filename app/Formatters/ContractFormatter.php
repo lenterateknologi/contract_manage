@@ -109,10 +109,12 @@ class ContractFormatter
                 'target_approvers' => $c->approvals->where('sequence', $c->workflowStep->step)->whereIn('status', ['pending', 'waiting'])->first()?->target_approvers,
                 'actions' => $c->workflowStep->actions ? $c->workflowStep->actions->map(fn ($action) => [
                     'id' => $action->id,
-                    'action_code' => $action->action_code instanceof \App\Enums\WorkflowAction ? $action->action_code->value : $action->action_code,
+                    'action_code' => $action->action_code instanceof \App\Enums\WorkflowAction ? $action->action_code->value : ($action->action_code ?? $action->masterAction?->code),
+                    'master_action_code' => $action->masterAction?->code,
                     'alias' => $action->alias,
                     'next_workflow_id' => $action->next_workflow_id,
                     'next_workflow_step_id' => $action->next_workflow_step_id,
+                    'next_step_id' => $action->next_step_id,
                     'assignee_config' => $action->assignee_config,
                     'required_fields' => $action->required_fields,
                     'autofilled_fields' => $action->autofilled_fields,
@@ -339,6 +341,7 @@ class ContractFormatter
                             'target_approvers' => $rowTargetApprovers,
                             'target_emails' => $a->approver?->email ?: $targetEmails,
                             'sequence' => $step->step,
+                            'sub_step' => $a->sub_step,
                             'status' => $a->status,
                             'comment' => $a->comment,
                             'decided_at' => $a->decided_at?->format('d/m/Y H:i'),
@@ -374,6 +377,9 @@ class ContractFormatter
                     'note' => null,
                     'approved_at' => null,
                     'approver' => null,
+                    'step_type' => 'APPROVAL',
+                    'step_name' => $step->name,
+                    'step_description' => $step->description,
                 ];
             }
 
@@ -387,6 +393,7 @@ class ContractFormatter
                     'target_approvers' => $a->approver_name,
                     'target_emails' => $a->approver?->email,
                     'sequence' => $step->step,
+                    'sub_step' => $a->sub_step,
                     'status' => $a->status,
                     'comment' => $a->comment,
                     'decided_at' => $a->decided_at?->format('d/m/Y H:i'),

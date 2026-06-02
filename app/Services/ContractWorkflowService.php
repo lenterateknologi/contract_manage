@@ -446,7 +446,7 @@ class ContractWorkflowService
                         return strtolower($code) === strtolower($actionCode) || in_array(strtolower($code), ['signature', 'sign']);
                     })->first();
 
-                    $targetStepId = $signingAction->meta['signature_target_step'] ?? $approval->workflow_step_id;
+                    $targetStepId = $signingAction?->assignee_config['signature_target_step'] ?? $approval->workflow_step_id;
                     $targetStep = $targetStepId == $approval->workflow_step_id 
                                     ? $approval->workflowStep 
                                     : \App\Models\WorkflowStep::find($targetStepId);

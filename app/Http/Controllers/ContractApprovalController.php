@@ -273,6 +273,11 @@ class ContractApprovalController extends Controller
                     ->where('workflow_step_id', $targetStepId)
                     ->max('sort_order') ?: 0;
 
+                $maxSubStep = Approval::where('contract_id', $contract->id)
+                    ->where('workflow_step_id', $targetStepId)
+                    ->whereNotNull('sub_step')
+                    ->max('sub_step') ?: 0;
+
                 Approval::create([
                     'contract_id' => $contract->id,
                     'workflow_step_id' => $targetStepId,
@@ -282,6 +287,7 @@ class ContractApprovalController extends Controller
                     'job_title' => $user->job_title ?? null,
                     'status' => $status,
                     'sequence' => $targetStep->step,
+                    'sub_step' => $maxSubStep + 1,
                     'sort_order' => $maxSort + 1,
                     'comment' => $request->input('note'),
                     'is_active' => true,
