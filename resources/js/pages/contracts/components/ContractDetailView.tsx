@@ -102,19 +102,18 @@ const ContractDetailView = ({
         attachment?: File,
         assignedPicId?: string,
         executionOrder?: string,
-        p1UserId?: string | string[],
-        p2UserId?: string | string[],
+        signerUserIds?: string[],
         actionCode?: string,
         isFinal?: boolean,
         targetStepId?: string,
     ) => {
         try {
-            const c = await contractApi.approve(contract.id, note, attachment, assignedPicId, executionOrder, p1UserId, p2UserId, actionCode || activeActionCode, isFinal, targetStepId);
+            const c = await contractApi.approve(contract.id, note, attachment, assignedPicId, executionOrder, signerUserIds, actionCode || activeActionCode, isFinal, targetStepId);
             onUpdate(c);
 
             let msg = 'Kontrak disetujui.';
             if (assignedPicId) msg = 'PIC ditugaskan dan kontrak disetujui.';
-            if (p1UserId || p2UserId) msg = 'Delegasi penandatanganan berhasil dikonfigurasi.';
+            if (signerUserIds && signerUserIds.length > 0) msg = 'Delegasi penandatanganan berhasil dikonfigurasi.';
             if (isFinal) msg = 'Penandatanganan selesai dikonfigurasi sebagai final.';
 
             showToast(msg, 'success');
@@ -508,7 +507,7 @@ const ContractDetailView = ({
                                             </Button>
                                         </div>
 
-                                        {!(activeSignerApproval?.role === 'Pihak 1' ? p1Downloaded : p2Downloaded) && (
+                                        {!(contract.metadata?.[`downloaded_step_${activeSignerApproval?.id}`]) && (
                                             <div className="flex items-start gap-1.5 px-3 py-2 rounded-lg bg-rose-50 border border-rose-100 dark:bg-rose-950/20 dark:border-rose-900/30 mt-1">
                                                 <AlertCircle size={14} className="text-rose-500 shrink-0 mt-0.5" />
                                                 <p className="text-rose-600 dark:text-rose-400 text-[9px] font-medium leading-relaxed italic">

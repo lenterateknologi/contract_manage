@@ -94,9 +94,6 @@ class ContractWorkflowQueryService
     public function resolveHierarchyApprover(Contract $contract, WorkflowStep|int $stepOrLevel): Collection
     {
         $initiator = $contract->initiator;
-        if (! $initiator) {
-            return collect();
-        }
 
         $step = null;
         if ($stepOrLevel instanceof WorkflowStep) {

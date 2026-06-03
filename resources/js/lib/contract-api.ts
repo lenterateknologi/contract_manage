@@ -24,8 +24,7 @@ export const contractApi = {
         attachment?: File,
         assignedPicId?: string,
         executionOrder?: string,
-        p1UserId?: string | string[],
-        p2UserId?: string | string[],
+        signerUserIds?: string[],
         actionCode?: string,
         isFinal?: boolean,
         targetStepId?: string,
@@ -35,19 +34,8 @@ export const contractApi = {
         if (attachment) fd.append('attachment', attachment);
         if (assignedPicId) fd.append('assigned_pic_id', assignedPicId);
         if (executionOrder) fd.append('execution_order', executionOrder);
-        if (p1UserId) {
-            if (Array.isArray(p1UserId)) {
-                p1UserId.forEach(id => fd.append('p1_user_id[]', id));
-            } else {
-                fd.append('p1_user_id', p1UserId);
-            }
-        }
-        if (p2UserId) {
-            if (Array.isArray(p2UserId)) {
-                p2UserId.forEach(id => fd.append('p2_user_id[]', id));
-            } else {
-                fd.append('p2_user_id', p2UserId);
-            }
+        if (signerUserIds && Array.isArray(signerUserIds)) {
+            signerUserIds.forEach(uid => fd.append('signer_user_ids[]', uid));
         }
         if (actionCode) fd.append('action_code', actionCode);
         if (isFinal) fd.append('is_final', '1');

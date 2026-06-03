@@ -47,19 +47,17 @@ trait EvaluatesWorkflowSteps
         // Rule 3: Skip direct supervisor review if initiator is a supervisor or manager
         if ($step->approver_type === 'atasan') {
             $initiator = $contract->initiator;
-            if ($initiator) {
-                $roleName = strtolower($initiator->role ?: ($initiator->role()->first()->name ?? ''));
-                $exemptRoles = [
-                    strtolower(Role::MANAGER),
-                    'supervisor',
-                    strtolower(Role::VP),
-                    strtolower(Role::CEO),
-                    strtolower(Role::DIRECTOR),
-                    strtolower(Role::ADMIN),
-                ];
-                if (in_array($roleName, $exemptRoles)) {
-                    return false;
-                }
+            $roleName = strtolower($initiator->role ?: ($initiator->role()->first()->name ?? ''));
+            $exemptRoles = [
+                strtolower(Role::MANAGER),
+                'supervisor',
+                strtolower(Role::VP),
+                strtolower(Role::CEO),
+                strtolower(Role::DIRECTOR),
+                strtolower(Role::ADMIN),
+            ];
+            if (in_array($roleName, $exemptRoles)) {
+                return false;
             }
         }
 
@@ -68,27 +66,25 @@ trait EvaluatesWorkflowSteps
         $lowerRoles = array_map('strtolower', $roles);
         if (in_array(strtolower(Role::MANAGER), $lowerRoles)) {
             $initiator = $contract->initiator;
-            if ($initiator) {
-                $initiatorRole = strtolower($initiator->role ?: ($initiator->role()->first()->name ?? ''));
-                $exemptRoles = [
-                    strtolower(Role::MANAGER),
-                    strtolower(Role::VP),
-                    strtolower(Role::CEO),
-                    strtolower(Role::DIRECTOR),
-                    strtolower(Role::ADMIN),
-                ];
-                if (in_array($initiatorRole, $exemptRoles)) {
-                    $targetDeptIds = $step->department_ids;
-                    if (empty($targetDeptIds) || in_array($initiator->department_id, $targetDeptIds)) {
-                        return false;
-                    }
+            $initiatorRole = strtolower($initiator->role ?: ($initiator->role()->first()->name ?? ''));
+            $exemptRoles = [
+                strtolower(Role::MANAGER),
+                strtolower(Role::VP),
+                strtolower(Role::CEO),
+                strtolower(Role::DIRECTOR),
+                strtolower(Role::ADMIN),
+            ];
+            if (in_array($initiatorRole, $exemptRoles)) {
+                $targetDeptIds = $step->department_ids;
+                if (empty($targetDeptIds) || in_array($initiator->department_id, $targetDeptIds)) {
+                    return false;
                 }
             }
         }
 
         // Rules 5 & 6: Skip Tax Review under certain conditions
-        $queryService = property_exists($this, 'queryService') ? $this->queryService : app(\App\Services\ContractWorkflowQueryService::class);
-        if ($queryService && $queryService->isTaxStep($step)) {
+        $queryService = $this->queryService ?? app(\App\Services\ContractWorkflowQueryService::class);
+        if ($queryService->isTaxStep($step)) {
             $metadata = $contract->metadata ?? [];
             $taxToggle = $metadata['tax_required'] ?? ($metadata['contract.has_tax'] ?? null);
 
@@ -104,8 +100,9 @@ trait EvaluatesWorkflowSteps
                 }
 
                 // Rule 6: Skip Tax Review for Specific Entities
-                $companyCode = $contract->initiator?->company()->first()?->code;
-                if (in_array(strtoupper($companyCode), ['LTI', 'LTX', 'LTS'])) {
+                $company = $contract->initiator->company;
+                $companyCode = $company?->code;
+                if (in_array(strtoupper($companyCode ?? ''), ['LTI', 'LTX', 'LTS'])) {
                     return false;
                 }
             }
@@ -333,6 +330,7 @@ trait EvaluatesWorkflowSteps
             ->get();
 
         foreach ($pendingApprovals as $approval) {
+            /** @var \App\Models\Approval $approval */
             $step = $approval->workflowStep;
             $skipCategories = ['signing', 'upload', 'joint_upload'];
             if (! in_array(strtolower($step->step_category ?? ''), $skipCategories)) {

@@ -21,7 +21,8 @@ class RegionsExport implements FromCollection, ShouldAutoSize, WithEvents, WithH
     public function collection()
     {
         $regions = Region::orderBy('name')->get();
-        $collection = collect($regions);
+        /** @var \Illuminate\Support\Collection<int, Region|null> $collection */
+        $collection = collect($regions->all());
 
         for ($i = 0; $i < 100; $i++) {
             $collection->push(null);

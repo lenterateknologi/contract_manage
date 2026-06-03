@@ -103,6 +103,7 @@ class ForgotPasswordController extends Controller
         }
 
         // Update user password
+        /** @var User $user */
         $user = $forgotPassword->user;
         $user->password = Hash::make($request->password);
         $user->save();

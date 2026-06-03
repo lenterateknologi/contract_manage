@@ -57,7 +57,7 @@ class StoreContractAction
                 'p2_signer_position' => $validated['p2_signer_position'] ?? null,
                 'p2_address' => $validated['p2_address'] ?? null,
                 'metadata' => [
-                    'tax_required' => $validated['tax_required'] ?? false,
+                    'tax_required' => $validated['tax_required'] ?? true,
                     'category' => $validated['category'] ?? 'contract',
                     'topic' => $validated['topic'] ?? 'perjanjian',
                     'project_name' => $validated['project_name'] ?? null,

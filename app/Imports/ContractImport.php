@@ -36,7 +36,7 @@ class ContractImport implements ToModel, WithHeadingRow, WithValidation
                 'vendor_id' => $vendor?->id,
                 'contract_date' => $row['tgl_kontrak'] ?? null,
                 'end_date' => $row['tgl_berakhir'] ?? null,
-                'created_by' => $creator?->id ?? Auth::id(),
+                'created_by' => $creator->id ?? Auth::id(),
                 'description' => $row['deskripsi'] ?? null,
             ],
         );

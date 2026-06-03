@@ -4,8 +4,25 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property string $id
+ * @property string|null $company_id
+ * @property string $code
+ * @property string $name
+ * @property string|null $description
+ * @property bool $is_active
+ * @property string|null $created_by
+ * @property string|null $updated_by
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property \Carbon\Carbon|null $deleted_at
+ * @property-read Company|null $company
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, User> $users
+ */
 class Department extends Model
 {
     protected $table = 'm_departments';
@@ -28,12 +45,18 @@ class Department extends Model
         'is_active' => 'boolean',
     ];
 
-    public function company()
+    /**
+     * @return BelongsTo<Company, Department>
+     */
+    public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class, 'company_id');
     }
 
-    public function users()
+    /**
+     * @return HasMany<User, Department>
+     */
+    public function users(): HasMany
     {
         return $this->hasMany(User::class);
     }

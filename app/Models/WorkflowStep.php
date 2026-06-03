@@ -81,21 +81,33 @@ class WorkflowStep extends Model
         return $this->description;
     }
 
+    /**
+     * @return HasMany<WorkflowStepAction, WorkflowStep>
+     */
     public function actions(): HasMany
     {
         return $this->hasMany(WorkflowStepAction::class, 'workflow_step_id');
     }
 
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Models\WorkflowStepRole, \App\Models\WorkflowStep>
+     */
     public function approverRoles(): HasMany
     {
         return $this->hasMany(WorkflowStepRole::class, 'workflow_step_id');
     }
 
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Models\WorkflowStepDepartment, \App\Models\WorkflowStep>
+     */
     public function approverDepartments(): HasMany
     {
         return $this->hasMany(WorkflowStepDepartment::class, 'workflow_step_id');
     }
 
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Models\WorkflowStepUser, \App\Models\WorkflowStep>
+     */
     public function approverUsers(): HasMany
     {
         return $this->hasMany(WorkflowStepUser::class, 'workflow_step_id');

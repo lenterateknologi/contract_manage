@@ -2,11 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Actions\Contract\ApproveContractAction;
-
-use App\Actions\Contract\ExportContractAction;
 use App\Actions\Contract\FileAction;
-use App\Actions\Contract\RejectContractAction;
 use App\Actions\Contract\StoreContractAction;
 use App\Actions\Contract\UpdateContractAction;
 use App\Formatters\ContractFormatter;
@@ -39,30 +35,18 @@ class ContractController extends Controller
 
     private UpdateContractAction $updateAction;
 
-    private ApproveContractAction $approveAction;
-
-    private RejectContractAction $rejectAction;
-
     private FileAction $fileAction;
-
-    private ExportContractAction $exportAction;
 
     public function __construct(
         ContractWorkflowService $workflowService,
         StoreContractAction $storeAction,
         UpdateContractAction $updateAction,
-        ApproveContractAction $approveAction,
-        RejectContractAction $rejectAction,
         FileAction $fileAction,
-        ExportContractAction $exportAction,
     ) {
         $this->workflowService = $workflowService;
         $this->storeAction = $storeAction;
         $this->updateAction = $updateAction;
-        $this->approveAction = $approveAction;
-        $this->rejectAction = $rejectAction;
         $this->fileAction = $fileAction;
-        $this->exportAction = $exportAction;
     }
 
     #[OA\Get(
@@ -137,7 +121,7 @@ class ContractController extends Controller
                 ->when($isManager, function ($q) use ($user) {
                     return $q->where('department_id', $user->department_id);
                 })
-                ->orderBy('name')->get()->map(fn ($u) => ContractFormatter::formatUser($u))),
+                ->orderBy('name')->get()->map(fn ($u) => ContractFormatter::formatUser($u))->toArray()),
             'vendors' => Inertia::defer(fn () => Vendor::with('documents')->where('is_active', true)->orderBy('name')->get()->map(fn ($v) => [
                 'id' => $v->id,
                 'name' => $v->name,
@@ -148,17 +132,22 @@ class ContractController extends Controller
                     'id' => $d->id,
                     'name' => $d->document_name,
                     'type' => $d->document_type,
-                ]),
-            ])),
-            'formTemplates' => Inertia::defer(fn () => FormTemplate::where('is_active', true)->with('contractType')->withCount('fields')->get()->map(fn ($ft) => [
-                'id' => $ft->id,
-                'name' => $ft->name,
-                'description' => $ft->description,
-                'document_type' => $ft->document_type,
-                'contract_type_id' => $ft->contract_type_id,
-                'contract_type_name' => $ft->contractType?->name,
-                'fields_count' => $ft->fields_count,
-            ])),
+                ])->toArray(),
+            ])->toArray()),
+            'formTemplates' => Inertia::defer(fn () => FormTemplate::where('is_active', true)->with('contractType')->withCount('fields')->get()->map(function ($item) {
+                $ft = $item;
+
+                /** @var FormTemplate $ft */
+                return [
+                    'id' => $ft->id,
+                    'name' => $ft->name,
+                    'description' => $ft->description,
+                    'document_type' => $ft->document_type,
+                    'contract_type_id' => $ft->contract_type_id,
+                    'contract_type_name' => $ft->contractType?->name,
+                    'fields_count' => $ft->fields_count,
+                ];
+            })->toArray()),
             'departments' => Inertia::defer($departmentsLoader),
             'roles' => Inertia::defer(fn () => Role::orderBy('name')->get()),
             'regions' => Inertia::defer($regionsLoader),
@@ -274,23 +263,28 @@ class ContractController extends Controller
                 ->when(Auth::user()->role === 'Manager', function ($q) {
                     return $q->where('department_id', Auth::user()->department_id);
                 })
-                ->orderBy('name')->get()->map(fn ($u) => ContractFormatter::formatUser($u))),
+                ->orderBy('name')->get()->map(fn ($u) => ContractFormatter::formatUser($u))->toArray()),
             'vendors' => Inertia::defer(fn () => Vendor::where('is_active', true)->orderBy('name')->get()->map(fn ($v) => [
                 'id' => $v->id,
                 'name' => $v->name,
                 'pic_name' => $v->pic_name,
                 'pic_position' => $v->pic_position,
                 'address' => $v->address,
-            ])),
-            'formTemplates' => Inertia::defer(fn () => FormTemplate::where('is_active', true)->with('contractType')->withCount('fields')->get()->map(fn ($ft) => [
-                'id' => $ft->id,
-                'name' => $ft->name,
-                'description' => $ft->description,
-                'document_type' => $ft->document_type,
-                'contract_type_id' => $ft->contract_type_id,
-                'contract_type_name' => $ft->contractType?->name,
-                'fields_count' => $ft->fields_count,
-            ])),
+            ])->toArray()),
+            'formTemplates' => Inertia::defer(fn () => FormTemplate::where('is_active', true)->with('contractType')->withCount('fields')->get()->map(function ($item) {
+                $ft = $item;
+
+                /** @var FormTemplate $ft */
+                return [
+                    'id' => $ft->id,
+                    'name' => $ft->name,
+                    'description' => $ft->description,
+                    'document_type' => $ft->document_type,
+                    'contract_type_id' => $ft->contract_type_id,
+                    'contract_type_name' => $ft->contractType?->name,
+                    'fields_count' => $ft->fields_count,
+                ];
+            })->toArray()),
             'filters' => array_merge($request->only(['search', 'status', 'contract_type_id']), [
                 'per_page' => $request->integer('per_page', 10),
             ]),
@@ -718,7 +712,7 @@ class ContractController extends Controller
             ->get()
             ->map(fn ($item) => [
                 'status' => $item->status,
-                'count' => (int) $item->count,
+                'count' => (int) $item->getAttribute('count'),
             ])
             ->values();
 
@@ -784,10 +778,10 @@ class ContractController extends Controller
             ->map(fn ($app) => [
                 'id' => $app->id,
                 'contract_id' => $app->contract_id,
-                'contract_no' => $app->contract?->contract_no,
-                'title' => $app->contract?->title,
-                'creator' => $app->contract?->creator?->name,
-                'type' => $app->contract?->contractType?->name,
+                'contract_no' => $app->contract->contract_no,
+                'title' => $app->contract->title,
+                'creator' => $app->contract->creator?->name,
+                'type' => $app->contract->contractType?->name,
                 'requested_at' => $app->created_at,
             ])
             ->values();
@@ -799,7 +793,7 @@ class ContractController extends Controller
             ->get()
             ->map(fn ($item) => [
                 'status' => $item->status,
-                'count' => (int) $item->count,
+                'count' => (int) $item->getAttribute('count'),
             ])
             ->values();
 
@@ -856,7 +850,7 @@ class ContractController extends Controller
                 $vendor = $group->first()->vendor;
 
                 return [
-                    'name' => $vendor?->name ?? 'Unknown Vendor',
+                    'name' => $vendor->name ?? 'Unknown Vendor',
                     'count' => $group->count(),
                     'value' => $group->sum(fn ($c) => $this->parsePrice($c->f2_price)),
                 ];
@@ -886,7 +880,7 @@ class ContractController extends Controller
             ->with(['initiator.department', 'creator.department'])
             ->get()
             ->groupBy(function ($c) {
-                return $c->initiator?->department?->name ?? $c->creator?->department?->name ?? 'Tanpa Divisi';
+                return $c->initiator->department->name ?? $c->creator->department->name ?? 'Tanpa Divisi';
             })
             ->map(function ($group, $deptName) {
                 $highRisk = 0;
@@ -926,7 +920,7 @@ class ContractController extends Controller
             ->whereDate('end_date', '<', now()->toDateString())
             ->with('contractType')
             ->get()
-            ->groupBy(fn ($c) => $c->contractType?->name ?? 'Lainnya')
+            ->groupBy(fn ($c) => $c->contractType->name ?? 'Lainnya')
             ->map(function ($group, $catName) use ($renewedIds) {
                 $renewed = 0;
                 $failed = 0;
@@ -971,7 +965,7 @@ class ContractController extends Controller
                 }
 
                 return [
-                    'name' => $vendor?->name ?? 'Unknown',
+                    'name' => $vendor->name ?? 'Unknown',
                     'total' => $total,
                     'renewal_rate' => $total > 0 ? round(($renewed / $total) * 100, 1) : 0,
                     'avg_cycle_time' => $avgDays,
@@ -1005,7 +999,7 @@ class ContractController extends Controller
         $budgetAllocation = (clone $baseQuery)
             ->with('contractType')
             ->get()
-            ->groupBy(fn ($c) => $c->contractType?->name ?? 'Lainnya')
+            ->groupBy(fn ($c) => $c->contractType->name ?? 'Lainnya')
             ->map(fn ($group, $catName) => [
                 'name' => $catName,
                 'value' => $group->sum(fn ($c) => $this->parsePrice($c->f2_price)),
@@ -1018,7 +1012,7 @@ class ContractController extends Controller
             ->with(['initiator.department', 'creator.department'])
             ->get()
             ->groupBy(function ($c) {
-                return $c->initiator?->department?->name ?? $c->creator?->department?->name ?? 'Tanpa Divisi';
+                return $c->initiator->department->name ?? $c->creator->department->name ?? 'Tanpa Divisi';
             })
             ->map(function ($group, $deptName) {
                 $contractIds = $group->pluck('id');
@@ -1136,7 +1130,7 @@ class ContractController extends Controller
         // Department Workload Heatmap / Breakdown aligned with KPI cards
         $users = User::with('department')->get();
         $departmentWorkload = $users->groupBy(function ($u) {
-            return $u->department?->name ?? 'Tanpa Divisi';
+            return $u->department->name ?? 'Tanpa Divisi';
         })
             ->map(function ($group, $deptName) {
                 $userIds = $group->pluck('id');

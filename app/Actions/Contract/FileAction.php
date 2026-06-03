@@ -124,6 +124,7 @@ class FileAction
     public function fileContent(Contract $contract, int $versionNo, Request $request): mixed
     {
         $type = $request->query('type', 'contract');
+        /** @var ContractVersion $version */
         $version = $contract->versions()
             ->where('document_type', $type)
             ->where('version_no', $versionNo)
@@ -138,6 +139,7 @@ class FileAction
 
     public function attachmentFile(Contract $contract, string $atId): mixed
     {
+        /** @var ContractAttachment $attachment */
         $attachment = $contract->attachments()->findOrFail($atId);
 
         if ($attachment->file_path && Storage::disk('local')->exists($attachment->file_path)) {
@@ -174,6 +176,7 @@ class FileAction
     {
         $type = $request->query('type', 'contract');
 
+        /** @var ContractVersion|null $version */
         $version = $contract->versions()
             ->where('document_type', $type)
             ->where('version_no', $versionNo)
@@ -232,6 +235,7 @@ class FileAction
 
     public function attachmentPdfPreview(Contract $contract, string $atId): mixed
     {
+        /** @var ContractAttachment $attachment */
         $attachment = $contract->attachments()->findOrFail($atId);
 
         if (! $attachment->file_path || ! Storage::disk('local')->exists($attachment->file_path)) {
@@ -376,6 +380,7 @@ class FileAction
     {
         \Illuminate\Support\Facades\Gate::authorize('updateAttachment', $contract);
 
+        /** @var ContractAttachment $attachment */
         $attachment = $contract->attachments()->findOrFail($atId);
 
         if (Storage::disk('local')->exists($attachment->file_path)) {
@@ -400,22 +405,24 @@ class FileAction
     {
         $type = $request->query('type', 'f1');
 
-        $versions = $contract->versions()
+        /** @var \Illuminate\Database\Eloquent\Collection<int, ContractVersion> $versionsCollection */
+        $versionsCollection = $contract->versions()
             ->where('document_type', $type)
             ->orderByDesc('version_no')
             ->with('uploader')
-            ->get()
-            ->map(fn ($v) => [
-                'id' => $v->id,
-                'version_no' => $v->version_no,
-                'file_name' => $v->file_name,
-                'file_path' => $v->file_path,
-                'change_log' => $v->change_log,
-                'uploaded_by' => $v->uploaded_by,
-                'uploader' => $v->uploader ? ['name' => $v->uploader->name] : null,
-                'created_at' => $v->created_at->format('Y-m-d H:i:s'),
-                'is_final' => $v->is_final,
-            ]);
+            ->get();
+
+        $versions = $versionsCollection->map(fn ($v) => [
+            'id' => $v->id,
+            'version_no' => $v->version_no,
+            'file_name' => $v->file_name,
+            'file_path' => $v->file_path,
+            'change_log' => $v->change_log,
+            'uploaded_by' => $v->uploaded_by,
+            'uploader' => $v->uploader ? ['name' => $v->uploader->name] : null,
+            'created_at' => $v->created_at?->format('Y-m-d H:i:s') ?? '',
+            'is_final' => $v->is_final,
+        ]);
 
         return response()->json($versions);
     }
@@ -473,19 +480,21 @@ class FileAction
 
     public function compareVersions(Contract $contract, string $type, Request $request): \Inertia\Response
     {
-        $versions = $contract->versions()
+        /** @var \Illuminate\Database\Eloquent\Collection<int, ContractVersion> $versionsCollection */
+        $versionsCollection = $contract->versions()
             ->where('document_type', $type)
             ->orderByDesc('version_no')
-            ->get()
-            ->map(fn ($v) => [
-                'id' => $v->id,
-                'version_no' => $v->version_no,
-                'file_name' => $v->file_name,
-                'created_at' => $v->created_at->format('Y-m-d H:i'),
-                'uploader' => [
-                    'name' => $v->uploader ? $v->uploader->name : 'System',
-                ],
-            ]);
+            ->get();
+
+        $versions = $versionsCollection->map(fn ($v) => [
+            'id' => $v->id,
+            'version_no' => $v->version_no,
+            'file_name' => $v->file_name,
+            'created_at' => $v->created_at?->format('Y-m-d H:i') ?? '',
+            'uploader' => [
+                'name' => $v->uploader ? $v->uploader->name : 'System',
+            ],
+        ]);
 
         return Inertia::render('admin/contracts/compare-agreements', [
             'contract' => $this->formatter->formatContract($contract),
@@ -494,28 +503,5 @@ class FileAction
             'initialV2' => (int) $request->v2,
             'documentType' => $type,
         ]);
-    }
-
-    private function extractTextFromDocx($filePath): string
-    {
-        if (! file_exists($filePath)) {
-            return '';
-        }
-
-        $zip = new \ZipArchive();
-        if ($zip->open($filePath) === true) {
-            if (($index = $zip->locateName('word/document.xml')) !== false) {
-                $content = $zip->getFromIndex($index);
-                $zip->close();
-
-                $content = str_replace(['</w:p>', '</w:r>', '<w:tab/>'], ["\n", ' ', "\t"], $content);
-                $content = strip_tags($content);
-
-                return trim($content);
-            }
-            $zip->close();
-        }
-
-        return '';
     }
 }

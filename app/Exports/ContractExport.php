@@ -22,6 +22,9 @@ class ContractExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMap
         $this->query = $query;
     }
 
+    /**
+     * @return \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Eloquent\Relations\Relation|\Illuminate\Database\Query\Builder
+     */
     public function query()
     {
         return $this->query ?: Contract::query()->with(['contractType', 'submissionType', 'creator', 'vendor']);
@@ -53,13 +56,13 @@ class ContractExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMap
             $contract->contract_no,
             $contract->title,
             $contract->crown_no,
-            $contract->contractType?->name ?? '—',
-            $contract->submissionType?->name ?? '—',
+            $contract->contractType->name ?? '—',
+            $contract->submissionType->name ?? '—',
             strtoupper($contract->status),
-            $contract->vendor?->name ?? '—',
+            $contract->vendor->name ?? '—',
             $contract->contract_date ? $contract->contract_date->toDateString() : '—',
             $contract->end_date ? $contract->end_date->toDateString() : '—',
-            $contract->creator?->name ?? '—',
+            $contract->creator->name ?? '—',
             $contract->created_at->toDateTimeString(),
             $contract->description,
         ];

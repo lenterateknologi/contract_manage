@@ -10,6 +10,48 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property string $id
+ * @property string|null $contract_type_id
+ * @property string|null $department_id
+ * @property string $name
+ * @property string|null $description
+ * @property bool $is_default
+ * @property bool $is_template
+ * @property bool $is_tax_involved
+ * @property string|null $initiator_type
+ * @property int|null $sla_drafting_hours
+ * @property int|null $sla_total_hours
+ * @property int|null $sla_cutoff_hour
+ * @property string|null $scope
+ * @property string|null $workflow_category
+ * @property array|null $company_group_ids
+ * @property array|null $region_ids
+ * @property array|null $company_ids
+ * @property array|null $approver_roles
+ * @property array|null $approver_departments
+ * @property array|null $approver_users
+ * @property array|null $legal_roles
+ * @property array|null $legal_departments
+ * @property array|null $legal_users
+ * @property string|null $created_by
+ * @property string|null $updated_by
+ * @property array|null $meta
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property \Carbon\Carbon|null $deleted_at
+ * @property-read array $initiator_roles
+ * @property-read array $initiator_users
+ * @property-read array $initiator_departments
+ * @property-read string|null $contract_type_name
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, WorkflowInitiatorRole> $initiatorRolesData
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, WorkflowInitiatorDepartment> $initiatorDepartmentsData
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, WorkflowInitiatorUser> $initiatorUsersData
+ * @property-read ContractType|null $contractType
+ * @property-read Department|null $department
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, WorkflowStep> $steps
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Contract> $contracts
+ */
 class Workflow extends Model
 {
     protected $table = 'm_workflows';

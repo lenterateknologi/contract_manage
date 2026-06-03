@@ -21,7 +21,8 @@ class VendorsExport implements FromCollection, ShouldAutoSize, WithEvents, WithH
     public function collection()
     {
         $vendors = Vendor::orderBy('name')->get();
-        $collection = collect($vendors);
+        /** @var \Illuminate\Support\Collection<int, Vendor|null> $collection */
+        $collection = collect($vendors->all());
 
         for ($i = 0; $i < 100; $i++) {
             $collection->push(null);

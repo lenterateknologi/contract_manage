@@ -5,8 +5,22 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property string $id
+ * @property string $name
+ * @property string $code
+ * @property string|null $description
+ * @property bool $is_active
+ * @property string|null $created_by
+ * @property string|null $updated_by
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property \Carbon\Carbon|null $deleted_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Company> $companies
+ */
 class CompanyGroup extends Model
 {
     use HasFactory, HasUuids, SoftDeletes;
@@ -26,7 +40,10 @@ class CompanyGroup extends Model
         'is_active' => 'boolean',
     ];
 
-    public function companies()
+    /**
+     * @return HasMany<Company, $this>
+     */
+    public function companies(): HasMany
     {
         return $this->hasMany(Company::class, 'company_group_id');
     }

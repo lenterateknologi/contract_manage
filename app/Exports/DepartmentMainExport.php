@@ -21,7 +21,8 @@ class DepartmentMainExport implements FromCollection, ShouldAutoSize, WithEvents
     public function collection()
     {
         $depts = Department::with('company')->orderBy('name')->get();
-        $collection = collect($depts);
+        /** @var \Illuminate\Support\Collection<int, Department|null> $collection */
+        $collection = collect($depts->all());
 
         for ($i = 0; $i < 100; $i++) {
             $collection->push(null);

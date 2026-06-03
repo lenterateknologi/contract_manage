@@ -9,6 +9,32 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * @property string $id
+ * @property string $contract_id
+ * @property string $workflow_step_id
+ * @property string|null $user_id
+ * @property string|null $approver_name
+ * @property string|null $role
+ * @property string|null $job_title
+ * @property string $status
+ * @property string|null $comment
+ * @property string|null $attachment_path
+ * @property \Carbon\Carbon|null $decided_at
+ * @property string|null $created_by
+ * @property string|null $updated_by
+ * @property int $sequence
+ * @property int|null $sub_step
+ * @property int|null $sort_order
+ * @property bool $is_active
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property \Carbon\Carbon|null $deleted_at
+ * @property string|null $target_approvers
+ * @property-read Contract $contract
+ * @property-read WorkflowStep $workflowStep
+ * @property-read User|null $approver
+ */
 class Approval extends Model
 {
     protected $table = 't_approvals';

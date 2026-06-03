@@ -260,7 +260,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                             </span>
                         </div>
                         <div className="flex items-center shrink-0">
-                            {isStaged && !isSkipped ? (
+                            {(isStaged || isWaiting) && !isSkipped ? (
                                 <div className="flex items-center gap-1 rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 text-[8px] font-black text-slate-500 uppercase tracking-wider dark:border-slate-700 dark:bg-slate-800">
                                     <Clock size={8} /> Draft
                                 </div>
@@ -612,10 +612,10 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                                         {/* Vertical line segment */}
                                                                         <div className={cn(
                                                                             "absolute left-0 w-0.5 transition-colors duration-300",
-                                                                            isApproved 
-                                                                                ? "bg-emerald-500 dark:bg-emerald-600" 
-                                                                                : isPending 
-                                                                                    ? "bg-amber-400 dark:bg-amber-500/50" 
+                                                                            isApproved
+                                                                                ? "bg-emerald-500 dark:bg-emerald-600"
+                                                                                : isPending
+                                                                                    ? "bg-amber-400 dark:bg-amber-500/50"
                                                                                     : "bg-slate-200 dark:bg-slate-800",
                                                                             !hasMainStep && isFirstInGroup ? "-top-6" : "top-0",
                                                                             isLastItemInGroup ? "h-[16px]" : "bottom-0"
@@ -623,10 +623,10 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                                         {/* Horizontal branch line segment */}
                                                                         <div className={cn(
                                                                             "absolute left-0 top-[16px] w-[39px] h-0.5 transition-colors duration-300",
-                                                                            isApproved 
-                                                                                ? "bg-emerald-500 dark:bg-emerald-600" 
-                                                                                : isPending 
-                                                                                    ? "bg-amber-400 dark:bg-amber-500/50" 
+                                                                            isApproved
+                                                                                ? "bg-emerald-500 dark:bg-emerald-600"
+                                                                                : isPending
+                                                                                    ? "bg-amber-400 dark:bg-amber-500/50"
                                                                                     : "bg-slate-200 dark:bg-slate-800"
                                                                         )} />
                                                                     </div>

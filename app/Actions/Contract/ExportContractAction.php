@@ -58,14 +58,15 @@ class ExportContractAction
                 'Aktor',
             ]);
 
+            /** @var \App\Models\ContractHistory $h */
             foreach ($histories as $h) {
                 fputcsv($handle, [
-                    $h->created_at->format('Y-m-d H:i:s'),
+                    $h->created_at?->format('Y-m-d H:i:s') ?? '',
                     $contract->contract_no,
                     $contract->title,
                     strtoupper($h->action),
                     $h->description,
-                    $h->actor?->name ?? 'System',
+                    $h->actor->name ?? 'System',
                 ]);
             }
             fclose($handle);
@@ -199,7 +200,6 @@ class ExportContractAction
                 ->format('A4')
                 ->margins(0, 0, 0, 0)
                 ->showBackground()
-                ->displayHeaderFooter(false)
                 ->setDelay(500);
 
             $pdfDir = 'contracts/' . $contract->id . '/pdfs';
@@ -265,7 +265,7 @@ class ExportContractAction
         if ($templateId) {
             $template = FormTemplate::find($templateId);
         } else {
-            $template = $submission ? $submission->template : FormTemplate::where('document_type', $type)->first();
+            $template = $submission ? $submission->formTemplate : FormTemplate::where('document_type', $type)->first();
         }
 
         if (! $template) {
@@ -278,6 +278,7 @@ class ExportContractAction
         if ($formDataRaw) {
             $formData = is_string($formDataRaw) ? json_decode($formDataRaw, true) : $formDataRaw;
         } else {
+            /** @var \App\Models\ContractFormSubmissionVersion|null $latestVersion */
             $latestVersion = $submission ? $submission->versions()->orderByDesc('version_no')->first() : null;
             $formData = $latestVersion ? ($latestVersion->form_data ?? []) : [];
         }
@@ -351,6 +352,7 @@ class ExportContractAction
             ->where('document_type', $type)
             ->first();
 
+        /** @var \App\Models\ContractFormSubmissionVersion|null $latestVersion */
         $latestVersion = $submission ? $submission->versions()->orderByDesc('version_no')->first() : null;
         $formData = $latestVersion ? ($latestVersion->form_data ?? []) : [];
 
@@ -359,6 +361,7 @@ class ExportContractAction
                 ->where('document_type', 'f1')
                 ->first();
 
+            /** @var \App\Models\ContractFormSubmissionVersion|null $latestF1 */
             $latestF1 = $f1Submission ? $f1Submission->versions()->orderByDesc('version_no')->first() : null;
             $f1Data = $latestF1 ? ($latestF1->form_data ?? []) : [];
 
@@ -484,10 +487,10 @@ class ExportContractAction
             $formData['meta_p1_entity'] = 'PT. Lentera Teknologi';
         }
         if (empty($formData['meta_p1_signer'])) {
-            $formData['meta_p1_signer'] = $contract->initiator?->name ?? $contract->creator?->name ?? '';
+            $formData['meta_p1_signer'] = $contract->initiator->name ?: ($contract->creator->name ?? '');
         }
         if (empty($formData['meta_p1_signer_position'])) {
-            $formData['meta_p1_signer_position'] = $contract->initiator?->role ?? $contract->creator?->role ?? 'Direktur';
+            $formData['meta_p1_signer_position'] = $contract->initiator->role ?? $contract->creator->role ?? 'Direktur';
         }
         if (empty($formData['meta_p1_alamat'])) {
             $formData['meta_p1_alamat'] = 'The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan';
@@ -513,7 +516,7 @@ class ExportContractAction
             $formData['meta_nomor'] = $contract->contract_no;
         }
         if (empty($formData['meta_topik'])) {
-            $formData['meta_topik'] = $contract->contractType?->name ?? $contract->contract_type ?? '';
+            $formData['meta_topik'] = $contract->contractType->name ?? $contract->contract_type ?? '';
         }
         if (empty($formData['meta_tipe_perjanjian'])) {
             $formData['meta_tipe_perjanjian'] = $contract->transaction_type ?? 'Perjanjian Baru';

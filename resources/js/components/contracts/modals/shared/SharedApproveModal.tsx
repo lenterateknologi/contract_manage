@@ -16,8 +16,7 @@ interface Props {
         attachment?: File,
         assignedPicId?: string,
         executionOrder?: string,
-        p1UserId?: string | string[],
-        p2UserId?: string | string[],
+        signerUserIds?: string[],
         actionCode?: string,
         isFinal?: boolean,
         targetStepId?: string,
@@ -61,22 +60,26 @@ export function SharedApproveModal({ open, onClose, onSubmit, isAssign, contract
         }
 
         if (open && isSigningSetup) {
-            const meta = contract?.next_step?.meta || {};
-            
             const activeAction = contract?.workflow_step?.actions?.find((a: any) => a.action_code === actionCode);
             const defaultTargetStepId = activeAction?.assignee_config?.signature_target_step || contract?.workflow_step_id;
             setSelectedTargetStepId(defaultTargetStepId ? String(defaultTargetStepId) : '');
 
-            // Auto-resolve based on types if possible
-            if (signerUserIds.length === 0) {
-                const isInitiator = meta.signing_p1_type === 'initiator' || signingParties.includes('initiator') || meta.signing_p2_type === 'initiator';
-                const isPic = meta.signing_p1_type === 'pic' || signingParties.includes('pic') || meta.signing_p2_type === 'pic';
+            // Auto-resolve based on signing_parties configuration from the workflow action
+            if (signerUserIds.length === 0 && signingParties.length > 0) {
+                const ids: string[] = [];
                 
-                const ids = [];
-                if (isInitiator && contract.initiator?.id) ids.push(contract.initiator.id);
-                if (isPic && contract.assigned_pic?.id) ids.push(contract.assigned_pic.id);
+                if (signingParties.includes('initiator') && contract.initiator?.id) {
+                    ids.push(contract.initiator.id);
+                }
                 
-                const validIds = ids.filter(Boolean);
+                if (signingParties.includes('pic') && contract.assigned_pic?.id) {
+                    ids.push(contract.assigned_pic.id);
+                }
+
+                // If 'legal' is specified, we might want to auto-select the current user if they are Legal 
+                // or find the first Legal manager, but usually 'pic' covers the legal PIC.
+                
+                const validIds = Array.from(new Set(ids.filter(Boolean)));
                 if (validIds.length > 0) {
                     setSignerUserIds(validIds);
                 }
@@ -168,8 +171,7 @@ export function SharedApproveModal({ open, onClose, onSubmit, isAssign, contract
                 attachment || undefined,
                 assignedPicId || undefined,
                 executionOrder || undefined,
-                signerUserIds, // Pass the whole array
-                undefined, // P2 is no longer needed separately
+                signerUserIds, // Unified array of signers
                 actionCode,
                 undefined,
                 selectedTargetStepId || undefined,

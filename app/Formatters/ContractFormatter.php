@@ -25,9 +25,9 @@ class ContractFormatter
             'description' => $c->description,
             'contract_date' => $c->contract_date,
             'end_date' => $c->end_date,
-            'contract_type' => $c->contractType?->name ?? '—',
+            'contract_type' => $c->contractType->name ?? '—',
             'contract_type_id' => $c->contract_type_id,
-            'submission_type' => $c->submissionType?->name ?? '—',
+            'submission_type' => $c->submissionType->name ?? '—',
             'submission_type_id' => $c->submission_type_id,
             'created_by' => $c->created_by,
             'transaction_type' => $c->transaction_type,
@@ -91,7 +91,7 @@ class ContractFormatter
             'workflow' => $c->workflow ? [
                 'id' => $c->workflow->id,
                 'name' => $c->workflow->name,
-                'contract_type' => $c->workflow->contract_type,
+                'contract_type' => $c->workflow->contractType,
                 'meta' => $c->workflow->meta ?? [],
                 'steps' => $c->workflow->relationLoaded('steps') ? $c->workflow->steps->map(fn ($s) => [
                     'id' => $s->id,
@@ -108,19 +108,22 @@ class ContractFormatter
                 'step_type' => 'APPROVAL',
                 'step_category' => $c->workflowStep->step_category,
                 'target_approvers' => $c->approvals->where('sequence', $c->workflowStep->step)->whereIn('status', ['pending', 'waiting'])->first()?->target_approvers,
-                'actions' => $c->workflowStep->actions ? $c->workflowStep->actions->map(fn ($action) => [
-                    'id' => $action->id,
-                    'action_code' => $action->action_code instanceof \App\Enums\WorkflowAction ? $action->action_code->value : ($action->action_code ?? $action->masterAction?->code),
-                    'master_action_code' => $action->masterAction?->code,
-                    'alias' => $action->alias,
-                    'next_workflow_id' => $action->next_workflow_id,
-                    'next_workflow_step_id' => $action->next_workflow_step_id,
-                    'next_step_id' => $action->next_step_id,
-                    'assignee_config' => $action->assignee_config,
-                    'required_fields' => $action->required_fields,
-                    'autofilled_fields' => $action->autofilled_fields,
-                    'signing_parties' => $action->signing_parties,
-                ])->toArray() : [],
+                'actions' => $c->workflowStep->actions->map(function ($action) {
+                    /** @var \App\Models\WorkflowStepAction $action */
+                    return [
+                        'id' => $action->id,
+                        'action_code' => $action->action_code instanceof \App\Enums\WorkflowAction ? $action->action_code->value : ($action->action_code ?? $action->masterAction?->code),
+                        'master_action_code' => $action->masterAction?->code,
+                        'alias' => $action->alias,
+                        'next_workflow_id' => $action->next_workflow_id,
+                        'next_workflow_step_id' => $action->next_workflow_step_id,
+                        'next_step_id' => $action->next_step_id,
+                        'assignee_config' => $action->assignee_config,
+                        'required_fields' => $action->required_fields,
+                        'autofilled_fields' => $action->autofilled_fields,
+                        'signing_parties' => $action->signing_parties,
+                    ];
+                })->toArray(),
             ] : null,
             'next_step' => $nextStep ? [
                 'id' => $nextStep->id,
@@ -270,8 +273,8 @@ class ContractFormatter
         foreach ($workflowSteps as $step) {
             $isStepSkipped = ! $workflowService->shouldExecuteStep($c, $step);
 
-            $regularApprovals = $c->approvals->where('workflow_step_id', $step->id)->filter(fn ($a) => $a->role !== Role::ADHOC_APPROVER && ! in_array($a->role, ['Penandatangan', 'Pihak 1', 'Pihak 2']));
-            $adhocApprovals = $c->approvals->where('workflow_step_id', $step->id)->filter(fn ($a) => $a->role === Role::ADHOC_APPROVER || in_array($a->role, ['Penandatangan', 'Pihak 1', 'Pihak 2']));
+            $regularApprovals = $c->approvals->where('workflow_step_id', $step->id)->filter(fn ($a) => $a->role !== Role::ADHOC_APPROVER && $a->role !== 'Penandatangan');
+            $adhocApprovals = $c->approvals->where('workflow_step_id', $step->id)->filter(fn ($a) => $a->role === Role::ADHOC_APPROVER || $a->role === 'Penandatangan');
 
             $deptNames = (array) $step->department_names;
             $deptName = count($deptNames) > 0 ? implode(', ', $deptNames) : null;
@@ -307,26 +310,26 @@ class ContractFormatter
                 $query = User::whereIn('role', $roles);
 
                 if ($step->filter_department) {
-                    $query->where('department_id', $c->initiator?->department_id ?? '00000000-0000-0000-0000-000000000000');
+                    $query->where('department_id', $c->initiator->department_id ?? '00000000-0000-0000-0000-000000000000');
                 } elseif (! empty($targetDeptIds)) {
                     $query->whereIn('department_id', $targetDeptIds);
                 }
 
                 $initiatorCompany = $c->initiator?->company;
                 if ($step->filter_company_group) {
-                    $companyGroupId = $initiatorCompany?->company_group_id ?? '00000000-0000-0000-0000-000000000000';
+                    $companyGroupId = $initiatorCompany->company_group_id ?? '00000000-0000-0000-0000-000000000000';
                     $query->whereHas('company', function ($q) use ($companyGroupId) {
                         $q->where('company_group_id', $companyGroupId);
                     });
                 }
                 if ($step->filter_region) {
-                    $regionId = $initiatorCompany?->region_id ?? '00000000-0000-0000-0000-000000000000';
+                    $regionId = $initiatorCompany->region_id ?? '00000000-0000-0000-0000-000000000000';
                     $query->whereHas('company', function ($q) use ($regionId) {
                         $q->where('region_id', $regionId);
                     });
                 }
                 if ($step->filter_company) {
-                    $query->where('company_id', $c->initiator?->company_id ?? '00000000-0000-0000-0000-000000000000');
+                    $query->where('company_id', $c->initiator->company_id ?? '00000000-0000-0000-0000-000000000000');
                 }
 
                 $approvers = $query->get();
@@ -336,7 +339,7 @@ class ContractFormatter
 
             // 1. ADD AD-HOC (SUB-STEPS) FIRST - they always happen before the main step action
             foreach ($adhocApprovals as $a) {
-                $isSigner = in_array($a->role, ['Penandatangan', 'Pihak 1', 'Pihak 2']);
+                $isSigner = $a->role === 'Penandatangan';
 
                 $timeline[] = [
                     'id' => $a->id,
@@ -344,7 +347,7 @@ class ContractFormatter
                     'user_id' => $a->user_id,
                     'approver_name' => $a->approver_name,
                     'role' => $a->role,
-                    'department_name' => $a->approver?->department?->name ?? $deptName,
+                    'department_name' => $a->approver?->department->name ?? $deptName,
                     'target_approvers' => $a->approver_name,
                     'target_emails' => $a->approver?->email,
                     'sequence' => $step->step,
@@ -392,7 +395,7 @@ class ContractFormatter
                     $isAllPending = $regularApprovals->every(fn ($a) => $a->status === 'pending');
                     if ($isAllPending && $regularApprovals->count() > 1 && $isRoleBased) {
                         $first = $regularApprovals->first();
-                        $candidateNames = $regularApprovals->map(fn ($a) => $a->approver?->name ?? $a->approver_name)->implode(', ');
+                        $candidateNames = $regularApprovals->map(fn ($a) => $a->approver->name ?? $a->approver_name)->implode(', ');
                         $candidateEmails = $regularApprovals->map(fn ($a) => $a->approver?->email)->filter()->implode(', ');
 
                         $timeline[] = [

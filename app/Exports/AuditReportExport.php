@@ -44,7 +44,7 @@ class AuditReportExport implements FromCollection, ShouldAutoSize, WithHeadings,
             $history->contract->title,
             strtoupper($history->action),
             $history->description,
-            $history->actor?->name ?? '—',
+            $history->actor->name ?? '—',
         ];
     }
 

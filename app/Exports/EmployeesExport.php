@@ -28,7 +28,8 @@ class EmployeesExport implements FromCollection, ShouldAutoSize, WithEvents, Wit
             })->orderBy('name')->get();
 
         // Convert to collection
-        $collection = collect($users);
+        /** @var \Illuminate\Support\Collection<int, User|null> $collection */
+        $collection = collect($users->all());
 
         // Pre-fill 100 empty rows with formulas for new employee additions
         for ($i = 0; $i < 100; $i++) {
@@ -82,7 +83,7 @@ class EmployeesExport implements FromCollection, ShouldAutoSize, WithEvents, Wit
             $user->position,
             $user->department_id,
             '=IF(ISBLANK(G' . $this->rowNumber . '), "", IFERROR(VLOOKUP(G' . $this->rowNumber . ', \'Unit Departemen\'!A:B, 2, FALSE), "Tidak Ditemukan"))',
-            $user->role?->name ?? $user->getAttribute('role'),
+            $user->role->name ?? $user->getAttribute('role'),
             $user->is_active ? 'Aktif' : 'Nonaktif',
         ];
     }

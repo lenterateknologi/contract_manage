@@ -21,7 +21,8 @@ class CompanyGroupsExport implements FromCollection, ShouldAutoSize, WithEvents,
     public function collection()
     {
         $groups = CompanyGroup::orderBy('name')->get();
-        $collection = collect($groups);
+        /** @var \Illuminate\Support\Collection<int, CompanyGroup|null> $collection */
+        $collection = collect($groups->all());
 
         for ($i = 0; $i < 100; $i++) {
             $collection->push(null);

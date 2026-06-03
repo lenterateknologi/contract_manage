@@ -7,6 +7,23 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property string $id
+ * @property string $contract_id
+ * @property string $document_type
+ * @property int $version_no
+ * @property string $file_name
+ * @property string $file_path
+ * @property string|null $change_log
+ * @property string|null $uploaded_by
+ * @property bool $is_final
+ * @property string|null $file_hash
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
+ * @property \Carbon\Carbon|null $deleted_at
+ * @property-read Contract $contract
+ * @property-read User|null $uploader
+ */
 class ContractVersion extends Model
 {
     protected $table = 't_contract_versions';

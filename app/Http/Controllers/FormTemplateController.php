@@ -242,6 +242,7 @@ class FormTemplateController extends Controller
                 $label = $fieldData['label'] ?? '';
                 $name = $fieldData['name'] ?? (! empty($label) ? Str::snake($label) : 'field_' . Str::random(6));
 
+                /** @var \App\Models\FormField $field */
                 $field = $template->fields()->create([
                     'label' => $label,
                     'name' => $name,
@@ -281,10 +282,11 @@ class FormTemplateController extends Controller
         $formData = json_decode($request->input('data', '[]'), true) ?? [];
 
         // Inline logo as Base64 to prevent deadlock during PDF generation
-        if ($template->has_letterhead && isset($template->letterhead_json['logo_url'])) {
-            $logoBase64 = $this->getLogoBase64($template->letterhead_json['logo_url']);
+        $letterheadJson = $template->letterhead_json;
+        if ($template->has_letterhead && is_array($letterheadJson) && isset($letterheadJson['logo_url'])) {
+            $logoBase64 = $this->getLogoBase64($letterheadJson['logo_url']);
             if ($logoBase64) {
-                $letterhead = $template->letterhead_json;
+                $letterhead = $letterheadJson;
                 $letterhead['logo_url'] = $logoBase64;
                 $template->letterhead_json = $letterhead;
             }
@@ -464,7 +466,9 @@ class FormTemplateController extends Controller
 
             // First pass: Create new fields
             foreach ($fields as $field) {
+                /** @var \App\Models\FormField $field */
                 $newField = $field->replicate();
+                /** @var \App\Models\FormField $newField */
                 $newField->form_template_id = $newTemplate->id;
                 $newField->save();
                 $idMapping[$field->id] = $newField->id;
@@ -472,6 +476,7 @@ class FormTemplateController extends Controller
 
             // Second pass: Update parent IDs
             foreach ($fields as $field) {
+                /** @var \App\Models\FormField $field */
                 if ($field->parent_id && isset($idMapping[$field->parent_id])) {
                     $newFieldId = $idMapping[$field->id];
                     DB::table('m_form_fields')
@@ -492,6 +497,7 @@ class FormTemplateController extends Controller
         $template->load(['fields' => fn ($q) => $q->orderBy('order')]);
 
         $fields = $template->fields->map(function ($field) {
+            /** @var \App\Models\FormField $field */
             return [
                 'id' => $field->id,
                 'parent_id' => $field->parent_id,
@@ -548,7 +554,7 @@ class FormTemplateController extends Controller
 
             return DB::transaction(function () use ($data) {
                 // Find a unique name
-                $originalName = ($data['name'] ?? 'Imported Form Template') . ' (Imported)';
+                $originalName = $data['name'] . ' (Imported)';
                 $name = $originalName;
                 $i = 1;
                 while (FormTemplate::where('name', $name)->exists()) {
@@ -583,6 +589,7 @@ class FormTemplateController extends Controller
                     $label = $fieldData['label'] ?? '';
                     $fieldName = $fieldData['name'] ?? (! empty($label) ? Str::snake($label) : 'field_' . Str::random(6));
 
+                    /** @var \App\Models\FormField $field */
                     $field = $template->fields()->create([
                         'label' => $label,
                         'name' => $fieldName,

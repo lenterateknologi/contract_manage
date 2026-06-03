@@ -2,12 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Actions\Contract\ApproveContractAction;
-use App\Actions\Contract\ExportContractAction;
-use App\Actions\Contract\FileAction;
-use App\Actions\Contract\RejectContractAction;
-use App\Actions\Contract\StoreContractAction;
-use App\Actions\Contract\UpdateContractAction;
 use App\Formatters\ContractFormatter;
 use App\Models\Contract;
 use App\Models\ContractFormSubmission;
@@ -15,7 +9,6 @@ use App\Models\ContractFormSubmissionVersion;
 use App\Models\ContractHistory;
 use App\Models\FormTemplate;
 use App\Models\Vendor;
-use App\Services\ContractWorkflowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -26,38 +19,6 @@ use Inertia\Inertia;
 
 class ContractFormController extends Controller
 {
-    private ContractWorkflowService $workflowService;
-
-    private StoreContractAction $storeAction;
-
-    private UpdateContractAction $updateAction;
-
-    private ApproveContractAction $approveAction;
-
-    private RejectContractAction $rejectAction;
-
-    private FileAction $fileAction;
-
-    private ExportContractAction $exportAction;
-
-    public function __construct(
-        ContractWorkflowService $workflowService,
-        StoreContractAction $storeAction,
-        UpdateContractAction $updateAction,
-        ApproveContractAction $approveAction,
-        RejectContractAction $rejectAction,
-        FileAction $fileAction,
-        ExportContractAction $exportAction,
-    ) {
-        $this->workflowService = $workflowService;
-        $this->storeAction = $storeAction;
-        $this->updateAction = $updateAction;
-        $this->approveAction = $approveAction;
-        $this->rejectAction = $rejectAction;
-        $this->fileAction = $fileAction;
-        $this->exportAction = $exportAction;
-    }
-
     public function saveFormSubmission(Request $request, string $id): JsonResponse
     {
         $contract = Contract::findOrFail($id);
@@ -270,7 +231,9 @@ class ContractFormController extends Controller
         $prefillData = null;
 
         if ($submission) {
-            $versions = $submission->versions()->with('createdBy')->get()->map(fn ($v) => [
+            /** @var \Illuminate\Database\Eloquent\Collection<int, ContractFormSubmissionVersion> $versionsCollection */
+            $versionsCollection = $submission->versions()->with('createdBy')->get();
+            $versions = $versionsCollection->map(fn ($v) => [
                 'id' => $v->id,
                 'version_no' => $v->version_no,
                 'form_data' => $v->form_data,
@@ -354,10 +317,10 @@ class ContractFormController extends Controller
             $formData['meta_p1_entity'] = 'PT. Lentera Teknologi';
         }
         if (empty($formData['meta_p1_signer'])) {
-            $formData['meta_p1_signer'] = $contract->initiator?->name ?? $contract->creator?->name ?? '';
+            $formData['meta_p1_signer'] = $contract->initiator->name ?? $contract->creator->name ?? '';
         }
         if (empty($formData['meta_p1_signer_position'])) {
-            $formData['meta_p1_signer_position'] = $contract->initiator?->role ?? $contract->creator?->role ?? 'Direktur';
+            $formData['meta_p1_signer_position'] = $contract->initiator->role ?? $contract->creator->role ?? 'Direktur';
         }
         if (empty($formData['meta_p1_alamat'])) {
             $formData['meta_p1_alamat'] = 'The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan';
@@ -365,6 +328,7 @@ class ContractFormController extends Controller
 
         // ── Pihak Kedua from Vendor master data ────────────────────────────
         if ($contract->vendor_id && $contract->vendor) {
+            /** @var Vendor $v */
             $v = $contract->vendor;
             if (empty($formData['meta_p2_entity'])) {
                 $formData['meta_p2_entity'] = $v->name;
@@ -385,7 +349,7 @@ class ContractFormController extends Controller
             $formData['meta_nomor'] = $contract->contract_no;
         }
         if (empty($formData['meta_topik'])) {
-            $formData['meta_topik'] = $contract->contractType?->name ?? $contract->contract_type ?? '';
+            $formData['meta_topik'] = $contract->contractType->name ?? $contract->contract_type ?? '';
         }
         if (empty($formData['meta_tipe_perjanjian'])) {
             $formData['meta_tipe_perjanjian'] = $contract->transaction_type ?? 'Perjanjian Baru';
@@ -416,7 +380,9 @@ class ContractFormController extends Controller
 
         $versions = [];
         if ($submission) {
-            $versions = $submission->versions()->orderByDesc('version_no')->get()->map(fn ($v) => [
+            /** @var \Illuminate\Database\Eloquent\Collection<int, ContractFormSubmissionVersion> $versionsCollection */
+            $versionsCollection = $submission->versions()->orderByDesc('version_no')->get();
+            $versions = $versionsCollection->map(fn ($v) => [
                 'id' => $v->id,
                 'version_no' => $v->version_no,
                 'form_data' => $v->form_data,

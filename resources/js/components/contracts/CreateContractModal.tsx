@@ -9,6 +9,7 @@ import { TreeSelect } from '@/components/ui/forms/TreeSelect';
 import { PortalSelect } from '@/components/ui/forms/PortalSelect';
 import { cn } from '@/lib/utils';
 import { contractApi } from '@/lib/contract-api';
+import { TaxToggle } from './parts/TaxToggle';
 
 interface Props {
     open: boolean;
@@ -28,7 +29,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
     const [typeId, setTypeId] = useState('');
     const [submissionTypeId, setSubmissionTypeId] = useState('');
     const [transactionType, setTransactionType] = useState('Perjanjian Baru');
-    const [taxRequired, setTaxRequired] = useState(false);
+    const [taxRequired, setTaxRequired] = useState(true);
     const [initiatedById, setInitiatedById] = useState('');
     const [vendorId, setVendorId] = useState('');
     const [category, setCategory] = useState<'contract' | 'non-contract' | 'nda'>('contract');
@@ -148,7 +149,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
             setTypeId('');
             setSubmissionTypeId('');
             setTransactionType('Perjanjian Baru');
-            setTaxRequired(false);
+            setTaxRequired(true);
             setInitiatedById(auth?.user?.id || '');
             setVendorId('');
         } catch (err: any) {
@@ -271,6 +272,8 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                     error={errors.title}
                     required
                 />
+
+                <TaxToggle taxRequired={taxRequired} setTaxRequired={setTaxRequired} />
 
                 <FormTextarea
                     label="Keterangan (Optional)"

@@ -9,6 +9,24 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property string $id
+ * @property string $workflow_step_id
+ * @property string $master_action_id
+ * @property WorkflowAction|null $action_code
+ * @property string|null $next_step_id
+ * @property string|null $next_workflow_id
+ * @property string|null $next_workflow_step_id
+ * @property array|null $required_fields
+ * @property array|null $autofilled_fields
+ * @property array|null $transition_config
+ * @property array|null $signing_parties
+ * @property array|null $assignee_config
+ * @property string|null $alias
+ * @property string|null $description
+ * @property bool $is_active
+ * @property-read WorkflowMasterAction|null $masterAction
+ */
 class WorkflowStepAction extends Model
 {
     use HasUuids, SoftDeletes;
@@ -66,5 +84,10 @@ class WorkflowStepAction extends Model
     public function nextWorkflowStep(): BelongsTo
     {
         return $this->belongsTo(WorkflowStep::class, 'next_workflow_step_id');
+    }
+
+    public function masterAction(): BelongsTo
+    {
+        return $this->belongsTo(WorkflowMasterAction::class, 'master_action_id');
     }
 }

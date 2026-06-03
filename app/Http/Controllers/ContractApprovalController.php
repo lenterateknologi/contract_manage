@@ -82,10 +82,8 @@ class ContractApprovalController extends Controller
             'attachment' => 'nullable|file|max:10240', // 10MB limit
             'assigned_pic_id' => 'nullable|uuid|exists:m_users,id',
             'execution_order' => 'nullable|string',
-            'p1_user_id' => 'nullable|array',
-            'p1_user_id.*' => 'uuid|exists:m_users,id',
-            'p2_user_id' => 'nullable|array',
-            'p2_user_id.*' => 'uuid|exists:m_users,id',
+            'signer_user_ids' => 'nullable|array',
+            'signer_user_ids.*' => 'uuid|exists:m_users,id',
             'action_code' => 'nullable|string',
             'target_step_id' => 'nullable|uuid|exists:m_workflow_steps,id',
         ]);
@@ -125,8 +123,7 @@ class ContractApprovalController extends Controller
             $request->execution_order,
             $request->action_code,
             $request->target_step_id,
-            $request->p1_user_id,
-            $request->p2_user_id,
+            $request->signer_user_ids,
         );
 
         return response()->json(ContractFormatter::formatContract($contract));

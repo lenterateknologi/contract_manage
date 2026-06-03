@@ -54,6 +54,7 @@ class WorkflowAction
             if (! empty($data['steps'])) {
                 foreach ($data['steps'] as $index => $stepData) {
                     $stepClientId = $stepData['id'] ?? "new-{$index}";
+                    /** @var WorkflowStep $step */
                     $step = $workflow->steps()->create([
                         'label' => $stepData['label'] ?? null,
                         'is_mandatory' => $stepData['is_mandatory'] ?? true,
@@ -217,8 +218,10 @@ class WorkflowAction
 
                     if ($isNew) {
                         $stepFields['created_by'] = Auth::id();
+                        /** @var WorkflowStep $step */
                         $step = $workflow->steps()->create($stepFields);
                     } else {
+                        /** @var WorkflowStep $step */
                         $step = WorkflowStep::where('workflow_id', $workflow->id)->findOrFail($stepId);
                         $step->update($stepFields);
                     }
@@ -287,17 +290,12 @@ class WorkflowAction
     {
         return DB::transaction(function () use ($data, $workflow) {
             // Cleanup existing steps
-            foreach ($workflow->steps as $oldStep) {
-                $oldStep->approverRoles()->delete();
-                $oldStep->approverDepartments()->delete();
-                $oldStep->approverUsers()->delete();
-                $oldStep->actions()->delete();
-            }
             $workflow->steps()->forceDelete();
 
             $stepIdMap = [];
             if (! empty($data['steps'])) {
                 foreach ($data['steps'] as $index => $stepData) {
+                    /** @var WorkflowStep $step */
                     $step = $workflow->steps()->create([
                         'label' => $stepData['label'] ?? null,
                         'is_mandatory' => $stepData['is_mandatory'] ?? true,
@@ -472,6 +470,7 @@ class WorkflowAction
             $newWorkflow->save();
 
             // Duplicate Initiator Roles
+            /** @var \App\Models\WorkflowInitiatorRole $role */
             foreach ($workflow->initiatorRolesData as $role) {
                 $newWorkflow->initiatorRolesData()->create([
                     'role_name' => $role->role_name,
@@ -479,6 +478,7 @@ class WorkflowAction
             }
 
             // Duplicate Initiator Departments
+            /** @var \App\Models\WorkflowInitiatorDepartment $dept */
             foreach ($workflow->initiatorDepartmentsData as $dept) {
                 $newWorkflow->initiatorDepartmentsData()->create([
                     'department_id' => $dept->department_id,
@@ -486,6 +486,7 @@ class WorkflowAction
             }
 
             // Duplicate Initiator Users
+            /** @var \App\Models\WorkflowInitiatorUser $u */
             foreach ($workflow->initiatorUsersData as $u) {
                 $newWorkflow->initiatorUsersData()->create([
                     'user_id' => $u->user_id,
@@ -496,6 +497,7 @@ class WorkflowAction
             $stepIdMap = [];
             $oldSteps = $workflow->steps; // Ordered by step
 
+            /** @var WorkflowStep $oldStep */
             foreach ($oldSteps as $oldStep) {
                 $newStep = $oldStep->replicate();
                 $newStep->workflow_id = $newWorkflow->id;
@@ -506,6 +508,7 @@ class WorkflowAction
                 $stepIdMap[$oldStep->id] = $newStep->id;
 
                 // Duplicate step approver roles
+                /** @var \App\Models\WorkflowStepRole $role */
                 foreach ($oldStep->approverRoles as $role) {
                     $newStep->approverRoles()->create([
                         'role_name' => $role->role_name,
@@ -513,6 +516,7 @@ class WorkflowAction
                 }
 
                 // Duplicate step approver departments
+                /** @var \App\Models\WorkflowStepDepartment $dept */
                 foreach ($oldStep->approverDepartments as $dept) {
                     $newStep->approverDepartments()->create([
                         'department_id' => $dept->department_id,
@@ -520,6 +524,7 @@ class WorkflowAction
                 }
 
                 // Duplicate step approver users
+                /** @var \App\Models\WorkflowStepUser $u */
                 foreach ($oldStep->approverUsers as $u) {
                     $newStep->approverUsers()->create([
                         'user_id' => $u->user_id,
@@ -528,6 +533,7 @@ class WorkflowAction
             }
 
             // Second pass: duplicate step actions and map next_step_id
+            /** @var WorkflowStep $oldStep */
             foreach ($oldSteps as $oldStep) {
                 $newStepId = $stepIdMap[$oldStep->id] ?? null;
                 if (! $newStepId) {
@@ -539,6 +545,7 @@ class WorkflowAction
                     continue;
                 }
 
+                /** @var WorkflowStepAction $action */
                 foreach ($oldStep->actions as $action) {
                     $newAction = $action->replicate();
                     $newAction->workflow_step_id = $newStep->id;
@@ -552,20 +559,18 @@ class WorkflowAction
 
                     // Map assignee_config step IDs
                     $assigneeConfig = $action->assignee_config ?? [];
-                    if (is_array($assigneeConfig)) {
-                        if (isset($assigneeConfig['default_target_step']) && isset($stepIdMap[$assigneeConfig['default_target_step']])) {
-                            $assigneeConfig['default_target_step'] = $stepIdMap[$assigneeConfig['default_target_step']];
-                        }
-                        if (isset($assigneeConfig['signature_target_step']) && isset($stepIdMap[$assigneeConfig['signature_target_step']])) {
-                            $assigneeConfig['signature_target_step'] = $stepIdMap[$assigneeConfig['signature_target_step']];
-                        }
-                        if (isset($assigneeConfig['selectable_steps']) && is_array($assigneeConfig['selectable_steps'])) {
-                            $assigneeConfig['selectable_steps'] = array_map(function ($stepId) use ($stepIdMap) {
-                                return $stepIdMap[$stepId] ?? $stepId;
-                            }, $assigneeConfig['selectable_steps']);
-                        }
-                        $newAction->assignee_config = $assigneeConfig;
+                    if (isset($assigneeConfig['default_target_step']) && isset($stepIdMap[$assigneeConfig['default_target_step']])) {
+                        $assigneeConfig['default_target_step'] = $stepIdMap[$assigneeConfig['default_target_step']];
                     }
+                    if (isset($assigneeConfig['signature_target_step']) && isset($stepIdMap[$assigneeConfig['signature_target_step']])) {
+                        $assigneeConfig['signature_target_step'] = $stepIdMap[$assigneeConfig['signature_target_step']];
+                    }
+                    if (isset($assigneeConfig['selectable_steps']) && is_array($assigneeConfig['selectable_steps'])) {
+                        $assigneeConfig['selectable_steps'] = array_map(function ($stepId) use ($stepIdMap) {
+                            return $stepIdMap[$stepId] ?? $stepId;
+                        }, $assigneeConfig['selectable_steps']);
+                    }
+                    $newAction->assignee_config = $assigneeConfig;
 
                     $newAction->save();
                 }

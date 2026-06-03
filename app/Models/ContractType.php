@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ContractType extends Model
@@ -31,37 +33,37 @@ class ContractType extends Model
         'features' => 'array',
     ];
 
-    public function parent()
+    public function parent(): BelongsTo
     {
         return $this->belongsTo(ContractType::class, 'parent_id');
     }
 
-    public function children()
+    public function children(): HasMany
     {
         return $this->hasMany(ContractType::class, 'parent_id');
     }
 
-    public function contracts()
+    public function contracts(): HasMany
     {
         return $this->hasMany(Contract::class);
     }
 
-    public function f1FormTemplate()
+    public function f1FormTemplate(): BelongsTo
     {
         return $this->belongsTo(FormTemplate::class, 'f1_form_template_id');
     }
 
-    public function f2FormTemplate()
+    public function f2FormTemplate(): BelongsTo
     {
         return $this->belongsTo(FormTemplate::class, 'f2_form_template_id');
     }
 
-    public function formTemplates()
+    public function formTemplates(): HasMany
     {
         return $this->hasMany(FormTemplate::class);
     }
 
-    public function workflow()
+    public function workflow(): BelongsTo
     {
         return $this->belongsTo(Workflow::class);
     }

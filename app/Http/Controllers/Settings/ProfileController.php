@@ -53,7 +53,7 @@ class ProfileController extends Controller
         return Inertia::render('settings/profile', [
             'mustVerifyEmail' => $user instanceof MustVerifyEmail,
             'status' => $request->session()->get('status'),
-            'department' => $user->department?->name ?? 'N/A',
+            'department' => $user->department->name ?? 'N/A',
             'recentContracts' => $recentContracts,
             'user' => [
                 'id' => $user->id,

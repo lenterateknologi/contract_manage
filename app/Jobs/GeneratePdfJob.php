@@ -55,11 +55,7 @@ class GeneratePdfJob implements ShouldQueue
                     '--no-first-run',
                     '--no-zygote',
                     '--single-process',
-                    '--disable-extensions',
                 ])
-                ->console(function ($message) {
-                    Log::info('[CHROME CONSOLE] ' . $message);
-                })
                 ->timeout(300)
                 ->paperSize(210, 297, 'mm')
                 ->margins(0, 0, 0, 0)
