@@ -1,19 +1,26 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
 use App\Actions\Admin\RoleAccessAction;
-
+use App\Exports\UsersExport;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreUserRequest;
 use App\Http\Requests\Admin\UpdateUserRequest;
+use App\Imports\UsersImport;
+use App\Models\Contract;
 use App\Models\Department;
 use App\Models\Module;
 use App\Models\ModuleGroup;
 use App\Models\Role;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use Maatwebsite\Excel\Facades\Excel;
 use OpenApi\Attributes as OA;
 
 class AdminController extends Controller
@@ -33,9 +40,9 @@ class AdminController extends Controller
             ->when($request->search, function ($q, $search) {
                 $search = strtolower($search);
                 $q->where(function ($qq) use ($search) {
-                    $qq->where(\Illuminate\Support\Facades\DB::raw('LOWER(name)'), 'like', "%{$search}%")
-                        ->orWhere(\Illuminate\Support\Facades\DB::raw('LOWER(email)'), 'like', "%{$search}%")
-                        ->orWhere(\Illuminate\Support\Facades\DB::raw('LOWER(username)'), 'like', "%{$search}%");
+                    $qq->where(DB::raw('LOWER(name)'), 'like', "%{$search}%")
+                        ->orWhere(DB::raw('LOWER(email)'), 'like', "%{$search}%")
+                        ->orWhere(DB::raw('LOWER(username)'), 'like', "%{$search}%");
                 });
             })
             ->when($request->role, function ($q, $role) {
@@ -74,7 +81,7 @@ class AdminController extends Controller
         $departmentTraffic = Department::orderBy('name')
             ->get()
             ->map(function ($dept) {
-                $incoming = \App\Models\Contract::where(function ($q) use ($dept) {
+                $incoming = Contract::where(function ($q) use ($dept) {
                     $q->whereHas('initiator', fn ($sq) => $sq->where('department_id', $dept->id))
                         ->orWhere(function ($sq) use ($dept) {
                             $sq->whereNull('initiated_by_id')
@@ -84,7 +91,7 @@ class AdminController extends Controller
                     ->whereIn('status', ['in_review', 'revision'])
                     ->count();
 
-                $outgoing = \App\Models\Contract::where(function ($q) use ($dept) {
+                $outgoing = Contract::where(function ($q) use ($dept) {
                     $q->whereHas('initiator', fn ($sq) => $sq->where('department_id', $dept->id))
                         ->orWhere(function ($sq) use ($dept) {
                             $sq->whereNull('initiated_by_id')
@@ -132,8 +139,8 @@ class AdminController extends Controller
             ->when($request->search, function ($q, $search) {
                 $search = strtolower($search);
                 $q->where(function ($qq) use ($search) {
-                    $qq->where(\Illuminate\Support\Facades\DB::raw('LOWER(name)'), 'like', "%{$search}%")
-                        ->orWhere(\Illuminate\Support\Facades\DB::raw('LOWER(description)'), 'like', "%{$search}%");
+                    $qq->where(DB::raw('LOWER(name)'), 'like', "%{$search}%")
+                        ->orWhere(DB::raw('LOWER(description)'), 'like', "%{$search}%");
                 });
             })
             ->when($request->created_from, function ($q, $from) {
@@ -177,7 +184,7 @@ class AdminController extends Controller
     public function updateRole(Request $request, Role $role)
     {
         $data = $request->validate([
-            'name' => 'required|string|max:255|unique:m_roles,name,' . $role->id,
+            'name' => 'required|string|max:255|unique:m_roles,name,'.$role->id,
             'description' => 'nullable|string',
         ]);
 
@@ -211,7 +218,7 @@ class AdminController extends Controller
 
         Role::whereIn('id', $ids)->delete();
 
-        return back()->with('success', count($ids) . ' role berhasil dihapus.');
+        return back()->with('success', count($ids).' role berhasil dihapus.');
     }
 
     public function accessMapping(Request $request, ?Role $role = null)
@@ -343,7 +350,7 @@ class AdminController extends Controller
     /**
      * Update user details.
      *
-     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
+     * @return RedirectResponse|JsonResponse
      */
     public function updateUser(UpdateUserRequest $request, User $user)
     {
@@ -392,12 +399,12 @@ class AdminController extends Controller
 
         User::whereIn('id', $ids)->delete();
 
-        return back()->with('success', count($ids) . ' pengguna berhasil dihapus.');
+        return back()->with('success', count($ids).' pengguna berhasil dihapus.');
     }
 
     public function exportUsers()
     {
-        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\UsersExport(), 'data_karyawan_' . date('Ymd') . '.xlsx');
+        return Excel::download(new UsersExport, 'data_karyawan_'.date('Ymd').'.xlsx');
     }
 
     public function importUsers(Request $request)
@@ -407,11 +414,11 @@ class AdminController extends Controller
         ]);
 
         try {
-            \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\UsersImport(), $request->file('file'));
+            Excel::import(new UsersImport, $request->file('file'));
 
             return back()->with('success', 'Data karyawan berhasil diimpor.');
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal mengimpor data: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Gagal mengimpor data: '.$e->getMessage()]);
         }
     }
 }

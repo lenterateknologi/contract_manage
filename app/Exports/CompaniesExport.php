@@ -9,9 +9,9 @@ class CompaniesExport implements WithMultipleSheets
     public function sheets(): array
     {
         return [
-            new CompaniesMainExport(),
-            new CompanyGroupsSheetExport(),
-            new RegionsSheetExport(),
+            new CompaniesMainExport,
+            new CompanyGroupsSheetExport,
+            new RegionsSheetExport,
         ];
     }
 }

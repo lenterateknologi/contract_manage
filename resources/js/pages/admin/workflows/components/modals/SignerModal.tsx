@@ -21,7 +21,7 @@ export function SignerModal({ isOpen, onClose, step, idx, userOptions, showToast
             onClose={onClose}
             contract={mockContract}
             actionCode="sign"
-            actionAlias="Tanda Tangan"
+            actionAlias="Upload Tanda Tangan"
             users={userOptions}
             onSubmit={async () => {
                 return new Promise(resolve => {

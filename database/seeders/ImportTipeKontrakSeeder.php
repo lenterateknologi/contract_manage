@@ -113,7 +113,7 @@ class ImportTipeKontrakSeeder extends Seeder
                 DB::table($dbTable)->insert($chunk);
             }
 
-            $this->command->info('Seeded ' . count($data) . " rows into {$dbTable}.");
+            $this->command->info('Seeded '.count($data)." rows into {$dbTable}.");
         }
 
         $this->command->info('>>> tipe-kontrak.json IMPORT COMPLETED');

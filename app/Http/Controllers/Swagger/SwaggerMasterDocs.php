@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Swagger;
 
 use OpenApi\Attributes as OA;
 
@@ -908,7 +908,7 @@ class SwaggerMasterDocs
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: 'code', type: 'string', example: 'pending_signatures'),
-                    new OA\Property(property: 'name', type: 'string', example: 'Menunggu Tanda Tangan'),
+                    new OA\Property(property: 'name', type: 'string', example: 'Menunggu Upload Tanda Tangan'),
                     new OA\Property(property: 'color', type: 'string', example: 'blue'),
                     new OA\Property(property: 'description', type: 'string', example: 'Menunggu tanda tangan pihak terkait'),
                 ],
@@ -933,7 +933,7 @@ class SwaggerMasterDocs
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: 'code', type: 'string', example: 'pending_signatures'),
-                    new OA\Property(property: 'name', type: 'string', example: 'Menunggu Proses Tanda Tangan'),
+                    new OA\Property(property: 'name', type: 'string', example: 'Menunggu Proses Upload Tanda Tangan'),
                     new OA\Property(property: 'color', type: 'string', example: 'indigo'),
                     new OA\Property(property: 'is_active', type: 'boolean', example: true),
                 ],

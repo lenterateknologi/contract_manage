@@ -2,14 +2,16 @@
 
 namespace Database\Factories;
 
+use App\Models\Contract;
 use App\Models\ContractType;
+use App\Models\SubmissionType;
 use App\Models\User;
 use App\Models\Vendor;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Contract>
+ * @extends Factory<Contract>
  */
 class ContractFactory extends Factory
 {
@@ -22,10 +24,10 @@ class ContractFactory extends Factory
     {
         $createdAt = $this->faker->dateTimeBetween('-6 months', 'now');
         $contractDate = clone $createdAt;
-        $endDate = (clone $contractDate)->modify('+' . rand(1, 3) . ' years');
+        $endDate = (clone $contractDate)->modify('+'.rand(1, 3).' years');
 
         return [
-            'contract_no' => 'CTR/' . strtoupper(Str::random(5)) . '/' . $createdAt->format('Ymd'),
+            'contract_no' => 'CTR/'.strtoupper(Str::random(5)).'/'.$createdAt->format('Ymd'),
             'title' => $this->faker->sentence(3),
             'description' => $this->faker->paragraph(),
             'contract_date' => $contractDate->format('Y-m-d'),
@@ -37,7 +39,7 @@ class ContractFactory extends Factory
             'created_at' => $createdAt,
             'updated_at' => $createdAt,
             'contract_type_id' => ContractType::inRandomOrder()->first()?->id ?? ContractType::factory(),
-            'submission_type_id' => \App\Models\SubmissionType::inRandomOrder()->first()?->id,
+            'submission_type_id' => SubmissionType::inRandomOrder()->first()?->id,
             'created_by' => User::inRandomOrder()->first()?->id ?? User::factory(),
             'initiated_by_id' => User::inRandomOrder()->first()?->id ?? User::factory(),
             'vendor_id' => Vendor::inRandomOrder()->first()?->id ?? Vendor::factory(),

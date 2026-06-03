@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\VendorsExport;
 use App\Http\Controllers\Controller;
+use App\Imports\VendorsImport;
 use App\Models\Vendor;
 use App\Models\VendorDocument;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use Maatwebsite\Excel\Facades\Excel;
 
 class VendorAdminController extends Controller
 {
@@ -17,10 +21,10 @@ class VendorAdminController extends Controller
             ->when($request->search, function ($q, $search) {
                 $search = strtolower($search);
                 $q->where(function ($qq) use ($search) {
-                    $qq->where(\Illuminate\Support\Facades\DB::raw('LOWER(name)'), 'like', "%{$search}%")
-                        ->orWhere(\Illuminate\Support\Facades\DB::raw('LOWER(code)'), 'like', "%{$search}%")
-                        ->orWhere(\Illuminate\Support\Facades\DB::raw('LOWER(category)'), 'like', "%{$search}%")
-                        ->orWhere(\Illuminate\Support\Facades\DB::raw('LOWER(email)'), 'like', "%{$search}%");
+                    $qq->where(DB::raw('LOWER(name)'), 'like', "%{$search}%")
+                        ->orWhere(DB::raw('LOWER(code)'), 'like', "%{$search}%")
+                        ->orWhere(DB::raw('LOWER(category)'), 'like', "%{$search}%")
+                        ->orWhere(DB::raw('LOWER(email)'), 'like', "%{$search}%");
                 });
             })
             ->when($request->category, function ($q, $category) {
@@ -103,7 +107,7 @@ class VendorAdminController extends Controller
     public function update(Request $request, Vendor $vendor)
     {
         $data = $request->validate([
-            'code' => 'required|string|max:50|unique:m_vendors,code,' . $vendor->id,
+            'code' => 'required|string|max:50|unique:m_vendors,code,'.$vendor->id,
             'name' => 'required|string|max:255',
             'category' => 'nullable|string|max:100',
             'email' => 'nullable|email|max:255',
@@ -141,12 +145,12 @@ class VendorAdminController extends Controller
 
         $file = $request->file('document_file');
         $originalName = $file->getClientOriginalName();
-        $path = $file->storeAs("vendor_documents/{$vendor->id}", time() . "_{$originalName}", 'public');
+        $path = $file->storeAs("vendor_documents/{$vendor->id}", time()."_{$originalName}", 'public');
 
         $vendor->documents()->create([
             'document_name' => $originalName,
             'document_type' => $request->document_type,
-            'file_url' => '/storage/' . $path,
+            'file_url' => '/storage/'.$path,
             'expires_at' => $request->filled('expires_at') && $request->expires_at !== '' ? $request->expires_at : null,
             'is_verified' => true,
         ]);
@@ -181,14 +185,14 @@ class VendorAdminController extends Controller
 
         Vendor::whereIn('id', $ids)->delete();
 
-        return back()->with('success', count($ids) . ' vendor berhasil dihapus.');
+        return back()->with('success', count($ids).' vendor berhasil dihapus.');
     }
 
     public function export()
     {
-        return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Exports\VendorsExport(),
-            'data_vendor_' . date('Ymd') . '.xlsx',
+        return Excel::download(
+            new VendorsExport,
+            'data_vendor_'.date('Ymd').'.xlsx',
         );
     }
 
@@ -197,11 +201,11 @@ class VendorAdminController extends Controller
         $request->validate(['file' => 'required|file|mimes:xlsx,xls']);
 
         try {
-            \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\VendorsImport(), $request->file('file'));
+            Excel::import(new VendorsImport, $request->file('file'));
 
             return back()->with('success', 'Data vendor berhasil diimpor.');
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal mengimpor data: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Gagal mengimpor data: '.$e->getMessage()]);
         }
     }
 }

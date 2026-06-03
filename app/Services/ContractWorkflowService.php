@@ -6,12 +6,15 @@ use App\Enums\WorkflowAction;
 use App\Models\Approval;
 use App\Models\Contract;
 use App\Models\ContractStatus;
+use App\Models\ContractVersion;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
 use App\Models\WorkflowStepAction;
 use App\Services\Traits\EvaluatesWorkflowSteps;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class ContractWorkflowService
 {
@@ -138,7 +141,7 @@ class ContractWorkflowService
         $this->createApprovalForStep($contract, $firstStep);
 
         if ($contract->initiated_by_id && $contract->initiated_by_id !== $contract->created_by) {
-            //
+
         }
 
         $this->queryService->logHistory($contract, 'CONTRACT_SENT', 'Kontrak dikirim untuk persetujuan', Auth::id());
@@ -160,13 +163,13 @@ class ContractWorkflowService
         if (in_array('ceo', $lowerRoles) || in_array('md', $lowerRoles)) {
             $initiatorDeptId = $contract->initiator->department_id;
             if ($initiatorDeptId) {
-                $approvers = User::where(\Illuminate\Support\Facades\DB::raw('LOWER(role)'), 'vp')
+                $approvers = User::where(DB::raw('LOWER(role)'), 'vp')
                     ->where('department_id', $initiatorDeptId)
                     ->where('is_active', true)
                     ->get();
             }
             if ($approvers->isEmpty()) {
-                $approvers = User::where(\Illuminate\Support\Facades\DB::raw('LOWER(role)'), 'vp')
+                $approvers = User::where(DB::raw('LOWER(role)'), 'vp')
                     ->where('is_active', true)
                     ->get();
             }
@@ -450,7 +453,7 @@ class ContractWorkflowService
                 // Process all signers as sequential sub-steps
                 $createSigner($signerUserIds, 'waiting');
 
-                $logMsg = 'Delegasi Penandatanganan: ' . implode(', ', $allSigners);
+                $logMsg = 'Delegasi Penandatanganan: '.implode(', ', $allSigners);
                 $this->queryService->logHistory($contract, 'SIGNING_SETUP', $logMsg, Auth::id());
 
                 // IMPORTANT: Only update current step approvals to 'waiting' if we are actually in that step
@@ -527,7 +530,7 @@ class ContractWorkflowService
             ]);
 
             $pic = User::find($assignedPicId);
-            $this->queryService->logHistory($contract, 'WORKFLOW_ASSIGNED', 'PIC ditugaskan ke: ' . ($pic ? $pic->name : $assignedPicId), Auth::id());
+            $this->queryService->logHistory($contract, 'WORKFLOW_ASSIGNED', 'PIC ditugaskan ke: '.($pic ? $pic->name : $assignedPicId), Auth::id());
         }
 
         $currentStepApprovals = $contract->approvals()
@@ -565,7 +568,7 @@ class ContractWorkflowService
                 }
 
                 $contract->update(['metadata' => $metadata]);
-                $this->queryService->logHistory($contract, 'WORKFLOW_ORDER_SET', 'Urutan penyelesaian diatur: ' . ($order === 'initiator_first' ? 'Inisiator dulu' : 'Legal dulu'), Auth::id());
+                $this->queryService->logHistory($contract, 'WORKFLOW_ORDER_SET', 'Urutan penyelesaian diatur: '.($order === 'initiator_first' ? 'Inisiator dulu' : 'Legal dulu'), Auth::id());
 
                 $remaining = array_diff($metadata['step_12_order'], $metadata['step_12_finished']);
                 if (! empty($remaining)) {
@@ -606,12 +609,12 @@ class ContractWorkflowService
                         ->max('version_no') ?? 0;
                     $versionNo = $lastVersion + 1;
                     $ext = pathinfo($attachmentPath, PATHINFO_EXTENSION) ?: 'docx';
-                    $newPath = 'contracts/' . $contract->id . '/agreements/' . "agreement_v{$versionNo}.{$ext}";
+                    $newPath = 'contracts/'.$contract->id.'/agreements/'."agreement_v{$versionNo}.{$ext}";
 
-                    \Illuminate\Support\Facades\Storage::disk('local')->makeDirectory('contracts/' . $contract->id . '/agreements');
-                    \Illuminate\Support\Facades\Storage::disk('local')->copy($attachmentPath, $newPath);
+                    Storage::disk('local')->makeDirectory('contracts/'.$contract->id.'/agreements');
+                    Storage::disk('local')->copy($attachmentPath, $newPath);
 
-                    \App\Models\ContractVersion::create([
+                    ContractVersion::create([
                         'contract_id' => $contract->id,
                         'document_type' => 'agreement',
                         'version_no' => $versionNo,
@@ -767,7 +770,7 @@ class ContractWorkflowService
             ->where('workflow_step_id', $approval->workflow_step_id)
             ->where('status', 'pending')
             ->get()
-            ->each(fn (Approval $a) => $a->reject('Ditolak oleh ' . $approval->approver_name));
+            ->each(fn (Approval $a) => $a->reject('Ditolak oleh '.$approval->approver_name));
 
         $this->queryService->logHistory($contract, 'APPROVAL_REJECTED', $description, Auth::id());
 

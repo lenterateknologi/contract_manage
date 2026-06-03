@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -13,7 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string|null $pic_position
  * @property string|null $address
  * @property bool $is_active
- * @property-read \Illuminate\Database\Eloquent\Collection<int, VendorDocument> $documents
+ * @property-read Collection<int, VendorDocument> $documents
  */
 class Vendor extends Model
 {
@@ -52,13 +54,13 @@ class Vendor extends Model
         'is_individual' => 'boolean',
     ];
 
-    public function contracts(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function contracts(): HasMany
     {
         // One vendor can have many contracts (to be implemented later in Contract model)
         return $this->hasMany(Contract::class);
     }
 
-    public function documents(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function documents(): HasMany
     {
         return $this->hasMany(VendorDocument::class, 'vendor_id');
     }

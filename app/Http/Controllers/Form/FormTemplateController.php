@@ -1,8 +1,11 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Form;
 
+use App\Http\Controllers\Controller;
 use App\Jobs\GeneratePdfJob;
+use App\Models\ContractType;
+use App\Models\FormField;
 use App\Models\FormTemplate;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -13,6 +16,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
+use Spatie\Browsershot\Browsershot;
 
 class FormTemplateController extends Controller
 {
@@ -23,7 +27,7 @@ class FormTemplateController extends Controller
     {
         return Inertia::render('admin/form-templates', [
             'templates' => FormTemplate::withCount('fields')->get(),
-            'contract_types' => \App\Models\ContractType::all(),
+            'contract_types' => ContractType::all(),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#'],
                 ['title' => 'Form Template', 'href' => route('admin.form-templates.index')],
@@ -37,7 +41,7 @@ class FormTemplateController extends Controller
     public function builder(?FormTemplate $template = null)
     {
         if (! $template) {
-            $template = new FormTemplate();
+            $template = new FormTemplate;
         } else {
             $template->load('fields');
         }
@@ -62,7 +66,7 @@ class FormTemplateController extends Controller
             $formData = $request->input('form_data', '[]');
 
             $jobId = (string) Str::uuid();
-            $cacheKey = 'pdf_adhoc_' . $jobId;
+            $cacheKey = 'pdf_adhoc_'.$jobId;
 
             Cache::put($cacheKey, [
                 'template' => $templateData,
@@ -79,12 +83,12 @@ class FormTemplateController extends Controller
                 $printUrl = str_replace('localhost', '127.0.0.1', $printUrl);
             }
 
-            $fileName = (Str::slug($templateData['name'] ?? 'test')) . '_' . time() . '.pdf';
+            $fileName = (Str::slug($templateData['name'] ?? 'test')).'_'.time().'.pdf';
 
             // Queue the job
             GeneratePdfJob::dispatch($jobId, $printUrl, $fileName);
 
-            Cache::put('pdf_status_' . $jobId, ['status' => 'pending', 'progress' => 10], 1800);
+            Cache::put('pdf_status_'.$jobId, ['status' => 'pending', 'progress' => 10], 1800);
 
             return response()->json([
                 'job_id' => $jobId,
@@ -92,7 +96,7 @@ class FormTemplateController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Failed to queue PDF: ' . $e->getMessage()], 500);
+            return response()->json(['message' => 'Failed to queue PDF: '.$e->getMessage()], 500);
         }
     }
 
@@ -101,7 +105,7 @@ class FormTemplateController extends Controller
      */
     public function checkPdfStatus(string $jobId)
     {
-        $status = Cache::get('pdf_status_' . $jobId);
+        $status = Cache::get('pdf_status_'.$jobId);
         if (! $status) {
             return response()->json(['status' => 'not_found'], 404);
         }
@@ -121,7 +125,7 @@ class FormTemplateController extends Controller
             $formData = $request->input('form_data', '[]');
 
             // Create a temporary "virtual" template for rendering
-            $key = 'pdf_adhoc_' . Str::uuid();
+            $key = 'pdf_adhoc_'.Str::uuid();
             Cache::put($key, [
                 'template' => $templateData,
                 'formData' => json_decode($formData, true) ?? [],
@@ -140,7 +144,7 @@ class FormTemplateController extends Controller
             }
 
             // High-Fidelity PDF rendering via Browsershot (Turbo Optimized)
-            $pdfContent = \Spatie\Browsershot\Browsershot::url($printUrl)
+            $pdfContent = Browsershot::url($printUrl)
                 ->setNodeBinary('/opt/homebrew/bin/node')
                 ->setNpmBinary('/opt/homebrew/bin/npm')
                 ->setChromePath('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
@@ -164,12 +168,12 @@ class FormTemplateController extends Controller
 
             return response($pdfContent)
                 ->header('Content-Type', 'application/pdf')
-                ->header('Content-Disposition', 'attachment; filename="' . ($templateData['name'] ?? 'test') . '.pdf"');
+                ->header('Content-Disposition', 'attachment; filename="'.($templateData['name'] ?? 'test').'.pdf"');
 
         } catch (\Exception $e) {
-            Log::error('Ad-hoc Browsershot Export Failed: ' . $e->getMessage());
+            Log::error('Ad-hoc Browsershot Export Failed: '.$e->getMessage());
 
-            return response()->json(['message' => 'Gagal render PDF: ' . $e->getMessage()], 500);
+            return response()->json(['message' => 'Gagal render PDF: '.$e->getMessage()], 500);
         }
     }
 
@@ -217,7 +221,7 @@ class FormTemplateController extends Controller
 
         return DB::transaction(function () use ($request, $template) {
             if (! $template) {
-                $template = new FormTemplate();
+                $template = new FormTemplate;
                 $template->created_by = Auth::id();
             }
 
@@ -240,9 +244,9 @@ class FormTemplateController extends Controller
             // First pass: Create all fields without setting parent_id
             foreach ($allFieldsData as $fieldData) {
                 $label = $fieldData['label'] ?? '';
-                $name = $fieldData['name'] ?? (! empty($label) ? Str::snake($label) : 'field_' . Str::random(6));
+                $name = $fieldData['name'] ?? (! empty($label) ? Str::snake($label) : 'field_'.Str::random(6));
 
-                /** @var \App\Models\FormField $field */
+                /** @var FormField $field */
                 $field = $template->fields()->create([
                     'label' => $label,
                     'name' => $name,
@@ -321,7 +325,7 @@ class FormTemplateController extends Controller
             }
 
             // High-Fidelity PDF rendering via Browsershot (Turbo Optimized)
-            $pdfContent = \Spatie\Browsershot\Browsershot::url($printUrl)
+            $pdfContent = Browsershot::url($printUrl)
                 ->setNodeBinary('/opt/homebrew/bin/node')
                 ->setNpmBinary('/opt/homebrew/bin/npm')
                 ->setChromePath('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
@@ -345,10 +349,10 @@ class FormTemplateController extends Controller
 
             return response($pdfContent)
                 ->header('Content-Type', 'application/pdf')
-                ->header('Content-Disposition', 'attachment; filename="' . $template->name . '.pdf"')
+                ->header('Content-Disposition', 'attachment; filename="'.$template->name.'.pdf"')
                 ->header('Cache-Control', 'no-cache, no-store, must-revalidate');
         } catch (\Exception $e) {
-            Log::error('Browsershot Export Failed: ' . $e->getMessage());
+            Log::error('Browsershot Export Failed: '.$e->getMessage());
 
             // Fallback to legacy Blade if Browsershot fails
             $template->load('fields');
@@ -359,7 +363,7 @@ class FormTemplateController extends Controller
                 'fields' => $fields,
             ]);
 
-            return $pdf->download($template->name . '.pdf');
+            return $pdf->download($template->name.'.pdf');
         }
     }
 
@@ -385,7 +389,7 @@ class FormTemplateController extends Controller
             }
 
             // High-Fidelity Preview via Browsershot (Turbo Optimized)
-            $pdfContent = \Spatie\Browsershot\Browsershot::url($printUrl)
+            $pdfContent = Browsershot::url($printUrl)
                 ->setNodeBinary('/opt/homebrew/bin/node')
                 ->setNpmBinary('/opt/homebrew/bin/npm')
                 ->setChromePath('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
@@ -409,9 +413,9 @@ class FormTemplateController extends Controller
 
             return response($pdfContent)
                 ->header('Content-Type', 'application/pdf')
-                ->header('Content-Disposition', 'inline; filename="' . $template->name . '.pdf"');
+                ->header('Content-Disposition', 'inline; filename="'.$template->name.'.pdf"');
         } catch (\Exception $e) {
-            Log::error('Browsershot Stream Failed: ' . $e->getMessage());
+            Log::error('Browsershot Stream Failed: '.$e->getMessage());
 
             // Robust Fallback to DomPDF
             $template->load('fields');
@@ -422,7 +426,7 @@ class FormTemplateController extends Controller
                 'fields' => $fields,
             ]);
 
-            return $pdf->stream($template->name . '.pdf');
+            return $pdf->stream($template->name.'.pdf');
         }
     }
 
@@ -445,7 +449,7 @@ class FormTemplateController extends Controller
 
         FormTemplate::whereIn('id', $ids)->delete();
 
-        return back()->with('success', count($ids) . ' templates deleted successfully.');
+        return back()->with('success', count($ids).' templates deleted successfully.');
     }
 
     /**
@@ -455,7 +459,7 @@ class FormTemplateController extends Controller
     {
         return DB::transaction(function () use ($template) {
             $newTemplate = $template->replicate();
-            $newTemplate->name = $template->name . ' (Copy)';
+            $newTemplate->name = $template->name.' (Copy)';
             $newTemplate->created_by = Auth::id();
             $newTemplate->updated_by = Auth::id();
             $newTemplate->save();
@@ -466,9 +470,9 @@ class FormTemplateController extends Controller
 
             // First pass: Create new fields
             foreach ($fields as $field) {
-                /** @var \App\Models\FormField $field */
+                /** @var FormField $field */
                 $newField = $field->replicate();
-                /** @var \App\Models\FormField $newField */
+                /* @var \App\Models\FormField $newField */
                 $newField->form_template_id = $newTemplate->id;
                 $newField->save();
                 $idMapping[$field->id] = $newField->id;
@@ -476,7 +480,7 @@ class FormTemplateController extends Controller
 
             // Second pass: Update parent IDs
             foreach ($fields as $field) {
-                /** @var \App\Models\FormField $field */
+                /** @var FormField $field */
                 if ($field->parent_id && isset($idMapping[$field->parent_id])) {
                     $newFieldId = $idMapping[$field->id];
                     DB::table('m_form_fields')
@@ -497,7 +501,7 @@ class FormTemplateController extends Controller
         $template->load(['fields' => fn ($q) => $q->orderBy('order')]);
 
         $fields = $template->fields->map(function ($field) {
-            /** @var \App\Models\FormField $field */
+            /* @var \App\Models\FormField $field */
             return [
                 'id' => $field->id,
                 'parent_id' => $field->parent_id,
@@ -526,7 +530,7 @@ class FormTemplateController extends Controller
             'fields' => $fields->toArray(),
         ];
 
-        $fileName = Str::slug($template->name) . '_export_' . date('Ymd_His') . '.json';
+        $fileName = Str::slug($template->name).'_export_'.date('Ymd_His').'.json';
 
         return response()->streamDownload(function () use ($exportData) {
             echo json_encode($exportData, JSON_PRETTY_PRINT);
@@ -554,11 +558,11 @@ class FormTemplateController extends Controller
 
             return DB::transaction(function () use ($data) {
                 // Find a unique name
-                $originalName = $data['name'] . ' (Imported)';
+                $originalName = $data['name'].' (Imported)';
                 $name = $originalName;
                 $i = 1;
                 while (FormTemplate::where('name', $name)->exists()) {
-                    $name = $originalName . " (Copy {$i})";
+                    $name = $originalName." (Copy {$i})";
                     $i++;
                 }
 
@@ -571,7 +575,7 @@ class FormTemplateController extends Controller
                     }
                 }
 
-                $template = new FormTemplate();
+                $template = new FormTemplate;
                 $template->name = $name;
                 $template->description = $data['description'] ?? null;
                 $template->document_type = $data['document_type'] ?? 'other';
@@ -587,9 +591,9 @@ class FormTemplateController extends Controller
                 // First pass: Create all fields
                 foreach ($data['fields'] as $fieldData) {
                     $label = $fieldData['label'] ?? '';
-                    $fieldName = $fieldData['name'] ?? (! empty($label) ? Str::snake($label) : 'field_' . Str::random(6));
+                    $fieldName = $fieldData['name'] ?? (! empty($label) ? Str::snake($label) : 'field_'.Str::random(6));
 
-                    /** @var \App\Models\FormField $field */
+                    /** @var FormField $field */
                     $field = $template->fields()->create([
                         'label' => $label,
                         'name' => $fieldName,
@@ -619,11 +623,11 @@ class FormTemplateController extends Controller
                 return redirect()->route('admin.form-templates.index')->with('success', 'Template form berhasil diimpor.');
             });
         } catch (\Exception $e) {
-            Log::error('Form Template Import Error: ' . $e->getMessage(), [
+            Log::error('Form Template Import Error: '.$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return back()->withErrors(['error' => 'Gagal mengimpor template form: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Gagal mengimpor template form: '.$e->getMessage()]);
         }
     }
 
@@ -669,12 +673,12 @@ class FormTemplateController extends Controller
             // This is critical to prevent deadlocks in single-threaded dev servers
             $localUrl = config('app.url') ?: 'http://127.0.0.1:8000';
             if (str_starts_with($logoUrl, $localUrl)) {
-                $trimmedPath = str_replace($localUrl . '/storage/', '', $logoUrl);
+                $trimmedPath = str_replace($localUrl.'/storage/', '', $logoUrl);
                 // Also handle cases where /storage is not in the URL but we know it's local storage
                 if ($trimmedPath === $logoUrl) {
-                    $trimmedPath = str_replace($localUrl . '/', '', $logoUrl);
+                    $trimmedPath = str_replace($localUrl.'/', '', $logoUrl);
                 }
-                $path = storage_path('app/public/' . $trimmedPath);
+                $path = storage_path('app/public/'.$trimmedPath);
 
                 // Fallback to public path if storage path doesn'tExist
                 if (! file_exists($path)) {
@@ -685,7 +689,7 @@ class FormTemplateController extends Controller
             elseif (str_starts_with($logoUrl, '/storage/')) {
 
                 $trimmedPath = str_replace('/storage/', '', $logoUrl);
-                $path = storage_path('app/public/' . $trimmedPath);
+                $path = storage_path('app/public/'.$trimmedPath);
             }
             // Handle direct public paths
             elseif (file_exists(public_path($logoUrl))) {
@@ -696,17 +700,17 @@ class FormTemplateController extends Controller
                 $content = file_get_contents($logoUrl);
                 $type = pathinfo(parse_url($logoUrl, PHP_URL_PATH), PATHINFO_EXTENSION) ?: 'png';
 
-                return 'data:image/' . $type . ';base64,' . base64_encode($content);
+                return 'data:image/'.$type.';base64,'.base64_encode($content);
             }
 
             if ($path && file_exists($path)) {
                 $type = pathinfo($path, PATHINFO_EXTENSION);
                 $data = file_get_contents($path);
 
-                return 'data:image/' . $type . ';base64,' . base64_encode($data);
+                return 'data:image/'.$type.';base64,'.base64_encode($data);
             }
         } catch (\Exception $e) {
-            Log::warning('PDF Logo Base64 failed: ' . $e->getMessage());
+            Log::warning('PDF Logo Base64 failed: '.$e->getMessage());
         }
 
         return null;

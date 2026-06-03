@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Report;
 
 use App\Exports\AuditReportExport;
 use App\Exports\ContractReportExport;
+use App\Http\Controllers\Controller;
 use App\Models\Approval;
 use App\Models\Contract;
 use App\Models\ContractHistory;
@@ -25,7 +26,7 @@ class ReportController extends Controller
             $query->where('t_contracts.created_at', '>=', $request->date_from);
         }
         if ($request->filled('date_to')) {
-            $query->where('t_contracts.created_at', '<=', $request->date_to . ' 23:59:59');
+            $query->where('t_contracts.created_at', '<=', $request->date_to.' 23:59:59');
         }
 
         // Multi-select filters - only apply if not empty
@@ -172,7 +173,7 @@ class ReportController extends Controller
             $query->where('t_contracts.created_at', '>=', $request->date_from);
         }
         if ($request->filled('date_to')) {
-            $query->where('t_contracts.created_at', '<=', $request->date_to . ' 23:59:59');
+            $query->where('t_contracts.created_at', '<=', $request->date_to.' 23:59:59');
         }
 
         // Multi-select filters
@@ -198,7 +199,7 @@ class ReportController extends Controller
 
         $contracts = $query->orderByDesc('t_contracts.created_at')->get();
 
-        return Excel::download(new ContractReportExport($contracts), 'rekap_kontrak_' . date('Ymd') . '.xlsx');
+        return Excel::download(new ContractReportExport($contracts), 'rekap_kontrak_'.date('Ymd').'.xlsx');
     }
 
     public function exportAuditCsv(Request $request)
@@ -210,7 +211,7 @@ class ReportController extends Controller
             $query->where('t_contracts.created_at', '>=', $request->date_from);
         }
         if ($request->filled('date_to')) {
-            $query->where('t_contracts.created_at', '<=', $request->date_to . ' 23:59:59');
+            $query->where('t_contracts.created_at', '<=', $request->date_to.' 23:59:59');
         }
 
         // Multi-select filters
@@ -240,6 +241,6 @@ class ReportController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        return Excel::download(new AuditReportExport($histories), 'audit_trail_' . date('Ymd') . '.xlsx');
+        return Excel::download(new AuditReportExport($histories), 'audit_trail_'.date('Ymd').'.xlsx');
     }
 }

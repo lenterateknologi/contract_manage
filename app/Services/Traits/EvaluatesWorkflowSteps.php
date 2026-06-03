@@ -2,11 +2,13 @@
 
 namespace App\Services\Traits;
 
+use App\Models\Approval;
 use App\Models\Contract;
 use App\Models\Department;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\WorkflowStep;
+use App\Services\ContractWorkflowQueryService;
 use Illuminate\Support\Facades\Auth;
 
 trait EvaluatesWorkflowSteps
@@ -83,7 +85,7 @@ trait EvaluatesWorkflowSteps
         }
 
         // Rules 5 & 6: Skip Tax Review under certain conditions
-        $queryService = $this->queryService ?? app(\App\Services\ContractWorkflowQueryService::class);
+        $queryService = $this->queryService ?? app(ContractWorkflowQueryService::class);
         if ($queryService->isTaxStep($step)) {
             $metadata = $contract->metadata ?? [];
             $taxToggle = $metadata['tax_required'] ?? ($metadata['contract.has_tax'] ?? null);
@@ -330,9 +332,9 @@ trait EvaluatesWorkflowSteps
             ->get();
 
         foreach ($pendingApprovals as $approval) {
-            /** @var \App\Models\Approval $approval */
+            /** @var Approval $approval */
             $step = $approval->workflowStep;
-            $skipCategories = ['signing', 'upload', 'joint_upload'];
+            $skipCategories = ['signing', 'joint_upload'];
             if (! in_array(strtolower($step->step_category ?? ''), $skipCategories)) {
                 $this->approveContract($contract, $approval, 'Sistem: Persetujuan Otomatis (Sama dengan penyetujui/inisiator sebelumnya)');
             }

@@ -1,11 +1,16 @@
 <?php
 
+use App\Models\CompanyGroup;
+use App\Models\ContractType;
+use App\Models\Module;
+use App\Models\ModuleGroup;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
 use App\Models\WorkflowStepAction;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
+use Inertia\Testing\AssertableInertia;
 
 beforeEach(function () {
     $this->admin = User::factory()->create([
@@ -41,7 +46,7 @@ test('admin can access master data sync index with counts', function () {
         ->assertOk();
 
     $response->assertInertia(
-        fn (Inertia\Testing\AssertableInertia $page) => $page
+        fn (AssertableInertia $page) => $page
             ->has('counts.workflows')
             ->where('counts.workflows', 2),
     );
@@ -242,7 +247,7 @@ test('admin can import master data using id as key for createorupdate', function
 });
 
 test('admin can export and import contract types hierarchy correctly', function () {
-    $parent = App\Models\ContractType::create([
+    $parent = ContractType::create([
         'id' => (string) Str::uuid(),
         'code' => 'CT-PARENT',
         'name' => 'Parent Contract Type',
@@ -250,7 +255,7 @@ test('admin can export and import contract types hierarchy correctly', function 
         'f2_input_mechanism' => 'manual',
     ]);
 
-    $child = App\Models\ContractType::create([
+    $child = ContractType::create([
         'id' => (string) Str::uuid(),
         'code' => 'CT-CHILD',
         'name' => 'Child Contract Type',
@@ -278,7 +283,7 @@ test('admin can export and import contract types hierarchy correctly', function 
     expect($childExport['parent_code'])->toBe('CT-PARENT');
 
     // Clean DB types to test import
-    App\Models\ContractType::query()->forceDelete();
+    ContractType::query()->forceDelete();
 
     // Prepare import payload
     $payload = [
@@ -325,8 +330,8 @@ test('admin can export and import contract types hierarchy correctly', function 
 
     $response->assertRedirect(route('admin.master-data-sync'));
 
-    $importedParent = App\Models\ContractType::where('code', 'CT-PARENT')->first();
-    $importedChild = App\Models\ContractType::where('code', 'CT-CHILD')->first();
+    $importedParent = ContractType::where('code', 'CT-PARENT')->first();
+    $importedChild = ContractType::where('code', 'CT-CHILD')->first();
 
     expect($importedParent)->not->toBeNull();
     expect($importedChild)->not->toBeNull();
@@ -341,19 +346,19 @@ test('admin can clean master and transactional data', function () {
         'is_active' => true,
     ]);
 
-    $companyGroup = App\Models\CompanyGroup::create([
+    $companyGroup = CompanyGroup::create([
         'id' => (string) Str::uuid(),
         'code' => 'CG-TEST',
         'name' => 'CG Test Name',
         'is_active' => true,
     ]);
 
-    $group = App\Models\ModuleGroup::create([
+    $group = ModuleGroup::create([
         'id' => (string) Str::uuid(),
         'name' => 'Clean Test Group',
     ]);
 
-    $module = App\Models\Module::create([
+    $module = Module::create([
         'id' => (string) Str::uuid(),
         'name' => 'Clean Test Module',
         'identifier' => 'CLEAN_TEST_MOD',

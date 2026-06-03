@@ -82,7 +82,7 @@ export function StepSimulatorButtons({
                         title={btn.tooltip}
                         onClick={(e) => {
                             e.stopPropagation();
-                            if (['approve', 'reject', 'return', 'assign_pic', 'upload', 'review', 'sign', 'forward'].includes(btn.actionType)) {
+                            if (['approve', 'reject', 'assign_pic', 'sign', 'forward'].includes(btn.actionType)) {
                                 setActiveModal(btn.actionType as any);
                             } else {
                                 showToast(`Simulasi: Menjalankan aksi "${btn.label}" (${btn.tooltip}). Kolom Wajib: ${(btn.act.required_fields || []).join(', ') || '-'}`, 'success');

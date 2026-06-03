@@ -4,6 +4,7 @@ use App\Models\ContractType;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
+use App\Models\WorkflowStepAction;
 use Inertia\Testing\AssertableInertia as Assert;
 
 test('admin workflows index page returns steps_count and contract_type_name', function () {
@@ -69,7 +70,7 @@ test('admin can duplicate workflow with its steps and actions', function () {
         'hierarchy_level' => 1,
     ]);
 
-    $action = App\Models\WorkflowStepAction::create([
+    $action = WorkflowStepAction::create([
         'workflow_step_id' => $step->id,
         'action_code' => 'approve',
         'next_step_id' => null,
@@ -111,7 +112,7 @@ test('admin can duplicate workflow with its steps and actions', function () {
     expect($duplicatedStep)->not->toBeNull();
 
     // Assert actions duplicated and assignee_config step ID mapped correctly
-    $duplicatedAction = App\Models\WorkflowStepAction::where('workflow_step_id', $duplicatedStep->id)->first();
+    $duplicatedAction = WorkflowStepAction::where('workflow_step_id', $duplicatedStep->id)->first();
     expect($duplicatedAction)->not->toBeNull();
     expect($duplicatedAction->action_code->value)->toBe('approve');
     expect($duplicatedAction->assignee_config['default_target_step'])->toBe($duplicatedStep->id);
@@ -145,7 +146,7 @@ test('admin or legal can get available workflows for another user', function () 
 
     // If admin requests WITH user_id matching the staff user, they GET the Staff-only workflow!
     $responseAdminWithUser = $this->actingAs($admin)
-        ->getJson('/api/contracts/workflows?user_id=' . $staff->id);
+        ->getJson('/api/contracts/workflows?user_id='.$staff->id);
     $responseAdminWithUser->assertSuccessful();
     $idsAdminWithUser = collect($responseAdminWithUser->json())->pluck('id')->toArray();
     expect($idsAdminWithUser)->toContain($workflow->id);

@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\System;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -59,13 +60,13 @@ class EmailTestController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Test email sent successfully to ' . $request->email,
+                'message' => 'Test email sent successfully to '.$request->email,
             ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Failed to send test email: ' . $e->getMessage(),
+                'message' => 'Failed to send test email: '.$e->getMessage(),
                 'error' => $e->getMessage(),
             ], 500);
         }

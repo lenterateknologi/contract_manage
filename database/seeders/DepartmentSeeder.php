@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Company;
 use App\Models\Department;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -29,7 +30,7 @@ class DepartmentSeeder extends Seeder
         foreach ($departments as $dept) {
             $companyId = null;
             if (isset($dept['company_code'])) {
-                $company = \App\Models\Company::where('code', $dept['company_code'])->first();
+                $company = Company::where('code', $dept['company_code'])->first();
                 if ($company) {
                     $companyId = $company->id;
                 }

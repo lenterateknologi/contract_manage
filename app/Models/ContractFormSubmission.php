@@ -9,23 +9,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-/**
- * @property string $id
- * @property string $contract_id
- * @property string $form_template_id
- * @property string $document_type
- * @property int $current_version
- * @property string|null $submitted_by
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
- * @property \Carbon\Carbon|null $deleted_at
- * @property-read Contract $contract
- * @property-read FormTemplate $formTemplate
- * @property-read \Illuminate\Database\Eloquent\Collection<int, ContractFormSubmissionVersion> $versions
- * @property-read ContractFormSubmissionVersion|null $currentVersionData
- * @property-read ContractFormSubmissionVersion|null $latestVersion
- * @property-read User|null $submittedBy
- */
 class ContractFormSubmission extends Model
 {
     protected $table = 't_contract_form_submissions';

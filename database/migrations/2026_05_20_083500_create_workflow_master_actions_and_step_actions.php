@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
-return new class() extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
@@ -72,8 +72,6 @@ return new class() extends Migration
             ['name' => 'Approve', 'code' => 'approve'],
             ['name' => 'Reject', 'code' => 'reject'],
             ['name' => 'Assign', 'code' => 'assign'],
-            ['name' => 'Upload', 'code' => 'upload'],
-            ['name' => 'Review', 'code' => 'review'],
         ];
 
         $masterActionMap = [];

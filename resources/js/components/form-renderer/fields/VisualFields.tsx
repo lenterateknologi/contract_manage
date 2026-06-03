@@ -110,7 +110,7 @@ export const SignatureBoxField: React.FC<{ field: any; value: any }> = ({ field,
             <div className="border-border bg-card ring-border/20 overflow-hidden rounded-lg border shadow-sm ring-1">
                 <div className="bg-muted/50 border-border border-b px-3 py-1.5 text-center">
                     <span className="text-foreground/60 shrink-0 text-[10px] font-semibold" style={getTypographyStyle(field, 0.7, true)}>
-                        {field.label || 'Tanda Tangan'}
+                        {field.label || 'Upload Tanda Tangan'}
                     </span>
                 </div>
                 <div className="flex h-24 flex-col items-center justify-end p-3 text-center">

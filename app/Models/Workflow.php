@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-
 use Illuminate\Database\Eloquent\Relations\HasMany;
-
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -37,20 +37,20 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string|null $created_by
  * @property string|null $updated_by
  * @property array|null $meta
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
- * @property \Carbon\Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
  * @property-read array $initiator_roles
  * @property-read array $initiator_users
  * @property-read array $initiator_departments
  * @property-read string|null $contract_type_name
- * @property-read \Illuminate\Database\Eloquent\Collection<int, WorkflowInitiatorRole> $initiatorRolesData
- * @property-read \Illuminate\Database\Eloquent\Collection<int, WorkflowInitiatorDepartment> $initiatorDepartmentsData
- * @property-read \Illuminate\Database\Eloquent\Collection<int, WorkflowInitiatorUser> $initiatorUsersData
+ * @property-read Collection<int, WorkflowInitiatorRole> $initiatorRolesData
+ * @property-read Collection<int, WorkflowInitiatorDepartment> $initiatorDepartmentsData
+ * @property-read Collection<int, WorkflowInitiatorUser> $initiatorUsersData
  * @property-read ContractType|null $contractType
  * @property-read Department|null $department
- * @property-read \Illuminate\Database\Eloquent\Collection<int, WorkflowStep> $steps
- * @property-read \Illuminate\Database\Eloquent\Collection<int, Contract> $contracts
+ * @property-read Collection<int, WorkflowStep> $steps
+ * @property-read Collection<int, Contract> $contracts
  */
 class Workflow extends Model
 {

@@ -40,7 +40,7 @@ class GeneratePdfJob implements ShouldQueue
     public function handle(): void
     {
         try {
-            Cache::put('pdf_status_' . $this->jobId, ['status' => 'processing', 'progress' => 30], 1800);
+            Cache::put('pdf_status_'.$this->jobId, ['status' => 'processing', 'progress' => 30], 1800);
 
             // High-Fidelity PDF rendering via Browsershot (Overhaul Optimized)
             $pdfContent = Browsershot::url($this->printUrl)
@@ -66,18 +66,18 @@ class GeneratePdfJob implements ShouldQueue
                 ->pdf();
 
             // Save to public storage
-            $path = 'pdfs/' . $this->fileName;
+            $path = 'pdfs/'.$this->fileName;
             Storage::disk('public')->put($path, $pdfContent);
 
-            Cache::put('pdf_status_' . $this->jobId, [
+            Cache::put('pdf_status_'.$this->jobId, [
                 'status' => 'completed',
                 'url' => Storage::url($path),
                 'progress' => 100,
             ], 1800);
 
         } catch (\Exception $e) {
-            Log::error('Queue PDF Export Failed: ' . $e->getMessage());
-            Cache::put('pdf_status_' . $this->jobId, [
+            Log::error('Queue PDF Export Failed: '.$e->getMessage());
+            Cache::put('pdf_status_'.$this->jobId, [
                 'status' => 'failed',
                 'error' => $e->getMessage(),
             ], 1800);

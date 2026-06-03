@@ -210,74 +210,31 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                     )}
                 </div>
 
-                {(() => {
-                    const currentStep = contract?.workflow_step;
-                    const activeAction = (currentStep?.actions || []).find((a: any) => {
-                        if (actionCode) return (a.action_code === actionCode) || (a.master_action_code === actionCode);
-                        return (a.master_action_code?.toLowerCase() === 'forward') || (a.action_code?.toLowerCase() === 'forward');
-                    });
-                    const config = activeAction?.assignee_config || {};
-                    const defaultTargetStepId = activeAction?.next_step_id || config.default_target_step || contract?.workflow_step_id;
-                    const resolvedTargetStepId = selectedTargetStepId || String(defaultTargetStepId);
-
-                    return (
-                        <>
-                            {contract?.workflow?.steps && contract.workflow.steps.length > 0 ? (
-                                <div className="space-y-2">
-                                    <label className="text-text-soft text-[10px] font-bold tracking-wider uppercase">
-                                        Sisipkan Ke Langkah
-                                    </label>
-                                    <SearchableSelect
-                                        value={resolvedTargetStepId}
-                                        onValueChange={(val) => {
-                                            setSelectedTargetStepId(val);
-                                            fetchUsers(val);
-                                        }}
-                                        placeholder="Pilih Langkah Target"
-                                        options={[
-                                            {
-                                                value: String(contract?.workflow_step_id),
-                                                label: `(Step Saat Ini) ${contract?.workflow_step?.step} - ${contract?.workflow_step?.description}`,
-                                            },
-                                            ...(contract?.workflow?.steps || [])
-                                                .filter(
-                                                    (step: any) =>
-                                                        step.id !== contract?.workflow_step_id && step.step_category !== 'Condition'
-                                                )
-                                                .map((step: any) => ({
-                                                    value: String(step.id),
-                                                    label: `Step ${step.step} - ${step.description}`,
-                                                })),
-                                        ].filter(opt => {
-                                            if (config.selectable_steps && config.selectable_steps.length > 0) {
-                                                return config.selectable_steps.includes(opt.value);
-                                            }
-                                            return true;
-                                        })}
-                                    />
-                                </div>
-                            ) : (
-                                <div className="space-y-2">
-                                    <label className="text-text-soft text-[10px] font-bold tracking-wider uppercase">
-                                        Disisipkan Ke Langkah
-                                    </label>
-                                    <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-400">
-                                        {(() => {
-                                            if (defaultTargetStepId === contract?.workflow_step_id) {
-                                                return `(Step Saat Ini) Tahap ${contract?.workflow_step?.step} - ${contract?.workflow_step?.description || contract?.workflow_step?.label || ''}`;
-                                            }
-                                            const targetStep = contract?.workflow?.steps?.find((s: any) => s.id === defaultTargetStepId);
-                                            if (targetStep) {
-                                                return `Tahap ${targetStep.step} - ${targetStep.description || targetStep.label || ''}`;
-                                            }
-                                            return 'Tahap Saat Ini (Default)';
-                                        })()}
-                                    </div>
-                                </div>
-                            )}
-                        </>
-                    );
-                })()}
+                <div className="space-y-2">
+                    <label className="text-text-soft text-[10px] font-bold tracking-wider uppercase">
+                        Disisipkan Ke Langkah
+                    </label>
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-400">
+                        {(() => {
+                            const currentStep = contract?.workflow_step;
+                            const activeAction = (currentStep?.actions || []).find((a: any) => {
+                                if (actionCode) return (a.action_code === actionCode) || (a.master_action_code === actionCode);
+                                return (a.master_action_code?.toLowerCase() === 'forward') || (a.action_code?.toLowerCase() === 'forward');
+                            });
+                            const config = activeAction?.assignee_config || {};
+                            const targetStepId = activeAction?.next_step_id || config.default_target_step || contract?.workflow_step_id;
+                            
+                            if (String(targetStepId) === String(contract?.workflow_step_id)) {
+                                return `(Step Saat Ini) Tahap ${contract?.workflow_step?.step} - ${contract?.workflow_step?.description || contract?.workflow_step?.label || ''}`;
+                            }
+                            const targetStep = (contract?.workflow?.steps || []).find((s: any) => String(s.id) === String(targetStepId));
+                            if (targetStep) {
+                                return `Tahap ${targetStep.step} - ${targetStep.description || targetStep.label || ''}`;
+                            }
+                            return 'Tahap Saat Ini (Default)';
+                        })()}
+                    </div>
+                </div>
 
                 {selectedUserIds.length > 1 && (
                     <div className="animate-in fade-in slide-in-from-top-2 duration-300">

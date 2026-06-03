@@ -1,14 +1,13 @@
 <?php
 
 use App\Models\AccessModule;
-
 use App\Models\Module;
 use App\Models\ModuleGroup;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Migrations\Migration;
 
-return new class() extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.

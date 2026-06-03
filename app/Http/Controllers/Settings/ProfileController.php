@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
+use App\Models\Contract;
+use App\Models\User;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,7 +23,7 @@ class ProfileController extends Controller
         $user = $request->user();
 
         // Fetch recent contracts created by user or where user is an approver
-        $recentContracts = \App\Models\Contract::where('created_by', $user->id)
+        $recentContracts = Contract::where('created_by', $user->id)
             ->orWhereHas('approvals', fn ($q) => $q->where('user_id', $user->id))
             ->with(['contractType', 'creator', 'workflow', 'approvals'])
             ->latest()
@@ -38,7 +40,7 @@ class ProfileController extends Controller
             ]);
 
         // Fetch colleagues (collaborators) from the same department
-        $collaborators = \App\Models\User::where('department_id', $user->department_id)
+        $collaborators = User::where('department_id', $user->department_id)
             ->where('id', '!=', $user->id)
             ->take(8)
             ->get()

@@ -6,6 +6,8 @@ use App\Models\ContractType;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
+use App\Services\ContractWorkflowService;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -89,7 +91,7 @@ test('it does not auto-approve step 1 even if the user is the initiator', functi
     $this->actingAs($this->creator);
 
     // 2. Start workflow (submit=false, simulating creation flow)
-    $contract = app(App\Services\ContractWorkflowService::class)->sendForApproval($contract, $this->workflow->id, null, false);
+    $contract = app(ContractWorkflowService::class)->sendForApproval($contract, $this->workflow->id, null, false);
 
     $contract = $contract->fresh();
 
@@ -119,7 +121,7 @@ test('it still auto-approves step > 1 if the user is the same', function () {
     $this->actingAs($this->creator);
 
     // 2. Start workflow (Initial Step 1)
-    app(App\Services\ContractWorkflowService::class)->sendForApproval($contract, $this->workflow->id, null, false);
+    app(ContractWorkflowService::class)->sendForApproval($contract, $this->workflow->id, null, false);
 
     $contract = $contract->fresh();
     expect($contract->workflow_step_id)->toBe($this->step1->id);
@@ -163,7 +165,7 @@ test('it supports sequential ad-hoc approvers', function () {
     $this->actingAs($this->creator);
 
     // 1. Send for approval
-    app(App\Services\ContractWorkflowService::class)->sendForApproval($contract, $this->workflow->id, null, false);
+    app(ContractWorkflowService::class)->sendForApproval($contract, $this->workflow->id, null, false);
     $contract = $contract->fresh();
 
     // 2. Add 2 sequential ad-hoc approvers
@@ -215,7 +217,7 @@ test('it supports parallel ad-hoc approvers', function () {
     $this->actingAs($this->creator);
 
     // 1. Send for approval
-    app(App\Services\ContractWorkflowService::class)->sendForApproval($contract, $this->workflow->id, null, false);
+    app(ContractWorkflowService::class)->sendForApproval($contract, $this->workflow->id, null, false);
     $contract = $contract->fresh();
 
     // 2. Add 2 parallel ad-hoc approvers (default)
@@ -253,7 +255,7 @@ test('it activates future step sequential ad-hoc approvals on transition', funct
     $this->actingAs($this->creator);
 
     // 1. Send for approval (transitions to step 1)
-    app(App\Services\ContractWorkflowService::class)->sendForApproval($contract, $this->workflow->id, null, false);
+    app(ContractWorkflowService::class)->sendForApproval($contract, $this->workflow->id, null, false);
     $contract = $contract->fresh();
 
     // 2. Add 2 sequential ad-hoc approvers to step 2 (future step!)
@@ -328,7 +330,7 @@ test('it separates Pihak 1 and Pihak 2 into sequential sub-steps and creates con
     $this->actingAs($this->creator);
 
     // 1. Send for approval (transitions to step 1)
-    app(App\Services\ContractWorkflowService::class)->sendForApproval($contract, $this->workflow->id, null, false);
+    app(ContractWorkflowService::class)->sendForApproval($contract, $this->workflow->id, null, false);
     $contract = $contract->fresh();
 
     // 2. Approve step 1 to advance to step 2 (signing setup step)
@@ -378,7 +380,7 @@ test('it separates Pihak 1 and Pihak 2 into sequential sub-steps and creates con
 
     // 4. Upload signature as Pihak 1
     $this->actingAs($p1);
-    $file = Illuminate\Http\UploadedFile::fake()->create('signed_p1.docx', 100);
+    $file = UploadedFile::fake()->create('signed_p1.docx', 100);
 
     $this->postJson("/api/contracts/{$contract->id}/approve", [
         'note' => 'Signed by Pihak 1',
@@ -398,7 +400,7 @@ test('it separates Pihak 1 and Pihak 2 into sequential sub-steps and creates con
 
     // 5. Upload signature as Pihak 2
     $this->actingAs($p2);
-    $file2 = Illuminate\Http\UploadedFile::fake()->create('signed_p2.docx', 100);
+    $file2 = UploadedFile::fake()->create('signed_p2.docx', 100);
 
     $this->postJson("/api/contracts/{$contract->id}/approve", [
         'note' => 'Signed by Pihak 2',
@@ -450,7 +452,7 @@ test('it supports exactly 1 signer and advances step when signed', function () {
     $this->actingAs($this->creator);
 
     // 1. Send for approval
-    app(App\Services\ContractWorkflowService::class)->sendForApproval($contract, $this->workflow->id, null, false);
+    app(ContractWorkflowService::class)->sendForApproval($contract, $this->workflow->id, null, false);
     $contract = $contract->fresh();
 
     // 2. Approve step 1 to advance to step 2
@@ -486,7 +488,7 @@ test('it supports exactly 1 signer and advances step when signed', function () {
 
     // 4. Upload signature as Pihak 1
     $this->actingAs($p1);
-    $file = Illuminate\Http\UploadedFile::fake()->create('signed_single.docx', 100);
+    $file = UploadedFile::fake()->create('signed_single.docx', 100);
 
     $this->postJson("/api/contracts/{$contract->id}/approve", [
         'note' => 'Signed by Single Signer',

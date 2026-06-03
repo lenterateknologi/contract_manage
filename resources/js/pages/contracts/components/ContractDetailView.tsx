@@ -455,7 +455,7 @@ const ContractDetailView = ({
                                 </div>
                                 <div className="flex flex-col gap-0.5">
                                     <h3 className="text-text-main text-sm font-semibold tracking-tight uppercase">
-                                        {isSigner ? 'Tanda Tangan Dibutuhkan' : 'Approval Dibutuhkan'}
+                                        {isSigner ? 'Upload Tanda Tangan Dibutuhkan' : 'Approval Dibutuhkan'}
                                     </h3>
                                     <p className="text-text-soft text-[10px] font-medium tracking-wide uppercase">
                                         {isSigner
@@ -519,10 +519,10 @@ const ContractDetailView = ({
                                 ) : (
                                     <>
                                         {(contract.workflow_step?.actions || []).map((action: any) => {
-                                            const isApproveType = ['approve', 'assign', 'upload', 'review', 'sign', 'signature'].includes(
+                                            const isApproveType = ['approve', 'assign', 'sign', 'signature'].includes(
                                                 action.action_code?.toLowerCase(),
                                             );
-                                            const isRejectType = ['reject', 'return'].includes(action.action_code?.toLowerCase());
+                                            const isRejectType = ['reject'].includes(action.action_code?.toLowerCase());
                                             const isForwardType = ['forward', 'add_adhoc'].includes(action.action_code?.toLowerCase());
 
                                             let variant: 'primary' | 'outline' | 'ghost' = 'outline';
@@ -532,7 +532,6 @@ const ContractDetailView = ({
                                                 variant = 'primary';
                                                 Icon = CheckCircle2;
                                                 if (action.action_code === 'assign') Icon = UserCheck;
-                                                if (action.action_code === 'upload') Icon = Upload;
                                                 if (['sign', 'signature'].includes(action.action_code)) Icon = PenTool;
                                             } else if (isRejectType) {
                                                 variant = 'outline';
@@ -566,15 +565,13 @@ const ContractDetailView = ({
                                                                 ? 'Kirim Persetujuan'
                                                                 : contract.requires_pic_assignment
                                                                     ? 'Tugaskan PIC'
-                                                                    : contract.workflow_step?.step_type === 'UPLOAD'
-                                                                        ? 'Upload Dokumen TTD'
-                                                                        : 'Setujui Kontrak'
+                                                                    : 'Setujui Kontrak'
                                                             : action.action_code === 'forward'
                                                                 ? 'Approval Tambahan'
                                                                 : action.action_code === 'reject'
                                                                     ? 'Tolak Kontrak'
                                                                     : ['signature', 'sign'].includes(action.action_code?.toLowerCase())
-                                                                        ? 'Tanda Tangan'
+                                                                        ? 'Upload Tanda Tangan'
                                                                         : action.action_code)}
                                                 </Button>
                                             );
@@ -596,9 +593,7 @@ const ContractDetailView = ({
                                                         ? 'Kirim Persetujuan'
                                                         : contract.requires_pic_assignment
                                                             ? 'Tugaskan PIC'
-                                                            : contract.workflow_step?.step_type === 'UPLOAD'
-                                                                ? 'Upload Dokumen TTD'
-                                                                : 'Setujui Kontrak'}
+                                                            : 'Setujui Kontrak'}
                                                 </Button>
                                                 <Button
                                                     variant="outline"
@@ -646,7 +641,7 @@ const ContractDetailView = ({
                                 STEP {contract.workflow_step?.step || 'N/A'}
                             </div>
                         </div>
-                        
+
                         <div className="mb-3 text-[10px] font-bold border-b border-black/5 pb-2">
                             <span className="text-text-soft mr-2 font-normal">Active Step:</span>
                             {contract.workflow_step?.description || 'No Step Assigned'}

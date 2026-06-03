@@ -7,74 +7,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-/**
- * App\Models\Contract
- *
- * @property string $id
- * @property string|null $contract_no
- * @property string|null $crown_no
- * @property string|null $title
- * @property string|null $description
- * @property \Carbon\Carbon|null $contract_date
- * @property \Carbon\Carbon|null $end_date
- * @property string|null $contract_type_id
- * @property string|null $contract_type_parent_id
- * @property string|null $submission_type_id
- * @property string|null $transaction_type
- * @property string|null $status
- * @property bool $is_digital_signature
- * @property string|null $created_by
- * @property int $current_version
- * @property string|null $workflow_id
- * @property string|null $origin_workflow_id
- * @property string|null $workflow_step_id
- * @property array|null $metadata
- * @property \Carbon\Carbon|null $submitted_at
- * @property string|null $initiated_by_id
- * @property string|null $vendor_id
- * @property string|null $parent_id
- * @property string|null $assigned_pic_id
- * @property string|null $assigned_by_id
- * @property string|null $p1_entity
- * @property string|null $p1_signer
- * @property string|null $p1_signer_position
- * @property string|null $p1_address
- * @property string|null $p2_entity
- * @property string|null $p2_signer
- * @property string|null $p2_signer_position
- * @property string|null $p2_address
- * @property string|null $kop_topik
- * @property string|null $kop_sub_topik
- * @property string|null $kop_lampiran
- * @property string|null $f1_tujuan
- * @property string|null $f1_sifat
- * @property string|null $f2_scope
- * @property string|null $f2_price
- * @property string|null $f2_payment
- * @property string|null $f2_tenure
- * @property string|null $f2_location
- * @property-read ContractType|null $contractType
- * @property-read ContractType|null $contractTypeParent
- * @property-read SubmissionType|null $submissionType
- * @property-read ContractStatus|null $statusDetail
- * @property-read \Illuminate\Database\Eloquent\Collection|ContractAttachment[] $attachments
- * @property-read User|null $creator
- * @property-read User $initiator
- * @property-read \Illuminate\Database\Eloquent\Collection|ContractVersion[] $versions
- * @property-read \Illuminate\Database\Eloquent\Collection|Approval[] $approvals
- * @property-read \Illuminate\Database\Eloquent\Collection|ContractHistory[] $histories
- * @property-read \Illuminate\Database\Eloquent\Collection|ContractMessage[] $messages
- * @property-read \Illuminate\Database\Eloquent\Collection|ContractFormSubmission[] $formSubmissions
- * @property-read Workflow|null $workflow
- * @property-read WorkflowStep|null $workflowStep
- * @property-read Vendor|null $vendor
- * @property-read Contract|null $parent
- * @property-read User|null $assignedPic
- * @property-read User|null $assignedBy
- * @property-read ContractMeta|null $meta
- */
 class Contract extends Model
 {
     protected $table = 't_contracts';
@@ -178,57 +113,36 @@ class Contract extends Model
         'end_date' => 'date',
     ];
 
-    /**
-     * @return BelongsTo<ContractType, Contract>
-     */
     public function contractType(): BelongsTo
     {
         return $this->belongsTo(ContractType::class, 'contract_type_id');
     }
 
-    /**
-     * @return BelongsTo<ContractType, $this>
-     */
     public function contractTypeParent(): BelongsTo
     {
         return $this->belongsTo(ContractType::class, 'contract_type_parent_id');
     }
 
-    /**
-     * @return BelongsTo<SubmissionType, $this>
-     */
     public function submissionType(): BelongsTo
     {
         return $this->belongsTo(SubmissionType::class, 'submission_type_id');
     }
 
-    /**
-     * @return BelongsTo<ContractStatus, $this>
-     */
     public function statusDetail(): BelongsTo
     {
         return $this->belongsTo(ContractStatus::class, 'status', 'code');
     }
 
-    /**
-     * @return HasMany<ContractAttachment, $this>
-     */
     public function attachments(): HasMany
     {
         return $this->hasMany(ContractAttachment::class);
     }
 
-    /**
-     * @return BelongsTo<User, $this>
-     */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    /**
-     * @return BelongsTo<User, $this>
-     */
     public function initiator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'initiated_by_id')->withDefault(function ($user, $contract) {
@@ -236,89 +150,56 @@ class Contract extends Model
         });
     }
 
-    /**
-     * @return HasMany<ContractVersion, $this>
-     */
     public function versions(): HasMany
     {
         return $this->hasMany(ContractVersion::class);
     }
 
-    /**
-     * @return HasMany<Approval, $this>
-     */
     public function approvals(): HasMany
     {
         return $this->hasMany(Approval::class);
     }
 
-    /**
-     * @return HasMany<ContractHistory, $this>
-     */
     public function histories(): HasMany
     {
         return $this->hasMany(ContractHistory::class)->orderBy('created_at');
     }
 
-    /**
-     * @return HasMany<ContractMessage, $this>
-     */
     public function messages(): HasMany
     {
         return $this->hasMany(ContractMessage::class)->orderBy('created_at');
     }
 
-    /**
-     * @return HasMany<ContractFormSubmission, $this>
-     */
     public function formSubmissions(): HasMany
     {
         return $this->hasMany(ContractFormSubmission::class);
     }
 
-    /**
-     * @return BelongsTo<Workflow, $this>
-     */
     public function workflow(): BelongsTo
     {
         return $this->belongsTo(Workflow::class);
     }
 
-    /**
-     * @return BelongsTo<WorkflowStep, $this>
-     */
     public function workflowStep(): BelongsTo
     {
         return $this->belongsTo(WorkflowStep::class);
     }
 
-    /**
-     * @return BelongsTo<Vendor, $this>
-     */
     public function vendor(): BelongsTo
     {
         return $this->belongsTo(Vendor::class, 'vendor_id');
     }
 
-    /**
-     * @return BelongsTo<Contract, $this>
-     */
     public function parent(): BelongsTo
     {
         return $this->belongsTo(Contract::class, 'parent_id');
     }
 
-    /**
-     * @return BelongsTo<User, $this>
-     */
     public function assignedPic(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_pic_id');
     }
 
-    /**
-     * @return BelongsTo<User, $this>
-     */
     public function assignedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_by_id');
@@ -342,14 +223,13 @@ class Contract extends Model
             $steps = $this->workflow->steps ?? collect();
             $total = $steps->count();
 
-            // A step is done if all approvals for that step are 'approved'
             $doneCount = 0;
             foreach ($steps as $step) {
                 $approvals = $this->approvals()->where('workflow_step_id', $step->id)->get();
-                if ($approvals->isNotEmpty() && $approvals->every(function ($a) {
-                    /** @var Approval $a */
+                $isDone = $approvals->isNotEmpty() && $approvals->every(function ($a) {
                     return $a->status === 'approved';
-                })) {
+                });
+                if ($isDone) {
                     $doneCount++;
                 }
             }
@@ -452,9 +332,6 @@ class Contract extends Model
         return $this->meta?->f2_location;
     }
 
-    /**
-     * Boot the model.
-     */
     protected static function booted(): void
     {
         static::saved(function (self $contract) {
@@ -466,17 +343,11 @@ class Contract extends Model
         });
     }
 
-    /**
-     * Get the metadata relationship.
-     */
-    public function meta(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function meta(): HasOne
     {
         return $this->hasOne(ContractMeta::class, 'contract_id', 'id');
     }
 
-    /**
-     * Override getAttribute to transparently fetch from meta relation.
-     */
     public function getAttribute($key)
     {
         if (in_array($key, static::$metaColumns)) {
@@ -492,15 +363,12 @@ class Contract extends Model
         return parent::getAttribute($key);
     }
 
-    /**
-     * Override setAttribute to transparently set into meta relation.
-     */
     public function setAttribute($key, $value)
     {
         if (in_array($key, static::$metaColumns)) {
             $meta = $this->meta;
             if (! $meta) {
-                $meta = new ContractMeta();
+                $meta = new ContractMeta;
                 if ($this->exists) {
                     $meta->contract_id = $this->id;
                 }
@@ -515,9 +383,6 @@ class Contract extends Model
         return parent::setAttribute($key, $value);
     }
 
-    /**
-     * Mutate an attribute for an array.
-     */
     protected function mutateAttributeForArray($key, $value)
     {
         if (in_array($key, static::$metaColumns)) {

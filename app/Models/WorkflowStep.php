@@ -6,9 +6,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-
 use Illuminate\Database\Eloquent\Relations\HasMany;
-
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class WorkflowStep extends Model
@@ -90,7 +88,7 @@ class WorkflowStep extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Models\WorkflowStepRole, \App\Models\WorkflowStep>
+     * @return HasMany<WorkflowStepRole, WorkflowStep>
      */
     public function approverRoles(): HasMany
     {
@@ -98,7 +96,7 @@ class WorkflowStep extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Models\WorkflowStepDepartment, \App\Models\WorkflowStep>
+     * @return HasMany<WorkflowStepDepartment, WorkflowStep>
      */
     public function approverDepartments(): HasMany
     {
@@ -106,7 +104,7 @@ class WorkflowStep extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Models\WorkflowStepUser, \App\Models\WorkflowStep>
+     * @return HasMany<WorkflowStepUser, WorkflowStep>
      */
     public function approverUsers(): HasMany
     {

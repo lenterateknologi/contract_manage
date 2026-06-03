@@ -3,12 +3,15 @@
 namespace App\Exports;
 
 use App\Models\Contract;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class ContractExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMapping, WithStyles
@@ -23,7 +26,7 @@ class ContractExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMap
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Eloquent\Relations\Relation|\Illuminate\Database\Query\Builder
+     * @return Builder|Relation|\Illuminate\Database\Query\Builder
      */
     public function query()
     {
@@ -74,7 +77,7 @@ class ContractExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMap
             1 => [
                 'font' => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF']],
                 'fill' => [
-                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'fillType' => Fill::FILL_SOLID,
                     'startColor' => ['argb' => 'FF4F46E5'], // Indigo color
                 ],
             ],

@@ -3,8 +3,13 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Carbon\Carbon;
+use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -29,17 +34,17 @@ use Illuminate\Notifications\Notifiable;
  * @property bool $is_active
  * @property-read bool $is_admin
  * @property string|null $remember_token
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
- * @property \Carbon\Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
  * @property-read Role|null $roleRelation
  * @property-read Department|null $department
  * @property-read Company|null $company
- * @property-read \Illuminate\Database\Eloquent\Collection<int, WorkflowStep> $workflowSteps
+ * @property-read Collection<int, WorkflowStep> $workflowSteps
  */
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasFactory, HasUuids, Notifiable, SoftDeletes;
 
     protected $table = 'm_users';
@@ -92,33 +97,33 @@ class User extends Authenticatable
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<Role, User>
+     * @return BelongsTo<Role, User>
      */
-    public function role(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class, 'role_id');
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<Department, User>
+     * @return BelongsTo<Department, User>
      */
-    public function department(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<Company, User>
+     * @return BelongsTo<Company, User>
      */
-    public function company(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class, 'company_id');
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany<WorkflowStep, User>
+     * @return BelongsToMany<WorkflowStep, User>
      */
-    public function workflowSteps(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    public function workflowSteps(): BelongsToMany
     {
         return $this->belongsToMany(WorkflowStep::class, 't_workflow_step_users')->withTimestamps();
     }

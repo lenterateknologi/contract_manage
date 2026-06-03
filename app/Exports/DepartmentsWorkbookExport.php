@@ -9,8 +9,8 @@ class DepartmentsWorkbookExport implements WithMultipleSheets
     public function sheets(): array
     {
         return [
-            new DepartmentMainExport(),
-            new CompaniesSheetExport(),
+            new DepartmentMainExport,
+            new CompaniesSheetExport,
         ];
     }
 }

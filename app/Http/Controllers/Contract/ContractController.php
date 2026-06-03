@@ -1,16 +1,24 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Contract;
 
 use App\Actions\Contract\FileAction;
 use App\Actions\Contract\StoreContractAction;
 use App\Actions\Contract\UpdateContractAction;
+use App\Exports\ContractExport;
 use App\Formatters\ContractFormatter;
+use App\Http\Controllers\Controller;
+use App\Imports\ContractImport;
 use App\Models\AccessModule;
 use App\Models\Approval;
+use App\Models\Company;
+use App\Models\CompanyGroup;
 use App\Models\Contract;
+use App\Models\ContractStatus;
 use App\Models\ContractType;
+use App\Models\Department;
 use App\Models\FormTemplate;
+use App\Models\Region;
 use App\Models\Role;
 use App\Models\SubmissionType;
 use App\Models\User;
@@ -21,10 +29,11 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
-
 use Inertia\Response;
+use Maatwebsite\Excel\Facades\Excel;
 use OpenApi\Attributes as OA;
 
 class ContractController extends Controller
@@ -85,23 +94,23 @@ class ContractController extends Controller
         $userCompany = $user->company;
 
         // Dynamic lists based on roles
-        $departmentsLoader = fn () => \App\Models\Department::query()
+        $departmentsLoader = fn () => Department::query()
             ->when($isManager, fn ($q) => $q->where('company_id', $user->company_id))
             ->when(! $hasFullAccess && ! $isManager, fn ($q) => $q->where('id', $user->department_id))
             ->orderBy('name')
             ->get();
 
-        $regionsLoader = fn () => \App\Models\Region::query()
+        $regionsLoader = fn () => Region::query()
             ->when(! $hasFullAccess && $userCompany, fn ($q) => $q->where('id', $userCompany->region_id))
             ->orderBy('name')
             ->get();
 
-        $companyGroupsLoader = fn () => \App\Models\CompanyGroup::query()
+        $companyGroupsLoader = fn () => CompanyGroup::query()
             ->when(! $hasFullAccess && $userCompany, fn ($q) => $q->where('id', $userCompany->company_group_id))
             ->orderBy('name')
             ->get();
 
-        $companiesLoader = fn () => \App\Models\Company::query()
+        $companiesLoader = fn () => Company::query()
             ->when($isManager && $userCompany, fn ($q) => $q->where('company_group_id', $userCompany->company_group_id))
             ->when(! $hasFullAccess && ! $isManager && $userCompany, fn ($q) => $q->where('id', $user->company_id))
             ->orderBy('name')
@@ -137,7 +146,7 @@ class ContractController extends Controller
             'formTemplates' => Inertia::defer(fn () => FormTemplate::where('is_active', true)->with('contractType')->withCount('fields')->get()->map(function ($item) {
                 $ft = $item;
 
-                /** @var FormTemplate $ft */
+                /* @var FormTemplate $ft */
                 return [
                     'id' => $ft->id,
                     'name' => $ft->name,
@@ -153,7 +162,7 @@ class ContractController extends Controller
             'regions' => Inertia::defer($regionsLoader),
             'companyGroups' => Inertia::defer($companyGroupsLoader),
             'companies' => Inertia::defer($companiesLoader),
-            'contractStatuses' => Inertia::defer(fn () => \App\Models\ContractStatus::all()),
+            'contractStatuses' => Inertia::defer(fn () => ContractStatus::all()),
             'filters' => array_merge($request->only([
                 'search', 'status', 'contract_type_id', 'role_id', 'department_id',
                 'created_from', 'created_to', 'region_ids', 'vendor_ids', 'statuses',
@@ -246,7 +255,7 @@ class ContractController extends Controller
             'meta:contract_id,kop_topik,kop_sub_topik,p1_entity,p1_signer,p1_signer_position,p1_address,p2_entity,p2_signer,p2_signer_position,p2_address,f2_scope,f2_price,f2_payment,f2_tenure,f2_location',
         ])->findOrFail($id);
 
-        \Illuminate\Support\Facades\Gate::authorize('view', $contract);
+        Gate::authorize('view', $contract);
 
         $contracts = $this->getFilteredContractsQuery($request, 'contracts')
             ->paginate($request->integer('per_page', 10))
@@ -274,7 +283,7 @@ class ContractController extends Controller
             'formTemplates' => Inertia::defer(fn () => FormTemplate::where('is_active', true)->with('contractType')->withCount('fields')->get()->map(function ($item) {
                 $ft = $item;
 
-                /** @var FormTemplate $ft */
+                /* @var FormTemplate $ft */
                 return [
                     'id' => $ft->id,
                     'name' => $ft->name,
@@ -1206,7 +1215,7 @@ class ContractController extends Controller
             ->all();
 
         // Department Traffic
-        $departmentTraffic = \App\Models\Department::orderBy('name')
+        $departmentTraffic = Department::orderBy('name')
             ->get()
             ->map(function ($dept) use ($baseQuery) {
                 $incoming = (clone $baseQuery)->where(function ($q) use ($dept) {
@@ -1489,11 +1498,11 @@ class ContractController extends Controller
         $isUpdatingInfo = collect($payload)->except(['parent_id'])->isNotEmpty();
 
         if ($isUpdatingInfo) {
-            \Illuminate\Support\Facades\Gate::authorize('update', $contract);
+            Gate::authorize('update', $contract);
         }
 
         if ($isUpdatingReference) {
-            \Illuminate\Support\Facades\Gate::authorize('updateReference', $contract);
+            Gate::authorize('updateReference', $contract);
         }
 
         $validated = $request->validate([
@@ -1592,9 +1601,9 @@ class ContractController extends Controller
     {
         $query = $this->getFilteredContractsQuery($request, $request->input('view', 'all'));
 
-        return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Exports\ContractExport($query),
-            'data_kontrak_' . date('Ymd_His') . '.xlsx',
+        return Excel::download(
+            new ContractExport($query),
+            'data_kontrak_'.date('Ymd_His').'.xlsx',
         );
     }
 
@@ -1619,11 +1628,11 @@ class ContractController extends Controller
         ]);
 
         try {
-            \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\ContractImport(), $request->file('file'));
+            Excel::import(new ContractImport, $request->file('file'));
 
             return back()->with('success', 'Data kontrak berhasil diimpor.');
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal mengimpor data: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Gagal mengimpor data: '.$e->getMessage()]);
         }
     }
 

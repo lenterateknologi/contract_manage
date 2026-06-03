@@ -7,9 +7,6 @@ enum WorkflowAction: string
     case APPROVE = 'approve';
     case REJECT = 'reject';
     case ASSIGN = 'assign';
-    case UPLOAD = 'upload';
-    case REVIEW = 'review';
-    case RETURN = 'return';
     case SIGN = 'sign';
     case SIGNATURE = 'signature';
     case FORWARD = 'forward';
@@ -20,11 +17,8 @@ enum WorkflowAction: string
             self::APPROVE => 'Setujui',
             self::REJECT => 'Tolak',
             self::ASSIGN => 'Tugaskan',
-            self::UPLOAD => 'Unggah Dokumen',
-            self::REVIEW => 'Tinjau',
-            self::RETURN => 'Kembalikan',
-            self::SIGN => 'Tanda Tangan',
-            self::SIGNATURE => 'Tanda Tangan',
+            self::SIGN => 'Upload Tanda Tangan',
+            self::SIGNATURE => 'Upload Tanda Tangan',
             self::FORWARD => 'Approval Tambahan',
         };
     }

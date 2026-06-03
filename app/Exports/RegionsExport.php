@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Models\Region;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithEvents;
@@ -12,6 +13,7 @@ use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Cell\DataValidation;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class RegionsExport implements FromCollection, ShouldAutoSize, WithEvents, WithHeadings, WithMapping, WithStyles, WithTitle
@@ -21,7 +23,7 @@ class RegionsExport implements FromCollection, ShouldAutoSize, WithEvents, WithH
     public function collection()
     {
         $regions = Region::orderBy('name')->get();
-        /** @var \Illuminate\Support\Collection<int, Region|null> $collection */
+        /** @var Collection<int, Region|null> $collection */
         $collection = collect($regions->all());
 
         for ($i = 0; $i < 100; $i++) {
@@ -72,7 +74,7 @@ class RegionsExport implements FromCollection, ShouldAutoSize, WithEvents, WithH
             1 => [
                 'font' => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF']],
                 'fill' => [
-                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'fillType' => Fill::FILL_SOLID,
                     'startColor' => ['argb' => 'FF4F46E5'], // Indigo theme
                 ],
             ],

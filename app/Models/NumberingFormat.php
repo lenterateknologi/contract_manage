@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class NumberingFormat extends Model
 {
@@ -23,7 +24,7 @@ class NumberingFormat extends Model
     {
         $format = self::where('module', $module)->where('is_active', true)->first();
         if (! $format) {
-            return strtoupper($module) . '-' . date('Y') . '-' . strtoupper(\Illuminate\Support\Str::random(5));
+            return strtoupper($module).'-'.date('Y').'-'.strtoupper(Str::random(5));
         }
 
         $format->increment('current_number');

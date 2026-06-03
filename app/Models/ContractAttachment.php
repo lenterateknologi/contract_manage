@@ -7,21 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-/**
- * @property string $id
- * @property string $contract_id
- * @property string $label
- * @property string|null $category
- * @property string $file_name
- * @property string $file_path
- * @property string|null $file_type
- * @property string|null $uploaded_by
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
- * @property \Carbon\Carbon|null $deleted_at
- * @property-read Contract $contract
- * @property-read User|null $uploader
- */
 class ContractAttachment extends Model
 {
     protected $table = 't_contract_attachments';

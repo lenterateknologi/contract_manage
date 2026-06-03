@@ -3,7 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
-return new class() extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
@@ -26,11 +26,6 @@ return new class() extends Migration
                 ->where('master_action_id', $deletedAssign->id)
                 ->update(['master_action_id' => $assignPic->id]);
         }
-
-        // 3. Make sure review action is active
-        DB::table('m_master_actions')
-            ->where('code', 'review')
-            ->update(['is_active' => true]);
     }
 
     /**

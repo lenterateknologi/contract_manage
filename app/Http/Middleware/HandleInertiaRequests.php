@@ -2,7 +2,11 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\AccessModule;
+use App\Models\Approval;
+use App\Models\Contract;
 use App\Models\Module;
+use App\Models\ModuleGroup;
 use App\Models\Role;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
@@ -61,12 +65,12 @@ class HandleInertiaRequests extends Middleware
                     'bg_color' => $request->user()->bg_color,
                     'text_color' => $request->user()->text_color,
                     'stats' => [
-                        'total_created' => \App\Models\Contract::where('created_by', $request->user()->id)->count(),
-                        'pending_approvals' => \App\Models\Approval::where('user_id', $request->user()->id)
+                        'total_created' => Contract::where('created_by', $request->user()->id)->count(),
+                        'pending_approvals' => Approval::where('user_id', $request->user()->id)
                             ->where('status', 'pending')
                             ->whereHas('contract', fn ($q) => $q->whereNull('deleted_at'))
                             ->count(),
-                        'assigned_active' => \App\Models\Contract::where('assigned_pic_id', $request->user()->id)
+                        'assigned_active' => Contract::where('assigned_pic_id', $request->user()->id)
                             ->where('status', 'active')
                             ->count(),
                     ],
@@ -94,7 +98,7 @@ class HandleInertiaRequests extends Middleware
             return [];
         }
 
-        return \App\Models\AccessModule::where('role_id', $role->id)
+        return AccessModule::where('role_id', $role->id)
             ->join('m_modules', 'm_access_modules.module_id', '=', 'm_modules.id')
             ->select('m_modules.identifier as code', 'can_read', 'can_create', 'can_update', 'can_delete', 'can_approve', 'can_bulk_approve', 'can_bulk_delete')
             ->get()
@@ -208,7 +212,7 @@ class HandleInertiaRequests extends Middleware
             unset($group);
 
             if (! $hasPengaturanSistem) {
-                $groupModel = \App\Models\ModuleGroup::firstWhere('name', 'Pengaturan Sistem');
+                $groupModel = ModuleGroup::firstWhere('name', 'Pengaturan Sistem');
                 $groups[] = [
                     'title' => 'Pengaturan Sistem',
                     'sequence' => $groupModel?->sequence ?? 5,

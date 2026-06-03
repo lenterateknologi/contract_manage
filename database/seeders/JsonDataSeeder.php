@@ -56,7 +56,7 @@ class JsonDataSeeder extends Seeder
                 DB::table($tableName)->insert($chunk);
             }
 
-            $this->command->info('Seeded ' . count($data) . " rows into {$tableName}.");
+            $this->command->info('Seeded '.count($data)." rows into {$tableName}.");
         }
     }
 }

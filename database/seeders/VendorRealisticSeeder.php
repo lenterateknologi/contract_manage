@@ -2,24 +2,26 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use App\Models\Vendor;
 use App\Models\VendorDocument;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class VendorRealisticSeeder extends Seeder
 {
     public function run(): void
     {
-        $admin = \App\Models\User::firstWhere('email', 'admin@example.com') ?? \App\Models\User::first();
+        $admin = User::firstWhere('email', 'admin@example.com') ?? User::first();
         $adminId = $admin ? $admin->id : null;
 
         // Bersihkan data vendor eksisting jika diperlukan
-        \Illuminate\Support\Facades\Schema::disableForeignKeyConstraints();
+        Schema::disableForeignKeyConstraints();
         Vendor::truncate();
         VendorDocument::truncate();
-        \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
+        Schema::enableForeignKeyConstraints();
 
         $vendors = [
             [
@@ -166,7 +168,7 @@ class VendorRealisticSeeder extends Seeder
                     'vendor_id' => $vendor->id,
                     'document_name' => $doc['name'],
                     'document_type' => $doc['type'],
-                    'file_url' => '/storage/vendor_documents/' . Str::slug($doc['name']) . '.pdf',
+                    'file_url' => '/storage/vendor_documents/'.Str::slug($doc['name']).'.pdf',
                     'expires_at' => Carbon::now()->addYears(2),
                     'is_verified' => true,
                 ]);

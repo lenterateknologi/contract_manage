@@ -2,9 +2,17 @@
 
 namespace App\Actions\Admin;
 
+use App\Models\Department;
+use App\Models\User;
 use App\Models\Workflow;
+use App\Models\WorkflowInitiatorDepartment;
+use App\Models\WorkflowInitiatorRole;
+use App\Models\WorkflowInitiatorUser;
 use App\Models\WorkflowStep;
 use App\Models\WorkflowStepAction;
+use App\Models\WorkflowStepDepartment;
+use App\Models\WorkflowStepRole;
+use App\Models\WorkflowStepUser;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -458,10 +466,10 @@ class WorkflowAction
 
             // Find a unique name
             $originalName = $workflow->name;
-            $name = $originalName . ' (Copy)';
+            $name = $originalName.' (Copy)';
             $i = 1;
             while (Workflow::where('name', $name)->exists()) {
-                $name = $originalName . " (Copy {$i})";
+                $name = $originalName." (Copy {$i})";
                 $i++;
             }
             $newWorkflow->name = $name;
@@ -470,7 +478,7 @@ class WorkflowAction
             $newWorkflow->save();
 
             // Duplicate Initiator Roles
-            /** @var \App\Models\WorkflowInitiatorRole $role */
+            /** @var WorkflowInitiatorRole $role */
             foreach ($workflow->initiatorRolesData as $role) {
                 $newWorkflow->initiatorRolesData()->create([
                     'role_name' => $role->role_name,
@@ -478,7 +486,7 @@ class WorkflowAction
             }
 
             // Duplicate Initiator Departments
-            /** @var \App\Models\WorkflowInitiatorDepartment $dept */
+            /** @var WorkflowInitiatorDepartment $dept */
             foreach ($workflow->initiatorDepartmentsData as $dept) {
                 $newWorkflow->initiatorDepartmentsData()->create([
                     'department_id' => $dept->department_id,
@@ -486,7 +494,7 @@ class WorkflowAction
             }
 
             // Duplicate Initiator Users
-            /** @var \App\Models\WorkflowInitiatorUser $u */
+            /** @var WorkflowInitiatorUser $u */
             foreach ($workflow->initiatorUsersData as $u) {
                 $newWorkflow->initiatorUsersData()->create([
                     'user_id' => $u->user_id,
@@ -508,7 +516,7 @@ class WorkflowAction
                 $stepIdMap[$oldStep->id] = $newStep->id;
 
                 // Duplicate step approver roles
-                /** @var \App\Models\WorkflowStepRole $role */
+                /** @var WorkflowStepRole $role */
                 foreach ($oldStep->approverRoles as $role) {
                     $newStep->approverRoles()->create([
                         'role_name' => $role->role_name,
@@ -516,7 +524,7 @@ class WorkflowAction
                 }
 
                 // Duplicate step approver departments
-                /** @var \App\Models\WorkflowStepDepartment $dept */
+                /** @var WorkflowStepDepartment $dept */
                 foreach ($oldStep->approverDepartments as $dept) {
                     $newStep->approverDepartments()->create([
                         'department_id' => $dept->department_id,
@@ -524,7 +532,7 @@ class WorkflowAction
                 }
 
                 // Duplicate step approver users
-                /** @var \App\Models\WorkflowStepUser $u */
+                /** @var WorkflowStepUser $u */
                 foreach ($oldStep->approverUsers as $u) {
                     $newStep->approverUsers()->create([
                         'user_id' => $u->user_id,
@@ -586,7 +594,7 @@ class WorkflowAction
             return $identifier;
         }
 
-        return \App\Models\Department::where('code', $identifier)->value('id');
+        return Department::where('code', $identifier)->value('id');
     }
 
     private function resolveUserId(string $identifier): ?string
@@ -595,6 +603,6 @@ class WorkflowAction
             return $identifier;
         }
 
-        return \App\Models\User::where('email', $identifier)->value('id');
+        return User::where('email', $identifier)->value('id');
     }
 }

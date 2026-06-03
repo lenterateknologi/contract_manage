@@ -1,16 +1,16 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\MasterConfigController;
 use App\Http\Controllers\Admin\MasterDataAdminController;
 use App\Http\Controllers\Admin\OrganizationController;
 use App\Http\Controllers\Admin\VendorAdminController;
 use App\Http\Controllers\Admin\WorkflowAdminController;
-use App\Http\Controllers\AdminController;
-use App\Http\Controllers\ContractController;
-use App\Http\Controllers\EmailTestController;
-use App\Http\Controllers\FormTemplateController;
-use App\Http\Controllers\ReportController;
-use App\Http\Controllers\TemplateController;
+use App\Http\Controllers\Contract\ContractController;
+use App\Http\Controllers\Form\FormTemplateController;
+use App\Http\Controllers\Report\ReportController;
+use App\Http\Controllers\System\EmailTestController;
+use App\Http\Controllers\Template\TemplateController;
 use App\Models\Contract;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -262,5 +262,5 @@ Route::middleware(['auth'])->group(function () {
     });
 });
 
-require __DIR__ . '/settings.php';
-require __DIR__ . '/auth.php';
+require __DIR__.'/settings.php';
+require __DIR__.'/auth.php';

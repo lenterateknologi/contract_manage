@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Contract;
 
 use App\Actions\Contract\ApproveContractAction;
 use App\Actions\Contract\ExportContractAction;
@@ -8,11 +8,11 @@ use App\Actions\Contract\FileAction;
 use App\Actions\Contract\RejectContractAction;
 use App\Actions\Contract\StoreContractAction;
 use App\Actions\Contract\UpdateContractAction;
+use App\Http\Controllers\Controller;
 use App\Models\Contract;
 use App\Services\ContractWorkflowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-
 use Inertia\Response;
 
 class ContractFileController extends Controller

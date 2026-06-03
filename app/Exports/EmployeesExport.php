@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Models\User;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithEvents;
@@ -12,6 +13,7 @@ use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Cell\DataValidation;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class EmployeesExport implements FromCollection, ShouldAutoSize, WithEvents, WithHeadings, WithMapping, WithStyles, WithTitle
@@ -28,7 +30,7 @@ class EmployeesExport implements FromCollection, ShouldAutoSize, WithEvents, Wit
             })->orderBy('name')->get();
 
         // Convert to collection
-        /** @var \Illuminate\Support\Collection<int, User|null> $collection */
+        /** @var Collection<int, User|null> $collection */
         $collection = collect($users->all());
 
         // Pre-fill 100 empty rows with formulas for new employee additions
@@ -68,7 +70,7 @@ class EmployeesExport implements FromCollection, ShouldAutoSize, WithEvents, Wit
                 '', // No Telepon
                 '', // Jabatan
                 '', // ID Departemen
-                '=IF(ISBLANK(G' . $this->rowNumber . '), "", IFERROR(VLOOKUP(G' . $this->rowNumber . ', \'Unit Departemen\'!A:B, 2, FALSE), "Tidak Ditemukan"))',
+                '=IF(ISBLANK(G'.$this->rowNumber.'), "", IFERROR(VLOOKUP(G'.$this->rowNumber.', \'Unit Departemen\'!A:B, 2, FALSE), "Tidak Ditemukan"))',
                 '', // Role
                 '', // Status Aktif
             ];
@@ -82,7 +84,7 @@ class EmployeesExport implements FromCollection, ShouldAutoSize, WithEvents, Wit
             $user->phone,
             $user->position,
             $user->department_id,
-            '=IF(ISBLANK(G' . $this->rowNumber . '), "", IFERROR(VLOOKUP(G' . $this->rowNumber . ', \'Unit Departemen\'!A:B, 2, FALSE), "Tidak Ditemukan"))',
+            '=IF(ISBLANK(G'.$this->rowNumber.'), "", IFERROR(VLOOKUP(G'.$this->rowNumber.', \'Unit Departemen\'!A:B, 2, FALSE), "Tidak Ditemukan"))',
             $user->role->name ?? $user->getAttribute('role'),
             $user->is_active ? 'Aktif' : 'Nonaktif',
         ];
@@ -99,7 +101,7 @@ class EmployeesExport implements FromCollection, ShouldAutoSize, WithEvents, Wit
             1 => [
                 'font' => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF']],
                 'fill' => [
-                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'fillType' => Fill::FILL_SOLID,
                     'startColor' => ['argb' => 'FF4F46E5'], // Indigo theme
                 ],
             ],

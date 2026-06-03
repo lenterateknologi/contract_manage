@@ -2,6 +2,7 @@
 
 namespace App\Formatters;
 
+use App\Enums\WorkflowAction;
 use App\Models\Contract;
 use App\Models\Role;
 use App\Models\User;
@@ -109,10 +110,10 @@ class ContractFormatter
                 'step_category' => $c->workflowStep->step_category,
                 'target_approvers' => $c->approvals->where('sequence', $c->workflowStep->step)->whereIn('status', ['pending', 'waiting'])->first()?->target_approvers,
                 'actions' => $c->workflowStep->actions->map(function ($action) {
-                    /** @var \App\Models\WorkflowStepAction $action */
+                    /* @var \App\Models\WorkflowStepAction $action */
                     return [
                         'id' => $action->id,
-                        'action_code' => $action->action_code instanceof \App\Enums\WorkflowAction ? $action->action_code->value : ($action->action_code ?? $action->masterAction?->code),
+                        'action_code' => $action->action_code instanceof WorkflowAction ? $action->action_code->value : ($action->action_code ?? $action->masterAction?->code),
                         'master_action_code' => $action->masterAction?->code,
                         'alias' => $action->alias,
                         'next_workflow_id' => $action->next_workflow_id,
@@ -370,7 +371,7 @@ class ContractFormatter
                 // Only show skipped main step if there are no regular approvals (prevents duplicates if manually added then skipped)
                 if ($regularApprovals->isEmpty()) {
                     $timeline[] = [
-                        'id' => 'skipped-' . $step->id,
+                        'id' => 'skipped-'.$step->id,
                         'user_id' => null,
                         'approver_name' => 'Langkah Dilewati',
                         'role' => is_array($step->role) ? implode(', ', $step->role) : $step->role,
@@ -399,7 +400,7 @@ class ContractFormatter
                         $candidateEmails = $regularApprovals->map(fn ($a) => $a->approver?->email)->filter()->implode(', ');
 
                         $timeline[] = [
-                            'id' => 'step-group-' . $step->id,
+                            'id' => 'step-group-'.$step->id,
                             'user_id' => null,
                             'approver_name' => $first->role,
                             'role' => $first->role,
@@ -462,7 +463,7 @@ class ContractFormatter
                     $isCurrentStep = $c->workflow_step_id === $step->id;
 
                     $timeline[] = [
-                        'id' => 'step-' . $step->id,
+                        'id' => 'step-'.$step->id,
                         'user_id' => null,
                         'approver_name' => $approverName,
                         'role' => $roleLabel,

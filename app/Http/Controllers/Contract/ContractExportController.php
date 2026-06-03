@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Contract;
 
 use App\Actions\Contract\ApproveContractAction;
 use App\Actions\Contract\ExportContractAction;
@@ -9,6 +9,7 @@ use App\Actions\Contract\RejectContractAction;
 use App\Actions\Contract\StoreContractAction;
 use App\Actions\Contract\UpdateContractAction;
 use App\Formatters\ContractFormatter;
+use App\Http\Controllers\Controller;
 use App\Jobs\GeneratePdfJob;
 use App\Models\Contract;
 use App\Models\ContractFormSubmission;
@@ -24,8 +25,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
-
 use Inertia\Inertia;
+use Spatie\Browsershot\Browsershot;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ContractExportController extends Controller
@@ -81,19 +82,19 @@ class ContractExportController extends Controller
             $query->whereDate('created_at', '<=', $request->date_to);
         }
         if ($request->search) {
-            $query->where('description', 'like', '%' . $request->search . '%');
+            $query->where('description', 'like', '%'.$request->search.'%');
         }
 
         $histories = $query->get();
 
         $headers = [
             'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="audit_trail_' . Str::slug($contract->contract_no ?: 'contract') . '_' . date('Ymd') . '.csv"',
+            'Content-Disposition' => 'attachment; filename="audit_trail_'.Str::slug($contract->contract_no ?: 'contract').'_'.date('Ymd').'.csv"',
         ];
 
         return new StreamedResponse(function () use ($histories, $contract) {
             $handle = fopen('php://output', 'w');
-            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF)); // BOM for Excel
+            fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF)); // BOM for Excel
 
             // Headers
             fputcsv($handle, [
@@ -129,10 +130,10 @@ class ContractExportController extends Controller
             $query->where('status', $request->status);
         }
         if ($request->filled('role')) {
-            $query->where('role', 'like', '%' . $request->role . '%');
+            $query->where('role', 'like', '%'.$request->role.'%');
         }
         if ($request->filled('department')) {
-            $query->where('department_name', 'like', '%' . $request->department . '%');
+            $query->where('department_name', 'like', '%'.$request->department.'%');
         }
 
         $approvals = $query->get();
@@ -177,7 +178,7 @@ class ContractExportController extends Controller
 
             // Safe filename
             $safeNo = Str::slug($contract->contract_no ?: 'contract');
-            $fileName = "Approval_Timeline_{$safeNo}_" . time() . '.pdf';
+            $fileName = "Approval_Timeline_{$safeNo}_".time().'.pdf';
 
             // Add Job to Queue - FIXED ARGUMENT ORDER (jobId, printUrl, fileName)
             GeneratePdfJob::dispatch(
@@ -192,7 +193,7 @@ class ContractExportController extends Controller
                 'message' => 'Laporan alur approval sedang diproses.',
             ]);
         } catch (\Exception $e) {
-            Log::error('Failed to queue Approval Timeline PDF: ' . $e->getMessage());
+            Log::error('Failed to queue Approval Timeline PDF: '.$e->getMessage());
 
             return response()->json([
                 'success' => false,
@@ -229,14 +230,14 @@ class ContractExportController extends Controller
 
             // Safe filename
             $safeNo = Str::slug($contract->contract_no ?: 'contract');
-            $fileName = 'Audit_Trail_' . $safeNo . '_' . time() . '.pdf';
+            $fileName = 'Audit_Trail_'.$safeNo.'_'.time().'.pdf';
 
             Log::info("Dispatching Audit PDF Job: {$jobId}");
 
             // Queue the job using existing GeneratePdfJob
             GeneratePdfJob::dispatch($jobId, $printUrl, $fileName);
 
-            Cache::put('pdf_status_' . $jobId, ['status' => 'pending', 'progress' => 10], 1800);
+            Cache::put('pdf_status_'.$jobId, ['status' => 'pending', 'progress' => 10], 1800);
 
             return response()->json([
                 'success' => true,
@@ -244,9 +245,9 @@ class ContractExportController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::critical('Audit PDF Queue Failure: ' . $e->getMessage());
+            Log::critical('Audit PDF Queue Failure: '.$e->getMessage());
 
-            return response()->json(['message' => 'Gagal antrikan PDF: ' . $e->getMessage()], 500);
+            return response()->json(['message' => 'Gagal antrikan PDF: '.$e->getMessage()], 500);
         }
     }
 
@@ -270,7 +271,7 @@ class ContractExportController extends Controller
             }
 
             // High-Fidelity PDF rendering via Browsershot
-            $pdfContent = \Spatie\Browsershot\Browsershot::url($printUrl)
+            $pdfContent = Browsershot::url($printUrl)
                 ->setNodeBinary('/opt/homebrew/bin/node')
                 ->setNpmBinary('/opt/homebrew/bin/npm')
                 ->setChromePath('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
@@ -291,9 +292,9 @@ class ContractExportController extends Controller
                 ->displayHeaderFooter(false)
                 ->setDelay(500);
 
-            $pdfDir = 'contracts/' . $contract->id . '/pdfs';
-            $pdfFileName = 'Audit_Trail_' . Str::slug($contract->contract_no) . '_' . md5($printUrl) . '.pdf';
-            $pdfPath = $pdfDir . '/' . $pdfFileName;
+            $pdfDir = 'contracts/'.$contract->id.'/pdfs';
+            $pdfFileName = 'Audit_Trail_'.Str::slug($contract->contract_no).'_'.md5($printUrl).'.pdf';
+            $pdfPath = $pdfDir.'/'.$pdfFileName;
             $disposition = 'attachment';
 
             if (Storage::disk('local')->exists($pdfPath)) {
@@ -313,14 +314,14 @@ class ContractExportController extends Controller
                 ->header('Content-Disposition', "$disposition; filename=\"{$pdfFileName}\"");
 
         } catch (\Exception $e) {
-            Log::error('Audit Trail Browsershot Export Failed: ' . $e->getMessage());
+            Log::error('Audit Trail Browsershot Export Failed: '.$e->getMessage());
 
             // Fallback to legacy PDF if Browsershot fails
             $contract->load(['creator', 'contractType']);
 
             $query = $contract->histories()->with('actor');
             if ($request->filled('search')) {
-                $query->where('description', 'like', '%' . $request->search . '%');
+                $query->where('description', 'like', '%'.$request->search.'%');
             }
             if ($request->filled('actor_id')) {
                 $query->where('actor_id', $request->actor_id);
@@ -351,7 +352,7 @@ class ContractExportController extends Controller
         $query = $contract->histories()->with('actor');
 
         if ($request->filled('search')) {
-            $query->where('description', 'like', '%' . $request->search . '%');
+            $query->where('description', 'like', '%'.$request->search.'%');
         }
 
         if ($request->filled('actor_id')) {
@@ -397,7 +398,7 @@ class ContractExportController extends Controller
         }
 
         if (! $template) {
-            Log::error("Template not found in PDF Queue. Type: {$type}, Provided ID: " . ($templateId ?? 'none'));
+            Log::error("Template not found in PDF Queue. Type: {$type}, Provided ID: ".($templateId ?? 'none'));
 
             return response()->json(['message' => 'Template not found.'], 404);
         }
@@ -425,7 +426,7 @@ class ContractExportController extends Controller
 
         try {
             $jobId = (string) Str::uuid();
-            $cacheKey = 'pdf_adhoc_' . $jobId;
+            $cacheKey = 'pdf_adhoc_'.$jobId;
 
             Log::info("Prepping PDF Cache: {$cacheKey}");
             Cache::put($cacheKey, [
@@ -445,26 +446,26 @@ class ContractExportController extends Controller
 
             // Safe filename (slugified contract number to avoid slash issues)
             $safeNo = $contract->contract_no ? Str::slug($contract->contract_no) : 'contract';
-            $fileName = $safeNo . '_' . strtoupper($type) . '_' . time() . '.pdf';
+            $fileName = $safeNo.'_'.strtoupper($type).'_'.time().'.pdf';
 
             Log::info("Dispatching PDF Job: {$jobId} for file: {$fileName}");
             // Queue the job
             GeneratePdfJob::dispatch($jobId, $printUrl, $fileName);
 
-            Cache::put('pdf_status_' . $jobId, ['status' => 'pending', 'progress' => 10], 1800);
+            Cache::put('pdf_status_'.$jobId, ['status' => 'pending', 'progress' => 10], 1800);
 
             return response()->json([
                 'success' => true,
                 'job_id' => $jobId,
             ]);
         } catch (\Exception $e) {
-            Log::critical("PDF Queue Failure for ID {$id}: " . $e->getMessage(), [
+            Log::critical("PDF Queue Failure for ID {$id}: ".$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
                 'type' => $type,
             ]);
 
             return response()->json([
-                'message' => 'Gagal antrikan PDF: ' . $e->getMessage(),
+                'message' => 'Gagal antrikan PDF: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -533,7 +534,7 @@ class ContractExportController extends Controller
                 $printUrl = str_replace('localhost', '127.0.0.1', $printUrl);
             }
 
-            $pdfContent = \Spatie\Browsershot\Browsershot::url($printUrl)
+            $pdfContent = Browsershot::url($printUrl)
                 ->setNodeBinary('/opt/homebrew/bin/node')
                 ->setNpmBinary('/opt/homebrew/bin/npm')
                 ->setChromePath('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
@@ -567,7 +568,7 @@ class ContractExportController extends Controller
                 ->header('Content-Disposition', "$disposition; filename=\"{$pdfFileName}\"");
 
         } catch (\Exception $e) {
-            Log::error('Browsershot Export Failed: ' . $e->getMessage());
+            Log::error('Browsershot Export Failed: '.$e->getMessage());
 
             // Fallback to DomPDF if Browsershot fails
             $fields = $template->fields->sortBy('order');
@@ -579,7 +580,7 @@ class ContractExportController extends Controller
             ]);
 
             $safeNo = Str::slug($contract->contract_no ?: 'contract');
-            $fileName = $safeNo . '_' . strtoupper($type) . '.pdf';
+            $fileName = $safeNo.'_'.strtoupper($type).'.pdf';
             if ($disposition === 'inline') {
                 return $pdf->stream($fileName);
             }
@@ -612,7 +613,7 @@ class ContractExportController extends Controller
         }
 
         if ($request->search) {
-            $query->where('description', 'like', '%' . $request->search . '%');
+            $query->where('description', 'like', '%'.$request->search.'%');
         }
 
         return response()->json($query->get()->map(function ($h) {

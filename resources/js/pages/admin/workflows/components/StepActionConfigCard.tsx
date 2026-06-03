@@ -44,25 +44,22 @@ export function StepActionConfigCard({
                 if (act.transition_config.offset === -1) return 'back';
             }
             if (act.transition_config.type === 'absolute') {
-                if (act.transition_config.sequence === 1) return 'initial';
-                return 'jump_step';
+                return 'initial';
             }
             if (act.transition_config.type === 'cross_workflow') return 'cross_workflow';
         }
-        
+
         // Fallback for backward compatibility
         if (act.next_workflow_id) return 'cross_workflow';
         if (act.next_step_id) {
-            const prevStep = allWorkflowSteps[idx - 1];
             const firstStep = allWorkflowSteps[0];
             if (firstStep && act.next_step_id === firstStep.id && idx > 0) return 'initial';
+            const prevStep = allWorkflowSteps[idx - 1];
             if (prevStep && act.next_step_id === prevStep.id) return 'back';
-            return 'jump_step';
         }
         return 'sequential';
     })();
 
-    const showLocalTargetSelector = transitionType === 'jump_step';
     const showCrossWorkflowSelector = transitionType === 'cross_workflow';
 
     return (
@@ -127,7 +124,7 @@ export function StepActionConfigCard({
                 </div>
 
                 {/* Cell 2: Transisi Ke & Conditional Details */}
-                <div className="space-y-3">
+                <div className="space-y-3 sm:col-span-2">
                     <div className="space-y-1">
                         <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Transisi Ke</label>
                         <Select
@@ -155,14 +152,6 @@ export function StepActionConfigCard({
                                         next_workflow_id: null,
                                         next_workflow_step_id: null
                                     });
-                                }
-                                else if (val === 'jump_step') {
-                                    updateAction(actIdx, {
-                                        transition_config: { type: 'absolute', sequence: act.transition_config?.sequence || 1 },
-                                        next_step_id: null,
-                                        next_workflow_id: null,
-                                        next_workflow_step_id: null
-                                    });
                                 } else if (val === 'cross_workflow') {
                                     updateAction(actIdx, {
                                         transition_config: { type: 'cross_workflow', workflow_id: '', sequence: 1 },
@@ -186,9 +175,6 @@ export function StepActionConfigCard({
                                 <SelectItem value="initial" className="text-[9px] font-bold uppercase">
                                     LANGKAH AWAL (INITIAL STEP)
                                 </SelectItem>
-                                <SelectItem value="jump_step" className="text-[9px] font-bold uppercase">
-                                    LANGKAH KE N (INTERNAL)
-                                </SelectItem>
                                 <SelectItem value="cross_workflow" className="text-[9px] font-bold uppercase">
                                     LANGKAH KE WORKFLOW N & STEP N
                                 </SelectItem>
@@ -196,32 +182,8 @@ export function StepActionConfigCard({
                         </Select>
                     </div>
 
-                    {showLocalTargetSelector && (
-                        <div className="space-y-1 bg-slate-50/40 p-2.5 rounded-xl border border-slate-100 dark:bg-slate-900/10 dark:border-slate-800">
-                            <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Pilih Target Langkah (Alur Ini)</label>
-                            <Select
-                                value={String(act.transition_config?.sequence || '')}
-                                onValueChange={(val) => updateAction(actIdx, { 
-                                    transition_config: { type: 'absolute', sequence: Number(val) },
-                                    next_step_id: null 
-                                })}
-                            >
-                                <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-white text-[10px] font-black uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
-                                    <SelectValue placeholder="PILIH TAHAP TARGET" />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-lg bg-white dark:bg-slate-950">
-                                    {allWorkflowSteps.map((s: any, sIdx: number) => (
-                                        <SelectItem key={s.id} value={String(s.step || sIdx + 1)} className="text-[9px] font-bold uppercase">
-                                            TAHAP {s.step || sIdx + 1}: {s.label || `Langkah ${sIdx + 1}`}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    )}
-
                     {showCrossWorkflowSelector && (
-                        <div className="space-y-3 bg-slate-50/40 p-2.5 rounded-xl border border-slate-100 dark:bg-slate-900/10 dark:border-slate-800">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 bg-slate-50/40 p-2.5 rounded-xl border border-slate-100 dark:bg-slate-900/10 dark:border-slate-800">
                             <div className="space-y-1">
                                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Target Alur Kerja</label>
                                 <Select
@@ -229,10 +191,10 @@ export function StepActionConfigCard({
                                     onValueChange={(val) => {
                                         const targetWf = allWorkflows.find((w: any) => String(w.id) === val);
                                         updateAction(actIdx, {
-                                            transition_config: { 
-                                                type: 'cross_workflow', 
-                                                workflow_id: val, 
-                                                sequence: targetWf?.steps?.[0]?.step || 1 
+                                            transition_config: {
+                                                type: 'cross_workflow',
+                                                workflow_id: val,
+                                                sequence: targetWf?.steps?.[0]?.step || 1
                                             },
                                             next_workflow_id: null,
                                             next_workflow_step_id: null
@@ -255,7 +217,7 @@ export function StepActionConfigCard({
                                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Mulai Dari Langkah</label>
                                 <Select
                                     value={String(act.transition_config?.sequence || '')}
-                                    onValueChange={(val) => updateAction(actIdx, { 
+                                    onValueChange={(val) => updateAction(actIdx, {
                                         transition_config: { ...act.transition_config, type: 'cross_workflow', sequence: Number(val) },
                                         next_workflow_step_id: null
                                     })}
@@ -315,9 +277,9 @@ export function StepActionConfigCard({
                     <div className="space-y-3 col-span-1 sm:col-span-2 bg-amber-50/50 p-3 rounded-xl border border-amber-100/50 dark:bg-amber-900/10 dark:border-amber-800/30">
                         <div className="flex items-center gap-1.5">
                             <FileSignature size={12} className="text-amber-500" />
-                            <label className="text-[9px] font-bold text-amber-600 uppercase tracking-tight dark:text-amber-500">Konfigurasi Tanda Tangan</label>
+                            <label className="text-[9px] font-bold text-amber-600 uppercase tracking-tight dark:text-amber-500">Konfigurasi Upload Tanda Tangan</label>
                         </div>
-                        
+
                         <div className="space-y-4">
                             <div className="space-y-1">
                                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Pilihan Penandatangan (Signers)</label>
@@ -327,10 +289,6 @@ export function StepActionConfigCard({
                                     options={[
                                         { value: 'initiator', label: 'INISIATOR (PIC / PEMBUAT)' },
                                         { value: 'pic', label: 'PIC DITUGASKAN' },
-                                        { value: 'legal', label: 'LEGAL STAFF' },
-                                        { value: 'manager_legal', label: 'MANAGER LEGAL' },
-                                        { value: 'vp_legal', label: 'VP LEGAL / MANAGEMENT' },
-                                        { value: 'vendor', label: 'VENDOR / PIHAK LUAR' }
                                     ]}
                                     placeholder="Pilih Pemeran Penandatangan..."
                                 />
@@ -384,7 +342,7 @@ export function StepActionConfigCard({
                             {isSignatureAction && (
                                 <div className="space-y-1 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
                                     <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">
-                                        Target Langkah Tanda Tangan (Insert To)
+                                        Target Langkah Upload Tanda Tangan (Insert To)
                                     </label>
                                     <Select
                                         value={act.assignee_config?.signature_target_step ? String(act.assignee_config?.signature_target_step) : ''}
@@ -437,84 +395,7 @@ export function StepActionConfigCard({
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    <p className="text-[9px] text-slate-400 italic">Tentukan pada langkah mana approver tambahan ini akan disisipkan secara default.</p>
-
-                                    <div className="pt-2">
-                                        <CompactSwitch
-                                            label="Izinkan user memilih target langkah"
-                                            description="Jika aktif, user dapat memilih langkah target secara spesifik saat proses approval tambahan."
-                                            checked={act.assignee_config?.allow_user_select_step || false}
-                                            onCheckedChange={(checked) => {
-                                                updateAction(actIdx, {
-                                                    assignee_config: {
-                                                        ...(act.assignee_config || {}),
-                                                        allow_user_select_step: checked,
-                                                        selectable_steps: checked ? (act.assignee_config?.selectable_steps || []) : []
-                                                    }
-                                                });
-                                            }}
-                                        />
-                                        
-                                        {act.assignee_config?.allow_user_select_step && (
-                                            <div className="mt-3 space-y-1 pl-4 border-l-2 border-slate-100 dark:border-slate-800">
-                                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">
-                                                    Pilihan Langkah yang Diizinkan
-                                                </label>
-                                                <SearchableMultiSelect
-                                                    values={act.assignee_config?.selectable_steps || []}
-                                                    onValuesChange={(vals) => {
-                                                        updateAction(actIdx, {
-                                                            assignee_config: {
-                                                                ...(act.assignee_config || {}),
-                                                                selectable_steps: vals
-                                                            }
-                                                        });
-                                                    }}
-                                                    options={allWorkflowSteps.map((s: any, sIdx: number) => ({
-                                                        value: String(s.id),
-                                                        label: `TAHAP ${sIdx + 1}: ${s.label || 'Langkah ' + (sIdx + 1)}`
-                                                    }))}
-                                                    placeholder="Pilih langkah..."
-                                                />
-                                                <p className="text-[9px] text-slate-400 italic">
-                                                    Jika dikosongkan, user dapat memilih semua langkah (kecuali condition).
-                                                </p>
-                                            </div>
-                                        )}
-
-                                        {!act.assignee_config?.allow_user_select_step && (
-                                            <div className="mt-3 space-y-1 pl-4 border-l-2 border-slate-100 dark:border-slate-800">
-                                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">
-                                                    Default Target Langkah (Mode Admin)
-                                                </label>
-                                                <Select
-                                                    value={act.assignee_config?.default_target_step ? String(act.assignee_config?.default_target_step) : ''}
-                                                    onValueChange={(val) => {
-                                                        updateAction(actIdx, {
-                                                            assignee_config: {
-                                                                ...(act.assignee_config || {}),
-                                                                default_target_step: val
-                                                            }
-                                                        });
-                                                    }}
-                                                >
-                                                    <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-white text-[10px] font-black uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
-                                                        <SelectValue placeholder="PILIH TAHAP TARGET" />
-                                                    </SelectTrigger>
-                                                    <SelectContent className="rounded-lg bg-white dark:bg-slate-950">
-                                                        {allWorkflowSteps.map((s: any, sIdx: number) => (
-                                                            <SelectItem key={s.id} value={String(s.id)} className="text-[9px] font-bold uppercase">
-                                                                TAHAP {sIdx + 1}: {s.label || `Langkah ${sIdx + 1}`}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                                <p className="text-[9px] text-slate-400 italic">
-                                                    Pilih langkah mana persetujuan tambahan ini akan disisipkan.
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
+                                    <p className="text-[9px] text-slate-400 italic">Tentukan pada langkah mana approver tambahan ini akan disisipkan.</p>
                                 </div>
                             )}
 

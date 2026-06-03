@@ -1910,7 +1910,7 @@
                                     },
                                     "name": {
                                         "type": "string",
-                                        "example": "Menunggu Tanda Tangan"
+                                        "example": "Menunggu Upload Tanda Tangan"
                                     },
                                     "color": {
                                         "type": "string",
@@ -1975,7 +1975,7 @@
                                     },
                                     "name": {
                                         "type": "string",
-                                        "example": "Menunggu Proses Tanda Tangan"
+                                        "example": "Menunggu Proses Upload Tanda Tangan"
                                     },
                                     "color": {
                                         "type": "string",

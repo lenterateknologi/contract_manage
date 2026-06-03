@@ -131,7 +131,7 @@ class StandardWorkflowSeeder extends Seeder
                 ],
                 [
                     'step' => 11,
-                    'name' => 'Proses Tanda Tangan',
+                    'name' => 'Proses Upload Tanda Tangan',
                     'type' => 'SIGNING',
                     'category' => 'signing',
                     'actor' => 'assigned_pic',
@@ -153,9 +153,9 @@ class StandardWorkflowSeeder extends Seeder
 
             foreach ($steps as $s) {
                 $actions = match (strtoupper($s['type'])) {
-                    'APPROVAL' => ['approve', 'reject', 'return'],
-                    'REVIEW' => ['review', 'return'],
-                    'SIGNING' => ['sign', 'return'],
+                    'APPROVAL' => ['approve', 'reject'],
+                    'REVIEW' => ['approve'],
+                    'SIGNING' => ['sign'],
                     'DRAFTING' => ($s['step'] === 1) ? ['approve'] : ['approve', 'assign'],
                     'CLOSING' => ['approve'],
                     default => ['approve', 'reject'],

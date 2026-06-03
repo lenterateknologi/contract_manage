@@ -67,18 +67,15 @@ export function SharedApproveModal({ open, onClose, onSubmit, isAssign, contract
             // Auto-resolve based on signing_parties configuration from the workflow action
             if (signerUserIds.length === 0 && signingParties.length > 0) {
                 const ids: string[] = [];
-                
+
                 if (signingParties.includes('initiator') && contract.initiator?.id) {
                     ids.push(contract.initiator.id);
                 }
-                
-                if (signingParties.includes('pic') && contract.assigned_pic?.id) {
+
+                if (signingParties.includes('assigned_pic') && contract.assigned_pic?.id) {
                     ids.push(contract.assigned_pic.id);
                 }
 
-                // If 'legal' is specified, we might want to auto-select the current user if they are Legal 
-                // or find the first Legal manager, but usually 'pic' covers the legal PIC.
-                
                 const validIds = Array.from(new Set(ids.filter(Boolean)));
                 if (validIds.length > 0) {
                     setSignerUserIds(validIds);
@@ -89,11 +86,11 @@ export function SharedApproveModal({ open, onClose, onSubmit, isAssign, contract
 
     const fetchUsers = async () => {
         if (initialUsers && initialUsers.length > 0) return;
-        
+
         setFetchingUsers(true);
         try {
             const allUsers = await contractApi.getUsers();
-            
+
             if (isSigningSetup) {
                 // For signing, we usually want all active users, or specifically those with signing authority
                 setUsers(allUsers.filter((u: any) => u.is_active));
@@ -102,7 +99,7 @@ export function SharedApproveModal({ open, onClose, onSubmit, isAssign, contract
 
             // Filter users based on next step requirements (Department and Roles)
             let requirements = contract.next_step;
-            
+
             const actionAssigneeConfig = activeAction?.assignee_config;
             if (actionAssigneeConfig && actionAssigneeConfig.type === 'role') {
                 requirements = {
@@ -197,7 +194,7 @@ export function SharedApproveModal({ open, onClose, onSubmit, isAssign, contract
                     </div>
                     <div>
                         <h3 className="text-sm font-bold tracking-wider text-slate-900 uppercase dark:text-white">
-                            {actionAlias || 'Tanda Tangan'}
+                            {actionAlias || 'Upload Tanda Tangan'}
                         </h3>
                         <p className="mt-0.5 text-[10px] font-medium text-slate-400 uppercase">
                             Tentukan Pihak Penandatangan
@@ -258,19 +255,37 @@ export function SharedApproveModal({ open, onClose, onSubmit, isAssign, contract
                             onValuesChange={setSignerUserIds}
                             showOrder={true}
                             options={(() => {
-                                const baseOptions = users.map((u) => ({
+                                let filteredUsers = [...users];
+
+                                if (signingParties.length > 0) {
+                                    filteredUsers = users.filter((u) => {
+                                        const roleLower = (u.role || '').toLowerCase();
+
+                                        return signingParties.some((party: string) => {
+                                            if (party === 'initiator') {
+                                                return u.id === contract?.initiator?.id;
+                                            }
+                                            if (party === 'assigned_pic') {
+                                                return u.id === contract?.assigned_pic?.id;
+                                            }
+                                            return roleLower === party.toLowerCase();
+                                        });
+                                    });
+                                }
+
+                                const baseOptions = filteredUsers.map((u) => ({
                                     value: u.id,
                                     label: `${u.name} (${u.role || 'User'})`,
                                 }));
 
-                                if (contract?.initiator?.id && !baseOptions.some(o => o.value === contract.initiator.id)) {
+                                if (signingParties.includes('initiator') && contract?.initiator?.id && !baseOptions.some(o => o.value === contract.initiator.id)) {
                                     baseOptions.push({
                                         value: contract.initiator.id,
                                         label: `${contract.initiator.name || 'Initiator'} (${contract.initiator.role || 'Initiator'})`
                                     });
                                 }
 
-                                if (contract?.assigned_pic?.id && !baseOptions.some(o => o.value === contract.assigned_pic.id)) {
+                                if (signingParties.includes('assigned_pic') && contract?.assigned_pic?.id && !baseOptions.some(o => o.value === contract.assigned_pic.id)) {
                                     baseOptions.push({
                                         value: contract.assigned_pic.id,
                                         label: `${contract.assigned_pic.name || 'PIC'} (${contract.assigned_pic.role || 'PIC'})`
@@ -285,44 +300,21 @@ export function SharedApproveModal({ open, onClose, onSubmit, isAssign, contract
 
                     <div className="space-y-1.5">
                         <label className="text-[11px] font-bold uppercase tracking-wider text-text-desc">
-                            Sisipkan Ke Langkah <span className="text-danger">*</span>
+                            Sisipkan Ke Langkah
                         </label>
-                        {contract?.workflow?.steps && contract.workflow.steps.length > 0 ? (
-                            <SearchableSelect
-                                value={selectedTargetStepId}
-                                onValueChange={setSelectedTargetStepId}
-                                placeholder="Pilih Langkah Target"
-                                options={[
-                                    {
-                                        value: String(contract?.workflow_step_id),
-                                        label: `(Step Saat Ini) ${contract?.workflow_step?.step} - ${contract?.workflow_step?.description || contract?.workflow_step?.label || ''}`,
-                                    },
-                                    ...(contract?.workflow?.steps || [])
-                                        .filter(
-                                            (step: any) =>
-                                                step.id !== contract?.workflow_step_id && step.step_category !== 'Condition'
-                                        )
-                                        .map((step: any) => ({
-                                            value: String(step.id),
-                                            label: `Step ${step.step} - ${step.description || step.label || ''}`,
-                                        })),
-                                ]}
-                            />
-                        ) : (
-                            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-400">
-                                {(() => {
-                                    const defaultTargetStepId = activeAction?.assignee_config?.signature_target_step || contract?.workflow_step_id;
-                                    if (defaultTargetStepId === contract?.workflow_step_id) {
-                                        return `(Step Saat Ini) Tahap ${contract?.workflow_step?.step} - ${contract?.workflow_step?.description || contract?.workflow_step?.label || ''}`;
-                                    }
-                                    const targetStep = contract?.workflow?.steps?.find((s: any) => s.id === defaultTargetStepId);
-                                    if (targetStep) {
-                                        return `Tahap ${targetStep.step} - ${targetStep.description || targetStep.label || ''}`;
-                                    }
-                                    return 'Tahap Saat Ini (Default)';
-                                })()}
-                            </div>
-                        )}
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-400">
+                            {(() => {
+                                const targetId = activeAction?.assignee_config?.signature_target_step || contract?.workflow_step_id;
+                                if (String(targetId) === String(contract?.workflow_step_id)) {
+                                    return `(Step Saat Ini) Tahap ${contract?.workflow_step?.step} - ${contract?.workflow_step?.description || contract?.workflow_step?.label || ''}`;
+                                }
+                                const targetStep = (contract?.workflow?.steps || []).find((s: any) => String(s.id) === String(targetId));
+                                if (targetStep) {
+                                    return `Tahap ${targetStep.step} - ${targetStep.description || targetStep.label || ''}`;
+                                }
+                                return 'Tahap Terkonfigurasi';
+                            })()}
+                        </div>
                     </div>
 
                     <div className="space-y-1.5">
@@ -341,10 +333,10 @@ export function SharedApproveModal({ open, onClose, onSubmit, isAssign, contract
                 <div className="space-y-6">
                     <p className="text-text-desc text-sm font-medium leading-relaxed">
                         {isAssign
-                          ? `Harap pilih ${actionAlias || 'Assignee'} yang akan mengerjakan tugas ini.`
-                          : contract?.workflow_step?.step === 1
-                            ? 'Konfirmasi untuk mengirim draft kontrak ini ke tahap persetujuan berikutnya. Pastikan dokumen sudah lengkap.'
-                            : 'Apakah Anda yakin ingin menyetujui kontrak ini? Anda dapat memberikan catatan approval dan lampiran (opsional).'}
+                            ? `Harap pilih ${actionAlias || 'Assignee'} yang akan mengerjakan tugas ini.`
+                            : contract?.workflow_step?.step === 1
+                                ? 'Konfirmasi untuk mengirim draft kontrak ini ke tahap persetujuan berikutnya. Pastikan dokumen sudah lengkap.'
+                                : 'Apakah Anda yakin ingin menyetujui kontrak ini? Anda dapat memberikan catatan approval dan lampiran (opsional).'}
                     </p>
 
                     {isAssign && (

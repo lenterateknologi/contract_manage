@@ -262,7 +262,7 @@
                     <div class="bg-slate-50 border-b border-slate-200 px-3 py-1.5 text-center">
                         <span class="text-[9px] font-black text-slate-600 leading-none"
                               style="font-size: {{ isset($options['font_size']) ? ($options['font_size'] * 0.7).'px' : '9px' }};">
-                            {{ $field->label ?: 'Tanda Tangan' }}
+                            {{ $field->label ?: 'Upload Tanda Tangan' }}
                         </span>
                     </div>
                     <div class="h-24 flex flex-col items-center justify-end p-3 text-center">

@@ -3,14 +3,21 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AccessModule;
 use App\Models\Company;
 use App\Models\CompanyGroup;
+use App\Models\Contract;
 use App\Models\ContractStatus;
 use App\Models\ContractType;
 use App\Models\Department;
 use App\Models\FormField;
 use App\Models\FormTemplate;
+use App\Models\Module;
+use App\Models\ModuleGroup;
 use App\Models\Region;
+use App\Models\Role;
+use App\Models\RoleModuleGroup;
+use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowInitiatorDepartment;
 use App\Models\WorkflowInitiatorRole;
@@ -20,9 +27,12 @@ use App\Models\WorkflowStepAction;
 use App\Models\WorkflowStepDepartment;
 use App\Models\WorkflowStepRole;
 use App\Models\WorkflowStepUser;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 
 class MasterDataAdminController extends Controller
@@ -42,11 +52,11 @@ class MasterDataAdminController extends Controller
                 'contract_statuses' => ContractStatus::count(),
                 'contract_types' => ContractType::count(),
                 'workflows' => Workflow::count(),
-                'contracts' => \App\Models\Contract::count(),
-                'roles' => \App\Models\Role::count(),
-                'modules' => \App\Models\Module::count(),
-                'access_mappings' => \App\Models\AccessModule::count(),
-                'navigation_mappings' => \App\Models\RoleModuleGroup::count(),
+                'contracts' => Contract::count(),
+                'roles' => Role::count(),
+                'modules' => Module::count(),
+                'access_mappings' => AccessModule::count(),
+                'navigation_mappings' => RoleModuleGroup::count(),
                 'form_templates' => FormTemplate::count(),
                 'form_fields' => FormField::count(),
             ],
@@ -259,14 +269,14 @@ class MasterDataAdminController extends Controller
 
             // 7. Roles
             if (! $requestedEntities || in_array('roles', $requestedEntities)) {
-                $exportData['roles'] = \App\Models\Role::all()->map(function ($r) {
+                $exportData['roles'] = Role::all()->map(function ($r) {
                     return ['id' => $r->id, 'name' => $r->name, 'description' => $r->description];
                 })->toArray();
             }
 
             // 8. Access Mappings
             if (! $requestedEntities || in_array('access_mappings', $requestedEntities)) {
-                $exportData['access_mappings'] = \App\Models\AccessModule::with(['role', 'module', 'moduleGroup'])->get()->map(function ($am) {
+                $exportData['access_mappings'] = AccessModule::with(['role', 'module', 'moduleGroup'])->get()->map(function ($am) {
                     return [
                         'role_name' => $am->role->name ?? null,
                         'module_identifier' => $am->module->identifier ?? null,
@@ -285,8 +295,8 @@ class MasterDataAdminController extends Controller
 
             // 8b. Navigation Mappings
             if (! $requestedEntities || in_array('navigation_mappings', $requestedEntities)) {
-                $exportData['role_navigation_mappings'] = \App\Models\RoleModuleGroup::with(['role', 'moduleGroup'])->get()->map(function ($rmg) {
-                    $modules = \App\Models\AccessModule::where('role_id', $rmg->role_id)
+                $exportData['role_navigation_mappings'] = RoleModuleGroup::with(['role', 'moduleGroup'])->get()->map(function ($rmg) {
+                    $modules = AccessModule::where('role_id', $rmg->role_id)
                         ->where('module_group_id', $rmg->module_group_id)
                         ->where('can_read', true)
                         ->with('module')
@@ -310,14 +320,14 @@ class MasterDataAdminController extends Controller
 
             // 8c. Module Groups & Modules (Exported automatically for navigation or access mappings)
             if (! $requestedEntities || in_array('navigation_mappings', $requestedEntities) || in_array('access_mappings', $requestedEntities)) {
-                $exportData['module_groups'] = \App\Models\ModuleGroup::all()->map(function ($mg) {
+                $exportData['module_groups'] = ModuleGroup::all()->map(function ($mg) {
                     return [
                         'name' => $mg->name,
                         'icon' => $mg->icon,
                     ];
                 })->toArray();
 
-                $exportData['modules'] = \App\Models\Module::with(['moduleGroup'])->get()->map(function ($m) {
+                $exportData['modules'] = Module::with(['moduleGroup'])->get()->map(function ($m) {
                     return [
                         'identifier' => $m->identifier,
                         'name' => $m->name,
@@ -377,7 +387,7 @@ class MasterDataAdminController extends Controller
                 })->toArray();
             }
 
-            $fileName = 'master_data_export_' . date('Ymd_His') . '.json';
+            $fileName = 'master_data_export_'.date('Ymd_His').'.json';
 
             return response()->streamDownload(function () use ($exportData) {
                 echo json_encode($exportData, JSON_PRETTY_PRINT);
@@ -385,9 +395,9 @@ class MasterDataAdminController extends Controller
                 'Content-Type' => 'application/json',
             ]);
         } catch (\Exception $e) {
-            Log::error('Master Data Export Error: ' . $e->getMessage());
+            Log::error('Master Data Export Error: '.$e->getMessage());
 
-            return back()->withErrors(['error' => 'Gagal mengekspor data master: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Gagal mengekspor data master: '.$e->getMessage()]);
         }
     }
 
@@ -431,8 +441,8 @@ class MasterDataAdminController extends Controller
                 'form_fields' => 0,
             ];
 
-            \Illuminate\Database\Eloquent\Model::unguard();
-            $admin = \Illuminate\Support\Facades\Auth::id();
+            Model::unguard();
+            $admin = Auth::id();
 
             // 0. Roles
             if (! empty($data['roles']) && is_array($data['roles'])) {
@@ -441,7 +451,7 @@ class MasterDataAdminController extends Controller
                         if (empty($r['name'])) {
                             continue;
                         }
-                        \App\Models\Role::updateOrCreate(
+                        Role::updateOrCreate(
                             ! empty($r['id']) ? ['id' => $r['id']] : ['name' => $r['name']],
                             [
                                 'name' => $r['name'],
@@ -450,12 +460,12 @@ class MasterDataAdminController extends Controller
                         );
                         $counts['roles']++;
                     } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor Role ' . ($r['name'] ?? '') . ': ' . $e->getMessage());
+                        Log::warning('Gagal mengimpor Role '.($r['name'] ?? '').': '.$e->getMessage());
                     }
                 }
             }
 
-            $roleMap = \App\Models\Role::pluck('id', 'name')->all();
+            $roleMap = Role::pluck('id', 'name')->all();
             $roleIdMap = [];
             if (! empty($data['roles']) && is_array($data['roles'])) {
                 foreach ($data['roles'] as $r) {
@@ -465,8 +475,8 @@ class MasterDataAdminController extends Controller
                 }
             }
 
-            $moduleMap = \App\Models\Module::pluck('id', 'identifier')->all();
-            $moduleGroupMap = \App\Models\ModuleGroup::pluck('id', 'name')->all();
+            $moduleMap = Module::pluck('id', 'identifier')->all();
+            $moduleGroupMap = ModuleGroup::pluck('id', 'name')->all();
 
             // Import Module Groups if present in navigation_mappings
             if (! empty($data['module_groups']) && is_array($data['module_groups'])) {
@@ -475,7 +485,7 @@ class MasterDataAdminController extends Controller
                         if (empty($mg['name'])) {
                             continue;
                         }
-                        \App\Models\ModuleGroup::updateOrCreate(
+                        ModuleGroup::updateOrCreate(
                             ! empty($mg['id']) ? ['id' => $mg['id']] : ['name' => $mg['name']],
                             [
                                 'name' => $mg['name'],
@@ -485,10 +495,10 @@ class MasterDataAdminController extends Controller
                             ],
                         );
                     } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor ModuleGroup ' . ($mg['name'] ?? '') . ': ' . $e->getMessage());
+                        Log::warning('Gagal mengimpor ModuleGroup '.($mg['name'] ?? '').': '.$e->getMessage());
                     }
                 }
-                $moduleGroupMap = \App\Models\ModuleGroup::pluck('id', 'name')->all();
+                $moduleGroupMap = ModuleGroup::pluck('id', 'name')->all();
             }
 
             // Import Modules if present in navigation_mappings
@@ -499,7 +509,7 @@ class MasterDataAdminController extends Controller
                             continue;
                         }
                         $groupId = ! empty($m['module_group_name']) ? ($moduleGroupMap[$m['module_group_name']] ?? null) : null;
-                        \App\Models\Module::updateOrCreate(
+                        Module::updateOrCreate(
                             ! empty($m['id']) ? ['id' => $m['id']] : ['identifier' => $m['identifier']],
                             [
                                 'identifier' => $m['identifier'],
@@ -514,10 +524,10 @@ class MasterDataAdminController extends Controller
                             ],
                         );
                     } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor Module ' . ($m['name'] ?? '') . ': ' . $e->getMessage());
+                        Log::warning('Gagal mengimpor Module '.($m['name'] ?? '').': '.$e->getMessage());
                     }
                 }
-                $moduleMap = \App\Models\Module::pluck('id', 'identifier')->all();
+                $moduleMap = Module::pluck('id', 'identifier')->all();
             }
 
             // 1. Company Groups
@@ -540,7 +550,7 @@ class MasterDataAdminController extends Controller
                         );
                         $counts['company_groups']++;
                     } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor CompanyGroup ' . ($g['code'] ?? '') . ': ' . $e->getMessage());
+                        Log::warning('Gagal mengimpor CompanyGroup '.($g['code'] ?? '').': '.$e->getMessage());
                     }
                 }
             }
@@ -577,7 +587,7 @@ class MasterDataAdminController extends Controller
                         );
                         $counts['regions']++;
                     } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor Region ' . ($r['code'] ?? '') . ': ' . $e->getMessage());
+                        Log::warning('Gagal mengimpor Region '.($r['code'] ?? '').': '.$e->getMessage());
                     }
                 }
             }
@@ -618,7 +628,7 @@ class MasterDataAdminController extends Controller
                         );
                         $counts['companies']++;
                     } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor Company ' . ($c['code'] ?? '') . ': ' . $e->getMessage());
+                        Log::warning('Gagal mengimpor Company '.($c['code'] ?? '').': '.$e->getMessage());
                     }
                 }
             }
@@ -656,7 +666,7 @@ class MasterDataAdminController extends Controller
                         );
                         $counts['departments']++;
                     } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor Department ' . ($d['code'] ?? '') . ': ' . $e->getMessage());
+                        Log::warning('Gagal mengimpor Department '.($d['code'] ?? '').': '.$e->getMessage());
                     }
                 }
             }
@@ -694,7 +704,7 @@ class MasterDataAdminController extends Controller
                         );
                         $counts['contract_statuses']++;
                     } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor ContractStatus ' . ($s['code'] ?? '') . ': ' . $e->getMessage());
+                        Log::warning('Gagal mengimpor ContractStatus '.($s['code'] ?? '').': '.$e->getMessage());
                     }
                 }
             }
@@ -788,7 +798,7 @@ class MasterDataAdminController extends Controller
                         $workflowIdMap[$w['id']] = $dbW->id;
                         $counts['workflows']++;
                     } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor Workflow ' . ($w['name'] ?? '') . ': ' . $e->getMessage());
+                        Log::warning('Gagal mengimpor Workflow '.($w['name'] ?? '').': '.$e->getMessage());
                     }
                 }
             }
@@ -810,7 +820,7 @@ class MasterDataAdminController extends Controller
                         ])->save();
                         $counts['workflow_initiator_departments']++;
                     } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor WorkflowInitiatorDepartment ID ' . ($d['id'] ?? '') . ': ' . $e->getMessage());
+                        Log::warning('Gagal mengimpor WorkflowInitiatorDepartment ID '.($d['id'] ?? '').': '.$e->getMessage());
                     }
                 }
             }
@@ -831,13 +841,13 @@ class MasterDataAdminController extends Controller
                         ])->save();
                         $counts['workflow_initiator_roles']++;
                     } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor WorkflowInitiatorRole ID ' . ($r['id'] ?? '') . ': ' . $e->getMessage());
+                        Log::warning('Gagal mengimpor WorkflowInitiatorRole ID '.($r['id'] ?? '').': '.$e->getMessage());
                     }
                 }
             }
 
             // 9. Workflow Initiator Users
-            $userEmailMap = \App\Models\User::pluck('id', 'email')->all();
+            $userEmailMap = User::pluck('id', 'email')->all();
             if (! empty($data['workflow_initiator_users']) && is_array($data['workflow_initiator_users'])) {
                 foreach ($data['workflow_initiator_users'] as $u) {
                     try {
@@ -854,7 +864,7 @@ class MasterDataAdminController extends Controller
                         ])->save();
                         $counts['workflow_initiator_users']++;
                     } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor WorkflowInitiatorUser ID ' . ($u['id'] ?? '') . ': ' . $e->getMessage());
+                        Log::warning('Gagal mengimpor WorkflowInitiatorUser ID '.($u['id'] ?? '').': '.$e->getMessage());
                     }
                 }
             }
@@ -927,7 +937,7 @@ class MasterDataAdminController extends Controller
                         $workflowStepIdMap[$s['id']] = $dbStep->id;
                         $counts['workflow_steps']++;
                     } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor WorkflowStep ID ' . ($s['id'] ?? '') . ': ' . $e->getMessage());
+                        Log::warning('Gagal mengimpor WorkflowStep ID '.($s['id'] ?? '').': '.$e->getMessage());
                     }
                 }
             }
@@ -949,7 +959,7 @@ class MasterDataAdminController extends Controller
                         ])->save();
                         $counts['workflow_step_departments']++;
                     } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor WorkflowStepDepartment ID ' . ($d['id'] ?? '') . ': ' . $e->getMessage());
+                        Log::warning('Gagal mengimpor WorkflowStepDepartment ID '.($d['id'] ?? '').': '.$e->getMessage());
                     }
                 }
             }
@@ -970,7 +980,7 @@ class MasterDataAdminController extends Controller
                         ])->save();
                         $counts['workflow_step_roles']++;
                     } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor WorkflowStepRole ID ' . ($r['id'] ?? '') . ': ' . $e->getMessage());
+                        Log::warning('Gagal mengimpor WorkflowStepRole ID '.($r['id'] ?? '').': '.$e->getMessage());
                     }
                 }
             }
@@ -992,7 +1002,7 @@ class MasterDataAdminController extends Controller
                         ])->save();
                         $counts['workflow_step_users']++;
                     } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor WorkflowStepUser ID ' . ($u['id'] ?? '') . ': ' . $e->getMessage());
+                        Log::warning('Gagal mengimpor WorkflowStepUser ID '.($u['id'] ?? '').': '.$e->getMessage());
                     }
                 }
             }
@@ -1030,7 +1040,7 @@ class MasterDataAdminController extends Controller
                         ])->save();
                         $counts['workflow_step_actions']++;
                     } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor WorkflowStepAction ID ' . ($a['id'] ?? '') . ': ' . $e->getMessage());
+                        Log::warning('Gagal mengimpor WorkflowStepAction ID '.($a['id'] ?? '').': '.$e->getMessage());
                     }
                 }
             }
@@ -1061,7 +1071,7 @@ class MasterDataAdminController extends Controller
                         );
                         $counts['form_templates']++;
                     } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor FormTemplate ID ' . ($ft['id'] ?? '') . ': ' . $e->getMessage());
+                        Log::warning('Gagal mengimpor FormTemplate ID '.($ft['id'] ?? '').': '.$e->getMessage());
                     }
                 }
             }
@@ -1092,7 +1102,7 @@ class MasterDataAdminController extends Controller
                         );
                         $counts['form_fields']++;
                     } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor FormField ID ' . ($ff['id'] ?? '') . ': ' . $e->getMessage());
+                        Log::warning('Gagal mengimpor FormField ID '.($ff['id'] ?? '').': '.$e->getMessage());
                     }
                 }
             }
@@ -1125,7 +1135,7 @@ class MasterDataAdminController extends Controller
                         );
                         $counts['contract_types']++;
                     } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor ContractType ' . ($t['code'] ?? '') . ': ' . $e->getMessage());
+                        Log::warning('Gagal mengimpor ContractType '.($t['code'] ?? '').': '.$e->getMessage());
                     }
                 }
 
@@ -1140,7 +1150,7 @@ class MasterDataAdminController extends Controller
                             ContractType::where('code', $t['code'])->update(['parent_id' => $parentId]);
                         }
                     } catch (\Exception $e) {
-                        Log::warning('Gagal mengupdate parent ContractType ' . ($t['code'] ?? '') . ': ' . $e->getMessage());
+                        Log::warning('Gagal mengupdate parent ContractType '.($t['code'] ?? '').': '.$e->getMessage());
                     }
                 }
             }
@@ -1160,7 +1170,7 @@ class MasterDataAdminController extends Controller
                         }
 
                         if ($roleId && $moduleId) {
-                            \App\Models\AccessModule::updateOrCreate(
+                            AccessModule::updateOrCreate(
                                 ! empty($am['id']) ? ['id' => $am['id']] : ['role_id' => $roleId, 'module_id' => $moduleId],
                                 [
                                     'role_id' => $roleId,
@@ -1179,7 +1189,7 @@ class MasterDataAdminController extends Controller
                             $counts['access_mappings']++;
                         }
                     } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor AccessModule: ' . $e->getMessage());
+                        Log::warning('Gagal mengimpor AccessModule: '.$e->getMessage());
                     }
                 }
             }
@@ -1192,7 +1202,7 @@ class MasterDataAdminController extends Controller
                         $groupId = $moduleGroupMap[$rmg['module_group_name']] ?? null;
 
                         if ($roleId && $groupId) {
-                            \App\Models\RoleModuleGroup::updateOrCreate(
+                            RoleModuleGroup::updateOrCreate(
                                 ! empty($rmg['id']) ? ['id' => $rmg['id']] : [
                                     'role_id' => $roleId,
                                     'module_group_id' => $groupId,
@@ -1208,7 +1218,7 @@ class MasterDataAdminController extends Controller
                                 foreach ($rmg['modules'] as $m) {
                                     $moduleId = $moduleMap[$m['module_identifier']] ?? null;
                                     if ($moduleId) {
-                                        \App\Models\AccessModule::updateOrCreate(
+                                        AccessModule::updateOrCreate(
                                             [
                                                 'role_id' => $roleId,
                                                 'module_id' => $moduleId,
@@ -1226,7 +1236,7 @@ class MasterDataAdminController extends Controller
                             $counts['role_navigation_mappings']++;
                         }
                     } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor RoleModuleGroup: ' . $e->getMessage());
+                        Log::warning('Gagal mengimpor RoleModuleGroup: '.$e->getMessage());
                     }
                 }
             }
@@ -1248,11 +1258,11 @@ class MasterDataAdminController extends Controller
 
             return redirect()->route('admin.master-data-sync')->with('success', $successMsg);
         } catch (\Exception $e) {
-            Log::error('Master Data Import Error: ' . $e->getMessage(), [
+            Log::error('Master Data Import Error: '.$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return back()->withErrors(['error' => 'Gagal mengimpor data master: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Gagal mengimpor data master: '.$e->getMessage()]);
         }
     }
 
@@ -1278,7 +1288,7 @@ class MasterDataAdminController extends Controller
                 try {
                     // 1. Transactional Contracts
                     if (in_array('contracts', $entities)) {
-                        if (\Illuminate\Support\Facades\Schema::hasTable('t_contracts') && \Illuminate\Support\Facades\Schema::hasColumn('t_contracts', 'parent_id')) {
+                        if (Schema::hasTable('t_contracts') && Schema::hasColumn('t_contracts', 'parent_id')) {
                             DB::table('t_contracts')->update(['parent_id' => null]);
                         }
                         DB::table('t_approvals')->delete();
@@ -1318,7 +1328,7 @@ class MasterDataAdminController extends Controller
 
                     // 4. Contract Types
                     if (in_array('contract_types', $entities)) {
-                        if (\Illuminate\Support\Facades\Schema::hasTable('m_contract_types') && \Illuminate\Support\Facades\Schema::hasColumn('m_contract_types', 'parent_id')) {
+                        if (Schema::hasTable('m_contract_types') && Schema::hasColumn('m_contract_types', 'parent_id')) {
                             DB::table('m_contract_types')->update(['parent_id' => null]);
                         }
                         DB::table('m_contract_types')->delete();
@@ -1332,7 +1342,7 @@ class MasterDataAdminController extends Controller
                     // 6. Companies
                     if (in_array('companies', $entities)) {
                         DB::table('m_companies')->delete();
-                        if (\Illuminate\Support\Facades\Schema::hasTable('m_company')) {
+                        if (Schema::hasTable('m_company')) {
                             DB::table('m_company')->delete();
                         }
                     }
@@ -1345,7 +1355,7 @@ class MasterDataAdminController extends Controller
                     // 8. Company Groups
                     if (in_array('company_groups', $entities)) {
                         DB::table('m_company_groups')->delete();
-                        if (\Illuminate\Support\Facades\Schema::hasTable('m_company_group')) {
+                        if (Schema::hasTable('m_company_group')) {
                             DB::table('m_company_group')->delete();
                         }
                     }
@@ -1375,11 +1385,11 @@ class MasterDataAdminController extends Controller
 
             return redirect()->route('admin.master-data-sync')->with('success', 'Entitas data terpilih berhasil dibersihkan.');
         } catch (\Exception $e) {
-            Log::error('Gagal membersihkan data master: ' . $e->getMessage(), [
+            Log::error('Gagal membersihkan data master: '.$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return redirect()->route('admin.master-data-sync')->with('error', 'Gagal membersihkan data terpilih: ' . $e->getMessage());
+            return redirect()->route('admin.master-data-sync')->with('error', 'Gagal membersihkan data terpilih: '.$e->getMessage());
         }
     }
 }

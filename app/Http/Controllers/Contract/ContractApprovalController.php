@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Contract;
 
 use App\Actions\Contract\ApproveContractAction;
 use App\Actions\Contract\ExportContractAction;
@@ -9,8 +9,10 @@ use App\Actions\Contract\RejectContractAction;
 use App\Actions\Contract\StoreContractAction;
 use App\Actions\Contract\UpdateContractAction;
 use App\Formatters\ContractFormatter;
+use App\Http\Controllers\Controller;
 use App\Models\Approval;
 use App\Models\Contract;
+use App\Models\Role;
 use App\Models\User;
 use App\Models\WorkflowStep;
 use App\Services\ContractWorkflowService;
@@ -255,7 +257,7 @@ class ContractApprovalController extends Controller
             // Validate that we are not removing any non-pending/waiting approvers
             $existingNonPendingUserIds = Approval::where('contract_id', $contract->id)
                 ->where('workflow_step_id', $targetStepId)
-                ->where('role', \App\Models\Role::ADHOC_APPROVER)
+                ->where('role', Role::ADHOC_APPROVER)
                 ->whereNotIn('status', ['pending', 'waiting'])
                 ->pluck('user_id')
                 ->toArray();
@@ -268,7 +270,7 @@ class ContractApprovalController extends Controller
             // Remove unselected pending/waiting ad-hoc approvers
             $query = Approval::where('contract_id', $contract->id)
                 ->where('workflow_step_id', $targetStepId)
-                ->where('role', \App\Models\Role::ADHOC_APPROVER)
+                ->where('role', Role::ADHOC_APPROVER)
                 ->whereIn('status', ['pending', 'waiting']);
 
             if (empty($userIds)) {
@@ -304,7 +306,7 @@ class ContractApprovalController extends Controller
                 } elseif ($isSequential) {
                     $hasPending = Approval::where('contract_id', $contract->id)
                         ->where('workflow_step_id', $targetStepId)
-                        ->where('role', \App\Models\Role::ADHOC_APPROVER)
+                        ->where('role', Role::ADHOC_APPROVER)
                         ->where('status', 'pending')
                         ->exists();
 
@@ -327,7 +329,7 @@ class ContractApprovalController extends Controller
                     'workflow_step_id' => $targetStepId,
                     'user_id' => $user->id,
                     'approver_name' => $user->name,
-                    'role' => \App\Models\Role::ADHOC_APPROVER,
+                    'role' => Role::ADHOC_APPROVER,
                     'job_title' => $user->job_title ?? null,
                     'status' => $status,
                     'sequence' => $targetStep->step,
@@ -346,7 +348,7 @@ class ContractApprovalController extends Controller
             if ($isCurrentStep) {
                 $hasActiveAdhoc = Approval::where('contract_id', $contract->id)
                     ->where('workflow_step_id', $targetStepId)
-                    ->where('role', \App\Models\Role::ADHOC_APPROVER)
+                    ->where('role', Role::ADHOC_APPROVER)
                     ->whereIn('status', ['pending', 'waiting'])
                     ->exists();
 
@@ -371,7 +373,7 @@ class ContractApprovalController extends Controller
                 $count = count($addedUsers);
                 $contract->histories()->create([
                     'action' => 'ADHOC_APPROVER_ADDED',
-                    'description' => "{$count} persetujuan tambahan ditambahkan oleh {$actorName}. Catatan: " . $request->input('note'),
+                    'description' => "{$count} persetujuan tambahan ditambahkan oleh {$actorName}. Catatan: ".$request->input('note'),
                     'actor_id' => Auth::id(),
                 ]);
             }
@@ -392,7 +394,7 @@ class ContractApprovalController extends Controller
             // Activate any inactive (draft/staged) ad-hoc approvals for the current step
             Approval::where('contract_id', $contract->id)
                 ->where('workflow_step_id', $contract->workflow_step_id)
-                ->where('role', \App\Models\Role::ADHOC_APPROVER)
+                ->where('role', Role::ADHOC_APPROVER)
                 ->where('is_active', false)
                 ->update(['is_active' => true, 'status' => 'pending']);
 
@@ -410,7 +412,7 @@ class ContractApprovalController extends Controller
             $contract = Contract::findOrFail($id);
             $approval = Approval::where('contract_id', $id)->findOrFail($approvalId);
 
-            if ($approval->role !== \App\Models\Role::ADHOC_APPROVER) {
+            if ($approval->role !== Role::ADHOC_APPROVER) {
                 return response()->json(['message' => 'Hanya persetujuan tambahan yang dapat dihapus.'], 403);
             }
 

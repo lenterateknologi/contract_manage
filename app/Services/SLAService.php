@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Carbon\Carbon;
+use Carbon\CarbonInterface;
 
 class SLAService
 {
@@ -14,11 +15,11 @@ class SLAService
     /**
      * Calculate a deadline based on business days (Mon-Fri) and dynamic cut-off.
      *
-     * @param \Carbon\CarbonInterface $startTime The time the request was submitted.
-     * @param int $businessHours The number of hours to add (e.g., 72 for 3 days).
-     * @param int $cutoffHour The hour at which submission counts for next day (default 16).
+     * @param  CarbonInterface  $startTime  The time the request was submitted.
+     * @param  int  $businessHours  The number of hours to add (e.g., 72 for 3 days).
+     * @param  int  $cutoffHour  The hour at which submission counts for next day (default 16).
      */
-    public function calculateBusinessDeadline(\Carbon\CarbonInterface $startTime, int $businessHours, int $cutoffHour = 16): Carbon
+    public function calculateBusinessDeadline(CarbonInterface $startTime, int $businessHours, int $cutoffHour = 16): Carbon
     {
         $date = Carbon::instance($startTime);
 

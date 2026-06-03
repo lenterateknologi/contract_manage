@@ -24,9 +24,6 @@ import { useMemo } from 'react';
 import { ApproveModal } from './modals/ApproveModal';
 import { AssignModal } from './modals/AssignModal';
 import { RejectModal } from './modals/RejectModal';
-import { ReturnModal } from './modals/ReturnModal';
-import { ReviewModal } from './modals/ReviewModal';
-import { UploadModal } from './modals/UploadModal';
 import { SignerModal } from './modals/SignerModal';
 import { ForwardModal } from './modals/ForwardModal';
 
@@ -1002,7 +999,7 @@ export default function SortableStepItem({
                                     Belum ada aksi yang dikonfigurasi. Klik tombol di atas untuk menambah.
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-2">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-2">
                                     {actions.map((act: any, actIdx: number) => {
                                         return (
                                             <div key={act.id || actIdx} className="relative animate-in fade-in duration-300">
@@ -1041,18 +1038,12 @@ export default function SortableStepItem({
 
             <RejectModal isOpen={activeModal === 'reject'} onClose={() => setActiveModal(null)} step={step} idx={idx} showToast={showToast} />
 
-            <ReturnModal isOpen={activeModal === 'return'} onClose={() => setActiveModal(null)} step={step} idx={idx} showToast={showToast} />
-
             <AssignModal
                 isOpen={activeModal === 'assign_pic'}
                 onClose={() => setActiveModal(null)}
                 assigneeOptions={assigneeOptions || []}
                 showToast={showToast}
             />
-
-            <UploadModal isOpen={activeModal === 'upload'} onClose={() => setActiveModal(null)} step={step} showToast={showToast} />
-
-            <ReviewModal isOpen={activeModal === 'review'} onClose={() => setActiveModal(null)} step={step} idx={idx} showToast={showToast} />
 
             <SignerModal
                 isOpen={activeModal === 'sign'}

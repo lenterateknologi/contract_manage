@@ -12,7 +12,7 @@ use Symfony\Component\HttpFoundation\Response;
 class LogHttpRequest
 {
     /**
-     * @param Closure(Request): (Response) $next
+     * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -49,7 +49,7 @@ class LogHttpRequest
 
             $body = $request->isMethod('get') ? null : json_encode($allData);
             if ($body && strlen($body) > 60000) {
-                $body = substr($body, 0, 60000) . '... [TRUNCATED]';
+                $body = substr($body, 0, 60000).'... [TRUNCATED]';
             }
 
             HttpLog::create([
@@ -68,7 +68,7 @@ class LogHttpRequest
                 'created_at' => now(),
             ]);
         } catch (\Exception $e) {
-            Log::error('LogHttpRequest termination error: ' . $e->getMessage());
+            Log::error('LogHttpRequest termination error: '.$e->getMessage());
         }
     }
 }

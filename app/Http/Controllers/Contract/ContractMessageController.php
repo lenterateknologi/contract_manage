@@ -1,12 +1,15 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Contract;
 
+use App\Http\Controllers\Controller;
 use App\Models\Contract;
 use App\Models\ContractMessage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\File;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ContractMessageController extends Controller
 {
@@ -21,7 +24,7 @@ class ContractMessageController extends Controller
             'message' => $m->message,
             'read_by' => $m->read_by ?? [],
             'created_at' => $m->created_at->format('Y-m-d H:i'),
-            'attachment_url' => $m->attachment_path ? asset('storage/' . $m->attachment_path) : null,
+            'attachment_url' => $m->attachment_path ? asset('storage/'.$m->attachment_path) : null,
             'attachment_name' => $m->attachment_name,
             'user' => $m->user ? [
                 'id' => $m->user->id,
@@ -72,7 +75,7 @@ class ContractMessageController extends Controller
             'id' => $msg->id,
             'user_id' => $msg->user_id,
             'message' => $msg->message,
-            'attachment_url' => $msg->attachment_path ? asset('storage/' . $msg->attachment_path) : null,
+            'attachment_url' => $msg->attachment_path ? asset('storage/'.$msg->attachment_path) : null,
             'attachment_name' => $msg->attachment_name,
             'read_by' => $msg->read_by,
             'created_at' => $msg->created_at->format('Y-m-d H:i'),
@@ -105,23 +108,23 @@ class ContractMessageController extends Controller
         return response()->json(['marked' => $messages->count()]);
     }
 
-    public function downloadAttachment(string $messageId): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    public function downloadAttachment(string $messageId): BinaryFileResponse
     {
         $msg = ContractMessage::findOrFail($messageId);
         if (! $msg->attachment_path) {
             abort(404);
         }
 
-        $path = storage_path('app/public/' . $msg->attachment_path);
+        $path = storage_path('app/public/'.$msg->attachment_path);
         if (! file_exists($path)) {
             abort(404);
         }
 
-        $mime = \Illuminate\Support\Facades\File::mimeType($path);
+        $mime = File::mimeType($path);
 
         return response()->file($path, [
             'Content-Type' => $mime,
-            'Content-Disposition' => 'inline; filename="' . $msg->attachment_name . '"',
+            'Content-Disposition' => 'inline; filename="'.$msg->attachment_name.'"',
         ]);
     }
 }

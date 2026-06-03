@@ -9,9 +9,9 @@ class UsersExport implements WithMultipleSheets
     public function sheets(): array
     {
         return [
-            new EmployeesExport(),
-            new RolesExport(),
-            new DepartmentsExport(),
+            new EmployeesExport,
+            new RolesExport,
+            new DepartmentsExport,
         ];
     }
 }

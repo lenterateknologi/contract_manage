@@ -15,6 +15,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\Workflow;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
@@ -26,8 +27,8 @@ class WorkflowAdminController extends Controller
             ->when($request->search, function ($q, $search) {
                 $search = strtolower($search);
                 $q->where(function ($qq) use ($search) {
-                    $qq->where(\Illuminate\Support\Facades\DB::raw('LOWER(name)'), 'like', "%{$search}%")
-                        ->orWhere(\Illuminate\Support\Facades\DB::raw('LOWER(description)'), 'like', "%{$search}%");
+                    $qq->where(DB::raw('LOWER(name)'), 'like', "%{$search}%")
+                        ->orWhere(DB::raw('LOWER(description)'), 'like', "%{$search}%");
                 });
             })
             ->when($request->contract_type_id, function ($q, $type) {
@@ -217,11 +218,11 @@ class WorkflowAdminController extends Controller
 
             return redirect()->route('admin.workflows')->with('success', 'Workflow berhasil dibuat.');
         } catch (\Exception $e) {
-            Log::error('Workflow Store Error: ' . $e->getMessage(), [
+            Log::error('Workflow Store Error: '.$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return back()->withErrors(['error' => 'Gagal menyimpan alur kerja: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Gagal menyimpan alur kerja: '.$e->getMessage()]);
         }
     }
 
@@ -292,9 +293,9 @@ class WorkflowAdminController extends Controller
 
             return redirect()->route('admin.workflows.edit', $workflow->id)->with('success', 'Workflow berhasil diperbarui.');
         } catch (\Exception $e) {
-            Log::error('Workflow Update Error: ' . $e->getMessage());
+            Log::error('Workflow Update Error: '.$e->getMessage());
 
-            return back()->withErrors(['error' => 'Gagal memperbarui alur kerja: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Gagal memperbarui alur kerja: '.$e->getMessage()]);
         }
     }
 
@@ -312,11 +313,11 @@ class WorkflowAdminController extends Controller
 
             return redirect()->route('admin.workflows')->with('success', "Alur kerja '{$workflow->name}' berhasil diduplikasi sebagai '{$newWorkflow->name}'.");
         } catch (\Exception $e) {
-            Log::error('Workflow Duplicate Error: ' . $e->getMessage(), [
+            Log::error('Workflow Duplicate Error: '.$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return back()->withErrors(['error' => 'Gagal menduplikasi alur kerja: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Gagal menduplikasi alur kerja: '.$e->getMessage()]);
         }
     }
 
@@ -392,7 +393,7 @@ class WorkflowAdminController extends Controller
 
         Workflow::whereIn('id', $ids)->delete();
 
-        return back()->with('success', count($ids) . ' alur kerja berhasil dihapus.');
+        return back()->with('success', count($ids).' alur kerja berhasil dihapus.');
     }
 
     public function export(Request $request)
@@ -518,7 +519,7 @@ class WorkflowAdminController extends Controller
             $exportData[] = $workflowData;
         }
 
-        $fileName = 'workflows_export_' . date('Ymd_His') . '.json';
+        $fileName = 'workflows_export_'.date('Ymd_His').'.json';
 
         return response()->streamDownload(function () use ($exportData) {
             echo json_encode($exportData, JSON_PRETTY_PRINT);
@@ -547,13 +548,13 @@ class WorkflowAdminController extends Controller
             }
 
             $count = 0;
-            \Illuminate\Support\Facades\DB::transaction(function () use ($data, $action, &$count) {
+            DB::transaction(function () use ($data, $action, &$count) {
                 foreach ($data as $workflowData) {
                     $originalName = $workflowData['name'] ?? 'Imported Workflow';
                     $name = $originalName;
                     $i = 1;
                     while (Workflow::where('name', $name)->exists()) {
-                        $name = $originalName . " (Copy {$i})";
+                        $name = $originalName." (Copy {$i})";
                         $i++;
                     }
                     $workflowData['name'] = $name;
@@ -566,11 +567,11 @@ class WorkflowAdminController extends Controller
 
             return redirect()->route('admin.workflows')->with('success', "{$count} Alur Kerja berhasil diimpor.");
         } catch (\Exception $e) {
-            Log::error('Workflow Import Error: ' . $e->getMessage(), [
+            Log::error('Workflow Import Error: '.$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return back()->withErrors(['error' => 'Gagal mengimpor alur kerja: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Gagal mengimpor alur kerja: '.$e->getMessage()]);
         }
     }
 }

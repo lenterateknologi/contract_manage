@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Auth;
 
+use App\Http\Controllers\Controller;
 use App\Mail\ForgotPasswordResetMail;
 use App\Models\ForgotPassword;
 use App\Models\User;

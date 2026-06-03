@@ -5,6 +5,8 @@ namespace App\Actions\Contract;
 use App\Jobs\GeneratePdfJob;
 use App\Models\Contract;
 use App\Models\ContractFormSubmission;
+use App\Models\ContractFormSubmissionVersion;
+use App\Models\ContractHistory;
 use App\Models\FormTemplate;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -14,6 +16,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
+use Spatie\Browsershot\Browsershot;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ExportContractAction
@@ -35,19 +38,19 @@ class ExportContractAction
             $query->whereDate('created_at', '<=', $request->date_to);
         }
         if ($request->search) {
-            $query->where('description', 'like', '%' . $request->search . '%');
+            $query->where('description', 'like', '%'.$request->search.'%');
         }
 
         $histories = $query->get();
 
         $headers = [
             'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="audit_trail_' . Str::slug($contract->contract_no ?: 'contract') . '_' . date('Ymd') . '.csv"',
+            'Content-Disposition' => 'attachment; filename="audit_trail_'.Str::slug($contract->contract_no ?: 'contract').'_'.date('Ymd').'.csv"',
         ];
 
         return new StreamedResponse(function () use ($histories, $contract) {
             $handle = fopen('php://output', 'w');
-            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF)); // BOM for Excel
+            fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF)); // BOM for Excel
 
             fputcsv($handle, [
                 'Waktu',
@@ -58,7 +61,7 @@ class ExportContractAction
                 'Aktor',
             ]);
 
-            /** @var \App\Models\ContractHistory $h */
+            /** @var ContractHistory $h */
             foreach ($histories as $h) {
                 fputcsv($handle, [
                     $h->created_at?->format('Y-m-d H:i:s') ?? '',
@@ -100,7 +103,7 @@ class ExportContractAction
             );
 
             $safeNo = Str::slug($contract->contract_no ?: 'contract');
-            $fileName = "Approval_Timeline_{$safeNo}_" . time() . '.pdf';
+            $fileName = "Approval_Timeline_{$safeNo}_".time().'.pdf';
 
             GeneratePdfJob::dispatch(
                 $jobId,
@@ -114,7 +117,7 @@ class ExportContractAction
                 'message' => 'Laporan alur approval sedang diproses.',
             ]);
         } catch (\Exception $e) {
-            Log::error('Failed to queue Approval Timeline PDF: ' . $e->getMessage());
+            Log::error('Failed to queue Approval Timeline PDF: '.$e->getMessage());
 
             return response()->json([
                 'success' => false,
@@ -147,13 +150,13 @@ class ExportContractAction
             }
 
             $safeNo = Str::slug($contract->contract_no ?: 'contract');
-            $fileName = 'Audit_Trail_' . $safeNo . '_' . time() . '.pdf';
+            $fileName = 'Audit_Trail_'.$safeNo.'_'.time().'.pdf';
 
             Log::info("Dispatching Audit PDF Job: {$jobId}");
 
             GeneratePdfJob::dispatch($jobId, $printUrl, $fileName);
 
-            Cache::put('pdf_status_' . $jobId, ['status' => 'pending', 'progress' => 10], 1800);
+            Cache::put('pdf_status_'.$jobId, ['status' => 'pending', 'progress' => 10], 1800);
 
             return response()->json([
                 'success' => true,
@@ -161,9 +164,9 @@ class ExportContractAction
             ]);
 
         } catch (\Exception $e) {
-            Log::critical('Audit PDF Queue Failure: ' . $e->getMessage());
+            Log::critical('Audit PDF Queue Failure: '.$e->getMessage());
 
-            return response()->json(['message' => 'Gagal antrikan PDF: ' . $e->getMessage()], 500);
+            return response()->json(['message' => 'Gagal antrikan PDF: '.$e->getMessage()], 500);
         }
     }
 
@@ -182,7 +185,7 @@ class ExportContractAction
                 $printUrl = str_replace('localhost', '127.0.0.1', $printUrl);
             }
 
-            $pdfContent = \Spatie\Browsershot\Browsershot::url($printUrl)
+            $pdfContent = Browsershot::url($printUrl)
                 ->setNodeBinary('/opt/homebrew/bin/node')
                 ->setNpmBinary('/opt/homebrew/bin/npm')
                 ->setChromePath('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
@@ -202,9 +205,9 @@ class ExportContractAction
                 ->showBackground()
                 ->setDelay(500);
 
-            $pdfDir = 'contracts/' . $contract->id . '/pdfs';
-            $pdfFileName = 'Audit_Trail_' . Str::slug($contract->contract_no) . '_' . md5($printUrl) . '.pdf';
-            $pdfPath = $pdfDir . '/' . $pdfFileName;
+            $pdfDir = 'contracts/'.$contract->id.'/pdfs';
+            $pdfFileName = 'Audit_Trail_'.Str::slug($contract->contract_no).'_'.md5($printUrl).'.pdf';
+            $pdfPath = $pdfDir.'/'.$pdfFileName;
             $disposition = 'attachment';
 
             if (Storage::disk('local')->exists($pdfPath)) {
@@ -223,13 +226,13 @@ class ExportContractAction
                 ->header('Content-Disposition', "$disposition; filename=\"{$pdfFileName}\"");
 
         } catch (\Exception $e) {
-            Log::error('Audit Trail Browsershot Export Failed: ' . $e->getMessage());
+            Log::error('Audit Trail Browsershot Export Failed: '.$e->getMessage());
 
             $contract->load(['creator', 'contractType']);
 
             $query = $contract->histories()->with('actor');
             if ($request->filled('search')) {
-                $query->where('description', 'like', '%' . $request->search . '%');
+                $query->where('description', 'like', '%'.$request->search.'%');
             }
             if ($request->filled('actor_id')) {
                 $query->where('actor_id', $request->actor_id);
@@ -269,7 +272,7 @@ class ExportContractAction
         }
 
         if (! $template) {
-            Log::error("Template not found in PDF Queue. Type: {$type}, Provided ID: " . ($templateId ?? 'none'));
+            Log::error("Template not found in PDF Queue. Type: {$type}, Provided ID: ".($templateId ?? 'none'));
 
             return response()->json(['message' => 'Template not found.'], 404);
         }
@@ -278,7 +281,7 @@ class ExportContractAction
         if ($formDataRaw) {
             $formData = is_string($formDataRaw) ? json_decode($formDataRaw, true) : $formDataRaw;
         } else {
-            /** @var \App\Models\ContractFormSubmissionVersion|null $latestVersion */
+            /** @var ContractFormSubmissionVersion|null $latestVersion */
             $latestVersion = $submission ? $submission->versions()->orderByDesc('version_no')->first() : null;
             $formData = $latestVersion ? ($latestVersion->form_data ?? []) : [];
         }
@@ -296,7 +299,7 @@ class ExportContractAction
 
         try {
             $jobId = (string) Str::uuid();
-            $cacheKey = 'pdf_adhoc_' . $jobId;
+            $cacheKey = 'pdf_adhoc_'.$jobId;
 
             Log::info("Prepping PDF Cache: {$cacheKey}");
             Cache::put($cacheKey, [
@@ -315,25 +318,25 @@ class ExportContractAction
             }
 
             $safeNo = $contract->contract_no ? Str::slug($contract->contract_no) : 'contract';
-            $fileName = $safeNo . '_' . strtoupper($type) . '_' . time() . '.pdf';
+            $fileName = $safeNo.'_'.strtoupper($type).'_'.time().'.pdf';
 
             Log::info("Dispatching PDF Job: {$jobId} for file: {$fileName}");
             GeneratePdfJob::dispatch($jobId, $printUrl, $fileName);
 
-            Cache::put('pdf_status_' . $jobId, ['status' => 'pending', 'progress' => 10], 1800);
+            Cache::put('pdf_status_'.$jobId, ['status' => 'pending', 'progress' => 10], 1800);
 
             return response()->json([
                 'success' => true,
                 'job_id' => $jobId,
             ]);
         } catch (\Exception $e) {
-            Log::critical("PDF Queue Failure for ID {$contract->id}: " . $e->getMessage(), [
+            Log::critical("PDF Queue Failure for ID {$contract->id}: ".$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
                 'type' => $type,
             ]);
 
             return response()->json([
-                'message' => 'Gagal antrikan PDF: ' . $e->getMessage(),
+                'message' => 'Gagal antrikan PDF: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -352,7 +355,7 @@ class ExportContractAction
             ->where('document_type', $type)
             ->first();
 
-        /** @var \App\Models\ContractFormSubmissionVersion|null $latestVersion */
+        /** @var ContractFormSubmissionVersion|null $latestVersion */
         $latestVersion = $submission ? $submission->versions()->orderByDesc('version_no')->first() : null;
         $formData = $latestVersion ? ($latestVersion->form_data ?? []) : [];
 
@@ -361,7 +364,7 @@ class ExportContractAction
                 ->where('document_type', 'f1')
                 ->first();
 
-            /** @var \App\Models\ContractFormSubmissionVersion|null $latestF1 */
+            /** @var ContractFormSubmissionVersion|null $latestF1 */
             $latestF1 = $f1Submission ? $f1Submission->versions()->orderByDesc('version_no')->first() : null;
             $f1Data = $latestF1 ? ($latestF1->form_data ?? []) : [];
 
@@ -396,7 +399,7 @@ class ExportContractAction
                 $printUrl = str_replace('localhost', '127.0.0.1', $printUrl);
             }
 
-            $pdfContent = \Spatie\Browsershot\Browsershot::url($printUrl)
+            $pdfContent = Browsershot::url($printUrl)
                 ->setNodeBinary('/opt/homebrew/bin/node')
                 ->setNpmBinary('/opt/homebrew/bin/npm')
                 ->setChromePath('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
@@ -429,7 +432,7 @@ class ExportContractAction
                 ->header('Content-Disposition', "$disposition; filename=\"{$pdfFileName}\"");
 
         } catch (\Exception $e) {
-            Log::error('Browsershot Export Failed: ' . $e->getMessage());
+            Log::error('Browsershot Export Failed: '.$e->getMessage());
 
             $fields = $template->fields->sortBy('order');
             $pdf = Pdf::loadView('pdf.form-template', [
@@ -440,7 +443,7 @@ class ExportContractAction
             ]);
 
             $safeNo = Str::slug($contract->contract_no ?: 'contract');
-            $fileName = $safeNo . '_' . strtoupper($type) . '.pdf';
+            $fileName = $safeNo.'_'.strtoupper($type).'.pdf';
             if ($disposition === 'inline') {
                 return $pdf->stream($fileName);
             }

@@ -26,13 +26,13 @@ class ContractAssignedNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $url = url('/contracts?search=' . $this->contract->contract_no);
+        $url = url('/contracts?search='.$this->contract->contract_no);
 
-        return (new MailMessage())
-            ->subject('Kontrak Baru Ditugaskan: ' . $this->contract->title)
+        return (new MailMessage)
+            ->subject('Kontrak Baru Ditugaskan: '.$this->contract->title)
             ->line('Tim Legal telah membuatkan draft kontrak untuk Anda.')
-            ->line('Nama Kontrak: ' . $this->contract->title)
-            ->line('Nomor Kontrak: ' . $this->contract->contract_no)
+            ->line('Nama Kontrak: '.$this->contract->title)
+            ->line('Nomor Kontrak: '.$this->contract->contract_no)
             ->action('Lihat Kontrak', $url)
             ->line('Silakan tinjau draf kontrak tersebut untuk melanjutkan proses.');
     }

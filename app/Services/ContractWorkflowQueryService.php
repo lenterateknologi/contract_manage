@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Approval;
 use App\Models\Contract;
+use App\Models\ContractType;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
@@ -51,7 +52,7 @@ class ContractWorkflowQueryService
                         ->orWhereNull('contract_type_id')
                         ->orWhere('is_default', true);
                 } else {
-                    $typeId = \App\Models\ContractType::where('code', $contractType)
+                    $typeId = ContractType::where('code', $contractType)
                         ->orWhere('name', $contractType)
                         ->value('id');
                     if ($typeId) {

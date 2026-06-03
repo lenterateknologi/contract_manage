@@ -2,22 +2,30 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\DepartmentsWorkbookExport;
 use App\Http\Controllers\Controller;
+use App\Imports\DepartmentsImport;
 use App\Models\AccessModule;
 use App\Models\ContractStatus;
+use App\Models\ContractTemplate;
 use App\Models\ContractType;
 use App\Models\Department;
+use App\Models\FormTemplate;
 use App\Models\Module;
 use App\Models\ModuleGroup;
+use App\Models\NumberingFormat;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use Inertia\Response;
+use Maatwebsite\Excel\Facades\Excel;
 
 class MasterConfigController extends Controller
 {
     // ─── Contract Types ───────────────────────────────────────────────────────
 
-    public function contractTypes(Request $request): \Inertia\Response
+    public function contractTypes(Request $request): Response
     {
         $sortBy = $request->input('sort_by', 'name');
         $sortDir = $request->input('sort_dir', 'asc');
@@ -39,16 +47,16 @@ class MasterConfigController extends Controller
                 function ($q, $s) {
                     $s = strtolower($s);
 
-                    return $q->where(\Illuminate\Support\Facades\DB::raw('LOWER(name)'), 'like', "%{$s}%")
-                        ->orWhere(\Illuminate\Support\Facades\DB::raw('LOWER(description)'), 'like', "%{$s}%");
+                    return $q->where(DB::raw('LOWER(name)'), 'like', "%{$s}%")
+                        ->orWhere(DB::raw('LOWER(description)'), 'like', "%{$s}%");
                 },
             );
 
         return Inertia::render('admin/index', [
             'currentView' => 'contract-types',
             'types' => $query->orderBy($sortBy, $sortDir)->paginate($request->input('per_page', 10))->withQueryString(),
-            'formTemplates' => \App\Models\FormTemplate::where('is_active', true)->orderBy('name')->get(),
-            'contractTemplates' => \App\Models\ContractTemplate::orderBy('name')->get(),
+            'formTemplates' => FormTemplate::where('is_active', true)->orderBy('name')->get(),
+            'contractTemplates' => ContractTemplate::orderBy('name')->get(),
             'filters' => $request->only(['search', 'sort_by', 'sort_dir']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
@@ -96,10 +104,10 @@ class MasterConfigController extends Controller
     public function updateContractType(Request $request, ContractType $type)
     {
         $data = $request->validate([
-            'code' => 'required|string|max:100|unique:m_contract_types,code,' . $type->id,
-            'name' => 'required|string|max:255|unique:m_contract_types,name,' . $type->id,
+            'code' => 'required|string|max:100|unique:m_contract_types,code,'.$type->id,
+            'name' => 'required|string|max:255|unique:m_contract_types,name,'.$type->id,
             'description' => 'nullable|string',
-            'parent_id' => 'nullable|uuid|exists:m_contract_types,id|not_in:' . $type->id,
+            'parent_id' => 'nullable|uuid|exists:m_contract_types,id|not_in:'.$type->id,
             'f1_input_mechanism' => 'nullable|string|in:manual,digital,folder',
             'f1_form_template_id' => 'nullable|uuid|exists:m_form_templates,id',
             'f1_contract_template_id' => 'nullable|uuid|exists:m_contract_templates,id',
@@ -127,7 +135,7 @@ class MasterConfigController extends Controller
         }
         ContractType::whereIn('id', $ids)->delete();
 
-        return back()->with('success', count($ids) . ' tipe kontrak berhasil dihapus.');
+        return back()->with('success', count($ids).' tipe kontrak berhasil dihapus.');
     }
 
     // ─── Contract Statuses ────────────────────────────────────────────────────
@@ -140,8 +148,8 @@ class MasterConfigController extends Controller
                 function ($q, $s) {
                     $s = strtolower($s);
 
-                    return $q->where(\Illuminate\Support\Facades\DB::raw('LOWER(label)'), 'like', "%{$s}%")
-                        ->orWhere(\Illuminate\Support\Facades\DB::raw('LOWER(code)'), 'like', "%{$s}%");
+                    return $q->where(DB::raw('LOWER(label)'), 'like', "%{$s}%")
+                        ->orWhere(DB::raw('LOWER(code)'), 'like', "%{$s}%");
                 },
             );
 
@@ -175,7 +183,7 @@ class MasterConfigController extends Controller
     public function updateContractStatus(Request $request, ContractStatus $status)
     {
         $data = $request->validate([
-            'code' => 'required|string|max:50|unique:m_contract_statuses,code,' . $status->id,
+            'code' => 'required|string|max:50|unique:m_contract_statuses,code,'.$status->id,
             'label' => 'required|string|max:255',
             'color' => 'required|string|max:20',
             'bg_color' => 'required|string|max:20',
@@ -203,7 +211,7 @@ class MasterConfigController extends Controller
         }
         ContractStatus::whereIn('id', $ids)->delete();
 
-        return back()->with('success', count($ids) . ' status berhasil dihapus.');
+        return back()->with('success', count($ids).' status berhasil dihapus.');
     }
 
     // ─── Departments ──────────────────────────────────────────────────────────
@@ -216,8 +224,8 @@ class MasterConfigController extends Controller
                 function ($q, $s) {
                     $s = strtolower($s);
 
-                    return $q->where(\Illuminate\Support\Facades\DB::raw('LOWER(name)'), 'like', "%{$s}%")
-                        ->orWhere(\Illuminate\Support\Facades\DB::raw('LOWER(code)'), 'like', "%{$s}%");
+                    return $q->where(DB::raw('LOWER(name)'), 'like', "%{$s}%")
+                        ->orWhere(DB::raw('LOWER(code)'), 'like', "%{$s}%");
                 },
             )
             ->when($request->is_active, function ($q, $active) {
@@ -257,7 +265,7 @@ class MasterConfigController extends Controller
     public function updateDepartment(Request $request, Department $department)
     {
         $data = $request->validate([
-            'code' => 'required|string|max:50|unique:m_departments,code,' . $department->id,
+            'code' => 'required|string|max:50|unique:m_departments,code,'.$department->id,
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'is_active' => 'boolean',
@@ -283,7 +291,7 @@ class MasterConfigController extends Controller
         }
         Department::whereIn('id', $ids)->delete();
 
-        return back()->with('success', count($ids) . ' departemen berhasil dihapus.');
+        return back()->with('success', count($ids).' departemen berhasil dihapus.');
     }
 
     // ─── Navigation & Modules ─────────────────────────────────────────────────
@@ -300,7 +308,7 @@ class MasterConfigController extends Controller
         $query = ModuleGroup::query()->when($request->search, function ($q, $s) {
             $s = strtolower($s);
 
-            return $q->where(\Illuminate\Support\Facades\DB::raw('LOWER(name)'), 'like', "%{$s}%");
+            return $q->where(DB::raw('LOWER(name)'), 'like', "%{$s}%");
         });
 
         return Inertia::render('admin/index', [
@@ -317,8 +325,8 @@ class MasterConfigController extends Controller
             ->when($request->search, function ($q, $s) {
                 $s = strtolower($s);
 
-                return $q->where(\Illuminate\Support\Facades\DB::raw('LOWER(name)'), 'like', "%{$s}%")
-                    ->orWhere(\Illuminate\Support\Facades\DB::raw('LOWER(description)'), 'like', "%{$s}%");
+                return $q->where(DB::raw('LOWER(name)'), 'like', "%{$s}%")
+                    ->orWhere(DB::raw('LOWER(description)'), 'like', "%{$s}%");
             })
             ->when($request->module_group_id, fn ($q, $id) => $q->whereIn('module_group_id', (array) $id));
 
@@ -365,7 +373,7 @@ class MasterConfigController extends Controller
 
     public function updateModuleGroup(Request $request, ModuleGroup $group)
     {
-        $data = $request->validate(['name' => 'required|string|max:255|unique:m_module_groups,name,' . $group->id, 'icon' => 'nullable|string|max:50']);
+        $data = $request->validate(['name' => 'required|string|max:255|unique:m_module_groups,name,'.$group->id, 'icon' => 'nullable|string|max:50']);
         $data['updated_by'] = Auth::id();
         $group->update($data);
 
@@ -387,7 +395,7 @@ class MasterConfigController extends Controller
         }
         ModuleGroup::whereIn('id', $ids)->delete();
 
-        return back()->with('success', count($ids) . ' grup modul berhasil dihapus.');
+        return back()->with('success', count($ids).' grup modul berhasil dihapus.');
     }
 
     public function storeModule(Request $request)
@@ -410,8 +418,8 @@ class MasterConfigController extends Controller
     public function updateModule(Request $request, Module $module)
     {
         $data = $request->validate([
-            'name' => 'required|string|max:255|unique:m_modules,name,' . $module->id,
-            'identifier' => 'required|string|max:50|unique:m_modules,identifier,' . $module->id,
+            'name' => 'required|string|max:255|unique:m_modules,name,'.$module->id,
+            'identifier' => 'required|string|max:50|unique:m_modules,identifier,'.$module->id,
             'module_group_id' => 'required|uuid|exists:m_module_groups,id',
             'route' => 'nullable|string|max:255',
             'icon' => 'nullable|string|max:50',
@@ -439,7 +447,7 @@ class MasterConfigController extends Controller
         }
         Module::whereIn('id', $ids)->delete();
 
-        return back()->with('success', count($ids) . ' modul berhasil dihapus.');
+        return back()->with('success', count($ids).' modul berhasil dihapus.');
     }
 
     // ─── Numbering Formats ────────────────────────────────────────────────────
@@ -448,7 +456,7 @@ class MasterConfigController extends Controller
     {
         return Inertia::render('admin/index', [
             'currentView' => 'numbering-formats',
-            'formats' => \App\Models\NumberingFormat::all(),
+            'formats' => NumberingFormat::all(),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Pengaturan Penomoran', 'href' => route('admin.numbering-formats'), 'icon' => 'Hash'],
@@ -456,7 +464,7 @@ class MasterConfigController extends Controller
         ]);
     }
 
-    public function updateNumberingFormat(Request $request, \App\Models\NumberingFormat $format)
+    public function updateNumberingFormat(Request $request, NumberingFormat $format)
     {
         $data = $request->validate([
             'format_pattern' => 'required|string',
@@ -473,9 +481,9 @@ class MasterConfigController extends Controller
 
     public function exportDepartments()
     {
-        return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Exports\DepartmentsWorkbookExport(),
-            'data_departemen_' . date('Ymd') . '.xlsx',
+        return Excel::download(
+            new DepartmentsWorkbookExport,
+            'data_departemen_'.date('Ymd').'.xlsx',
         );
     }
 
@@ -484,11 +492,11 @@ class MasterConfigController extends Controller
         $request->validate(['file' => 'required|file|mimes:xlsx,xls']);
 
         try {
-            \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\DepartmentsImport(), $request->file('file'));
+            Excel::import(new DepartmentsImport, $request->file('file'));
 
             return back()->with('success', 'Data departemen berhasil diimpor.');
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal mengimpor data: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Gagal mengimpor data: '.$e->getMessage()]);
         }
     }
 }

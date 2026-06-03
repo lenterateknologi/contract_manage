@@ -2,9 +2,6 @@ import {
     CheckCircle2,
     XCircle,
     UserCheck,
-    Upload,
-    Eye,
-    CornerDownLeft,
     FileSignature,
     Settings2
 } from 'lucide-react';
@@ -49,10 +46,7 @@ export const MASTER_ACTIONS = [
     { id: 'approve', code: 'approve', name: 'Setujui' },
     { id: 'reject', code: 'reject', name: 'Tolak' },
     { id: 'assign', code: 'assign', name: 'Tugaskan' },
-    { id: 'upload', code: 'upload', name: 'Unggah Dokumen' },
-    { id: 'review', code: 'review', name: 'Tinjau' },
-    { id: 'return', code: 'return', name: 'Kembalikan' },
-    { id: 'signature', code: 'signature', name: 'Tanda Tangan' },
+    { id: 'signature', code: 'signature', name: 'Upload Tanda Tangan' },
     { id: 'forward', code: 'forward', name: 'Approval Tambahan' },
 ];
 
@@ -77,9 +71,6 @@ export const ACTION_THEMES: Record<string, { color: string; icon: any; actionTyp
     reject: { color: 'bg-rose-500 hover:bg-rose-600', icon: XCircle, actionType: 'reject' },
     assign_pic: { color: 'bg-blue-600 hover:bg-blue-700', icon: UserCheck, actionType: 'assign_pic' },
     assign: { color: 'bg-blue-600 hover:bg-blue-700', icon: UserCheck, actionType: 'assign_pic' },
-    upload: { color: 'bg-indigo-600 hover:bg-indigo-700', icon: Upload, actionType: 'upload' },
-    review: { color: 'bg-indigo-600 hover:bg-indigo-700', icon: Eye, actionType: 'review' },
-    return: { color: 'bg-amber-500 hover:bg-amber-600', icon: CornerDownLeft, actionType: 'return' },
     sign: { color: 'bg-amber-600 hover:bg-amber-700', icon: FileSignature, actionType: 'sign' },
     forward: { color: 'bg-indigo-500 hover:bg-indigo-600', icon: UserCheck, actionType: 'forward' },
 };
@@ -89,9 +80,6 @@ export function getActionTheme(code: string) {
     if (cleanCode === 'approve') return ACTION_THEMES.approve;
     if (cleanCode === 'reject') return ACTION_THEMES.reject;
     if (cleanCode === 'assign_pic' || cleanCode === 'assign') return ACTION_THEMES.assign;
-    if (cleanCode === 'upload') return ACTION_THEMES.upload;
-    if (cleanCode === 'review') return ACTION_THEMES.review;
-    if (cleanCode === 'return' || cleanCode.includes('kembalikan')) return ACTION_THEMES.return;
     if (cleanCode.includes('sign') || cleanCode.includes('tangan') || cleanCode.includes('paraf')) return ACTION_THEMES.sign;
     if (cleanCode === 'forward' || cleanCode === 'add_adhoc') return ACTION_THEMES.forward;
 

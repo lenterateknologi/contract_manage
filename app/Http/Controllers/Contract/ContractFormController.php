@@ -1,20 +1,22 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Contract;
 
 use App\Formatters\ContractFormatter;
+use App\Http\Controllers\Controller;
 use App\Models\Contract;
 use App\Models\ContractFormSubmission;
 use App\Models\ContractFormSubmissionVersion;
 use App\Models\ContractHistory;
 use App\Models\FormTemplate;
 use App\Models\Vendor;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
-
 use Inertia\Inertia;
 
 class ContractFormController extends Controller
@@ -33,9 +35,9 @@ class ContractFormController extends Controller
 
         // Apply Policy Check
         if ($docType === 'f1') {
-            \Illuminate\Support\Facades\Gate::authorize('updateF1', $contract);
+            Gate::authorize('updateF1', $contract);
         } else {
-            \Illuminate\Support\Facades\Gate::authorize('updateF2', $contract);
+            Gate::authorize('updateF2', $contract);
         }
 
         $formData = $request->form_data;
@@ -89,9 +91,9 @@ class ContractFormController extends Controller
                         return $fieldLabels[$key] ?? $key;
                     }, $changes);
 
-                    $changeSummary = 'Perubahan pada: ' . implode(', ', array_slice($readableChanges, 0, 10));
+                    $changeSummary = 'Perubahan pada: '.implode(', ', array_slice($readableChanges, 0, 10));
                     if (count($readableChanges) > 10) {
-                        $changeSummary .= ' (dan ' . (count($readableChanges) - 10) . ' lainnya)';
+                        $changeSummary .= ' (dan '.(count($readableChanges) - 10).' lainnya)';
                     }
                 }
             }
@@ -203,8 +205,8 @@ class ContractFormController extends Controller
         // Log to contract history
         $action = $isNew ? "form_{$docType}_submitted" : "form_{$docType}_updated";
         $desc = $isNew
-            ? 'Form ' . strtoupper($docType) . ' telah diisi (v1)'
-            : 'Form ' . strtoupper($docType) . " diperbarui ke v{$versionNo}" . ($changeSummary ? ". {$changeSummary}" : '');
+            ? 'Form '.strtoupper($docType).' telah diisi (v1)'
+            : 'Form '.strtoupper($docType)." diperbarui ke v{$versionNo}".($changeSummary ? ". {$changeSummary}" : '');
 
         ContractHistory::create([
             'contract_id' => $contract->id,
@@ -231,7 +233,7 @@ class ContractFormController extends Controller
         $prefillData = null;
 
         if ($submission) {
-            /** @var \Illuminate\Database\Eloquent\Collection<int, ContractFormSubmissionVersion> $versionsCollection */
+            /** @var Collection<int, ContractFormSubmissionVersion> $versionsCollection */
             $versionsCollection = $submission->versions()->with('createdBy')->get();
             $versions = $versionsCollection->map(fn ($v) => [
                 'id' => $v->id,
@@ -380,7 +382,7 @@ class ContractFormController extends Controller
 
         $versions = [];
         if ($submission) {
-            /** @var \Illuminate\Database\Eloquent\Collection<int, ContractFormSubmissionVersion> $versionsCollection */
+            /** @var Collection<int, ContractFormSubmissionVersion> $versionsCollection */
             $versionsCollection = $submission->versions()->orderByDesc('version_no')->get();
             $versions = $versionsCollection->map(fn ($v) => [
                 'id' => $v->id,

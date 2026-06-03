@@ -1,16 +1,17 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\VendorAdminController;
 use App\Http\Controllers\Admin\WorkflowAdminController;
-use App\Http\Controllers\AdminController;
-use App\Http\Controllers\ContractApprovalController;
-use App\Http\Controllers\ContractController;
-use App\Http\Controllers\ContractExportController;
-use App\Http\Controllers\ContractFileController;
-use App\Http\Controllers\ContractFormController;
-use App\Http\Controllers\ContractMessageController;
-use App\Http\Controllers\ReportController;
-use App\Http\Controllers\TemplateController;
+use App\Http\Controllers\Contract\ContractApprovalController;
+use App\Http\Controllers\Contract\ContractController;
+use App\Http\Controllers\Contract\ContractExportController;
+use App\Http\Controllers\Contract\ContractFileController;
+use App\Http\Controllers\Contract\ContractFormController;
+use App\Http\Controllers\Contract\ContractMessageController;
+use App\Http\Controllers\Report\ReportController;
+use App\Http\Controllers\Template\TemplateController;
+use App\Models\FormTemplate;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
@@ -72,7 +73,7 @@ Route::middleware('auth')->group(function () {
 
     // Helpers
     Route::get('/form-templates/{id}/fields', function ($id) {
-        $tpl = App\Models\FormTemplate::with(['fields' => fn ($q) => $q->orderBy('order')])->findOrFail($id);
+        $tpl = FormTemplate::with(['fields' => fn ($q) => $q->orderBy('order')])->findOrFail($id);
 
         return response()->json($tpl);
     });

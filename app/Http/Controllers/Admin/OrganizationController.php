@@ -2,13 +2,20 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\CompaniesExport;
+use App\Exports\CompanyGroupsExport;
+use App\Exports\RegionsExport;
 use App\Http\Controllers\Controller;
+use App\Imports\CompaniesImport;
+use App\Imports\CompanyGroupsImport;
+use App\Imports\RegionsImport;
 use App\Models\Company;
 use App\Models\CompanyGroup;
 use App\Models\Region;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use Maatwebsite\Excel\Facades\Excel;
 
 class OrganizationController extends Controller
 {
@@ -58,7 +65,7 @@ class OrganizationController extends Controller
     {
         $data = $request->validate([
             'name' => 'required|string|max:255',
-            'code' => 'required|string|max:50|unique:m_company_groups,code,' . $group->id,
+            'code' => 'required|string|max:50|unique:m_company_groups,code,'.$group->id,
             'description' => 'nullable|string',
         ]);
         $data['updated_by'] = Auth::id();
@@ -117,7 +124,7 @@ class OrganizationController extends Controller
     {
         $data = $request->validate([
             'name' => 'required|string|max:255',
-            'code' => 'required|string|max:50|unique:m_regions,code,' . $region->id,
+            'code' => 'required|string|max:50|unique:m_regions,code,'.$region->id,
             'alias' => 'nullable|string|max:50',
             'id_portal_master' => 'nullable|string|max:50',
             'description' => 'nullable|string',
@@ -195,7 +202,7 @@ class OrganizationController extends Controller
             'company_group_id' => 'required|uuid|exists:m_company_groups,id',
             'region_id' => 'required|uuid|exists:m_regions,id',
             'name' => 'required|string|max:255',
-            'code' => 'required|string|max:50|unique:m_companies,code,' . $company->id,
+            'code' => 'required|string|max:50|unique:m_companies,code,'.$company->id,
             'address' => 'nullable|string',
         ]);
         $data['updated_by'] = Auth::id();
@@ -221,7 +228,7 @@ class OrganizationController extends Controller
 
     public function exportCompanyGroups()
     {
-        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\CompanyGroupsExport(), 'group_perusahaan_' . date('Ymd') . '.xlsx');
+        return Excel::download(new CompanyGroupsExport, 'group_perusahaan_'.date('Ymd').'.xlsx');
     }
 
     public function importCompanyGroups(Request $request)
@@ -229,17 +236,17 @@ class OrganizationController extends Controller
         $request->validate(['file' => 'required|file|mimes:xlsx,xls']);
 
         try {
-            \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\CompanyGroupsImport(), $request->file('file'));
+            Excel::import(new CompanyGroupsImport, $request->file('file'));
 
             return back()->with('success', 'Group perusahaan berhasil diimpor.');
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal mengimpor data: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Gagal mengimpor data: '.$e->getMessage()]);
         }
     }
 
     public function exportRegions()
     {
-        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\RegionsExport(), 'wilayah_region_' . date('Ymd') . '.xlsx');
+        return Excel::download(new RegionsExport, 'wilayah_region_'.date('Ymd').'.xlsx');
     }
 
     public function importRegions(Request $request)
@@ -247,17 +254,17 @@ class OrganizationController extends Controller
         $request->validate(['file' => 'required|file|mimes:xlsx,xls']);
 
         try {
-            \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\RegionsImport(), $request->file('file'));
+            Excel::import(new RegionsImport, $request->file('file'));
 
             return back()->with('success', 'Wilayah region berhasil diimpor.');
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal mengimpor data: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Gagal mengimpor data: '.$e->getMessage()]);
         }
     }
 
     public function exportCompanies()
     {
-        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\CompaniesExport(), 'data_perusahaan_' . date('Ymd') . '.xlsx');
+        return Excel::download(new CompaniesExport, 'data_perusahaan_'.date('Ymd').'.xlsx');
     }
 
     public function importCompanies(Request $request)
@@ -265,11 +272,11 @@ class OrganizationController extends Controller
         $request->validate(['file' => 'required|file|mimes:xlsx,xls']);
 
         try {
-            \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\CompaniesImport(), $request->file('file'));
+            Excel::import(new CompaniesImport, $request->file('file'));
 
             return back()->with('success', 'Data perusahaan berhasil diimpor.');
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Gagal mengimpor data: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Gagal mengimpor data: '.$e->getMessage()]);
         }
     }
 }

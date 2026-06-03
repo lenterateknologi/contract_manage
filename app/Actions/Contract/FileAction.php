@@ -7,14 +7,18 @@ use App\Models\Contract;
 use App\Models\ContractAttachment;
 use App\Models\ContractHistory;
 use App\Models\ContractVersion;
+use App\Models\VendorDocument;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class FileAction
 {
@@ -49,11 +53,11 @@ class FileAction
 
         // Apply Policy Check
         if ($type === 'f1') {
-            \Illuminate\Support\Facades\Gate::authorize('updateF1', $contract);
+            Gate::authorize('updateF1', $contract);
         } elseif ($type === 'f2') {
-            \Illuminate\Support\Facades\Gate::authorize('updateF2', $contract);
+            Gate::authorize('updateF2', $contract);
         } else {
-            \Illuminate\Support\Facades\Gate::authorize('updateAgreement', $contract);
+            Gate::authorize('updateAgreement', $contract);
         }
 
         // Find latest version for this type
@@ -63,7 +67,7 @@ class FileAction
 
         $newVer = $lastVer + 1;
         $userId = Auth::id();
-        $hash = Str::random(12) . '...';
+        $hash = Str::random(12).'...';
 
         $typeLabel = strtoupper($type);
         $ext = $request->file('file')->getClientOriginalExtension();
@@ -197,7 +201,7 @@ class FileAction
 
         $sourcePath = Storage::disk('local')->path($version->file_path);
         $pdfDir = Storage::disk('local')->path("contracts/{$contract->id}/pdfs");
-        $pdfPath = $pdfDir . '/' . pathinfo($version->file_path, PATHINFO_FILENAME) . '.pdf';
+        $pdfPath = $pdfDir.'/'.pathinfo($version->file_path, PATHINFO_FILENAME).'.pdf';
 
         if (! file_exists($pdfDir)) {
             mkdir($pdfDir, 0755, true);
@@ -205,7 +209,7 @@ class FileAction
 
         if (! file_exists($pdfPath)) {
             $soffice = config('services.libreoffice.path');
-            $userDir = 'file://' . sys_get_temp_dir() . '/soffice_user_' . md5($contract->id);
+            $userDir = 'file://'.sys_get_temp_dir().'/soffice_user_'.md5($contract->id);
 
             $safeSoffice = escapeshellarg($soffice);
             $safeUserDir = escapeshellarg($userDir);
@@ -229,7 +233,7 @@ class FileAction
 
         return response()->file($pdfPath, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="' . basename($pdfPath) . '"',
+            'Content-Disposition' => 'inline; filename="'.basename($pdfPath).'"',
         ]);
     }
 
@@ -244,7 +248,7 @@ class FileAction
 
         $sourcePath = Storage::disk('local')->path($attachment->file_path);
         $pdfDir = Storage::disk('local')->path("contracts/{$contract->id}/attachments/pdfs");
-        $pdfPath = $pdfDir . '/' . pathinfo($attachment->file_path, PATHINFO_FILENAME) . '.pdf';
+        $pdfPath = $pdfDir.'/'.pathinfo($attachment->file_path, PATHINFO_FILENAME).'.pdf';
 
         if (! file_exists($pdfDir)) {
             mkdir($pdfDir, 0755, true);
@@ -255,7 +259,7 @@ class FileAction
                 copy($sourcePath, $pdfPath);
             } else {
                 $soffice = config('services.libreoffice.path');
-                $userDir = 'file://' . sys_get_temp_dir() . '/soffice_user_at_' . md5($atId);
+                $userDir = 'file://'.sys_get_temp_dir().'/soffice_user_at_'.md5($atId);
 
                 $safeSoffice = escapeshellarg($soffice);
                 $safeUserDir = escapeshellarg($userDir);
@@ -270,7 +274,7 @@ class FileAction
         if (file_exists($pdfPath)) {
             return response()->file($pdfPath, [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="' . basename($pdfPath) . '"',
+                'Content-Disposition' => 'inline; filename="'.basename($pdfPath).'"',
             ]);
         }
 
@@ -283,7 +287,7 @@ class FileAction
             abort(404);
         }
 
-        $document = \App\Models\VendorDocument::where('vendor_id', $contract->vendor_id)->findOrFail($docId);
+        $document = VendorDocument::where('vendor_id', $contract->vendor_id)->findOrFail($docId);
 
         if (! Storage::disk('public')->exists($document->file_url)) {
             abort(404, 'File not found');
@@ -298,7 +302,7 @@ class FileAction
             abort(404);
         }
 
-        $document = \App\Models\VendorDocument::where('vendor_id', $contract->vendor_id)->findOrFail($docId);
+        $document = VendorDocument::where('vendor_id', $contract->vendor_id)->findOrFail($docId);
 
         if (! Storage::disk('public')->exists($document->file_url)) {
             return response()->json(['message' => 'File not found.'], 404);
@@ -306,7 +310,7 @@ class FileAction
 
         $sourcePath = Storage::disk('public')->path($document->file_url);
         $pdfDir = Storage::disk('local')->path("vendors/{$contract->vendor_id}/documents/pdfs");
-        $pdfPath = $pdfDir . '/' . pathinfo($document->file_url, PATHINFO_FILENAME) . '.pdf';
+        $pdfPath = $pdfDir.'/'.pathinfo($document->file_url, PATHINFO_FILENAME).'.pdf';
 
         if (! file_exists($pdfDir)) {
             mkdir($pdfDir, 0755, true);
@@ -317,7 +321,7 @@ class FileAction
                 copy($sourcePath, $pdfPath);
             } else {
                 $soffice = config('services.libreoffice.path');
-                $userDir = 'file://' . sys_get_temp_dir() . '/soffice_user_vendor_' . md5($docId);
+                $userDir = 'file://'.sys_get_temp_dir().'/soffice_user_vendor_'.md5($docId);
 
                 $safeSoffice = escapeshellarg($soffice);
                 $safeUserDir = escapeshellarg($userDir);
@@ -332,7 +336,7 @@ class FileAction
         if (file_exists($pdfPath)) {
             return response()->file($pdfPath, [
                 'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="' . basename($pdfPath) . '"',
+                'Content-Disposition' => 'inline; filename="'.basename($pdfPath).'"',
             ]);
         }
 
@@ -341,7 +345,7 @@ class FileAction
 
     public function uploadAttachment(Contract $contract, Request $request): JsonResponse
     {
-        \Illuminate\Support\Facades\Gate::authorize('updateAttachment', $contract);
+        Gate::authorize('updateAttachment', $contract);
 
         $request->validate([
             'label' => 'required|string|max:255',
@@ -352,7 +356,7 @@ class FileAction
         $file = $request->file('file');
         $name = $file->getClientOriginalName();
         $ext = $file->getClientOriginalExtension();
-        $path = $file->storeAs("contracts/{$contract->id}/attachments", Str::uuid() . ".{$ext}", 'local');
+        $path = $file->storeAs("contracts/{$contract->id}/attachments", Str::uuid().".{$ext}", 'local');
 
         ContractAttachment::create([
             'contract_id' => $contract->id,
@@ -378,7 +382,7 @@ class FileAction
 
     public function deleteAttachment(Contract $contract, string $atId): JsonResponse
     {
-        \Illuminate\Support\Facades\Gate::authorize('updateAttachment', $contract);
+        Gate::authorize('updateAttachment', $contract);
 
         /** @var ContractAttachment $attachment */
         $attachment = $contract->attachments()->findOrFail($atId);
@@ -405,7 +409,7 @@ class FileAction
     {
         $type = $request->query('type', 'f1');
 
-        /** @var \Illuminate\Database\Eloquent\Collection<int, ContractVersion> $versionsCollection */
+        /** @var Collection<int, ContractVersion> $versionsCollection */
         $versionsCollection = $contract->versions()
             ->where('document_type', $type)
             ->orderByDesc('version_no')
@@ -429,7 +433,7 @@ class FileAction
 
     public function uploadAgreement(Contract $contract, Request $request): JsonResponse
     {
-        \Illuminate\Support\Facades\Gate::authorize('updateAgreement', $contract);
+        Gate::authorize('updateAgreement', $contract);
 
         $request->validate([
             'file' => 'required|file|mimes:docx|max:10240',
@@ -443,7 +447,7 @@ class FileAction
             ->max('version_no') ?? 0;
 
         $versionNo = $lastVersion + 1;
-        $path = $file->storeAs('contracts/' . $contract->id . '/agreements', "agreement_v{$versionNo}.docx", 'local');
+        $path = $file->storeAs('contracts/'.$contract->id.'/agreements', "agreement_v{$versionNo}.docx", 'local');
 
         ContractVersion::create([
             'contract_id' => $contract->id,
@@ -458,7 +462,7 @@ class FileAction
         ContractHistory::create([
             'contract_id' => $contract->id,
             'action' => 'AGREEMENT_UPLOADED',
-            'description' => "Agreement v{$versionNo} diupload: " . $file->getClientOriginalName(),
+            'description' => "Agreement v{$versionNo} diupload: ".$file->getClientOriginalName(),
             'actor_id' => Auth::id(),
         ]);
 
@@ -478,9 +482,9 @@ class FileAction
         return response()->json($versions);
     }
 
-    public function compareVersions(Contract $contract, string $type, Request $request): \Inertia\Response
+    public function compareVersions(Contract $contract, string $type, Request $request): Response
     {
-        /** @var \Illuminate\Database\Eloquent\Collection<int, ContractVersion> $versionsCollection */
+        /** @var Collection<int, ContractVersion> $versionsCollection */
         $versionsCollection = $contract->versions()
             ->where('document_type', $type)
             ->orderByDesc('version_no')
