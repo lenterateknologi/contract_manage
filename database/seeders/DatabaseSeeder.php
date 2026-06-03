@@ -19,7 +19,7 @@ class DatabaseSeeder extends Seeder
             VendorSeeder::class,             // 7. Vendors Base
             VendorRealisticSeeder::class,    // 8. Premium Vendors
             UserSeeder::class,               // 9. Extended Users
-            A1WorkflowSeeder::class,         // 10. Unified A1 Workflow (14 Steps)
+            StandardWorkflowSeeder::class,   // 10. Unified Standard Workflow (Base-10)
             SampleSeeder::class,             // 11. Transactions & Redesigns
         ]);
     }

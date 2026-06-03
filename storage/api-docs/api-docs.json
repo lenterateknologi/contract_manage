@@ -175,9 +175,2338 @@
                     }
                 ]
             }
+        },
+        "/api/admin/departments": {
+            "get": {
+                "tags": [
+                    "Admin - Departments"
+                ],
+                "summary": "Get list of departments",
+                "operationId": "a23e643f58d973481d608ed888955436",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of departments retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "current_page": {
+                                            "type": "integer"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Department"
+                                            }
+                                        },
+                                        "total": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Admin - Departments"
+                ],
+                "summary": "Create a new department",
+                "operationId": "9c0389f522638652bddf847161af30eb",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "code": {
+                                        "type": "string",
+                                        "example": "HRD"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Human Resource Department"
+                                    },
+                                    "company_id": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "nullable": true
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Divisi Sumber Daya Manusia"
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "default": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Department created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Department"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/departments/{department}": {
+            "put": {
+                "tags": [
+                    "Admin - Departments"
+                ],
+                "summary": "Update an existing department",
+                "operationId": "010fa93f3c03b3ee163ca68d498368b3",
+                "parameters": [
+                    {
+                        "name": "department",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "code": {
+                                        "type": "string",
+                                        "example": "HRD"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Human Resource Development"
+                                    },
+                                    "company_id": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "nullable": true
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Divisi SDM Terupdate"
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Department updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Department"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Department not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Admin - Departments"
+                ],
+                "summary": "Soft delete a department",
+                "operationId": "544cfcc41834af251dff2ec566eda95f",
+                "parameters": [
+                    {
+                        "name": "department",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Department deleted successfully"
+                    },
+                    "404": {
+                        "description": "Department not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/departments/bulk-delete": {
+            "post": {
+                "tags": [
+                    "Admin - Departments"
+                ],
+                "summary": "Bulk delete departments",
+                "operationId": "93dadfd971bd2471c165b8410c5ef5ca",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "uuid"
+                                        },
+                                        "example": [
+                                            "019e8b4f-ceab-736c-98b7-cda53ab88524"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Departments deleted successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/vendors": {
+            "get": {
+                "tags": [
+                    "Admin - Vendors"
+                ],
+                "summary": "Get list of vendors",
+                "operationId": "df06de9b1d6708de24877010cd76e60b",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "category",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "is_active",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of vendors retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Vendor"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Admin - Vendors"
+                ],
+                "summary": "Create a new vendor",
+                "operationId": "d7e315305295865e9b34484a660c2bce",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "code": {
+                                        "type": "string",
+                                        "example": "VND-002"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "CV Karya Utama"
+                                    },
+                                    "category": {
+                                        "type": "string",
+                                        "example": "Logistics"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "contact@karyautama.co.id"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "022-8889900"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "Jl. Asia Afrika No. 12, Bandung"
+                                    },
+                                    "company_type": {
+                                        "type": "string",
+                                        "example": "CV"
+                                    },
+                                    "is_individual": {
+                                        "type": "boolean",
+                                        "default": false
+                                    },
+                                    "website": {
+                                        "type": "string",
+                                        "example": "www.karyautama.co.id"
+                                    },
+                                    "pic_name": {
+                                        "type": "string",
+                                        "example": "Ahmad Subardjo"
+                                    },
+                                    "pic_position": {
+                                        "type": "string",
+                                        "example": "Operations Manager"
+                                    },
+                                    "npwp": {
+                                        "type": "string",
+                                        "example": "02.444.555.6-777.000"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Vendor created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Vendor"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/vendors/{vendor}": {
+            "put": {
+                "tags": [
+                    "Admin - Vendors"
+                ],
+                "summary": "Update an existing vendor",
+                "operationId": "ae313333f9cc5291a037267c8e5b6f72",
+                "parameters": [
+                    {
+                        "name": "vendor",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "code": {
+                                        "type": "string",
+                                        "example": "VND-002"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "CV Karya Utama Perkasa"
+                                    },
+                                    "category": {
+                                        "type": "string",
+                                        "example": "Logistics & Shipping"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "admin@karyautamaperkasa.co.id"
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Vendor updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Vendor"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Admin - Vendors"
+                ],
+                "summary": "Soft delete a vendor",
+                "operationId": "b564fed82b761b85df5d358515797dbd",
+                "parameters": [
+                    {
+                        "name": "vendor",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Vendor deleted successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/vendors/bulk-delete": {
+            "post": {
+                "tags": [
+                    "Admin - Vendors"
+                ],
+                "summary": "Bulk delete vendors",
+                "operationId": "dccf3dfda58c3424585f867318a04ae4",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "uuid"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Vendors deleted successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/workflows": {
+            "get": {
+                "tags": [
+                    "Admin - Workflows"
+                ],
+                "summary": "Get list of workflows",
+                "operationId": "bf0956d8b777433cfe64182fd6173bd1",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of workflows retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Workflow"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Admin - Workflows"
+                ],
+                "summary": "Create a new workflow",
+                "operationId": "20fa1fcb9c9c01c940b4e10e3f20385e",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Workflow HR Internal"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Alur persetujuan berkas internal divisi SDM"
+                                    },
+                                    "contract_type_id": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "nullable": true
+                                    },
+                                    "department_id": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "nullable": true
+                                    },
+                                    "is_default": {
+                                        "type": "boolean",
+                                        "default": false
+                                    },
+                                    "is_tax_involved": {
+                                        "type": "boolean",
+                                        "default": false
+                                    },
+                                    "sla_drafting_hours": {
+                                        "type": "integer",
+                                        "default": 24
+                                    },
+                                    "sla_total_hours": {
+                                        "type": "integer",
+                                        "default": 72
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Workflow created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Workflow"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/workflows/{workflow}": {
+            "put": {
+                "tags": [
+                    "Admin - Workflows"
+                ],
+                "summary": "Update an existing workflow",
+                "operationId": "81265abad2cbfaa0a0762a050152e2dc",
+                "parameters": [
+                    {
+                        "name": "workflow",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Workflow HR Internal Updated"
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Workflow updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Workflow"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Admin - Workflows"
+                ],
+                "summary": "Soft delete a workflow",
+                "operationId": "0139d4f5da25715337e8f563ad99fd21",
+                "parameters": [
+                    {
+                        "name": "workflow",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Workflow deleted successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/workflows/bulk-delete": {
+            "post": {
+                "tags": [
+                    "Admin - Workflows"
+                ],
+                "summary": "Bulk delete workflows",
+                "operationId": "87fe59adab3b5bdc084b1390ff5eddb3",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "uuid"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Workflows deleted successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/contract-types": {
+            "get": {
+                "tags": [
+                    "Admin - Contract Types"
+                ],
+                "summary": "Get list of contract types",
+                "operationId": "3957877a6b2dddb8079bf10130d9bb4c",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of contract types retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/ContractType"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Admin - Contract Types"
+                ],
+                "summary": "Create a new contract type",
+                "operationId": "c31b8ca21a11e5371db2d8d3be3f8e58",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "code": {
+                                        "type": "string",
+                                        "example": "NDA"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Non-Disclosure Agreement"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Dokumen kerahasiaan data"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Contract Type created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractType"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/contract-types/{type}": {
+            "put": {
+                "tags": [
+                    "Admin - Contract Types"
+                ],
+                "summary": "Update an existing contract type",
+                "operationId": "323ed7396cb6bfebaf1ad6bb242da825",
+                "parameters": [
+                    {
+                        "name": "type",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "code": {
+                                        "type": "string",
+                                        "example": "NDA"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Non-Disclosure Agreement Amandemen"
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Contract Type updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractType"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Admin - Contract Types"
+                ],
+                "summary": "Soft delete a contract type",
+                "operationId": "a71e69aab97b93d367143c02030de0a7",
+                "parameters": [
+                    {
+                        "name": "type",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Contract Type deleted successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/contract-types/bulk-delete": {
+            "post": {
+                "tags": [
+                    "Admin - Contract Types"
+                ],
+                "summary": "Bulk delete contract types",
+                "operationId": "40ad4612f03ce4daef8728edcd9058a1",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "uuid"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Contract Types deleted successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/companies": {
+            "get": {
+                "tags": [
+                    "Admin - Companies"
+                ],
+                "summary": "Get list of companies",
+                "operationId": "c0f8162b7b27e397d9df01045b27e881",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of companies retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Company"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Admin - Companies"
+                ],
+                "summary": "Create a new company",
+                "operationId": "c5ebf15f312c86ec25e060c69ad8e7ae",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "code": {
+                                        "type": "string",
+                                        "example": "PT-TMS"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "PT Teknologi Mega Solusi"
+                                    },
+                                    "alias": {
+                                        "type": "string",
+                                        "example": "TMS"
+                                    },
+                                    "company_group_id": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "nullable": true
+                                    },
+                                    "region_id": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "nullable": true
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "Gedung Central, Jakarta"
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "default": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Company created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Company"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/companies/{company}": {
+            "put": {
+                "tags": [
+                    "Admin - Companies"
+                ],
+                "summary": "Update an existing company",
+                "operationId": "a220ed532835f93d15b8e64a0c21a291",
+                "parameters": [
+                    {
+                        "name": "company",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "code": {
+                                        "type": "string",
+                                        "example": "PT-TMS"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "PT Teknologi Mega Solusi Internasional"
+                                    },
+                                    "alias": {
+                                        "type": "string",
+                                        "example": "TMSI"
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Company updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Company"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Admin - Companies"
+                ],
+                "summary": "Soft delete a company",
+                "operationId": "3448a8952812816baf1fdb73164c428b",
+                "parameters": [
+                    {
+                        "name": "company",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Company deleted successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/companies/bulk-delete": {
+            "post": {
+                "tags": [
+                    "Admin - Companies"
+                ],
+                "summary": "Bulk delete companies",
+                "operationId": "25e48b6650c21c489471ae31b6594ff5",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "uuid"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Companies deleted successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/regions": {
+            "get": {
+                "tags": [
+                    "Admin - Regions"
+                ],
+                "summary": "Get list of regions",
+                "operationId": "d81197662038d69edffa8b23fe95ccd7",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of regions retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Region"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Admin - Regions"
+                ],
+                "summary": "Create a new region",
+                "operationId": "026042bd8c5147a101137e4b17aed990",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "code": {
+                                        "type": "string",
+                                        "example": "BDG"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Bandung"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Regional Jawa Barat"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Region created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Region"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/regions/{region}": {
+            "put": {
+                "tags": [
+                    "Admin - Regions"
+                ],
+                "summary": "Update an existing region",
+                "operationId": "b02ecbf9b61b50322cea2b3977fdd178",
+                "parameters": [
+                    {
+                        "name": "region",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "code": {
+                                        "type": "string",
+                                        "example": "BDG"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Bandung Raya"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Jawa Barat & Bandung Raya"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Region updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Region"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Admin - Regions"
+                ],
+                "summary": "Soft delete a region",
+                "operationId": "0d3b4aaa83640b383eddaa18926ecfde",
+                "parameters": [
+                    {
+                        "name": "region",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Region deleted successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/regions/bulk-delete": {
+            "post": {
+                "tags": [
+                    "Admin - Regions"
+                ],
+                "summary": "Bulk delete regions",
+                "operationId": "934b5f9810f3cd53d5569d8ce57c7cc8",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "uuid"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Regions deleted successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/company-groups": {
+            "get": {
+                "tags": [
+                    "Admin - Company Groups"
+                ],
+                "summary": "Get list of company groups",
+                "operationId": "c75944b7fb47981bcdac1d45ebf9ef28",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of company groups retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/CompanyGroup"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Admin - Company Groups"
+                ],
+                "summary": "Create a new company group",
+                "operationId": "77bdf6f7618644ac0ccc2aa471325ad2",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "code": {
+                                        "type": "string",
+                                        "example": "ENT"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Enterprise Group"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Grup bisnis utama"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Company Group created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CompanyGroup"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/company-groups/{group}": {
+            "put": {
+                "tags": [
+                    "Admin - Company Groups"
+                ],
+                "summary": "Update an existing company group",
+                "operationId": "7f06cf3ed04dc470f6332de89663da46",
+                "parameters": [
+                    {
+                        "name": "group",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "code": {
+                                        "type": "string",
+                                        "example": "ENT"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Enterprise Division Group"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Grup bisnis utama terupdate"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Company Group updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CompanyGroup"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Admin - Company Groups"
+                ],
+                "summary": "Soft delete a company group",
+                "operationId": "d7796c1132aeaa77f6c2ea48708c433b",
+                "parameters": [
+                    {
+                        "name": "group",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Company Group deleted successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/company-groups/bulk-delete": {
+            "post": {
+                "tags": [
+                    "Admin - Company Groups"
+                ],
+                "summary": "Bulk delete company groups",
+                "operationId": "94a26cf44724a9ec769ecde9cfbcee4f",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "uuid"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Company Groups deleted successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/contract-statuses": {
+            "get": {
+                "tags": [
+                    "Admin - Contract Statuses"
+                ],
+                "summary": "Get list of contract statuses",
+                "operationId": "f61e93d21256f3bf6b0f688df2c1ea79",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of contract statuses retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/ContractStatus"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Admin - Contract Statuses"
+                ],
+                "summary": "Create a new contract status",
+                "operationId": "04b4a1ee6cff5a02febe67f980917905",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "code": {
+                                        "type": "string",
+                                        "example": "pending_signatures"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Menunggu Tanda Tangan"
+                                    },
+                                    "color": {
+                                        "type": "string",
+                                        "example": "blue"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Menunggu tanda tangan pihak terkait"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Contract Status created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractStatus"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/contract-statuses/{status}": {
+            "put": {
+                "tags": [
+                    "Admin - Contract Statuses"
+                ],
+                "summary": "Update an existing contract status",
+                "operationId": "9157294a67a16dcbad3d16c8737d13c9",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "code": {
+                                        "type": "string",
+                                        "example": "pending_signatures"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Menunggu Proses Tanda Tangan"
+                                    },
+                                    "color": {
+                                        "type": "string",
+                                        "example": "indigo"
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Contract Status updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ContractStatus"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Admin - Contract Statuses"
+                ],
+                "summary": "Soft delete a contract status",
+                "operationId": "709e70134ac301e491015fd315db6492",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Contract Status deleted successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/contract-statuses/bulk-delete": {
+            "post": {
+                "tags": [
+                    "Admin - Contract Statuses"
+                ],
+                "summary": "Bulk delete contract statuses",
+                "operationId": "1d06008675a2fb68a894cb54e0fe6a34",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "uuid"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Contract Statuses deleted successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/users/bulk-delete": {
+            "post": {
+                "tags": [
+                    "Admin - Users"
+                ],
+                "summary": "Bulk delete users",
+                "operationId": "89f2fd1757b6921955ca12a450048167",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "uuid"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Users deleted successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/roles/bulk-delete": {
+            "post": {
+                "tags": [
+                    "Admin - Roles"
+                ],
+                "summary": "Bulk delete roles",
+                "operationId": "83eb853f0b67edfcd2856019045c4bbb",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "uuid"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Roles deleted successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
         }
     },
     "components": {
+        "schemas": {
+            "Department": {
+                "properties": {
+                    "id": {
+                        "description": "Class SwaggerMasterDocs\n\nVirtual file to define Swagger / OpenAPI documentation for master data endpoints.\nThis keeps the main controllers clean and separates documentation concern.",
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "019e8b4f-ceab-736c-98b7-cda53ab88524"
+                    },
+                    "company_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "019e8b4f-ceab-736c-98b7-cda53ab88520",
+                        "nullable": true
+                    },
+                    "code": {
+                        "type": "string",
+                        "example": "MKT"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Marketing"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Departemen Pemasaran",
+                        "nullable": true
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "Vendor": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "019e8b4f-ceab-736c-98b7-cda53ab88524"
+                    },
+                    "code": {
+                        "type": "string",
+                        "example": "VND-001"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "PT Rekanan Sukses Mandiri"
+                    },
+                    "category": {
+                        "type": "string",
+                        "example": "IT Consultant",
+                        "nullable": true
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "info@rekanan.com",
+                        "nullable": true
+                    },
+                    "phone": {
+                        "type": "string",
+                        "example": "021-5556677",
+                        "nullable": true
+                    },
+                    "address": {
+                        "type": "string",
+                        "example": "Jl. Jendral Sudirman No. 10",
+                        "nullable": true
+                    },
+                    "company_type": {
+                        "type": "string",
+                        "example": "PT",
+                        "nullable": true
+                    },
+                    "is_individual": {
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "website": {
+                        "type": "string",
+                        "example": "https://rekanan.com",
+                        "nullable": true
+                    },
+                    "pic_name": {
+                        "type": "string",
+                        "example": "Budi Santoso",
+                        "nullable": true
+                    },
+                    "pic_position": {
+                        "type": "string",
+                        "example": "Account Manager",
+                        "nullable": true
+                    },
+                    "npwp": {
+                        "type": "string",
+                        "example": "01.234.567.8-999.000",
+                        "nullable": true
+                    },
+                    "nib": {
+                        "type": "string",
+                        "example": "123456789012",
+                        "nullable": true
+                    },
+                    "siup": {
+                        "type": "string",
+                        "example": "503/SIUP/2026",
+                        "nullable": true
+                    },
+                    "director_name": {
+                        "type": "string",
+                        "example": "Joko Widodo",
+                        "nullable": true
+                    },
+                    "bank_name": {
+                        "type": "string",
+                        "example": "Bank Central Asia",
+                        "nullable": true
+                    },
+                    "bank_account_no": {
+                        "type": "string",
+                        "example": "1234567890",
+                        "nullable": true
+                    },
+                    "bank_account_name": {
+                        "type": "string",
+                        "example": "PT Rekanan Sukses Mandiri",
+                        "nullable": true
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "example": true
+                    }
+                },
+                "type": "object"
+            },
+            "Workflow": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "019e8b4f-ceab-736c-98b7-cda53ab88524"
+                    },
+                    "contract_type_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "019e8b4f-ceab-736c-98b7-cda53ab88520",
+                        "nullable": true
+                    },
+                    "department_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "019e8b4f-ceab-736c-98b7-cda53ab88521",
+                        "nullable": true
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Alur Persetujuan Perjanjian Kerjasama"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Alur standar untuk PKS vendor",
+                        "nullable": true
+                    },
+                    "is_default": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "is_template": {
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "is_tax_involved": {
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "initiator_type": {
+                        "type": "string",
+                        "example": "all"
+                    },
+                    "sla_drafting_hours": {
+                        "type": "integer",
+                        "example": 48
+                    },
+                    "sla_total_hours": {
+                        "type": "integer",
+                        "example": 120
+                    },
+                    "workflow_category": {
+                        "type": "string",
+                        "example": "procurement"
+                    }
+                },
+                "type": "object"
+            },
+            "ContractType": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "019e8b4f-ceab-736c-98b7-cda53ab88524"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Perjanjian Kerjasama (PKS)"
+                    },
+                    "code": {
+                        "type": "string",
+                        "example": "PKS"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Tipe kontrak untuk kerjasama umum",
+                        "nullable": true
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "example": true
+                    }
+                },
+                "type": "object"
+            },
+            "ContractStatus": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "019e8b4f-ceab-736c-98b7-cda53ab88524"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Dalam Review"
+                    },
+                    "code": {
+                        "type": "string",
+                        "example": "in_review"
+                    },
+                    "color": {
+                        "type": "string",
+                        "example": "yellow"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Sedang direview oleh approver",
+                        "nullable": true
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "example": true
+                    }
+                },
+                "type": "object"
+            },
+            "CompanyGroup": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "019e8b4f-ceab-736c-98b7-cda53ab88524"
+                    },
+                    "code": {
+                        "type": "string",
+                        "example": "LTG"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Lentera Teknologi Group"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Holding Company Group",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "Region": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "019e8b4f-ceab-736c-98b7-cda53ab88524"
+                    },
+                    "code": {
+                        "type": "string",
+                        "example": "JKT"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "DKI Jakarta"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Regional Jakarta",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "Company": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "019e8b4f-ceab-736c-98b7-cda53ab88524"
+                    },
+                    "company_group_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "019e8b4f-ceab-736c-98b7-cda53ab88520",
+                        "nullable": true
+                    },
+                    "region_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "019e8b4f-ceab-736c-98b7-cda53ab88521",
+                        "nullable": true
+                    },
+                    "code": {
+                        "type": "string",
+                        "example": "PT-LTM"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "PT Lentera Teknologi Mandiri"
+                    },
+                    "alias": {
+                        "type": "string",
+                        "example": "LTM",
+                        "nullable": true
+                    },
+                    "address": {
+                        "type": "string",
+                        "example": "Gedung Lentera LT. 5",
+                        "nullable": true
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "example": true
+                    }
+                },
+                "type": "object"
+            }
+        },
         "securitySchemes": {
             "bearerAuth": {
                 "type": "http",
@@ -195,6 +2524,46 @@
         {
             "name": "Contracts",
             "description": "Contracts"
+        },
+        {
+            "name": "Admin - Departments",
+            "description": "Admin - Departments"
+        },
+        {
+            "name": "Admin - Vendors",
+            "description": "Admin - Vendors"
+        },
+        {
+            "name": "Admin - Workflows",
+            "description": "Admin - Workflows"
+        },
+        {
+            "name": "Admin - Contract Types",
+            "description": "Admin - Contract Types"
+        },
+        {
+            "name": "Admin - Companies",
+            "description": "Admin - Companies"
+        },
+        {
+            "name": "Admin - Regions",
+            "description": "Admin - Regions"
+        },
+        {
+            "name": "Admin - Company Groups",
+            "description": "Admin - Company Groups"
+        },
+        {
+            "name": "Admin - Contract Statuses",
+            "description": "Admin - Contract Statuses"
+        },
+        {
+            "name": "Admin - Users",
+            "description": "Admin - Users"
+        },
+        {
+            "name": "Admin - Roles",
+            "description": "Admin - Roles"
         }
     ]
 }

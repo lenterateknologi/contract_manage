@@ -93,7 +93,13 @@ export default function WorkflowEditor({
         if (over && active.id !== over.id) {
             const oldIdx = form.data.steps.findIndex((i: any) => i.id === active.id);
             const newIdx = form.data.steps.findIndex((i: any) => i.id === over.id);
-            form.setData('steps', arrayMove(form.data.steps, oldIdx, newIdx));
+            
+            const newSteps = arrayMove(form.data.steps, oldIdx, newIdx).map((step: any, index: number) => ({
+                ...step,
+                step: index + 1
+            }));
+
+            form.setData('steps', newSteps);
         }
     };
 
@@ -604,26 +610,38 @@ export default function WorkflowEditor({
                                                                         const newStep = { ...form.data.steps[i], id: `new-${Date.now()}` };
                                                                         const s = [...form.data.steps];
                                                                         s.splice(i + 1, 0, newStep);
-                                                                        form.setData('steps', s);
+                                                                        const normalized = s.map((item: any, index: number) => ({
+                                                                            ...item,
+                                                                            step: index + 1
+                                                                        }));
+                                                                        form.setData('steps', normalized);
                                                                     }}
                                                                     moveLocalStep={(i: number, direction: 'up' | 'down') => {
+                                                                        let s = [...form.data.steps];
                                                                         if (direction === 'up' && i > 0) {
-                                                                            form.setData('steps', arrayMove(form.data.steps, i, i - 1));
-                                                                        } else if (direction === 'down' && i < form.data.steps.length - 1) {
-                                                                            form.setData('steps', arrayMove(form.data.steps, i, i + 1));
+                                                                            s = arrayMove(s, i, i - 1);
+                                                                        } else if (direction === 'down' && i < s.length - 1) {
+                                                                            s = arrayMove(s, i, i + 1);
                                                                         }
+                                                                        const normalized = s.map((item: any, index: number) => ({
+                                                                            ...item,
+                                                                            step: index + 1
+                                                                        }));
+                                                                        form.setData('steps', normalized);
                                                                     }}
                                                                     updateLocalStep={(i, data) => {
                                                                         const s = [...form.data.steps];
                                                                         s[i] = { ...s[i], ...data };
                                                                         form.setData('steps', s);
                                                                     }}
-                                                                    removeLocalStep={(i: number) =>
-                                                                        form.setData(
-                                                                            'steps',
-                                                                            form.data.steps.filter((_: any, index: number) => index !== i),
-                                                                        )
-                                                                    }
+                                                                    removeLocalStep={(i: number) => {
+                                                                        const filtered = form.data.steps.filter((_: any, index: number) => index !== i);
+                                                                        const normalized = filtered.map((item: any, index: number) => ({
+                                                                            ...item,
+                                                                            step: index + 1
+                                                                        }));
+                                                                        form.setData('steps', normalized);
+                                                                    }}
                                                                     isExpanded={expandedStepId === step.id}
                                                                     setIsExpanded={(expanded) => setExpandedStepId(expanded ? step.id : null)}
                                                                 />

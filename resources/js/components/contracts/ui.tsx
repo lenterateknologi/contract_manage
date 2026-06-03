@@ -15,6 +15,8 @@ const STATUS_LABEL: Record<string, string> = {
     pending: 'Menunggu',
     rejected: 'Ditolak',
     waiting: 'Menunggu',
+    SKIPPED: 'Dilewati',
+    SELANJUTNYA: 'Selanjutnya',
 };
 
 const STATUS_CLS: Record<string, string> = {
@@ -27,6 +29,8 @@ const STATUS_CLS: Record<string, string> = {
     pending: 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/40 dark:text-amber-400 dark:border-amber-800',
     rejected: 'bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-900/40 dark:text-rose-400 dark:border-rose-800',
     waiting: 'bg-slate-50 text-slate-400 border-slate-100 dark:bg-slate-900/30 dark:text-slate-600 dark:border-slate-800',
+    SKIPPED: 'bg-slate-100 text-slate-400 border-slate-200 opacity-60 dark:bg-slate-800 dark:text-slate-500',
+    SELANJUTNYA: 'bg-slate-50 text-slate-400 border-slate-100 border-dashed dark:bg-slate-900/10 dark:text-slate-600',
 };
 
 export function StatusBadge({ status, label }: { status: string; label?: string }) {

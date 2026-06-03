@@ -35,10 +35,12 @@ class Approval extends Model
         'sequence',
         'sub_step',
         'sort_order',
+        'is_active',
     ];
 
     protected $casts = [
         'decided_at' => 'datetime',
+        'is_active' => 'boolean',
     ];
 
     public function contract(): BelongsTo

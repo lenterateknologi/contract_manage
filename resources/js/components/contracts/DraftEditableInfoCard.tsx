@@ -3,6 +3,8 @@ import { cn } from '@/lib/utils';
 import { Contract, ContractType } from '@/types/contracts';
 import { Check, ChevronDown, ChevronUp, Info, Loader2, ChevronRight, LayoutTemplate, FileText, Zap } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { TaxToggle } from './parts/TaxToggle';
+import { ContractInfoForm } from './parts/ContractInfoForm';
 
 export interface FormTemplateInfo {
     id: string;
@@ -117,9 +119,9 @@ export function DraftEditableInfoCard({
                     await onUpdate({
                         title,
                         description,
-                        contract_type_id: typeId || undefined,
-                        vendor_id: vendorId || undefined,
-                        submission_type_id: submissionTypeId || undefined,
+                        contract_type_id: typeId || null,
+                        vendor_id: vendorId || null,
+                        submission_type_id: submissionTypeId || null,
                         kop_sub_topik: kopSubTopik,
                         metadata: {
                             ...selected.metadata,
@@ -194,174 +196,40 @@ export function DraftEditableInfoCard({
                 <div className="grid grid-cols-1 gap-5 p-5">
                     {isDraft && (
                         <div className="border-surface-border col-span-full mt-2 border-t pt-4">
-                            <div
-                                className={cn(
-                                    'mb-4 rounded-xl border p-3 transition-all duration-300',
-                                    taxRequired
-                                        ? 'bg-primary/5 border-primary/20'
-                                        : 'border-surface-border/50 bg-surface-muted/30',
-                                )}
-                            >
-                                <label className="flex cursor-pointer items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div
-                                            className={cn(
-                                                'flex h-8 w-8 items-center justify-center rounded-lg transition-all',
-                                                taxRequired
-                                                    ? 'bg-primary shadow-primary/20 text-white shadow-lg'
-                                                    : 'bg-surface-muted text-text-soft/20',
-                                            )}
-                                        >
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                width="16"
-                                                height="16"
-                                                viewBox="0 0 24 24"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeWidth="2.5"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                            >
-                                                <path d="M4 10h12" />
-                                                <path d="M4 14h9" />
-                                                <path d="M19 6a7.7 7.7 0 0 0-5.2-2A7.9 7.9 0 0 0 6 12c0 4.4 3.5 8 7.8 8 2 0 3.8-.8 5.2-2" />
-                                                <path d="M16 16l4-4-4-4" />
-                                            </svg>
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <span
-                                                className={cn(
-                                                    'text-[11px] font-semibold tracking-wider uppercase',
-                                                    taxRequired ? 'text-primary' : 'text-text-soft/40',
-                                                )}
-                                            >
-                                                Ada Pajak
-                                            </span>
-                                            <span className="text-text-soft/30 text-[9px] font-medium">
-                                                Aktifkan jika kontrak dikenakan pajak (PPN/PPh)
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div
-                                        onClick={() => {
-                                            const newVal = !taxRequired;
-                                            setTaxRequired(newVal);
-                                            // Trigger immediate save for tax toggle to update workflow steps instantly
-                                            if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
-                                            setLocalSaving(true);
-                                            Promise.resolve(
-                                                onUpdate({
-                                                    metadata: {
-                                                        ...selected.metadata,
-                                                        tax_required: newVal,
-                                                    },
-                                                })
-                                            ).finally(() => setLocalSaving(false));
-                                        }}
-                                        className={cn(
-                                            'relative h-5 w-9 rounded-full transition-all duration-300',
-                                            taxRequired ? 'bg-primary shadow-inner shadow-black/10' : 'bg-surface-muted border-surface-border border',
-                                        )}
-                                    >
-                                        <div
-                                            className={cn(
-                                                'absolute top-1 h-3 w-3 rounded-full bg-white shadow-sm transition-all duration-300',
-                                                taxRequired ? 'left-5' : 'left-1',
-                                            )}
-                                        />
-                                    </div>
-                                    <input
-                                        type="checkbox"
-                                        checked={taxRequired}
-                                        onChange={() => { }} // Controlled by div click for better feel
-                                        className="hidden"
-                                    />
-                                </label>
-                            </div>
-                        </div>
-                    )}
-                    <div className="flex flex-col gap-1">
-                        <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">No. Pengajuan</div>
-                        <div className="text-text-main font-mono text-sm font-semibold">
-                            {selected.contract_no}
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                        <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">No. Kontrak (F2)</div>
-                        <div className="text-primary text-sm font-bold">
-                            {(selected as any).crown_no || <span className="text-text-soft/40 italic font-medium text-xs">Belum diisi di F2</span>}
-                        </div>
-                    </div>
-
-                    {isDraft ? (
-                        <div className="flex flex-col gap-1.5">
-                            <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Judul Kontrak</div>
-                            <input
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                placeholder="Masukkan nama kontrak..."
-                                className={inputCls}
+                            <TaxToggle 
+                                taxRequired={taxRequired} 
+                                setTaxRequired={(newVal) => {
+                                    setTaxRequired(newVal);
+                                    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+                                    setLocalSaving(true);
+                                    Promise.resolve(
+                                        onUpdate({
+                                            metadata: {
+                                                ...selected.metadata,
+                                                tax_required: newVal,
+                                            },
+                                        })
+                                    ).finally(() => setLocalSaving(false));
+                                }} 
                             />
                         </div>
-                    ) : null}
-
-                    <div className="flex flex-col gap-1.5">
-                        <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Jenis Kontrak</div>
-                        {isDraft ? (
-                            <select value={typeId} onChange={(e) => setTypeId(e.target.value)} className={inputCls}>
-                                <option value="">Pilih Tipe</option>
-                                {Array.isArray(types) &&
-                                    types.map((t) => (
-                                        <option key={t.id} value={t.id}>
-                                            {t.name}
-                                        </option>
-                                    ))}
-                            </select>
-                        ) : (
-                            <div className="text-text-main text-sm font-semibold">
-                                {selected.contract_type}
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                        <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Perjanjian</div>
-                        {isDraft ? (
-                            <select value={submissionTypeId} onChange={(e) => setSubmissionTypeId(e.target.value)} className={inputCls}>
-                                <option value="">Pilih Tipe</option>
-                                {Array.isArray(submissionTypes) &&
-                                    submissionTypes.map((st) => (
-                                        <option key={st.id} value={st.id}>
-                                            {st.name}
-                                        </option>
-                                    ))}
-                            </select>
-                        ) : (
-                            <div className="text-text-main text-sm font-semibold">{selected.submission_type || '—'}</div>
-                        )}
-                    </div>
-
-
-                    <div className="flex flex-col gap-1.5">
-                        <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Pihak Kedua (Vendor)</div>
-                        {isDraft ? (
-                            <select value={vendorId} onChange={(e) => setVendorId(e.target.value)} className={inputCls}>
-                                <option value="">Pilih Vendor</option>
-                                {Array.isArray(vendors) &&
-                                    vendors.map((v) => (
-                                        <option key={v.id} value={v.id}>
-                                            {v.name}
-                                        </option>
-                                    ))}
-                            </select>
-                        ) : (
-                            <div className="text-text-main text-sm font-semibold">
-                                {(selected as any).vendor?.name || '-'}
-                            </div>
-                        )}
-                    </div>
+                    )}
+                    <ContractInfoForm 
+                        isDraft={isDraft}
+                        title={title}
+                        setTitle={setTitle}
+                        typeId={typeId}
+                        setTypeId={setTypeId}
+                        submissionTypeId={submissionTypeId}
+                        setSubmissionTypeId={setSubmissionTypeId}
+                        vendorId={vendorId}
+                        setVendorId={setVendorId}
+                        types={types}
+                        submissionTypes={submissionTypes}
+                        vendors={vendors}
+                        selected={selected}
+                        inputCls={inputCls}
+                    />
 
                     <div className="flex flex-col gap-1">
                         <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Dibuat Oleh</div>

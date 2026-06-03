@@ -237,26 +237,21 @@ test('step does not advance until both regular and adhoc approvals are approved'
         'user_id' => $this->adhocUser->id,
     ])->assertSuccessful();
 
-    // Approve as regular manager (step 2 is role-based, so this would normally advance the step)
+    // Approve as regular manager should FAIL first because they are waiting for ad-hoc approval
     $this->actingAs($this->manager);
     $this->postJson("/api/contracts/{$contract->id}/approve", [
         'note' => 'Approved by manager',
-    ])->assertSuccessful();
+    ])->assertStatus(422);
 
-    // Verify contract has NOT advanced to step 3 because adhoc is pending
-    $contract = $contract->fresh();
-    expect($contract->workflow_step_id)->toBe($this->step2->id);
-    expect($contract->status)->toBe('in_review');
-
-    // Verify regular manager approval is approved
+    // Verify manager is indeed waiting
     $this->assertDatabaseHas('t_approvals', [
         'contract_id' => $contract->id,
         'workflow_step_id' => $this->step2->id,
         'user_id' => $this->manager->id,
-        'status' => 'approved',
+        'status' => 'waiting',
     ]);
 
-    // Verify adhoc is still pending
+    // Verify adhoc is pending
     $this->assertDatabaseHas('t_approvals', [
         'contract_id' => $contract->id,
         'workflow_step_id' => $this->step2->id,
@@ -268,6 +263,20 @@ test('step does not advance until both regular and adhoc approvals are approved'
     $this->actingAs($this->adhocUser);
     $this->postJson("/api/contracts/{$contract->id}/approve", [
         'note' => 'Approved by adhoc VP',
+    ])->assertSuccessful();
+
+    // Verify manager is now activated to pending
+    $this->assertDatabaseHas('t_approvals', [
+        'contract_id' => $contract->id,
+        'workflow_step_id' => $this->step2->id,
+        'user_id' => $this->manager->id,
+        'status' => 'pending',
+    ]);
+
+    // Approve as regular manager now succeeds
+    $this->actingAs($this->manager);
+    $this->postJson("/api/contracts/{$contract->id}/approve", [
+        'note' => 'Approved by manager',
     ])->assertSuccessful();
 
     // Verify contract has now advanced to step 3 (VP Approval)

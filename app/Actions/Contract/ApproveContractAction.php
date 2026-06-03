@@ -19,7 +19,7 @@ class ApproveContractAction
         $this->workflowService = $workflowService;
     }
 
-    public function approve(Contract $contract, Approval $approval, ?string $note, ?string $attachmentPath, ?string $assignedPicId, ?string $executionOrder, ?string $actionCode = 'approve'): Contract
+    public function approve(Contract $contract, Approval $approval, ?string $note, ?string $attachmentPath, ?string $assignedPicId, ?string $executionOrder, ?string $actionCode = 'approve', ?string $targetStepId = null, $p1UserIds = null, $p2UserIds = null): Contract
     {
         return $this->workflowService->approveContract(
             $contract,
@@ -29,6 +29,9 @@ class ApproveContractAction
             $assignedPicId,
             $executionOrder,
             $actionCode ?? 'approve',
+            $targetStepId,
+            $p1UserIds,
+            $p2UserIds,
         );
     }
 

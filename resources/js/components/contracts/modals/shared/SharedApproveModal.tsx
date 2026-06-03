@@ -19,6 +19,8 @@ interface Props {
         p1UserId?: string | string[],
         p2UserId?: string | string[],
         actionCode?: string,
+        isFinal?: boolean,
+        targetStepId?: string,
     ) => Promise<void>;
     isAssign?: boolean;
     contract: any;
@@ -36,6 +38,7 @@ export function SharedApproveModal({ open, onClose, onSubmit, isAssign, contract
     const [users, setUsers] = useState<any[]>(initialUsers || []);
     const [fetchingUsers, setFetchingUsers] = useState(false);
     const [signerUserIds, setSignerUserIds] = useState<string[]>([]);
+    const [selectedTargetStepId, setSelectedTargetStepId] = useState<string>('');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const activeAction = contract?.workflow_step?.actions?.find((a: any) => a.action_code === actionCode);
@@ -43,7 +46,14 @@ export function SharedApproveModal({ open, onClose, onSubmit, isAssign, contract
 
     const isSigningSetup =
         ['sign', 'signature'].includes(actionCode?.toLowerCase() || '') ||
-        contract?.approvals?.some((a: any) => a.role === 'Staff Legal (Setup)' && ['pending', 'waiting'].includes(a.status));
+        contract?.approvals?.some((a: any) => a.role === 'Staff Legal (Setup)' && ['pending', 'waiting'].includes(a.status)) ||
+        (contract?.workflow_step?.step_category === 'signing' &&
+            contract?.approvals?.some(
+                (a: any) =>
+                    a.workflow_step_id === contract.workflow_step_id &&
+                    a.sub_step == null &&
+                    ['pending', 'waiting'].includes(a.status)
+            ));
 
     useEffect(() => {
         if (open && (isAssign || isSigningSetup)) {
@@ -53,6 +63,10 @@ export function SharedApproveModal({ open, onClose, onSubmit, isAssign, contract
         if (open && isSigningSetup) {
             const meta = contract?.next_step?.meta || {};
             
+            const activeAction = contract?.workflow_step?.actions?.find((a: any) => a.action_code === actionCode);
+            const defaultTargetStepId = activeAction?.assignee_config?.signature_target_step || contract?.workflow_step_id;
+            setSelectedTargetStepId(defaultTargetStepId ? String(defaultTargetStepId) : '');
+
             // Auto-resolve based on types if possible
             if (signerUserIds.length === 0) {
                 const isInitiator = meta.signing_p1_type === 'initiator' || signingParties.includes('initiator') || meta.signing_p2_type === 'initiator';
@@ -132,8 +146,8 @@ export function SharedApproveModal({ open, onClose, onSubmit, isAssign, contract
         }
 
         if (isSigningSetup) {
-            if (signerUserIds.length === 0) {
-                alert('Pilih personil penandatangan');
+            if (signerUserIds.length < 1) {
+                alert('Harap pilih minimal 1 personil penandatangan.');
                 return;
             }
         }
@@ -154,9 +168,11 @@ export function SharedApproveModal({ open, onClose, onSubmit, isAssign, contract
                 attachment || undefined,
                 assignedPicId || undefined,
                 executionOrder || undefined,
-                signerUserIds,
-                undefined,
+                signerUserIds, // Pass the whole array
+                undefined, // P2 is no longer needed separately
                 actionCode,
+                undefined,
+                selectedTargetStepId || undefined,
             );
             onClose();
             setNote('');
@@ -164,6 +180,7 @@ export function SharedApproveModal({ open, onClose, onSubmit, isAssign, contract
             setAssignedPicId('');
             setExecutionOrder('');
             setSignerUserIds([]);
+            setSelectedTargetStepId('');
         } finally {
             setLoading(false);
         }
@@ -237,6 +254,7 @@ export function SharedApproveModal({ open, onClose, onSubmit, isAssign, contract
                         <SearchableMultiSelect
                             values={signerUserIds}
                             onValuesChange={setSignerUserIds}
+                            showOrder={true}
                             options={(() => {
                                 const baseOptions = users.map((u) => ({
                                     value: u.id,
@@ -261,6 +279,48 @@ export function SharedApproveModal({ open, onClose, onSubmit, isAssign, contract
                             })()}
                             placeholder="Cari dan pilih penandatangan..."
                         />
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-text-desc">
+                            Sisipkan Ke Langkah <span className="text-danger">*</span>
+                        </label>
+                        {contract?.workflow?.steps && contract.workflow.steps.length > 0 ? (
+                            <SearchableSelect
+                                value={selectedTargetStepId}
+                                onValueChange={setSelectedTargetStepId}
+                                placeholder="Pilih Langkah Target"
+                                options={[
+                                    {
+                                        value: String(contract?.workflow_step_id),
+                                        label: `(Step Saat Ini) ${contract?.workflow_step?.step} - ${contract?.workflow_step?.description || contract?.workflow_step?.label || ''}`,
+                                    },
+                                    ...(contract?.workflow?.steps || [])
+                                        .filter(
+                                            (step: any) =>
+                                                step.id !== contract?.workflow_step_id && step.step_category !== 'Condition'
+                                        )
+                                        .map((step: any) => ({
+                                            value: String(step.id),
+                                            label: `Step ${step.step} - ${step.description || step.label || ''}`,
+                                        })),
+                                ]}
+                            />
+                        ) : (
+                            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-400">
+                                {(() => {
+                                    const defaultTargetStepId = activeAction?.assignee_config?.signature_target_step || contract?.workflow_step_id;
+                                    if (defaultTargetStepId === contract?.workflow_step_id) {
+                                        return `(Step Saat Ini) Tahap ${contract?.workflow_step?.step} - ${contract?.workflow_step?.description || contract?.workflow_step?.label || ''}`;
+                                    }
+                                    const targetStep = contract?.workflow?.steps?.find((s: any) => s.id === defaultTargetStepId);
+                                    if (targetStep) {
+                                        return `Tahap ${targetStep.step} - ${targetStep.description || targetStep.label || ''}`;
+                                    }
+                                    return 'Tahap Saat Ini (Default)';
+                                })()}
+                            </div>
+                        )}
                     </div>
 
                     <div className="space-y-1.5">

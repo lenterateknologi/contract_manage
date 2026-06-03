@@ -18,6 +18,7 @@ interface SearchableMultiSelectProps {
     triggerClassName?: string;
     emptyText?: string;
     disabled?: boolean;
+    showOrder?: boolean;
 }
 
 export function SearchableMultiSelect({
@@ -30,6 +31,7 @@ export function SearchableMultiSelect({
     triggerClassName,
     emptyText = 'Tidak ada hasil',
     disabled = false,
+    showOrder = false,
 }: SearchableMultiSelectProps) {
     const [open, setOpen] = React.useState(false);
     const [search, setSearch] = React.useState('');
@@ -103,15 +105,16 @@ export function SearchableMultiSelect({
                     {values.length === 0 ? (
                         <span className="text-slate-800 dark:text-slate-200 py-0.5">{placeholder}</span>
                     ) : (
-                        values.map(val => {
+                        values.map((val, idx) => {
                             const option = options.find(o => o.value === val);
+                            const displayLabel = option ? option.label : val;
                             return (
                                 <span
                                     key={val}
                                     onClick={(e) => e.stopPropagation()}
                                     className="inline-flex items-center gap-1 bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 px-2 py-0.5 rounded text-[10px] hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors"
                                 >
-                                    {option ? option.label : val}
+                                    {showOrder ? `${idx + 1}. ${displayLabel}` : displayLabel}
                                     <button
                                         type="button"
                                         onClick={(e) => removeOption(e, val)}

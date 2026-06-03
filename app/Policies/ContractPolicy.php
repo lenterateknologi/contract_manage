@@ -149,17 +149,46 @@ class ContractPolicy
      */
     private function isActor(User $user, Contract $contract): bool
     {
-        // Creator can always act if it's their own contract and it's in a state they can act on
+        // 1. Creator can always act on their own contract (unless locked/archived)
         if ($contract->created_by === $user->id) {
             return true;
         }
 
-        // Active approver for the current step
-        return $contract->approvals()
+        // 2. Active approver check (specific record exists)
+        $hasActiveApproval = $contract->approvals()
             ->where('user_id', $user->id)
             ->where('workflow_step_id', $contract->workflow_step_id)
             ->where('status', 'pending')
             ->exists();
+
+        if ($hasActiveApproval) {
+            return true;
+        }
+
+        // 3. Role/Department matching (Fallback for placeholders or PIC assignment)
+        $currentStep = $contract->workflowStep;
+        if (! $currentStep) {
+            return false;
+        }
+
+        // Admin can always act as a fallback actor
+        if ($user->role === Role::ADMIN || $user->role === Role::SUPER_ADMIN) {
+            return true;
+        }
+
+        // Check if user's role matches any of the required roles for this step
+        $stepRoles = (array) $currentStep->role;
+        $userRoleMatches = in_array($user->role, $stepRoles);
+
+        // Check if department matches if applicable
+        $stepDeptIds = $currentStep->department_ids;
+        $deptMatches = empty($stepDeptIds) || in_array($user->department_id, $stepDeptIds);
+
+        if ($userRoleMatches && $deptMatches) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

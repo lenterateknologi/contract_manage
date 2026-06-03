@@ -206,7 +206,7 @@ export default function SortableStepItem({
                         className="border-primary/5 bg-primary/[0.03] hover:bg-primary/10 hover:border-primary/20 flex h-10 w-10 cursor-grab items-center justify-center rounded-xl border transition-all"
                     >
                         <div className="bg-primary/30 mb-0.5 h-1.5 w-1.5 rounded-full" />
-                        <span className="text-primary/40 text-[10px] leading-none font-black">#{idx + 1}</span>
+                        <span className="text-primary/40 text-[10px] leading-none font-black">#{step.step}</span>
                     </div>
                 </div>
 

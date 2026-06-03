@@ -162,6 +162,10 @@ export default function AgreementView({
         });
     }, [versions, debouncedSearch]);
 
+    const selectedVersion = React.useMemo(() => {
+        return versions.find((v) => v.version_no === selectedVno) || versions[0];
+    }, [versions, selectedVno]);
+
     // PDF Preview URL targeting the backend conversion endpoint
     const pdfUrl = selectedVno ? `/api/contracts/${contract.id}/pdf/${selectedVno}?type=${effectiveDocType}#view=FitH` : null;
 
@@ -303,6 +307,20 @@ export default function AgreementView({
                                         <Diff size={16} className="opacity-40" />
                                         Bandingkan Versi
                                     </Button>
+                                )}
+
+                                {selectedVersion && (
+                                    <a
+                                        href={isRevision 
+                                            ? `/api/contracts/versions/${selectedVersion.id}/download`
+                                            : `/api/contracts/agreement-versions/${selectedVersion.id}/download`
+                                        }
+                                        download
+                                        className="flex w-full h-auto items-center justify-start gap-3 px-4 py-3 text-left text-xs text-text-main transition-all hover:bg-surface-muted"
+                                    >
+                                        <Download size={16} className="opacity-40" />
+                                        Download Dokumen
+                                    </a>
                                 )}
                             </div>
                         )}

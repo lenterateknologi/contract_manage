@@ -39,6 +39,7 @@ class ContractFormatter
             'p2_signer' => $c->p2_signer,
             'p2_signer_position' => $c->p2_signer_position,
             'p2_address' => $c->p2_address,
+            'vendor_id' => $c->vendor_id,
             'vendor' => $c->vendor ? [
                 'id' => $c->vendor->id,
                 'name' => $c->vendor->name,
@@ -181,8 +182,28 @@ class ContractFormatter
                 'submitted_by' => $fs->submitted_by,
                 'updated_at' => $fs->updated_at->format('Y-m-d H:i'),
             ]),
-            'can_approve' => $c->approvals->where('status', 'pending')->where('user_id', Auth::id())->isNotEmpty(),
-            'pending_approval_id' => $c->approvals->where('status', 'pending')->where('user_id', Auth::id())->first()?->id,
+            'can_approve' => $c->approvals->where('status', 'pending')->where('user_id', Auth::id())->filter(function ($a) use ($c) {
+                if ($a->sub_step !== null) {
+                    return true;
+                }
+                $hasUnapprovedSubSteps = $c->approvals
+                    ->where('sequence', $a->sequence)
+                    ->whereNotNull('sub_step')
+                    ->contains(fn ($sub) => $sub->status !== 'approved');
+
+                return ! $hasUnapprovedSubSteps;
+            })->isNotEmpty(),
+            'pending_approval_id' => $c->approvals->where('status', 'pending')->where('user_id', Auth::id())->filter(function ($a) use ($c) {
+                if ($a->sub_step !== null) {
+                    return true;
+                }
+                $hasUnapprovedSubSteps = $c->approvals
+                    ->where('sequence', $a->sequence)
+                    ->whereNotNull('sub_step')
+                    ->contains(fn ($sub) => $sub->status !== 'approved');
+
+                return ! $hasUnapprovedSubSteps;
+            })->first()?->id,
         ];
     }
 
@@ -247,10 +268,10 @@ class ContractFormatter
         $workflowService = app(ContractWorkflowService::class);
 
         foreach ($workflowSteps as $step) {
-            if (! $workflowService->shouldExecuteStep($c, $step)) {
-                continue;
-            }
-            $approvals = $c->approvals->where('workflow_step_id', $step->id);
+            $isStepSkipped = ! $workflowService->shouldExecuteStep($c, $step);
+
+            $regularApprovals = $c->approvals->where('workflow_step_id', $step->id)->filter(fn ($a) => $a->role !== Role::ADHOC_APPROVER && ! in_array($a->role, ['Penandatangan', 'Pihak 1', 'Pihak 2']));
+            $adhocApprovals = $c->approvals->where('workflow_step_id', $step->id)->filter(fn ($a) => $a->role === Role::ADHOC_APPROVER || in_array($a->role, ['Penandatangan', 'Pihak 1', 'Pihak 2']));
 
             $deptNames = (array) $step->department_names;
             $deptName = count($deptNames) > 0 ? implode(', ', $deptNames) : null;
@@ -261,6 +282,8 @@ class ContractFormatter
 
             $targetApprovers = null;
             $targetEmails = null;
+
+            // Resolve potential approvers for placeholders
             if ($step->approver_type === 'user') {
                 $targetApprovers = $step->users->pluck('name')->implode(', ');
                 $targetEmails = $step->users->pluck('email')->implode(', ');
@@ -284,15 +307,12 @@ class ContractFormatter
                 $query = User::whereIn('role', $roles);
 
                 if ($step->filter_department) {
-                    // Prioritize initiator department filter
                     $query->where('department_id', $c->initiator?->department_id ?? '00000000-0000-0000-0000-000000000000');
                 } elseif (! empty($targetDeptIds)) {
-                    // Fallback to manual department pool
                     $query->whereIn('department_id', $targetDeptIds);
                 }
 
                 $initiatorCompany = $c->initiator?->company;
-
                 if ($step->filter_company_group) {
                     $companyGroupId = $initiatorCompany?->company_group_id ?? '00000000-0000-0000-0000-000000000000';
                     $query->whereHas('company', function ($q) use ($companyGroupId) {
@@ -310,116 +330,20 @@ class ContractFormatter
                 }
 
                 $approvers = $query->get();
-                if (str_contains($step->description, 'Manager') || str_contains($step->description, 'Atasan')) {
-                    \Illuminate\Support\Facades\Log::info('DEBUGLOG: Raw Attributes ' . $step->step, [
-                        'step_id' => $step->id,
-                        'raw_filter_dept' => $step->getAttributes()['filter_department'] ?? 'NOT_IN_ATTRIBUTES',
-                        'cast_filter_dept' => $step->filter_department,
-                        'all_keys' => array_keys($step->getAttributes()),
-                    ]);
-                }
                 $targetApprovers = $approvers->pluck('name')->implode(', ');
                 $targetEmails = $approvers->pluck('email')->implode(', ');
             }
 
-            $regularApprovals = $approvals->filter(fn ($a) => $a->role !== Role::ADHOC_APPROVER);
-            $adhocApprovals = $approvals->filter(fn ($a) => $a->role === Role::ADHOC_APPROVER);
-
-            if ($regularApprovals->isNotEmpty()) {
-                $isRoleBased = $step->approver_type === 'role';
-                $hasDecision = $regularApprovals->contains(fn ($a) => in_array($a->status, ['approved', 'rejected']));
-                $isAllPending = $regularApprovals->every(fn ($a) => $a->status === 'pending');
-
-                if ($isAllPending && $regularApprovals->count() > 1) {
-                    $first = $regularApprovals->first();
-                    $candidateNames = $regularApprovals->map(fn ($a) => $a->approver?->name ?? $a->approver_name)->implode(', ');
-                    $candidateEmails = $regularApprovals->map(fn ($a) => $a->approver?->email)->filter()->implode(', ');
-
-                    $timeline[] = [
-                        'id' => 'step-group-' . $step->id,
-                        'user_id' => null,
-                        'approver_name' => $first->role,
-                        'role' => $first->role,
-                        'department_name' => $deptName,
-                        'target_approvers' => $candidateNames ?: $targetApprovers,
-                        'target_emails' => $candidateEmails ?: $targetEmails,
-                        'sequence' => $step->step,
-                        'status' => 'pending',
-                        'comment' => null,
-                        'decided_at' => null,
-                        'step_type' => 'APPROVAL',
-                        'step_name' => $step->name,
-                        'step_description' => $step->description,
-                        'approver' => null,
-                    ];
-                } else {
-                    $approvalsToDisplay = $regularApprovals;
-                    if ($isRoleBased && $hasDecision) {
-                        $approvalsToDisplay = $regularApprovals->filter(fn ($a) => in_array($a->status, ['approved', 'rejected']));
-                    }
-
-                    foreach ($approvalsToDisplay as $a) {
-                        $rowTargetApprovers = $targetApprovers;
-
-                        $timeline[] = [
-                            'id' => $a->id,
-                            'workflow_step_id' => $a->workflow_step_id,
-                            'user_id' => $a->user_id,
-                            'approver_name' => $a->approver_name,
-                            'role' => $a->role,
-                            'department_name' => $deptName,
-                            'target_approvers' => $rowTargetApprovers,
-                            'target_emails' => $a->approver?->email ?: $targetEmails,
-                            'sequence' => $step->step,
-                            'sub_step' => $a->sub_step,
-                            'status' => $a->status,
-                            'comment' => $a->comment,
-                            'decided_at' => $a->decided_at?->format('d/m/Y H:i'),
-                            'created_at' => $a->created_at?->toIso8601String(),
-                            'is_active' => $a->is_active,
-                            'step_type' => 'APPROVAL',
-                            'step_name' => $step->name,
-                            'step_description' => $step->description,
-                            'approver' => self::formatUser($a->approver),
-                        ];
-                    }
-                }
-            } else {
-                $roleLabel = is_array($step->role) ? implode(', ', $step->role) : $step->role;
-                $stepTargetApprovers = $targetApprovers;
-                $approverName = 'Menunggu ' . $roleLabel;
-
-                if ($step->approver_type === 'assigned_pic') {
-                    $stepTargetApprovers = 'PIC (Belum Ditugaskan)';
-                    $approverName = 'PIC (Belum Ditugaskan)';
-                }
-
-                $timeline[] = [
-                    'id' => 'step-' . $step->id,
-                    'user_id' => null,
-                    'approver_name' => $approverName,
-                    'role' => $roleLabel,
-                    'department_name' => $deptName,
-                    'target_approvers' => $stepTargetApprovers,
-                    'target_emails' => $targetEmails,
-                    'sequence' => $step->step,
-                    'status' => 'SELANJUTNYA',
-                    'note' => null,
-                    'approved_at' => null,
-                    'approver' => null,
-                    'step_type' => 'APPROVAL',
-                    'step_name' => $step->name,
-                    'step_description' => $step->description,
-                ];
-            }
-
+            // 1. ADD AD-HOC (SUB-STEPS) FIRST - they always happen before the main step action
             foreach ($adhocApprovals as $a) {
+                $isSigner = in_array($a->role, ['Penandatangan', 'Pihak 1', 'Pihak 2']);
+
                 $timeline[] = [
                     'id' => $a->id,
                     'workflow_step_id' => $a->workflow_step_id,
                     'user_id' => $a->user_id,
                     'approver_name' => $a->approver_name,
-                    'role' => Role::ADHOC_APPROVER,
+                    'role' => $a->role,
                     'department_name' => $a->approver?->department?->name ?? $deptName,
                     'target_approvers' => $a->approver_name,
                     'target_emails' => $a->approver?->email,
@@ -431,10 +355,129 @@ class ContractFormatter
                     'created_at' => $a->created_at?->toIso8601String(),
                     'is_active' => $a->is_active,
                     'step_type' => 'APPROVAL',
-                    'step_name' => Role::ADHOC_APPROVER,
-                    'step_description' => 'Persetujuan tambahan di luar alur kerja template',
+                    'step_name' => $isSigner ? $a->role : Role::ADHOC_APPROVER,
+                    'step_description' => $isSigner ? 'Proses penandatanganan dokumen' : 'Persetujuan tambahan di luar alur kerja template',
+                    'step_category' => $isSigner ? 'signing' : null,
                     'approver' => self::formatUser($a->approver),
                 ];
+            }
+
+            // 2. ADD MAIN STEP (REGULAR APPROVAL OR PLACEHOLDER)
+            if ($isStepSkipped) {
+                // Only show skipped main step if there are no regular approvals (prevents duplicates if manually added then skipped)
+                if ($regularApprovals->isEmpty()) {
+                    $timeline[] = [
+                        'id' => 'skipped-' . $step->id,
+                        'user_id' => null,
+                        'approver_name' => 'Langkah Dilewati',
+                        'role' => is_array($step->role) ? implode(', ', $step->role) : $step->role,
+                        'department_name' => $deptName,
+                        'target_approvers' => 'Syarat tidak terpenuhi',
+                        'target_emails' => null,
+                        'sequence' => $step->step,
+                        'status' => 'SKIPPED',
+                        'note' => 'Langkah ini dilewati berdasarkan logika sistem.',
+                        'step_type' => 'APPROVAL',
+                        'step_name' => $step->name,
+                        'step_description' => $step->description,
+                        'step_category' => $step->step_category,
+                    ];
+                }
+            } else {
+                if ($regularApprovals->isNotEmpty()) {
+                    $isRoleBased = $step->approver_type === 'role';
+                    $hasDecision = $regularApprovals->contains(fn ($a) => in_array($a->status, ['approved', 'rejected']));
+
+                    // Grouping for multiple pending role-based approvers
+                    $isAllPending = $regularApprovals->every(fn ($a) => $a->status === 'pending');
+                    if ($isAllPending && $regularApprovals->count() > 1 && $isRoleBased) {
+                        $first = $regularApprovals->first();
+                        $candidateNames = $regularApprovals->map(fn ($a) => $a->approver?->name ?? $a->approver_name)->implode(', ');
+                        $candidateEmails = $regularApprovals->map(fn ($a) => $a->approver?->email)->filter()->implode(', ');
+
+                        $timeline[] = [
+                            'id' => 'step-group-' . $step->id,
+                            'user_id' => null,
+                            'approver_name' => $first->role,
+                            'role' => $first->role,
+                            'department_name' => $deptName,
+                            'target_approvers' => $candidateNames ?: $targetApprovers,
+                            'target_emails' => $candidateEmails ?: $targetEmails,
+                            'sequence' => $step->step,
+                            'status' => 'pending',
+                            'comment' => null,
+                            'decided_at' => null,
+                            'is_active' => (bool) $first->is_active,
+                            'step_type' => 'APPROVAL',
+                            'step_name' => $step->name,
+                            'step_description' => $step->description,
+                            'step_category' => $step->step_category,
+                            'approver' => null,
+                        ];
+                    } else {
+                        $approvalsToDisplay = $regularApprovals;
+                        if ($isRoleBased && $hasDecision) {
+                            $approvalsToDisplay = $regularApprovals->filter(fn ($a) => in_array($a->status, ['approved', 'rejected']));
+                        }
+
+                        foreach ($approvalsToDisplay as $a) {
+                            $timeline[] = [
+                                'id' => $a->id,
+                                'workflow_step_id' => $a->workflow_step_id,
+                                'user_id' => $a->user_id,
+                                'approver_name' => $a->approver_name,
+                                'role' => $a->role,
+                                'department_name' => $deptName,
+                                'target_approvers' => $targetApprovers,
+                                'target_emails' => $a->approver?->email ?: $targetEmails,
+                                'sequence' => $step->step,
+                                'sub_step' => $a->sub_step,
+                                'status' => $a->status,
+                                'comment' => $a->comment,
+                                'decided_at' => $a->decided_at?->format('d/m/Y H:i'),
+                                'created_at' => $a->created_at?->toIso8601String(),
+                                'is_active' => $a->is_active,
+                                'step_type' => 'APPROVAL',
+                                'step_name' => $step->name,
+                                'step_description' => $step->description,
+                                'step_category' => $step->step_category,
+                                'approver' => self::formatUser($a->approver),
+                            ];
+                        }
+                    }
+                } else {
+                    // Placeholder for future step
+                    $roleLabel = is_array($step->role) ? implode(', ', $step->role) : $step->role;
+                    $stepTargetApprovers = $targetApprovers;
+                    $approverName = $roleLabel;
+
+                    if ($step->approver_type === 'assigned_pic') {
+                        $stepTargetApprovers = 'PIC (Belum Ditugaskan)';
+                        $approverName = 'PIC (Belum Ditugaskan)';
+                    }
+
+                    $isCurrentStep = $c->workflow_step_id === $step->id;
+
+                    $timeline[] = [
+                        'id' => 'step-' . $step->id,
+                        'user_id' => null,
+                        'approver_name' => $approverName,
+                        'role' => $roleLabel,
+                        'department_name' => $deptName,
+                        'target_approvers' => $stepTargetApprovers,
+                        'target_emails' => $targetEmails,
+                        'sequence' => $step->step,
+                        'status' => $isCurrentStep ? 'pending' : 'SELANJUTNYA',
+                        'note' => null,
+                        'approved_at' => null,
+                        'approver' => null,
+                        'is_active' => $isCurrentStep,
+                        'step_type' => 'APPROVAL',
+                        'step_name' => $step->name,
+                        'step_description' => $step->description,
+                        'step_category' => $step->step_category,
+                    ];
+                }
             }
         }
 

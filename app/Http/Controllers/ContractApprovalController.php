@@ -82,9 +82,12 @@ class ContractApprovalController extends Controller
             'attachment' => 'nullable|file|max:10240', // 10MB limit
             'assigned_pic_id' => 'nullable|uuid|exists:m_users,id',
             'execution_order' => 'nullable|string',
-            'p1_user_id' => 'nullable|uuid|exists:m_users,id',
-            'p2_user_id' => 'nullable|uuid|exists:m_users,id',
+            'p1_user_id' => 'nullable|array',
+            'p1_user_id.*' => 'uuid|exists:m_users,id',
+            'p2_user_id' => 'nullable|array',
+            'p2_user_id.*' => 'uuid|exists:m_users,id',
             'action_code' => 'nullable|string',
+            'target_step_id' => 'nullable|uuid|exists:m_workflow_steps,id',
         ]);
 
         $contract = Contract::findOrFail($id);
@@ -121,6 +124,9 @@ class ContractApprovalController extends Controller
             $request->assigned_pic_id,
             $request->execution_order,
             $request->action_code,
+            $request->target_step_id,
+            $request->p1_user_id,
+            $request->p2_user_id,
         );
 
         return response()->json(ContractFormatter::formatContract($contract));
@@ -239,6 +245,16 @@ class ContractApprovalController extends Controller
             $isSequential = $request->boolean('is_sequential', false);
             $isCurrentStep = $targetStepId === $contract->workflow_step_id;
 
+            // Save is_sequential setting to contract metadata
+            $metadata = $contract->metadata ?? [];
+            if (! isset($metadata['adhoc_steps'])) {
+                $metadata['adhoc_steps'] = [];
+            }
+            $metadata['adhoc_steps'][$targetStepId] = [
+                'is_sequential' => $isSequential,
+            ];
+            $contract->update(['metadata' => $metadata]);
+
             // Validate that we are not removing any non-pending/waiting approvers
             $existingNonPendingUserIds = Approval::where('contract_id', $contract->id)
                 ->where('workflow_step_id', $targetStepId)
@@ -327,6 +343,29 @@ class ContractApprovalController extends Controller
                 ]);
 
                 $addedUsers[] = $user->name;
+            }
+
+            // Sync main step regular approvals status when adding ad-hoc approvals to current step
+            if ($isCurrentStep) {
+                $hasActiveAdhoc = Approval::where('contract_id', $contract->id)
+                    ->where('workflow_step_id', $targetStepId)
+                    ->where('role', \App\Models\Role::ADHOC_APPROVER)
+                    ->whereIn('status', ['pending', 'waiting'])
+                    ->exists();
+
+                if ($hasActiveAdhoc) {
+                    Approval::where('contract_id', $contract->id)
+                        ->where('workflow_step_id', $targetStepId)
+                        ->whereNotIn('role', ['Persetujuan Tambahan', 'Pihak 1', 'Pihak 2'])
+                        ->where('status', 'pending')
+                        ->update(['status' => 'waiting']);
+                } else {
+                    Approval::where('contract_id', $contract->id)
+                        ->where('workflow_step_id', $targetStepId)
+                        ->whereNotIn('role', ['Persetujuan Tambahan', 'Pihak 1', 'Pihak 2'])
+                        ->where('status', 'waiting')
+                        ->update(['status' => 'pending']);
+                }
             }
 
             if (! empty($addedUsers)) {

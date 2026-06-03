@@ -28,6 +28,7 @@ export const contractApi = {
         p2UserId?: string | string[],
         actionCode?: string,
         isFinal?: boolean,
+        targetStepId?: string,
     ): Promise<Contract> => {
         const fd = new FormData();
         fd.append('note', note);
@@ -50,6 +51,7 @@ export const contractApi = {
         }
         if (actionCode) fd.append('action_code', actionCode);
         if (isFinal) fd.append('is_final', '1');
+        if (targetStepId) fd.append('target_step_id', targetStepId);
         return api.post(`/api/contracts/${id}/approve`, fd).then((r) => r.data);
     },
     reject: (id: string, reason: string, attachment?: File): Promise<Contract> => {

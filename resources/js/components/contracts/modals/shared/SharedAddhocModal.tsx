@@ -29,10 +29,19 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
 
     useEffect(() => {
         if (open) {
-            setSelectedTargetStepId(null);
+            const currentStep = contract?.workflow_step;
+            const activeAction = (currentStep?.actions || []).find((a: any) => {
+                if (actionCode) return (a.action_code === actionCode) || (a.master_action_code === actionCode) || (a.master_action?.code === actionCode);
+                return (a.master_action_code?.toLowerCase() === 'forward') || (a.action_code?.toLowerCase() === 'forward') || (a.master_action?.code?.toLowerCase() === 'forward');
+            });
+            const config = activeAction?.assignee_config || {};
+            const defaultTargetStepId = activeAction?.next_step_id || config.default_target_step || contract?.workflow_step_id;
+            const initialTargetStepId = defaultTargetStepId ? String(defaultTargetStepId) : null;
+
+            setSelectedTargetStepId(initialTargetStepId);
             setNote('');
             setIsSequential(false);
-            fetchUsers(null);
+            fetchUsers(initialTargetStepId);
         }
     }, [open, contract?.id]);
 
@@ -126,7 +135,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
             });
             const config = activeAction?.assignee_config || {};
             const defaultTargetStepId = activeAction?.next_step_id || config.default_target_step || contract.workflow_step_id;
-            const finalTargetStepId = config.allow_user_select_step && selectedTargetStepId ? selectedTargetStepId : defaultTargetStepId;
+            const finalTargetStepId = selectedTargetStepId || defaultTargetStepId;
 
             const updatedContract = await contractApi.addAdhocApprover(contract.id, selectedUserIds, note, isSequential, finalTargetStepId);
             onUpdate(updatedContract);
@@ -191,6 +200,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                         <SearchableMultiSelect
                             values={selectedUserIds}
                             onValuesChange={setSelectedUserIds}
+                            showOrder={true}
                             options={users.map((u) => ({
                                 value: u.id,
                                 label: `${u.name} (${u.role}${u.department_name ? ` - ${u.department_name}` : ''})`,
@@ -212,7 +222,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
 
                     return (
                         <>
-                            {config.allow_user_select_step && contract?.workflow?.steps && contract.workflow.steps.length > 0 ? (
+                            {contract?.workflow?.steps && contract.workflow.steps.length > 0 ? (
                                 <div className="space-y-2">
                                     <label className="text-text-soft text-[10px] font-bold tracking-wider uppercase">
                                         Sisipkan Ke Langkah
