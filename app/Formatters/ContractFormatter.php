@@ -224,6 +224,41 @@ class ContractFormatter
         ];
     }
 
+    public static function parsePrice(?string $price): float
+    {
+        if (empty($price)) {
+            return 0.0;
+        }
+        $clean = preg_replace('/[^\d.,]/', '', $price);
+        $hasDot = str_contains($clean, '.');
+        $hasComma = str_contains($clean, ',');
+
+        if ($hasDot && $hasComma) {
+            if (strpos($clean, '.') < strpos($clean, ',')) {
+                $clean = str_replace('.', '', $clean);
+                $clean = str_replace(',', '.', $clean);
+            } else {
+                $clean = str_replace(',', '', $clean);
+            }
+        } elseif ($hasComma) {
+            if (preg_match('/,\d{2}$/', $clean)) {
+                $clean = str_replace(',', '.', $clean);
+            } else {
+                $clean = str_replace(',', '', $clean);
+            }
+        } elseif ($hasDot) {
+            if (substr_count($clean, '.') > 1) {
+                $clean = str_replace('.', '', $clean);
+            } else {
+                if (preg_match('/\.\d{3}$/', $clean)) {
+                    $clean = str_replace('.', '', $clean);
+                }
+            }
+        }
+
+        return (float) $clean;
+    }
+
     public static function getNextStep(Contract $contract): ?WorkflowStep
     {
         if (! $contract->workflowStep || ! $contract->workflow) {
@@ -239,13 +274,15 @@ class ContractFormatter
             return null;
         }
 
+        $attributes = $user->getAttributes();
+
         return [
             'id' => $user->id,
             'name' => $user->name,
-            'initials' => $user->initials,
-            'role' => $user->getAttribute('role'),
-            'role_id' => $user->role_id,
-            'department_id' => $user->department_id,
+            'initials' => array_key_exists('initials', $attributes) ? $user->initials : ($user->getAttribute('initials') ?? ''),
+            'role' => array_key_exists('role', $attributes) ? $user->role : null,
+            'role_id' => array_key_exists('role_id', $attributes) ? $user->role_id : null,
+            'department_id' => array_key_exists('department_id', $attributes) ? $user->department_id : null,
             'department_name' => $user->relationLoaded('department') ? $user->department?->name : null,
             'email' => $user->email,
         ];

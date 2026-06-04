@@ -93,8 +93,6 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
         auth?.user?.department?.name?.toLowerCase().includes('legal') ||
         auth?.user?.role?.toLowerCase().includes('legal');
 
-import { validateContractForm } from '@/validations/contractValidation';
-...
     const handleSubmit = async () => {
         const validationErrors = validateContractForm(
             { title, contract_type_id: typeId, workflow_id: workflowId },

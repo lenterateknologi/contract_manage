@@ -4,38 +4,28 @@ namespace App\Http\Controllers\Admin;
 
 use App\Exports\VendorsExport;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Common\ImportFileRequest;
 use App\Http\Requests\Vendor\StoreVendorRequest;
 use App\Http\Requests\Vendor\UpdateVendorRequest;
+use App\Http\Requests\Vendor\UploadVendorDocumentRequest;
 use App\Imports\VendorsImport;
 use App\Models\Vendor;
 use App\Models\VendorDocument;
+use App\Queries\Master\VendorQuery;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
 
 class VendorAdminController extends Controller
 {
+    public function __construct(
+        protected VendorQuery $vendorQuery,
+    ) {}
+
     public function index(Request $request)
     {
-        $query = Vendor::query()
-            ->when($request->search, function ($q, $search) {
-                $search = strtolower($search);
-                $q->where(function ($qq) use ($search) {
-                    $qq->where(DB::raw('LOWER(name)'), 'like', "%{$search}%")
-                        ->orWhere(DB::raw('LOWER(code)'), 'like', "%{$search}%")
-                        ->orWhere(DB::raw('LOWER(category)'), 'like', "%{$search}%")
-                        ->orWhere(DB::raw('LOWER(email)'), 'like', "%{$search}%");
-                });
-            })
-            ->when($request->category, function ($q, $category) {
-                $q->whereIn('category', (array) $category);
-            })
-            ->when($request->is_active, function ($q, $active) {
-                $bools = collect((array) $active)->map(fn ($v) => filter_var($v, FILTER_VALIDATE_BOOLEAN))->toArray();
-                $q->whereIn('is_active', $bools);
-            });
+        $query = $this->vendorQuery->list($request);
 
         return Inertia::render('admin/Index', [
             'currentView' => 'vendors',
@@ -62,7 +52,7 @@ class VendorAdminController extends Controller
 
     public function edit(Vendor $vendor)
     {
-        $vendor->load('documents');
+        $vendor = $this->vendorQuery->findWithDocuments($vendor->id);
 
         return Inertia::render('vendors/form', [
             'vendor' => $vendor,
@@ -95,14 +85,8 @@ class VendorAdminController extends Controller
         return back()->with('success', 'Vendor berhasil diperbarui.');
     }
 
-    public function uploadDocument(Request $request, Vendor $vendor)
+    public function uploadDocument(UploadVendorDocumentRequest $request, Vendor $vendor)
     {
-        $request->validate([
-            'document_file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
-            'document_type' => 'required|string',
-            'expires_at' => 'nullable|date',
-        ]);
-
         $file = $request->file('document_file');
         $originalName = $file->getClientOriginalName();
         $path = $file->storeAs("vendor_documents/{$vendor->id}", time()."_{$originalName}", 'public');
@@ -156,10 +140,8 @@ class VendorAdminController extends Controller
         );
     }
 
-    public function import(Request $request)
+    public function import(ImportFileRequest $request)
     {
-        $request->validate(['file' => 'required|file|mimes:xlsx,xls']);
-
         try {
             Excel::import(new VendorsImport, $request->file('file'));
 

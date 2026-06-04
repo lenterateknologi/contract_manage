@@ -2,21 +2,25 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Actions\Admin\RoleAccessAction;
+use App\Actions\Role\RoleAccessAction;
 use App\Exports\UsersExport;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Common\ImportFileRequest;
+use App\Http\Requests\Role\ReorderRoleNavigationRequest;
 use App\Http\Requests\Role\StoreRoleRequest;
+use App\Http\Requests\Role\UpdateRoleAccessRequest;
 use App\Http\Requests\Role\UpdateRoleRequest;
 use App\Http\Requests\User\StoreUserRequest;
 use App\Http\Requests\User\UpdateUserRequest;
 use App\Imports\UsersImport;
 use App\Models\Company;
-use App\Models\Contract;
 use App\Models\Department;
 use App\Models\Module;
 use App\Models\ModuleGroup;
 use App\Models\Role;
 use App\Models\User;
+use App\Queries\Master\OrganizationQuery;
+use App\Queries\Master\UserQuery;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -28,6 +32,11 @@ use OpenApi\Attributes as OA;
 
 class AdminController extends Controller
 {
+    public function __construct(
+        protected UserQuery $userQuery,
+        protected OrganizationQuery $organizationQuery,
+    ) {}
+
     #[OA\Get(
         path: '/api/admin/users',
         summary: 'Get list of users',
@@ -39,24 +48,7 @@ class AdminController extends Controller
     )]
     public function users(Request $request)
     {
-        $query = User::with(['department', 'company'])
-            ->when($request->search, function ($q, $search) {
-                $search = strtolower($search);
-                $q->where(function ($qq) use ($search) {
-                    $qq->where(DB::raw('LOWER(name)'), 'like', "%{$search}%")
-                        ->orWhere(DB::raw('LOWER(email)'), 'like', "%{$search}%")
-                        ->orWhere(DB::raw('LOWER(username)'), 'like', "%{$search}%");
-                });
-            })
-            ->when($request->role, function ($q, $role) {
-                $q->whereIn('role', (array) $role);
-            })
-            ->when($request->department_id, function ($q, $deptId) {
-                $q->whereIn('department_id', (array) $deptId);
-            })
-            ->when($request->company_id, function ($q, $companyId) {
-                $q->whereIn('company_id', (array) $companyId);
-            });
+        $query = $this->userQuery->list($request);
 
         if ($request->wantsJson()) {
             return response()->json([
@@ -83,42 +75,9 @@ class AdminController extends Controller
 
     public function members(Request $request)
     {
-        $users = User::orderBy('name')->get();
-        $departments = Department::orderBy('name')->get();
-
-        $departmentTraffic = Department::orderBy('name')
-            ->get()
-            ->map(function ($dept) {
-                $incoming = Contract::where(function ($q) use ($dept) {
-                    $q->whereHas('initiator', fn ($sq) => $sq->where('department_id', $dept->id))
-                        ->orWhere(function ($sq) use ($dept) {
-                            $sq->whereNull('initiated_by_id')
-                                ->whereHas('creator', fn ($ssq) => $ssq->where('department_id', $dept->id));
-                        });
-                })
-                    ->whereIn('status', ['in_review', 'revision'])
-                    ->count();
-
-                $outgoing = Contract::where(function ($q) use ($dept) {
-                    $q->whereHas('initiator', fn ($sq) => $sq->where('department_id', $dept->id))
-                        ->orWhere(function ($sq) use ($dept) {
-                            $sq->whereNull('initiated_by_id')
-                                ->whereHas('creator', fn ($ssq) => $ssq->where('department_id', $dept->id));
-                        });
-                })
-                    ->whereIn('status', ['approved', 'locked', 'archived'])
-                    ->count();
-
-                return [
-                    'department_id' => $dept->id,
-                    'department_name' => $dept->name,
-                    'incoming_count' => $incoming,
-                    'outgoing_count' => $outgoing,
-                    'member_count' => User::where('department_id', $dept->id)->count(),
-                ];
-            })
-            ->values()
-            ->all();
+        $users = $this->userQuery->options()->get();
+        $departments = $this->organizationQuery->departments()->get();
+        $departmentTraffic = $this->organizationQuery->getDepartmentTraffic();
 
         return Inertia::render('admin/Index', [
             'currentView' => 'members',
@@ -295,36 +254,16 @@ class AdminController extends Controller
         ]);
     }
 
-    public function updateRoleAccess(Request $request, Role $role, RoleAccessAction $action)
+    public function updateRoleAccess(UpdateRoleAccessRequest $request, Role $role, RoleAccessAction $action)
     {
-        $data = $request->validate([
-            'accesses' => 'required|array',
-            'accesses.*.module_id' => 'required|uuid|exists:m_modules,id',
-            'accesses.*.can_read' => 'boolean',
-            'accesses.*.can_create' => 'boolean',
-            'accesses.*.can_update' => 'boolean',
-            'accesses.*.can_delete' => 'boolean',
-            'accesses.*.can_approve' => 'boolean',
-            'accesses.*.can_bulk_approve' => 'boolean',
-            'accesses.*.can_bulk_delete' => 'boolean',
-        ]);
-
-        $action->updateRoleAccess($role, $data['accesses']);
+        $action->updateRoleAccess($role, $request->validated()['accesses']);
 
         return back()->with('success', 'Role access berhasil diperbarui.');
     }
 
-    public function reorderRoleNavigation(Request $request, Role $role, RoleAccessAction $action)
+    public function reorderRoleNavigation(ReorderRoleNavigationRequest $request, Role $role, RoleAccessAction $action)
     {
-        $data = $request->validate([
-            'role_id' => 'required|uuid|exists:m_roles,id',
-            'groups' => 'required|array',
-            'groups.*.id' => 'required|uuid|exists:m_module_groups,id',
-            'groups.*.modules' => 'nullable|array',
-            'groups.*.modules.*.id' => 'required|uuid|exists:m_modules,id',
-        ]);
-
-        $action->reorderRoleNavigation($role, $data['groups']);
+        $action->reorderRoleNavigation($role, $request->validated()['groups']);
 
         return back();
     }
@@ -404,12 +343,8 @@ class AdminController extends Controller
         return Excel::download(new UsersExport, 'data_karyawan_'.date('Ymd').'.xlsx');
     }
 
-    public function importUsers(Request $request)
+    public function importUsers(ImportFileRequest $request)
     {
-        $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls',
-        ]);
-
         try {
             Excel::import(new UsersImport, $request->file('file'));
 

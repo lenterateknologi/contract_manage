@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\CleanMasterDataRequest;
+use App\Http\Requests\Admin\ImportMasterDataRequest;
 use App\Models\AccessModule;
 use App\Models\Company;
 use App\Models\CompanyGroup;
@@ -404,12 +406,8 @@ class MasterDataAdminController extends Controller
     /**
      * Import master data from JSON.
      */
-    public function import(Request $request)
+    public function import(ImportMasterDataRequest $request)
     {
-        $request->validate([
-            'file' => 'required|file|extensions:json',
-        ]);
-
         try {
             $content = file_get_contents($request->file('file')->getRealPath());
             $data = json_decode($content, true);
@@ -1269,14 +1267,9 @@ class MasterDataAdminController extends Controller
     /**
      * Clean selected master and contract transactional data.
      */
-    public function clean(Request $request)
+    public function clean(CleanMasterDataRequest $request)
     {
-        $request->validate([
-            'entities' => 'required|array',
-            'entities.*' => 'string|in:company_groups,regions,companies,departments,contract_statuses,contract_types,workflows,contracts,roles,access_mappings,navigation_mappings,form_templates,form_fields',
-        ]);
-
-        $entities = $request->input('entities');
+        $entities = $request->validated()['entities'];
 
         try {
             DB::transaction(function () use ($entities) {

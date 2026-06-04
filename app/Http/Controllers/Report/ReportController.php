@@ -9,7 +9,7 @@ use App\Models\Approval;
 use App\Models\Contract;
 use App\Models\ContractHistory;
 use App\Models\ContractType;
-use App\Models\User;
+use App\Queries\Master\UserQuery;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +17,10 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller
 {
+    public function __construct(
+        protected UserQuery $userQuery,
+    ) {}
+
     public function index(Request $request): JsonResponse
     {
         $query = Contract::query();
@@ -161,7 +165,7 @@ class ReportController extends Controller
             'bottlenecks' => $bottlenecks,
             'statusDistribution' => $statusDistribution,
             'monthlyTrend' => $monthlyTrend,
-            'users' => User::select('id', 'name', 'company_id')->get(),
+            'users' => $this->userQuery->options()->get(),
             'types' => ContractType::select('id', 'name')->get(),
             'companies' => CompanyGroup::with('companies')->get(),
         ]);

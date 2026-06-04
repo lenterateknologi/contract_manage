@@ -125,7 +125,7 @@ export function ContractReferenceCard({ selected, canUpdate, onUpdate, processin
                         </div>
                     </div>
                 ) : (
-                    <div className="animate-in zoom-in-95 flex flex-col items-center justify-center rounded-2xl border border-dashed border-black/10 bg-black/[0.01] px-6 py-10 text-center duration-300 dark:border-white/10 dark:bg-white/[0.01]">
+                    <div className="animate-in zoom-in-95 flex flex-col items-center justify-center rounded-2xl px-6 py-10 text-center duration-300">
                         <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-black/5 text-black/20 dark:bg-white/5 dark:text-white/20">
                             <LinkIcon size={24} />
                         </div>

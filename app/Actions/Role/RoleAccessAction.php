@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Actions\Admin;
+namespace App\Actions\Role;
 
 use App\Models\AccessModule;
 use App\Models\Module;

@@ -3,13 +3,13 @@
 use App\Http\Controllers\Form\FormTemplateController;
 use Illuminate\Support\Facades\Route;
 
-/**
+/*
  * ── Digital Form Builder & Templates ──
  * This feature is web-only for administrative management of forms.
  */
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
-    
+
     // Signed Routes for Browsershot / PDF Rendering
     Route::prefix('form-templates')->controller(FormTemplateController::class)->group(function () {
         Route::get('/render-adhoc/{key}', 'renderAdhoc')->name('admin.form-templates.render-adhoc')->middleware('signed');

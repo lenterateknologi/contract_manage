@@ -3,11 +3,7 @@
 namespace App\Http\Controllers\Contract;
 
 use App\Actions\Contract\ApproveContractAction;
-use App\Actions\Contract\ExportContractAction;
-use App\Actions\Contract\FileAction;
 use App\Actions\Contract\RejectContractAction;
-use App\Actions\Contract\StoreContractAction;
-use App\Actions\Contract\UpdateContractAction;
 use App\Formatters\ContractFormatter;
 use App\Http\Controllers\Controller;
 use App\Models\Approval;
@@ -22,37 +18,11 @@ use Illuminate\Support\Facades\Auth;
 
 class ContractApprovalController extends Controller
 {
-    private ContractWorkflowService $workflowService;
-
-    private StoreContractAction $storeAction;
-
-    private UpdateContractAction $updateAction;
-
-    private ApproveContractAction $approveAction;
-
-    private RejectContractAction $rejectAction;
-
-    private FileAction $fileAction;
-
-    private ExportContractAction $exportAction;
-
     public function __construct(
-        ContractWorkflowService $workflowService,
-        StoreContractAction $storeAction,
-        UpdateContractAction $updateAction,
-        ApproveContractAction $approveAction,
-        RejectContractAction $rejectAction,
-        FileAction $fileAction,
-        ExportContractAction $exportAction,
-    ) {
-        $this->workflowService = $workflowService;
-        $this->storeAction = $storeAction;
-        $this->updateAction = $updateAction;
-        $this->approveAction = $approveAction;
-        $this->rejectAction = $rejectAction;
-        $this->fileAction = $fileAction;
-        $this->exportAction = $exportAction;
-    }
+        protected ContractWorkflowService $workflowService,
+        protected ApproveContractAction $approveAction,
+        protected RejectContractAction $rejectAction,
+    ) {}
 
     public function send(Request $request, string $id): JsonResponse
     {
@@ -86,6 +56,8 @@ class ContractApprovalController extends Controller
             'execution_order' => 'nullable|string',
             'signer_user_ids' => 'nullable|array',
             'signer_user_ids.*' => 'uuid|exists:m_users,id',
+            'p1_user_id' => 'nullable|uuid|exists:m_users,id',
+            'p2_user_id' => 'nullable|uuid|exists:m_users,id',
             'action_code' => 'nullable|string',
             'target_step_id' => 'nullable|uuid|exists:m_workflow_steps,id',
         ]);
@@ -103,7 +75,8 @@ class ContractApprovalController extends Controller
         }
 
         // VALIDATION: Manager can only assign to their own department staff
-        if ($request->assigned_pic_id && Auth::user()->role === 'Manager') {
+        $userRole = Auth::user()->role ?? Auth::user()->roleRelation?->name;
+        if ($request->assigned_pic_id && $userRole === 'Manager') {
             $assignedUser = User::find($request->assigned_pic_id);
             if ($assignedUser && $assignedUser->department_id !== Auth::user()->department_id) {
                 return response()->json(['message' => 'Anda hanya dapat menugaskan kontrak kepada staf di departemen Anda sendiri.'], 422);
@@ -116,6 +89,19 @@ class ContractApprovalController extends Controller
             $approval->attachment_path = $attachmentPath;
         }
 
+        $signerUserIds = $request->input('signer_user_ids');
+        if (empty($signerUserIds)) {
+            $p1 = $request->input('p1_user_id');
+            $p2 = $request->input('p2_user_id');
+            $signerUserIds = [];
+            if ($p1) {
+                $signerUserIds[] = $p1;
+            }
+            if ($p2) {
+                $signerUserIds[] = $p2;
+            }
+        }
+
         $contract = $this->approveAction->approve(
             $contract,
             $approval,
@@ -125,7 +111,7 @@ class ContractApprovalController extends Controller
             $request->execution_order,
             $request->action_code,
             $request->target_step_id,
-            $request->signer_user_ids,
+            ! empty($signerUserIds) ? $signerUserIds : null,
         );
 
         return response()->json(ContractFormatter::formatContract($contract));

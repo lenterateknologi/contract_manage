@@ -4,12 +4,20 @@ namespace App\Http\Controllers\Admin;
 
 use App\Exports\DepartmentsWorkbookExport;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Common\BulkDeleteRequest;
+use App\Http\Requests\Common\ImportFileRequest;
 use App\Http\Requests\ContractStatus\StoreContractStatusRequest;
 use App\Http\Requests\ContractStatus\UpdateContractStatusRequest;
 use App\Http\Requests\ContractType\StoreContractTypeRequest;
 use App\Http\Requests\ContractType\UpdateContractTypeRequest;
 use App\Http\Requests\Department\StoreDepartmentRequest;
 use App\Http\Requests\Department\UpdateDepartmentRequest;
+use App\Http\Requests\Module\StoreModuleGroupRequest;
+use App\Http\Requests\Module\StoreModuleRequest;
+use App\Http\Requests\Module\UpdateModuleGroupRequest;
+use App\Http\Requests\Module\UpdateModuleRequest;
+use App\Http\Requests\Role\ReorderRoleNavigationRequest;
+use App\Http\Requests\Settings\UpdateNumberingFormatRequest;
 use App\Imports\DepartmentsImport;
 use App\Models\AccessModule;
 use App\Models\ContractStatus;
@@ -20,6 +28,7 @@ use App\Models\FormTemplate;
 use App\Models\Module;
 use App\Models\ModuleGroup;
 use App\Models\NumberingFormat;
+use App\Queries\Master\OrganizationQuery;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -29,6 +38,10 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class MasterConfigController extends Controller
 {
+    public function __construct(
+        protected OrganizationQuery $organizationQuery,
+    ) {}
+
     // ─── Contract Types ───────────────────────────────────────────────────────
 
     public function contractTypes(Request $request): Response
@@ -45,18 +58,7 @@ class MasterConfigController extends Controller
             $sortDir = 'asc';
         }
 
-        $query = ContractType::query()
-            ->with(['parent', 'children']) // Load children to show them in the tree
-            ->whereNull('parent_id') // Only paginate root-level items
-            ->when(
-                $request->search,
-                function ($q, $s) {
-                    $s = strtolower($s);
-
-                    return $q->where(DB::raw('LOWER(name)'), 'like', "%{$s}%")
-                        ->orWhere(DB::raw('LOWER(description)'), 'like', "%{$s}%");
-                },
-            );
+        $query = $this->organizationQuery->contractTypes($request);
 
         return Inertia::render('admin/Index', [
             'currentView' => 'contract-types',
@@ -124,16 +126,7 @@ class MasterConfigController extends Controller
 
     public function contractStatuses(Request $request)
     {
-        $query = ContractStatus::query()
-            ->when(
-                $request->search,
-                function ($q, $s) {
-                    $s = strtolower($s);
-
-                    return $q->where(DB::raw('LOWER(label)'), 'like', "%{$s}%")
-                        ->orWhere(DB::raw('LOWER(code)'), 'like', "%{$s}%");
-                },
-            );
+        $query = $this->organizationQuery->contractStatuses($request);
 
         return Inertia::render('admin/Index', [
             'currentView' => 'contract-statuses',
@@ -182,20 +175,7 @@ class MasterConfigController extends Controller
 
     public function departments(Request $request)
     {
-        $query = Department::query()
-            ->when(
-                $request->search,
-                function ($q, $s) {
-                    $s = strtolower($s);
-
-                    return $q->where(DB::raw('LOWER(name)'), 'like', "%{$s}%")
-                        ->orWhere(DB::raw('LOWER(code)'), 'like', "%{$s}%");
-                },
-            )
-            ->when($request->is_active, function ($q, $active) {
-                $bools = collect((array) $active)->map(fn ($v) => filter_var($v, FILTER_VALIDATE_BOOLEAN))->toArray();
-                $q->whereIn('is_active', $bools);
-            });
+        $query = $this->organizationQuery->departments($request);
 
         if ($request->wantsJson()) {
             return response()->json($query->orderBy('name')->paginate($request->input('per_page', 10)));
@@ -237,12 +217,9 @@ class MasterConfigController extends Controller
         return back()->with('success', 'Departemen berhasil dihapus.');
     }
 
-    public function bulkDestroyDepartment(Request $request)
+    public function bulkDestroyDepartment(BulkDeleteRequest $request)
     {
-        $ids = $request->input('ids', []);
-        if (empty($ids)) {
-            return back();
-        }
+        $ids = $request->validated()['ids'];
         Department::whereIn('id', $ids)->delete();
 
         return back()->with('success', count($ids).' departemen berhasil dihapus.');
@@ -293,15 +270,9 @@ class MasterConfigController extends Controller
         ]);
     }
 
-    public function reorderNavigation(Request $request)
+    public function reorderNavigation(ReorderRoleNavigationRequest $request)
     {
-        $data = $request->validate([
-            'role_id' => 'required|uuid|exists:m_roles,id',
-            'groups' => 'required|array',
-            'groups.*.id' => 'required|uuid|exists:m_module_groups,id',
-            'groups.*.modules' => 'nullable|array',
-            'groups.*.modules.*.id' => 'required|uuid|exists:m_modules,id',
-        ]);
+        $data = $request->validated();
 
         foreach ($data['groups'] as $groupData) {
             foreach ($groupData['modules'] ?? [] as $moduleData) {
@@ -316,18 +287,18 @@ class MasterConfigController extends Controller
         return back()->with('success', 'Navigation and permissions berhasil diperbarui.');
     }
 
-    public function storeModuleGroup(Request $request)
+    public function storeModuleGroup(StoreModuleGroupRequest $request)
     {
-        $data = $request->validate(['name' => 'required|string|max:255|unique:m_module_groups,name', 'icon' => 'nullable|string|max:50']);
+        $data = $request->validated();
         $data['created_by'] = $data['updated_by'] = Auth::id();
         ModuleGroup::create($data);
 
         return back()->with('success', 'Module group berhasil dibuat.');
     }
 
-    public function updateModuleGroup(Request $request, ModuleGroup $group)
+    public function updateModuleGroup(UpdateModuleGroupRequest $request, ModuleGroup $group)
     {
-        $data = $request->validate(['name' => 'required|string|max:255|unique:m_module_groups,name,'.$group->id, 'icon' => 'nullable|string|max:50']);
+        $data = $request->validated();
         $data['updated_by'] = Auth::id();
         $group->update($data);
 
@@ -341,45 +312,26 @@ class MasterConfigController extends Controller
         return back()->with('success', 'Module group berhasil dihapus.');
     }
 
-    public function bulkDestroyModuleGroups(Request $request)
+    public function bulkDestroyModuleGroups(BulkDeleteRequest $request)
     {
-        $ids = $request->input('ids', []);
-        if (empty($ids)) {
-            return back();
-        }
+        $ids = $request->validated()['ids'];
         ModuleGroup::whereIn('id', $ids)->delete();
 
         return back()->with('success', count($ids).' grup modul berhasil dihapus.');
     }
 
-    public function storeModule(Request $request)
+    public function storeModule(StoreModuleRequest $request)
     {
-        $data = $request->validate([
-            'name' => 'required|string|max:255|unique:m_modules,name',
-            'identifier' => 'required|string|max:50|unique:m_modules,identifier',
-            'module_group_id' => 'required|uuid|exists:m_module_groups,id',
-            'route' => 'nullable|string|max:255',
-            'icon' => 'nullable|string|max:50',
-            'showed_as_menu' => 'boolean',
-            'description' => 'nullable|string',
-        ]);
+        $data = $request->validated();
         $data['created_by'] = $data['updated_by'] = Auth::id();
         Module::create($data);
 
         return back()->with('success', 'Module berhasil dibuat.');
     }
 
-    public function updateModule(Request $request, Module $module)
+    public function updateModule(UpdateModuleRequest $request, Module $module)
     {
-        $data = $request->validate([
-            'name' => 'required|string|max:255|unique:m_modules,name,'.$module->id,
-            'identifier' => 'required|string|max:50|unique:m_modules,identifier,'.$module->id,
-            'module_group_id' => 'required|uuid|exists:m_module_groups,id',
-            'route' => 'nullable|string|max:255',
-            'icon' => 'nullable|string|max:50',
-            'showed_as_menu' => 'boolean',
-            'description' => 'nullable|string',
-        ]);
+        $data = $request->validated();
         $data['updated_by'] = Auth::id();
         $module->update($data);
 
@@ -393,12 +345,9 @@ class MasterConfigController extends Controller
         return back()->with('success', 'Module berhasil dihapus.');
     }
 
-    public function bulkDestroyModules(Request $request)
+    public function bulkDestroyModules(BulkDeleteRequest $request)
     {
-        $ids = $request->input('ids', []);
-        if (empty($ids)) {
-            return back();
-        }
+        $ids = $request->validated()['ids'];
         Module::whereIn('id', $ids)->delete();
 
         return back()->with('success', count($ids).' modul berhasil dihapus.');
@@ -418,15 +367,9 @@ class MasterConfigController extends Controller
         ]);
     }
 
-    public function updateNumberingFormat(Request $request, NumberingFormat $format)
+    public function updateNumberingFormat(UpdateNumberingFormatRequest $request, NumberingFormat $format)
     {
-        $data = $request->validate([
-            'format_pattern' => 'required|string',
-            'current_number' => 'required|integer',
-            'padding' => 'required|integer|min:1|max:10',
-            'is_active' => 'boolean',
-        ]);
-        $format->update($data);
+        $format->update($request->validated());
 
         return back()->with('success', 'Numbering format berhasil diperbarui.');
     }
@@ -441,10 +384,8 @@ class MasterConfigController extends Controller
         );
     }
 
-    public function importDepartments(Request $request)
+    public function importDepartments(ImportFileRequest $request)
     {
-        $request->validate(['file' => 'required|file|mimes:xlsx,xls']);
-
         try {
             Excel::import(new DepartmentsImport, $request->file('file'));
 

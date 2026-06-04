@@ -2,10 +2,16 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Actions\Admin\WorkflowAction;
+use App\Actions\Workflow\DestroyWorkflowAction;
+use App\Actions\Workflow\DuplicateWorkflowAction;
+use App\Actions\Workflow\StoreWorkflowAction;
+use App\Actions\Workflow\UpdateWorkflowAction;
+use App\Actions\Workflow\UpdateWorkflowStepsAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Workflow\ImportWorkflowRequest;
 use App\Http\Requests\Workflow\StoreWorkflowRequest;
 use App\Http\Requests\Workflow\UpdateWorkflowRequest;
+use App\Http\Requests\Workflow\UpdateWorkflowStepsRequest;
 use App\Models\Company;
 use App\Models\CompanyGroup;
 use App\Models\ContractStatus;
@@ -16,6 +22,8 @@ use App\Models\Region;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Workflow;
+use App\Queries\Master\UserQuery;
+use App\Queries\Master\WorkflowQuery;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -23,28 +31,14 @@ use Inertia\Inertia;
 
 class WorkflowAdminController extends Controller
 {
+    public function __construct(
+        protected WorkflowQuery $workflowQuery,
+        protected UserQuery $userQuery,
+    ) {}
+
     public function index(Request $request)
     {
-        $query = Workflow::withCount('steps')->with(['contractType', 'steps.approverRoles', 'steps.approverDepartments', 'steps.approverUsers', 'initiatorRolesData', 'initiatorDepartmentsData', 'initiatorUsersData'])
-            ->when($request->search, function ($q, $search) {
-                $search = strtolower($search);
-                $q->where(function ($qq) use ($search) {
-                    $qq->where(DB::raw('LOWER(name)'), 'like', "%{$search}%")
-                        ->orWhere(DB::raw('LOWER(description)'), 'like', "%{$search}%");
-                });
-            })
-            ->when($request->contract_type_id, function ($q, $type) {
-                $q->whereIn('contract_type_id', (array) $type);
-            })
-            ->when($request->company_group_id, function ($q, $id) {
-                $q->whereJsonContains('company_group_ids', $id);
-            })
-            ->when($request->region_id, function ($q, $id) {
-                $q->whereJsonContains('region_ids', $id);
-            })
-            ->when($request->company_id, function ($q, $id) {
-                $q->whereJsonContains('company_ids', $id);
-            });
+        $query = $this->workflowQuery->list($request);
 
         return Inertia::render('admin/Index', [
             'currentView' => 'workflows',
@@ -88,7 +82,7 @@ class WorkflowAdminController extends Controller
             'regions' => Region::all(),
             'companies' => Company::all(),
             'contractStatuses' => ContractStatus::orderBy('label')->get(),
-            'allWorkflows' => Workflow::with(['steps', 'contractType'])->orderBy('name')->get(),
+            'allWorkflows' => $this->workflowQuery->options()->get(),
             'formTemplates' => FormTemplate::select('id', 'name')->orderBy('name')->get(),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
@@ -100,7 +94,7 @@ class WorkflowAdminController extends Controller
 
     public function edit(Workflow $workflow)
     {
-        $workflow->load(['steps.approverRoles', 'steps.approverDepartments', 'steps.approverUsers', 'steps.actions', 'initiatorRolesData', 'initiatorDepartmentsData', 'initiatorUsersData']);
+        $workflow = $this->workflowQuery->findForEdit($workflow->id);
 
         $workflowData = $workflow->toArray();
         $workflowData['initiator_roles'] = $workflow->initiatorRolesData->pluck('role_name')->toArray();
@@ -144,7 +138,7 @@ class WorkflowAdminController extends Controller
             'regions' => Region::all(),
             'companies' => Company::all(),
             'contractStatuses' => ContractStatus::orderBy('label')->get(),
-            'allWorkflows' => Workflow::with(['steps', 'contractType'])->orderBy('name')->get(),
+            'allWorkflows' => $this->workflowQuery->options()->get(),
             'formTemplates' => FormTemplate::select('id', 'name')->orderBy('name')->get(),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
@@ -154,12 +148,12 @@ class WorkflowAdminController extends Controller
         ]);
     }
 
-    public function store(StoreWorkflowRequest $request, WorkflowAction $action)
+    public function store(StoreWorkflowRequest $request, StoreWorkflowAction $action)
     {
         Log::info('Incoming Workflow Store Request', $request->all());
 
         try {
-            $action->store($request->validated());
+            $action->execute($request->validated());
 
             return redirect()->route('admin.workflows')->with('success', 'Workflow berhasil dibuat.');
         } catch (\Exception $e) {
@@ -171,12 +165,12 @@ class WorkflowAdminController extends Controller
         }
     }
 
-    public function update(UpdateWorkflowRequest $request, Workflow $workflow, WorkflowAction $action)
+    public function update(UpdateWorkflowRequest $request, Workflow $workflow, UpdateWorkflowAction $action)
     {
         Log::info('Incoming Workflow Update Request', $request->all());
 
         try {
-            $action->update($workflow, $request->validated());
+            $action->execute($workflow, $request->validated());
 
             return redirect()->route('admin.workflows.edit', $workflow->id)->with('success', 'Workflow berhasil diperbarui.');
         } catch (\Exception $e) {
@@ -186,17 +180,17 @@ class WorkflowAdminController extends Controller
         }
     }
 
-    public function destroy(Workflow $workflow, WorkflowAction $action)
+    public function destroy(Workflow $workflow, DestroyWorkflowAction $action)
     {
-        $action->destroy($workflow);
+        $action->execute($workflow);
 
         return redirect()->back();
     }
 
-    public function duplicate(Workflow $workflow, WorkflowAction $action)
+    public function duplicate(Workflow $workflow, DuplicateWorkflowAction $action)
     {
         try {
-            $newWorkflow = $action->duplicate($workflow);
+            $newWorkflow = $action->execute($workflow);
 
             return redirect()->route('admin.workflows')->with('success', "Alur kerja '{$workflow->name}' berhasil diduplikasi sebagai '{$newWorkflow->name}'.");
         } catch (\Exception $e) {
@@ -212,7 +206,7 @@ class WorkflowAdminController extends Controller
     {
         $workflow->load('steps');
         $roles = Role::orderBy('name')->get();
-        $users = User::orderBy('name')->get();
+        $users = $this->userQuery->options()->get();
 
         return Inertia::render('workflows/Steps', [
             'workflow' => $workflow,
@@ -221,54 +215,17 @@ class WorkflowAdminController extends Controller
         ]);
     }
 
-    public function updateSteps(Request $request, Workflow $workflow, WorkflowAction $action)
+    public function updateSteps(UpdateWorkflowStepsRequest $request, Workflow $workflow, UpdateWorkflowStepsAction $action)
     {
-        $data = $request->validate([
-            'steps' => 'nullable|array',
-            'steps.*.id' => 'nullable|string',
-            'steps.*.role' => 'nullable',
-            'steps.*.description' => 'nullable|string',
-            'steps.*.approver_type' => 'nullable|string',
-            'steps.*.step_category' => 'nullable|string',
-            'steps.*.is_optional' => 'boolean',
-            'steps.*.optional_label' => 'nullable|string',
-            'steps.*.condition_expression' => 'nullable|string',
-            'steps.*.phase' => 'nullable|string',
-            'steps.*.uploader_type' => 'nullable|string',
-            'steps.*.hierarchy_level' => 'nullable|integer',
-            'steps.*.role_id' => 'nullable|string',
-            'steps.*.user_ids' => 'nullable|array',
-            'steps.*.department_ids' => 'nullable|array',
-            'steps.*.label' => 'nullable|string',
-            'steps.*.is_mandatory' => 'nullable|boolean',
-            'steps.*.meta' => 'nullable|array',
-            'steps.*.company_group_ids' => 'nullable|array',
-            'steps.*.region_ids' => 'nullable|array',
-            'steps.*.company_ids' => 'nullable|array',
-            'steps.*.filter_department' => 'nullable|boolean',
-            'steps.*.filter_company_group' => 'nullable|boolean',
-            'steps.*.filter_region' => 'nullable|boolean',
-            'steps.*.filter_company' => 'nullable|boolean',
-            'steps.*.actions' => 'nullable|array',
-            'steps.*.actions.*.id' => 'nullable|string',
-            'steps.*.actions.*.master_action_id' => 'nullable|string',
-            'steps.*.actions.*.master_action_name' => 'nullable|string',
-            'steps.*.actions.*.next_step_id' => 'nullable|string',
-            'steps.*.actions.*.next_workflow_id' => 'nullable|string',
-            'steps.*.actions.*.next_workflow_step_id' => 'nullable|string',
-            'steps.*.actions.*.required_fields' => 'nullable|array',
-            'steps.*.actions.*.autofilled_fields' => 'nullable|array',
-            'steps.*.actions.*.transition_config' => 'nullable|array',
-            'steps.*.actions.*.signing_parties' => 'nullable|array',
-            'steps.*.actions.*.assignee_config' => 'nullable|array',
-            'steps.*.actions.*.alias' => 'nullable|string',
-            'steps.*.actions.*.description' => 'nullable|string',
-            'steps.*.actions.*.is_active' => 'nullable|boolean',
-        ]);
+        try {
+            $action->execute($workflow, $request->validated());
 
-        $action->updateSteps($workflow, $data);
+            return redirect()->route('admin.workflows.edit', $workflow->id)->with('success', 'Tahapan alur kerja berhasil diperbarui.');
+        } catch (\Exception $e) {
+            Log::error('Workflow Steps Update Error: '.$e->getMessage());
 
-        return redirect()->route('admin.workflows')->with('success', 'Steps berhasil diperbarui.');
+            return back()->withErrors(['error' => 'Gagal memperbarui tahapan: '.$e->getMessage()]);
+        }
     }
 
     public function bulkDestroy(Request $request)
@@ -415,12 +372,8 @@ class WorkflowAdminController extends Controller
         ]);
     }
 
-    public function import(Request $request, WorkflowAction $action)
+    public function import(ImportWorkflowRequest $request, StoreWorkflowAction $action)
     {
-        $request->validate([
-            'file' => 'required|file|mimes:json',
-        ]);
-
         try {
             $content = file_get_contents($request->file('file')->getRealPath());
             $data = json_decode($content, true);
@@ -447,7 +400,7 @@ class WorkflowAdminController extends Controller
                     $workflowData['name'] = $name;
                     $workflowData['is_default'] = false;
 
-                    $action->store($workflowData);
+                    $action->execute($workflowData);
                     $count++;
                 }
             });

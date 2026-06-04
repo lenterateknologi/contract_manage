@@ -6,8 +6,12 @@ use App\Exports\CompaniesExport;
 use App\Exports\CompanyGroupsExport;
 use App\Exports\RegionsExport;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Common\BulkDeleteRequest;
+use App\Http\Requests\Common\ImportFileRequest;
 use App\Http\Requests\Company\StoreCompanyRequest;
 use App\Http\Requests\Company\UpdateCompanyRequest;
+use App\Http\Requests\CompanyGroup\StoreCompanyGroupRequest;
+use App\Http\Requests\CompanyGroup\UpdateCompanyGroupRequest;
 use App\Http\Requests\Region\StoreRegionRequest;
 use App\Http\Requests\Region\UpdateRegionRequest;
 use App\Imports\CompaniesImport;
@@ -16,6 +20,7 @@ use App\Imports\RegionsImport;
 use App\Models\Company;
 use App\Models\CompanyGroup;
 use App\Models\Region;
+use App\Queries\Master\OrganizationQuery;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -23,22 +28,15 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class OrganizationController extends Controller
 {
+    public function __construct(
+        protected OrganizationQuery $organizationQuery,
+    ) {}
+
     // ─── Company Groups ───────────────────────────────────────────────────────
 
     public function companyGroups(Request $request)
     {
-        $query = CompanyGroup::with(['companies.region'])
-            ->when($request->search, function ($q, $search) {
-                $q->where(function ($sub) use ($search) {
-                    $sub->where('name', 'like', "%{$search}%")
-                        ->orWhere('code', 'like', "%{$search}%");
-                });
-            })
-            ->when($request->region_id, function ($q, $regionId) {
-                $q->whereHas('companies', function ($sq) use ($regionId) {
-                    $sq->whereIn('region_id', (array) $regionId);
-                });
-            });
+        $query = $this->organizationQuery->companyGroups($request);
 
         return Inertia::render('admin/Index', [
             'currentView' => 'company-groups',
@@ -52,26 +50,18 @@ class OrganizationController extends Controller
         ]);
     }
 
-    public function storeCompanyGroup(Request $request)
+    public function storeCompanyGroup(StoreCompanyGroupRequest $request)
     {
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'code' => 'required|string|max:50|unique:m_company_groups,code',
-            'description' => 'nullable|string',
-        ]);
+        $data = $request->validated();
         $data['created_by'] = $data['updated_by'] = Auth::id();
         CompanyGroup::create($data);
 
         return back()->with('success', 'Group berhasil dibuat.');
     }
 
-    public function updateCompanyGroup(Request $request, CompanyGroup $group)
+    public function updateCompanyGroup(UpdateCompanyGroupRequest $request, CompanyGroup $group)
     {
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'code' => 'required|string|max:50|unique:m_company_groups,code,'.$group->id,
-            'description' => 'nullable|string',
-        ]);
+        $data = $request->validated();
         $data['updated_by'] = Auth::id();
         $group->update($data);
 
@@ -85,9 +75,9 @@ class OrganizationController extends Controller
         return back()->with('success', 'Group berhasil dihapus.');
     }
 
-    public function bulkDestroyCompanyGroup(Request $request)
+    public function bulkDestroyCompanyGroup(BulkDeleteRequest $request)
     {
-        $ids = $request->validate(['ids' => 'required|array'])['ids'];
+        $ids = $request->validated()['ids'];
         CompanyGroup::whereIn('id', $ids)->delete();
 
         return back()->with('success', 'Grup terpilih berhasil dihapus.');
@@ -99,7 +89,7 @@ class OrganizationController extends Controller
     {
         return Inertia::render('admin/Index', [
             'currentView' => 'regions',
-            'regions' => Region::with(['companies.group'])->get(),
+            'regions' => $this->organizationQuery->regions()->get(),
             'companyGroups' => CompanyGroup::all(),
             'filters' => $request->only(['search', 'action', 'id', 'company_group_id']),
             'breadcrumbs' => [
@@ -134,9 +124,9 @@ class OrganizationController extends Controller
         return back()->with('success', 'Region berhasil dihapus.');
     }
 
-    public function bulkDestroyRegion(Request $request)
+    public function bulkDestroyRegion(BulkDeleteRequest $request)
     {
-        $ids = $request->validate(['ids' => 'required|array'])['ids'];
+        $ids = $request->validated()['ids'];
         Region::whereIn('id', $ids)->delete();
 
         return back()->with('success', 'Wilayah terpilih berhasil dihapus.');
@@ -146,19 +136,7 @@ class OrganizationController extends Controller
 
     public function companies(Request $request)
     {
-        $query = Company::with(['region', 'group'])
-            ->when($request->search, function ($q, $search) {
-                $q->where(function ($sub) use ($search) {
-                    $sub->where('name', 'like', "%{$search}%")
-                        ->orWhere('code', 'like', "%{$search}%");
-                });
-            })
-            ->when($request->region_id, function ($q, $regionId) {
-                $q->whereIn('region_id', (array) $regionId);
-            })
-            ->when($request->company_group_id, function ($q, $companyGroupId) {
-                $q->whereIn('company_group_id', (array) $companyGroupId);
-            });
+        $query = $this->organizationQuery->companies($request);
 
         return Inertia::render('admin/Index', [
             'currentView' => 'companies',
@@ -198,9 +176,9 @@ class OrganizationController extends Controller
         return back()->with('success', 'Company berhasil dihapus.');
     }
 
-    public function bulkDestroyCompany(Request $request)
+    public function bulkDestroyCompany(BulkDeleteRequest $request)
     {
-        $ids = $request->validate(['ids' => 'required|array'])['ids'];
+        $ids = $request->validated()['ids'];
         Company::whereIn('id', $ids)->delete();
 
         return back()->with('success', 'Perusahaan terpilih berhasil dihapus.');
@@ -211,10 +189,8 @@ class OrganizationController extends Controller
         return Excel::download(new CompanyGroupsExport, 'group_perusahaan_'.date('Ymd').'.xlsx');
     }
 
-    public function importCompanyGroups(Request $request)
+    public function importCompanyGroups(ImportFileRequest $request)
     {
-        $request->validate(['file' => 'required|file|mimes:xlsx,xls']);
-
         try {
             Excel::import(new CompanyGroupsImport, $request->file('file'));
 
@@ -229,10 +205,8 @@ class OrganizationController extends Controller
         return Excel::download(new RegionsExport, 'wilayah_region_'.date('Ymd').'.xlsx');
     }
 
-    public function importRegions(Request $request)
+    public function importRegions(ImportFileRequest $request)
     {
-        $request->validate(['file' => 'required|file|mimes:xlsx,xls']);
-
         try {
             Excel::import(new RegionsImport, $request->file('file'));
 
@@ -247,10 +221,8 @@ class OrganizationController extends Controller
         return Excel::download(new CompaniesExport, 'data_perusahaan_'.date('Ymd').'.xlsx');
     }
 
-    public function importCompanies(Request $request)
+    public function importCompanies(ImportFileRequest $request)
     {
-        $request->validate(['file' => 'required|file|mimes:xlsx,xls']);
-
         try {
             Excel::import(new CompaniesImport, $request->file('file'));
 

@@ -6,7 +6,6 @@ use App\Http\Controllers\Admin\MasterDataAdminController;
 use App\Http\Controllers\Admin\OrganizationController;
 use App\Http\Controllers\Admin\VendorAdminController;
 use App\Http\Controllers\Admin\WorkflowAdminController;
-use App\Http\Controllers\Form\FormTemplateController;
 use App\Http\Controllers\Report\ReportController;
 use App\Http\Controllers\System\EmailTestController;
 use App\Http\Controllers\Template\TemplateController;

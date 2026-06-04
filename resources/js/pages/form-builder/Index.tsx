@@ -14,7 +14,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import axios from 'axios';
 import { ArrowLeft, Download, FileText, Grid, Layout, List, Loader2, Plus, Redo, Save, Undo } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { TrashZone } from './form-builder/components/TrashZone';
+import { TrashZone } from './components/TrashZone';
 
 interface FormField {
     id: string;

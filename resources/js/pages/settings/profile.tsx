@@ -140,7 +140,7 @@ export default function Profile({ department, recentContracts = [] }: ProfilePro
 
                     {/* Header */}
                     <div className="dark:bg-surface-base border-surface-border bg-white border-b">
-                        <div className="mx-auto max-w-5xl px-6 pt-10 pb-0">
+                        <div className="w-full px-6 pt-10 pb-0">
 
                             {/* User info row */}
                             <div className="flex items-start justify-between gap-6 mb-8">
@@ -242,7 +242,7 @@ export default function Profile({ department, recentContracts = [] }: ProfilePro
                     </div>
 
                     {/* Content */}
-                    <div className="mx-auto max-w-5xl px-6 py-10">
+                    <div className="w-full px-6 py-10">
 
                         {/* General Tab */}
                         {activeTab === 'general' && (
@@ -423,7 +423,7 @@ export default function Profile({ department, recentContracts = [] }: ProfilePro
 
                     {/* Footer */}
                     <div className="border-surface-border/40 border-t px-6 py-6">
-                        <div className="mx-auto max-w-5xl flex items-center justify-between">
+                        <div className="w-full flex items-center justify-between">
                             <p className="text-text-soft text-xs">Sistem Manajemen Kontrak · {new Date().getFullYear()}</p>
                             <DeleteUser className="text-danger hover:bg-danger/5 rounded-lg px-3 py-1.5 text-xs transition-colors" />
                         </div>

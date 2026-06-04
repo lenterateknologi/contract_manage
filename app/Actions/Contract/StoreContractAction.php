@@ -2,6 +2,9 @@
 
 namespace App\Actions\Contract;
 
+use App\Enums\ContractHistoryAction;
+use App\Enums\ContractStatusEnum;
+use App\Enums\TransactionType;
 use App\Models\Contract;
 use App\Models\ContractHistory;
 use App\Models\ContractType;
@@ -29,8 +32,8 @@ class StoreContractAction
             $contractType = ContractType::find($validated['contract_type_id']);
 
             $contract_no = NumberingFormat::generateNextNumber('contract', [
-                'kode_departemen' => $initiator->department->code ?? 'GEN',
-                'kode_perjanjian' => $contractType->code ?? 'KTR',
+                'kode_departemen' => $initiator?->department?->code ?? 'GEN',
+                'kode_perjanjian' => $contractType?->code ?? 'KTR',
             ]);
 
             $contract = Contract::create([
@@ -41,8 +44,8 @@ class StoreContractAction
                 'contract_type_id' => $validated['contract_type_id'],
                 'contract_type_parent_id' => $validated['contract_type_parent_id'] ?? null,
                 'submission_type_id' => $validated['submission_type_id'] ?? null,
-                'transaction_type' => $validated['transaction_type'] ?? 'Perjanjian Baru',
-                'status' => 'draft',
+                'transaction_type' => $validated['transaction_type'] ?? TransactionType::NewAgreement->value,
+                'status' => ContractStatusEnum::Draft->value,
                 'created_by' => $userId,
                 'initiated_by_id' => $initiatorId,
                 'vendor_id' => $validated['vendor_id'] ?? null,
@@ -67,7 +70,12 @@ class StoreContractAction
                 'p2_address' => $validated['p2_address'] ?? null,
             ]);
 
-            ContractHistory::create(['contract_id' => $contract->id, 'action' => 'CONTRACT_CREATED', 'description' => 'Kontrak dibuat', 'actor_id' => $userId]);
+            ContractHistory::create([
+                'contract_id' => $contract->id,
+                'action' => ContractHistoryAction::ContractCreated->value,
+                'description' => ContractHistoryAction::ContractCreated->label(),
+                'actor_id' => $userId,
+            ]);
 
             // AUTOMATION: Automatically assign workflow and set to Step 1 (Drafting)
             $contract = $this->workflowService->sendForApproval($contract, $validated['workflow_id'] ?? null);

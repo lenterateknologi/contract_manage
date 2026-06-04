@@ -391,7 +391,7 @@ class ContractWorkflowService
 
                 // Helper function to create signer
                 $createSigner = function ($userIds, $statusFallback) use ($contract, $targetStepId, $initialStatus, $targetSequence, &$allSigners) {
-                    foreach ($userIds as $id) {
+                    foreach ($userIds as $index => $id) {
                         $user = User::find($id);
                         if ($user) {
                             $maxSort = Approval::where('contract_id', $contract->id)
@@ -405,12 +405,17 @@ class ContractWorkflowService
 
                             $newSubStep = $maxSubStep + 1;
 
+                            $role = 'Penandatangan';
+                            if (request()->has('p1_user_id') || request()->has('p2_user_id')) {
+                                $role = ($index === 0) ? 'Pihak 1' : 'Pihak 2';
+                            }
+
                             Approval::create([
                                 'contract_id' => $contract->id,
                                 'workflow_step_id' => $targetStepId,
                                 'user_id' => $user->id,
                                 'approver_name' => $user->name,
-                                'role' => 'Penandatangan',
+                                'role' => $role,
                                 'status' => empty($allSigners) ? $initialStatus : $statusFallback,
                                 'sequence' => $targetSequence,
                                 'sub_step' => $newSubStep,
@@ -434,7 +439,7 @@ class ContractWorkflowService
                 if ($targetStepId === $contract->workflow_step_id) {
                     $contract->approvals()
                         ->where('workflow_step_id', $targetStepId)
-                        ->whereNotIn('role', ['initiator', 'Penandatangan', 'Persetujuan Tambahan'])
+                        ->whereNotIn('role', ['initiator', 'Penandatangan', 'Persetujuan Tambahan', 'Pihak 1', 'Pihak 2'])
                         ->where('status', 'pending')
                         ->update(['status' => 'waiting']);
 
@@ -473,11 +478,11 @@ class ContractWorkflowService
                 $logMsg = "Proses {$approval->role} dialihkan ke orang berikutnya: {$nextApproval->approver_name}";
                 $this->queryService->logHistory($contract, 'APPROVAL_PENDING', $logMsg, Auth::id());
             } else {
-                if (in_array($approval->role, ['Persetujuan Tambahan', 'Penandatangan'])) {
+                if (in_array($approval->role, ['Persetujuan Tambahan', 'Penandatangan', 'Pihak 1', 'Pihak 2'])) {
                     // All adhoc/signers finished for this step, now ACTIVATE regular approvers
                     $regularApprovalsToActivate = Approval::where('contract_id', $contract->id)
                         ->where('workflow_step_id', $approval->workflow_step_id)
-                        ->whereNotIn('role', ['Persetujuan Tambahan', 'Penandatangan'])
+                        ->whereNotIn('role', ['Persetujuan Tambahan', 'Penandatangan', 'Pihak 1', 'Pihak 2'])
                         ->where('status', 'waiting')
                         ->get();
 
@@ -587,7 +592,7 @@ class ContractWorkflowService
 
             if ($attachmentPath) {
                 // Force a database query to get the absolute latest version number
-                $lastVersion = \App\Models\ContractVersion::where('contract_id', $contract->id)
+                $lastVersion = ContractVersion::where('contract_id', $contract->id)
                     ->where('document_type', 'agreement')
                     ->max('version_no') ?? 0;
 
@@ -604,7 +609,7 @@ class ContractWorkflowService
                     'version_no' => $versionNo,
                     'file_name' => "agreement_v{$versionNo}.{$ext}",
                     'file_path' => $newPath,
-                    'change_log' => "Dokumen ditandatangani oleh {$approval->approver_name}",
+                    'change_log' => in_array($approval->role, ['Pihak 1', 'Pihak 2']) ? "Dokumen ditandatangani {$approval->role}" : "Dokumen ditandatangani oleh {$approval->approver_name}",
                     'uploaded_by' => Auth::id(),
                 ]);
 
@@ -686,7 +691,7 @@ class ContractWorkflowService
                 $this->createApprovalForStep($contract, $nextStep);
 
                 // Handle auto-approval if the person who just approved is also the approver for the next step
-                // $this->handleAutoApproval($contract, Auth::user());
+                $this->handleAutoApproval($contract, Auth::user());
 
                 $this->queryService->logHistory($contract, 'WORKFLOW_ADVANCED', "Alur kerja berlanjut ke tahap {$nextStep->step}: {$nextStep->description}", Auth::id());
             } else {
