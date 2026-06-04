@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/base/Button';
 import { Input } from '@/components/ui/base/Input';
 import { Label } from '@/components/ui/base/Label';
 import { useForm } from '@inertiajs/react';
-import { Camera, Eye, EyeOff, Loader2, Lock, Shield, User as UserIcon } from 'lucide-react';
+import { Camera, Eye, EyeOff, Loader2, Shield } from 'lucide-react';
 import React, { useState } from 'react';
 
 export function ProfileView({ meUser, showToast }: { meUser: any; showToast: any }) {
