@@ -60,14 +60,12 @@ const WorkflowNode = ({ data }: NodeProps<Node<WorkflowNodeData>>) => {
         <div
             className={cn(
                 'group relative min-w-[220px] rounded-xl border px-4 py-3 transition-all duration-200 select-none',
-                data.isFinal
-                    ? 'border-success/20 bg-success/5'
-                    : 'border-surface-border bg-surface-base shadow-sm',
+                data.isFinal ? 'border-success/20 bg-success/5' : 'border-surface-border bg-surface-base shadow-sm',
             )}
         >
             {/* Main Flow Handles (Vertical) */}
             {!data.isInitial && (
-                <Handle type="target" position={Position.Top} className="hover:!bg-primary h-2 w-2 border-none !bg-text-soft transition-colors" />
+                <Handle type="target" position={Position.Top} className="hover:!bg-primary !bg-text-soft h-2 w-2 border-none transition-colors" />
             )}
 
             {/* Rejection Handles: Single Source (Bottom) and Single Target (Right) */}
@@ -76,7 +74,7 @@ const WorkflowNode = ({ data }: NodeProps<Node<WorkflowNodeData>>) => {
                     type="target"
                     position={Position.Right}
                     id="reject-in"
-                    className="h-1.5 w-1.5 border-none !bg-danger/30 transition-colors hover:!bg-danger"
+                    className="!bg-danger/30 hover:!bg-danger h-1.5 w-1.5 border-none transition-colors"
                 />
             )}
 
@@ -85,7 +83,7 @@ const WorkflowNode = ({ data }: NodeProps<Node<WorkflowNodeData>>) => {
                 position={Position.Bottom}
                 id="reject-out"
                 style={{ left: '40%' }}
-                className="h-1.5 w-1.5 border-none !bg-danger/30 transition-colors hover:!bg-danger"
+                className="!bg-danger/30 hover:!bg-danger h-1.5 w-1.5 border-none transition-colors"
             />
 
             <div className="flex items-center gap-3">
@@ -98,22 +96,22 @@ const WorkflowNode = ({ data }: NodeProps<Node<WorkflowNodeData>>) => {
                     <Icon size={14} />
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col text-left">
-                    <span className="mb-0.5 text-[9px] leading-none font-bold tracking-wider text-text-soft uppercase">{data.type || 'STEP'}</span>
-                    <span className="truncate text-xs font-bold text-text-main">{data.label}</span>
+                    <span className="text-text-soft mb-0.5 text-[9px] leading-none font-bold tracking-wider uppercase">{data.type || 'STEP'}</span>
+                    <span className="text-text-main truncate text-xs font-bold">{data.label}</span>
                     {data.organization && (data.organization.group || data.organization.region || data.organization.company) && (
                         <div className="mt-1.5 flex flex-wrap gap-1">
                             {data.organization.group && (
-                                <span className="rounded bg-role-manager-bg px-1.5 py-0.5 text-[8px] font-black tracking-tighter text-role-manager-text uppercase">
+                                <span className="bg-role-manager-bg text-role-manager-text rounded px-1.5 py-0.5 text-[8px] font-black tracking-tighter uppercase">
                                     {data.organization.group}
                                 </span>
                             )}
                             {data.organization.region && (
-                                <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[8px] font-black tracking-tighter text-primary uppercase">
+                                <span className="bg-primary/10 text-primary rounded px-1.5 py-0.5 text-[8px] font-black tracking-tighter uppercase">
                                     {data.organization.region}
                                 </span>
                             )}
                             {data.organization.company && (
-                                <span className="rounded bg-role-staff-bg px-1.5 py-0.5 text-[8px] font-black tracking-tighter text-role-staff-text uppercase">
+                                <span className="bg-role-staff-bg text-role-staff-text rounded px-1.5 py-0.5 text-[8px] font-black tracking-tighter uppercase">
                                     {data.organization.company}
                                 </span>
                             )}
@@ -128,7 +126,7 @@ const WorkflowNode = ({ data }: NodeProps<Node<WorkflowNodeData>>) => {
                             e.stopPropagation();
                             data.onDelete?.();
                         }}
-                        className="rounded-lg p-1.5 text-text-soft opacity-0 transition-all group-hover:opacity-100 hover:bg-danger/5 hover:text-danger"
+                        className="text-text-soft hover:bg-danger/5 hover:text-danger rounded-lg p-1.5 opacity-0 transition-all group-hover:opacity-100"
                     >
                         <Trash2 size={14} />
                     </button>
@@ -136,7 +134,7 @@ const WorkflowNode = ({ data }: NodeProps<Node<WorkflowNodeData>>) => {
             </div>
 
             {!data.isFinal && (
-                <Handle type="source" position={Position.Bottom} className="hover:!bg-primary h-2 w-2 border-none !bg-text-soft transition-colors" />
+                <Handle type="source" position={Position.Bottom} className="hover:!bg-primary !bg-text-soft h-2 w-2 border-none transition-colors" />
             )}
         </div>
     );
@@ -398,12 +396,7 @@ export function WorkflowVisualizer({
     );
 
     return (
-        <div
-            className={cn(
-                'h-full w-full overflow-hidden border border-surface-border bg-surface-muted/30',
-                className,
-            )}
-        >
+        <div className={cn('border-surface-border bg-surface-muted/30 h-full w-full overflow-hidden border', className)}>
             <ReactFlow
                 nodes={nodes}
                 edges={edges}

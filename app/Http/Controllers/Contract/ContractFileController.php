@@ -9,6 +9,7 @@ use App\Actions\Contract\RejectContractAction;
 use App\Actions\Contract\StoreContractAction;
 use App\Actions\Contract\UpdateContractAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Contract\UploadRevisionRequest;
 use App\Models\Contract;
 use App\Services\ContractWorkflowService;
 use Illuminate\Http\JsonResponse;
@@ -49,7 +50,7 @@ class ContractFileController extends Controller
         $this->exportAction = $exportAction;
     }
 
-    public function uploadRevision(Request $request, string $id): JsonResponse
+    public function uploadRevision(UploadRevisionRequest $request, string $id): JsonResponse
     {
         $contract = Contract::findOrFail($id);
 

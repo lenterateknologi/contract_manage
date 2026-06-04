@@ -29,7 +29,6 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild className="focus:bg-primary focus:text-primary-foreground">
-
                 <Link
                     className="flex w-full items-center hover:text-white"
                     method="post"

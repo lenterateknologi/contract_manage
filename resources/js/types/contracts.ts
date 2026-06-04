@@ -162,6 +162,8 @@ export interface Contract {
     current_version: number;
     requires_pic_assignment?: boolean;
     created_at: string;
+    updated_at: string;
+    updated_at_formatted?: string;
     submitted_at: string | null;
     creator: UserProfile;
     metadata?: {

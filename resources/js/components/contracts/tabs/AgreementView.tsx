@@ -1,6 +1,6 @@
-import { useToast } from '@/components/ui/feedback/Toast';
 import { Button } from '@/components/ui/base/Button';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
+import { useToast } from '@/components/ui/feedback/Toast';
 import { SearchInput } from '@/components/ui/forms/SearchInput';
 import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
@@ -20,13 +20,13 @@ interface AgreementVersion {
     created_at: string;
 }
 
-export default function AgreementView({ 
-    contract, 
+export default function AgreementView({
+    contract,
     onUpdate,
     docType = 'agreement',
-    meId
-}: { 
-    contract: Contract; 
+    meId,
+}: {
+    contract: Contract;
     onUpdate: (c: Contract) => void;
     docType?: 'agreement' | 'contract' | 'f1' | 'f2';
     meId?: string;
@@ -65,7 +65,7 @@ export default function AgreementView({
         async (forceLatest = false, silent = false) => {
             if (!silent) setLoading(true);
             try {
-                const url = isRevision 
+                const url = isRevision
                     ? `/api/contracts/${contract.id}/revision/versions?type=${effectiveDocType}`
                     : `/api/contracts/${contract.id}/agreement/versions`;
                 const res = await axios.get(url);
@@ -102,7 +102,7 @@ export default function AgreementView({
     // --- SIGNING LOGIC ---
     const activeSignerApproval = React.useMemo(() => {
         return (contract.approvals || []).find(
-            (a: any) => a.status === 'pending' && a.user_id === meId && (a.role === 'Pihak 1' || a.role === 'Pihak 2' || a.role === 'Penandatangan')
+            (a: any) => a.status === 'pending' && a.user_id === meId && (a.role === 'Pihak 1' || a.role === 'Pihak 2' || a.role === 'Penandatangan'),
         );
     }, [contract.approvals, meId]);
 
@@ -110,15 +110,13 @@ export default function AgreementView({
     const stepDownloaded = activeSignerApproval ? contract.metadata?.[`downloaded_step_${activeSignerApproval.id}`] : null;
 
     const handleDownload = async (vId?: string) => {
-        const versionsList = versions.length > 0 ? versions : contract.versions?.filter(v => v.document_type === 'agreement') || [];
+        const versionsList = versions.length > 0 ? versions : contract.versions?.filter((v) => v.document_type === 'agreement') || [];
         if (versionsList.length === 0) {
             showToast('Tidak ada dokumen agreement yang ditemukan.', 'danger');
             return;
         }
 
-        const versionToDownload = vId 
-            ? versionsList.find(v => v.id === vId) 
-            : versionsList.sort((a, b) => b.version_no - a.version_no)[0];
+        const versionToDownload = vId ? versionsList.find((v) => v.id === vId) : versionsList.sort((a, b) => b.version_no - a.version_no)[0];
 
         if (!versionToDownload) return;
 
@@ -126,11 +124,11 @@ export default function AgreementView({
 
         if (isSigner && activeSignerApproval) {
             const newMeta = { ...contract.metadata };
-            
+
             // Track globally for legacy P1/P2
             if (activeSignerApproval?.role === 'Pihak 1') newMeta['p1_downloaded_at'] = new Date().toISOString();
             if (activeSignerApproval?.role === 'Pihak 2') newMeta['p2_downloaded_at'] = new Date().toISOString();
-            
+
             // Track specifically for this approval step
             newMeta[`downloaded_step_${activeSignerApproval.id}`] = new Date().toISOString();
 
@@ -145,11 +143,7 @@ export default function AgreementView({
     // ---------------------
 
     const allowFlag =
-        effectiveDocType === 'f1'
-            ? contract.allow_f1_edit
-            : effectiveDocType === 'f2'
-              ? contract.allow_f2_edit
-              : contract.allow_agreement_edit;
+        effectiveDocType === 'f1' ? contract.allow_f1_edit : effectiveDocType === 'f2' ? contract.allow_f2_edit : contract.allow_agreement_edit;
 
     // We allow edit if user is Creator or Approver, AND the flag is not explicitly false.
     // (Admins who are neither will be read-only on frontend unless we pass their role)
@@ -196,9 +190,7 @@ export default function AgreementView({
         }
 
         try {
-            const url = isRevision 
-                ? `/api/contracts/${contract.id}/revision` 
-                : `/api/contracts/${contract.id}/agreement`;
+            const url = isRevision ? `/api/contracts/${contract.id}/revision` : `/api/contracts/${contract.id}/agreement`;
             const res = await axios.post(url, formData);
             setUploadNote('');
             if (onUpdate && res.data) onUpdate(res.data);
@@ -220,11 +212,11 @@ export default function AgreementView({
     const handleCompare = () => {
         const v1 = versions.length > 1 ? versions[1].version_no : selectedVno;
         const v2 = selectedVno;
-        
+
         const url = isRevision
             ? `/admin/contracts/${contract.id}/form-submissions/${effectiveDocType}/compare?v1=${v1}&v2=${v2}`
             : `/admin/contracts/${contract.id}/agreement/compare?v1=${v1}&v2=${v2}`;
-            
+
         window.open(url, '_blank');
     };
 
@@ -232,11 +224,7 @@ export default function AgreementView({
         if (!debouncedSearch) return versions;
         const q = debouncedSearch.toLowerCase();
         return versions.filter((v) => {
-            return (
-                v.version_no.toString().includes(q) ||
-                v.uploader?.name?.toLowerCase().includes(q) ||
-                v.created_at.toLowerCase().includes(q)
-            );
+            return v.version_no.toString().includes(q) || v.uploader?.name?.toLowerCase().includes(q) || v.created_at.toLowerCase().includes(q);
         });
     }, [versions, debouncedSearch]);
 
@@ -251,7 +239,7 @@ export default function AgreementView({
     const labelMapping: Record<string, string> = {
         f1: 'Dokumen F1',
         f2: 'Dokumen F2',
-        agreement: 'Persetujuan'
+        agreement: 'Persetujuan',
     };
     const titleLabel = labelMapping[effectiveDocType] || 'Persetujuan';
 
@@ -361,14 +349,14 @@ export default function AgreementView({
                         </Button>
 
                         {showMoreActions && (
-                            <div className="animate-in fade-in zoom-in-95 absolute top-full right-0 z-[999] mt-2 w-64 origin-top-right rounded-2xl border border-surface-border bg-surface-base p-1.5 shadow-2xl backdrop-blur-xl duration-200">
+                            <div className="animate-in fade-in zoom-in-95 border-surface-border bg-surface-base absolute top-full right-0 z-[999] mt-2 w-64 origin-top-right rounded-2xl border p-1.5 shadow-2xl backdrop-blur-xl duration-200">
                                 <Button
                                     variant="ghost"
                                     onClick={() => {
                                         loadVersions();
                                         setShowMoreActions(false);
                                     }}
-                                    className="flex w-full h-auto items-center justify-start gap-3 px-4 py-3 text-left text-xs text-text-main transition-all hover:bg-surface-muted"
+                                    className="text-text-main hover:bg-surface-muted flex h-auto w-full items-center justify-start gap-3 px-4 py-3 text-left text-xs transition-all"
                                 >
                                     <RefreshCw size={16} className="opacity-40" />
                                     Refresh List
@@ -381,7 +369,7 @@ export default function AgreementView({
                                             handleCompare();
                                             setShowMoreActions(false);
                                         }}
-                                        className="flex w-full h-auto items-center justify-start gap-3 px-4 py-3 text-left text-xs text-text-main transition-all hover:bg-surface-muted"
+                                        className="text-text-main hover:bg-surface-muted flex h-auto w-full items-center justify-start gap-3 px-4 py-3 text-left text-xs transition-all"
                                     >
                                         <Diff size={16} className="opacity-40" />
                                         Bandingkan Versi
@@ -395,7 +383,7 @@ export default function AgreementView({
                                             handleDownload(selectedVersion.id);
                                             setShowMoreActions(false);
                                         }}
-                                        className="flex w-full h-auto items-center justify-start gap-3 px-4 py-3 text-left text-xs text-text-main transition-all hover:bg-surface-muted"
+                                        className="text-text-main hover:bg-surface-muted flex h-auto w-full items-center justify-start gap-3 px-4 py-3 text-left text-xs transition-all"
                                     >
                                         <Download size={16} className="opacity-40" />
                                         Download
@@ -409,27 +397,22 @@ export default function AgreementView({
                         <div className="flex flex-col items-end gap-1">
                             <Button
                                 asChild
-                                className={cn(
-                                    'h-10 px-6',
-                                    (uploading || (isSigner && !stepDownloaded)) && 'pointer-events-none opacity-50',
-                                )}
+                                className={cn('h-10 px-6', (uploading || (isSigner && !stepDownloaded)) && 'pointer-events-none opacity-50')}
                             >
                                 <label className="cursor-pointer">
-                                    <input 
-                                        type="file" 
-                                        className="hidden" 
-                                        accept={isRevision ? ".pdf,.doc,.docx,.DOC,.DOCX,.PDF" : ".docx,.DOCX"} 
-                                        onChange={handleFileChange} 
-                                        disabled={uploading || (isSigner && !stepDownloaded)} 
+                                    <input
+                                        type="file"
+                                        className="hidden"
+                                        accept={isRevision ? '.pdf,.doc,.docx,.DOC,.DOCX,.PDF' : '.docx,.DOCX'}
+                                        onChange={handleFileChange}
+                                        disabled={uploading || (isSigner && !stepDownloaded)}
                                     />
                                     {uploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
                                     Upload
                                 </label>
                             </Button>
                             {isSigner && !stepDownloaded && (
-                                <span className="text-[9px] font-medium text-danger italic">
-                                    Unduh dokumen sebelum upload
-                                </span>
+                                <span className="text-danger text-[9px] font-medium italic">Unduh dokumen sebelum upload</span>
                             )}
                         </div>
                     )}
@@ -437,7 +420,7 @@ export default function AgreementView({
             </div>
 
             {/* Main Preview Area - PDF Iframe */}
-            <div className="relative flex min-h-[1000px] flex-1 flex-col overflow-hidden border-t border-surface-border bg-surface-base dark:bg-transparent">
+            <div className="border-surface-border bg-surface-base relative flex min-h-[1000px] flex-1 flex-col overflow-hidden border-t dark:bg-transparent">
                 {loading ? (
                     <div className="flex h-full flex-col items-center justify-center gap-4">
                         <LoadingLottie width={120} height={120} />
@@ -450,7 +433,8 @@ export default function AgreementView({
                         </div>
                         <h4 className="mb-2 text-xs font-medium text-black dark:text-white">Dokumen Tidak Tersedia</h4>
                         <p className="max-w-sm text-[11px] font-medium text-black/40 dark:text-white/40">
-                            Upload draf final {titleLabel.toLowerCase()} Anda ({isRevision ? '.pdf, .docx' : '.docx'}) untuk mulai melacak versi secara dinamis.
+                            Upload draf final {titleLabel.toLowerCase()} Anda ({isRevision ? '.pdf, .docx' : '.docx'}) untuk mulai melacak versi
+                            secara dinamis.
                         </p>
                     </div>
                 ) : (

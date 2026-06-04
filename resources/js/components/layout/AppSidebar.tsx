@@ -1,6 +1,7 @@
 import { NavFooter } from '@/components/navigation/NavFooter';
 import { NavMain } from '@/components/navigation/NavMain';
 import { NavUser } from '@/components/navigation/NavUser';
+import { SearchInput } from '@/components/ui/forms/SearchInput';
 import {
     Sidebar,
     SidebarContent,
@@ -43,7 +44,6 @@ import {
 } from 'lucide-react';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import AppLogo from './AppLogo';
-import { SearchInput } from '@/components/ui/forms/SearchInput';
 
 const iconMap: Record<string, LucideIcon> = {
     LayoutGrid,
@@ -121,7 +121,12 @@ export const AppSidebar = memo(function AppSidebar() {
             <SidebarHeader className="p-0">
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild tooltip="Dashboard" className="group-data-[collapsible=icon]:!size-12 group-data-[collapsible=icon]:!p-0">
+                        <SidebarMenuButton
+                            size="lg"
+                            asChild
+                            tooltip="Dashboard"
+                            className="group-data-[collapsible=icon]:!size-12 group-data-[collapsible=icon]:!p-0"
+                        >
                             <Link href="/dashboard" className="flex h-full w-full items-center justify-center">
                                 <AppLogo />
                             </Link>
@@ -147,11 +152,11 @@ export const AppSidebar = memo(function AppSidebar() {
                         </SidebarMenu>
                     ) : (
                         <div className="px-2">
-                            <div className="relative group/search">
+                            <div className="group/search relative">
                                 <SearchInput
                                     ref={inputRef}
                                     placeholder="Cari fitur..."
-                                    className="bg-sidebar-accent/50 border-sidebar-border/50 text-sidebar-foreground placeholder:text-sidebar-foreground/30 h-9 w-full rounded-lg text-[13px] font-semibold transition-all duration-300 pr-12"
+                                    className="bg-sidebar-accent/50 border-sidebar-border/50 text-sidebar-foreground placeholder:text-sidebar-foreground/30 h-9 w-full rounded-lg pr-12 text-[13px] font-semibold transition-all duration-300"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     autoFocus={search !== ''}
@@ -164,7 +169,7 @@ export const AppSidebar = memo(function AppSidebar() {
                                 {search && (
                                     <button
                                         onClick={() => setSearch('')}
-                                        className="absolute top-1/2 right-2 -translate-y-1/2 rounded-full p-1.5 transition-colors hover:bg-white/10 z-10"
+                                        className="absolute top-1/2 right-2 z-10 -translate-y-1/2 rounded-full p-1.5 transition-colors hover:bg-white/10"
                                     >
                                         <X className="text-sidebar-foreground/60 h-3.5 w-3.5" />
                                     </button>

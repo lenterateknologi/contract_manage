@@ -4,9 +4,9 @@ import { FormEventHandler, useState } from 'react';
 
 import { Button } from '@/components/ui/base/Button';
 import { Checkbox } from '@/components/ui/base/Checkbox';
-import { FormInput } from '@/components/ui/forms/FormInput';
 import { Label } from '@/components/ui/base/Label';
 import TextLink from '@/components/ui/base/TextLink';
+import { FormInput } from '@/components/ui/forms/FormInput';
 import AuthSplitLayout from '@/layouts/auth/auth-split-layout';
 
 interface LoginForm {

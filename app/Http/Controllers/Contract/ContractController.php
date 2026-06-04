@@ -8,6 +8,8 @@ use App\Actions\Contract\UpdateContractAction;
 use App\Exports\ContractExport;
 use App\Formatters\ContractFormatter;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Contract\StoreContractRequest;
+use App\Http\Requests\Contract\UpdateContractRequest;
 use App\Imports\ContractImport;
 use App\Models\AccessModule;
 use App\Models\Approval;
@@ -1488,45 +1490,19 @@ class ContractController extends Controller
             new OA\Response(response: 422, description: 'Validation error'),
         ],
     )]
-    public function store(Request $request): JsonResponse
+    public function store(StoreContractRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'crown_no' => 'nullable|string|max:255',
-            'contract_type_id' => 'required|exists:m_contract_types,id',
-            'contract_type_parent_id' => 'nullable|exists:m_contract_types,id',
-            'submission_type_id' => 'nullable|exists:m_submission_types,id',
-            'transaction_type' => 'nullable|string|in:Perjanjian Baru,Addendum,Amandement,Perubahan Perjanjian',
-            'tax_required' => 'nullable|boolean',
-            'initiated_by_id' => 'nullable|uuid|exists:m_users,id',
-            'vendor_id' => 'nullable|uuid|exists:m_vendors,id',
-            'kop_sub_topik' => 'nullable|string',
-            'p1_entity' => 'nullable|string',
-            'p1_signer' => 'nullable|string',
-            'p1_signer_position' => 'nullable|string',
-            'p1_address' => 'nullable|string',
-            'p2_entity' => 'nullable|string',
-            'p2_signer' => 'nullable|string',
-            'p2_signer_position' => 'nullable|string',
-            'p2_address' => 'nullable|string',
-            'category' => 'nullable|string',
-            'project_name' => 'nullable|string',
-            'topic' => 'nullable|string',
-            'workflow_id' => 'nullable|uuid|exists:m_workflows,id',
-        ]);
-
-        $contract = $this->storeAction->execute($validated);
+        $contract = $this->storeAction->execute($request->validated());
 
         return response()->json(ContractFormatter::formatContract($contract), 201);
     }
 
-    public function update(Request $request, string $id): JsonResponse
+    public function update(UpdateContractRequest $request, string $id): JsonResponse
     {
         $contract = Contract::findOrFail($id);
 
         // Granular permission check
-        $payload = $request->all();
+        $payload = $request->validated();
         $isUpdatingReference = array_key_exists('parent_id', $payload);
         $isUpdatingInfo = collect($payload)->except(['parent_id'])->isNotEmpty();
 

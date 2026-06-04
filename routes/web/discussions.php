@@ -1,21 +1,18 @@
 <?php
 
+use App\Http\Controllers\Chat\ChatController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
-/**
+/*
  * ── Discussion & Messaging (Web) ──
  */
 
 Route::middleware(['auth'])->group(function () {
-    // Global Inbox View (Placeholder)
+    // Global Chat Center
+    Route::get('/admin/chat', [ChatController::class, 'index'])->name('admin.chat.index');
+
+    // Legacy/Alternative path if needed
     Route::get('/discussions', function () {
-        return Inertia::render('discussions/index', [
-            'breadcrumbs' => [
-                ['title' => 'Diskusi', 'href' => route('web.discussions.index'), 'icon' => 'MessageSquare'],
-            ],
-        ]);
+        return redirect()->route('admin.chat.index');
     })->name('web.discussions.index');
-    
-    // Future: Thread views, mention lists, etc.
 });

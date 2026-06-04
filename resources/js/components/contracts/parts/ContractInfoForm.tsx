@@ -1,6 +1,4 @@
-import { cn } from '@/lib/utils';
 import { ContractType } from '@/types/contracts';
-import React from 'react';
 
 // --- CONFIGURATION ---
 const SHOW_META_KEYS = true; // Set to false to hide technical keys from the UI
@@ -47,7 +45,7 @@ export function ContractInfoForm({
         if (!SHOW_META_KEYS) return null;
 
         return (
-            <span className="text-[8px] font-mono text-primary bg-primary/5 px-1.5 py-0.5 rounded-sm uppercase tracking-tighter opacity-70 border border-primary/10">
+            <span className="text-primary bg-primary/5 border-primary/10 rounded-sm border px-1.5 py-0.5 font-mono text-[8px] tracking-tighter uppercase opacity-70">
                 KEY: {name}
             </span>
         );
@@ -69,7 +67,7 @@ export function ContractInfoForm({
                     />
                 ) : (
                     <div className="text-primary text-sm font-bold">
-                        {selected.crown_no || <span className="text-text-soft/40 italic font-medium text-xs">Belum diisi</span>}
+                        {selected.crown_no || <span className="text-text-soft/40 text-xs font-medium italic">Belum diisi</span>}
                     </div>
                 )}
             </div>
@@ -80,12 +78,7 @@ export function ContractInfoForm({
                         <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Judul Kontrak</div>
                         <MetaBadge name="meta_judul_kontrak" />
                     </div>
-                    <input
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        placeholder="Masukkan nama kontrak..."
-                        className={inputCls}
-                    />
+                    <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Masukkan nama kontrak..." className={inputCls} />
                 </div>
             ) : null}
 
@@ -105,9 +98,7 @@ export function ContractInfoForm({
                             ))}
                     </select>
                 ) : (
-                    <div className="text-text-main text-sm font-semibold">
-                        {selected.contract_type}
-                    </div>
+                    <div className="text-text-main text-sm font-semibold">{selected.contract_type}</div>
                 )}
             </div>
 
@@ -147,9 +138,7 @@ export function ContractInfoForm({
                             ))}
                     </select>
                 ) : (
-                    <div className="text-text-main text-sm font-semibold">
-                        {selected.vendor?.name || '-'}
-                    </div>
+                    <div className="text-text-main text-sm font-semibold">{selected.vendor?.name || '-'}</div>
                 )}
             </div>
         </>

@@ -1,7 +1,7 @@
-import { useToast } from '@/components/ui/feedback/Toast';
 import { Button } from '@/components/ui/base/Button';
 import { FilterCategory, FilterPopover } from '@/components/ui/data/FilterPopover';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
+import { useToast } from '@/components/ui/feedback/Toast';
 import { SearchInput } from '@/components/ui/forms/SearchInput';
 import { useDebounce } from '@/hooks/use-debounce';
 import { contractApi } from '@/lib/contract-api';
@@ -114,7 +114,7 @@ export default function ContractAuditTrail({ contract }: Props) {
                         onFilterChange={(key, val) => {
                             const newFilters = { ...filters };
                             if (key === 'actor_id') {
-                                newFilters.actor_id = Array.isArray(val) ? (val[0] || '') : val;
+                                newFilters.actor_id = Array.isArray(val) ? val[0] || '' : val;
                             } else if (key === 'date_from' || key === 'date_to') {
                                 newFilters[key] = val;
                             }

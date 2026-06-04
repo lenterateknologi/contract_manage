@@ -35,7 +35,7 @@ export const contractApi = {
         if (assignedPicId) fd.append('assigned_pic_id', assignedPicId);
         if (executionOrder) fd.append('execution_order', executionOrder);
         if (signerUserIds && Array.isArray(signerUserIds)) {
-            signerUserIds.forEach(uid => fd.append('signer_user_ids[]', uid));
+            signerUserIds.forEach((uid) => fd.append('signer_user_ids[]', uid));
         }
         if (actionCode) fd.append('action_code', actionCode);
         if (isFinal) fd.append('is_final', '1');
@@ -67,8 +67,7 @@ export const contractApi = {
     },
     removeAdhocApprover: (id: string, approvalId: string): Promise<Contract> =>
         api.delete(`/api/contracts/${id}/approver/${approvalId}`).then((r) => r.data),
-    submitAdhocApprovers: (id: string): Promise<Contract> =>
-        api.post(`/api/contracts/${id}/submit-approvers`).then((r) => r.data),
+    submitAdhocApprovers: (id: string): Promise<Contract> => api.post(`/api/contracts/${id}/submit-approvers`).then((r) => r.data),
     uploadRevision: (id: string, data: FormData): Promise<Contract> => api.post(`/api/contracts/${id}/revision`, data).then((r) => r.data),
     changeVersion: (id: string, versionNo: number): Promise<Contract> =>
         api.post(`/api/contracts/${id}/version`, { version_no: versionNo }).then((r) => r.data),

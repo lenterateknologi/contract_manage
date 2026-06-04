@@ -1,4 +1,3 @@
-import { ArrowUpRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface MetricItemProps {
@@ -59,35 +58,41 @@ export function MetricItem({ label, value, icon: Icon, color, onClick, isAlert }
         <div
             onClick={onClick}
             className={cn(
-                "group relative bg-white dark:bg-surface-base border border-surface-border/60 p-6 pl-8 rounded-2xl flex items-center justify-between transition-all duration-500 shadow-sm overflow-hidden min-h-[110px]",
-                onClick ? cn("cursor-pointer hover:shadow-xl hover:-translate-y-0.5", getHoverBorderColor(color)) : "cursor-default",
-                isAlert && "hover:border-rose-500/40"
+                'group dark:bg-surface-base border-surface-border/60 relative flex min-h-[110px] items-center justify-between overflow-hidden rounded-2xl border bg-white p-6 pl-8 shadow-sm transition-all duration-500',
+                onClick ? cn('cursor-pointer hover:-translate-y-0.5 hover:shadow-xl', getHoverBorderColor(color)) : 'cursor-default',
+                isAlert && 'hover:border-rose-500/40',
             )}
         >
             {/* Background decorative glow */}
-            <div className={cn(
-                "absolute inset-0 opacity-0 group-hover:opacity-[0.03] dark:group-hover:opacity-[0.05] transition-opacity duration-500 rounded-2xl pointer-events-none bg-gradient-to-br",
-                getGradientGlow(color)
-            )} />
+            <div
+                className={cn(
+                    'pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br opacity-0 transition-opacity duration-500 group-hover:opacity-[0.03] dark:group-hover:opacity-[0.05]',
+                    getGradientGlow(color),
+                )}
+            />
 
-            <div className="space-y-1.5 pr-4 z-10">
-                <p className="text-[10px] font-semibold text-text-soft uppercase tracking-wider leading-none">{label}</p>
-                <p className="text-3xl font-extrabold tracking-tight text-text-main leading-none">{value}</p>
+            <div className="z-10 space-y-1.5 pr-4">
+                <p className="text-text-soft text-[10px] leading-none font-semibold tracking-wider uppercase">{label}</p>
+                <p className="text-text-main text-3xl leading-none font-extrabold tracking-tight">{value}</p>
             </div>
 
-            <div className={cn(
-                "h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-500 group-hover:scale-110 shadow-sm z-10",
-                getBgColor(color),
-                color
-            )}>
-                <Icon size={20} strokeWidth={2.2} className={cn(isAlert && "animate-pulse")} />
+            <div
+                className={cn(
+                    'z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm transition-all duration-500 group-hover:scale-110',
+                    getBgColor(color),
+                    color,
+                )}
+            >
+                <Icon size={20} strokeWidth={2.2} className={cn(isAlert && 'animate-pulse')} />
             </div>
 
             {/* Left accent bar */}
-            <div className={cn(
-                "absolute left-0 top-0 bottom-0 w-1 transition-all duration-500 opacity-60 group-hover:opacity-100",
-                getBarColor(color)
-            )} />
+            <div
+                className={cn(
+                    'absolute top-0 bottom-0 left-0 w-1 opacity-60 transition-all duration-500 group-hover:opacity-100',
+                    getBarColor(color),
+                )}
+            />
         </div>
     );
 }

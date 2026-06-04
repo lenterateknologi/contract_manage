@@ -134,7 +134,7 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
 
     const active = activeId ? contracts.find((c) => c.id === activeId) : null;
     const msgs = active?.messages ?? [];
-    
+
     const filteredMsgs = React.useMemo(() => {
         return debouncedSearchThread.trim() ? msgs.filter((m) => m.message.toLowerCase().includes(debouncedSearchThread.toLowerCase())) : msgs;
     }, [msgs, debouncedSearchThread]);

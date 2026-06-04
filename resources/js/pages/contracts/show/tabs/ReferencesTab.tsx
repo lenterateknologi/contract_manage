@@ -10,13 +10,5 @@ interface ReferencesTabProps {
 }
 
 export const ReferencesTab = ({ contract, canUpdate, onUpdate, processing, meId }: ReferencesTabProps) => {
-    return (
-        <ContractReferenceCard
-            selected={contract}
-            canUpdate={canUpdate}
-            onUpdate={onUpdate}
-            processing={processing}
-            meId={meId}
-        />
-    );
+    return <ContractReferenceCard selected={contract} canUpdate={canUpdate} onUpdate={onUpdate} processing={processing} meId={meId} />;
 };

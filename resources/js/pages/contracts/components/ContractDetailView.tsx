@@ -5,25 +5,54 @@ import { contractApi } from '@/lib/contract-api';
 import { cn } from '@/lib/utils';
 import { Contract, ContractType } from '@/types/contracts';
 import { router } from '@inertiajs/react';
-import { AlertCircle, Archive, CheckCircle2, ChevronLeft, Clock, FileText, MoreVertical, Save, Trash2, UserPlus, X, Zap, UserCheck, Upload, PenTool, Users, Send, Download, Loader2 } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import {
+    AlertCircle,
+    Archive,
+    CheckCircle2,
+    ChevronLeft,
+    Clock,
+    Download,
+    FileText,
+    Loader2,
+    MoreVertical,
+    PenTool,
+    Save,
+    Trash2,
+    Upload,
+    UserCheck,
+    UserPlus,
+    Zap,
+} from 'lucide-react';
+import React, { useMemo, useState, lazy, Suspense } from 'react';
 
-import { SharedApproveModal } from '@/components/contracts/modals/shared/SharedApproveModal';
-import { SharedRejectModal } from '@/components/contracts/modals/shared/SharedRejectModal';
-import { SharedAddhocModal } from '@/components/contracts/modals/shared/SharedAddhocModal';
 import { DraftEditableInfoCard } from '@/components/contracts/parts/DraftEditableInfoCard';
-import { UserAvatar } from '@/components/user/UserAvatar';
 
-// Tab Components
-import { F1Tab } from '../show/tabs/F1Tab';
-import { F2Tab } from '../show/tabs/F2Tab';
-import { AgreementTab } from '../show/tabs/AgreementTab';
-import { TimelineTab } from '../show/tabs/TimelineTab';
-import { AttachmentsTab } from '../show/tabs/AttachmentsTab';
-import { ChatTab } from '../show/tabs/ChatTab';
-import { ReferencesTab } from '../show/tabs/ReferencesTab';
-import { MembersTab } from '../show/tabs/MembersTab';
-import { AuditTrailTab } from '../show/tabs/AuditTrailTab';
+// Lazy load modals
+const SharedAddhocModal = lazy(() => import('@/components/contracts/modals/shared/SharedAddhocModal').then(m => ({ default: m.SharedAddhocModal })));
+const SharedApproveModal = lazy(() => import('@/components/contracts/modals/shared/SharedApproveModal').then(m => ({ default: m.SharedApproveModal })));
+const SharedRejectModal = lazy(() => import('@/components/contracts/modals/shared/SharedRejectModal').then(m => ({ default: m.SharedRejectModal })));
+
+// Lazy load Tab Components for performance
+const AgreementTab = lazy(() => import('../show/tabs/AgreementTab').then(m => ({ default: m.AgreementTab })));
+const AttachmentsTab = lazy(() => import('../show/tabs/AttachmentsTab').then(m => ({ default: m.AttachmentsTab })));
+const AuditTrailTab = lazy(() => import('../show/tabs/AuditTrailTab').then(m => ({ default: m.AuditTrailTab })));
+const ChatTab = lazy(() => import('../show/tabs/ChatTab').then(m => ({ default: m.ChatTab })));
+const F1Tab = lazy(() => import('../show/tabs/F1Tab').then(m => ({ default: m.F1Tab })));
+const F2Tab = lazy(() => import('../show/tabs/F2Tab').then(m => ({ default: m.F2Tab })));
+const MembersTab = lazy(() => import('../show/tabs/MembersTab').then(m => ({ default: m.MembersTab })));
+const ReferencesTab = lazy(() => import('../show/tabs/ReferencesTab').then(m => ({ default: m.ReferencesTab })));
+const TimelineTab = lazy(() => import('../show/tabs/TimelineTab').then(m => ({ default: m.TimelineTab })));
+
+const TabSkeleton = () => (
+    <div className="flex flex-1 flex-col space-y-4 p-6">
+        <div className="bg-sidebar-accent h-8 w-1/3 animate-pulse rounded-md" />
+        <div className="bg-sidebar-accent h-64 w-full animate-pulse rounded-xl" />
+        <div className="grid grid-cols-2 gap-4">
+            <div className="bg-sidebar-accent h-32 w-full animate-pulse rounded-xl" />
+            <div className="bg-sidebar-accent h-32 w-full animate-pulse rounded-xl" />
+        </div>
+    </div>
+);
 
 const ContractDetailView = ({
     contract,
@@ -68,11 +97,15 @@ const ContractDetailView = ({
     const setDetailTab = (tab: string) => {
         const newParams = new URLSearchParams(window.location.search);
         newParams.set('tab', tab);
-        router.get(`${window.location.pathname}?${newParams.toString()}`, {}, {
-            preserveState: true,
-            preserveScroll: true,
-            replace: true,
-        });
+        router.get(
+            `${window.location.pathname}?${newParams.toString()}`,
+            {},
+            {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            },
+        );
     };
 
     const [processing, setProcessing] = useState(false);
@@ -108,7 +141,17 @@ const ContractDetailView = ({
         targetStepId?: string,
     ) => {
         try {
-            const c = await contractApi.approve(contract.id, note, attachment, assignedPicId, executionOrder, signerUserIds, actionCode || activeActionCode, isFinal, targetStepId);
+            const c = await contractApi.approve(
+                contract.id,
+                note,
+                attachment,
+                assignedPicId,
+                executionOrder,
+                signerUserIds,
+                actionCode || activeActionCode,
+                isFinal,
+                targetStepId,
+            );
             onUpdate(c);
 
             let msg = 'Kontrak disetujui.';
@@ -157,13 +200,13 @@ const ContractDetailView = ({
 
     const activeSignerApproval = useMemo(() => {
         return (contract.approvals || []).find(
-            (a: any) => a.status === 'pending' && a.user_id === meId && (a.role === 'Pihak 1' || a.role === 'Pihak 2' || a.role === 'Penandatangan')
+            (a: any) => a.status === 'pending' && a.user_id === meId && (a.role === 'Pihak 1' || a.role === 'Pihak 2' || a.role === 'Penandatangan'),
         );
     }, [contract.approvals, meId]);
 
     const isSigner = !!activeSignerApproval;
 
-    const isP1 = useMemo(() => (contract.approvals || []).some(a => a.role === 'Pihak 1' && a.user_id === meId), [contract.approvals, meId]);
+    const isP1 = useMemo(() => (contract.approvals || []).some((a) => a.role === 'Pihak 1' && a.user_id === meId), [contract.approvals, meId]);
     const p1Downloaded = contract.metadata?.p1_downloaded_at;
     const p2Downloaded = contract.metadata?.p2_downloaded_at;
     const stepDownloaded = activeSignerApproval ? contract.metadata?.[`downloaded_step_${activeSignerApproval.id}`] : null;
@@ -181,11 +224,11 @@ const ContractDetailView = ({
             window.open(`/api/contracts/${contract.id}/file/${latest.version_no}?type=agreement`, '_blank');
 
             const newMeta = { ...contract.metadata };
-            
+
             // Track globally for legacy P1/P2
             if (activeSignerApproval?.role === 'Pihak 1') newMeta['p1_downloaded_at'] = new Date().toISOString();
             if (activeSignerApproval?.role === 'Pihak 2') newMeta['p2_downloaded_at'] = new Date().toISOString();
-            
+
             // Track specifically for this approval step (Used by the UI check)
             if (activeSignerApproval?.id) {
                 newMeta[`downloaded_step_${activeSignerApproval.id}`] = new Date().toISOString();
@@ -213,19 +256,27 @@ const ContractDetailView = ({
     };
 
     const currentStepSequence = contract.workflow_step?.step;
-    const currentStepAdhocApprovals = useMemo(() => (contract.approvals || [])
-        .filter((a: any) => a.role === 'Persetujuan Tambahan' && Number(a.sequence) === Number(currentStepSequence))
-        .sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0)), [contract.approvals, currentStepSequence]);
+    const currentStepAdhocApprovals = useMemo(
+        () =>
+            (contract.approvals || [])
+                .filter((a: any) => a.role === 'Persetujuan Tambahan' && Number(a.sequence) === Number(currentStepSequence))
+                .sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0)),
+        [contract.approvals, currentStepSequence],
+    );
 
-    const tabs = useMemo(() => [
-        { id: 'form_template', label: 'F1 (Permohonan)', mode: (contract as any).f1_mode || 'upload' },
-        { id: 'f2', label: 'F2 (Ringkasan)', mode: (contract as any).f2_mode || 'upload' },
-        { id: 'agreement', label: 'Draft Perjanjian', mode: (contract as any).contract_mode || 'upload' },
-        { id: 'timeline', label: 'Alur Persetujuan', mode: 'always' },
-        { id: 'attachments', label: 'Lampiran', mode: 'always' },
-        { id: 'chat', label: 'Chat', mode: 'always' },
-        { id: 'references', label: 'Kontrak Referensi', mode: 'always' },
-    ].filter((tab) => tab.mode !== 'none'), [contract]);
+    const tabs = useMemo(
+        () =>
+            [
+                { id: 'form_template', label: 'F1 (Permohonan)', mode: (contract as any).f1_mode || 'upload' },
+                { id: 'f2', label: 'F2 (Ringkasan)', mode: (contract as any).f2_mode || 'upload' },
+                { id: 'agreement', label: 'Draft Perjanjian', mode: (contract as any).contract_mode || 'upload' },
+                { id: 'timeline', label: 'Alur Persetujuan', mode: 'always' },
+                { id: 'attachments', label: 'Lampiran', mode: 'always' },
+                { id: 'chat', label: 'Chat', mode: 'always' },
+                { id: 'references', label: 'Kontrak Referensi', mode: 'always' },
+            ].filter((tab) => tab.mode !== 'none'),
+        [contract],
+    );
 
     return (
         <div className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-6 p-4">
@@ -380,78 +431,50 @@ const ContractDetailView = ({
                             ))}
                         </div>
                         <div className={cn('flex min-h-[600px] flex-1 flex-col')}>
-                            {detailTab === 'form_template' && (
-                                <F1Tab
-                                    contract={contract}
-                                    formTemplates={formTemplates}
-                                    vendors={vendors}
-                                    meUser={meUser}
-                                    onUpdate={onUpdate}
-                                />
-                            )}
-                            {detailTab === 'f2' && (
-                                <F2Tab
-                                    contract={contract}
-                                    formTemplates={formTemplates}
-                                    vendors={vendors}
-                                    meUser={meUser}
-                                    onUpdate={onUpdate}
-                                />
-                            )}
-                            {detailTab === 'agreement' && (
-                                <AgreementTab
-                                    contract={contract}
-                                    formTemplates={formTemplates}
-                                    vendors={vendors}
-                                    meUser={meUser}
-                                    onUpdate={onUpdate}
-                                />
-                            )}
-                            {detailTab === 'attachments' && (
-                                <AttachmentsTab
-                                    contract={contract}
-                                    canUpdate={canUpdate}
-                                    onUpdate={onUpdate}
-                                    showToast={showToast}
-                                    meUser={meUser}
-                                />
-                            )}
+                            <Suspense fallback={<TabSkeleton />}>
+                                {detailTab === 'form_template' && (
+                                    <F1Tab contract={contract} formTemplates={formTemplates} vendors={vendors} meUser={meUser} onUpdate={onUpdate} />
+                                )}
+                                {detailTab === 'f2' && (
+                                    <F2Tab contract={contract} formTemplates={formTemplates} vendors={vendors} meUser={meUser} onUpdate={onUpdate} />
+                                )}
+                                {detailTab === 'agreement' && (
+                                    <AgreementTab
+                                        contract={contract}
+                                        formTemplates={formTemplates}
+                                        vendors={vendors}
+                                        meUser={meUser}
+                                        onUpdate={onUpdate}
+                                    />
+                                )}
+                                {detailTab === 'attachments' && (
+                                    <AttachmentsTab contract={contract} canUpdate={canUpdate} onUpdate={onUpdate} showToast={showToast} meUser={meUser} />
+                                )}
 
-                            {detailTab === 'audit' && (
-                                <AuditTrailTab contract={contract} />
-                            )}
-                            {detailTab === 'timeline' && (
-                                <TimelineTab
-                                    contract={contract}
-                                    meId={meId}
-                                    onApprove={(note, file) => handleApprove(note, file)}
-                                    showToast={showToast}
-                                />
-                            )}
-                            {detailTab === 'references' && (
-                                <ReferencesTab
-                                    contract={contract}
-                                    canUpdate={canUpdate}
-                                    onUpdate={async (d: any) => { await handleUpdate(d); }}
-                                    processing={processing}
-                                    meId={meId}
-                                />
-                            )}
+                                {detailTab === 'audit' && <AuditTrailTab contract={contract} />}
+                                {detailTab === 'timeline' && (
+                                    <TimelineTab
+                                        contract={contract}
+                                        meId={meId}
+                                        onApprove={(note, file) => handleApprove(note, file)}
+                                        showToast={showToast}
+                                    />
+                                )}
+                                {detailTab === 'references' && (
+                                    <ReferencesTab
+                                        contract={contract}
+                                        canUpdate={canUpdate}
+                                        onUpdate={async (d: any) => {
+                                            await handleUpdate(d);
+                                        }}
+                                        processing={processing}
+                                        meId={meId}
+                                    />
+                                )}
 
-                            {detailTab === 'chat' && (
-                                <ChatTab
-                                    contract={contract}
-                                    meId={meId}
-                                    users={vendors}
-                                    onUpdate={onUpdate}
-                                />
-                            )}
-                            {detailTab === 'members' && (
-                                <MembersTab
-                                    contract={contract}
-                                    users={users}
-                                />
-                            )}
+                                {detailTab === 'chat' && <ChatTab contract={contract} meId={meId} users={vendors} onUpdate={onUpdate} />}
+                                {detailTab === 'members' && <MembersTab contract={contract} users={users} />}
+                            </Suspense>
                         </div>
                     </div>
                 </div>
@@ -480,7 +503,7 @@ const ContractDetailView = ({
                                         <Button
                                             variant="outline"
                                             onClick={() => handleSigningAction('download')}
-                                            className="w-full text-xs tracking-wider uppercase shadow-sm border-blue-200 text-blue-700 hover:bg-blue-100/50 dark:border-blue-900/30 dark:text-blue-400 gap-1.5"
+                                            className="w-full gap-1.5 border-blue-200 text-xs tracking-wider text-blue-700 uppercase shadow-sm hover:bg-blue-100/50 dark:border-blue-900/30 dark:text-blue-400"
                                         >
                                             <Download size={16} /> Download
                                         </Button>
@@ -495,33 +518,23 @@ const ContractDetailView = ({
                                                     const f = e.target.files?.[0];
                                                     if (f) handleSigningAction('upload', f);
                                                 }}
-                                                disabled={
-                                                    !stepDownloaded ||
-                                                    signingUploading
-                                                }
+                                                disabled={!stepDownloaded || signingUploading}
                                             />
                                             <Button
                                                 variant="primary"
                                                 onClick={() => document.getElementById('sidebar-upload-draft')?.click()}
-                                                disabled={
-                                                    !stepDownloaded ||
-                                                    signingUploading
-                                                }
-                                                className="w-full text-xs tracking-wider uppercase shadow-primary/20 shadow-lg gap-1.5 bg-blue-600 hover:bg-blue-700 text-white hover:text-white"
+                                                disabled={!stepDownloaded || signingUploading}
+                                                className="shadow-primary/20 w-full gap-1.5 bg-blue-600 text-xs tracking-wider text-white uppercase shadow-lg hover:bg-blue-700 hover:text-white"
                                             >
-                                                {signingUploading ? (
-                                                    <Loader2 size={16} className="animate-spin" />
-                                                ) : (
-                                                    <Upload size={16} />
-                                                )}
+                                                {signingUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
                                                 Upload
                                             </Button>
                                         </div>
 
                                         {!stepDownloaded && (
-                                            <div className="flex items-start gap-1.5 px-3 py-2 rounded-lg bg-rose-50 border border-rose-100 dark:bg-rose-950/20 dark:border-rose-900/30 mt-1">
-                                                <AlertCircle size={14} className="text-rose-500 shrink-0 mt-0.5" />
-                                                <p className="text-rose-600 dark:text-rose-400 text-[9px] font-medium leading-relaxed italic">
+                                            <div className="mt-1 flex items-start gap-1.5 rounded-lg border border-rose-100 bg-rose-50 px-3 py-2 dark:border-rose-900/30 dark:bg-rose-950/20">
+                                                <AlertCircle size={14} className="mt-0.5 shrink-0 text-rose-500" />
+                                                <p className="text-[9px] leading-relaxed font-medium text-rose-600 italic dark:text-rose-400">
                                                     Anda wajib mengunduh draft terlebih dahulu sebelum mengunggah hasil TTD.
                                                 </p>
                                             </div>
@@ -566,7 +579,7 @@ const ContractDetailView = ({
                                                         'w-full text-xs tracking-wider uppercase shadow-sm transition-all',
                                                         isApproveType && 'shadow-primary/20 shadow-lg',
                                                         isRejectType && 'border-danger/20 hover:bg-danger hover:text-white',
-                                                        isForwardType && 'border-indigo-500/20 text-indigo-600 hover:bg-indigo-500/10 border',
+                                                        isForwardType && 'border border-indigo-500/20 text-indigo-600 hover:bg-indigo-500/10',
                                                     )}
                                                 >
                                                     <Icon size={16} />{' '}
@@ -575,15 +588,15 @@ const ContractDetailView = ({
                                                             ? contract.workflow_step?.step === 1
                                                                 ? 'Kirim Persetujuan'
                                                                 : contract.requires_pic_assignment
-                                                                    ? 'Tugaskan PIC'
-                                                                    : 'Setujui Kontrak'
+                                                                  ? 'Tugaskan PIC'
+                                                                  : 'Setujui Kontrak'
                                                             : action.action_code === 'forward'
-                                                                ? 'Approval Tambahan'
-                                                                : action.action_code === 'reject'
-                                                                    ? 'Tolak Kontrak'
-                                                                    : ['signature', 'sign'].includes(action.action_code?.toLowerCase())
-                                                                        ? 'Upload Tanda Tangan'
-                                                                        : action.action_code)}
+                                                              ? 'Approval Tambahan'
+                                                              : action.action_code === 'reject'
+                                                                ? 'Tolak Kontrak'
+                                                                : ['signature', 'sign'].includes(action.action_code?.toLowerCase())
+                                                                  ? 'Upload Tanda Tangan'
+                                                                  : action.action_code)}
                                                 </Button>
                                             );
                                         })}
@@ -603,8 +616,8 @@ const ContractDetailView = ({
                                                     {contract.workflow_step?.step === 1
                                                         ? 'Kirim Persetujuan'
                                                         : contract.requires_pic_assignment
-                                                            ? 'Tugaskan PIC'
-                                                            : 'Setujui Kontrak'}
+                                                          ? 'Tugaskan PIC'
+                                                          : 'Setujui Kontrak'}
                                                 </Button>
                                                 <Button
                                                     variant="outline"
@@ -624,7 +637,6 @@ const ContractDetailView = ({
                         </div>
                     )}
 
-
                     <DraftEditableInfoCard
                         selected={contract}
                         types={types}
@@ -642,24 +654,24 @@ const ContractDetailView = ({
                     />
 
                     {/* Debug Access Control Panel */}
-                    <div className="bg-black/5 dark:bg-white/5 rounded-2xl p-4 border border-black/5 dark:border-white/5 opacity-60 hover:opacity-100 transition-opacity text-text-main">
-                        <div className="flex items-center justify-between mb-3 border-b border-black/10 pb-2">
+                    <div className="text-text-main rounded-2xl border border-black/5 bg-black/5 p-4 opacity-60 transition-opacity hover:opacity-100 dark:border-white/5 dark:bg-white/5">
+                        <div className="mb-3 flex items-center justify-between border-b border-black/10 pb-2">
                             <div className="flex items-center gap-2">
-                                <div className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-soft">Debug Access Control</h4>
+                                <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
+                                <h4 className="text-text-soft text-[10px] font-black tracking-[0.2em] uppercase">Debug Access Control</h4>
                             </div>
-                            <div className="bg-black text-white px-2 py-0.5 rounded text-[9px] font-bold">
+                            <div className="rounded bg-black px-2 py-0.5 text-[9px] font-bold text-white">
                                 STEP {contract.workflow_step?.step || 'N/A'}
                             </div>
                         </div>
 
-                        <div className="mb-3 text-[10px] font-bold border-b border-black/5 pb-2">
+                        <div className="mb-3 border-b border-black/5 pb-2 text-[10px] font-bold">
                             <span className="text-text-soft mr-2 font-normal">Active Step:</span>
                             {contract.workflow_step?.description || 'No Step Assigned'}
                         </div>
 
-                        <div className="grid grid-cols-1 gap-1.5 text-[9px] font-mono">
-                            <div className="flex justify-between border-b border-black/10 pb-1 font-bold text-[8px] mb-1">
+                        <div className="grid grid-cols-1 gap-1.5 font-mono text-[9px]">
+                            <div className="mb-1 flex justify-between border-b border-black/10 pb-1 text-[8px] font-bold">
                                 <span className="text-text-soft">FEATURE flag</span>
                                 <div className="flex gap-4">
                                     <span>RESOLVED</span>
@@ -669,54 +681,82 @@ const ContractDetailView = ({
                             <div className="flex justify-between border-b border-black/5 pb-1">
                                 <span className="text-text-soft uppercase">Info Edit</span>
                                 <div className="flex gap-4">
-                                    <span className={contract.allow_info_edit ? 'text-green-600 font-bold' : 'text-rose-600 font-bold'}>{contract.allow_info_edit ? 'T' : 'F'}</span>
-                                    <span className="text-amber-600">{(contract.workflow_step as any)?.meta?.allow_info_edit !== false ? 'T' : 'F'}</span>
+                                    <span className={contract.allow_info_edit ? 'font-bold text-green-600' : 'font-bold text-rose-600'}>
+                                        {contract.allow_info_edit ? 'T' : 'F'}
+                                    </span>
+                                    <span className="text-amber-600">
+                                        {(contract.workflow_step as any)?.meta?.allow_info_edit !== false ? 'T' : 'F'}
+                                    </span>
                                 </div>
                             </div>
                             <div className="flex justify-between border-b border-black/5 pb-1">
                                 <span className="text-text-soft uppercase">F1 Edit</span>
                                 <div className="flex gap-4">
-                                    <span className={contract.allow_f1_edit ? 'text-green-600 font-bold' : 'text-rose-600 font-bold'}>{contract.allow_f1_edit ? 'T' : 'F'}</span>
-                                    <span className="text-amber-600">{(contract.workflow_step as any)?.meta?.allow_f1_edit !== false ? 'T' : 'F'}</span>
+                                    <span className={contract.allow_f1_edit ? 'font-bold text-green-600' : 'font-bold text-rose-600'}>
+                                        {contract.allow_f1_edit ? 'T' : 'F'}
+                                    </span>
+                                    <span className="text-amber-600">
+                                        {(contract.workflow_step as any)?.meta?.allow_f1_edit !== false ? 'T' : 'F'}
+                                    </span>
                                 </div>
                             </div>
                             <div className="flex justify-between border-b border-black/5 pb-1">
                                 <span className="text-text-soft uppercase">F2 Edit</span>
                                 <div className="flex gap-4">
-                                    <span className={contract.allow_f2_edit ? 'text-green-600 font-bold' : 'text-rose-600 font-bold'}>{contract.allow_f2_edit ? 'T' : 'F'}</span>
-                                    <span className="text-amber-600">{(contract.workflow_step as any)?.meta?.allow_f2_edit !== false ? 'T' : 'F'}</span>
+                                    <span className={contract.allow_f2_edit ? 'font-bold text-green-600' : 'font-bold text-rose-600'}>
+                                        {contract.allow_f2_edit ? 'T' : 'F'}
+                                    </span>
+                                    <span className="text-amber-600">
+                                        {(contract.workflow_step as any)?.meta?.allow_f2_edit !== false ? 'T' : 'F'}
+                                    </span>
                                 </div>
                             </div>
                             <div className="flex justify-between border-b border-black/5 pb-1">
                                 <span className="text-text-soft uppercase">Draft Edit</span>
                                 <div className="flex gap-4">
-                                    <span className={contract.allow_agreement_edit ? 'text-green-600 font-bold' : 'text-rose-600 font-bold'}>{contract.allow_agreement_edit ? 'T' : 'F'}</span>
-                                    <span className="text-amber-600">{(contract.workflow_step as any)?.meta?.allow_agreement_edit !== false ? 'T' : 'F'}</span>
+                                    <span className={contract.allow_agreement_edit ? 'font-bold text-green-600' : 'font-bold text-rose-600'}>
+                                        {contract.allow_agreement_edit ? 'T' : 'F'}
+                                    </span>
+                                    <span className="text-amber-600">
+                                        {(contract.workflow_step as any)?.meta?.allow_agreement_edit !== false ? 'T' : 'F'}
+                                    </span>
                                 </div>
                             </div>
                             <div className="flex justify-between border-b border-black/5 pb-1">
                                 <span className="text-text-soft uppercase">Attachment</span>
                                 <div className="flex gap-4">
-                                    <span className={contract.allow_attachment_edit ? 'text-green-600 font-bold' : 'text-rose-600 font-bold'}>{contract.allow_attachment_edit ? 'T' : 'F'}</span>
-                                    <span className="text-amber-600">{(contract.workflow_step as any)?.meta?.allow_attachment_edit !== false ? 'T' : 'F'}</span>
+                                    <span className={contract.allow_attachment_edit ? 'font-bold text-green-600' : 'font-bold text-rose-600'}>
+                                        {contract.allow_attachment_edit ? 'T' : 'F'}
+                                    </span>
+                                    <span className="text-amber-600">
+                                        {(contract.workflow_step as any)?.meta?.allow_attachment_edit !== false ? 'T' : 'F'}
+                                    </span>
                                 </div>
                             </div>
                             <div className="flex justify-between border-b border-black/5 pb-1">
                                 <span className="text-text-soft uppercase">Reference</span>
                                 <div className="flex gap-4">
-                                    <span className={contract.allow_reference ? 'text-green-600 font-bold' : 'text-rose-600 font-bold'}>{contract.allow_reference ? 'T' : 'F'}</span>
-                                    <span className="text-amber-600">{(contract.workflow_step as any)?.meta?.allow_reference !== false ? 'T' : 'F'}</span>
+                                    <span className={contract.allow_reference ? 'font-bold text-green-600' : 'font-bold text-rose-600'}>
+                                        {contract.allow_reference ? 'T' : 'F'}
+                                    </span>
+                                    <span className="text-amber-600">
+                                        {(contract.workflow_step as any)?.meta?.allow_reference !== false ? 'T' : 'F'}
+                                    </span>
                                 </div>
                             </div>
-                            <div className="flex justify-between border-b border-black/5 pb-1 mt-1">
+                            <div className="mt-1 flex justify-between border-b border-black/5 pb-1">
                                 <span className="text-text-soft uppercase">Can Approve (Actor)</span>
-                                <span className={contract.can_approve ? 'text-green-600 font-bold' : 'text-rose-600 font-bold'}>{contract.can_approve ? 'TRUE' : 'FALSE'}</span>
+                                <span className={contract.can_approve ? 'font-bold text-green-600' : 'font-bold text-rose-600'}>
+                                    {contract.can_approve ? 'TRUE' : 'FALSE'}
+                                </span>
                             </div>
                             <div className="flex justify-between border-b border-black/5 pb-1">
                                 <span className="text-text-soft uppercase">Is Creator (Actor)</span>
-                                <span className={contract.created_by === meId ? 'text-green-600 font-bold' : 'text-rose-600 font-bold'}>{contract.created_by === meId ? 'TRUE' : 'FALSE'}</span>
+                                <span className={contract.created_by === meId ? 'font-bold text-green-600' : 'font-bold text-rose-600'}>
+                                    {contract.created_by === meId ? 'TRUE' : 'FALSE'}
+                                </span>
                             </div>
-                            <div className="mt-2 text-[8px] text-text-soft/50 break-all bg-black/5 p-2 rounded">
+                            <div className="text-text-soft/50 mt-2 rounded bg-black/5 p-2 text-[8px] break-all">
                                 STEP_ID: {contract.workflow_step_id || 'N/A'}
                             </div>
                         </div>
@@ -724,41 +764,47 @@ const ContractDetailView = ({
                 </div>
             </div>
 
-            <SharedApproveModal
-                open={approveOpen}
-                onClose={() => {
-                    setApproveOpen(false);
-                    setActiveActionCode(undefined);
-                }}
-                onSubmit={handleApprove}
-                isAssign={!!contract.requires_pic_assignment || ['assign', 'assign_pic'].includes(activeActionCode?.toLowerCase() || '')}
-                contract={contract}
-                onUpdate={onUpdate}
-                actionCode={activeActionCode}
-                actionAlias={contract.workflow_step?.actions?.find((a: any) => a.action_code === activeActionCode)?.alias ?? undefined}
-            />
+            <Suspense fallback={null}>
+                <SharedApproveModal
+                    open={approveOpen}
+                    onClose={() => {
+                        setApproveOpen(false);
+                        setActiveActionCode(undefined);
+                    }}
+                    onSubmit={handleApprove}
+                    isAssign={!!contract.requires_pic_assignment || ['assign', 'assign_pic'].includes(activeActionCode?.toLowerCase() || '')}
+                    contract={contract}
+                    onUpdate={onUpdate}
+                    actionCode={activeActionCode}
+                    actionAlias={contract.workflow_step?.actions?.find((a: any) => a.action_code === activeActionCode)?.alias ?? undefined}
+                />
+            </Suspense>
 
-            <SharedRejectModal
-                open={rejectOpen}
-                onClose={() => {
-                    setRejectOpen(false);
-                    setActiveActionCode(undefined);
-                }}
-                onSubmit={handleReject}
-                actionAlias={contract.workflow_step?.actions?.find((a: any) => a.action_code === activeActionCode)?.alias ?? undefined}
-            />
-            <SharedAddhocModal
-                open={addhocOpen}
-                onClose={() => {
-                    setAddhocOpen(false);
-                    setActiveActionCode(undefined);
-                }}
-                contract={contract}
-                onUpdate={onUpdate}
-                showToast={showToast}
-                actionCode={activeActionCode}
-                actionAlias={contract.workflow_step?.actions?.find((a: any) => a.action_code === activeActionCode)?.alias ?? undefined}
-            />
+            <Suspense fallback={null}>
+                <SharedRejectModal
+                    open={rejectOpen}
+                    onClose={() => {
+                        setRejectOpen(false);
+                        setActiveActionCode(undefined);
+                    }}
+                    onSubmit={handleReject}
+                    actionAlias={contract.workflow_step?.actions?.find((a: any) => a.action_code === activeActionCode)?.alias ?? undefined}
+                />
+            </Suspense>
+            <Suspense fallback={null}>
+                <SharedAddhocModal
+                    open={addhocOpen}
+                    onClose={() => {
+                        setAddhocOpen(false);
+                        setActiveActionCode(undefined);
+                    }}
+                    contract={contract}
+                    onUpdate={onUpdate}
+                    showToast={showToast}
+                    actionCode={activeActionCode}
+                    actionAlias={contract.workflow_step?.actions?.find((a: any) => a.action_code === activeActionCode)?.alias ?? undefined}
+                />
+            </Suspense>
         </div>
     );
 };

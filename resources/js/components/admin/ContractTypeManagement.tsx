@@ -1,17 +1,16 @@
-import { useToast } from '@/components/ui/feedback/Toast';
 import { Button } from '@/components/ui/base/Button';
 import { Column, DataTable } from '@/components/ui/data/DataTable';
+import { useToast } from '@/components/ui/feedback/Toast';
 import { usePermissions } from '@/hooks/use-permissions';
+import { cn } from '@/lib/utils';
 import { router } from '@inertiajs/react';
 import { ChevronDown, Plus, ShieldCheck, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { cn } from '@/lib/utils';
 
 interface ContractTypeManagementProps {
     readonly contractTypes: any;
     readonly filters: any;
 }
-
 
 export function ContractTypeManagement({ contractTypes, filters }: Readonly<ContractTypeManagementProps>) {
     const { showToast } = useToast();
@@ -39,9 +38,9 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
     const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
     const allParentIds = useMemo(() => Object.keys(childrenMap), [childrenMap]);
-    
+
     const isAllExpanded = useMemo(() => {
-        return allParentIds.length > 0 && allParentIds.every(id => expanded[id] === true);
+        return allParentIds.length > 0 && allParentIds.every((id) => expanded[id] === true);
     }, [allParentIds, expanded]);
 
     const toggleAll = () => {
@@ -70,13 +69,13 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
                     // (Currently backend might only load 1 level, but logic supports more)
                     const nestedMap: Record<string, any[]> = { [child.id]: child.children };
                     const addNested = (pId: string, d: number) => {
-                         const subChildren = nestedMap[pId] || [];
-                         subChildren.forEach(sc => {
-                             list.push({ ...sc, _depth: d });
-                             if (expanded[sc.id] === true && sc.children) {
-                                 // Continue recursion if data exists
-                             }
-                         });
+                        const subChildren = nestedMap[pId] || [];
+                        subChildren.forEach((sc) => {
+                            list.push({ ...sc, _depth: d });
+                            if (expanded[sc.id] === true && sc.children) {
+                                // Continue recursion if data exists
+                            }
+                        });
                     };
                     addNested(child.id, depth + 1);
                 }
@@ -106,16 +105,9 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
                     const hasDepth = depth > 0;
 
                     return (
-                        <div
-                            className="group flex flex-col"
-                            style={{ paddingLeft: `${depth * 24}px` }}
-                        >
+                        <div className="group flex flex-col" style={{ paddingLeft: `${depth * 24}px` }}>
                             <div className="flex items-center gap-1.5">
-                                {hasDepth && (
-                                    <span className="text-muted-foreground/30 font-medium select-none mr-0.5">
-                                        ↳
-                                    </span>
-                                )}
+                                {hasDepth && <span className="text-muted-foreground/30 mr-0.5 font-medium select-none">↳</span>}
                                 {isParent ? (
                                     <Button
                                         variant="ghost"
@@ -132,19 +124,18 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
                                     >
                                         <ChevronDown
                                             size={12}
-                                            className={cn(
-                                                "transition-transform duration-200",
-                                                expanded[row.id] !== true && "-rotate-90"
-                                            )}
+                                            className={cn('transition-transform duration-200', expanded[row.id] !== true && '-rotate-90')}
                                         />
                                     </Button>
                                 ) : (
-                                    <div className="w-5 h-5 shrink-0" />
+                                    <div className="h-5 w-5 shrink-0" />
                                 )}
-                                <span className={cn(
-                                    "text-[13px] font-semibold tracking-tight uppercase transition-transform group-hover:translate-x-1",
-                                    depth > 0 ? "text-text-desc" : "text-text-main"
-                                )}>
+                                <span
+                                    className={cn(
+                                        'text-[13px] font-semibold tracking-tight uppercase transition-transform group-hover:translate-x-1',
+                                        depth > 0 ? 'text-text-desc' : 'text-text-main',
+                                    )}
+                                >
                                     {row.name}
                                 </span>
                             </div>
@@ -161,11 +152,7 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
             {
                 header: 'Kode Sistem',
                 accessorKey: 'code',
-                cell: (row) => (
-                    <span className="font-mono text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                        {row.code}
-                    </span>
-                ),
+                cell: (row) => <span className="font-mono text-[10px] font-semibold tracking-wider text-slate-400 uppercase">{row.code}</span>,
             },
             {
                 header: 'Keterangan Konten',
@@ -212,22 +199,14 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
             headerActions={
                 <div className="flex items-center gap-2">
                     {allParentIds.length > 0 && (
-                        <Button
-                            variant="white"
-                            onClick={toggleAll}
-                            className="text-[10px] font-black uppercase tracking-widest"
-                        >
-                            <ChevronDown size={14} className={cn("transition-transform duration-200", !isAllExpanded && "-rotate-90")} />
+                        <Button variant="white" onClick={toggleAll} className="text-[10px] font-black tracking-widest uppercase">
+                            <ChevronDown size={14} className={cn('transition-transform duration-200', !isAllExpanded && '-rotate-90')} />
                             {isAllExpanded ? 'Minimize Semua' : 'Expand Semua'}
                         </Button>
                     )}
                     {canCreate && (
-                        <Button
-                            variant="white"
-                            onClick={openCreate}
-                            className="text-[10px] font-black uppercase tracking-widest"
-                        >
-                            <Plus size={14} className="mr-2 text-primary" /> Registrasi Klasifikasi
+                        <Button variant="white" onClick={openCreate} className="text-[10px] font-black tracking-widest uppercase">
+                            <Plus size={14} className="text-primary mr-2" /> Registrasi Klasifikasi
                         </Button>
                     )}
                 </div>
@@ -265,11 +244,7 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
                 onPageChange: (page: number) =>
                     router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
                 onPerPageChange: (pp: number) =>
-                    router.get(
-                        globalThis.location.pathname,
-                        { ...filters, per_page: pp, page: 1 },
-                        { preserveState: true, preserveScroll: true },
-                    ),
+                    router.get(globalThis.location.pathname, { ...filters, per_page: pp, page: 1 }, { preserveState: true, preserveScroll: true }),
             }}
         />
     );

@@ -1,5 +1,4 @@
 import { cn } from '@/lib/utils';
-import React from 'react';
 
 interface TaxToggleProps {
     taxRequired: boolean;
@@ -11,9 +10,7 @@ export function TaxToggle({ taxRequired, setTaxRequired }: TaxToggleProps) {
         <div
             className={cn(
                 'mb-4 rounded-xl border p-3 transition-all duration-300',
-                taxRequired
-                    ? 'bg-primary/5 border-primary/20'
-                    : 'border-surface-border/50 bg-surface-muted/30',
+                taxRequired ? 'bg-primary/5 border-primary/20' : 'border-surface-border/50 bg-surface-muted/30',
             )}
         >
             <label className="flex cursor-pointer items-center justify-between">
@@ -21,9 +18,7 @@ export function TaxToggle({ taxRequired, setTaxRequired }: TaxToggleProps) {
                     <div
                         className={cn(
                             'flex h-8 w-8 items-center justify-center rounded-lg transition-all',
-                            taxRequired
-                                ? 'bg-primary shadow-primary/20 text-white shadow-lg'
-                                : 'bg-surface-muted text-text-soft/20',
+                            taxRequired ? 'bg-primary shadow-primary/20 text-white shadow-lg' : 'bg-surface-muted text-text-soft/20',
                         )}
                     >
                         <svg
@@ -45,16 +40,11 @@ export function TaxToggle({ taxRequired, setTaxRequired }: TaxToggleProps) {
                     </div>
                     <div className="flex flex-col">
                         <span
-                            className={cn(
-                                'text-[11px] font-semibold tracking-wider uppercase',
-                                taxRequired ? 'text-primary' : 'text-text-soft/40',
-                            )}
+                            className={cn('text-[11px] font-semibold tracking-wider uppercase', taxRequired ? 'text-primary' : 'text-text-soft/40')}
                         >
                             Ada Pajak
                         </span>
-                        <span className="text-text-soft/30 text-[9px] font-medium">
-                            Aktifkan jika kontrak dikenakan pajak (PPN/PPh)
-                        </span>
+                        <span className="text-text-soft/30 text-[9px] font-medium">Aktifkan jika kontrak dikenakan pajak (PPN/PPh)</span>
                     </div>
                 </div>
                 <div
@@ -74,7 +64,7 @@ export function TaxToggle({ taxRequired, setTaxRequired }: TaxToggleProps) {
                 <input
                     type="checkbox"
                     checked={taxRequired}
-                    onChange={() => { }} // Controlled by div click for better feel
+                    onChange={() => {}} // Controlled by div click for better feel
                     className="hidden"
                 />
             </label>

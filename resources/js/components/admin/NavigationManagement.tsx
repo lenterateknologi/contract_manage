@@ -1,6 +1,6 @@
-import { useToast } from '@/components/ui/feedback/Toast';
 import { Button } from '@/components/ui/base/Button';
 import { Column, DataTable } from '@/components/ui/data/DataTable';
+import { useToast } from '@/components/ui/feedback/Toast';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
@@ -8,34 +8,34 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import { usePermissions } from '@/hooks/use-permissions';
 import { router, useForm } from '@inertiajs/react';
 import {
-    LayoutGrid,
-    FileText,
-    Clock,
-    FilePlus,
-    FileEdit,
-    History,
-    Users,
-    ShieldCheck,
-    Settings2,
-    GitBranch,
     BarChart3,
-    Tags,
     Building2,
-    Truck,
-    UserCheck,
-    FolderClosed,
+    Clock,
     FileCode,
-    ScanLine,
-    Workflow,
-    UserCog,
-    KeyRound,
-    ShieldAlert,
+    FileEdit,
+    FilePlus,
+    FileText,
     Folder,
+    FolderClosed,
+    GitBranch,
+    History,
+    KeyRound,
+    LayoutGrid,
     Link as LinkIcon,
     Pencil,
     Plus,
+    ScanLine,
+    Settings2,
     Shield,
+    ShieldAlert,
+    ShieldCheck,
+    Tags,
     Trash2,
+    Truck,
+    UserCheck,
+    UserCog,
+    Users,
+    Workflow,
     type LucideIcon,
 } from 'lucide-react';
 import React, { useMemo } from 'react';
@@ -88,11 +88,16 @@ const ModulesCountCell = ({ count }: Readonly<{ count: number }>) => (
     </div>
 );
 
-const ModuleNameCell = ({ name, identifier, description, icon }: Readonly<{ name: string; identifier: string; description?: string; icon?: string }>) => {
+const ModuleNameCell = ({
+    name,
+    identifier,
+    description,
+    icon,
+}: Readonly<{ name: string; identifier: string; description?: string; icon?: string }>) => {
     const IconComp = icon && SELECTABLE_ICONS[icon] ? SELECTABLE_ICONS[icon] : LayoutGrid;
     return (
         <div className="group flex items-start gap-3">
-            <div className="bg-surface-muted border-surface-border text-text-main/40 group-hover:bg-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-all group-hover:text-white mt-0.5">
+            <div className="bg-surface-muted border-surface-border text-text-main/40 group-hover:bg-primary mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-all group-hover:text-white">
                 <IconComp size={14} />
             </div>
             <div className="flex flex-col gap-0.5">
@@ -105,7 +110,7 @@ const ModuleNameCell = ({ name, identifier, description, icon }: Readonly<{ name
                     </div>
                 </div>
                 {description && (
-                    <span className="text-text-desc text-[11px] leading-relaxed text-muted-foreground whitespace-pre-wrap max-w-md">
+                    <span className="text-text-desc text-muted-foreground max-w-md text-[11px] leading-relaxed whitespace-pre-wrap">
                         {description}
                     </span>
                 )}
@@ -340,7 +345,7 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
             />
 
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent className="border-surface-border max-w-[480px] overflow-hidden rounded-[2.5rem] border bg-card p-0 shadow-2xl">
+                <DialogContent className="border-surface-border bg-card max-w-[480px] overflow-hidden rounded-[2.5rem] border p-0 shadow-2xl">
                     <div className="bg-primary relative overflow-hidden p-10 text-white">
                         <div className="absolute top-0 right-0 rotate-12 p-8 opacity-10">
                             <LayoutGrid size={120} strokeWidth={1} />
@@ -385,7 +390,7 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
                                                 <SelectTrigger className="border-surface-border bg-primary/5 focus:border-primary h-10 rounded-xl text-xs font-medium transition-all">
                                                     <SelectValue />
                                                 </SelectTrigger>
-                                                <SelectContent className="border-surface-border rounded-xl bg-card shadow-2xl">
+                                                <SelectContent className="border-surface-border bg-card rounded-xl shadow-2xl">
                                                     {(groups.data || groups || []).map((g: any) => (
                                                         <SelectItem key={g.id} value={String(g.id)} className="py-2.5 text-xs font-medium uppercase">
                                                             {g.name}
@@ -414,11 +419,15 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
                                                 <SelectTrigger className="border-surface-border bg-primary/5 focus:border-primary h-10 rounded-xl text-xs font-medium transition-all">
                                                     <SelectValue />
                                                 </SelectTrigger>
-                                                <SelectContent className="border-surface-border max-h-60 rounded-xl bg-card shadow-2xl overflow-y-auto">
+                                                <SelectContent className="border-surface-border bg-card max-h-60 overflow-y-auto rounded-xl shadow-2xl">
                                                     {Object.keys(SELECTABLE_ICONS).map((iconName) => {
                                                         const IconComponent = SELECTABLE_ICONS[iconName];
                                                         return (
-                                                            <SelectItem key={iconName} value={iconName} className="py-2.5 text-xs font-medium uppercase">
+                                                            <SelectItem
+                                                                key={iconName}
+                                                                value={iconName}
+                                                                className="py-2.5 text-xs font-medium uppercase"
+                                                            >
                                                                 <div className="flex items-center gap-2">
                                                                     {IconComponent && <IconComponent size={14} className="text-text-main/50" />}
                                                                     <span>{iconName}</span>
@@ -430,9 +439,9 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
                                             </Select>
                                         </div>
                                     </div>
-                                    <div className="space-y-1.5 w-full group">
+                                    <div className="group w-full space-y-1.5">
                                         <div className="flex items-center justify-between px-0.5">
-                                            <label className="text-xs font-bold uppercase transition-colors text-primary/60 dark:text-white/60">
+                                            <label className="text-primary/60 text-xs font-bold uppercase transition-colors dark:text-white/60">
                                                 Deskripsi Modul
                                             </label>
                                         </div>
@@ -440,7 +449,7 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
                                             value={moduleForm.data.description || ''}
                                             onChange={(e) => moduleForm.setData('description', e.target.value)}
                                             placeholder="CONTOH: MODUL UNTUK MENGELOLA DATA VENDOR UTAMA"
-                                            className="flex min-h-[80px] w-full rounded-lg border bg-white dark:bg-white/[0.02] px-3 py-2 text-sm font-medium transition-all outline-none border-primary/5 dark:border-white/5 text-black dark:text-white focus:border-primary/20 dark:focus:border-white/20 focus:bg-primary/[0.01] dark:focus:bg-white/[0.01] shadow-sm resize-none"
+                                            className="border-primary/5 focus:border-primary/20 focus:bg-primary/[0.01] flex min-h-[80px] w-full resize-none rounded-lg border bg-white px-3 py-2 text-sm font-medium text-black shadow-sm transition-all outline-none dark:border-white/5 dark:bg-white/[0.02] dark:text-white dark:focus:border-white/20 dark:focus:bg-white/[0.01]"
                                         />
                                     </div>
                                 </>

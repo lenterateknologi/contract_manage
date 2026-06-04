@@ -1,10 +1,9 @@
 import { Avatar } from '@/components/contracts/ui/ui';
-import { cn } from '@/lib/utils';
 import { Contract, ContractType } from '@/types/contracts';
-import { Check, ChevronDown, ChevronUp, Info, Loader2, ChevronRight, LayoutTemplate, FileText, Zap } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, Info, Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { TaxToggle } from './TaxToggle';
 import { ContractInfoForm } from './ContractInfoForm';
+import { TaxToggle } from './TaxToggle';
 
 export interface FormTemplateInfo {
     id: string;
@@ -71,7 +70,9 @@ export function DraftEditableInfoCard({
         setDescription(selected.description || '');
         const typeVal = selected.contract_type_id
             ? String(selected.contract_type_id)
-            : (types.find((x) => x.name === selected.contract_type)?.id ? String(types.find((x) => x.name === selected.contract_type)?.id) : '');
+            : types.find((x) => x.name === selected.contract_type)?.id
+              ? String(types.find((x) => x.name === selected.contract_type)?.id)
+              : '';
         setTypeId(typeVal);
         setVendorId(selected.vendor_id || '');
         setSubmissionTypeId(selected.submission_type_id || '');
@@ -97,7 +98,9 @@ export function DraftEditableInfoCard({
     const hasChanges = useMemo(() => {
         const origTypeId = selected.contract_type_id
             ? String(selected.contract_type_id)
-            : (types.find((x) => x.name === selected.contract_type)?.id ? String(types.find((x) => x.name === selected.contract_type)?.id) : '');
+            : types.find((x) => x.name === selected.contract_type)?.id
+              ? String(types.find((x) => x.name === selected.contract_type)?.id)
+              : '';
         return (
             title !== selected.title ||
             description !== (selected.description || '') ||
@@ -155,16 +158,10 @@ export function DraftEditableInfoCard({
 
     return (
         <div className="bg-surface-base text-text-main border-surface-border overflow-hidden rounded-xl border shadow-sm">
-
             <div className="bg-primary flex h-12 items-center justify-between border-b px-4">
-
                 <div className="flex items-center gap-2 text-sm font-semibold text-white">
                     <Info size={16} className="text-white/70" /> Informasi Kontrak
-                    {isDraft && (
-                        <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-semibold text-white">
-                            Dapat Diedit
-                        </span>
-                    )}
+                    {isDraft && <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-semibold text-white">Dapat Diedit</span>}
                 </div>
                 <div className="flex items-center gap-2">
                     {isDraft && (
@@ -187,10 +184,7 @@ export function DraftEditableInfoCard({
                             )}
                         </div>
                     )}
-                    <button
-                        onClick={() => setMinimized(!minimized)}
-                        className="text-white/70 transition-all hover:text-white active:scale-95"
-                    >
+                    <button onClick={() => setMinimized(!minimized)} className="text-white/70 transition-all hover:text-white active:scale-95">
                         {minimized ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
                     </button>
                 </div>
@@ -200,8 +194,8 @@ export function DraftEditableInfoCard({
                 <div className="grid grid-cols-1 gap-5 p-5">
                     {isDraft && (
                         <div className="border-surface-border col-span-full mt-2 border-t pt-4">
-                            <TaxToggle 
-                                taxRequired={taxRequired} 
+                            <TaxToggle
+                                taxRequired={taxRequired}
                                 setTaxRequired={(newVal) => {
                                     setTaxRequired(newVal);
                                     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
@@ -212,13 +206,13 @@ export function DraftEditableInfoCard({
                                                 ...selected.metadata,
                                                 tax_required: newVal,
                                             },
-                                        })
+                                        }),
                                     ).finally(() => setLocalSaving(false));
-                                }} 
+                                }}
                             />
                         </div>
                     )}
-                    <ContractInfoForm 
+                    <ContractInfoForm
                         isDraft={isDraft}
                         title={title}
                         setTitle={setTitle}
@@ -281,21 +275,19 @@ export function DraftEditableInfoCard({
                     {selected.workflow_step && (
                         <div className="border-surface-border col-span-full border-t pt-4">
                             <div className="text-text-desc mb-2 text-xs font-semibold">Hasil Analisis Workflow</div>
-                            <div className="animate-in fade-in border-emerald-500/20 bg-emerald-500/5 flex items-center gap-2 rounded-xl border p-3 shadow-sm">
-                                <div className="bg-emerald-500/10 text-emerald-600 flex h-8 w-8 items-center justify-center rounded-lg">
+                            <div className="animate-in fade-in flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 shadow-sm">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600">
                                     <Check size={16} strokeWidth={3} />
                                 </div>
                                 <div className="flex flex-col gap-0.5">
-                                    <span className="text-emerald-700 text-xs font-bold">
-                                        Langkah Aktif: {selected.workflow_step.description}
-                                    </span>
-                                    <span className="text-emerald-600/70 text-[10px] font-semibold uppercase tracking-wider">
+                                    <span className="text-xs font-bold text-emerald-700">Langkah Aktif: {selected.workflow_step.description}</span>
+                                    <span className="text-[10px] font-semibold tracking-wider text-emerald-600/70 uppercase">
                                         PIC/Role: {selected.workflow_step.role}
                                     </span>
                                     {selected.workflow_step.target_approvers && (
                                         <div className="mt-1 flex items-center gap-1.5 rounded-md bg-white/50 px-2 py-0.5 dark:bg-black/20">
-                                            <span className="text-emerald-600 text-[9px] font-black tracking-tighter uppercase">Target:</span>
-                                            <span className="text-emerald-700 truncate text-[9px] font-bold">
+                                            <span className="text-[9px] font-black tracking-tighter text-emerald-600 uppercase">Target:</span>
+                                            <span className="truncate text-[9px] font-bold text-emerald-700">
                                                 {selected.workflow_step.target_approvers}
                                             </span>
                                         </div>
@@ -304,8 +296,6 @@ export function DraftEditableInfoCard({
                             </div>
                         </div>
                     )}
-
-
                 </div>
             )}
         </div>

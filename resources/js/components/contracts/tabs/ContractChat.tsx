@@ -4,8 +4,8 @@ import { cn } from '@/lib/utils';
 import { Contract, ContractMessage } from '@/types/contracts';
 import { ArrowDown, Download, FileIcon, MessageSquare, Paperclip, RefreshCw, Send, X } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { MentionDropdown } from '../parts/MentionDropdown';
 import DocumentPreviewModal from '../modals/DocumentPreviewModal';
+import { MentionDropdown } from '../parts/MentionDropdown';
 
 interface Props {
     contract: Contract;

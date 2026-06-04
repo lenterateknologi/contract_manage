@@ -1,13 +1,13 @@
 import { FormSection, ManagementForm } from '@/components/admin/ManagementForm';
-import { useToast } from '@/components/ui/feedback/Toast';
 import { Button } from '@/components/ui/base/Button';
 import { Checkbox } from '@/components/ui/base/Checkbox';
 import { Column, DataTable } from '@/components/ui/data/DataTable';
+import { useToast } from '@/components/ui/feedback/Toast';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { usePermissions } from '@/hooks/use-permissions';
 import { cn } from '@/lib/utils';
 import { router, useForm } from '@inertiajs/react';
-import { AlertCircle, Plus, ShieldCheck, Tags, Trash2 } from 'lucide-react';
+import { AlertCircle, Plus, Tags, Trash2 } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 
 interface StatusManagementProps {
@@ -69,9 +69,7 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                 className: 'text-right',
                 cell: (row) => (
                     <div className="flex items-center justify-end gap-2 select-none">
-                        <div
-                            className={cn('h-2 w-2 rounded-full', row.is_active ? 'animate-pulse bg-success' : 'bg-surface-muted')}
-                        />
+                        <div className={cn('h-2 w-2 rounded-full', row.is_active ? 'bg-success animate-pulse' : 'bg-surface-muted')} />
                         <span
                             className={cn(
                                 'text-xs font-semibold tracking-wide transition-colors duration-200 select-none',
@@ -140,7 +138,7 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                 isDirty={form.isDirty}
                 isEdit={isEdit}
             >
-                <div className="animate-in fade-in grid grid-cols-1 gap-16 duration-300 select-none lg:grid-cols-2 w-full">
+                <div className="animate-in fade-in grid w-full grid-cols-1 gap-16 duration-300 select-none lg:grid-cols-2">
                     {/* Side 1: Primary Configuration */}
                     <div className="space-y-12">
                         <FormSection title="Arsitektur Identitas" subtitle="Parameter dasar yang mendefinisikan status dalam database">
@@ -172,7 +170,9 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                         <FormSection title="Skema Warna" subtitle="Konfigurasi palet visual untuk badge dan audit trail">
                             <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
                                 <div className="space-y-3">
-                                    <label className="text-primary/60 ml-1 text-[10px] font-semibold uppercase tracking-widest dark:text-white/60">Warna Teks Utama</label>
+                                    <label className="text-primary/60 ml-1 text-[10px] font-semibold tracking-widest uppercase dark:text-white/60">
+                                        Warna Teks Utama
+                                    </label>
                                     <div className="border-border/80 bg-muted/20 flex items-center gap-4 rounded-2xl border p-4 backdrop-blur-sm transition-all duration-200">
                                         <input
                                             type="color"
@@ -189,7 +189,9 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                                     </div>
                                 </div>
                                 <div className="space-y-3">
-                                    <label className="text-primary/60 ml-1 text-[10px] font-semibold uppercase tracking-widest dark:text-white/60">Warna Latar (Background)</label>
+                                    <label className="text-primary/60 ml-1 text-[10px] font-semibold tracking-widest uppercase dark:text-white/60">
+                                        Warna Latar (Background)
+                                    </label>
                                     <div className="border-border/80 bg-muted/20 flex items-center gap-4 rounded-2xl border p-4 backdrop-blur-sm transition-all duration-200">
                                         <input
                                             type="color"
@@ -212,22 +214,20 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                     {/* Side 2: Controls */}
                     <div className="space-y-12">
                         <FormSection title="Kontrol Perilaku" subtitle="Pengaturan status aktifitas sistem">
-                            <div className="grid grid-cols-1 gap-8 items-start">
+                            <div className="grid grid-cols-1 items-start gap-8">
                                 <div
                                     onClick={() => form.setData('is_active', !form.data.is_active)}
-                                    className="group hover:bg-black/[0.01] dark:hover:bg-white/[0.01] flex cursor-pointer items-center gap-4 rounded-2xl border border-black/[0.03] dark:border-white/[0.03] p-6 transition-all duration-200 select-none"
+                                    className="group flex cursor-pointer items-center gap-4 rounded-2xl border border-black/[0.03] p-6 transition-all duration-200 select-none hover:bg-black/[0.01] dark:border-white/[0.03] dark:hover:bg-white/[0.01]"
                                 >
                                     <Checkbox
                                         id="is_active"
                                         checked={!!form.data.is_active}
-                                        onCheckedChange={() => { }}
+                                        onCheckedChange={() => {}}
                                         className="border-border data-[state=checked]:bg-primary h-6 w-6 rounded-lg"
                                     />
                                     <div className="flex flex-col">
-                                        <span className="text-text-main text-sm font-semibold tracking-wide">
-                                            Status Aktif
-                                        </span>
-                                        <span className="text-text-desc mt-1 text-[11px] font-medium leading-tight">
+                                        <span className="text-text-main text-sm font-semibold tracking-wide">Status Aktif</span>
+                                        <span className="text-text-desc mt-1 text-[11px] leading-tight font-medium">
                                             Tersedia dalam mesin alur kerja sistem.
                                         </span>
                                     </div>
@@ -235,7 +235,7 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
 
                                 <div className="animate-in fade-in flex gap-4 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-6 backdrop-blur-sm duration-300 dark:bg-amber-500/10">
                                     <AlertCircle size={20} className="mt-0.5 shrink-0 text-amber-500" />
-                                    <p className="text-[11px] leading-relaxed font-semibold text-amber-700/80 uppercase tracking-tight">
+                                    <p className="text-[11px] leading-relaxed font-semibold tracking-tight text-amber-700/80 uppercase">
                                         Perubahan parameter visual akan berdampak langsung pada seluruh elemen sistem secara global.
                                     </p>
                                 </div>
@@ -260,33 +260,30 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                 router.get(globalThis.location.pathname, { ...filters, search: v, page: 1 }, { preserveState: true, replace: true })
             }
             headerActions={
-                <Button
-                    variant="white"
-                    onClick={openCreate}
-                >
+                <Button variant="white" onClick={openCreate}>
                     <Plus size={14} className="text-primary" /> Registrasi Status Baru
                 </Button>
             }
             bulkActions={
                 canDelete
                     ? [
-                        {
-                            label: 'Hapus Terpilih',
-                            icon: Trash2,
-                            variant: 'destructive',
-                            onClick: (ids: string[] | number[]) => {
-                                if (confirm(`Apakah Anda yakin ingin menghapus ${ids.length} status terpilih?`)) {
-                                    router.post(
-                                        '/admin/contract-statuses/bulk-delete',
-                                        { ids },
-                                        {
-                                            onSuccess: () => showToast(`${ids.length} status telah dihapus`, 'success'),
-                                        },
-                                    );
-                                }
-                            },
-                        },
-                    ]
+                          {
+                              label: 'Hapus Terpilih',
+                              icon: Trash2,
+                              variant: 'destructive',
+                              onClick: (ids: string[] | number[]) => {
+                                  if (confirm(`Apakah Anda yakin ingin menghapus ${ids.length} status terpilih?`)) {
+                                      router.post(
+                                          '/admin/contract-statuses/bulk-delete',
+                                          { ids },
+                                          {
+                                              onSuccess: () => showToast(`${ids.length} status telah dihapus`, 'success'),
+                                          },
+                                      );
+                                  }
+                              },
+                          },
+                      ]
                     : undefined
             }
             pagination={{
@@ -299,11 +296,7 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                 onPageChange: (page: number) =>
                     router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
                 onPerPageChange: (pp: number) =>
-                    router.get(
-                        globalThis.location.pathname,
-                        { ...filters, per_page: pp, page: 1 },
-                        { preserveState: true, preserveScroll: true },
-                    ),
+                    router.get(globalThis.location.pathname, { ...filters, per_page: pp, page: 1 }, { preserveState: true, preserveScroll: true }),
             }}
         />
     );

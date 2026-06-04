@@ -1,7 +1,7 @@
-import { useToast } from '@/components/ui/feedback/Toast';
 import { Button } from '@/components/ui/base/Button';
 import { Column, DataTable } from '@/components/ui/data/DataTable';
 import { ExcelActions } from '@/components/ui/data/ExcelActions';
+import { useToast } from '@/components/ui/feedback/Toast';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -27,12 +27,8 @@ const RegionCell = ({ name, description }: Readonly<{ name: string; description?
             <GitBranch size={18} />
         </div>
         <div className="flex min-w-0 flex-col gap-0.5">
-            <span className="text-sm font-semibold tracking-wide text-text-main leading-tight">{name}</span>
-            {description && (
-                <span className="text-text-desc text-[11px] font-medium leading-normal">
-                    {description}
-                </span>
-            )}
+            <span className="text-text-main text-sm leading-tight font-semibold tracking-wide">{name}</span>
+            {description && <span className="text-text-desc text-[11px] leading-normal font-medium">{description}</span>}
         </div>
     </div>
 );
@@ -77,20 +73,12 @@ export function RegionManagement({ regions, filters }: Readonly<RegionManagement
             {
                 header: 'ID Portal',
                 accessorKey: 'id_portal_master',
-                cell: (row) => (
-                    <span className="text-text-desc text-sm font-medium tracking-wide">
-                        {row.id_portal_master || '—'}
-                    </span>
-                ),
+                cell: (row) => <span className="text-text-desc text-sm font-medium tracking-wide">{row.id_portal_master || '—'}</span>,
             },
             {
                 header: 'Jumlah Company',
                 accessorKey: 'companies_count',
-                cell: (row) => (
-                    <span className="text-text-desc text-sm font-medium tracking-wide">
-                        {row.companies?.length || 0} Company
-                    </span>
-                ),
+                cell: (row) => <span className="text-text-desc text-sm font-medium tracking-wide">{row.companies?.length || 0} Company</span>,
             },
         ],
         [],
@@ -153,7 +141,7 @@ export function RegionManagement({ regions, filters }: Readonly<RegionManagement
                             type="button"
                             variant="ghost"
                             onClick={() => setIsConfirmOpen(true)}
-                            className="h-10 rounded-xl border border-danger/20 px-4 text-xs font-bold text-danger transition-all duration-200 select-none hover:bg-danger hover:text-white active:scale-95"
+                            className="border-danger/20 text-danger hover:bg-danger h-10 rounded-xl border px-4 text-xs font-bold transition-all duration-200 select-none hover:text-white active:scale-95"
                         >
                             <Trash2 size={15} className="mr-2" /> Hapus
                         </Button>
@@ -176,7 +164,7 @@ export function RegionManagement({ regions, filters }: Readonly<RegionManagement
                     description={`Apakah Anda yakin ingin menghapus region ${editingRegion?.name}? Tindakan ini tidak dapat dibatalkan.`}
                     confirmText="Hapus Region"
                 />
-                <div className="animate-in fade-in grid grid-cols-1 gap-16 duration-300 select-none lg:grid-cols-2 w-full">
+                <div className="animate-in fade-in grid w-full grid-cols-1 gap-16 duration-300 select-none lg:grid-cols-2">
                     {/* Side 1: Primary Configuration */}
                     <div className="space-y-12">
                         <FormSection title="Parameter Wilayah" subtitle="Nama dan identitas unik wilayah operasional">
@@ -236,7 +224,7 @@ export function RegionManagement({ regions, filters }: Readonly<RegionManagement
                                         variant="white"
                                         size="sm"
                                         onClick={() => router.get('/admin/companies', { action: 'create', region_id: editingRegion.id })}
-                                        className="h-8 rounded-lg border-primary/20 text-[9px] font-black uppercase tracking-widest text-primary hover:bg-primary hover:text-white transition-all"
+                                        className="border-primary/20 text-primary hover:bg-primary h-8 rounded-lg text-[9px] font-black tracking-widest uppercase transition-all hover:text-white"
                                     >
                                         <Plus size={12} className="mr-1.5" /> Tambah Company
                                     </Button>
@@ -247,13 +235,13 @@ export function RegionManagement({ regions, filters }: Readonly<RegionManagement
                                         {editingRegion.companies.map((company: any) => (
                                             <div
                                                 key={company.id}
-                                                className="group flex items-center justify-between rounded-xl border border-black/[0.03] dark:border-white/[0.03] bg-black/[0.01] dark:bg-white/[0.01] p-4 transition-all hover:border-primary/30 hover:bg-white dark:hover:bg-black"
+                                                className="group hover:border-primary/30 flex items-center justify-between rounded-xl border border-black/[0.03] bg-black/[0.01] p-4 transition-all hover:bg-white dark:border-white/[0.03] dark:bg-white/[0.01] dark:hover:bg-black"
                                             >
                                                 <div className="flex flex-col">
-                                                    <span className="text-[12px] font-bold text-slate-700 tracking-tight dark:text-slate-300">
+                                                    <span className="text-[12px] font-bold tracking-tight text-slate-700 dark:text-slate-300">
                                                         {company.name}
                                                     </span>
-                                                    <span className="text-text-soft text-[10px] font-medium uppercase mt-0.5">
+                                                    <span className="text-text-soft mt-0.5 text-[10px] font-medium uppercase">
                                                         {company.code} • {company.alias || company.code}
                                                     </span>
                                                 </div>
@@ -262,7 +250,7 @@ export function RegionManagement({ regions, filters }: Readonly<RegionManagement
                                                     variant="ghost"
                                                     size="sm"
                                                     onClick={() => router.get('/admin/companies', { action: 'edit', id: company.id })}
-                                                    className="text-text-desc hover:text-primary h-8 rounded-lg text-[10px] font-black uppercase tracking-widest opacity-0 transition-opacity group-hover:opacity-100"
+                                                    className="text-text-desc hover:text-primary h-8 rounded-lg text-[10px] font-black tracking-widest uppercase opacity-0 transition-opacity group-hover:opacity-100"
                                                 >
                                                     Kelola
                                                 </Button>
@@ -270,17 +258,18 @@ export function RegionManagement({ regions, filters }: Readonly<RegionManagement
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-black/[0.03] dark:border-white/[0.03] rounded-xl bg-black/[0.01] dark:bg-white/[0.01]">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-300">Belum ada company terdaftar</p>
+                                    <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-black/[0.03] bg-black/[0.01] py-12 dark:border-white/[0.03] dark:bg-white/[0.01]">
+                                        <p className="text-[10px] font-black tracking-widest text-slate-300 uppercase">Belum ada company terdaftar</p>
                                     </div>
                                 )}
                             </FormSection>
                         )}
 
-                        <div className="animate-in fade-in flex gap-4 rounded-2xl border border-primary/20 bg-primary/5 p-6 backdrop-blur-sm duration-300 dark:bg-primary/10">
-                            <GitBranch size={24} className="mt-0.5 shrink-0 text-primary" />
-                            <p className="text-[11px] leading-relaxed font-semibold text-primary/80 uppercase tracking-tight">
-                                Region adalah level menengah dalam hirarki organisasi. Region bersifat global dan dapat digunakan oleh berbagai Group Perusahaan untuk pemetaan wilayah hukum dan pajak.
+                        <div className="animate-in fade-in border-primary/20 bg-primary/5 dark:bg-primary/10 flex gap-4 rounded-2xl border p-6 backdrop-blur-sm duration-300">
+                            <GitBranch size={24} className="text-primary mt-0.5 shrink-0" />
+                            <p className="text-primary/80 text-[11px] leading-relaxed font-semibold tracking-tight uppercase">
+                                Region adalah level menengah dalam hirarki organisasi. Region bersifat global dan dapat digunakan oleh berbagai Group
+                                Perusahaan untuk pemetaan wilayah hukum dan pajak.
                             </p>
                         </div>
                     </div>
@@ -302,16 +291,9 @@ export function RegionManagement({ regions, filters }: Readonly<RegionManagement
             }
             headerActions={
                 <div className="flex items-center gap-2">
-                    <ExcelActions
-                        exportRoute="admin.regions.export"
-                        importRoute="admin.regions.import"
-                        label="Region"
-                    />
+                    <ExcelActions exportRoute="admin.regions.export" importRoute="admin.regions.import" label="Region" />
                     {canCreate && (
-                        <Button
-                            variant="white"
-                            onClick={openCreate}
-                        >
+                        <Button variant="white" onClick={openCreate}>
                             <Plus size={15} className="text-primary" /> Tambah Region
                         </Button>
                     )}

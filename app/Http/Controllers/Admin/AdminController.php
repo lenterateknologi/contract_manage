@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Actions\Admin\RoleAccessAction;
 use App\Exports\UsersExport;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\StoreUserRequest;
-use App\Http\Requests\Admin\UpdateUserRequest;
+use App\Http\Requests\Role\StoreRoleRequest;
+use App\Http\Requests\Role\UpdateRoleRequest;
+use App\Http\Requests\User\StoreUserRequest;
+use App\Http\Requests\User\UpdateUserRequest;
 use App\Imports\UsersImport;
+use App\Models\Company;
 use App\Models\Contract;
 use App\Models\Department;
 use App\Models\Module;
@@ -36,7 +39,7 @@ class AdminController extends Controller
     )]
     public function users(Request $request)
     {
-        $query = User::with('department')
+        $query = User::with(['department', 'company'])
             ->when($request->search, function ($q, $search) {
                 $search = strtolower($search);
                 $q->where(function ($qq) use ($search) {
@@ -50,6 +53,9 @@ class AdminController extends Controller
             })
             ->when($request->department_id, function ($q, $deptId) {
                 $q->whereIn('department_id', (array) $deptId);
+            })
+            ->when($request->company_id, function ($q, $companyId) {
+                $q->whereIn('company_id', (array) $companyId);
             });
 
         if ($request->wantsJson()) {
@@ -57,15 +63,17 @@ class AdminController extends Controller
                 'users' => $query->orderBy('name')->paginate($request->input('per_page', 10)),
                 'roles' => Role::orderBy('name')->get(),
                 'departments' => Department::orderBy('name')->get(),
+                'companies' => Company::with(['group', 'region'])->orderBy('name')->get(),
             ]);
         }
 
-        return Inertia::render('admin/index', [
+        return Inertia::render('admin/Index', [
             'currentView' => 'users',
             'users' => $query->orderBy('name')->paginate($request->input('per_page', 10))->withQueryString(),
             'roles' => Role::orderBy('name')->get(),
             'departments' => Department::orderBy('name')->get(),
-            'filters' => $request->only(['search', 'role', 'department_id']),
+            'companies' => Company::with(['group', 'region'])->orderBy('name')->get(),
+            'filters' => $request->only(['search', 'role', 'department_id', 'company_id']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Manajemen User', 'href' => route('admin.users'), 'description' => 'Kelola akses dan profil pengguna sistem.', 'icon' => 'Users'],
@@ -112,7 +120,7 @@ class AdminController extends Controller
             ->values()
             ->all();
 
-        return Inertia::render('admin/index', [
+        return Inertia::render('admin/Index', [
             'currentView' => 'members',
             'users' => $users,
             'departments' => $departments,
@@ -154,7 +162,7 @@ class AdminController extends Controller
             return response()->json($query->orderBy('name')->paginate($request->input('per_page', 10)));
         }
 
-        return Inertia::render('admin/index', [
+        return Inertia::render('admin/Index', [
             'currentView' => 'roles',
             'roles' => $query->orderBy('name')->paginate($request->input('per_page', 10))->withQueryString(),
             'filters' => $request->only(['search', 'created_from', 'created_to']),
@@ -165,14 +173,9 @@ class AdminController extends Controller
         ]);
     }
 
-    public function storeRole(Request $request)
+    public function storeRole(StoreRoleRequest $request)
     {
-        $data = $request->validate([
-            'name' => 'required|string|max:255|unique:m_roles,name',
-            'description' => 'nullable|string',
-        ]);
-
-        $role = Role::create($data);
+        $role = Role::create($request->validated());
 
         if ($request->wantsJson()) {
             return response()->json($role, 201);
@@ -181,14 +184,9 @@ class AdminController extends Controller
         return back()->with('success', 'Role berhasil dibuat.');
     }
 
-    public function updateRole(Request $request, Role $role)
+    public function updateRole(UpdateRoleRequest $request, Role $role)
     {
-        $data = $request->validate([
-            'name' => 'required|string|max:255|unique:m_roles,name,'.$role->id,
-            'description' => 'nullable|string',
-        ]);
-
-        $role->update($data);
+        $role->update($request->validated());
 
         if ($request->wantsJson()) {
             return response()->json($role);
@@ -281,7 +279,7 @@ class AdminController extends Controller
 
         $allRoles = Role::orderBy('name')->get();
 
-        return Inertia::render('admin/role-config', [
+        return Inertia::render('roles/Config', [
             'role' => $role,
             'roles' => $allRoles,
             'modules' => $modules,

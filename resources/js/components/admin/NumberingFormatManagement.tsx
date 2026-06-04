@@ -3,7 +3,7 @@ import { Checkbox } from '@/components/ui/base/Checkbox';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { cn } from '@/lib/utils';
 import { useForm } from '@inertiajs/react';
-import { CalendarDays, FileText, Hash, Info, LayoutGrid, Save, Settings2, Loader2 } from 'lucide-react';
+import { CalendarDays, FileText, Hash, Info, LayoutGrid, Loader2, Save, Settings2 } from 'lucide-react';
 import React, { useState } from 'react';
 
 interface NumberingFormat {
@@ -21,16 +21,14 @@ interface Props {
 
 export function NumberingFormatManagement({ formats }: Readonly<Props>) {
     return (
-        <div className="animate-in fade-in flex flex-col gap-12 bg-card p-4 duration-500">
+        <div className="animate-in fade-in bg-card flex flex-col gap-12 p-4 duration-500">
             <div className="border-surface-border flex items-center justify-between border-b pb-10">
                 <div className="flex items-center gap-5">
                     <div className="bg-primary shadow-primary/20 flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-2xl">
                         <Hash size={28} />
                     </div>
                     <div>
-                        <h2 className="text-text-desc mb-1 text-[11px] font-black tracking-[0.4em] uppercase">
-                            Serial Architecture
-                        </h2>
+                        <h2 className="text-text-desc mb-1 text-[11px] font-black tracking-[0.4em] uppercase">Serial Architecture</h2>
                         <p className="text-text-main text-2xl font-black tracking-tight uppercase italic">Sistem Penomoran Otomatis</p>
                     </div>
                 </div>
@@ -44,9 +42,7 @@ export function NumberingFormatManagement({ formats }: Readonly<Props>) {
                 {formats.length === 0 && (
                     <div className="border-surface-border bg-surface-muted flex flex-col items-center justify-center rounded-[2.5rem] border-4 border-dashed py-32">
                         <Hash className="text-text-main/10 mb-6 h-16 w-16" />
-                        <span className="text-text-main/20 text-[13px] font-black tracking-[0.5em] uppercase">
-                            Konfigurasi Belum Terdaftar
-                        </span>
+                        <span className="text-text-main/20 text-[13px] font-black tracking-[0.5em] uppercase">Konfigurasi Belum Terdaftar</span>
                     </div>
                 )}
             </div>
@@ -61,9 +57,7 @@ export function NumberingFormatManagement({ formats }: Readonly<Props>) {
                     </div>
                     <div className="flex flex-col gap-8">
                         <div className="flex flex-col">
-                            <span className="text-text-main mb-2 text-[11px] font-black tracking-[0.3em] uppercase">
-                                Panduan Sintaks Placeholder
-                            </span>
+                            <span className="text-text-main mb-2 text-[11px] font-black tracking-[0.3em] uppercase">Panduan Sintaks Placeholder</span>
                             <p className="text-text-desc text-[9px] font-bold uppercase">
                                 Gunakan tag di bawah ini untuk membangun pola penomoran dokumen yang dinamis
                             </p>
@@ -120,9 +114,7 @@ function FormatCard({ format }: Readonly<{ format: NumberingFormat }>) {
         <div
             className={cn(
                 'overflow-hidden rounded-[2.5rem] border transition-all duration-500',
-                isEditing
-                    ? 'border-primary ring-primary/5 shadow-2xl ring-8'
-                    : 'border-surface-border hover:border-primary/30 bg-card',
+                isEditing ? 'border-primary ring-primary/5 shadow-2xl ring-8' : 'border-surface-border hover:border-primary/30 bg-card',
             )}
         >
             <div className="border-surface-border bg-surface-muted flex items-center justify-between border-b px-10 py-8">
@@ -131,16 +123,9 @@ function FormatCard({ format }: Readonly<{ format: NumberingFormat }>) {
                         <Settings2 size={20} />
                     </div>
                     <div className="flex flex-col">
-                        <h3 className="text-text-main mb-1 text-[11px] font-black tracking-[0.3em] uppercase">
-                            Modul: {format.module}
-                        </h3>
+                        <h3 className="text-text-main mb-1 text-[11px] font-black tracking-[0.3em] uppercase">Modul: {format.module}</h3>
                         <div className="flex items-center gap-2">
-                            <div
-                                className={cn(
-                                    'h-1.5 w-1.5 rounded-full',
-                                    format.is_active ? 'animate-pulse bg-success' : 'bg-primary/20',
-                                )}
-                            />
+                            <div className={cn('h-1.5 w-1.5 rounded-full', format.is_active ? 'bg-success animate-pulse' : 'bg-primary/20')} />
                             <span className="text-text-desc text-[9px] font-black tracking-[0.1em] uppercase">
                                 {format.is_active ? 'Sistem Aktif & Terpantau' : 'Sistem Penomoran Non-Aktif'}
                             </span>
@@ -199,9 +184,7 @@ function FormatCard({ format }: Readonly<{ format: NumberingFormat }>) {
                                 <Checkbox checked={data.is_active} onCheckedChange={() => {}} />
                                 <div className="flex flex-col">
                                     <span className="text-text-main text-[10px] font-black uppercase">Aktivasi Sistem</span>
-                                    <span className="text-text-main/30 mt-0.5 text-[8px] font-bold uppercase">
-                                        Aktifkan generator nomor otomatis
-                                    </span>
+                                    <span className="text-text-main/30 mt-0.5 text-[8px] font-bold uppercase">Aktifkan generator nomor otomatis</span>
                                 </div>
                             </div>
 
@@ -216,11 +199,7 @@ function FormatCard({ format }: Readonly<{ format: NumberingFormat }>) {
                                 >
                                     Batalkan
                                 </Button>
-                                <Button
-                                    type="submit"
-                                    disabled={processing}
-                                    className="px-12"
-                                >
+                                <Button type="submit" disabled={processing} className="px-12">
                                     {processing ? (
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     ) : (
@@ -251,9 +230,7 @@ function FormatCard({ format }: Readonly<{ format: NumberingFormat }>) {
                         </div>
                         <div className="grid grid-cols-2 gap-6 lg:col-span-5">
                             <div className="border-surface-border bg-surface-muted rounded-[1.5rem] border p-6 shadow-sm transition-all hover:shadow-md">
-                                <span className="text-text-main/30 mb-4 block text-[9px] font-black tracking-[0.2em] uppercase">
-                                    Index Terakhir
-                                </span>
+                                <span className="text-text-main/30 mb-4 block text-[9px] font-black tracking-[0.2em] uppercase">Index Terakhir</span>
                                 <div className="flex items-baseline gap-2">
                                     <span className="text-text-main text-4xl leading-none font-black tracking-tighter tabular-nums">
                                         {format.current_number}
@@ -262,9 +239,7 @@ function FormatCard({ format }: Readonly<{ format: NumberingFormat }>) {
                                 </div>
                             </div>
                             <div className="border-surface-border bg-surface-muted rounded-[1.5rem] border p-6 shadow-sm transition-all hover:shadow-md">
-                                <span className="text-text-main/30 mb-4 block text-[9px] font-black tracking-[0.2em] uppercase">
-                                    Padding Digit
-                                </span>
+                                <span className="text-text-main/30 mb-4 block text-[9px] font-black tracking-[0.2em] uppercase">Padding Digit</span>
                                 <div className="flex items-baseline gap-2">
                                     <span className="text-text-main text-4xl leading-none font-black tracking-tighter tabular-nums">
                                         {format.padding}

@@ -402,7 +402,7 @@ class ContractFormController extends Controller
             ]);
         }
 
-        return Inertia::render('admin/contracts/compare-forms', [
+        return Inertia::render('contracts/compare-forms', [
             'contract' => ContractFormatter::formatContract($contract),
             'docType' => $type,
             'template' => $matchingTemplate ? [

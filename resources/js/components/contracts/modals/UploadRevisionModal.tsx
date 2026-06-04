@@ -1,9 +1,9 @@
-import React, { useRef, useState } from 'react';
-import { Modal } from '@/components/ui/overlays/Modal';
 import { Button } from '@/components/ui/base/Button';
 import { FormInput } from '@/components/ui/forms/FormInput';
-import { Upload, FileUp, FileCheck, CloudUpload, X } from 'lucide-react';
+import { Modal } from '@/components/ui/overlays/Modal';
 import { cn } from '@/lib/utils';
+import { CloudUpload, FileCheck, FileUp } from 'lucide-react';
+import React, { useState } from 'react';
 
 interface Props {
     open: boolean;
@@ -59,11 +59,7 @@ export default function UploadRevisionModal({ open, onClose, onSubmit, initialTy
                     <Button variant="outline" onClick={onClose} disabled={loading}>
                         Batal
                     </Button>
-                    <Button
-                        onClick={handleSubmit}
-                        disabled={loading || !file || !changelog.trim()}
-                        className="min-w-[120px]"
-                    >
+                    <Button onClick={handleSubmit} disabled={loading || !file || !changelog.trim()} className="min-w-[120px]">
                         {loading ? 'Mengupload...' : 'Upload'}
                     </Button>
                 </div>
@@ -71,7 +67,7 @@ export default function UploadRevisionModal({ open, onClose, onSubmit, initialTy
         >
             <div className="space-y-6">
                 <div>
-                    <label className="text-muted-foreground mb-2 block text-[11px] font-bold uppercase tracking-wider">Jenis Dokumen</label>
+                    <label className="text-muted-foreground mb-2 block text-[11px] font-bold tracking-wider uppercase">Jenis Dokumen</label>
                     <div className="bg-muted border-border flex gap-2 rounded-xl border p-1">
                         {(['f1', 'f2'] as const).map((t) => (
                             <button
@@ -80,9 +76,9 @@ export default function UploadRevisionModal({ open, onClose, onSubmit, initialTy
                                 onClick={() => setType(t)}
                                 className={cn(
                                     'flex-1 rounded-lg py-2 text-[11px] font-black uppercase transition-all',
-                                    type === t 
-                                        ? 'bg-white text-black shadow-sm dark:bg-slate-800 dark:text-white' 
-                                        : 'text-black/40 hover:text-black dark:text-white/40 dark:hover:text-white'
+                                    type === t
+                                        ? 'bg-white text-black shadow-sm dark:bg-slate-800 dark:text-white'
+                                        : 'text-black/40 hover:text-black dark:text-white/40 dark:hover:text-white',
                                 )}
                             >
                                 {t === 'f1' ? 'F1 (Utama)' : 'F2'}
@@ -101,9 +97,9 @@ export default function UploadRevisionModal({ open, onClose, onSubmit, initialTy
                     <div
                         className={cn(
                             'flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-10 transition-all',
-                            file 
-                                ? 'border-primary bg-primary/[0.02] dark:border-white dark:bg-white/[0.02]' 
-                                : 'border-black/10 bg-slate-50 group-hover:border-primary/40 dark:border-white/10 dark:bg-white/5 dark:group-hover:border-white/40'
+                            file
+                                ? 'border-primary bg-primary/[0.02] dark:border-white dark:bg-white/[0.02]'
+                                : 'group-hover:border-primary/40 border-black/10 bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:group-hover:border-white/40',
                         )}
                     >
                         {file ? (
@@ -112,13 +108,15 @@ export default function UploadRevisionModal({ open, onClose, onSubmit, initialTy
                             <CloudUpload size={32} className="text-black/20 dark:text-white/20" />
                         )}
                         <div className="max-w-full text-center">
-                            <div className={cn(
-                                "text-[11px] font-black uppercase truncate px-4",
-                                file ? "text-primary dark:text-white" : "text-black/40 dark:text-white/40"
-                            )}>
+                            <div
+                                className={cn(
+                                    'truncate px-4 text-[11px] font-black uppercase',
+                                    file ? 'text-primary dark:text-white' : 'text-black/40 dark:text-white/40',
+                                )}
+                            >
                                 {file ? file.name : 'Pilih file atau drag ke sini'}
                             </div>
-                            {!file && <div className="text-[10px] font-medium text-black/20 mt-1">Mendukung .docx, .doc, .pdf</div>}
+                            {!file && <div className="mt-1 text-[10px] font-medium text-black/20">Mendukung .docx, .doc, .pdf</div>}
                         </div>
                     </div>
                 </div>

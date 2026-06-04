@@ -2,7 +2,6 @@ import { cn } from '@/lib/utils';
 import { router } from '@inertiajs/react';
 import React, { useEffect, useState } from 'react';
 
-
 interface AuthSplitLayoutProps {
     children: React.ReactNode;
     title?: string;
@@ -18,7 +17,7 @@ export default function AuthSplitLayout({ children, title, description, isSucces
     const onAnimationEnd = (url: URL, visit: any) => {
         router.visit(url, {
             ...visit,
-            onStart: () => { }, // Clear interceptor loop
+            onStart: () => {}, // Clear interceptor loop
         });
     };
 

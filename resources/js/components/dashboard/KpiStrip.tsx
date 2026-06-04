@@ -17,14 +17,14 @@ function KpiCard({ label, value, subtext, icon, accentClass, onClick }: KpiCardP
         <div
             onClick={onClick}
             className={cn(
-                'group border-surface-border/60 bg-surface-base/40 relative flex flex-col gap-4 overflow-hidden rounded-2xl border p-5 shadow-sm transition-all duration-300 backdrop-blur-sm',
+                'group border-surface-border/60 bg-surface-base/40 relative flex flex-col gap-4 overflow-hidden rounded-2xl border p-5 shadow-sm backdrop-blur-sm transition-all duration-300',
                 onClick && 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-[0.99]',
             )}
         >
             <div className="flex items-start justify-between">
                 <div
                     className={cn(
-                        'flex h-10 w-10 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-105 shadow-xs border border-surface-border/10',
+                        'border-surface-border/10 flex h-10 w-10 items-center justify-center rounded-xl border shadow-xs transition-transform duration-300 group-hover:scale-105',
                         accentClass,
                     )}
                 >
@@ -47,7 +47,7 @@ interface KpiStripProps {
 
 export function KpiStrip({ metrics: m, onNavigate }: KpiStripProps) {
     return (
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 select-none">
+        <div className="grid grid-cols-2 gap-4 select-none lg:grid-cols-4">
             <KpiCard
                 label="Total Kontrak"
                 value={m.totalContracts}
@@ -76,13 +76,8 @@ export function KpiStrip({ metrics: m, onNavigate }: KpiStripProps) {
                 value={m.attentionCount}
                 subtext="Revisi & Segera Berakhir"
                 icon={<AlertTriangle className="h-4.5 w-4.5" />}
-                accentClass={
-                    m.attentionCount > 0
-                        ? 'bg-danger/10 text-danger'
-                        : 'bg-surface-muted/60 text-text-desc'
-                }
+                accentClass={m.attentionCount > 0 ? 'bg-danger/10 text-danger' : 'bg-surface-muted/60 text-text-desc'}
             />
         </div>
     );
 }
-

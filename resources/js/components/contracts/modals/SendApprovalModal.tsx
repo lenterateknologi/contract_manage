@@ -264,9 +264,7 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
                                                                     // Filter by approver roles configured on the step
                                                                     const roles: string[] = step.role || [];
                                                                     if (roles.length === 0) return true;
-                                                                    return roles.some((r: string) =>
-                                                                        u.role?.toLowerCase() === r.toLowerCase()
-                                                                    );
+                                                                    return roles.some((r: string) => u.role?.toLowerCase() === r.toLowerCase());
                                                                 })
                                                                 .map((u: any) => (
                                                                     <option key={u.id} value={u.id.toString()}>

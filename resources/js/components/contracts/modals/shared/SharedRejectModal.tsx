@@ -104,7 +104,8 @@ export function SharedRejectModal({ open, onClose, onSubmit, actionAlias }: Prop
                         disabled={loading || !reason.trim()}
                         className="flex items-center gap-1.5 rounded-lg bg-black px-5 py-2 text-[11px] font-black tracking-[0.2em] text-white uppercase shadow-lg transition-all active:scale-95 disabled:opacity-30 dark:bg-white dark:text-black"
                     >
-                        <i className="fa-solid fa-xmark text-[11px]" /> {loading ? 'Mengirim...' : actionAlias ? `Konfirmasi ${actionAlias}` : 'Konfirmasi Tolak'}
+                        <i className="fa-solid fa-xmark text-[11px]" />{' '}
+                        {loading ? 'Mengirim...' : actionAlias ? `Konfirmasi ${actionAlias}` : 'Konfirmasi Tolak'}
                     </button>
                 </div>
             </div>

@@ -26,12 +26,12 @@ interface ActivityFeedProps {
 
 export function ActivityFeed({ items }: ActivityFeedProps) {
     return (
-        <div className="border-surface-border/60 bg-surface-base/40 text-text-main rounded-2xl border shadow-sm backdrop-blur-sm w-full select-none animate-in fade-in duration-300">
+        <div className="border-surface-border/60 bg-surface-base/40 text-text-main animate-in fade-in w-full rounded-2xl border shadow-sm backdrop-blur-sm duration-300 select-none">
             <div className="border-surface-border/60 flex items-center justify-between border-b px-6 py-4">
                 <SectionTitle>Aktivitas Terbaru</SectionTitle>
-                <span className="flex h-2 w-2 animate-pulse rounded-full bg-success" />
+                <span className="bg-success flex h-2 w-2 animate-pulse rounded-full" />
             </div>
-            <div className="divide-y divide-surface-border/20 max-h-[500px] overflow-y-auto">
+            <div className="divide-surface-border/20 max-h-[500px] divide-y overflow-y-auto">
                 {items.length === 0 ? (
                     <div className="flex flex-col items-center justify-center gap-2 py-12">
                         <BarChart3 className="text-text-desc/20 h-8 w-8" />
@@ -42,7 +42,12 @@ export function ActivityFeed({ items }: ActivityFeedProps) {
                         const cfg = getActionConfig(act.action);
                         return (
                             <div key={act.id} className="hover:bg-surface-muted/40 group flex items-start gap-4 px-6 py-4 transition-colors">
-                                <div className={cn('mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-surface-border/10 shadow-xs', cfg.color)}>
+                                <div
+                                    className={cn(
+                                        'border-surface-border/10 mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border shadow-xs',
+                                        cfg.color,
+                                    )}
+                                >
                                     {cfg.icon}
                                 </div>
                                 <div className="min-w-0 flex-1">
@@ -60,7 +65,7 @@ export function ActivityFeed({ items }: ActivityFeedProps) {
                                         <span className="text-text-desc/60 text-[10px] font-medium uppercase">{act.actor}</span>
                                     </div>
                                 </div>
-                                <span className="text-text-desc/40 shrink-0 text-[10px] font-semibold uppercase whitespace-nowrap">
+                                <span className="text-text-desc/40 shrink-0 text-[10px] font-semibold whitespace-nowrap uppercase">
                                     {relativeTime(act.created_at)}
                                 </span>
                             </div>

@@ -9,6 +9,7 @@ import { usePage } from '@inertiajs/react';
 import { AlertCircle, Check, FilePlus2, Loader2, ShieldCheck } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { TaxToggle } from '../parts/TaxToggle';
+import { validateContractForm } from '@/validations/contractValidation';
 
 interface Props {
     open: boolean;
@@ -92,20 +93,20 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
         auth?.user?.department?.name?.toLowerCase().includes('legal') ||
         auth?.user?.role?.toLowerCase().includes('legal');
 
+import { validateContractForm } from '@/validations/contractValidation';
+...
     const handleSubmit = async () => {
+        const validationErrors = validateContractForm(
+            { title, contract_type_id: typeId, workflow_id: workflowId },
+            workflows.length > 0
+        );
+
+        if (Object.keys(validationErrors).length > 0) {
+            setErrors(validationErrors);
+            return;
+        }
+
         setErrors({});
-        if (!title.trim()) {
-            setErrors((prev) => ({ ...prev, title: 'Nama kontrak harus diisi' }));
-            return;
-        }
-        if (!typeId) {
-            setErrors((prev) => ({ ...prev, contract_type_id: 'Tipe kontrak harus dipilih' }));
-            return;
-        }
-        if (workflows.length > 0 && !workflowId) {
-            setErrors((prev) => ({ ...prev, workflow_id: 'Alur kerja harus dipilih' }));
-            return;
-        }
 
         const fd = new FormData();
         fd.append('title', title);

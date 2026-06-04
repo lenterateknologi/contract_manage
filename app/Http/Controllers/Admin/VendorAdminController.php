@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Exports\VendorsExport;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Vendor\StoreVendorRequest;
+use App\Http\Requests\Vendor\UpdateVendorRequest;
 use App\Imports\VendorsImport;
 use App\Models\Vendor;
 use App\Models\VendorDocument;
@@ -35,7 +37,7 @@ class VendorAdminController extends Controller
                 $q->whereIn('is_active', $bools);
             });
 
-        return Inertia::render('admin/index', [
+        return Inertia::render('admin/Index', [
             'currentView' => 'vendors',
             'vendors' => $query->orderBy('name')->paginate($request->input('per_page', 10))->withQueryString(),
             'filters' => $request->only(['search', 'category', 'is_active']),
@@ -48,7 +50,7 @@ class VendorAdminController extends Controller
 
     public function create()
     {
-        return Inertia::render('admin/vendors/form', [
+        return Inertia::render('vendors/form', [
             'vendor' => null,
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
@@ -62,7 +64,7 @@ class VendorAdminController extends Controller
     {
         $vendor->load('documents');
 
-        return Inertia::render('admin/vendors/form', [
+        return Inertia::render('vendors/form', [
             'vendor' => $vendor,
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
@@ -72,29 +74,9 @@ class VendorAdminController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreVendorRequest $request)
     {
-        $data = $request->validate([
-            'code' => 'required|string|max:50|unique:m_vendors,code',
-            'name' => 'required|string|max:255',
-            'category' => 'nullable|string|max:100',
-            'email' => 'nullable|email|max:255',
-            'phone' => 'nullable|string|max:50',
-            'address' => 'nullable|string',
-            'is_active' => 'boolean',
-            'company_type' => 'nullable|string|max:100',
-            'is_individual' => 'boolean',
-            'website' => 'nullable|string|max:255',
-            'pic_name' => 'nullable|string|max:255',
-            'pic_position' => 'nullable|string|max:255',
-            'npwp' => 'nullable|string|max:50',
-            'nib' => 'nullable|string|max:50',
-            'siup' => 'nullable|string|max:50',
-            'director_name' => 'nullable|string|max:255',
-            'bank_name' => 'nullable|string|max:255',
-            'bank_account_no' => 'nullable|string|max:100',
-            'bank_account_name' => 'nullable|string|max:255',
-        ]);
+        $data = $request->validated();
 
         $data['created_by'] = Auth::id();
         $data['updated_by'] = Auth::id();
@@ -104,32 +86,10 @@ class VendorAdminController extends Controller
         return redirect()->route('admin.vendors.edit', $vendor->id)->with('success', 'Vendor berhasil dibuat. Anda sekarang dapat melampirkan dokumen.');
     }
 
-    public function update(Request $request, Vendor $vendor)
+    public function update(UpdateVendorRequest $request, Vendor $vendor)
     {
-        $data = $request->validate([
-            'code' => 'required|string|max:50|unique:m_vendors,code,'.$vendor->id,
-            'name' => 'required|string|max:255',
-            'category' => 'nullable|string|max:100',
-            'email' => 'nullable|email|max:255',
-            'phone' => 'nullable|string|max:50',
-            'address' => 'nullable|string',
-            'is_active' => 'boolean',
-            'company_type' => 'nullable|string|max:100',
-            'is_individual' => 'boolean',
-            'website' => 'nullable|string|max:255',
-            'pic_name' => 'nullable|string|max:255',
-            'pic_position' => 'nullable|string|max:255',
-            'npwp' => 'nullable|string|max:50',
-            'nib' => 'nullable|string|max:50',
-            'siup' => 'nullable|string|max:50',
-            'director_name' => 'nullable|string|max:255',
-            'bank_name' => 'nullable|string|max:255',
-            'bank_account_no' => 'nullable|string|max:100',
-            'bank_account_name' => 'nullable|string|max:255',
-        ]);
-
+        $data = $request->validated();
         $data['updated_by'] = Auth::id();
-
         $vendor->update($data);
 
         return back()->with('success', 'Vendor berhasil diperbarui.');

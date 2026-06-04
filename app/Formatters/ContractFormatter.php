@@ -79,6 +79,8 @@ class ContractFormatter
 
             'current_version' => $c->current_version,
             'created_at' => $c->created_at->format('d/m/Y'),
+            'updated_at' => $c->updated_at->toIso8601String(),
+            'updated_at_formatted' => $c->updated_at->format('d/m/Y H:i'),
             'submitted_at' => $c->submitted_at ? $c->submitted_at->format('d/m/Y H:i') : null,
             'creator' => self::formatUser($c->creator),
             'initiator' => self::formatUser($c->initiator),

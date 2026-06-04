@@ -1,16 +1,12 @@
-import { DashboardMetrics } from '@/components/dashboard/DashboardMetrics';
-import CreateContractModal from '@/components/contracts/modals/CreateContractModal';
-import { EditContractModal } from '@/components/contracts/modals/EditContractModal';
-import PreviewModal from '@/components/contracts/modals/PreviewModal';
-import SendApprovalModal from '@/components/contracts/modals/SendApprovalModal';
 import { ProfileView } from '@/components/contracts/parts/ProfileView';
-import { ToastProvider, useToast } from '@/components/ui/feedback/Toast';
+import { DashboardMetrics } from '@/components/dashboard/DashboardMetrics';
 import { Button } from '@/components/ui/base/Button';
 import { Column, DataTable as TableContract } from '@/components/ui/data/DataTable';
 import { FilterPopover } from '@/components/ui/data/FilterPopover';
 import { StatusBadge } from '@/components/ui/data/StatusBadge';
 import { ContractCardSkeleton, ContractTableSkeleton } from '@/components/ui/feedback/ContractSkeleton';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
+import { ToastProvider, useToast } from '@/components/ui/feedback/Toast';
 import { SearchInput } from '@/components/ui/forms/SearchInput';
 import { LayoutToggle, LayoutType } from '@/components/ui/navigation/LayoutToggle';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
@@ -42,8 +38,14 @@ import {
     Trash2,
     Zap,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense, memo } from 'react';
 import ContractDetailView from './components/ContractDetailView';
+
+// Lazy loaded modals for performance
+const CreateContractModal = lazy(() => import('@/components/contracts/modals/CreateContractModal'));
+const EditContractModal = lazy(() => import('@/components/contracts/modals/EditContractModal').then(m => ({ default: m.EditContractModal })));
+const PreviewModal = lazy(() => import('@/components/contracts/modals/PreviewModal'));
+const SendApprovalModal = lazy(() => import('@/components/contracts/modals/SendApprovalModal'));
 
 const ensureArray = (val: any): any[] => {
     if (Array.isArray(val)) return val;
@@ -61,7 +63,7 @@ import {
     TypeAndVendorCell,
 } from './components/ContractTableCells';
 
-const SLACountdown = ({ deadline, status }: Readonly<{ deadline: string | null; status: string }>) => {
+const SLACountdown = memo(({ deadline, status }: Readonly<{ deadline: string | null; status: string }>) => {
     const [timeLeft, setTimeLeft] = useState<string>('');
     const [urgency, setUrgency] = useState<'normal' | 'warning' | 'danger'>('normal');
 
@@ -118,15 +120,19 @@ const SLACountdown = ({ deadline, status }: Readonly<{ deadline: string | null; 
             {timeLeft}
         </div>
     );
-};
+});
 
-const CreatedAtCell = ({ c }: Readonly<{ c: Contract }>) => (
+SLACountdown.displayName = 'SLACountdown';
+
+const CreatedAtCell = memo(({ c }: Readonly<{ c: Contract }>) => (
     <span className="text-sidebar-foreground/40 text-[11px] font-medium">{c.created_at}</span>
-);
+));
+
+CreatedAtCell.displayName = 'CreatedAtCell';
 
 const renderCreatedAt = (c: Contract) => <CreatedAtCell c={c} />;
 
-const BulkActions = ({
+const BulkActions = memo(({
     selectedRows,
     canBulkApprove,
     handleBulkApprove,
@@ -151,9 +157,11 @@ const BulkActions = ({
             </Button>
         )}
     </div>
-);
+));
 
-const RowActions = ({
+BulkActions.displayName = 'BulkActions';
+
+const RowActions = memo(({
     c,
     openDetail,
     setSelected,
@@ -203,7 +211,9 @@ const RowActions = ({
             </DropdownMenuItem>
         </DropdownMenuContent>
     </DropdownMenu>
-);
+));
+
+RowActions.displayName = 'RowActions';
 
 function ContractPage({
     contracts: contractsPaged,
@@ -303,15 +313,15 @@ function ContractPage({
         [selected?.id],
     );
 
-    const openDetail = (c: Contract) => {
+    const openDetail = useCallback((c: Contract) => {
         setSelected(c);
         router.get(route('contracts.show', c.id), {}, { preserveState: true, preserveScroll: true });
-    };
+    }, []);
 
-    const closeDetail = () => {
+    const closeDetail = useCallback(() => {
         setSelected(null);
         router.get(route('contracts'), {}, { preserveState: true, preserveScroll: true });
-    };
+    }, []);
 
     const activeFiltersCount = useMemo(() => {
         const getCount = (val: any) => {
@@ -385,10 +395,10 @@ function ContractPage({
         }
     };
 
-    const canBulkApprove = meUser?.role === 'Admin' || meUser?.role === 'Super Admin' || !!meUser?.is_admin;
-    const canBulkDelete = meUser?.role === 'Admin' || meUser?.role === 'Super Admin' || !!meUser?.is_admin;
+    const canBulkApprove = useMemo(() => meUser?.role === 'Admin' || meUser?.role === 'Super Admin' || !!meUser?.is_admin, [meUser]);
+    const canBulkDelete = useMemo(() => meUser?.role === 'Admin' || meUser?.role === 'Super Admin' || !!meUser?.is_admin, [meUser]);
 
-    const handleBulkApprove = async (rows: Contract[]) => {
+    const handleBulkApprove = useCallback(async (rows: Contract[]) => {
         if (!confirm(`Setujui ${rows.length} kontrak terpilih?`)) return;
         setProcessing(true);
         try {
@@ -400,9 +410,9 @@ function ContractPage({
         } finally {
             setProcessing(false);
         }
-    };
+    }, [showToast]);
 
-    const handleBulkDelete = async (rows: Contract[]) => {
+    const handleBulkDelete = useCallback(async (rows: Contract[]) => {
         if (!confirm(`Hapus ${rows.length} kontrak terpilih?`)) return;
         setProcessing(true);
         try {
@@ -414,7 +424,7 @@ function ContractPage({
         } finally {
             setProcessing(false);
         }
-    };
+    }, [showToast]);
 
     const handleSingleFilterToggle = (key: string, value: any) => {
         const f = filters as any;
@@ -799,32 +809,38 @@ function ContractPage({
                 )}
             </div>
 
-            <CreateContractModal
-                open={createOpen}
-                onClose={() => setCreateOpen(false)}
-                onSubmit={handleCreate}
-                types={types}
-                submissionTypes={submissionTypes}
-                users={users}
-                vendors={vendors}
-            />
-            <SendApprovalModal
-                open={sendOpen}
-                onClose={() => setSendOpen(false)}
-                onSubmit={handleSendSubmit}
-                contractType={selected?.contract_type ?? undefined}
-                users={users}
-            />
-            <EditContractModal
-                open={editOpen}
-                onClose={() => setEditOpen(false)}
-                onSubmit={handleUpdateFromList}
-                contract={selected}
-                types={types}
-                submissionTypes={submissionTypes}
-                vendors={vendors}
-                processing={processing}
-            />
+            <Suspense fallback={null}>
+                <CreateContractModal
+                    open={createOpen}
+                    onClose={() => setCreateOpen(false)}
+                    onSubmit={handleCreate}
+                    types={types}
+                    submissionTypes={submissionTypes}
+                    users={users}
+                    vendors={vendors}
+                />
+            </Suspense>
+            <Suspense fallback={null}>
+                <SendApprovalModal
+                    open={sendOpen}
+                    onClose={() => setSendOpen(false)}
+                    onSubmit={handleSendSubmit}
+                    contractType={selected?.contract_type ?? undefined}
+                    users={users}
+                />
+            </Suspense>
+            <Suspense fallback={null}>
+                <EditContractModal
+                    open={editOpen}
+                    onClose={() => setEditOpen(false)}
+                    onSubmit={handleUpdateFromList}
+                    contract={selected}
+                    types={types}
+                    submissionTypes={submissionTypes}
+                    vendors={vendors}
+                    processing={processing}
+                />
+            </Suspense>
             {/* FilterSheet is removed and replaced by FilterPopover trigger above */}
             <ConfirmationModal
                 open={deleteOpen}
@@ -834,7 +850,9 @@ function ContractPage({
                 description="Seluruh data dokumen, riwayat, dan chat terkait kontrak ini akan dihapus secara permanen."
                 processing={processing}
             />
-            <PreviewModal open={previewOpen} onClose={() => setPreviewOpen(false)} title={previewTitle} url={previewUrl} hasFile={previewHasFile} />
+            <Suspense fallback={null}>
+                <PreviewModal open={previewOpen} onClose={() => setPreviewOpen(false)} title={previewTitle} url={previewUrl} hasFile={previewHasFile} />
+            </Suspense>
             {timelinePdfPreviewUrl && (
                 <div className="bg-surface-base/90 animate-in fade-in zoom-in-95 fixed inset-0 z-[100] flex flex-col backdrop-blur-xl duration-300">
                     <div className="border-surface-border bg-surface-muted flex h-16 items-center justify-between border-b px-6">

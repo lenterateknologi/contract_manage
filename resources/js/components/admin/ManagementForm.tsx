@@ -106,8 +106,8 @@ export function FormSection({
             {(title || subtitle || headerAction) && (
                 <div className="flex items-center justify-between gap-4 border-b border-black/[0.03] pb-4 dark:border-white/[0.03]">
                     <div className="space-y-1">
-                        {title && <h3 className="text-text-main text-xs font-black uppercase tracking-widest">{title}</h3>}
-                        {subtitle && <p className="text-text-desc text-[10px] font-medium leading-relaxed italic">{subtitle}</p>}
+                        {title && <h3 className="text-text-main text-xs font-black tracking-widest uppercase">{title}</h3>}
+                        {subtitle && <p className="text-text-desc text-[10px] leading-relaxed font-medium italic">{subtitle}</p>}
                     </div>
                     {headerAction}
                 </div>

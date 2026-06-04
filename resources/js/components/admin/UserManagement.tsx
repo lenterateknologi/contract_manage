@@ -1,34 +1,15 @@
-import { useToast } from '@/components/ui/feedback/Toast';
 import { Button } from '@/components/ui/base/Button';
 import { Column, DataTable } from '@/components/ui/data/DataTable';
 import { ExcelActions } from '@/components/ui/data/ExcelActions';
+import { useToast } from '@/components/ui/feedback/Toast';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { CompactSwitch } from '@/components/ui/forms/CompactSwitch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
-import { Modal } from '@/components/ui/overlays/Modal';
 import { usePermissions } from '@/hooks/use-permissions';
 import { avatarColor, cn } from '@/lib/utils';
 import { router, useForm } from '@inertiajs/react';
-import {
-    Briefcase,
-    Building2,
-    Check,
-    CheckCircle2,
-    Download,
-    FileSpreadsheet,
-    Fingerprint,
-    Loader2,
-    Lock,
-    Mail,
-    Phone,
-    Plus,
-    ShieldAlert,
-    Trash2,
-    Upload,
-    User,
-    UserCircle,
-} from 'lucide-react';
+import { Briefcase, Building2, CheckCircle2, Fingerprint, Lock, Mail, Phone, Plus, ShieldAlert, Trash2, User } from 'lucide-react';
 import React, { useMemo } from 'react';
 import { FormSection, ManagementForm } from './ManagementForm';
 
@@ -36,6 +17,7 @@ interface UserManagementProps {
     users: any;
     roles: any[];
     departments: any[];
+    companies?: any[];
     filters: any;
 }
 
@@ -58,15 +40,15 @@ const UserCell = ({ name, email }: Readonly<{ name: string; email: string }>) =>
             {name.charAt(0).toUpperCase()}
         </div>
         <div className="flex min-w-0 flex-col">
-            <span className="mb-0.5 truncate text-sm leading-tight font-semibold tracking-wide text-text-main transition-transform duration-200 group-hover:translate-x-1">
+            <span className="text-text-main mb-0.5 truncate text-sm leading-tight font-semibold tracking-wide transition-transform duration-200 group-hover:translate-x-1">
                 {name}
             </span>
-            <span className="text-text-desc truncate text-xs font-medium lowercase tracking-tight">{email}</span>
+            <span className="text-text-desc truncate text-xs font-medium tracking-tight lowercase">{email}</span>
         </div>
     </div>
 );
 
-export function UserManagement({ users, roles, departments, filters }: Readonly<UserManagementProps>) {
+export function UserManagement({ users, roles, departments, companies = [], filters }: Readonly<UserManagementProps>) {
     const { showToast } = useToast();
     const { canCreate, canUpdate, canDelete } = usePermissions('ADMIN_USERS');
     const [isEditorOpen, setIsEditorOpen] = React.useState(false);
@@ -82,6 +64,7 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
         password_confirmation: '',
         role: roles[0]?.name || '',
         department_id: departments[0]?.id || '',
+        company_id: companies[0]?.id || '',
         position: '',
         is_active: true as boolean,
     });
@@ -110,8 +93,14 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                 type: 'searchable',
                 options: departments.map((d) => ({ label: d.name, value: d.id })),
             },
+            {
+                label: 'Perusahaan / Company',
+                key: 'company_id',
+                type: 'searchable',
+                options: companies.map((c) => ({ label: c.name, value: c.id })),
+            },
         ],
-        [roles, departments],
+        [roles, departments, companies],
     );
 
     const columns = useMemo<Column<any>[]>(
@@ -143,13 +132,23 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                 header: 'Penempatan',
                 accessorKey: 'department_id',
                 cell: (row) => (
-                    <div className="flex items-center gap-2 select-none">
-                        <div className="bg-primary/10 flex h-6 w-6 items-center justify-center rounded-lg text-primary shadow-inner">
-                            <Building2 size={12} />
+                    <div className="flex flex-col gap-1 select-none">
+                        <div className="flex items-center gap-2">
+                            <div className="bg-primary/10 text-primary flex h-5 w-5 items-center justify-center rounded shadow-inner">
+                                <Building2 size={10} />
+                            </div>
+                            <span className="text-text-main text-[10px] font-bold tracking-tight uppercase">
+                                {row.department?.name || 'No Dept'}
+                            </span>
                         </div>
-                        <span className="text-text-main text-xs font-semibold tracking-tight uppercase">
-                            {row.department?.name || 'Unassigned'}
-                        </span>
+                        <div className="flex items-center gap-2">
+                            <div className="bg-surface-muted/50 text-text-desc flex h-5 w-5 items-center justify-center rounded">
+                                <Fingerprint size={10} />
+                            </div>
+                            <span className="text-text-desc text-[9px] font-semibold tracking-tight uppercase italic">
+                                {row.company?.name || 'No Company'}
+                            </span>
+                        </div>
                     </div>
                 ),
             },
@@ -159,9 +158,7 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                 className: 'text-right',
                 cell: (row) => (
                     <div className="flex items-center justify-end gap-2 select-none">
-                        <div
-                            className={cn('h-1.5 w-1.5 rounded-full', row.is_active ? 'animate-pulse bg-success' : 'bg-surface-muted')}
-                        />
+                        <div className={cn('h-1.5 w-1.5 rounded-full', row.is_active ? 'bg-success animate-pulse' : 'bg-surface-muted')} />
                         <span
                             className={cn(
                                 'text-[10px] font-black tracking-widest uppercase transition-colors duration-200 select-none',
@@ -194,6 +191,7 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
             password_confirmation: '',
             role: u.role,
             department_id: u.department_id || '',
+            company_id: u.company_id || '',
             position: u.position || '',
             is_active: !!u.is_active,
         });
@@ -241,7 +239,11 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                     setEditingUser(null);
                     // Clear deep-link filters
                     if (filters.action || filters.id) {
-                        router.get(globalThis.location.pathname, { ...filters, action: undefined, id: undefined }, { preserveState: true, replace: true });
+                        router.get(
+                            globalThis.location.pathname,
+                            { ...filters, action: undefined, id: undefined },
+                            { preserveState: true, replace: true },
+                        );
                     }
                 }}
                 onSave={handleSubmit}
@@ -255,7 +257,7 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                             type="button"
                             variant="ghost"
                             onClick={() => setIsConfirmOpen(true)}
-                            className="border-danger/10 text-danger hover:bg-danger hover:text-white px-4 text-xs transition-all active:scale-95"
+                            className="border-danger/10 text-danger hover:bg-danger px-4 text-xs transition-all hover:text-white active:scale-95"
                         >
                             <Trash2 size={15} className="mr-2" /> Hapus Akun
                         </Button>
@@ -280,7 +282,7 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                     confirmText="Ya, Hapus Permanen"
                 />
 
-                <div className="animate-in fade-in grid grid-cols-1 gap-16 duration-300 select-none lg:grid-cols-2 w-full">
+                <div className="animate-in fade-in grid w-full grid-cols-1 gap-16 duration-300 select-none lg:grid-cols-2">
                     {/* Side 1: Primary Configuration */}
                     <div className="space-y-12">
                         {/* Section: Identitas & Otentikasi */}
@@ -321,7 +323,7 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                                     error={form.errors.phone}
                                     icon={Phone}
                                 />
-                                <div className="grid grid-cols-1 gap-8 md:grid-cols-2 border-t border-black/[0.03] pt-10 dark:border-white/[0.03]">
+                                <div className="grid grid-cols-1 gap-8 border-t border-black/[0.03] pt-10 md:grid-cols-2 dark:border-white/[0.03]">
                                     <CompactInput
                                         label={editingUser ? 'Reset Password (Opsional)' : 'Set Password Akun'}
                                         type="password"
@@ -352,50 +354,120 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                             <div className="grid grid-cols-1 gap-y-10">
                                 <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
                                     <div className="space-y-2.5">
-                                        <label className="text-primary/60 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest dark:text-white/60">
+                                        <label className="text-primary/60 flex items-center gap-2 text-[10px] font-black tracking-widest uppercase dark:text-white/60">
                                             <ShieldAlert size={12} className="opacity-50" /> Role Akses
                                         </label>
                                         <Select value={form.data.role} onValueChange={(v: string) => form.setData('role', String(v))}>
-                                            <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-11 rounded-xl text-xs font-bold transition-all shadow-sm ring-1 ring-black/[0.03]">
+                                            <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-11 rounded-xl text-xs font-bold shadow-sm ring-1 ring-black/[0.03] transition-all">
                                                 <SelectValue />
                                             </SelectTrigger>
-                                            <SelectContent className="border-surface-border rounded-xl bg-surface-base shadow-2xl">
+                                            <SelectContent className="border-surface-border bg-surface-base rounded-xl shadow-2xl">
                                                 {roles.map((r) => (
-                                                    <SelectItem key={r.id} value={r.name} className="py-3 text-xs font-bold uppercase text-black dark:text-white">
+                                                    <SelectItem
+                                                        key={r.id}
+                                                        value={r.name}
+                                                        className="py-3 text-xs font-bold text-black uppercase dark:text-white"
+                                                    >
                                                         {r.name}
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>
                                         {form.errors.role && (
-                                            <p className="mt-1.5 text-[10px] font-bold tracking-tight text-danger uppercase">{form.errors.role}</p>
+                                            <p className="text-danger mt-1.5 text-[10px] font-bold tracking-tight uppercase">{form.errors.role}</p>
                                         )}
                                     </div>
                                     <div className="space-y-2.5">
-                                        <label className="text-primary/60 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest dark:text-white/60">
+                                        <label className="text-primary/60 flex items-center gap-2 text-[10px] font-black tracking-widest uppercase dark:text-white/60">
                                             <Building2 size={12} className="opacity-50" /> Unit / Departemen
                                         </label>
                                         <Select
                                             value={String(form.data.department_id)}
                                             onValueChange={(v: string) => form.setData('department_id', String(v))}
                                         >
-                                            <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-11 rounded-xl text-xs font-bold transition-all shadow-sm ring-1 ring-black/[0.03]">
+                                            <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-11 rounded-xl text-xs font-bold shadow-sm ring-1 ring-black/[0.03] transition-all">
                                                 <SelectValue />
                                             </SelectTrigger>
-                                            <SelectContent className="border-surface-border rounded-xl bg-surface-base shadow-2xl">
+                                            <SelectContent className="border-surface-border bg-surface-base rounded-xl shadow-2xl">
                                                 {departments.map((d) => (
-                                                    <SelectItem key={d.id} value={String(d.id)} className="py-3 text-xs font-bold uppercase text-black dark:text-white">
+                                                    <SelectItem
+                                                        key={d.id}
+                                                        value={String(d.id)}
+                                                        className="py-3 text-xs font-bold text-black uppercase dark:text-white"
+                                                    >
                                                         {d.name}
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>
                                         {form.errors.department_id && (
-                                            <p className="mt-1.5 text-[10px] font-bold tracking-tight text-danger uppercase">
+                                            <p className="text-danger mt-1.5 text-[10px] font-bold tracking-tight uppercase">
                                                 {form.errors.department_id}
                                             </p>
                                         )}
                                     </div>
+                                </div>
+                                <div className="space-y-2.5">
+                                    <label className="text-primary/60 flex items-center gap-2 text-[10px] font-black tracking-widest uppercase dark:text-white/60">
+                                        <Building2 size={12} className="opacity-50" /> Perusahaan / Company
+                                    </label>
+                                    <Select
+                                        value={String(form.data.company_id)}
+                                        onValueChange={(v: string) => form.setData('company_id', String(v))}
+                                    >
+                                        <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-11 rounded-xl text-xs font-bold shadow-sm ring-1 ring-black/[0.03] transition-all">
+                                            <SelectValue placeholder="PILIH PERUSAHAAN" />
+                                        </SelectTrigger>
+                                        <SelectContent className="border-surface-border bg-surface-base rounded-xl shadow-2xl">
+                                            {companies.map((c) => (
+                                                <SelectItem
+                                                    key={c.id}
+                                                    value={String(c.id)}
+                                                    className="py-3 text-xs font-bold text-black uppercase dark:text-white"
+                                                >
+                                                    {c.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    {form.errors.company_id && (
+                                        <p className="text-danger mt-1.5 text-[10px] font-bold tracking-tight uppercase">
+                                            {form.errors.company_id}
+                                        </p>
+                                    )}
+
+                                    {/* Auto-populated Info Section */}
+                                    {form.data.company_id && (
+                                        <div className="bg-surface-muted/30 mt-4 flex flex-col gap-4 rounded-xl border border-black/[0.03] p-4 dark:border-white/[0.03]">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="bg-primary/10 text-primary flex h-5 w-5 items-center justify-center rounded">
+                                                        <User size={10} className="opacity-50" />
+                                                    </div>
+                                                    <span className="text-[10px] font-bold tracking-tight text-slate-500 uppercase">
+                                                        Company Group
+                                                    </span>
+                                                </div>
+                                                <span className="text-text-main text-[10px] font-black tracking-widest uppercase">
+                                                    {companies.find((c) => c.id === form.data.company_id)?.group?.name || '—'}
+                                                </span>
+                                            </div>
+                                            <div className="h-px w-full bg-black/[0.03] dark:bg-white/[0.03]" />
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="bg-primary/10 text-primary flex h-5 w-5 items-center justify-center rounded">
+                                                        <Fingerprint size={10} className="opacity-50" />
+                                                    </div>
+                                                    <span className="text-[10px] font-bold tracking-tight text-slate-500 uppercase">
+                                                        Region / Wilayah
+                                                    </span>
+                                                </div>
+                                                <span className="text-text-main text-[10px] font-black tracking-widest uppercase">
+                                                    {companies.find((c) => c.id === form.data.company_id)?.region?.name || '—'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                                 <CompactInput
                                     label="Jabatan Struktural"
@@ -421,7 +493,7 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
 
                                 <div className="animate-in fade-in flex gap-4 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5 backdrop-blur-sm duration-300 dark:bg-amber-500/10">
                                     <ShieldAlert size={20} className="mt-0.5 shrink-0 text-amber-500" />
-                                    <p className="text-[10px] leading-relaxed font-semibold text-amber-700/80 uppercase tracking-tight">
+                                    <p className="text-[10px] leading-relaxed font-semibold tracking-tight text-amber-700/80 uppercase">
                                         Perubahan parameter otoritas akan berdampak pada hak akses navigasi dan aksi pengguna secara langsung.
                                     </p>
                                 </div>
@@ -447,25 +519,13 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
             filters={filterConfig as any}
             activeFilters={filters}
             onFilterChange={(newFilters: any) => {
-                router.get(
-                    globalThis.location.pathname,
-                    { ...filters, ...newFilters, page: 1 },
-                    { preserveState: true, replace: true },
-                );
+                router.get(globalThis.location.pathname, { ...filters, ...newFilters, page: 1 }, { preserveState: true, replace: true });
             }}
             headerActions={
                 <div className="flex items-center gap-2">
-                    <ExcelActions
-                        exportRoute="admin.users.export"
-                        importRoute="admin.users.import"
-                        label="Pengguna"
-                        onImport={handleImport}
-                    />
+                    <ExcelActions exportRoute="admin.users.export" importRoute="admin.users.import" label="Pengguna" onImport={handleImport} />
                     {canCreate && (
-                        <Button
-                            variant="white"
-                            onClick={openCreate}
-                        >
+                        <Button variant="white" onClick={openCreate}>
                             <Plus size={15} className="text-primary" /> Tambah Pengguna
                         </Button>
                     )}
@@ -475,23 +535,23 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
             bulkActions={
                 canDelete
                     ? [
-                        {
-                            label: 'Hapus Terpilih',
-                            icon: Trash2,
-                            variant: 'destructive',
-                            onClick: (ids: string[] | number[]) => {
-                                if (confirm(`Apakah Anda yakin ingin menghapus ${ids.length} akun pengguna terpilih?`)) {
-                                    router.post(
-                                        route('admin.users.bulk-destroy'),
-                                        { ids },
-                                        {
-                                            onSuccess: () => showToast(`${ids.length} akun pengguna telah dihapus`, 'success'),
-                                        },
-                                    );
-                                }
-                            },
-                        },
-                    ]
+                          {
+                              label: 'Hapus Terpilih',
+                              icon: Trash2,
+                              variant: 'destructive',
+                              onClick: (ids: string[] | number[]) => {
+                                  if (confirm(`Apakah Anda yakin ingin menghapus ${ids.length} akun pengguna terpilih?`)) {
+                                      router.post(
+                                          route('admin.users.bulk-destroy'),
+                                          { ids },
+                                          {
+                                              onSuccess: () => showToast(`${ids.length} akun pengguna telah dihapus`, 'success'),
+                                          },
+                                      );
+                                  }
+                              },
+                          },
+                      ]
                     : undefined
             }
             pagination={{
@@ -504,11 +564,7 @@ export function UserManagement({ users, roles, departments, filters }: Readonly<
                 onPageChange: (page: number) =>
                     router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
                 onPerPageChange: (pp: number) =>
-                    router.get(
-                        globalThis.location.pathname,
-                        { ...filters, per_page: pp, page: 1 },
-                        { preserveState: true, preserveScroll: true },
-                    ),
+                    router.get(globalThis.location.pathname, { ...filters, per_page: pp, page: 1 }, { preserveState: true, preserveScroll: true }),
             }}
         />
     );

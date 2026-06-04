@@ -42,7 +42,7 @@ class MasterDataAdminController extends Controller
      */
     public function index()
     {
-        return Inertia::render('admin/index', [
+        return Inertia::render('admin/Index', [
             'currentView' => 'master-data-sync',
             'counts' => [
                 'company_groups' => CompanyGroup::count(),

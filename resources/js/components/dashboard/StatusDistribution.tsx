@@ -10,7 +10,7 @@ export function StatusDistribution({ items }: StatusDistributionProps) {
     const total = items.reduce((sum, s) => sum + s.count, 0) || 1;
 
     return (
-        <div className="border-surface-border/60 bg-surface-base/40 text-text-main rounded-2xl border p-6 shadow-sm backdrop-blur-sm dark:border-surface-border/60 dark:bg-surface-base/20 lg:col-span-4 select-none">
+        <div className="border-surface-border/60 bg-surface-base/40 text-text-main dark:border-surface-border/60 dark:bg-surface-base/20 rounded-2xl border p-6 shadow-sm backdrop-blur-sm select-none lg:col-span-4">
             <SectionTitle>Distribusi Status</SectionTitle>
             <div className="space-y-3.5">
                 {items.length === 0 ? (
@@ -36,7 +36,7 @@ export function StatusDistribution({ items }: StatusDistributionProps) {
                                         <span className="text-text-desc/50 text-[10px] font-semibold">{pct}%</span>
                                     </div>
                                 </div>
-                                <div className="bg-surface-muted/40 h-1.5 w-full overflow-hidden rounded-full border border-surface-border/10">
+                                <div className="bg-surface-muted/40 border-surface-border/10 h-1.5 w-full overflow-hidden rounded-full border">
                                     <div className={cn('h-full rounded-full transition-all duration-700', cfg.dot)} style={{ width: `${pct}%` }} />
                                 </div>
                             </div>

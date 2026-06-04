@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/base/Button';
 import { FilterCategory, FilterPopover } from '@/components/ui/data/FilterPopover';
+import { useToast } from '@/components/ui/feedback/Toast';
 import { SearchInput } from '@/components/ui/forms/SearchInput';
 import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
@@ -7,7 +8,6 @@ import { Contract, ContractApproval, UserProfile } from '@/types/contracts';
 import axios from 'axios';
 import { Download, ListFilter, Loader2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { useToast } from '@/components/ui/feedback/Toast';
 import { ApprovalCard } from './ApprovalCard';
 import { InitiatorStepCard } from './InitiatorStepCard';
 import { ProjectedStepCard } from './ProjectedStepCard';

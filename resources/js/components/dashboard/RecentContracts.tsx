@@ -16,7 +16,12 @@ const STATUS_BADGE_CONFIG: Record<string, { label: string; color: string; bg: st
     draft: { label: 'Draft', color: 'text-slate-600 dark:text-slate-400', bg: 'bg-slate-500/10 border-slate-500/20', dot: 'bg-slate-400' },
     in_review: { label: 'Review', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20', dot: 'bg-amber-500' },
     revision: { label: 'Revisi', color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-500/10 border-rose-500/20', dot: 'bg-rose-500' },
-    approved: { label: 'Disetujui', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20', dot: 'bg-emerald-500' },
+    approved: {
+        label: 'Disetujui',
+        color: 'text-emerald-600 dark:text-emerald-400',
+        bg: 'bg-emerald-500/10 border-emerald-500/20',
+        dot: 'bg-emerald-500',
+    },
 };
 
 // Sleek palette for contract type badges
@@ -35,24 +40,22 @@ interface RecentContractsProps {
 
 export function RecentContracts({ items, onViewAll }: RecentContractsProps) {
     return (
-        <div className="border-border/60 bg-card/40 text-foreground overflow-hidden rounded-2xl border shadow-sm backdrop-blur-sm w-full dark:border-slate-800/60 dark:bg-slate-900/20">
+        <div className="border-border/60 bg-card/40 text-foreground w-full overflow-hidden rounded-2xl border shadow-sm backdrop-blur-sm dark:border-slate-800/60 dark:bg-slate-900/20">
             <div className="border-border/60 flex items-center justify-between border-b px-6 py-4 dark:border-slate-800/60">
                 <SectionTitle>Kontrak Terbaru</SectionTitle>
                 <button
                     onClick={onViewAll}
-                    className="text-primary/70 hover:text-primary text-[11px] font-medium uppercase tracking-wider transition-colors cursor-pointer"
+                    className="text-primary/70 hover:text-primary cursor-pointer text-[11px] font-medium tracking-wider uppercase transition-colors"
                 >
                     Lihat Semua →
                 </button>
             </div>
             <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
+                <table className="w-full border-collapse text-left">
                     <thead>
                         <tr className="border-border/40 bg-muted/20 border-b dark:border-slate-800/40 dark:bg-slate-900/35">
                             <th className="text-muted-foreground px-5 py-3 text-[9px] font-medium tracking-wider uppercase">No. Kontrak</th>
-                            <th className="text-muted-foreground px-5 py-3 text-[9px] font-medium tracking-wider uppercase">
-                                Judul & Pembuat
-                            </th>
+                            <th className="text-muted-foreground px-5 py-3 text-[9px] font-medium tracking-wider uppercase">Judul & Pembuat</th>
                             <th className="text-muted-foreground hidden px-5 py-3 text-[9px] font-medium tracking-wider uppercase md:table-cell">
                                 Tipe
                             </th>
@@ -62,7 +65,7 @@ export function RecentContracts({ items, onViewAll }: RecentContractsProps) {
                             </th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-border/20 dark:divide-slate-800/40">
+                    <tbody className="divide-border/20 divide-y dark:divide-slate-800/40">
                         {items.length === 0 ? (
                             <tr>
                                 <td colSpan={5} className="text-muted-foreground py-10 text-center text-[12px] font-medium">
@@ -80,7 +83,7 @@ export function RecentContracts({ items, onViewAll }: RecentContractsProps) {
                                         key={c.id}
                                         onClick={() => router.get(`/contracts/${c.id}`)}
                                         className={cn(
-                                            'group bg-card/10 hover:bg-muted/40 text-foreground cursor-pointer border-l-3 transition-all duration-200 dark:bg-slate-900/10 dark:hover:bg-slate-800/20 border-b border-border/20 last:border-b-0 dark:border-slate-800/40',
+                                            'group bg-card/10 hover:bg-muted/40 text-foreground border-border/20 cursor-pointer border-b border-l-3 transition-all duration-200 last:border-b-0 dark:border-slate-800/40 dark:bg-slate-900/10 dark:hover:bg-slate-800/20',
                                             accentCfg.border,
                                         )}
                                     >
@@ -96,7 +99,7 @@ export function RecentContracts({ items, onViewAll }: RecentContractsProps) {
                                             <span className="text-foreground group-hover:text-primary block max-w-[240px] truncate text-[12px] font-medium transition-colors">
                                                 {c.title}
                                             </span>
-                                            <span className="text-muted-foreground text-[10px] font-medium block mt-0.5">{c.creator}</span>
+                                            <span className="text-muted-foreground mt-0.5 block text-[10px] font-medium">{c.creator}</span>
                                         </td>
 
                                         {/* Tipe — colorful badge */}
@@ -121,7 +124,7 @@ export function RecentContracts({ items, onViewAll }: RecentContractsProps) {
                                                     statusCfg.color,
                                                 )}
                                             >
-                                                <span className={cn('h-1.5 w-1.5 rounded-full animate-pulse', statusCfg.dot)} />
+                                                <span className={cn('h-1.5 w-1.5 animate-pulse rounded-full', statusCfg.dot)} />
                                                 {statusCfg.label}
                                             </span>
                                         </td>
@@ -140,4 +143,3 @@ export function RecentContracts({ items, onViewAll }: RecentContractsProps) {
         </div>
     );
 }
-

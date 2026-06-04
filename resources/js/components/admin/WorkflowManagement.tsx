@@ -1,42 +1,40 @@
-import { useState, useMemo } from 'react';
-import { router } from '@inertiajs/react';
-import {
-    Plus,
-    Trash2,
-    GitBranch,
-    UserCircle,
-    CheckCircle2,
-    Copy,
-} from 'lucide-react';
 import { Button } from '@/components/ui/base/Button';
-import { DataTable, Column } from '@/components/ui/data/DataTable';
-import { usePermissions } from '@/hooks/use-permissions';
+import { Column, DataTable } from '@/components/ui/data/DataTable';
 import { useToast } from '@/components/ui/feedback/Toast';
+import { usePermissions } from '@/hooks/use-permissions';
+import { router } from '@inertiajs/react';
+import { CheckCircle2, Copy, GitBranch, Plus, Trash2, UserCircle } from 'lucide-react';
+import { useMemo } from 'react';
 
 const WorkflowNameCell = ({ row }: { row: any }) => (
     <div className="flex flex-col gap-0.5">
         <div className="flex items-center gap-2">
-            <span className="text-text-main text-xs font-semibold uppercase tracking-tight">{row.name}</span>
+            <span className="text-text-main text-xs font-semibold tracking-tight uppercase">{row.name}</span>
             {row.is_default && (
                 <div className="bg-success/10 border-success/20 text-success rounded-lg border px-1.5 py-0.5 text-[7px] font-semibold tracking-wider uppercase">
                     DEFAULT
                 </div>
             )}
         </div>
-        <span className="text-primary/30 mt-0.5 text-[8px] font-semibold uppercase dark:text-white/30">
-            {row.contract_type_name || 'GLOBAL'}
-        </span>
+        <span className="text-primary/30 mt-0.5 text-[8px] font-semibold uppercase dark:text-white/30">{row.contract_type_name || 'GLOBAL'}</span>
     </div>
 );
 
 const InitiatorCell = ({ row }: { row: any }) => {
-    const label = row.initiator_type === 'all' ? 'Seluruh Staff' : row.initiator_type === 'department' ? 'Per Departemen' : row.initiator_type === 'role' ? 'Per Jabatan' : 'Spesifik User';
+    const label =
+        row.initiator_type === 'all'
+            ? 'Seluruh Staff'
+            : row.initiator_type === 'department'
+              ? 'Per Departemen'
+              : row.initiator_type === 'role'
+                ? 'Per Jabatan'
+                : 'Spesifik User';
     return (
         <div className="flex items-center gap-2">
             <div className="bg-surface-muted rounded-lg p-1.5">
                 <UserCircle size={12} className="text-text-soft" />
             </div>
-            <span className="text-text-desc text-[10px] font-medium uppercase tracking-wider">{label}</span>
+            <span className="text-text-desc text-[10px] font-medium tracking-wider uppercase">{label}</span>
         </div>
     );
 };
@@ -50,7 +48,7 @@ const StepsCell = ({ row }: { row: any }) => (
                 </div>
             ))}
             {(row.steps_count || 0) > 3 && (
-                <div className="border-surface-base bg-surface-muted flex h-6 w-6 items-center justify-center rounded-full border-2 text-[8px] font-bold text-text-soft">
+                <div className="border-surface-base bg-surface-muted text-text-soft flex h-6 w-6 items-center justify-center rounded-full border-2 text-[8px] font-bold">
                     +{(row.steps_count || 0) - 3}
                 </div>
             )}
@@ -105,7 +103,7 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                             variant="primary"
                             size="sm"
                             onClick={openCreate}
-                            className="h-9 rounded-xl px-5 text-[10px] font-semibold uppercase tracking-widest gap-2 shadow-lg shadow-primary/20"
+                            className="shadow-primary/20 h-9 gap-2 rounded-xl px-5 text-[10px] font-semibold tracking-widest uppercase shadow-lg"
                         >
                             <Plus size={14} />
                             Alur Baru
@@ -130,9 +128,13 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                             size="icon"
                             onClick={() => {
                                 if (confirm('Apakah Anda yakin ingin menduplikasi alur kerja ini?')) {
-                                    router.post(route('admin.workflows.duplicate', row.id), {}, {
-                                        onSuccess: () => showToast('Alur kerja berhasil diduplikasi', 'success'),
-                                    });
+                                    router.post(
+                                        route('admin.workflows.duplicate', row.id),
+                                        {},
+                                        {
+                                            onSuccess: () => showToast('Alur kerja berhasil diduplikasi', 'success'),
+                                        },
+                                    );
                                 }
                             }}
                             className="text-text-main/20 hover:text-text-main hover:bg-primary/[0.05] h-9 w-9 rounded-xl transition-all"
@@ -170,11 +172,7 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                 onPageChange: (page: number) =>
                     router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
                 onPerPageChange: (pp: number) =>
-                    router.get(
-                        globalThis.location.pathname,
-                        { ...filters, per_page: pp, page: 1 },
-                        { preserveState: true, preserveScroll: true },
-                    ),
+                    router.get(globalThis.location.pathname, { ...filters, per_page: pp, page: 1 }, { preserveState: true, preserveScroll: true }),
             }}
         />
     );

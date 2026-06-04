@@ -6,6 +6,10 @@ use App\Exports\CompaniesExport;
 use App\Exports\CompanyGroupsExport;
 use App\Exports\RegionsExport;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Company\StoreCompanyRequest;
+use App\Http\Requests\Company\UpdateCompanyRequest;
+use App\Http\Requests\Region\StoreRegionRequest;
+use App\Http\Requests\Region\UpdateRegionRequest;
 use App\Imports\CompaniesImport;
 use App\Imports\CompanyGroupsImport;
 use App\Imports\RegionsImport;
@@ -36,7 +40,7 @@ class OrganizationController extends Controller
                 });
             });
 
-        return Inertia::render('admin/index', [
+        return Inertia::render('admin/Index', [
             'currentView' => 'company-groups',
             'companyGroups' => $query->paginate($request->input('per_page', 10))->withQueryString(),
             'regions' => Region::all(),
@@ -93,7 +97,7 @@ class OrganizationController extends Controller
 
     public function regions(Request $request)
     {
-        return Inertia::render('admin/index', [
+        return Inertia::render('admin/Index', [
             'currentView' => 'regions',
             'regions' => Region::with(['companies.group'])->get(),
             'companyGroups' => CompanyGroup::all(),
@@ -105,30 +109,18 @@ class OrganizationController extends Controller
         ]);
     }
 
-    public function storeRegion(Request $request)
+    public function storeRegion(StoreRegionRequest $request)
     {
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'code' => 'required|string|max:50|unique:m_regions,code',
-            'alias' => 'nullable|string|max:50',
-            'id_portal_master' => 'nullable|string|max:50',
-            'description' => 'nullable|string',
-        ]);
+        $data = $request->validated();
         $data['created_by'] = $data['updated_by'] = Auth::id();
         Region::create($data);
 
         return back()->with('success', 'Region berhasil dibuat.');
     }
 
-    public function updateRegion(Request $request, Region $region)
+    public function updateRegion(UpdateRegionRequest $request, Region $region)
     {
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'code' => 'required|string|max:50|unique:m_regions,code,'.$region->id,
-            'alias' => 'nullable|string|max:50',
-            'id_portal_master' => 'nullable|string|max:50',
-            'description' => 'nullable|string',
-        ]);
+        $data = $request->validated();
         $data['updated_by'] = Auth::id();
         $region->update($data);
 
@@ -168,7 +160,7 @@ class OrganizationController extends Controller
                 $q->whereIn('company_group_id', (array) $companyGroupId);
             });
 
-        return Inertia::render('admin/index', [
+        return Inertia::render('admin/Index', [
             'currentView' => 'companies',
             'companies' => $query->paginate($request->input('per_page', 10))->withQueryString(),
             'regions' => Region::all(),
@@ -181,30 +173,18 @@ class OrganizationController extends Controller
         ]);
     }
 
-    public function storeCompany(Request $request)
+    public function storeCompany(StoreCompanyRequest $request)
     {
-        $data = $request->validate([
-            'company_group_id' => 'required|uuid|exists:m_company_groups,id',
-            'region_id' => 'required|uuid|exists:m_regions,id',
-            'name' => 'required|string|max:255',
-            'code' => 'required|string|max:50|unique:m_companies,code',
-            'address' => 'nullable|string',
-        ]);
+        $data = $request->validated();
         $data['created_by'] = $data['updated_by'] = Auth::id();
         Company::create($data);
 
         return back()->with('success', 'Company berhasil dibuat.');
     }
 
-    public function updateCompany(Request $request, Company $company)
+    public function updateCompany(UpdateCompanyRequest $request, Company $company)
     {
-        $data = $request->validate([
-            'company_group_id' => 'required|uuid|exists:m_company_groups,id',
-            'region_id' => 'required|uuid|exists:m_regions,id',
-            'name' => 'required|string|max:255',
-            'code' => 'required|string|max:50|unique:m_companies,code,'.$company->id,
-            'address' => 'nullable|string',
-        ]);
+        $data = $request->validated();
         $data['updated_by'] = Auth::id();
         $company->update($data);
 

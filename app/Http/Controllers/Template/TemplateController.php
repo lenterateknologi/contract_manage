@@ -17,7 +17,7 @@ class TemplateController extends Controller
      */
     public function index()
     {
-        return Inertia::render('admin/templates', [
+        return Inertia::render('templates/Index', [
             'folders' => TemplateFolder::withCount('templates')->get(),
             'templates' => ContractTemplate::with('folder', 'creator')->get(),
             'breadcrumbs' => [

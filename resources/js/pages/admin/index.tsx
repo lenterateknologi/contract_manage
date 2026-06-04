@@ -4,6 +4,7 @@ import { CompanyGroupManagement } from '@/components/admin/CompanyGroupManagemen
 import { CompanyManagement } from '@/components/admin/CompanyManagement';
 import { ContractTypeManagement } from '@/components/admin/ContractTypeManagement';
 import { DepartmentManagement } from '@/components/admin/DepartmentManagement';
+import { MasterDataSync } from '@/components/admin/MasterDataSync';
 import { NavigationManagement } from '@/components/admin/NavigationManagement';
 import { NumberingFormatManagement } from '@/components/admin/NumberingFormatManagement';
 import { RegionManagement } from '@/components/admin/RegionManagement';
@@ -12,9 +13,8 @@ import { StatusManagement } from '@/components/admin/StatusManagement';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { VendorManagement } from '@/components/admin/VendorManagement';
 import { WorkflowManagement } from '@/components/admin/WorkflowManagement';
-import { ToastProvider } from '@/components/ui/feedback/Toast';
 import { MembersPerDivision } from '@/components/dashboard/MembersPerDivision';
-import { MasterDataSync } from '@/components/admin/MasterDataSync';
+import { ToastProvider } from '@/components/ui/feedback/Toast';
 
 interface PaginatedData<T> {
     data: T[];
@@ -55,9 +55,13 @@ interface Props {
         contract_statuses: number;
         contract_types: number;
         workflows: number;
+        contracts?: number;
         roles: number;
+        modules?: number;
         access_mappings: number;
         navigation_mappings: number;
+        form_templates: number;
+        form_fields: number;
     };
 }
 
@@ -107,7 +111,6 @@ export default function AdminIndex({
         regions: 'Data Region',
         companies: 'Data Company',
         'master-data-sync': 'Ekspor Impor Master',
-
     };
 
     const viewTitle = viewTitleMap[currentView] || 'Administrasi Sistem';
@@ -121,7 +124,7 @@ export default function AdminIndex({
     const renderView = () => {
         switch (currentView) {
             case 'users':
-                return <UserManagement users={users} roles={rolesArray} departments={deptsArray} filters={filters} />;
+                return <UserManagement users={users} roles={rolesArray} departments={deptsArray} companies={companies} filters={filters} />;
             case 'roles':
                 return <RoleManagement roles={roles} filters={filters} />;
             case 'workflows':

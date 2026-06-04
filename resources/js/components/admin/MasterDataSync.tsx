@@ -1,30 +1,28 @@
 import { Button } from '@/components/ui/base/Button';
 import { Checkbox } from '@/components/ui/base/Checkbox';
 import { useToast } from '@/components/ui/feedback/Toast';
+import { cn } from '@/lib/utils';
 import { router } from '@inertiajs/react';
 import {
-    Download,
-    Upload,
-    Database,
-    RefreshCw,
-    FileJson,
     AlertTriangle,
-    Layers,
-    MapPin,
     Building2,
-    Network,
-    CheckSquare,
-    FileSpreadsheet,
-    Info,
     CheckCircle2,
+    CheckSquare,
+    Database,
+    Download,
+    FileJson,
+    FileSpreadsheet,
+    FileText,
     GitBranch,
-    ShieldCheck,
-    LayoutGrid,
+    Layers,
     Loader2,
-    FileText
+    MapPin,
+    Network,
+    RefreshCw,
+    ShieldCheck,
+    Upload,
 } from 'lucide-react';
 import React, { useRef, useState } from 'react';
-import { cn } from '@/lib/utils';
 
 interface Counts {
     company_groups: number;
@@ -36,6 +34,7 @@ interface Counts {
     workflows: number;
     contracts?: number;
     roles: number;
+    modules?: number;
     access_mappings: number;
     navigation_mappings: number;
     form_templates: number;
@@ -77,26 +76,54 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
         { id: 'regions', label: 'Regional', count: activeCounts.regions, icon: MapPin, desc: 'Wilayah administrasi operasional' },
         { id: 'companies', label: 'Perusahaan PT', count: activeCounts.companies, icon: Building2, desc: 'Entitas hukum terdaftar' },
         { id: 'departments', label: 'Unit / Departemen', count: activeCounts.departments, icon: Network, desc: 'Divisi operasional internal' },
-        { id: 'contract_statuses', label: 'Status Alur', count: activeCounts.contract_statuses, icon: CheckSquare, desc: 'Status siklus hidup kontrak' },
-        { id: 'contract_types', label: 'Tipe Kategori', count: activeCounts.contract_types, icon: FileSpreadsheet, desc: 'Templat & alur persetujuan' },
+        {
+            id: 'contract_statuses',
+            label: 'Status Alur',
+            count: activeCounts.contract_statuses,
+            icon: CheckSquare,
+            desc: 'Status siklus hidup kontrak',
+        },
+        {
+            id: 'contract_types',
+            label: 'Tipe Kategori',
+            count: activeCounts.contract_types,
+            icon: FileSpreadsheet,
+            desc: 'Templat & alur persetujuan',
+        },
         { id: 'workflows', label: 'Alur Kerja (Workflows)', count: activeCounts.workflows, icon: GitBranch, desc: 'Definisi tahapan approval' },
-        { id: 'contracts', label: 'Transaksi Kontrak', count: activeCounts.contracts ?? 0, icon: FileText, desc: 'Data kontrak, persetujuan, & riwayat versi' },
+        {
+            id: 'contracts',
+            label: 'Transaksi Kontrak',
+            count: activeCounts.contracts ?? 0,
+            icon: FileText,
+            desc: 'Data kontrak, persetujuan, & riwayat versi',
+        },
         { id: 'roles', label: 'Peran (Roles)', count: activeCounts.roles, icon: ShieldCheck, desc: 'Jabatan & otoritas sistem' },
-        { id: 'access_mappings', label: 'Hak Akses & Navigasi', count: activeCounts.access_mappings + activeCounts.navigation_mappings, icon: ShieldCheck, desc: 'Konfigurasi hak akses modul dan struktur menu per role' },
-        { id: 'form_templates', label: 'Custom Formulir', count: activeCounts.form_templates, icon: FileJson, desc: 'Template dan field input formulir F1 & F2' },
+        {
+            id: 'access_mappings',
+            label: 'Hak Akses & Navigasi',
+            count: activeCounts.access_mappings + activeCounts.navigation_mappings,
+            icon: ShieldCheck,
+            desc: 'Konfigurasi hak akses modul dan struktur menu per role',
+        },
+        {
+            id: 'form_templates',
+            label: 'Custom Formulir',
+            count: activeCounts.form_templates,
+            icon: FileJson,
+            desc: 'Template dan field input formulir F1 & F2',
+        },
     ];
 
     const toggleEntity = (id: string) => {
-        setSelectedEntities(prev =>
-            prev.includes(id) ? prev.filter(e => e !== id) : [...prev, id]
-        );
+        setSelectedEntities((prev) => (prev.includes(id) ? prev.filter((e) => e !== id) : [...prev, id]));
     };
 
     const toggleAll = () => {
         if (selectedEntities.length === entities.length) {
             setSelectedEntities([]);
         } else {
-            setSelectedEntities(entities.map(e => e.id));
+            setSelectedEntities(entities.map((e) => e.id));
         }
     };
 
@@ -116,7 +143,7 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
         }
 
         const queryParams = new URLSearchParams({
-            entities: expandedEntities.join(',')
+            entities: expandedEntities.join(','),
         }).toString();
 
         window.location.href = `${route('admin.master-data-sync.export')}?${queryParams}`;
@@ -188,7 +215,11 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
             return;
         }
 
-        if (!window.confirm(`Apakah Anda yakin ingin menghapus data dari ${selectedEntities.length} entitas terpilih? Tindakan ini akan menghapus data tersebut secara permanen dan tidak dapat dibatalkan.`)) {
+        if (
+            !window.confirm(
+                `Apakah Anda yakin ingin menghapus data dari ${selectedEntities.length} entitas terpilih? Tindakan ini akan menghapus data tersebut secara permanen dan tidak dapat dibatalkan.`,
+            )
+        ) {
             return;
         }
 
@@ -203,52 +234,60 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
 
         setLoading(true);
         setError(null);
-        router.post(route('admin.master-data-sync.clean'), { entities: expandedEntities }, {
-            onSuccess: () => {
-                showToast('Entitas data terpilih berhasil dibersihkan', 'success');
-                setSelectedEntities([]);
-                setLoading(false);
+        router.post(
+            route('admin.master-data-sync.clean'),
+            { entities: expandedEntities },
+            {
+                onSuccess: () => {
+                    showToast('Entitas data terpilih berhasil dibersihkan', 'success');
+                    setSelectedEntities([]);
+                    setLoading(false);
+                },
+                onError: (errors: any) => {
+                    const msg = errors.error ?? 'Gagal membersihkan data terpilih.';
+                    setError(msg);
+                    showToast(msg, 'danger');
+                    setLoading(false);
+                },
             },
-            onError: (errors: any) => {
-                const msg = errors.error ?? 'Gagal membersihkan data terpilih.';
-                setError(msg);
-                showToast(msg, 'danger');
-                setLoading(false);
-            },
-        });
+        );
     };
 
     return (
         <>
             {/* Header */}
-            <div className="flex items-center justify-between pb-6 px-5 pt-5 select-none">
+            <div className="flex items-center justify-between px-5 pt-5 pb-6 select-none">
                 <div className="flex items-center gap-3">
                     <div className="bg-primary/10 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-sm backdrop-blur-sm">
                         <Database size={18} />
                     </div>
                     <div className="flex flex-col">
                         <h1 className="text-text-main text-base font-semibold tracking-tight uppercase italic">Sync & Control Center</h1>
-                        <p className="text-text-desc text-[10px] font-medium uppercase tracking-wider">Manajemen migrasi dan granular export-import data master</p>
+                        <p className="text-text-desc text-[10px] font-medium tracking-wider uppercase">
+                            Manajemen migrasi dan granular export-import data master
+                        </p>
                     </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 px-5 select-none">
+            <div className="grid grid-cols-1 gap-8 px-5 select-none lg:grid-cols-12">
                 {/* Left: Entity Table */}
                 <div className="lg:col-span-8">
-                    <div className="border-surface-border bg-surface-base/40 backdrop-blur-sm overflow-hidden rounded-2xl border shadow-sm">
+                    <div className="border-surface-border bg-surface-base/40 overflow-hidden rounded-2xl border shadow-sm backdrop-blur-sm">
                         <table className="w-full text-left">
                             <thead>
                                 <tr className="bg-surface-muted/40 border-surface-border border-b">
                                     <th className="w-12 px-4 py-3.5 text-center">
                                         <Checkbox
-                                            className="h-4 w-4 rounded border-surface-border"
+                                            className="border-surface-border h-4 w-4 rounded"
                                             checked={selectedEntities.length === entities.length}
                                             onCheckedChange={toggleAll}
                                         />
                                     </th>
                                     <th className="text-text-desc px-4 py-3.5 text-[11px] font-medium tracking-wider uppercase">Entitas Data</th>
-                                    <th className="text-text-desc px-4 py-3.5 text-center text-[11px] font-medium tracking-wider uppercase">Volume</th>
+                                    <th className="text-text-desc px-4 py-3.5 text-center text-[11px] font-medium tracking-wider uppercase">
+                                        Volume
+                                    </th>
                                     <th className="text-text-desc px-4 py-3.5 text-[11px] font-medium tracking-wider uppercase">Deskripsi</th>
                                 </tr>
                             </thead>
@@ -258,13 +297,13 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                                         key={item.id}
                                         onClick={() => toggleEntity(item.id)}
                                         className={cn(
-                                            "hover:bg-surface-muted/30 cursor-pointer transition-colors",
-                                            selectedEntities.includes(item.id) && "bg-primary/[0.03]"
+                                            'hover:bg-surface-muted/30 cursor-pointer transition-colors',
+                                            selectedEntities.includes(item.id) && 'bg-primary/[0.03]',
                                         )}
                                     >
                                         <td className="px-4 py-3.5 text-center" onClick={(e) => e.stopPropagation()}>
                                             <Checkbox
-                                                className="h-4 w-4 rounded border-surface-border"
+                                                className="border-surface-border h-4 w-4 rounded"
                                                 checked={selectedEntities.includes(item.id)}
                                                 onCheckedChange={() => toggleEntity(item.id)}
                                             />
@@ -276,11 +315,11 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                                             </div>
                                         </td>
                                         <td className="px-4 py-3.5 text-center">
-                                            <span className="bg-surface-muted text-text-main rounded-lg px-2.5 py-1 font-mono text-[10px] font-semibold">{item.count}</span>
+                                            <span className="bg-surface-muted text-text-main rounded-lg px-2.5 py-1 font-mono text-[10px] font-semibold">
+                                                {item.count}
+                                            </span>
                                         </td>
-                                        <td className="text-text-desc px-4 py-3.5 text-xs font-medium italic">
-                                            {item.desc}
-                                        </td>
+                                        <td className="text-text-desc px-4 py-3.5 text-xs font-medium italic">{item.desc}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -291,7 +330,7 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                 {/* Right: Actions */}
                 <div className="flex flex-col gap-6 lg:col-span-4">
                     {/* Export Card */}
-                    <div className="border-surface-border bg-surface-base/40 backdrop-blur-sm rounded-2xl border p-6 shadow-sm">
+                    <div className="border-surface-border bg-surface-base/40 rounded-2xl border p-6 shadow-sm backdrop-blur-sm">
                         <div className="mb-4 flex items-center justify-between">
                             <h3 className="text-text-main text-[11px] font-semibold tracking-wider uppercase">Export Configuration</h3>
                             <span className="bg-primary/10 text-primary rounded-lg px-2 py-0.5 text-[10px] font-semibold">
@@ -304,7 +343,7 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                         <Button
                             onClick={handleExport}
                             disabled={selectedEntities.length === 0}
-                            className="w-full shadow-primary/20"
+                            className="shadow-primary/20 w-full"
                             variant="primary"
                         >
                             <Download size={14} className="mr-2" />
@@ -313,7 +352,7 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                     </div>
 
                     {/* Import Card */}
-                    <div className="border-surface-border bg-surface-base/40 backdrop-blur-sm rounded-2xl border p-6 shadow-sm">
+                    <div className="border-surface-border bg-surface-base/40 rounded-2xl border p-6 shadow-sm backdrop-blur-sm">
                         <h3 className="text-text-main mb-4 text-[11px] font-semibold tracking-wider uppercase">Quick Import</h3>
                         <div
                             onDragEnter={handleDrag}
@@ -322,17 +361,15 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                             onDrop={handleDrop}
                             onClick={() => fileInputRef.current?.click()}
                             className={cn(
-                                "relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-8 transition-all duration-200 cursor-pointer",
-                                dragActive ? "border-primary bg-primary/5" : "border-surface-border hover:bg-surface-muted/20"
+                                'relative flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-8 transition-all duration-200',
+                                dragActive ? 'border-primary bg-primary/5' : 'border-surface-border hover:bg-surface-muted/20',
                             )}
                         >
                             <input ref={fileInputRef} type="file" accept=".json" onChange={handleChange} className="hidden" disabled={loading} />
-                            <div className="bg-surface-muted/60 mb-2 rounded-xl p-2.5 border border-surface-border">
+                            <div className="bg-surface-muted/60 border-surface-border mb-2 rounded-xl border p-2.5">
                                 {file ? <FileJson size={20} className="text-primary" /> : <Upload size={20} className="text-text-soft" />}
                             </div>
-                            <p className="text-text-main text-[11px] font-semibold line-clamp-1">
-                                {file ? file.name : 'Drop file JSON di sini'}
-                            </p>
+                            <p className="text-text-main line-clamp-1 text-[11px] font-semibold">{file ? file.name : 'Drop file JSON di sini'}</p>
                         </div>
 
                         {file && (
@@ -341,19 +378,10 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                                     <CheckCircle2 size={12} /> Berkas siap disinkronkan
                                 </div>
                                 <div className="flex gap-2">
-                                    <Button
-                                        variant="white"
-                                        onClick={() => setFile(null)}
-                                        className="flex-1"
-                                    >
+                                    <Button variant="white" onClick={() => setFile(null)} className="flex-1">
                                         RESET
                                     </Button>
-                                    <Button
-                                        onClick={handleImport}
-                                        disabled={loading}
-                                        className="flex-[2] shadow-primary/20"
-                                        variant="primary"
-                                    >
+                                    <Button onClick={handleImport} disabled={loading} className="shadow-primary/20 flex-[2]" variant="primary">
                                         {loading ? <Loader2 className="animate-spin" size={14} /> : <RefreshCw size={14} className="mr-2" />}
                                         SYNC NOW
                                     </Button>
@@ -363,7 +391,7 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                     </div>
 
                     {/* Danger Zone: Clean Data Master Card */}
-                    <div className="border-danger/20 bg-danger/[0.02] backdrop-blur-sm rounded-2xl border p-6 shadow-sm">
+                    <div className="border-danger/20 bg-danger/[0.02] rounded-2xl border p-6 shadow-sm backdrop-blur-sm">
                         <div className="mb-4 flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <AlertTriangle size={16} className="text-danger" />
@@ -374,13 +402,14 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                             </span>
                         </div>
                         <p className="text-text-desc mb-6 text-[11px] leading-relaxed font-medium">
-                            Bersihkan data dari entitas yang dicentang pada tabel di samping secara permanen dari database. Tindakan ini tidak dapat dibatalkan.
+                            Bersihkan data dari entitas yang dicentang pada tabel di samping secara permanen dari database. Tindakan ini tidak dapat
+                            dibatalkan.
                         </p>
                         <Button
                             onClick={handleCleanData}
                             disabled={loading || selectedEntities.length === 0}
                             variant="destructive"
-                            className="w-full shadow-danger/20"
+                            className="shadow-danger/20 w-full"
                         >
                             {loading ? <Loader2 className="animate-spin" size={14} /> : <AlertTriangle size={14} className="mr-2" />}
                             CLEAN DATA TERPILIH

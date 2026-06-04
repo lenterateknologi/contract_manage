@@ -34,19 +34,18 @@ export default function DeleteUser({ className }: { className?: string }) {
             <DialogTrigger asChild>
                 <button
                     type="button"
-                    className={className || "text-xs font-semibold text-text-soft hover:text-danger underline cursor-pointer transition-colors"}
+                    className={className || 'text-text-soft hover:text-danger cursor-pointer text-xs font-semibold underline transition-colors'}
                 >
                     Close Account
                 </button>
             </DialogTrigger>
-            <DialogContent className="bg-card border border-surface-border rounded-xl shadow-xl max-w-md p-6">
-                <DialogTitle className="text-lg font-bold text-text-main">
-                    Apakah Anda yakin ingin menghapus akun?
-                </DialogTitle>
-                <DialogDescription className="text-xs text-text-soft mt-2 leading-relaxed">
-                    Setelah akun Anda dihapus, semua data dan sumber daya di dalamnya akan terhapus secara permanen. Silakan masukkan password Anda untuk mengonfirmasi penghapusan akun secara permanen.
+            <DialogContent className="bg-card border-surface-border max-w-md rounded-xl border p-6 shadow-xl">
+                <DialogTitle className="text-text-main text-lg font-bold">Apakah Anda yakin ingin menghapus akun?</DialogTitle>
+                <DialogDescription className="text-text-soft mt-2 text-xs leading-relaxed">
+                    Setelah akun Anda dihapus, semua data dan sumber daya di dalamnya akan terhapus secara permanen. Silakan masukkan password Anda
+                    untuk mengonfirmasi penghapusan akun secara permanen.
                 </DialogDescription>
-                <form className="space-y-4 mt-4" onSubmit={deleteUser}>
+                <form className="mt-4 space-y-4" onSubmit={deleteUser}>
                     <div className="grid gap-2">
                         <Label htmlFor="password" className="sr-only">
                             Password
@@ -61,7 +60,7 @@ export default function DeleteUser({ className }: { className?: string }) {
                             onChange={(e) => setData('password', e.target.value)}
                             placeholder="Masukkan Password Anda"
                             autoComplete="current-password"
-                            className="h-10 rounded-lg border-surface-border"
+                            className="border-surface-border h-10 rounded-lg"
                         />
 
                         <InputError message={errors.password} />
@@ -69,12 +68,12 @@ export default function DeleteUser({ className }: { className?: string }) {
 
                     <DialogFooter className="mt-6 flex justify-end gap-2">
                         <DialogClose asChild>
-                            <Button variant="secondary" onClick={closeModal} className="h-10 rounded-lg text-xs font-bold px-4">
+                            <Button variant="secondary" onClick={closeModal} className="h-10 rounded-lg px-4 text-xs font-bold">
                                 Batal
                             </Button>
                         </DialogClose>
 
-                        <Button variant="destructive" disabled={processing} className="h-10 rounded-lg text-xs font-bold px-4" asChild>
+                        <Button variant="destructive" disabled={processing} className="h-10 rounded-lg px-4 text-xs font-bold" asChild>
                             <button type="submit">Hapus Akun</button>
                         </Button>
                     </DialogFooter>

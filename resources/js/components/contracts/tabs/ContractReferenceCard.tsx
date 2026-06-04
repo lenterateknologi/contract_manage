@@ -14,13 +14,7 @@ interface ContractReferenceCardProps {
     processing: boolean;
 }
 
-export function ContractReferenceCard({ 
-    selected, 
-    canUpdate, 
-    onUpdate, 
-    processing,
-    meId
-}: ContractReferenceCardProps & { meId?: string }) {
+export function ContractReferenceCard({ selected, canUpdate, onUpdate, processing, meId }: ContractReferenceCardProps & { meId?: string }) {
     const parent = selected.parent;
     const isActor = (selected as any).can_approve || selected.created_by === meId;
     const canModifyRef = selected.allow_reference !== false && (isActor || canUpdate);
@@ -70,7 +64,7 @@ export function ContractReferenceCard({
     };
 
     return (
-        <div className={cn("animate-in fade-in flex flex-col gap-5 duration-500", !parent && "flex-1 justify-center")}>
+        <div className={cn('animate-in fade-in flex flex-col gap-5 duration-500', !parent && 'flex-1 justify-center')}>
             {!parent && canModifyRef && <div className="flex justify-end"></div>}
 
             <div className="relative">

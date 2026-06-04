@@ -1,7 +1,7 @@
-import { useToast } from '@/components/ui/feedback/Toast';
 import { Button } from '@/components/ui/base/Button';
 import { Column, DataTable } from '@/components/ui/data/DataTable';
 import { ExcelActions } from '@/components/ui/data/ExcelActions';
+import { useToast } from '@/components/ui/feedback/Toast';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
@@ -30,7 +30,7 @@ const CompanyCell = ({ name }: Readonly<{ name: string }>) => (
             <Building2 size={18} />
         </div>
         <div className="flex min-w-0 flex-col">
-            <span className="mb-0.5 truncate text-sm leading-tight font-semibold tracking-wide text-text-main">{name}</span>
+            <span className="text-text-main mb-0.5 truncate text-sm leading-tight font-semibold tracking-wide">{name}</span>
         </div>
     </div>
 );
@@ -80,11 +80,7 @@ export function CompanyManagement({ companies, regions, groups, filters }: Reado
     );
 
     const handleFilterChange = (newFilters: Record<string, any>) => {
-        router.get(
-            globalThis.location.pathname,
-            { ...filters, ...newFilters, page: 1 },
-            { preserveState: true, replace: true },
-        );
+        router.get(globalThis.location.pathname, { ...filters, ...newFilters, page: 1 }, { preserveState: true, replace: true });
     };
 
     const columns = useMemo<Column<any>[]>(
@@ -100,7 +96,7 @@ export function CompanyManagement({ companies, regions, groups, filters }: Reado
                 cell: (row) => (
                     <div className="flex flex-col">
                         <span className="text-text-main text-sm font-semibold">{row.code}</span>
-                        <span className="text-text-soft text-[10px] font-medium uppercase tracking-tight">{row.alias || '—'}</span>
+                        <span className="text-text-soft text-[10px] font-medium tracking-tight uppercase">{row.alias || '—'}</span>
                     </div>
                 ),
             },
@@ -175,7 +171,7 @@ export function CompanyManagement({ companies, regions, groups, filters }: Reado
                             type="button"
                             variant="ghost"
                             onClick={() => setIsConfirmOpen(true)}
-                            className="border-danger/20 text-danger hover:bg-danger hover:text-white px-4 text-xs transition-all"
+                            className="border-danger/20 text-danger hover:bg-danger px-4 text-xs transition-all hover:text-white"
                         >
                             <Trash2 size={15} className="mr-2" /> Hapus
                         </Button>
@@ -198,52 +194,62 @@ export function CompanyManagement({ companies, regions, groups, filters }: Reado
                     description={`Apakah Anda yakin ingin menghapus ${editingCompany?.name}? Data operasional terkait akan terdampak.`}
                     confirmText="Hapus Perusahaan"
                 />
-                <div className="animate-in fade-in grid grid-cols-1 gap-16 duration-300 select-none lg:grid-cols-2 w-full">
+                <div className="animate-in fade-in grid w-full grid-cols-1 gap-16 duration-300 select-none lg:grid-cols-2">
                     {/* Side 1: Core Configuration */}
                     <div className="space-y-12">
                         <FormSection title="Identitas Korporasi" subtitle="Parameter dasar yang mendefinisikan entitas perusahaan">
                             <div className="grid grid-cols-1 gap-y-10">
                                 <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
                                     <div className="space-y-2.5">
-                                        <label className="text-primary/60 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest dark:text-white/60">
+                                        <label className="text-primary/60 flex items-center gap-2 text-[10px] font-black tracking-widest uppercase dark:text-white/60">
                                             Grup Perusahaan / Group
                                         </label>
                                         <Select value={form.data.company_group_id} onValueChange={(v: string) => form.setData('company_group_id', v)}>
-                                            <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-11 rounded-xl text-xs font-bold transition-all shadow-sm ring-1 ring-black/[0.03]">
+                                            <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-11 rounded-xl text-xs font-bold shadow-sm ring-1 ring-black/[0.03] transition-all">
                                                 <SelectValue placeholder="PILIH GRUP..." />
                                             </SelectTrigger>
-                                            <SelectContent className="border-surface-border rounded-xl bg-surface-base shadow-2xl">
+                                            <SelectContent className="border-surface-border bg-surface-base rounded-xl shadow-2xl">
                                                 {(groups || []).map((g: any) => (
-                                                    <SelectItem key={g.id} value={g.id.toString()} className="py-2.5 text-xs font-bold uppercase text-black dark:text-white">
+                                                    <SelectItem
+                                                        key={g.id}
+                                                        value={g.id.toString()}
+                                                        className="py-2.5 text-xs font-bold text-black uppercase dark:text-white"
+                                                    >
                                                         {g.name}
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>
                                         {form.errors.company_group_id && (
-                                            <p className="mt-1.5 text-[10px] font-bold tracking-tight text-danger uppercase">
+                                            <p className="text-danger mt-1.5 text-[10px] font-bold tracking-tight uppercase">
                                                 {form.errors.company_group_id}
                                             </p>
                                         )}
                                     </div>
                                     <div className="space-y-2.5">
-                                        <label className="text-primary/60 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest dark:text-white/60">
+                                        <label className="text-primary/60 flex items-center gap-2 text-[10px] font-black tracking-widest uppercase dark:text-white/60">
                                             Wilayah / Region
                                         </label>
                                         <Select value={form.data.region_id} onValueChange={(v: string) => form.setData('region_id', v)}>
-                                            <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-11 rounded-xl text-xs font-bold transition-all shadow-sm ring-1 ring-black/[0.03]">
+                                            <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-11 rounded-xl text-xs font-bold shadow-sm ring-1 ring-black/[0.03] transition-all">
                                                 <SelectValue placeholder="PILIH REGION..." />
                                             </SelectTrigger>
-                                            <SelectContent className="border-surface-border rounded-xl bg-surface-base shadow-2xl">
+                                            <SelectContent className="border-surface-border bg-surface-base rounded-xl shadow-2xl">
                                                 {(regions || []).map((r: any) => (
-                                                    <SelectItem key={r.id} value={r.id.toString()} className="py-2.5 text-xs font-bold uppercase text-black dark:text-white">
+                                                    <SelectItem
+                                                        key={r.id}
+                                                        value={r.id.toString()}
+                                                        className="py-2.5 text-xs font-bold text-black uppercase dark:text-white"
+                                                    >
                                                         {r.name}
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>
                                         {form.errors.region_id && (
-                                            <p className="mt-1.5 text-[10px] font-bold tracking-tight text-danger uppercase">{form.errors.region_id}</p>
+                                            <p className="text-danger mt-1.5 text-[10px] font-bold tracking-tight uppercase">
+                                                {form.errors.region_id}
+                                            </p>
                                         )}
                                     </div>
                                 </div>
@@ -256,7 +262,7 @@ export function CompanyManagement({ companies, regions, groups, filters }: Reado
                                     error={form.errors.name}
                                     icon={Building2}
                                 />
-                                
+
                                 <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
                                     <CompactInput
                                         label="Kode Entitas"
@@ -291,10 +297,11 @@ export function CompanyManagement({ companies, regions, groups, filters }: Reado
                             />
                         </FormSection>
 
-                        <div className="animate-in fade-in flex gap-4 rounded-2xl border border-primary/20 bg-primary/5 p-6 backdrop-blur-sm duration-300 dark:bg-primary/10">
-                            <Building2 size={24} className="mt-0.5 shrink-0 text-primary" />
-                            <p className="text-[11px] leading-relaxed font-semibold text-primary/80 uppercase tracking-tight">
-                                Company adalah level unit bisnis operasional paling granular dalam hirarki Master Data yang akan digunakan untuk penentuan otoritas penyetuju dan penomoran kontrak otomatis.
+                        <div className="animate-in fade-in border-primary/20 bg-primary/5 dark:bg-primary/10 flex gap-4 rounded-2xl border p-6 backdrop-blur-sm duration-300">
+                            <Building2 size={24} className="text-primary mt-0.5 shrink-0" />
+                            <p className="text-primary/80 text-[11px] leading-relaxed font-semibold tracking-tight uppercase">
+                                Company adalah level unit bisnis operasional paling granular dalam hirarki Master Data yang akan digunakan untuk
+                                penentuan otoritas penyetuju dan penomoran kontrak otomatis.
                             </p>
                         </div>
                     </div>
@@ -319,16 +326,9 @@ export function CompanyManagement({ companies, regions, groups, filters }: Reado
             onFilterChange={handleFilterChange}
             headerActions={
                 <div className="flex items-center gap-2">
-                    <ExcelActions
-                        exportRoute="admin.companies.export"
-                        importRoute="admin.companies.import"
-                        label="Perusahaan"
-                    />
+                    <ExcelActions exportRoute="admin.companies.export" importRoute="admin.companies.import" label="Perusahaan" />
                     {canCreate && (
-                        <Button
-                            variant="white"
-                            onClick={openCreate}
-                        >
+                        <Button variant="white" onClick={openCreate}>
                             <Plus size={15} className="text-primary" /> Registrasi Company
                         </Button>
                     )}

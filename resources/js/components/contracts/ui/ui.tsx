@@ -1,5 +1,4 @@
 import { cn } from '@/lib/utils';
-import { UserProfile } from '@/types/contracts';
 import { UserAvatar } from '../../user/UserAvatar';
 
 export { UserAvatar as Avatar };

@@ -1,6 +1,6 @@
-import { useToast } from '@/components/ui/feedback/Toast';
 import { Button } from '@/components/ui/base/Button';
 import { Column, DataTable } from '@/components/ui/data/DataTable';
+import { useToast } from '@/components/ui/feedback/Toast';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -178,7 +178,7 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                     description={`Apakah Anda yakin ingin menghapus role ${editingRole?.name}? Seluruh mapping hak akses untuk role ini akan dihapus permanen.`}
                     confirmText="Hapus Role"
                 />
-                <div className="animate-in fade-in grid grid-cols-1 gap-16 duration-300 select-none lg:grid-cols-2 w-full">
+                <div className="animate-in fade-in grid w-full grid-cols-1 gap-16 duration-300 select-none lg:grid-cols-2">
                     {/* Side 1: Primary Configuration */}
                     <div className="space-y-12">
                         <FormSection title="Identitas Otoritas" subtitle="Nama jabatan dan penjelasan peran dalam ekosistem sistem">
@@ -206,24 +206,26 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
 
                     {/* Side 2: Information & Authority Hub */}
                     <div className="space-y-12">
-                        <div className="border-black/[0.03] dark:border-white/[0.03] group relative overflow-hidden rounded-[2rem] border-2 border-dashed p-10 transition-all duration-200 select-none hover:bg-black/[0.01] dark:hover:bg-white/[0.01]">
+                        <div className="group relative overflow-hidden rounded-[2rem] border-2 border-dashed border-black/[0.03] p-10 transition-all duration-200 select-none hover:bg-black/[0.01] dark:border-white/[0.03] dark:hover:bg-white/[0.01]">
                             <div className="absolute top-0 right-0 p-8 opacity-5 transition-opacity duration-200 group-hover:opacity-10">
                                 <ShieldCheck size={100} strokeWidth={1} />
                             </div>
 
                             <div className="relative z-10 mb-6 flex items-center gap-3">
-                                <span className="text-[10px] font-black tracking-widest text-text-main uppercase opacity-60">Authority Architecture</span>
+                                <span className="text-text-main text-[10px] font-black tracking-widest uppercase opacity-60">
+                                    Authority Architecture
+                                </span>
                             </div>
 
                             <div className="relative z-10 space-y-4">
                                 <p className="text-text-desc text-[11px] leading-relaxed font-semibold">
-                                    Role ini menentukan hak akses dasar pengguna terhadap modul-modul sistem. Gunakan menu 
-                                    <span className="text-primary font-bold"> Pemetaan Hak Akses </span> 
+                                    Role ini menentukan hak akses dasar pengguna terhadap modul-modul sistem. Gunakan menu
+                                    <span className="text-primary font-bold"> Pemetaan Hak Akses </span>
                                     untuk mengatur konfigurasi izin (Read, Create, Update, Delete) secara spesifik sesuai tanggung jawab struktural.
                                 </p>
-                                <div className="flex items-center gap-2 rounded-xl bg-primary/5 px-4 py-2 border border-primary/10 w-fit">
-                                    <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                                    <span className="text-[9px] font-black text-primary uppercase tracking-widest">Parameter Otoritas Aktif</span>
+                                <div className="bg-primary/5 border-primary/10 flex w-fit items-center gap-2 rounded-xl border px-4 py-2">
+                                    <div className="bg-primary h-1.5 w-1.5 animate-pulse rounded-full" />
+                                    <span className="text-primary text-[9px] font-black tracking-widest uppercase">Parameter Otoritas Aktif</span>
                                 </div>
                             </div>
                         </div>

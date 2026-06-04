@@ -2,12 +2,7 @@
  * Shared color palette definitions and deterministic hashing helpers for consistent UI components.
  */
 
-export const COMPANY_COLORS = [
-    'bg-primary-muted text-primary',
-    'bg-info/10 text-info',
-    'bg-primary/10 text-primary',
-    'bg-primary/20 text-primary',
-];
+export const COMPANY_COLORS = ['bg-primary-muted text-primary', 'bg-info/10 text-info', 'bg-primary/10 text-primary', 'bg-primary/20 text-primary'];
 
 export const GROUP_COLORS = [
     'bg-primary-muted text-primary',

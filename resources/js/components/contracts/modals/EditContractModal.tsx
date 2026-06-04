@@ -1,9 +1,9 @@
 import { Button } from '@/components/ui/base/Button';
-import { Modal } from '@/components/ui/overlays/Modal';
 import { FormInput } from '@/components/ui/forms/FormInput';
 import { FormTextarea } from '@/components/ui/forms/FormTextarea';
 import { PortalSelect } from '@/components/ui/forms/PortalSelect';
 import { TreeSelect } from '@/components/ui/forms/TreeSelect';
+import { Modal } from '@/components/ui/overlays/Modal';
 import { Contract, ContractType } from '@/types/contracts';
 import { Check, FileEdit, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -43,10 +43,10 @@ export function EditContractModal({
             setContractNo(contract.contract_no);
             setDescription(contract.description || '');
             setDate(contract.contract_date ? contract.contract_date.split('T')[0] : '');
-            
+
             const t = types.find((x) => x.name === contract.contract_type);
             setTypeId(t ? String(t.id) : '');
-            
+
             setSubmissionTypeId(contract.submission_type_id || '');
             setVendorId((contract as any).vendor_id || '');
         }
@@ -82,11 +82,7 @@ export function EditContractModal({
                     <Button variant="ghost" onClick={onClose} disabled={processing}>
                         Batal
                     </Button>
-                    <Button
-                        onClick={handleSubmit}
-                        disabled={processing || !title}
-                        className="min-w-[140px]"
-                    >
+                    <Button onClick={handleSubmit} disabled={processing || !title} className="min-w-[140px]">
                         {processing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check size={16} className="mr-2" />}
                         Simpan Perubahan
                     </Button>
@@ -102,31 +98,17 @@ export function EditContractModal({
                         placeholder="Masukkan judul kontrak"
                         required
                     />
-                    <FormInput
-                        label="No. Pengajuan"
-                        value={contractNo}
-                        onChange={(e) => setContractNo(e.target.value)}
-                        placeholder="CTR/2026/..."
-                    />
+                    <FormInput label="No. Pengajuan" value={contractNo} onChange={(e) => setContractNo(e.target.value)} placeholder="CTR/2026/..." />
                 </div>
 
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                     <div className="space-y-1.5">
-                        <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                            Tipe Kontrak
-                        </label>
-                        <TreeSelect
-                            value={typeId}
-                            onValueChange={(val) => setTypeId(val)}
-                            items={types}
-                            placeholder="Pilih Tipe Kontrak"
-                        />
+                        <label className="text-muted-foreground text-[11px] font-bold tracking-wider uppercase">Tipe Kontrak</label>
+                        <TreeSelect value={typeId} onValueChange={(val) => setTypeId(val)} items={types} placeholder="Pilih Tipe Kontrak" />
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                            Perjanjian
-                        </label>
+                        <label className="text-muted-foreground text-[11px] font-bold tracking-wider uppercase">Perjanjian</label>
                         <PortalSelect
                             value={submissionTypeId}
                             onValueChange={(val) => setSubmissionTypeId(val)}
@@ -136,9 +118,7 @@ export function EditContractModal({
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                            Pihak Kedua (Vendor)
-                        </label>
+                        <label className="text-muted-foreground text-[11px] font-bold tracking-wider uppercase">Pihak Kedua (Vendor)</label>
                         <PortalSelect
                             value={vendorId}
                             onValueChange={(val) => setVendorId(val)}
@@ -149,12 +129,7 @@ export function EditContractModal({
                 </div>
 
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                    <FormInput
-                        label="Tanggal"
-                        type="date"
-                        value={date}
-                        onChange={(e) => setDate(e.target.value)}
-                    />
+                    <FormInput label="Tanggal" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
                 </div>
 
                 <FormTextarea

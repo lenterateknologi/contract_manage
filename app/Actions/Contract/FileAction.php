@@ -34,11 +34,15 @@ class FileAction
 
     public function uploadRevision(Contract $contract, Request $request): JsonResponse
     {
+        $config = config('uploads.categories.contract_revision');
+        $mimes = implode(',', $config['allowed_mimes']);
+        $maxSize = $config['max_size'];
+
         try {
             $request->validate([
                 'document_type' => 'nullable|string|in:contract,f1,f2',
                 'changelog' => 'required|string',
-                'file' => 'required|file|extensions:docx,doc,pdf|max:102400',
+                'file' => "required|file|extensions:{$mimes}|max:{$maxSize}",
             ]);
         } catch (ValidationException $e) {
             Log::error('Validation Failed on Revision', [
@@ -347,12 +351,6 @@ class FileAction
     {
         Gate::authorize('updateAttachment', $contract);
 
-        $request->validate([
-            'label' => 'required|string|max:255',
-            'category' => 'nullable|string|max:255',
-            'file' => 'required|file|max:102400',
-        ]);
-
         $file = $request->file('file');
         $name = $file->getClientOriginalName();
         $ext = $file->getClientOriginalExtension();
@@ -434,11 +432,6 @@ class FileAction
     public function uploadAgreement(Contract $contract, Request $request): JsonResponse
     {
         Gate::authorize('updateAgreement', $contract);
-
-        $request->validate([
-            'file' => 'required|file|extensions:docx|max:10240',
-            'change_log' => 'nullable|string',
-        ]);
 
         $file = $request->file('file');
 

@@ -1,10 +1,9 @@
 import { Button } from '@/components/ui/base/Button';
+import { StatusBadge } from '@/components/ui/data/StatusBadge';
 import { CompactSwitch } from '@/components/ui/forms/CompactSwitch';
 import { FormTextarea } from '@/components/ui/forms/FormTextarea';
 import { SearchableMultiSelect } from '@/components/ui/forms/SearchableMultiSelect';
-import { SearchableSelect } from '@/components/ui/forms/SearchableSelect';
 import { Modal } from '@/components/ui/overlays/Modal';
-import { StatusBadge } from '@/components/ui/data/StatusBadge';
 import { contractApi } from '@/lib/contract-api';
 import { CheckCircle2, Loader2, UserPlus, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -33,8 +32,12 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
         if (open) {
             const currentStep = contract?.workflow_step;
             const activeAction = (currentStep?.actions || []).find((a: any) => {
-                if (actionCode) return (a.action_code === actionCode) || (a.master_action_code === actionCode) || (a.master_action?.code === actionCode);
-                return (a.master_action_code?.toLowerCase() === 'forward') || (a.action_code?.toLowerCase() === 'forward') || (a.master_action?.code?.toLowerCase() === 'forward');
+                if (actionCode) return a.action_code === actionCode || a.master_action_code === actionCode || a.master_action?.code === actionCode;
+                return (
+                    a.master_action_code?.toLowerCase() === 'forward' ||
+                    a.action_code?.toLowerCase() === 'forward' ||
+                    a.master_action?.code?.toLowerCase() === 'forward'
+                );
             });
             const config = activeAction?.assignee_config || {};
             const defaultTargetStepId = activeAction?.next_step_id || config.default_target_step || contract?.workflow_step_id;
@@ -63,8 +66,12 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
 
             const currentStep = contract?.workflow_step;
             const activeAction = (currentStep?.actions || []).find((a: any) => {
-                if (actionCode) return (a.action_code === actionCode) || (a.master_action_code === actionCode) || (a.master_action?.code === actionCode);
-                return (a.master_action_code?.toLowerCase() === 'forward') || (a.action_code?.toLowerCase() === 'forward') || (a.master_action?.code?.toLowerCase() === 'forward');
+                if (actionCode) return a.action_code === actionCode || a.master_action_code === actionCode || a.master_action?.code === actionCode;
+                return (
+                    a.master_action_code?.toLowerCase() === 'forward' ||
+                    a.action_code?.toLowerCase() === 'forward' ||
+                    a.master_action?.code?.toLowerCase() === 'forward'
+                );
             });
 
             const config = activeAction?.assignee_config || {};
@@ -72,7 +79,10 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
 
             // Existing ad-hoc approvers should be pre-selected
             const existingAdhocUserIds = (contract?.approvals || [])
-                .filter((a: any) => String(a.workflow_step_id) === String(finalTargetStepId) && a.role === 'Persetujuan Tambahan' && a.status !== 'rejected')
+                .filter(
+                    (a: any) =>
+                        String(a.workflow_step_id) === String(finalTargetStepId) && a.role === 'Persetujuan Tambahan' && a.status !== 'rejected',
+                )
                 .map((a: any) => String(a.user_id));
 
             // Main approvers should not be available for selection
@@ -134,8 +144,12 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
             // Get the target step ID from the action configuration
             const currentStep = contract?.workflow_step;
             const activeAction = (currentStep?.actions || []).find((a: any) => {
-                if (actionCode) return (a.action_code === actionCode) || (a.master_action_code === actionCode) || (a.master_action?.code === actionCode);
-                return (a.master_action_code?.toLowerCase() === 'forward') || (a.action_code?.toLowerCase() === 'forward') || (a.master_action?.code?.toLowerCase() === 'forward');
+                if (actionCode) return a.action_code === actionCode || a.master_action_code === actionCode || a.master_action?.code === actionCode;
+                return (
+                    a.master_action_code?.toLowerCase() === 'forward' ||
+                    a.action_code?.toLowerCase() === 'forward' ||
+                    a.master_action?.code?.toLowerCase() === 'forward'
+                );
             });
             const config = activeAction?.assignee_config || {};
             const defaultTargetStepId = activeAction?.next_step_id || config.default_target_step || contract.workflow_step_id;
@@ -155,10 +169,11 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
 
     const isSigningAction = ['assign', 'sign', 'signature', 'assign_pic'].includes(actionCode?.toLowerCase() || '');
 
-    const currentStepDelegates = (contract?.approvals || []).filter((a: any) =>
-        String(a.workflow_step_id) === String(selectedTargetStepId || contract?.workflow_step_id) &&
-        ['Persetujuan Tambahan', 'Penandatangan'].includes(a.role) &&
-        a.status !== 'rejected'
+    const currentStepDelegates = (contract?.approvals || []).filter(
+        (a: any) =>
+            String(a.workflow_step_id) === String(selectedTargetStepId || contract?.workflow_step_id) &&
+            ['Persetujuan Tambahan', 'Penandatangan'].includes(a.role) &&
+            a.status !== 'rejected',
     );
 
     return (
@@ -209,19 +224,19 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                                 <Users size={12} className="text-indigo-500" />
                                 {isSigningAction ? 'Penandatangan Terdaftar' : 'Approver Terdaftar'}
                             </div>
-                            <span className="text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 px-1.5 py-0.5 rounded">
+                            <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400">
                                 {currentStepDelegates.length} Orang
                             </span>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                             {currentStepDelegates.map((a: any) => (
-                                <div key={a.id} className="flex items-center gap-3 p-2 rounded-xl border border-surface-border bg-surface-muted/20">
-                                    <div className="h-7 w-7 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
+                                <div key={a.id} className="border-surface-border bg-surface-muted/20 flex items-center gap-3 rounded-xl border p-2">
+                                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-100 text-[10px] font-bold text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
                                         {a.approver_name?.substring(0, 2).toUpperCase()}
                                     </div>
-                                    <div className="flex flex-col min-w-0">
-                                        <span className="text-xs font-bold truncate text-text-main leading-tight">{a.approver_name}</span>
-                                        <span className="text-[9px] text-text-soft uppercase tracking-tighter">{a.job_title || a.role}</span>
+                                    <div className="flex min-w-0 flex-col">
+                                        <span className="text-text-main truncate text-xs leading-tight font-bold">{a.approver_name}</span>
+                                        <span className="text-text-soft text-[9px] tracking-tighter uppercase">{a.job_title || a.role}</span>
                                     </div>
                                     <div className="ml-auto">
                                         <StatusBadge status={a.status} />
@@ -229,7 +244,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                                 </div>
                             ))}
                         </div>
-                        <div className="h-px bg-surface-border/50 my-2" />
+                        <div className="bg-surface-border/50 my-2 h-px" />
                     </div>
                 )}
                 {/* ------------------------------ */}
@@ -259,15 +274,13 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-text-soft text-[10px] font-bold tracking-wider uppercase">
-                        Disisipkan Ke Langkah
-                    </label>
+                    <label className="text-text-soft text-[10px] font-bold tracking-wider uppercase">Disisipkan Ke Langkah</label>
                     <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-400">
                         {(() => {
                             const currentStep = contract?.workflow_step;
                             const activeAction = (currentStep?.actions || []).find((a: any) => {
-                                if (actionCode) return (a.action_code === actionCode) || (a.master_action_code === actionCode);
-                                return (a.master_action_code?.toLowerCase() === 'forward') || (a.action_code?.toLowerCase() === 'forward');
+                                if (actionCode) return a.action_code === actionCode || a.master_action_code === actionCode;
+                                return a.master_action_code?.toLowerCase() === 'forward' || a.action_code?.toLowerCase() === 'forward';
                             });
                             const config = activeAction?.assignee_config || {};
                             const targetStepId = activeAction?.next_step_id || config.default_target_step || contract?.workflow_step_id;
@@ -303,7 +316,8 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                 {selectedUserIds.length > 0 && (
                     <div className="animate-in fade-in slide-in-from-top-1 space-y-2.5 duration-200">
                         <div className="text-text-soft flex items-center gap-1.5 text-[10px] font-bold tracking-wider uppercase">
-                            <Users size={12} />Persetujuan Tambahan
+                            <Users size={12} />
+                            Persetujuan Tambahan
                             <span>Approver Terpilih ({selectedUserIds.length})</span>
                         </div>
                         <div className="border-surface-border bg-surface-muted/30 flex flex-wrap gap-2 rounded-xl border p-3">

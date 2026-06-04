@@ -1,8 +1,8 @@
-import { useToast } from '@/components/ui/feedback/Toast';
 import { FormField } from '@/components/form/fields/FormElement';
 import { UnifiedFormViewer } from '@/components/form/renderer/UnifiedFormViewer';
 import { Button } from '@/components/ui/base/Button';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
+import { useToast } from '@/components/ui/feedback/Toast';
 import { SearchInput } from '@/components/ui/forms/SearchInput';
 import { Modal } from '@/components/ui/overlays/Modal';
 import { contractApi } from '@/lib/contract-api';
@@ -521,7 +521,6 @@ function GenericFormTab({
                     </div>
                 </div>
             )}
-
 
             <div className="border-surface-border bg-surface-base/50 sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between border-b px-6 backdrop-blur-md">
                 <div className="flex items-center gap-4">

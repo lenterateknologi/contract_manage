@@ -182,6 +182,25 @@ class HandleInertiaRequests extends Middleware
             return $orderA <=> $orderB;
         });
 
+        // Add Chat to Modul Kontrak for all users
+        foreach ($groups as &$group) {
+            if (trim($group['title']) === 'Modul Kontrak') {
+                $group['items'][] = [
+                    'title' => 'Chat / Diskusi',
+                    'url' => '/admin/chat',
+                    'icon' => 'MessageSquare',
+                    'sequence' => 99,
+                ];
+                usort($group['items'], function ($a, $b) {
+                    $orderA = $a['sequence'] ?? 9999;
+                    $orderB = $b['sequence'] ?? 9999;
+
+                    return $orderA <=> $orderB ?: strcmp($a['title'], $b['title']);
+                });
+            }
+        }
+        unset($group);
+
         if ($request->user() && ($request->user()->role === 'Admin' || $request->user()->role === 'Super Admin' || $request->user()->is_admin)) {
             $hasPengaturanSistem = false;
             foreach ($groups as &$group) {

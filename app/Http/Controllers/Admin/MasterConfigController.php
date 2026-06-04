@@ -4,6 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Exports\DepartmentsWorkbookExport;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ContractStatus\StoreContractStatusRequest;
+use App\Http\Requests\ContractStatus\UpdateContractStatusRequest;
+use App\Http\Requests\ContractType\StoreContractTypeRequest;
+use App\Http\Requests\ContractType\UpdateContractTypeRequest;
+use App\Http\Requests\Department\StoreDepartmentRequest;
+use App\Http\Requests\Department\UpdateDepartmentRequest;
 use App\Imports\DepartmentsImport;
 use App\Models\AccessModule;
 use App\Models\ContractStatus;
@@ -52,7 +58,7 @@ class MasterConfigController extends Controller
                 },
             );
 
-        return Inertia::render('admin/index', [
+        return Inertia::render('admin/Index', [
             'currentView' => 'contract-types',
             'types' => $query->orderBy($sortBy, $sortDir)->paginate($request->input('per_page', 10))->withQueryString(),
             'formTemplates' => FormTemplate::where('is_active', true)->orderBy('name')->get(),
@@ -67,7 +73,7 @@ class MasterConfigController extends Controller
 
     public function createContractType()
     {
-        return Inertia::render('admin/contract-types/form', [
+        return Inertia::render('contract-types/form', [
             'parentTypes' => ContractType::orderBy('name')->get(),
         ]);
     }
@@ -76,46 +82,22 @@ class MasterConfigController extends Controller
     {
         $type->load('children');
 
-        return Inertia::render('admin/contract-types/form', [
+        return Inertia::render('contract-types/form', [
             'contractType' => $type,
             'parentTypes' => ContractType::where('id', '!=', $type->id)->orderBy('name')->get(),
         ]);
     }
 
-    public function storeContractType(Request $request)
+    public function storeContractType(StoreContractTypeRequest $request)
     {
-        $data = $request->validate([
-            'code' => 'required|string|max:100|unique:m_contract_types,code',
-            'name' => 'required|string|max:255|unique:m_contract_types,name',
-            'description' => 'nullable|string',
-            'parent_id' => 'nullable|uuid|exists:m_contract_types,id',
-            'f1_input_mechanism' => 'nullable|string|in:manual,digital,folder',
-            'f1_form_template_id' => 'nullable|uuid|exists:m_form_templates,id',
-            'f1_contract_template_id' => 'nullable|uuid|exists:m_contract_templates,id',
-            'f2_input_mechanism' => 'nullable|string|in:manual,digital,folder',
-            'f2_form_template_id' => 'nullable|uuid|exists:m_form_templates,id',
-            'f2_contract_template_id' => 'nullable|uuid|exists:m_contract_templates,id',
-        ]);
-        ContractType::create($data);
+        ContractType::create($request->validated());
 
         return redirect()->route('admin.contract-types')->with('success', 'Tipe kontrak berhasil dibuat.');
     }
 
-    public function updateContractType(Request $request, ContractType $type)
+    public function updateContractType(UpdateContractTypeRequest $request, ContractType $type)
     {
-        $data = $request->validate([
-            'code' => 'required|string|max:100|unique:m_contract_types,code,'.$type->id,
-            'name' => 'required|string|max:255|unique:m_contract_types,name,'.$type->id,
-            'description' => 'nullable|string',
-            'parent_id' => 'nullable|uuid|exists:m_contract_types,id|not_in:'.$type->id,
-            'f1_input_mechanism' => 'nullable|string|in:manual,digital,folder',
-            'f1_form_template_id' => 'nullable|uuid|exists:m_form_templates,id',
-            'f1_contract_template_id' => 'nullable|uuid|exists:m_contract_templates,id',
-            'f2_input_mechanism' => 'nullable|string|in:manual,digital,folder',
-            'f2_form_template_id' => 'nullable|uuid|exists:m_form_templates,id',
-            'f2_contract_template_id' => 'nullable|uuid|exists:m_contract_templates,id',
-        ]);
-        $type->update($data);
+        $type->update($request->validated());
 
         return redirect()->route('admin.contract-types')->with('success', 'Tipe kontrak berhasil diperbarui.');
     }
@@ -153,7 +135,7 @@ class MasterConfigController extends Controller
                 },
             );
 
-        return Inertia::render('admin/index', [
+        return Inertia::render('admin/Index', [
             'currentView' => 'contract-statuses',
             'statuses' => $query->orderBy('label')->paginate($request->input('per_page', 10))->withQueryString(),
             'filters' => $request->only(['search']),
@@ -164,34 +146,16 @@ class MasterConfigController extends Controller
         ]);
     }
 
-    public function storeContractStatus(Request $request)
+    public function storeContractStatus(StoreContractStatusRequest $request)
     {
-        $data = $request->validate([
-            'code' => 'required|string|max:50|unique:m_contract_statuses,code',
-            'label' => 'required|string|max:255',
-            'color' => 'required|string|max:20',
-            'bg_color' => 'required|string|max:20',
-            'icon' => 'nullable|string|max:50',
-            'description' => 'nullable|string',
-            'is_active' => 'boolean',
-        ]);
-        ContractStatus::create($data);
+        ContractStatus::create($request->validated());
 
         return back()->with('success', 'Status berhasil dibuat.');
     }
 
-    public function updateContractStatus(Request $request, ContractStatus $status)
+    public function updateContractStatus(UpdateContractStatusRequest $request, ContractStatus $status)
     {
-        $data = $request->validate([
-            'code' => 'required|string|max:50|unique:m_contract_statuses,code,'.$status->id,
-            'label' => 'required|string|max:255',
-            'color' => 'required|string|max:20',
-            'bg_color' => 'required|string|max:20',
-            'icon' => 'nullable|string|max:50',
-            'description' => 'nullable|string',
-            'is_active' => 'boolean',
-        ]);
-        $status->update($data);
+        $status->update($request->validated());
 
         return back()->with('success', 'Status berhasil diperbarui.');
     }
@@ -237,7 +201,7 @@ class MasterConfigController extends Controller
             return response()->json($query->orderBy('name')->paginate($request->input('per_page', 10)));
         }
 
-        return Inertia::render('admin/index', [
+        return Inertia::render('admin/Index', [
             'currentView' => 'departments',
             'departments' => $query->orderBy('name')->paginate($request->input('per_page', 10))->withQueryString(),
             'filters' => $request->only(['search', 'is_active']),
@@ -248,28 +212,18 @@ class MasterConfigController extends Controller
         ]);
     }
 
-    public function storeDepartment(Request $request)
+    public function storeDepartment(StoreDepartmentRequest $request)
     {
-        $data = $request->validate([
-            'code' => 'required|string|max:50|unique:m_departments,code',
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'is_active' => 'boolean',
-        ]);
+        $data = $request->validated();
         $data['created_by'] = $data['updated_by'] = Auth::id();
         Department::create($data);
 
         return back()->with('success', 'Departemen berhasil dibuat.');
     }
 
-    public function updateDepartment(Request $request, Department $department)
+    public function updateDepartment(UpdateDepartmentRequest $request, Department $department)
     {
-        $data = $request->validate([
-            'code' => 'required|string|max:50|unique:m_departments,code,'.$department->id,
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'is_active' => 'boolean',
-        ]);
+        $data = $request->validated();
         $data['updated_by'] = Auth::id();
         $department->update($data);
 
@@ -300,7 +254,7 @@ class MasterConfigController extends Controller
     {
         $groups = ModuleGroup::with(['modules' => fn ($q) => $q->orderBy('name')])->orderBy('name')->get();
 
-        return Inertia::render('admin/index', ['currentView' => 'navigation', 'groups' => $groups]);
+        return Inertia::render('admin/Index', ['currentView' => 'navigation', 'groups' => $groups]);
     }
 
     public function moduleGroups(Request $request)
@@ -311,7 +265,7 @@ class MasterConfigController extends Controller
             return $q->where(DB::raw('LOWER(name)'), 'like', "%{$s}%");
         });
 
-        return Inertia::render('admin/index', [
+        return Inertia::render('admin/Index', [
             'currentView' => 'module-groups',
             'moduleGroups' => $query->orderBy('name')->paginate($request->input('per_page', 10))->withQueryString(),
             'filters' => $request->only(['search']),
@@ -330,7 +284,7 @@ class MasterConfigController extends Controller
             })
             ->when($request->module_group_id, fn ($q, $id) => $q->whereIn('module_group_id', (array) $id));
 
-        return Inertia::render('admin/index', [
+        return Inertia::render('admin/Index', [
             'currentView' => 'modules',
             'modules' => $query->orderBy('name')->paginate($request->input('per_page', 10))->withQueryString(),
             'moduleGroups' => ModuleGroup::all(),
@@ -454,7 +408,7 @@ class MasterConfigController extends Controller
 
     public function numberingFormats()
     {
-        return Inertia::render('admin/index', [
+        return Inertia::render('admin/Index', [
             'currentView' => 'numbering-formats',
             'formats' => NumberingFormat::all(),
             'breadcrumbs' => [

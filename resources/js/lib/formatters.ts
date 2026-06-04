@@ -6,7 +6,10 @@
  * Format a date string or object to a human-readable Indonesian date.
  * Default format: 26 Mei 2026
  */
-export function formatDate(date: string | Date | null | undefined, options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' }): string {
+export function formatDate(
+    date: string | Date | null | undefined,
+    options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' },
+): string {
     if (!date) return '-';
     const d = typeof date === 'string' ? new Date(date) : date;
     if (isNaN(d.getTime())) return '-';
@@ -29,14 +32,16 @@ export function formatDateTime(date: string | Date | null | undefined): string {
     if (!date) return '-';
     const d = typeof date === 'string' ? new Date(date) : date;
     if (isNaN(d.getTime())) return '-';
-    return d.toLocaleString('id-ID', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-    }).replace(/\./g, ':');
+    return d
+        .toLocaleString('id-ID', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+        })
+        .replace(/\./g, ':');
 }
 
 /**
@@ -47,12 +52,12 @@ export function formatCurrency(amount: number | string | null | undefined): stri
     if (amount === null || amount === undefined || amount === '') return 'Rp 0';
     const val = typeof amount === 'string' ? parseFloat(amount.replace(/[^\d.-]/g, '')) : amount;
     if (isNaN(val)) return 'Rp 0';
-    
+
     return new Intl.NumberFormat('id-ID', {
         style: 'currency',
         currency: 'IDR',
         minimumFractionDigits: 0,
-        maximumFractionDigits: 0
+        maximumFractionDigits: 0,
     }).format(val);
 }
 
@@ -75,7 +80,7 @@ export function parseCurrency(price: string | null | undefined): number {
     } else if (hasComma) {
         result = clean.replace(',', '.');
     }
-    
+
     const val = parseFloat(result);
     return isNaN(val) ? 0 : val;
 }
