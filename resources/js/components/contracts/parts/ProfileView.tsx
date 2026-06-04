@@ -1,11 +1,12 @@
 import { Button } from '@/components/ui/base/Button';
 import { Input } from '@/components/ui/base/Input';
 import { Label } from '@/components/ui/base/Label';
+import { User } from '@/types';
 import { useForm } from '@inertiajs/react';
 import { Camera, Eye, EyeOff, Loader2, Shield } from 'lucide-react';
 import React, { useState } from 'react';
 
-export function ProfileView({ meUser, showToast }: { meUser: any; showToast: any }) {
+export function ProfileView({ meUser, showToast }: { meUser: User; showToast: (msg: string, type: 'success' | 'danger' | 'info') => void }) {
     const {
         data: pData,
         setData: setPData,
@@ -58,7 +59,7 @@ export function ProfileView({ meUser, showToast }: { meUser: any; showToast: any
                 qReset();
                 setIsEditingSecurity(false);
             },
-            onError: (err: any) => {
+            onError: (err: Record<string, string>) => {
                 const msg = (Object.values(err)[0] as string) || 'Gagal memperbarui password.';
                 showToast(msg, 'danger');
             },
@@ -132,22 +133,22 @@ export function ProfileView({ meUser, showToast }: { meUser: any; showToast: any
                 </div>
                 <div className="p-6">
                     {!isEditingInfo ? (
-                        <div className="space-y-4">
-                            <div className="grid grid-cols-3 gap-4">
+                        <div className="animate-in fade-in slide-in-from-top-1 space-y-4 duration-200">
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                                 <span className="text-text-soft text-[10px] font-bold uppercase">Full Name</span>
-                                <span className="col-span-2 text-sm font-medium">{meUser.name}</span>
+                                <span className="text-sm font-medium sm:col-span-2">{meUser.name}</span>
                             </div>
-                            <div className="grid grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                                 <span className="text-text-soft text-[10px] font-bold uppercase">Work Email</span>
-                                <span className="col-span-2 text-sm font-medium">{meUser.email}</span>
+                                <span className="text-sm font-medium sm:col-span-2">{meUser.email}</span>
                             </div>
-                            <div className="grid grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                                 <span className="text-text-soft text-[10px] font-bold uppercase">Phone</span>
-                                <span className="col-span-2 text-sm font-medium">{meUser.phone || '-'}</span>
+                                <span className="text-sm font-medium sm:col-span-2">{meUser.phone || '-'}</span>
                             </div>
                         </div>
                     ) : (
-                        <form onSubmit={updateProfile} className="max-w-md space-y-4">
+                        <form onSubmit={updateProfile} className="animate-in fade-in zoom-in-95 max-w-md space-y-4 duration-200">
                             <div className="space-y-1.5">
                                 <Label className="text-text-desc ml-0.5 text-[9px] font-bold tracking-widest uppercase">Nama Lengkap</Label>
                                 <Input
@@ -216,12 +217,12 @@ export function ProfileView({ meUser, showToast }: { meUser: any; showToast: any
                 </div>
                 <div className="p-6">
                     {!isEditingSecurity ? (
-                        <div className="flex items-center gap-4">
+                        <div className="animate-in fade-in slide-in-from-top-1 flex items-center gap-4 duration-200">
                             <span className="text-text-soft text-[10px] font-bold uppercase">Password</span>
                             <span className="text-sm font-medium">••••••••••••••••</span>
                         </div>
                     ) : (
-                        <form onSubmit={updatePassword} className="max-w-md space-y-4">
+                        <form onSubmit={updatePassword} className="animate-in fade-in zoom-in-95 max-w-md space-y-4 duration-200">
                             <div className="space-y-1.5">
                                 <Label className="text-text-desc ml-0.5 text-[9px] font-bold tracking-widest uppercase">Password Saat Ini</Label>
                                 <div className="relative">
@@ -285,9 +286,9 @@ export function ProfileView({ meUser, showToast }: { meUser: any; showToast: any
             </div>
 
             {/* Account Metadata / Footer */}
-            <div className="border-surface-border/40 mt-8 border-t pt-6 text-center">
-                <p className="text-text-soft text-[9px] font-medium tracking-widest uppercase opacity-60">
-                    ID: {meUser.id} • {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+            <div className="border-surface-border/40 mt-12 border-t pt-8 text-center">
+                <p className="text-text-soft text-[9px] font-bold tracking-widest uppercase opacity-40">
+                    Account Reference: {meUser.id?.toString().padStart(6, '0')} • System Date: {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase()}
                 </p>
             </div>
         </div>
