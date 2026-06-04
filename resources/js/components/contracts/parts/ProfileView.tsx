@@ -23,7 +23,7 @@ export function ProfileView({ meUser, showToast }: { meUser: any; showToast: any
         setData: setQData,
         put,
         processing: qProcessing,
-        reset: resetQ,
+        reset: qReset,
     } = useForm({
         current_password: '',
         password: '',
@@ -55,7 +55,8 @@ export function ProfileView({ meUser, showToast }: { meUser: any; showToast: any
             preserveScroll: true,
             onSuccess: () => {
                 showToast('Password diperbarui!', 'success');
-                resetQ();
+                qReset();
+                setIsEditingSecurity(false);
             },
             onError: (err: any) => {
                 const msg = (Object.values(err)[0] as string) || 'Gagal memperbarui password.';
@@ -194,7 +195,7 @@ export function ProfileView({ meUser, showToast }: { meUser: any; showToast: any
                                 size="sm"
                                 onClick={() => {
                                     setIsEditingSecurity(false);
-                                    resetQ();
+                                    qReset();
                                 }}
                                 className="text-text-soft cursor-pointer text-[10px] font-bold uppercase"
                             >
@@ -229,7 +230,7 @@ export function ProfileView({ meUser, showToast }: { meUser: any; showToast: any
                                         value={qData.current_password}
                                         onChange={(e) => setQData('current_password', e.target.value)}
                                         placeholder="••••••••"
-                                        className="border-surface-border h-9 rounded-lg bg-white pr-10 text-xs shadow-none"
+                                        className="border-surface-border bg-surface-muted/5 h-9 rounded-lg pr-10 text-xs shadow-none transition-all focus:bg-white"
                                     />
                                     <button
                                         type="button"
@@ -248,7 +249,7 @@ export function ProfileView({ meUser, showToast }: { meUser: any; showToast: any
                                         type={showNew ? 'text' : 'password'}
                                         value={qData.password}
                                         onChange={(e) => setQData('password', e.target.value)}
-                                        className="border-surface-border h-9 rounded-lg bg-white pr-10 text-xs shadow-none"
+                                        className="border-surface-border bg-surface-muted/5 h-9 rounded-lg pr-10 text-xs shadow-none transition-all focus:bg-white"
                                     />
                                     <button
                                         type="button"
@@ -267,7 +268,7 @@ export function ProfileView({ meUser, showToast }: { meUser: any; showToast: any
                                         type={showConfirm ? 'text' : 'password'}
                                         value={qData.password_confirmation}
                                         onChange={(e) => setQData('password_confirmation', e.target.value)}
-                                        className="border-surface-border h-9 rounded-lg bg-white pr-10 text-xs shadow-none"
+                                        className="border-surface-border bg-surface-muted/5 h-9 rounded-lg pr-10 text-xs shadow-none transition-all focus:bg-white"
                                     />
                                     <button
                                         type="button"
