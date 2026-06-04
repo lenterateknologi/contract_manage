@@ -1,21 +1,9 @@
-import { useForm } from '@inertiajs/react';
-import React, { useState } from 'react';
-import { 
-    Loader2, 
-    MapPin, 
-    Eye,
-    EyeOff,
-    Camera,
-    User as UserIcon,
-    Lock,
-    Phone,
-    Mail,
-    Shield
-} from 'lucide-react';
 import { Button } from '@/components/ui/base/Button';
 import { Input } from '@/components/ui/base/Input';
 import { Label } from '@/components/ui/base/Label';
-import { cn } from '@/lib/utils';
+import { useForm } from '@inertiajs/react';
+import { Camera, Eye, EyeOff, Loader2, Lock, Shield, User as UserIcon } from 'lucide-react';
+import React, { useState } from 'react';
 
 export function ProfileView({ meUser, showToast }: { meUser: any; showToast: any }) {
     const {
@@ -23,6 +11,7 @@ export function ProfileView({ meUser, showToast }: { meUser: any; showToast: any
         setData: setPData,
         patch,
         processing: pProcessing,
+        reset: pReset,
     } = useForm({
         name: meUser?.name || '',
         email: meUser?.email || '',
@@ -52,7 +41,10 @@ export function ProfileView({ meUser, showToast }: { meUser: any; showToast: any
         e.preventDefault();
         patch('/settings/profile', {
             preserveScroll: true,
-            onSuccess: () => showToast('Profil diperbarui!', 'success'),
+            onSuccess: () => {
+                showToast('Profil diperbarui!', 'success');
+                setIsEditingInfo(false);
+            },
             onError: () => showToast('Gagal memperbarui profil.', 'danger'),
         });
     };
@@ -73,109 +65,176 @@ export function ProfileView({ meUser, showToast }: { meUser: any; showToast: any
     };
 
     return (
-        <div className="mx-auto max-w-[760px] px-4 py-8 select-none animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div className="animate-in fade-in slide-in-from-bottom-2 mx-auto max-w-[760px] px-4 py-8 duration-500 select-none">
             {/* Header Section */}
-            <div className="mb-6 flex items-center gap-6 border-b border-surface-border/50 pb-8 text-left">
-                <div className="relative group shrink-0">
-                    <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-surface-muted shadow-sm">
+            <div className="border-surface-border/50 mb-6 flex items-center gap-6 border-b pb-8 text-left">
+                <div className="group relative shrink-0">
+                    <div className="border-surface-muted h-20 w-20 overflow-hidden rounded-full border-2 shadow-sm">
                         {meUser?.avatar_url ? (
-                            <img src={meUser.avatar_url} alt={meUser.name} className="w-full h-full object-cover" />
+                            <img src={meUser.avatar_url} alt={meUser.name} className="h-full w-full object-cover" />
                         ) : (
-                            <div className="w-full h-full flex items-center justify-center font-bold text-2xl uppercase bg-primary/10 text-primary">
+                            <div className="bg-primary/10 text-primary flex h-full w-full items-center justify-center text-2xl font-bold uppercase">
                                 {meUser?.name?.substring(0, 2).toUpperCase() || '?'}
                             </div>
                         )}
                     </div>
-                    <button className="absolute -bottom-1 -right-1 bg-primary text-white p-1.5 rounded-full shadow-md hover:scale-110 transition-transform cursor-pointer border border-white">
+                    <button className="bg-primary absolute -right-1 -bottom-1 cursor-pointer rounded-full border border-white p-1.5 text-white shadow-md transition-transform hover:scale-110">
                         <Camera size={10} />
                     </button>
                 </div>
                 <div className="min-w-0 flex-1">
-                    <h1 className="text-xl font-bold text-text-main tracking-tight">{meUser.name}</h1>
-                    <div className="flex items-center gap-4 mt-1">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-text-soft flex items-center gap-1">
+                    <h1 className="text-text-main text-xl font-bold tracking-tight">{meUser.name}</h1>
+                    <div className="mt-1 flex items-center gap-4">
+                        <span className="text-text-soft flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase">
                             <Shield size={12} className="text-primary/70" /> {meUser?.role || 'User'}
                         </span>
-                        <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-[9px] font-bold text-green-600 uppercase tracking-tighter border border-green-100">
+                        <span className="inline-flex items-center rounded-full border border-green-100 bg-green-50 px-2 py-0.5 text-[9px] font-bold tracking-tighter text-green-600 uppercase">
                             Active Account
                         </span>
                     </div>
                 </div>
             </div>
 
-            <div className="bg-white dark:bg-surface-base border border-surface-border/50 rounded-2xl overflow-hidden shadow-sm">
-                <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-surface-border/40">
-                    {/* --- LEFT: PROFILE --- */}
-                    <div className="p-6 lg:p-8 space-y-5">
-                        <div className="flex items-center gap-2 mb-1">
-                            <UserIcon size={16} className="text-primary" />
-                            <h2 className="text-[11px] font-bold uppercase tracking-widest text-text-soft">Informasi Profil</h2>
+            {/* Personal Information Card */}
+            <div className="border-surface-border/50 dark:bg-surface-base mb-6 overflow-hidden rounded-xl border bg-white shadow-sm">
+                <div className="border-surface-border/30 bg-surface-muted/5 flex items-center justify-between border-b px-6 py-4">
+                    <h2 className="text-text-soft text-[11px] font-bold tracking-widest uppercase">Personal Information</h2>
+                    {!isEditingInfo ? (
+                        <Button variant="ghost" size="sm" onClick={() => setIsEditingInfo(true)} className="text-primary cursor-pointer text-[10px] font-bold uppercase">
+                            Edit
+                        </Button>
+                    ) : (
+                        <div className="flex gap-2">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                    setIsEditingInfo(false);
+                                    pReset();
+                                }}
+                                className="text-text-soft cursor-pointer text-[10px] font-bold uppercase"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={updateProfile}
+                                disabled={pProcessing}
+                                className="text-primary cursor-pointer text-[10px] font-bold uppercase"
+                            >
+                                {pProcessing ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : null}
+                                Save
+                            </Button>
                         </div>
-
-                        <form onSubmit={updateProfile} className="space-y-4">
+                    )}
+                </div>
+                <div className="p-6">
+                    {!isEditingInfo ? (
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-3 gap-4">
+                                <span className="text-text-soft text-[10px] font-bold uppercase">Full Name</span>
+                                <span className="col-span-2 text-sm font-medium">{meUser.name}</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-4">
+                                <span className="text-text-soft text-[10px] font-bold uppercase">Work Email</span>
+                                <span className="col-span-2 text-sm font-medium">{meUser.email}</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-4">
+                                <span className="text-text-soft text-[10px] font-bold uppercase">Phone</span>
+                                <span className="col-span-2 text-sm font-medium">{meUser.phone || '-'}</span>
+                            </div>
+                        </div>
+                    ) : (
+                        <form onSubmit={updateProfile} className="max-w-md space-y-4">
                             <div className="space-y-1.5">
-                                <Label className="text-[9px] font-bold uppercase tracking-widest text-text-desc ml-0.5">Nama Lengkap</Label>
+                                <Label className="text-text-desc ml-0.5 text-[9px] font-bold tracking-widest uppercase">Nama Lengkap</Label>
                                 <Input
                                     value={pData.name}
                                     onChange={(e) => setPData('name', e.target.value)}
-                                    className="h-9 rounded-lg border-surface-border bg-surface-muted/5 text-xs focus:bg-white transition-all shadow-none"
+                                    className="border-surface-border bg-surface-muted/5 h-9 rounded-lg text-xs shadow-none transition-all focus:bg-white"
                                 />
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label className="text-[9px] font-bold uppercase tracking-widest text-text-desc ml-0.5">Email Kerja</Label>
+                                <Label className="text-text-desc ml-0.5 text-[9px] font-bold tracking-widest uppercase">Email Kerja</Label>
                                 <Input
                                     type="email"
                                     value={pData.email}
                                     onChange={(e) => setPData('email', e.target.value)}
-                                    className="h-9 rounded-lg border-surface-border bg-surface-muted/5 text-xs focus:bg-white transition-all shadow-none"
+                                    className="border-surface-border bg-surface-muted/5 h-9 rounded-lg text-xs shadow-none transition-all focus:bg-white"
                                 />
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label className="text-[9px] font-bold uppercase tracking-widest text-text-desc ml-0.5">Nomor Telepon</Label>
+                                <Label className="text-text-desc ml-0.5 text-[9px] font-bold tracking-widest uppercase">Nomor Telepon</Label>
                                 <Input
                                     value={pData.phone}
                                     onChange={(e) => setPData('phone', e.target.value)}
-                                    className="h-9 rounded-lg border-surface-border bg-surface-muted/5 text-xs focus:bg-white transition-all shadow-none"
+                                    className="border-surface-border bg-surface-muted/5 h-9 rounded-lg text-xs shadow-none transition-all focus:bg-white"
                                 />
                             </div>
-
-                            <div className="pt-2">
-                                <Button
-                                    type="submit"
-                                    disabled={pProcessing}
-                                    className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold text-[9px] tracking-widest uppercase h-9 rounded-lg shadow-sm cursor-pointer"
-                                >
-                                    {pProcessing ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
-                                    Simpan Profil
-                                </Button>
-                            </div>
                         </form>
-                    </div>
+                    )}
+                </div>
+            </div>
 
-                    {/* --- RIGHT: PASSWORD --- */}
-                    <div className="p-6 lg:p-8 space-y-5 bg-surface-muted/5">
-                        <div className="flex items-center gap-2 mb-1">
-                            <Lock size={16} className="text-primary" />
-                            <h2 className="text-[11px] font-bold uppercase tracking-widest text-text-soft">Keamanan Akun</h2>
+            {/* Security Card */}
+            <div className="dark:bg-surface-base border-surface-border/50 overflow-hidden rounded-xl border bg-white shadow-sm">
+                <div className="border-surface-border/30 bg-surface-muted/5 flex items-center justify-between border-b px-6 py-4">
+                    <h2 className="text-text-soft text-[11px] font-bold tracking-widest uppercase">Security</h2>
+                    {!isEditingSecurity ? (
+                        <Button variant="ghost" size="sm" onClick={() => setIsEditingSecurity(true)} className="text-primary cursor-pointer text-[10px] font-bold uppercase">
+                            Change Password
+                        </Button>
+                    ) : (
+                        <div className="flex gap-2">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                    setIsEditingSecurity(false);
+                                    resetQ();
+                                }}
+                                className="text-text-soft cursor-pointer text-[10px] font-bold uppercase"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={updatePassword}
+                                disabled={qProcessing}
+                                className="text-primary cursor-pointer text-[10px] font-bold uppercase"
+                            >
+                                {qProcessing ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : null}
+                                Update
+                            </Button>
                         </div>
-
-                        <form onSubmit={updatePassword} className="space-y-4">
+                    )}
+                </div>
+                <div className="p-6">
+                    {!isEditingSecurity ? (
+                        <div className="flex items-center gap-4">
+                            <span className="text-text-soft text-[10px] font-bold uppercase">Password</span>
+                            <span className="text-sm font-medium">••••••••••••••••</span>
+                        </div>
+                    ) : (
+                        <form onSubmit={updatePassword} className="max-w-md space-y-4">
                             <div className="space-y-1.5">
-                                <Label className="text-[9px] font-bold uppercase tracking-widest text-text-desc ml-0.5">Password Saat Ini</Label>
+                                <Label className="text-text-desc ml-0.5 text-[9px] font-bold tracking-widest uppercase">Password Saat Ini</Label>
                                 <div className="relative">
                                     <Input
                                         type={showCurrent ? 'text' : 'password'}
                                         value={qData.current_password}
                                         onChange={(e) => setQData('current_password', e.target.value)}
                                         placeholder="••••••••"
-                                        className="h-9 rounded-lg border-surface-border bg-white text-xs pr-10 shadow-none"
+                                        className="border-surface-border h-9 rounded-lg bg-white pr-10 text-xs shadow-none"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowCurrent(!showCurrent)}
-                                        className="absolute top-1/2 right-3 -translate-y-1/2 text-text-soft hover:text-primary transition-colors cursor-pointer"
+                                        className="text-text-soft hover:text-primary absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer transition-colors"
                                     >
                                         {showCurrent ? <EyeOff size={14} /> : <Eye size={14} />}
                                     </button>
@@ -183,18 +242,18 @@ export function ProfileView({ meUser, showToast }: { meUser: any; showToast: any
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label className="text-[9px] font-bold uppercase tracking-widest text-text-desc ml-0.5">Password Baru</Label>
+                                <Label className="text-text-desc ml-0.5 text-[9px] font-bold tracking-widest uppercase">Password Baru</Label>
                                 <div className="relative">
                                     <Input
                                         type={showNew ? 'text' : 'password'}
                                         value={qData.password}
                                         onChange={(e) => setQData('password', e.target.value)}
-                                        className="h-9 rounded-lg border-surface-border bg-white text-xs pr-10 shadow-none"
+                                        className="border-surface-border h-9 rounded-lg bg-white pr-10 text-xs shadow-none"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowNew(!showNew)}
-                                        className="absolute top-1/2 right-3 -translate-y-1/2 text-text-soft hover:text-primary transition-colors cursor-pointer"
+                                        className="text-text-soft hover:text-primary absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer transition-colors"
                                     >
                                         {showNew ? <EyeOff size={14} /> : <Eye size={14} />}
                                     </button>
@@ -202,43 +261,31 @@ export function ProfileView({ meUser, showToast }: { meUser: any; showToast: any
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label className="text-[9px] font-bold uppercase tracking-widest text-text-desc ml-0.5">Konfirmasi Password</Label>
+                                <Label className="text-text-desc ml-0.5 text-[9px] font-bold tracking-widest uppercase">Konfirmasi Password</Label>
                                 <div className="relative">
                                     <Input
                                         type={showConfirm ? 'text' : 'password'}
                                         value={qData.password_confirmation}
                                         onChange={(e) => setQData('password_confirmation', e.target.value)}
-                                        className="h-9 rounded-lg border-surface-border bg-white text-xs pr-10 shadow-none"
+                                        className="border-surface-border h-9 rounded-lg bg-white pr-10 text-xs shadow-none"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowConfirm(!showConfirm)}
-                                        className="absolute top-1/2 right-3 -translate-y-1/2 text-text-soft hover:text-primary transition-colors cursor-pointer"
+                                        className="text-text-soft hover:text-primary absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer transition-colors"
                                     >
                                         {showConfirm ? <EyeOff size={14} /> : <Eye size={14} />}
                                     </button>
                                 </div>
                             </div>
-
-                            <div className="pt-2">
-                                <Button
-                                    type="submit"
-                                    disabled={qProcessing}
-                                    variant="outline"
-                                    className="w-full h-9 rounded-lg border-surface-border text-[9px] tracking-widest uppercase font-bold hover:bg-slate-50 transition-all cursor-pointer shadow-none"
-                                >
-                                    {qProcessing ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
-                                    Update Password
-                                </Button>
-                            </div>
                         </form>
-                    </div>
+                    )}
                 </div>
             </div>
 
             {/* Account Metadata / Footer */}
-            <div className="mt-8 pt-6 border-t border-surface-border/40 text-center">
-                <p className="text-[9px] text-text-soft uppercase tracking-widest font-medium opacity-60">
+            <div className="border-surface-border/40 mt-8 border-t pt-6 text-center">
+                <p className="text-text-soft text-[9px] font-medium tracking-widest uppercase opacity-60">
                     ID: {meUser.id} • {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </p>
             </div>
