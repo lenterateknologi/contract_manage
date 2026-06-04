@@ -13,7 +13,6 @@ use App\Models\WorkflowStep;
 use App\Models\WorkflowStepAction;
 use App\Services\Traits\EvaluatesWorkflowSteps;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class ContractWorkflowService
@@ -68,24 +67,6 @@ class ContractWorkflowService
 
         $originWorkflowId = $contract->origin_workflow_id ?: $workflow->id;
 
-        if (strtolower($topic) === 'nda') {
-            $contract->update([
-                'status' => 'archived',
-                'workflow_id' => $workflow->id,
-                'origin_workflow_id' => $originWorkflowId,
-                'workflow_step_id' => null,
-                'submitted_at' => now(),
-            ]);
-
-            $contract->histories()->create([
-                'action' => 'CONTRACT_ARCHIVED',
-                'description' => 'NDA Langsung diarsipkan (Recording Only)',
-                'actor_id' => Auth::id(),
-            ]);
-
-            return $contract->fresh();
-        }
-
         $draftingHours = $workflow->sla_drafting_hours ?: 72;
         $totalHours = $workflow->sla_total_hours ?: 240;
         $cutoffHour = $workflow->sla_cutoff_hour ?: 16;
@@ -105,7 +86,7 @@ class ContractWorkflowService
         ]);
 
         $contract->update(['metadata' => $metadata]);
-        $contract = $contract->fresh();
+        $contract->load(['initiator.department', 'initiator.company', 'creator.department', 'creator.company']);
 
         $contract->approvals()->delete();
 
@@ -140,6 +121,11 @@ class ContractWorkflowService
 
         $this->createApprovalForStep($contract, $firstStep);
 
+        // Handle auto-approval if submitter is also the approver for the first step
+        if ($submit) {
+            $this->handleAutoApproval($contract, Auth::user());
+        }
+
         if ($contract->initiated_by_id && $contract->initiated_by_id !== $contract->created_by) {
 
         }
@@ -158,24 +144,6 @@ class ContractWorkflowService
         $roles = (array) $step->role;
         $lowerRoles = array_map('strtolower', $roles);
         $approvers = collect();
-
-        // Rule 1: CEO/MD Approver Replacement
-        if (in_array('ceo', $lowerRoles) || in_array('md', $lowerRoles)) {
-            $initiatorDeptId = $contract->initiator->department_id;
-            if ($initiatorDeptId) {
-                $approvers = User::where(DB::raw('LOWER(role)'), 'vp')
-                    ->where('department_id', $initiatorDeptId)
-                    ->where('is_active', true)
-                    ->get();
-            }
-            if ($approvers->isEmpty()) {
-                $approvers = User::where(DB::raw('LOWER(role)'), 'vp')
-                    ->where('is_active', true)
-                    ->get();
-            }
-            $roles = ['VP'];
-            $lowerRoles = ['vp'];
-        }
 
         if ($step->step_category === 'joint_upload') {
             $metadata = $contract->metadata ?? [];
@@ -220,7 +188,7 @@ class ContractWorkflowService
             if ($step->approver_type === 'atasan') {
                 $approvers = $this->queryService->resolveHierarchyApprover($contract, $step);
             } elseif ($step->approver_type === 'user') {
-                $approvers = $step->users;
+                $approvers = $step->users()->get();
             } elseif ($step->approver_type === 'initiator' || in_array('initiator', $lowerRoles)) {
                 $approvers = collect([$contract->initiator]);
             } else {
@@ -239,28 +207,29 @@ class ContractWorkflowService
 
                     $targetDeptIds = $step->department_ids ?? [];
 
-                    if ($step->filter_department && $contract->initiator->department_id) {
-                        $query->where('department_id', $contract->initiator->department_id);
+                    if ($step->filter_department) {
+                        $query->where('department_id', $contract->initiator->department_id ?? '00000000-0000-0000-0000-000000000000');
                     } elseif (! empty($targetDeptIds)) {
                         $query->whereIn('department_id', $targetDeptIds);
                     }
 
                     $initiatorCompany = $contract->initiator->company;
 
-                    if ($step->filter_company_group && $initiatorCompany?->company_group_id) {
-                        $companyGroupId = $initiatorCompany->company_group_id;
-                        $query->whereHas('company', function ($q) use ($companyGroupId) {
-                            $q->where('company_group_id', $companyGroupId);
+                    if ($step->filter_company_group || $step->filter_region) {
+                        $query->whereHas('company', function ($q) use ($step, $initiatorCompany) {
+                            if ($step->filter_company_group) {
+                                $groupId = $initiatorCompany?->company_group_id ?? '00000000-0000-0000-0000-000000000000';
+                                $q->where('company_group_id', $groupId);
+                            }
+                            if ($step->filter_region) {
+                                $regionId = $initiatorCompany?->region_id ?? '00000000-0000-0000-0000-000000000000';
+                                $q->where('region_id', $regionId);
+                            }
                         });
                     }
-                    if ($step->filter_region && $initiatorCompany?->region_id) {
-                        $regionId = $initiatorCompany->region_id;
-                        $query->whereHas('company', function ($q) use ($regionId) {
-                            $q->where('region_id', $regionId);
-                        });
-                    }
-                    if ($step->filter_company && $contract->initiator->company_id) {
-                        $query->where('company_id', $contract->initiator->company_id);
+
+                    if ($step->filter_company) {
+                        $query->where('company_id', $contract->initiator->company_id ?? '00000000-0000-0000-0000-000000000000');
                     }
 
                     $approvers = $query->get();
@@ -350,6 +319,11 @@ class ContractWorkflowService
      */
     public function approveContract(Contract $contract, Approval $approval, ?string $comment = null, ?string $attachmentPath = null, ?string $assignedPicId = null, ?string $executionOrder = null, string|WorkflowAction $actionCode = WorkflowAction::APPROVE, ?string $targetStepId = null, $signerUserIdsParam = null): Contract
     {
+        // Ensure relationships needed for step evaluation are loaded
+        if (! $contract->relationLoaded('initiator')) {
+            $contract->load(['initiator', 'initiator.department', 'initiator.company', 'creator', 'creator.department', 'creator.company']);
+        }
+
         if ($actionCode instanceof WorkflowAction) {
             $actionCode = $actionCode->value;
         }
@@ -698,6 +672,9 @@ class ContractWorkflowService
                 ]);
 
                 $this->createApprovalForStep($contract, $nextStep);
+
+                // Handle auto-approval if the person who just approved is also the approver for the next step
+                $this->handleAutoApproval($contract, Auth::user());
 
                 $this->queryService->logHistory($contract, 'WORKFLOW_ADVANCED', "Alur kerja berlanjut ke tahap {$nextStep->step}: {$nextStep->description}", Auth::id());
             } else {

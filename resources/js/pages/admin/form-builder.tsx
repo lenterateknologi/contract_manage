@@ -1,9 +1,9 @@
-import { CanvasArea } from '@/components/form-builder/CanvasArea';
-import { FIELD_TYPES } from '@/components/form-builder/constants';
-import { JSONEditorPanel } from '@/components/form-builder/JSONEditorPanel';
-import { LibraryPanel } from '@/components/form-builder/LibraryPanel';
-import { PropertiesPanel } from '@/components/form-builder/PropertiesPanel';
-import { StructurePanel } from '@/components/form-builder/StructurePanel';
+import { CanvasArea } from '@/components/form/builder/CanvasArea';
+import { FIELD_TYPES } from '@/components/form/builder/constants';
+import { JSONEditorPanel } from '@/components/form/builder/JSONEditorPanel';
+import { LibraryPanel } from '@/components/form/builder/LibraryPanel';
+import { PropertiesPanel } from '@/components/form/builder/PropertiesPanel';
+import { StructurePanel } from '@/components/form/builder/StructurePanel';
 import { Button } from '@/components/ui/base/Button';
 import { ScrollArea } from '@/components/ui/base/ScrollArea';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
@@ -115,7 +115,17 @@ const generatePresetFields = (presetType: string, startingOrder: number, parentI
             is_required: false,
             width: '100',
             order: startingOrder + 0.1,
-            options: { logo_url: '/storage/fr_logo.png', width: 90, height: 90, alignment: 'center' },
+            options: {
+                logo_url: '/storage/fr_logo.png',
+                width: 90,
+                height: 90,
+                alignment: 'center',
+                v_alignment: 'middle',
+                margin_top: 0,
+                margin_bottom: 0,
+                margin_left: 0,
+                margin_right: 0,
+            },
         });
 
         // Text Container (grid_y) inside the row
@@ -317,12 +327,12 @@ const generatePresetFields = (presetType: string, startingOrder: number, parentI
             is_required: false,
             width: '100',
             order: startingOrder,
-            options: { 
-                font_size: 12, 
-                font_weight: 'normal', 
-                font_family: "'Times New Roman', serif", 
-                line_height: '1.6', 
-                margin_top: 10, 
+            options: {
+                font_size: 12,
+                font_weight: 'normal',
+                font_family: "'Times New Roman', serif",
+                line_height: '1.6',
+                margin_top: 10,
                 margin_bottom: 10,
                 text_align: 'justify'
             },
@@ -500,63 +510,296 @@ const generatePresetFields = (presetType: string, startingOrder: number, parentI
         }
     } else if (presetType === 'preset_content_commercial') {
         const titleId = Math.random().toString(36).substr(2, 9);
-            const fieldsToGenerate = [
-                { label: 'MASA BERLAKU / JANGKA WAKTU', name: 'masa_berlaku' },
-                { label: 'LOKASI / AREA PEKERJAAN', name: 'lokasi_pekerjaan' },
-                { label: 'DIMENSI / LUAS (M2)', name: 'dimensi_luas' },
-                { label: 'NILAI TRANSAKSI / IMBALAN JASA', name: 'nilai_transaksi' },
-                { label: 'MEKANISME & SYARAT PEMBAYARAN', name: 'mekanisme_pembayaran' },
-                { label: 'PEMBEBANAN PPN', name: 'beban_ppn' },
-                { label: 'PEMBEBANAN PPH', name: 'beban_pph' },
-                { label: 'RINGKASAN KLAUSUL PENTING', name: 'ringkasan_klausul' },
-            ];
+        const fieldsToGenerate = [
+            { label: 'MASA BERLAKU / JANGKA WAKTU', name: 'masa_berlaku' },
+            { label: 'LOKASI / AREA PEKERJAAN', name: 'lokasi_pekerjaan' },
+            { label: 'DIMENSI / LUAS (M2)', name: 'dimensi_luas' },
+            { label: 'NILAI TRANSAKSI / IMBALAN JASA', name: 'nilai_transaksi' },
+            { label: 'MEKANISME & SYARAT PEMBAYARAN', name: 'mekanisme_pembayaran' },
+            { label: 'PEMBEBANAN PPN', name: 'beban_ppn' },
+            { label: 'PEMBEBANAN PPH', name: 'beban_pph' },
+            { label: 'RINGKASAN KLAUSUL PENTING', name: 'ringkasan_klausul' },
+        ];
 
-            fields.push({
-                id: layoutId,
-                parent_id: parentId,
-                label: 'Blok Detail Komersial (Container)',
-                name: `preset_commercial_layout_${currentFieldCount + 1}`,
-                type: 'grid_y',
-                placeholder: '',
-                is_required: false,
-                width: '100',
-                order: startingOrder,
-                options: { gap: 4, align_items: 'stretch', margin_top: 15, margin_bottom: 10 },
-            } as FormField);
+        fields.push({
+            id: layoutId,
+            parent_id: parentId,
+            label: 'Blok Detail Komersial (Container)',
+            name: `preset_commercial_layout_${currentFieldCount + 1}`,
+            type: 'grid_y',
+            placeholder: '',
+            is_required: false,
+            width: '100',
+            order: startingOrder,
+            options: { gap: 4, align_items: 'stretch', margin_top: 15, margin_bottom: 10 },
+        } as FormField);
 
+        fields.push({
+            id: titleId,
+            parent_id: layoutId,
+            label: 'DETAIL KOMERSIAL & OPERASIONAL',
+            name: `preset_commercial_title_${currentFieldCount + 2}`,
+            type: 'static_text',
+            placeholder: '',
+            is_required: false,
+            width: '100',
+            order: startingOrder + 0.01,
+            options: { font_size: 12, font_weight: 'bold', font_family: "'Times New Roman', serif", text_decoration: 'underline', margin_bottom: 8 },
+        } as FormField);
+
+        fieldsToGenerate.forEach((item, idx) => {
             fields.push({
-                id: titleId,
+                id: Math.random().toString(36).substr(2, 9),
                 parent_id: layoutId,
-                label: 'DETAIL KOMERSIAL & OPERASIONAL',
-                name: `preset_commercial_title_${currentFieldCount + 2}`,
-                type: 'static_text',
-                placeholder: '',
+                label: item.label,
+                name: `${item.name}_${currentFieldCount + idx + 3}`,
+                type: 'labeled_value',
+                placeholder: '—',
                 is_required: false,
                 width: '100',
-                order: startingOrder + 0.01,
-                options: { font_size: 12, font_weight: 'bold', font_family: "'Times New Roman', serif", text_decoration: 'underline', margin_bottom: 8 },
+                order: startingOrder + 0.02 + (idx * 0.01),
+                options: {
+                    label_width: '220',
+                    show_colon: true,
+                    field_style: 'dashed_bottom',
+                    font_size: 11,
+                    font_family: "'Times New Roman', serif"
+                },
             } as FormField);
+        });
+    } else if (presetType === 'preset_header_logo_info') {
+        // Root outer wrapper with border
+        const outerId = Math.random().toString(36).substr(2, 9);
+        const gridXId = Math.random().toString(36).substr(2, 9);
+        const logoId = Math.random().toString(36).substr(2, 9);
+        const rightColId = Math.random().toString(36).substr(2, 9);
 
-            fieldsToGenerate.forEach((item, idx) => {
-                fields.push({
-                    id: Math.random().toString(36).substr(2, 9),
-                    parent_id: layoutId,
-                    label: item.label,
-                    name: `${item.name}_${currentFieldCount + idx + 3}`,
-                    type: 'labeled_value',
-                    placeholder: '—',
-                    is_required: false,
-                    width: '100',
-                    order: startingOrder + 0.02 + (idx * 0.01),
-                    options: { 
-                        label_width: '220', 
-                        show_colon: true, 
-                        field_style: 'dashed_bottom',
-                        font_size: 11,
-                        font_family: "'Times New Roman', serif"
-                    },
-                } as FormField);
-            });
+        const infoFields = [
+            { label: 'NOMOR', name: 'nomor' },
+            { label: 'TOPIK', name: 'topik' },
+            { label: 'SUB TOPIK', name: 'sub_topik' },
+            { label: 'LAMPIRAN', name: 'lampiran' },
+        ];
+
+        // Outer grid_y — full bordered wrapper
+        fields.push({
+            id: outerId,
+            parent_id: parentId,
+            label: 'Kop Logo & Info Surat',
+            name: `preset_logo_info_wrapper_${currentFieldCount + 1}`,
+            type: 'grid_y',
+            placeholder: '',
+            is_required: false,
+            width: '100',
+            order: startingOrder,
+            options: {
+                gap: 0,
+                border_style: 'none',
+                border_width: 0,
+                border_color: '#9ca3af',
+                align_items: 'center',
+                justify_content: 'center',
+            },
+        } as FormField);
+
+        // Inner grid_x: logo left | info right
+        fields.push({
+            id: gridXId,
+            parent_id: outerId,
+            label: 'Header Row',
+            name: `preset_logo_info_row_${currentFieldCount + 2}`,
+            type: 'grid_x',
+            placeholder: '',
+            is_required: false,
+            width: '100',
+            order: startingOrder + 0.01,
+            options: {
+                grid_cols: 2,
+                col_sizes: ['150px', '500px'],
+                gap: 0,
+                border_style: 'none',
+                align_items: 'center',
+                justify_content: 'space-between',
+            },
+        } as FormField);
+
+        // Logo image (left column)
+        fields.push({
+            id: logoId,
+            parent_id: gridXId,
+            label: 'Logo Perusahaan',
+            name: `preset_logo_img_${currentFieldCount + 3}`,
+            type: 'image',
+            placeholder: '',
+            is_required: false,
+            width: '100',
+            order: startingOrder + 0.02,
+            options: {
+                logo_url: '/storage/fr_logo.png',
+                width: 130,
+                height: 130,
+                alignment: 'center',
+                v_alignment: 'middle',
+                object_fit: 'contain',
+                margin_top: 0,
+                margin_bottom: 0,
+                margin_left: 0,
+                margin_right: 0,
+            },
+        } as FormField);
+
+        // Right column: grid_y for info fields
+        fields.push({
+            id: rightColId,
+            parent_id: gridXId,
+            label: 'Info Surat',
+            name: `preset_logo_info_right_${currentFieldCount + 4}`,
+            type: 'grid_y',
+            placeholder: '',
+            is_required: false,
+            width: '100',
+            order: startingOrder + 0.03,
+            options: {
+                gap: 4,
+                align_items: 'stretch',
+                justify_content: 'center',
+                border_style: 'none',
+                border_width: 0,
+                border_color: '#9ca3af',
+                border_left: false,
+                border_right: false,
+                border_top: false,
+                border_bottom: false,
+                padding_top: 4,
+                padding_bottom: 4,
+                padding_left: 12,
+                padding_right: 12,
+            },
+        } as FormField);
+
+        // Info labeled_value fields
+        infoFields.forEach((item, idx) => {
+            fields.push({
+                id: Math.random().toString(36).substr(2, 9),
+                parent_id: rightColId,
+                label: item.label,
+                name: `preset_${item.name}_${currentFieldCount + 5 + idx}`,
+                type: 'labeled_value',
+                placeholder: '—',
+                is_required: false,
+                width: '100',
+                order: startingOrder + 0.04 + (idx * 0.01),
+                options: {
+                    value_type: 'textfield',
+                    label_width: '90',
+                    show_colon: true,
+                    field_style: 'dashed_bottom',
+                    font_size: 11,
+                    font_weight: 'bold',
+                    font_family: "'Inter', sans-serif",
+                    margin_top: 0,
+                    margin_bottom: 0,
+                    margin_left: 0,
+                    margin_right: 0,
+                    padding_top: 0,
+                    padding_bottom: 0,
+                    padding_left: 0,
+                    padding_right: 0,
+                },
+            } as FormField);
+        });
+    } else if (presetType === 'preset_header_info_only') {
+        const outerId = Math.random().toString(36).substr(2, 9);
+        const rightColId = Math.random().toString(36).substr(2, 9);
+
+        const infoFields = [
+            { label: 'NOMOR', name: 'nomor' },
+            { label: 'TOPIK', name: 'topik' },
+            { label: 'SUB TOPIK', name: 'sub_topik' },
+            { label: 'LAMPIRAN', name: 'lampiran' },
+        ];
+
+        // Outer grid_y — aligned to stretch (full width)
+        fields.push({
+            id: outerId,
+            parent_id: parentId,
+            label: 'Info Surat Container',
+            name: `preset_info_only_wrapper_${currentFieldCount + 1}`,
+            type: 'grid_y',
+            placeholder: '',
+            is_required: false,
+            width: '100',
+            order: startingOrder,
+            options: {
+                gap: 0,
+                border_style: 'none',
+                border_width: 0,
+                border_color: '#9ca3af',
+                align_items: 'stretch',
+                justify_content: 'center',
+            },
+        } as FormField);
+
+        // Info container: grid_y for info fields, width 100%
+        fields.push({
+            id: rightColId,
+            parent_id: outerId,
+            label: 'Info Surat',
+            name: `preset_info_only_right_${currentFieldCount + 2}`,
+            type: 'grid_y',
+            placeholder: '',
+            is_required: false,
+            width: '100',
+            order: startingOrder + 0.01,
+            options: {
+                gap: 4,
+                align_items: 'stretch',
+                justify_content: 'center',
+                border_style: 'none',
+                border_width: 0,
+                border_color: '#9ca3af',
+                border_left: false,
+                border_right: false,
+                border_top: false,
+                border_bottom: false,
+                padding_top: 4,
+                padding_bottom: 4,
+                padding_left: 0,
+                padding_right: 0,
+            },
+        } as FormField);
+
+        // Info labeled_value fields
+        infoFields.forEach((item, idx) => {
+            fields.push({
+                id: Math.random().toString(36).substr(2, 9),
+                parent_id: rightColId,
+                label: item.label,
+                name: `preset_${item.name}_${currentFieldCount + 3 + idx}`,
+                type: 'labeled_value',
+                placeholder: '—',
+                is_required: false,
+                width: '100',
+                order: startingOrder + 0.02 + (idx * 0.01),
+                options: {
+                    value_type: 'textfield',
+                    label_width: '90',
+                    show_colon: true,
+                    field_style: 'dashed_bottom',
+                    font_size: 11,
+                    font_weight: 'bold',
+                    font_family: "'Inter', sans-serif",
+                    margin_top: 0,
+                    margin_bottom: 0,
+                    margin_left: 0,
+                    margin_right: 0,
+                    padding_top: 0,
+                    padding_bottom: 0,
+                    padding_left: 0,
+                    padding_right: 0,
+                },
+            } as FormField);
+        });
     }
 
     return fields;

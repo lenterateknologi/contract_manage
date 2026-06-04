@@ -11,7 +11,7 @@ import { useState, useMemo } from 'react';
 import { SharedApproveModal } from '@/components/contracts/modals/shared/SharedApproveModal';
 import { SharedRejectModal } from '@/components/contracts/modals/shared/SharedRejectModal';
 import { SharedAddhocModal } from '@/components/contracts/modals/shared/SharedAddhocModal';
-import { DraftEditableInfoCard } from '@/components/contracts/DraftEditableInfoCard';
+import { DraftEditableInfoCard } from '@/components/contracts/parts/DraftEditableInfoCard';
 import { UserAvatar } from '@/components/user/UserAvatar';
 
 // Tab Components
@@ -401,6 +401,7 @@ const ContractDetailView = ({
                             {detailTab === 'attachments' && (
                                 <AttachmentsTab
                                     contract={contract}
+                                    canUpdate={canUpdate}
                                     onUpdate={onUpdate}
                                     showToast={showToast}
                                     meUser={meUser}
@@ -418,11 +419,11 @@ const ContractDetailView = ({
                                     showToast={showToast}
                                 />
                             )}
-                            {detailTab === 'reference' && (
+                            {detailTab === 'references' && (
                                 <ReferencesTab
                                     contract={contract}
                                     canUpdate={canUpdate}
-                                    onUpdate={handleUpdate}
+                                    onUpdate={async (d: any) => { await handleUpdate(d); }}
                                     processing={processing}
                                     meId={meId}
                                 />

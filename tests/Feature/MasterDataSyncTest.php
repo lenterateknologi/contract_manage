@@ -134,7 +134,7 @@ test('admin can import master data using id as key for createorupdate', function
             [
                 'id' => $uuidAction,
                 'workflow_step_id' => $uuidStep,
-                'action_code' => 'return',
+                'action_code' => 'reject',
                 'is_active' => true,
             ],
         ],
@@ -168,7 +168,7 @@ test('admin can import master data using id as key for createorupdate', function
     $this->assertDatabaseHas('m_workflow_step_actions', [
         'id' => $uuidAction,
         'workflow_step_id' => $uuidStep,
-        'action_code' => 'return',
+        'action_code' => 'reject',
     ]);
 
     // Now test importing again with the same UUIDs but updated values (replace scenario)
@@ -205,7 +205,7 @@ test('admin can import master data using id as key for createorupdate', function
             [
                 'id' => $uuidAction,
                 'workflow_step_id' => $uuidStep,
-                'action_code' => 'return',
+                'action_code' => 'reject',
                 'is_active' => false,
             ],
         ],

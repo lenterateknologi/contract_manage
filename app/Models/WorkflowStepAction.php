@@ -37,8 +37,8 @@ class WorkflowStepAction extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
+        'id',
         'workflow_step_id',
-        'master_action_id',
         'action_code',
         'next_step_id',
         'next_workflow_id',

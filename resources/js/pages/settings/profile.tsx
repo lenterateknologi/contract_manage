@@ -53,7 +53,7 @@ import { Label } from '@/components/ui/base/Label';
 import DeleteUser from '@/components/user/DeleteUser';
 import SettingsLayout from '@/layouts/settings/layout';
 import { cn } from '@/lib/utils';
-import { Avatar } from '@/components/contracts/ui';
+import { Avatar } from '@/components/contracts/ui/ui';
 import { StatusBadge } from '@/components/ui/data/StatusBadge';
 
 import { UserProfile as BaseUserProfile } from '@/types/contracts';

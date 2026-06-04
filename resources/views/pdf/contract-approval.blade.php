@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
@@ -133,4 +133,4 @@
         Halaman <span class="page-number"></span> &bull; Dicetak melalui Contract Management System
     </div>
 </body>
-</html>
+</html> -->

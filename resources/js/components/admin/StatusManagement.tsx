@@ -1,5 +1,5 @@
 import { FormSection, ManagementForm } from '@/components/admin/ManagementForm';
-import { useToast } from '@/components/contracts/Toast';
+import { useToast } from '@/components/ui/feedback/Toast';
 import { Button } from '@/components/ui/base/Button';
 import { Checkbox } from '@/components/ui/base/Checkbox';
 import { Column, DataTable } from '@/components/ui/data/DataTable';

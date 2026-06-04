@@ -1,22 +1,21 @@
-import { useDebounce } from '@/hooks/use-debounce';
-import CreateContractModal from '@/components/contracts/CreateContractModal';
-import PreviewModal from '@/components/contracts/PreviewModal';
-import ContractDetailView from './components/ContractDetailView';
-import { DashboardMetrics } from '@/components/contracts/DashboardMetrics';
-import { EditContractModal } from '@/components/contracts/EditContractModal';
-import { ProfileView } from '@/components/contracts/ProfileView';
-import SendApprovalModal from '@/components/contracts/SendApprovalModal';
-import { ToastProvider, useToast } from '@/components/contracts/Toast';
+import { DashboardMetrics } from '@/components/dashboard/DashboardMetrics';
+import CreateContractModal from '@/components/contracts/modals/CreateContractModal';
+import { EditContractModal } from '@/components/contracts/modals/EditContractModal';
+import PreviewModal from '@/components/contracts/modals/PreviewModal';
+import SendApprovalModal from '@/components/contracts/modals/SendApprovalModal';
+import { ProfileView } from '@/components/contracts/parts/ProfileView';
+import { ToastProvider, useToast } from '@/components/ui/feedback/Toast';
 import { Button } from '@/components/ui/base/Button';
-import { StatusBadge } from '@/components/ui/data/StatusBadge';
-import { FilterPopover } from '@/components/ui/data/FilterPopover';
 import { Column, DataTable as TableContract } from '@/components/ui/data/DataTable';
-import { ContractTableSkeleton, ContractCardSkeleton } from '@/components/ui/feedback/ContractSkeleton';
+import { FilterPopover } from '@/components/ui/data/FilterPopover';
+import { StatusBadge } from '@/components/ui/data/StatusBadge';
+import { ContractCardSkeleton, ContractTableSkeleton } from '@/components/ui/feedback/ContractSkeleton';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
 import { SearchInput } from '@/components/ui/forms/SearchInput';
 import { LayoutToggle, LayoutType } from '@/components/ui/navigation/LayoutToggle';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/overlays/DropdownMenu';
+import { useDebounce } from '@/hooks/use-debounce';
 import { usePermissions } from '@/hooks/use-permissions';
 import { contractApi } from '@/lib/contract-api';
 import { cn } from '@/lib/utils';
@@ -26,7 +25,6 @@ import axios from 'axios';
 import {
     AlertCircle,
     AlertTriangle,
-    Archive,
     Check,
     CheckCircle2,
     ChevronLeft,
@@ -41,12 +39,11 @@ import {
     Layers,
     MoreVertical,
     PlusCircle,
-    Save,
-    Send,
     Trash2,
     Zap,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import ContractDetailView from './components/ContractDetailView';
 
 const ensureArray = (val: any): any[] => {
     if (Array.isArray(val)) return val;
@@ -144,20 +141,12 @@ const BulkActions = ({
 }>) => (
     <div className="flex items-center gap-2">
         {canBulkApprove && (
-            <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleBulkApprove(selectedRows)}
-            >
+            <Button variant="outline" size="sm" onClick={() => handleBulkApprove(selectedRows)}>
                 <Check className="mr-1.5 h-3 w-3" /> Approve
             </Button>
         )}
         {canBulkDelete && (
-            <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleBulkDelete(selectedRows)}
-            >
+            <Button variant="outline" size="sm" onClick={() => handleBulkDelete(selectedRows)}>
                 <Trash2 className="mr-1.5 h-3 w-3" /> Hapus
             </Button>
         )}
@@ -179,11 +168,7 @@ const RowActions = ({
 }>) => (
     <DropdownMenu>
         <DropdownMenuTrigger asChild>
-            <Button
-                variant="ghost"
-                size="icon"
-                className="group"
-            >
+            <Button variant="ghost" size="icon" className="group">
                 <MoreVertical size={14} className="text-sidebar-foreground/40 group-hover:text-sidebar-primary" />
             </Button>
         </DropdownMenuTrigger>
@@ -524,7 +509,6 @@ function ContractPage({
                             onClose={closeDetail}
                             onUpdate={updateContract}
                             showToast={showToast}
-                            setSendOpen={setSendOpen}
                             setDeleteOpen={setDeleteOpen}
                             setPreviewTitle={setPreviewTitle}
                             setPreviewUrl={setPreviewUrl}
@@ -544,8 +528,8 @@ function ContractPage({
                             {view === 'profile' && <ProfileView meUser={meUser} showToast={showToast} />}
                             {view !== 'profile' && view !== 'dashboard' && (
                                 <div className="bg-surface-base/20 border-surface-border flex min-h-0 flex-1 flex-col gap-0 overflow-hidden">
-                                    <div className="border-surface-border bg-surface-base/80 backdrop-blur-md sticky top-0 z-[50] flex items-center gap-6 border-b px-5 py-4">
-                                        <div className="flex items-center gap-2 max-w-sm flex-1">
+                                    <div className="border-surface-border bg-surface-base/80 sticky top-0 z-[50] flex items-center gap-6 border-b px-5 py-4 backdrop-blur-md">
+                                        <div className="flex max-w-sm flex-1 items-center gap-2">
                                             <SearchInput
                                                 containerClassName="flex-1"
                                                 placeholder="Cari kontrak..."
@@ -569,12 +553,37 @@ function ContractPage({
                                                         key: 'status',
                                                         type: 'searchable',
                                                         options: [
-                                                            { label: 'Draft', value: 'draft', icon: Layers, color: 'bg-surface-muted text-text-soft' },
+                                                            {
+                                                                label: 'Draft',
+                                                                value: 'draft',
+                                                                icon: Layers,
+                                                                color: 'bg-surface-muted text-text-soft',
+                                                            },
                                                             { label: 'Pending', value: 'pending', icon: Clock, color: 'bg-warning/10 text-warning' },
-                                                            { label: 'In Review', value: 'in_review', icon: Zap, color: 'bg-warning/10 text-warning' },
-                                                            { label: 'Revision', value: 'revision', icon: AlertTriangle, color: 'bg-danger/10 text-danger' },
-                                                            { label: 'Approved', value: 'approved', icon: CheckCircle2, color: 'bg-primary text-primary-foreground' },
-                                                            { label: 'Rejected', value: 'rejected', icon: AlertCircle, color: 'bg-danger/10 text-danger' },
+                                                            {
+                                                                label: 'In Review',
+                                                                value: 'in_review',
+                                                                icon: Zap,
+                                                                color: 'bg-warning/10 text-warning',
+                                                            },
+                                                            {
+                                                                label: 'Revision',
+                                                                value: 'revision',
+                                                                icon: AlertTriangle,
+                                                                color: 'bg-danger/10 text-danger',
+                                                            },
+                                                            {
+                                                                label: 'Approved',
+                                                                value: 'approved',
+                                                                icon: CheckCircle2,
+                                                                color: 'bg-primary text-primary-foreground',
+                                                            },
+                                                            {
+                                                                label: 'Rejected',
+                                                                value: 'rejected',
+                                                                icon: AlertCircle,
+                                                                color: 'bg-danger/10 text-danger',
+                                                            },
                                                         ],
                                                     },
                                                     {
@@ -604,12 +613,12 @@ function ContractPage({
                                                 ]}
                                             >
                                                 <Button
-                                                    variant={activeFiltersCount > 0 ? "primary" : "white"}
-                                                    className="relative h-10 w-10 p-0 flex items-center justify-center shrink-0 rounded-xl"
+                                                    variant={activeFiltersCount > 0 ? 'primary' : 'white'}
+                                                    className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl p-0"
                                                 >
                                                     <Filter size={14} strokeWidth={2.5} />
                                                     {activeFiltersCount > 0 && (
-                                                        <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[9px] font-semibold bg-primary text-white shadow-sm border border-white dark:border-black">
+                                                        <span className="bg-primary absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-md border border-white px-1 text-[9px] font-semibold text-white shadow-sm dark:border-black">
                                                             {activeFiltersCount}
                                                         </span>
                                                     )}
@@ -624,10 +633,10 @@ function ContractPage({
                                         </div>
                                     </div>
 
-                                    <div className="border-surface-border bg-surface-base/40 border-b px-5 py-2 flex items-center gap-1.5 overflow-x-auto scrollbar-none backdrop-blur-md sticky top-[73px] z-10">
+                                    <div className="border-surface-border bg-surface-base/40 sticky top-[73px] z-10 flex scrollbar-none items-center gap-1.5 overflow-x-auto border-b px-5 py-2 backdrop-blur-md">
                                         <Button
                                             onClick={() => handleFilterChange({ submission_type_id: undefined, page: 1 })}
-                                            variant={!filters.submission_type_id ? "primary" : "ghost"}
+                                            variant={!filters.submission_type_id ? 'primary' : 'ghost'}
                                             size="sm"
                                             className="whitespace-nowrap"
                                         >
@@ -637,7 +646,7 @@ function ContractPage({
                                             <Button
                                                 key={type.id}
                                                 onClick={() => handleFilterChange({ submission_type_id: type.id, page: 1 })}
-                                                variant={filters.submission_type_id === type.id ? "primary" : "ghost"}
+                                                variant={filters.submission_type_id === type.id ? 'primary' : 'ghost'}
                                                 size="sm"
                                                 className="whitespace-nowrap"
                                             >
@@ -646,7 +655,7 @@ function ContractPage({
                                         ))}
                                     </div>
 
-                                    <div className={cn('flex-1 overflow-auto custom-scrollbar', layout === 'grid' && 'p-4')}>
+                                    <div className={cn('custom-scrollbar flex-1 overflow-auto', layout === 'grid' && 'p-4')}>
                                         {layout === 'table' ? (
                                             <TableContract
                                                 columns={columns}
@@ -665,98 +674,122 @@ function ContractPage({
                                                         router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true }),
                                                 }}
                                             />
+                                        ) : processing ? (
+                                            <ContractCardSkeleton />
                                         ) : (
-                                            processing ? (
-                                                <ContractCardSkeleton />
-                                            ) : (
-                                                <div className="flex flex-col gap-8">
-                                                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                                                        {contractsPaged.data.map((c) => (
-                                                            <button
-                                                                key={c.id}
-                                                                onClick={() => openDetail(c)}
-                                                                className="group border-surface-border bg-surface-base/60 backdrop-blur-sm hover:border-primary hover:shadow-primary/5 relative flex cursor-pointer flex-col gap-4 rounded-2xl border p-6 text-left transition-all hover:shadow-2xl focus:ring-2 focus:ring-primary focus:outline-none"
-                                                            >
-                                                                <div className="flex items-start justify-between gap-3">
-                                                                    <div className="flex min-w-0 flex-col gap-1">
-                                                                        <span className="group-hover:text-primary text-[10px] font-semibold uppercase tracking-wider text-text-soft transition-all">
-                                                                            {c.contract_no || 'No Req'}
-                                                                        </span>
-                                                                        <h3 className="group-hover:text-primary line-clamp-2 text-sm leading-tight font-semibold uppercase tracking-tight text-text-main transition-colors">
-                                                                            {c.title}
-                                                                        </h3>
-                                                                        <span className="mt-0.5 text-[10px] font-medium text-text-desc uppercase italic">
-                                                                            {c.contract_type}
-                                                                        </span>
-                                                                    </div>
-                                                                    <div className="flex-shrink-0 origin-top-right scale-90">
-                                                                        <StatusBadge status={c.status} />
-                                                                    </div>
+                                            <div className="flex flex-col gap-8">
+                                                <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                                                    {contractsPaged.data.map((c) => (
+                                                        <button
+                                                            key={c.id}
+                                                            onClick={() => openDetail(c)}
+                                                            className="group border-surface-border bg-surface-base/60 hover:border-primary hover:shadow-primary/5 focus:ring-primary relative flex cursor-pointer flex-col gap-4 rounded-2xl border p-6 text-left backdrop-blur-sm transition-all hover:shadow-2xl focus:ring-2 focus:outline-none"
+                                                        >
+                                                            <div className="flex items-start justify-between gap-3">
+                                                                <div className="flex min-w-0 flex-col gap-1">
+                                                                    <span className="group-hover:text-primary text-text-soft text-[10px] font-semibold tracking-wider uppercase transition-all">
+                                                                        {c.contract_no || 'No Req'}
+                                                                    </span>
+                                                                    <h3 className="group-hover:text-primary text-text-main line-clamp-2 text-sm leading-tight font-semibold tracking-tight uppercase transition-colors">
+                                                                        {c.title}
+                                                                    </h3>
+                                                                    <span className="text-text-desc mt-0.5 text-[10px] font-medium uppercase italic">
+                                                                        {c.contract_type}
+                                                                    </span>
                                                                 </div>
+                                                                <div className="flex-shrink-0 origin-top-right scale-90">
+                                                                    <StatusBadge status={c.status} />
+                                                                </div>
+                                                            </div>
 
-                                                                <div className="border-surface-border/40 bg-surface-muted/30 group-hover:border-primary/20 flex flex-col gap-3 rounded-xl border p-4 transition-all">
+                                                            <div className="border-surface-border/40 bg-surface-muted/30 group-hover:border-primary/20 flex flex-col gap-3 rounded-xl border p-4 transition-all">
+                                                                <div className="flex items-center justify-between">
+                                                                    <span className="text-text-soft text-[10px] font-semibold uppercase">
+                                                                        Departemen
+                                                                    </span>
+                                                                    <span className="text-text-main truncate text-[11px] font-semibold uppercase">
+                                                                        {c.initiator?.department_name || 'Umum'}
+                                                                    </span>
+                                                                </div>
+                                                                {c.assigned_pic && (
                                                                     <div className="flex items-center justify-between">
-                                                                        <span className="text-[10px] font-semibold uppercase text-text-soft">Departemen</span>
-                                                                        <span className="truncate text-[11px] font-semibold uppercase text-text-main">{c.initiator?.department_name || 'Umum'}</span>
-                                                                    </div>
-                                                                    {c.assigned_pic && (
-                                                                        <div className="flex items-center justify-between">
-                                                                            <span className="text-[10px] font-semibold uppercase text-text-soft">PJ Legal</span>
-                                                                            <span className="truncate text-[11px] font-semibold uppercase text-text-main">{c.assigned_pic.name}</span>
-                                                                        </div>
-                                                                    )}
-                                                                    <div className="flex items-center justify-between pt-1 text-[10px] font-semibold uppercase">
-                                                                        <span className="text-text-soft">Progress</span>
-                                                                        <span className="font-semibold text-primary bg-primary/5 px-2 py-0.5 rounded-lg">
-                                                                            {c.progress.done}/{c.progress.total}
+                                                                        <span className="text-text-soft text-[10px] font-semibold uppercase">
+                                                                            PJ Legal
+                                                                        </span>
+                                                                        <span className="text-text-main truncate text-[11px] font-semibold uppercase">
+                                                                            {c.assigned_pic.name}
                                                                         </span>
                                                                     </div>
+                                                                )}
+                                                                <div className="flex items-center justify-between pt-1 text-[10px] font-semibold uppercase">
+                                                                    <span className="text-text-soft">Progress</span>
+                                                                    <span className="text-primary bg-primary/5 rounded-lg px-2 py-0.5 font-semibold">
+                                                                        {c.progress.done}/{c.progress.total}
+                                                                    </span>
                                                                 </div>
+                                                            </div>
 
-                                                                <div className="border-surface-border/50 mt-auto flex items-center justify-end border-t pt-4">
-                                                                    <div className="origin-right scale-75">
-                                                                        <SLACountdown deadline={c.sla_deadline ?? null} status={c.status} />
-                                                                    </div>
+                                                            <div className="border-surface-border/50 mt-auto flex items-center justify-end border-t pt-4">
+                                                                <div className="origin-right scale-75">
+                                                                    <SLACountdown deadline={c.sla_deadline ?? null} status={c.status} />
                                                                 </div>
-                                                            </button>
-                                                        ))}
+                                                            </div>
+                                                        </button>
+                                                    ))}
+                                                </div>
+
+                                                <div className="mt-8 mb-10 flex w-full items-center justify-between px-1">
+                                                    <div className="border-surface-border bg-surface-muted/40 flex items-center gap-4 rounded-xl border px-6 py-2 shadow-sm backdrop-blur-sm transition-all duration-500">
+                                                        <div className="text-text-desc text-xs font-semibold tracking-wider whitespace-nowrap uppercase">
+                                                            Menampilkan{' '}
+                                                            <span className="text-text-main font-semibold">
+                                                                {contractsPaged.from} - {contractsPaged.to}
+                                                            </span>{' '}
+                                                            dari <span className="text-text-main font-semibold">{contractsPaged.total}</span> data
+                                                        </div>
                                                     </div>
 
-                                                    <div className="mt-8 mb-10 flex w-full items-center justify-between px-1">
-                                                        <div className="flex items-center gap-4 rounded-xl border border-surface-border bg-surface-muted/40 px-6 py-2 shadow-sm backdrop-blur-sm transition-all duration-500">
-                                                            <div className="text-xs font-semibold whitespace-nowrap text-text-desc uppercase tracking-wider">
-                                                                Menampilkan <span className="font-semibold text-text-main">{contractsPaged.from} - {contractsPaged.to}</span> dari <span className="font-semibold text-text-main">{contractsPaged.total}</span> data
-                                                            </div>
+                                                    <div className="border-surface-border bg-surface-base/40 flex items-center gap-1.5 rounded-2xl border p-1.5 shadow-sm backdrop-blur-sm transition-all duration-500">
+                                                        <Button
+                                                            variant="white"
+                                                            size="icon"
+                                                            disabled={contractsPaged.current_page === 1}
+                                                            onClick={() =>
+                                                                router.get(
+                                                                    globalThis.location.pathname,
+                                                                    { ...filters, page: contractsPaged.current_page - 1 },
+                                                                    { preserveState: true },
+                                                                )
+                                                            }
+                                                            className="h-9 w-9 rounded-xl"
+                                                        >
+                                                            <ChevronLeft className="text-text-main h-4 w-4" />
+                                                        </Button>
+                                                        <div className="bg-surface-muted/60 border-surface-border/40 mx-2 flex h-9 items-center gap-2 rounded-xl border px-4">
+                                                            <span className="text-primary text-xs font-semibold">{contractsPaged.current_page}</span>
+                                                            <span className="text-text-soft text-xs font-semibold">/</span>
+                                                            <span className="text-primary text-xs font-semibold">
+                                                                {contractsPaged.last_page || 1}
+                                                            </span>
                                                         </div>
-
-                                                        <div className="flex items-center gap-1.5 rounded-2xl border border-surface-border bg-surface-base/40 p-1.5 shadow-sm backdrop-blur-sm transition-all duration-500">
-                                                            <Button
-                                                                variant="white"
-                                                                size="icon"
-                                                                disabled={contractsPaged.current_page === 1}
-                                                                onClick={() => router.get(globalThis.location.pathname, { ...filters, page: contractsPaged.current_page - 1 }, { preserveState: true })}
-                                                                className="h-9 w-9 rounded-xl"
-                                                            >
-                                                                <ChevronLeft className="h-4 w-4 text-text-main" />
-                                                            </Button>
-                                                            <div className="mx-2 flex items-center gap-2 px-4 h-9 bg-surface-muted/60 rounded-xl border border-surface-border/40">
-                                                                <span className="text-xs font-semibold text-primary">{contractsPaged.current_page}</span>
-                                                                <span className="text-xs font-semibold text-text-soft">/</span>
-                                                                <span className="text-xs font-semibold text-primary">{contractsPaged.last_page || 1}</span>
-                                                            </div>
-                                                            <Button
-                                                                variant="white"
-                                                                size="icon"
-                                                                disabled={contractsPaged.current_page === contractsPaged.last_page}
-                                                                onClick={() => router.get(globalThis.location.pathname, { ...filters, page: contractsPaged.current_page + 1 }, { preserveState: true })}
-                                                                className="h-9 w-9 rounded-xl"
-                                                            >
-                                                                <ChevronRight className="h-4 w-4 text-text-main" />
-                                                            </Button>
-                                                        </div>
+                                                        <Button
+                                                            variant="white"
+                                                            size="icon"
+                                                            disabled={contractsPaged.current_page === contractsPaged.last_page}
+                                                            onClick={() =>
+                                                                router.get(
+                                                                    globalThis.location.pathname,
+                                                                    { ...filters, page: contractsPaged.current_page + 1 },
+                                                                    { preserveState: true },
+                                                                )
+                                                            }
+                                                            className="h-9 w-9 rounded-xl"
+                                                        >
+                                                            <ChevronRight className="text-text-main h-4 w-4" />
+                                                        </Button>
                                                     </div>
                                                 </div>
-                                            )
+                                            </div>
                                         )}
                                     </div>
                                 </div>
@@ -804,12 +837,14 @@ function ContractPage({
             <PreviewModal open={previewOpen} onClose={() => setPreviewOpen(false)} title={previewTitle} url={previewUrl} hasFile={previewHasFile} />
             {timelinePdfPreviewUrl && (
                 <div className="bg-surface-base/90 animate-in fade-in zoom-in-95 fixed inset-0 z-[100] flex flex-col backdrop-blur-xl duration-300">
-                    <div className="flex h-16 items-center justify-between border-b border-surface-border bg-surface-muted px-6">
+                    <div className="border-surface-border bg-surface-muted flex h-16 items-center justify-between border-b px-6">
                         <div className="flex flex-col">
-                            <h3 className="text-text-main flex items-center gap-2 text-sm font-semibold uppercase tracking-wider">
-                                <FileText className="size-4 text-primary" /> Export Alur Approval
+                            <h3 className="text-text-main flex items-center gap-2 text-sm font-semibold tracking-wider uppercase">
+                                <FileText className="text-primary size-4" /> Export Alur Approval
                             </h3>
-                            <span className="text-text-soft text-[10px] font-semibold uppercase tracking-wider">{selected?.contract_no} — Generation Complete</span>
+                            <span className="text-text-soft text-[10px] font-semibold tracking-wider uppercase">
+                                {selected?.contract_no} — Generation Complete
+                            </span>
                         </div>
                         <div className="flex items-center gap-3">
                             <Button asChild variant="primary" className="h-9">
@@ -817,12 +852,18 @@ function ContractPage({
                                     <Download size={14} /> Download PDF
                                 </a>
                             </Button>
-                            <Button variant="outline" className="h-9" onClick={() => setTimelinePdfPreviewUrl(null)}>Tutup</Button>
+                            <Button variant="outline" className="h-9" onClick={() => setTimelinePdfPreviewUrl(null)}>
+                                Tutup
+                            </Button>
                         </div>
                     </div>
                     <div className="flex flex-1 justify-center overflow-hidden p-8">
                         <div className="ring-surface-border animate-in slide-in-from-bottom-5 fill-mode-both h-full w-full max-w-[210mm] overflow-hidden rounded-xl bg-white shadow-2xl ring-1 delay-150 duration-500">
-                            <iframe src={`${timelinePdfPreviewUrl}#toolbar=0&navpanes=0`} className="h-full w-full border-none" title="Approval Timeline Preview" />
+                            <iframe
+                                src={`${timelinePdfPreviewUrl}#toolbar=0&navpanes=0`}
+                                className="h-full w-full border-none"
+                                title="Approval Timeline Preview"
+                            />
                         </div>
                     </div>
                 </div>
@@ -871,29 +912,49 @@ export default function ContractsIndex({
         initialContractsPaged.data.length === 0 && !initialMetrics && !initialSelectedProp && initialTypes.length === 0,
     );
 
-    useEffect(() => { setContractsPaged(initialContractsPaged); }, [initialContractsPaged]);
-    useEffect(() => { if (initialTypes.length > 0) setTypes(initialTypes); }, [initialTypes]);
-    useEffect(() => { if (initialSubmissionTypes.length > 0) setSubmissionTypes(initialSubmissionTypes); }, [initialSubmissionTypes]);
-    useEffect(() => { if (initialMetrics) setMetrics(initialMetrics); }, [initialMetrics]);
+    useEffect(() => {
+        setContractsPaged(initialContractsPaged);
+    }, [initialContractsPaged]);
+    useEffect(() => {
+        if (initialTypes.length > 0) setTypes(initialTypes);
+    }, [initialTypes]);
+    useEffect(() => {
+        if (initialSubmissionTypes.length > 0) setSubmissionTypes(initialSubmissionTypes);
+    }, [initialSubmissionTypes]);
+    useEffect(() => {
+        if (initialMetrics) setMetrics(initialMetrics);
+    }, [initialMetrics]);
 
     useEffect(() => {
         const hasCriticalData = initialContractsPaged.data.length > 0 || initialSelectedProp || initialMetrics;
-        if (hasCriticalData && initialTypes.length > 0) { setBootLoading(false); return; }
-        if (hasCriticalData) { setBootLoading(false); }
-        else {
+        if (hasCriticalData && initialTypes.length > 0) {
+            setBootLoading(false);
+            return;
+        }
+        if (hasCriticalData) {
+            setBootLoading(false);
+        } else {
             setBootLoading(true);
             Promise.all([
                 contractApi.list({ view: currentView }),
                 contractApi.getTypes(),
-                axios.get('/api/contracts/submission-types').then((res) => res.data).catch(() => []),
-                axios.post('/admin/api/reports/data', {}).then((res) => res.data).catch(() => null),
-            ]).then(([cData, tData, sData, mData]) => {
-                setContractsPaged(cData as any);
-                setTypes(tData);
-                setSubmissionTypes(sData);
-                setMetrics(mData);
-                setBootLoading(false);
-            }).catch(() => setBootLoading(false));
+                axios
+                    .get('/api/contracts/submission-types')
+                    .then((res) => res.data)
+                    .catch(() => []),
+                axios
+                    .post('/admin/api/reports/data', {})
+                    .then((res) => res.data)
+                    .catch(() => null),
+            ])
+                .then(([cData, tData, sData, mData]) => {
+                    setContractsPaged(cData as any);
+                    setTypes(tData);
+                    setSubmissionTypes(sData);
+                    setMetrics(mData);
+                    setBootLoading(false);
+                })
+                .catch(() => setBootLoading(false));
         }
     }, [currentView]);
 
@@ -906,13 +967,13 @@ export default function ContractsIndex({
                         <div className="relative flex items-center justify-center">
                             <LoadingLottie width={180} height={180} />
                             <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="h-32 w-32 animate-spin rounded-full border-b-2 border-primary opacity-20" />
+                                <div className="border-primary h-32 w-32 animate-spin rounded-full border-b-2 opacity-20" />
                             </div>
                         </div>
                         <div className="flex flex-col items-center gap-2">
-                            <span className="animate-pulse text-xs font-semibold tracking-wider text-text-desc uppercase">Memuat Sistem Kontrak</span>
-                            <div className="h-0.5 w-48 overflow-hidden rounded-full bg-surface-muted">
-                                <div className="animate-progress h-full w-full origin-left bg-primary" />
+                            <span className="text-text-desc animate-pulse text-xs font-semibold tracking-wider uppercase">Memuat Sistem Kontrak</span>
+                            <div className="bg-surface-muted h-0.5 w-48 overflow-hidden rounded-full">
+                                <div className="animate-progress bg-primary h-full w-full origin-left" />
                             </div>
                         </div>
                     </div>

@@ -48,8 +48,6 @@ class ProfileController extends Controller
                 'id' => $u->id,
                 'name' => $u->name,
                 'initials' => $u->initials,
-                'bg_color' => $u->bg_color,
-                'text_color' => $u->text_color,
             ]);
 
         return Inertia::render('settings/profile', [
@@ -71,8 +69,6 @@ class ProfileController extends Controller
                 'bio' => $user->bio,
                 'role' => $user->role,
                 'initials' => $user->initials,
-                'bg_color' => $user->bg_color,
-                'text_color' => $user->text_color,
                 'created_at' => $user->created_at->isoFormat('D MMMM YYYY'),
             ],
         ]);

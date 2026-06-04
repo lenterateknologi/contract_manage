@@ -14,6 +14,14 @@ class ContractFormatter
 {
     public static function formatContract(Contract $c): array
     {
+        $c->loadMissing([
+            'initiator.department', 'initiator.company',
+            'creator.department', 'creator.company',
+            'approvals.approver.department', 'approvals.workflowStep',
+            'workflowStep.actions', 'histories.actor.department',
+            'contractType', 'submissionType', 'vendor.documents', 'parent', 'workflow.steps',
+            'versions.uploader', 'messages.user', 'attachments.uploader', 'formSubmissions.submittedBy',
+        ]);
         $nextStep = self::getNextStep($c);
         $requiresPicAssignment = $nextStep && $nextStep->approver_type === 'assigned_pic';
         $progress = $c->progressData();
@@ -32,14 +40,14 @@ class ContractFormatter
             'submission_type_id' => $c->submission_type_id,
             'created_by' => $c->created_by,
             'transaction_type' => $c->transaction_type,
-            'p1_entity' => $c->p1_entity,
-            'p1_signer' => $c->p1_signer,
-            'p1_signer_position' => $c->p1_signer_position,
-            'p1_address' => $c->p1_address,
-            'p2_entity' => $c->p2_entity,
-            'p2_signer' => $c->p2_signer,
-            'p2_signer_position' => $c->p2_signer_position,
-            'p2_address' => $c->p2_address,
+            'p1_entity' => $c->meta?->p1_entity,
+            'p1_signer' => $c->meta?->p1_signer,
+            'p1_signer_position' => $c->meta?->p1_signer_position,
+            'p1_address' => $c->meta?->p1_address,
+            'p2_entity' => $c->meta?->p2_entity,
+            'p2_signer' => $c->meta?->p2_signer,
+            'p2_signer_position' => $c->meta?->p2_signer_position,
+            'p2_address' => $c->meta?->p2_address,
             'vendor_id' => $c->vendor_id,
             'vendor' => $c->vendor ? [
                 'id' => $c->vendor->id,
@@ -47,6 +55,7 @@ class ContractFormatter
                 'pic_name' => $c->vendor->pic_name,
                 'pic_position' => $c->vendor->pic_position,
                 'address' => $c->vendor->address,
+                'documents' => $c->vendor->relationLoaded('documents') ? $c->vendor->documents : [],
             ] : null,
             'status' => $c->status,
             'metadata' => $c->metadata ?? [],
@@ -79,7 +88,7 @@ class ContractFormatter
                     ? self::formatUser($c->approvals->where('sequence', 3)->where('status', 'approved')->first()->approver)
                     : null),
             'initiated_by_id' => $c->initiated_by_id,
-            'kop_sub_topik' => $c->kop_sub_topik,
+            'kop_sub_topik' => $c->meta?->kop_sub_topik,
             'parent_id' => $c->parent_id,
             'parent' => $c->parent ? [
                 'id' => $c->parent->id,
@@ -111,10 +120,12 @@ class ContractFormatter
                 'target_approvers' => $c->approvals->where('sequence', $c->workflowStep->step)->whereIn('status', ['pending', 'waiting'])->first()?->target_approvers,
                 'actions' => $c->workflowStep->actions->map(function ($action) {
                     /* @var \App\Models\WorkflowStepAction $action */
+                    $code = $action->action_code instanceof WorkflowAction ? $action->action_code->value : $action->action_code;
+
                     return [
                         'id' => $action->id,
-                        'action_code' => $action->action_code instanceof WorkflowAction ? $action->action_code->value : ($action->action_code ?? $action->masterAction?->code),
-                        'master_action_code' => $action->masterAction?->code,
+                        'action_code' => $code,
+                        'master_action_code' => $code,
                         'alias' => $action->alias,
                         'next_workflow_id' => $action->next_workflow_id,
                         'next_workflow_step_id' => $action->next_workflow_step_id,
@@ -230,13 +241,11 @@ class ContractFormatter
             'id' => $user->id,
             'name' => $user->name,
             'initials' => $user->initials,
-            'role' => $user->role,
+            'role' => $user->getAttribute('role'),
             'role_id' => $user->role_id,
             'department_id' => $user->department_id,
-            'department_name' => $user->department?->name,
+            'department_name' => $user->relationLoaded('department') ? $user->department?->name : null,
             'email' => $user->email,
-            'bg_color' => $user->bg_color,
-            'text_color' => $user->text_color,
         ];
     }
 
@@ -289,8 +298,8 @@ class ContractFormatter
 
             // Resolve potential approvers for placeholders
             if ($step->approver_type === 'user') {
-                $targetApprovers = $step->users->pluck('name')->implode(', ');
-                $targetEmails = $step->users->pluck('email')->implode(', ');
+                $targetApprovers = $step->users()->pluck('name')->implode(', ');
+                $targetEmails = $step->users()->pluck('email')->implode(', ');
             } elseif ($step->approver_type === 'atasan') {
                 $approvers = $workflowService->resolveHierarchyApprover($c, $step);
                 $targetApprovers = $approvers->pluck('name')->implode(', ');
@@ -307,7 +316,7 @@ class ContractFormatter
                 }
             } elseif ($step->approver_type === 'role') {
                 $roles = (array) $step->role;
-                $targetDeptIds = ! empty($step->department_ids) ? $step->department_ids : ($step->department_id ? [$step->department_id] : []);
+                $targetDeptIds = (array) ($step->department_ids ?? []);
                 $query = User::whereIn('role', $roles);
 
                 if ($step->filter_department) {
@@ -317,20 +326,22 @@ class ContractFormatter
                 }
 
                 $initiatorCompany = $c->initiator?->company;
-                if ($step->filter_company_group) {
-                    $companyGroupId = $initiatorCompany->company_group_id ?? '00000000-0000-0000-0000-000000000000';
-                    $query->whereHas('company', function ($q) use ($companyGroupId) {
-                        $q->where('company_group_id', $companyGroupId);
+                if ($step->filter_company_group || $step->filter_region) {
+                    $query->whereHas('company', function ($q) use ($step, $initiatorCompany) {
+                        if ($step->filter_company_group) {
+                            $groupId = $initiatorCompany?->company_group_id ?? '00000000-0000-0000-0000-000000000000';
+                            $q->where('company_group_id', $groupId);
+                        }
+                        if ($step->filter_region) {
+                            $regionId = $initiatorCompany?->region_id ?? '00000000-0000-0000-0000-000000000000';
+                            $q->where('region_id', $regionId);
+                        }
                     });
                 }
-                if ($step->filter_region) {
-                    $regionId = $initiatorCompany->region_id ?? '00000000-0000-0000-0000-000000000000';
-                    $query->whereHas('company', function ($q) use ($regionId) {
-                        $q->where('region_id', $regionId);
-                    });
-                }
+
                 if ($step->filter_company) {
-                    $query->where('company_id', $c->initiator->company_id ?? '00000000-0000-0000-0000-000000000000');
+                    $companyId = $c->initiator->company_id ?? '00000000-0000-0000-0000-000000000000';
+                    $query->where('company_id', $companyId);
                 }
 
                 $approvers = $query->get();

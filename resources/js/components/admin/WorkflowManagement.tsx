@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/base/Button';
 import { DataTable, Column } from '@/components/ui/data/DataTable';
 import { usePermissions } from '@/hooks/use-permissions';
-import { useToast } from '@/components/contracts/Toast';
+import { useToast } from '@/components/ui/feedback/Toast';
 
 const WorkflowNameCell = ({ row }: { row: any }) => (
     <div className="flex flex-col gap-0.5">

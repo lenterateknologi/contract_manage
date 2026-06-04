@@ -21,7 +21,7 @@ import { Head, router, useForm } from '@inertiajs/react';
 import { Copy, Edit2, FileCheck, FileJson, FileText, Filter, Layout, MoreHorizontal, Plus, Settings, Trash2, Download, Upload, Loader2 } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { Modal } from '@/components/ui/overlays/Modal';
-import { useToast } from '@/components/contracts/Toast';
+import { useToast } from '@/components/ui/feedback/Toast';
 import { TreeSelect, TreeSelectItem } from '@/components/ui/forms/TreeSelect';
 
 interface FormTemplate {

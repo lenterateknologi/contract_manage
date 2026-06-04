@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/components/contracts/Toast';
+import { useToast } from '@/components/ui/feedback/Toast';
 import { MASTER_ACTIONS, getActionTheme } from '../constants';
 
 interface StepSimulatorButtonsProps {

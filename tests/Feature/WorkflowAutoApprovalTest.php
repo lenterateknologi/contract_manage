@@ -145,7 +145,7 @@ test('it still auto-approves step > 1 if the user is the same', function () {
         'workflow_step_id' => $this->step2->id,
         'user_id' => $this->creator->id,
         'status' => 'approved',
-        'comment' => 'Sistem Auto-Approve (Pemeriksa yang sama)',
+        'comment' => 'Sistem: Persetujuan Otomatis (Sama dengan penyetujui/inisiator sebelumnya)',
     ]);
 });
 

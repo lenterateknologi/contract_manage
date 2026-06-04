@@ -46,8 +46,17 @@ class StoreContractAction
                 'created_by' => $userId,
                 'initiated_by_id' => $initiatorId,
                 'vendor_id' => $validated['vendor_id'] ?? null,
-                'kop_sub_topik' => $validated['kop_sub_topik'] ?? null,
                 'parent_id' => $validated['parent_id'] ?? null,
+                'metadata' => [
+                    'tax_required' => $validated['tax_required'] ?? true,
+                    'category' => $validated['category'] ?? 'contract',
+                    'topic' => $validated['topic'] ?? 'perjanjian',
+                    'project_name' => $validated['project_name'] ?? null,
+                ],
+            ]);
+
+            $contract->meta()->create([
+                'kop_sub_topik' => $validated['kop_sub_topik'] ?? null,
                 'p1_entity' => $validated['p1_entity'] ?? null,
                 'p1_signer' => $validated['p1_signer'] ?? null,
                 'p1_signer_position' => $validated['p1_signer_position'] ?? null,
@@ -56,12 +65,6 @@ class StoreContractAction
                 'p2_signer' => $validated['p2_signer'] ?? null,
                 'p2_signer_position' => $validated['p2_signer_position'] ?? null,
                 'p2_address' => $validated['p2_address'] ?? null,
-                'metadata' => [
-                    'tax_required' => $validated['tax_required'] ?? true,
-                    'category' => $validated['category'] ?? 'contract',
-                    'topic' => $validated['topic'] ?? 'perjanjian',
-                    'project_name' => $validated['project_name'] ?? null,
-                ],
             ]);
 
             ContractHistory::create(['contract_id' => $contract->id, 'action' => 'CONTRACT_CREATED', 'description' => 'Kontrak dibuat', 'actor_id' => $userId]);

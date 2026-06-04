@@ -12,7 +12,7 @@ import { StatusManagement } from '@/components/admin/StatusManagement';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { VendorManagement } from '@/components/admin/VendorManagement';
 import { WorkflowManagement } from '@/components/admin/WorkflowManagement';
-import { ToastProvider } from '@/components/contracts/Toast';
+import { ToastProvider } from '@/components/ui/feedback/Toast';
 import { MembersPerDivision } from '@/components/dashboard/MembersPerDivision';
 import { MasterDataSync } from '@/components/admin/MasterDataSync';
 

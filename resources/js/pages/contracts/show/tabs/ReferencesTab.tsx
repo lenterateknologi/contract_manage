@@ -1,10 +1,10 @@
-import { ContractReferenceCard } from '@/components/contracts/ContractReferenceCard';
+import { ContractReferenceCard } from '@/components/contracts/tabs/ContractReferenceCard';
 import { Contract } from '@/types/contracts';
 
 interface ReferencesTabProps {
     contract: Contract;
     canUpdate: boolean;
-    onUpdate: (data: any) => void;
+    onUpdate: (data: any) => Promise<void>;
     processing: boolean;
     meId?: string;
 }

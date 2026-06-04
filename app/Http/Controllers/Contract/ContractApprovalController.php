@@ -69,7 +69,7 @@ class ContractApprovalController extends Controller
             // Use workflow service to send for approval
             $contract = $this->workflowService->sendForApproval($contract, $workflowId, $customSteps, true);
 
-            $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'approvals.workflowStep', 'workflow.steps', 'histories.actor', 'messages.user', 'workflow', 'workflowStep']);
+            $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'approvals.workflowStep', 'workflow.steps', 'histories.actor', 'messages.user', 'workflow', 'workflowStep.actions']);
 
             return response()->json(ContractFormatter::formatContract($contract), 200);
         } catch (\Exception $e) {

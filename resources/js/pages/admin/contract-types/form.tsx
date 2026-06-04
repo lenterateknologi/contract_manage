@@ -1,5 +1,5 @@
 import { FormSection, ManagementForm } from '@/components/admin/ManagementForm';
-import { useToast } from '@/components/contracts/Toast';
+import { useToast } from '@/components/ui/feedback/Toast';
 import { Button } from '@/components/ui/base/Button';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';

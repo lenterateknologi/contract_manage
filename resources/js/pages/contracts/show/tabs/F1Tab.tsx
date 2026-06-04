@@ -1,5 +1,5 @@
-import AgreementView from '@/components/contracts/AgreementView';
-import { FormSubmissionTab } from '@/components/contracts/FormSubmissionTab';
+import AgreementView from '@/components/contracts/tabs/AgreementView';
+import { FormSubmissionTab } from '@/components/contracts/tabs/FormSubmissionTab';
 import { Contract } from '@/types/contracts';
 
 interface F1TabProps {

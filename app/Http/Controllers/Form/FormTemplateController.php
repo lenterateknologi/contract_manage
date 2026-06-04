@@ -353,17 +353,7 @@ class FormTemplateController extends Controller
                 ->header('Cache-Control', 'no-cache, no-store, must-revalidate');
         } catch (\Exception $e) {
             Log::error('Browsershot Export Failed: '.$e->getMessage());
-
-            // Fallback to legacy Blade if Browsershot fails
-            $template->load('fields');
-            $fields = $template->fields->sortBy('order');
-            $pdf = Pdf::loadView('pdf.form-template', [
-                'template' => $template,
-                'formData' => json_decode($request->input('data', '[]'), true) ?? [],
-                'fields' => $fields,
-            ]);
-
-            return $pdf->download($template->name.'.pdf');
+            abort(500, 'Gagal menghasilkan PDF: '.$e->getMessage());
         }
     }
 
@@ -416,17 +406,7 @@ class FormTemplateController extends Controller
                 ->header('Content-Disposition', 'inline; filename="'.$template->name.'.pdf"');
         } catch (\Exception $e) {
             Log::error('Browsershot Stream Failed: '.$e->getMessage());
-
-            // Robust Fallback to DomPDF
-            $template->load('fields');
-            $fields = $template->fields->sortBy('order');
-            $pdf = Pdf::loadView('pdf.form-template', [
-                'template' => $template,
-                'formData' => json_decode($request->input('data', '[]'), true) ?? [],
-                'fields' => $fields,
-            ]);
-
-            return $pdf->stream($template->name.'.pdf');
+            abort(500, 'Gagal menghasilkan PDF: '.$e->getMessage());
         }
     }
 

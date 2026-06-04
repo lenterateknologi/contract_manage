@@ -62,8 +62,6 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user() ? array_merge($request->user()->toArray(), [
                     'initials' => $request->user()->initials,
                     'role' => $request->user()->role,
-                    'bg_color' => $request->user()->bg_color,
-                    'text_color' => $request->user()->text_color,
                     'stats' => [
                         'total_created' => Contract::where('created_by', $request->user()->id)->count(),
                         'pending_approvals' => Approval::where('user_id', $request->user()->id)

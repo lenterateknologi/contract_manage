@@ -1,4 +1,4 @@
-import { FormTemplate, InteractiveForm } from '@/components/form-renderer/InteractiveForm';
+import { FormTemplate, InteractiveForm } from '@/components/form/renderer/InteractiveForm';
 import { Head } from '@inertiajs/react';
 import React from 'react';
 

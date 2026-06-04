@@ -95,12 +95,6 @@ class UsersImport implements ToCollection, WithHeadingRow
                 continue;
             }
 
-            // Generate initials
-            $initials = collect(explode(' ', $name))
-                ->map(fn ($n) => strtoupper(substr($n, 0, 1)))
-                ->take(2)
-                ->join('');
-
             if ($user) {
                 // Update existing user
                 $updateData = [
@@ -141,7 +135,6 @@ class UsersImport implements ToCollection, WithHeadingRow
                     'role' => $roleObj ? $roleObj->name : 'Staff',
                     'role_id' => $roleObj ? $roleObj->id : null,
                     'department_id' => $department ? $department->id : null,
-                    'initials' => $initials,
                     'password' => bcrypt('Karyawan123!'), // Default password
                 ]);
             }

@@ -25,8 +25,6 @@ use Illuminate\Notifications\Notifiable;
  * @property string|null $position
  * @property string|null $bio
  * @property string|null $phone
- * @property string|null $bg_color
- * @property string|null $text_color
  * @property string|null $username
  * @property string|null $role_id
  * @property string|null $department_id
@@ -58,13 +56,10 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'initials',
         'role',
         'position',
         'bio',
         'phone',
-        'bg_color',
-        'text_color',
         'username',
         'role_id',
         'department_id',
@@ -80,6 +75,15 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+    ];
+
+    /**
+     * The accessors to append to the model's array form.
+     *
+     * @var list<string>
+     */
+    protected $appends = [
+        'initials',
     ];
 
     /**
@@ -99,7 +103,7 @@ class User extends Authenticatable
     /**
      * @return BelongsTo<Role, User>
      */
-    public function role(): BelongsTo
+    public function roleRelation(): BelongsTo
     {
         return $this->belongsTo(Role::class, 'role_id');
     }
@@ -131,5 +135,26 @@ class User extends Authenticatable
     public function getIsAdminAttribute(): bool
     {
         return in_array($this->role, ['Admin', 'Super Admin']);
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'Admin' || $this->role === 'Super Admin';
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === 'Super Admin';
+    }
+
+    public function getInitialsAttribute(): string
+    {
+        $name = $this->name ?? '';
+        $words = explode(' ', trim($name));
+        if (count($words) >= 2) {
+            return strtoupper(substr($words[0], 0, 1).substr($words[1], 0, 1));
+        }
+
+        return strtoupper(substr($name, 0, 2));
     }
 }

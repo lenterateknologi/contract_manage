@@ -1,4 +1,4 @@
-import { ToastProvider } from '@/components/contracts/Toast';
+import { ToastProvider } from '@/components/ui/feedback/Toast';
 import { SidebarProvider } from '@/components/ui/navigation/Sidebar';
 import { useState } from 'react';
 

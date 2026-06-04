@@ -2,10 +2,16 @@ import { cn } from '@/lib/utils';
 import { ContractType } from '@/types/contracts';
 import React from 'react';
 
+// --- CONFIGURATION ---
+const SHOW_META_KEYS = true; // Set to false to hide technical keys from the UI
+// -------------------
+
 interface ContractInfoFormProps {
     isDraft: boolean;
     title: string;
     setTitle: (val: string) => void;
+    crownNo: string;
+    setCrownNo: (val: string) => void;
     typeId: string;
     setTypeId: (val: string) => void;
     submissionTypeId: string;
@@ -23,6 +29,8 @@ export function ContractInfoForm({
     isDraft,
     title,
     setTitle,
+    crownNo,
+    setCrownNo,
     typeId,
     setTypeId,
     submissionTypeId,
@@ -35,25 +43,43 @@ export function ContractInfoForm({
     selected,
     inputCls,
 }: ContractInfoFormProps) {
+    const MetaBadge = ({ name }: { name: string }) => {
+        if (!SHOW_META_KEYS) return null;
+
+        return (
+            <span className="text-[8px] font-mono text-primary bg-primary/5 px-1.5 py-0.5 rounded-sm uppercase tracking-tighter opacity-70 border border-primary/10">
+                KEY: {name}
+            </span>
+        );
+    };
+
     return (
         <>
-            <div className="flex flex-col gap-1">
-                <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">No. Pengajuan</div>
-                <div className="text-text-main font-mono text-sm font-semibold">
-                    {selected.contract_no}
+            <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                    <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">No. Kontrak (F2)</div>
+                    <MetaBadge name="crown_no" />
                 </div>
-            </div>
-
-            <div className="flex flex-col gap-1">
-                <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">No. Kontrak (F2)</div>
-                <div className="text-primary text-sm font-bold">
-                    {selected.crown_no || <span className="text-text-soft/40 italic font-medium text-xs">Belum diisi di F2</span>}
-                </div>
+                {isDraft ? (
+                    <input
+                        value={crownNo}
+                        onChange={(e) => setCrownNo(e.target.value)}
+                        placeholder="Masukkan nomor kontrak F2..."
+                        className={inputCls}
+                    />
+                ) : (
+                    <div className="text-primary text-sm font-bold">
+                        {selected.crown_no || <span className="text-text-soft/40 italic font-medium text-xs">Belum diisi</span>}
+                    </div>
+                )}
             </div>
 
             {isDraft ? (
                 <div className="flex flex-col gap-1.5">
-                    <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Judul Kontrak</div>
+                    <div className="flex items-center justify-between">
+                        <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Judul Kontrak</div>
+                        <MetaBadge name="meta_judul_kontrak" />
+                    </div>
                     <input
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
@@ -64,7 +90,10 @@ export function ContractInfoForm({
             ) : null}
 
             <div className="flex flex-col gap-1.5">
-                <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Jenis Kontrak</div>
+                <div className="flex items-center justify-between">
+                    <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Jenis Kontrak</div>
+                    <MetaBadge name="meta_jenis_kontrak" />
+                </div>
                 {isDraft ? (
                     <select value={typeId} onChange={(e) => setTypeId(e.target.value)} className={inputCls}>
                         <option value="">Pilih Tipe</option>
@@ -83,7 +112,10 @@ export function ContractInfoForm({
             </div>
 
             <div className="flex flex-col gap-1.5">
-                <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Perjanjian</div>
+                <div className="flex items-center justify-between">
+                    <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Perjanjian</div>
+                    <MetaBadge name="meta_tipe_perjanjian" />
+                </div>
                 {isDraft ? (
                     <select value={submissionTypeId} onChange={(e) => setSubmissionTypeId(e.target.value)} className={inputCls}>
                         <option value="">Pilih Tipe</option>
@@ -100,7 +132,10 @@ export function ContractInfoForm({
             </div>
 
             <div className="flex flex-col gap-1.5">
-                <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Pihak Kedua (Vendor)</div>
+                <div className="flex items-center justify-between">
+                    <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Pihak Kedua (Vendor)</div>
+                    <MetaBadge name="meta_vendor_name" />
+                </div>
                 {isDraft ? (
                     <select value={vendorId} onChange={(e) => setVendorId(e.target.value)} className={inputCls}>
                         <option value="">Pilih Vendor</option>

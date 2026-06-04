@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/overlays/Dialog';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { FormSection, ManagementForm } from '@/components/admin/ManagementForm';
-import { useToast } from '@/components/contracts/Toast';
+import { useToast } from '@/components/ui/feedback/Toast';
 import { SELECTABLE_ICONS } from '@/components/admin/NavigationManagement';
 import { Button } from '@/components/ui/base/Button';
 import {

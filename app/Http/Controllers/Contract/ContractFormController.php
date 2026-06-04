@@ -197,8 +197,17 @@ class ContractFormController extends Controller
                 $updates['p2_address'] = $formData['meta_p2_alamat'];
             }
 
-            if (! empty($updates)) {
-                $contract->update($updates);
+            $baseUpdates = collect($updates)->only(['transaction_type', 'title', 'contract_date'])->toArray();
+            $metaUpdates = collect($updates)->except(['transaction_type', 'title', 'contract_date'])->toArray();
+
+            if (! empty($baseUpdates)) {
+                $contract->update($baseUpdates);
+            }
+            if (! empty($metaUpdates)) {
+                $contract->meta()->updateOrCreate(
+                    ['contract_id' => $contract->id],
+                    $metaUpdates
+                );
             }
         }
 

@@ -15,6 +15,7 @@ class ContractType extends Model
     use HasUuids, SoftDeletes;
 
     protected $fillable = [
+        'id',
         'name',
         'code',
         'parent_id',
@@ -27,6 +28,7 @@ class ContractType extends Model
         'f2_input_mechanism',
         'f2_form_template_id',
         'f2_contract_template_id',
+        'is_active',
     ];
 
     protected $casts = [

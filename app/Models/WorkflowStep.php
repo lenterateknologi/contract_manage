@@ -27,6 +27,7 @@ class WorkflowStep extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
+        'id',
         'workflow_id',
         'approver_type',
         'step',
@@ -59,6 +60,10 @@ class WorkflowStep extends Model
         'step' => 'integer',
         'is_active' => 'boolean',
         'meta' => 'array',
+        'is_optional' => 'boolean',
+        'hierarchy_level' => 'integer',
+        'approver_type' => 'string',
+        'step_category' => 'string',
         'company_group_ids' => 'array',
         'region_ids' => 'array',
         'company_ids' => 'array',
@@ -70,7 +75,7 @@ class WorkflowStep extends Model
         'filter_company' => 'boolean',
     ];
 
-    protected $with = ['approverRoles', 'approverDepartments', 'approverUsers'];
+    protected $with = ['approverRoles', 'approverDepartments.department', 'approverUsers'];
 
     protected $appends = ['role', 'department_ids', 'department_names', 'user_ids', 'name'];
 

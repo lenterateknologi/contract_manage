@@ -1,15 +1,15 @@
-import ApprovalSteps from '@/components/contracts/ApprovalSteps';
+import ApprovalSteps from '@/components/contracts/parts/ApprovalSteps';
 import { Contract } from '@/types/contracts';
 import { Button } from '@/components/ui/base/Button';
 import { FileDown, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import axios from 'axios';
-import { useToast } from '@/components/contracts/Toast';
+import { useToast } from '@/components/ui/feedback/Toast';
 
 interface TimelineTabProps {
     contract: Contract;
     meId: string;
-    onApprove: (note: string, file?: File) => void;
+    onApprove: (note: string, file?: File) => Promise<void>;
     showToast: (msg: string, type: any) => void;
 }
 

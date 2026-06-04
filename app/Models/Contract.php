@@ -18,48 +18,6 @@ class Contract extends Model
 
     protected $with = ['meta'];
 
-    protected $appends = [
-        'kop_topik',
-        'kop_sub_topik',
-        'kop_lampiran',
-        'f1_tujuan',
-        'f1_sifat',
-        'p1_entity',
-        'p1_signer',
-        'p1_signer_position',
-        'p1_address',
-        'p2_entity',
-        'p2_signer',
-        'p2_signer_position',
-        'p2_address',
-        'f2_scope',
-        'f2_price',
-        'f2_payment',
-        'f2_tenure',
-        'f2_location',
-    ];
-
-    protected static $metaColumns = [
-        'kop_topik',
-        'kop_sub_topik',
-        'kop_lampiran',
-        'f1_tujuan',
-        'f1_sifat',
-        'p1_entity',
-        'p1_signer',
-        'p1_signer_position',
-        'p1_address',
-        'p2_entity',
-        'p2_signer',
-        'p2_signer_position',
-        'p2_address',
-        'f2_scope',
-        'f2_price',
-        'f2_payment',
-        'f2_tenure',
-        'f2_location',
-    ];
-
     protected $fillable = [
         'contract_no',
         'crown_no',
@@ -81,25 +39,7 @@ class Contract extends Model
         'metadata',
         'submitted_at',
         'initiated_by_id',
-        // F1 & F2 Template Fields
-        'kop_topik',
-        'kop_sub_topik',
-        'kop_lampiran',
-        'f1_tujuan',
-        'f1_sifat',
-        'p1_entity',
-        'p1_signer',
-        'p1_signer_position',
-        'p1_address',
-        'p2_entity',
-        'p2_signer',
-        'p2_signer_position',
-        'p2_address',
-        'f2_scope',
-        'f2_price',
-        'f2_payment',
-        'f2_tenure',
-        'f2_location',
+
         'vendor_id',
         'parent_id',
         'assigned_pic_id',
@@ -242,153 +182,8 @@ class Contract extends Model
         return ['done' => 0, 'total' => 0, 'pct' => 0];
     }
 
-    public function getKopTopikAttribute(): ?string
-    {
-        return $this->meta?->kop_topik;
-    }
-
-    public function getKopSubTopikAttribute(): ?string
-    {
-        return $this->meta?->kop_sub_topik;
-    }
-
-    public function getKopLampiranAttribute(): ?string
-    {
-        return $this->meta?->kop_lampiran;
-    }
-
-    public function getF1TujuanAttribute(): ?string
-    {
-        return $this->meta?->f1_tujuan;
-    }
-
-    public function getF1SifatAttribute(): ?string
-    {
-        return $this->meta?->f1_sifat;
-    }
-
-    public function getP1EntityAttribute(): ?string
-    {
-        return $this->meta?->p1_entity;
-    }
-
-    public function getP1SignerAttribute(): ?string
-    {
-        return $this->meta?->p1_signer;
-    }
-
-    public function getP1SignerPositionAttribute(): ?string
-    {
-        return $this->meta?->p1_signer_position;
-    }
-
-    public function getP1AddressAttribute(): ?string
-    {
-        return $this->meta?->p1_address;
-    }
-
-    public function getP2EntityAttribute(): ?string
-    {
-        return $this->meta?->p2_entity;
-    }
-
-    public function getP2SignerAttribute(): ?string
-    {
-        return $this->meta?->p2_signer;
-    }
-
-    public function getP2SignerPositionAttribute(): ?string
-    {
-        return $this->meta?->p2_signer_position;
-    }
-
-    public function getP2AddressAttribute(): ?string
-    {
-        return $this->meta?->p2_address;
-    }
-
-    public function getF2ScopeAttribute(): ?string
-    {
-        return $this->meta?->f2_scope;
-    }
-
-    public function getF2PriceAttribute(): ?string
-    {
-        return $this->meta?->f2_price;
-    }
-
-    public function getF2PaymentAttribute(): ?string
-    {
-        return $this->meta?->f2_payment;
-    }
-
-    public function getF2TenureAttribute(): ?string
-    {
-        return $this->meta?->f2_tenure;
-    }
-
-    public function getF2LocationAttribute(): ?string
-    {
-        return $this->meta?->f2_location;
-    }
-
-    protected static function booted(): void
-    {
-        static::saved(function (self $contract) {
-            if ($contract->relationLoaded('meta') && $contract->meta) {
-                $meta = $contract->meta;
-                $meta->contract_id = $contract->id;
-                $meta->save();
-            }
-        });
-    }
-
     public function meta(): HasOne
     {
         return $this->hasOne(ContractMeta::class, 'contract_id', 'id');
-    }
-
-    public function getAttribute($key)
-    {
-        if (in_array($key, static::$metaColumns)) {
-            if ($this->relationLoaded('meta')) {
-                return $this->meta ? $this->meta->{$key} : null;
-            }
-
-            $meta = $this->meta;
-
-            return $meta ? $meta->{$key} : null;
-        }
-
-        return parent::getAttribute($key);
-    }
-
-    public function setAttribute($key, $value)
-    {
-        if (in_array($key, static::$metaColumns)) {
-            $meta = $this->meta;
-            if (! $meta) {
-                $meta = new ContractMeta;
-                if ($this->exists) {
-                    $meta->contract_id = $this->id;
-                }
-                $this->setRelation('meta', $meta);
-            }
-
-            $meta->{$key} = $value;
-
-            return $this;
-        }
-
-        return parent::setAttribute($key, $value);
-    }
-
-    protected function mutateAttributeForArray($key, $value)
-    {
-        if (in_array($key, static::$metaColumns)) {
-            return $this->getAttribute($key);
-        }
-
-        return parent::mutateAttributeForArray($key, $value);
     }
 }

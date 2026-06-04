@@ -72,7 +72,8 @@ class ReportController extends Controller
             ->groupBy('role')
             ->get();
 
-        $statusDistribution = (clone $query)->select('status', DB::raw('count(*) as count'))
+        $statusDistribution = (clone $query)->withoutEagerLoads()
+            ->select('status', DB::raw('count(*) as count'))
             ->groupBy('status')
             ->get();
 
@@ -123,7 +124,8 @@ class ReportController extends Controller
             ? "strftime('%Y-%m', t_contracts.created_at) as month"
             : "to_char(t_contracts.created_at, 'YYYY-MM') as month";
 
-        $monthlyTrend = (clone $query)->leftJoin('m_contract_types', 't_contracts.contract_type_id', '=', 'm_contract_types.id')
+        $monthlyTrend = (clone $query)->withoutEagerLoads()
+            ->leftJoin('m_contract_types', 't_contracts.contract_type_id', '=', 'm_contract_types.id')
             ->select(
                 DB::raw($monthExpression),
                 'm_contract_types.name as type_name',
@@ -159,8 +161,9 @@ class ReportController extends Controller
             'bottlenecks' => $bottlenecks,
             'statusDistribution' => $statusDistribution,
             'monthlyTrend' => $monthlyTrend,
-            'users' => User::select('id', 'name')->get(),
+            'users' => User::select('id', 'name', 'company_id')->get(),
             'types' => ContractType::select('id', 'name')->get(),
+            'companies' => CompanyGroup::with('companies')->get(),
         ]);
     }
 

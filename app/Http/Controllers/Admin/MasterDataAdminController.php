@@ -1273,7 +1273,7 @@ class MasterDataAdminController extends Controller
     {
         $request->validate([
             'entities' => 'required|array',
-            'entities.*' => 'string|in:company_groups,regions,companies,departments,contract_statuses,contract_types,workflows,contracts,roles,access_mappings,navigation_mappings',
+            'entities.*' => 'string|in:company_groups,regions,companies,departments,contract_statuses,contract_types,workflows,contracts,roles,access_mappings,navigation_mappings,form_templates,form_fields',
         ]);
 
         $entities = $request->input('entities');

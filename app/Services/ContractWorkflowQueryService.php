@@ -99,13 +99,13 @@ class ContractWorkflowQueryService
         $step = null;
         if ($stepOrLevel instanceof WorkflowStep) {
             $step = $stepOrLevel;
-            $level = $step->hierarchy_level ?: 1;
+            $level = ($step->getAttributes()['hierarchy_level'] ?? null) ?: 1;
         } else {
             $level = (int) $stepOrLevel;
         }
 
         $currentDeptId = $initiator->department_id;
-        $initiatorRoleName = $initiator->getAttribute('role') ?: ($initiator->role()->first()->name ?? '');
+        $initiatorRoleName = $initiator->getAttribute('role') ?: ($initiator->roleRelation()->first()->name ?? '');
         $initiatorRole = strtolower($initiatorRoleName);
 
         // Define hierarchy order
@@ -131,28 +131,30 @@ class ContractWorkflowQueryService
 
         if ($step) {
             // Apply Organizational Filters from Step
-            if ($step->filter_department && $initiator->department_id) {
-                $query->where('department_id', $initiator->department_id);
+            if ($step->filter_department) {
+                $query->where('department_id', $initiator->department_id ?? '00000000-0000-0000-0000-000000000000');
             }
 
-            if ($step->filter_company && $initiator->company_id) {
-                $query->where('company_id', $initiator->company_id);
+            if ($step->filter_company) {
+                $query->where('company_id', $initiator->company_id ?? '00000000-0000-0000-0000-000000000000');
             }
 
             if ($step->filter_company_group || $step->filter_region) {
-                $initiatorCompany = $initiator->company;
-                if ($initiatorCompany) {
-                    if ($step->filter_company_group && $initiatorCompany->company_group_id) {
-                        $query->whereHas('company', function ($q) use ($initiatorCompany) {
-                            $q->where('company_group_id', $initiatorCompany->company_group_id);
-                        });
-                    }
-                    if ($step->filter_region && $initiatorCompany->region_id) {
-                        $query->whereHas('company', function ($q) use ($initiatorCompany) {
-                            $q->where('region_id', $initiatorCompany->region_id);
-                        });
-                    }
+                if (! $initiator->relationLoaded('company')) {
+                    $initiator->load('company');
                 }
+                $initiatorCompany = $initiator->company;
+
+                $query->whereHas('company', function ($q) use ($step, $initiatorCompany) {
+                    if ($step->filter_company_group) {
+                        $groupId = $initiatorCompany?->company_group_id ?? '00000000-0000-0000-0000-000000000000';
+                        $q->where('company_group_id', $groupId);
+                    }
+                    if ($step->filter_region) {
+                        $regionId = $initiatorCompany?->region_id ?? '00000000-0000-0000-0000-000000000000';
+                        $q->where('region_id', $regionId);
+                    }
+                });
             }
 
             // If specific roles are defined for this step, ensure the target role is within that set
@@ -162,6 +164,7 @@ class ContractWorkflowQueryService
             }
 
             // "alur workflow yang tersedia" - restrict pool to users allowed by the workflow's global configuration
+            $step->loadMissing('workflow');
             $workflow = $step->workflow;
             if ($workflow) {
                 // 1. Global Approver Roles

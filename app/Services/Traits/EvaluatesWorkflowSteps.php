@@ -8,7 +8,6 @@ use App\Models\Department;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\WorkflowStep;
-use App\Services\ContractWorkflowQueryService;
 use Illuminate\Support\Facades\Auth;
 
 trait EvaluatesWorkflowSteps
@@ -38,21 +37,20 @@ trait EvaluatesWorkflowSteps
     public function shouldExecuteStep(Contract $contract, WorkflowStep $step): bool
     {
         // Rule 2: Bypass optional or decision steps entirely
-        if ($step->is_optional) {
+        if ($step->getAttributes()['is_optional'] ?? false) {
             return false;
         }
 
-        if ($step->step_category === 'decision') {
+        if (($step->getAttributes()['step_category'] ?? '') === 'decision') {
             return false;
         }
 
-        // Rule 3: Skip direct supervisor review if initiator is a supervisor or manager
+        // Skip direct supervisor review if initiator is a supervisor or manager
         if ($step->approver_type === 'atasan') {
             $initiator = $contract->initiator;
-            $roleName = strtolower($initiator->role ?: ($initiator->role()->first()->name ?? ''));
+            $roleName = strtolower($initiator->role ?: ($initiator->roleRelation()->first()->name ?? ''));
             $exemptRoles = [
                 strtolower(Role::MANAGER),
-                'supervisor',
                 strtolower(Role::VP),
                 strtolower(Role::CEO),
                 strtolower(Role::DIRECTOR),
@@ -63,12 +61,12 @@ trait EvaluatesWorkflowSteps
             }
         }
 
-        // Rule 4: Skip Department Manager Review if Initiator is Manager/Head
+        // Skip Department Manager Review if Initiator is Manager/Head
         $roles = (array) $step->role;
         $lowerRoles = array_map('strtolower', $roles);
         if (in_array(strtolower(Role::MANAGER), $lowerRoles)) {
             $initiator = $contract->initiator;
-            $initiatorRole = strtolower($initiator->role ?: ($initiator->role()->first()->name ?? ''));
+            $initiatorRole = strtolower($initiator->role ?: ($initiator->roleRelation()->first()->name ?? ''));
             $exemptRoles = [
                 strtolower(Role::MANAGER),
                 strtolower(Role::VP),
@@ -79,32 +77,6 @@ trait EvaluatesWorkflowSteps
             if (in_array($initiatorRole, $exemptRoles)) {
                 $targetDeptIds = $step->department_ids;
                 if (empty($targetDeptIds) || in_array($initiator->department_id, $targetDeptIds)) {
-                    return false;
-                }
-            }
-        }
-
-        // Rules 5 & 6: Skip Tax Review under certain conditions
-        $queryService = $this->queryService ?? app(ContractWorkflowQueryService::class);
-        if ($queryService->isTaxStep($step)) {
-            $metadata = $contract->metadata ?? [];
-            $taxToggle = $metadata['tax_required'] ?? ($metadata['contract.has_tax'] ?? null);
-
-            // If explicitly toggled ON, bypass automatic skip rules
-            if (in_array($taxToggle, [true, 'true', 1, '1', 'on', 'yes'], true)) {
-                // Continue to check other conditions (like condition_expression)
-            } else {
-                // Rule 5: Skip Tax Review if Contract Price < 1,000,000 IDR
-                $priceStr = $contract->f2_price ?? '';
-                $price = $this->parsePrice($priceStr);
-                if ($price < 1000000) {
-                    return false;
-                }
-
-                // Rule 6: Skip Tax Review for Specific Entities
-                $company = $contract->initiator->company;
-                $companyCode = $company?->code;
-                if (in_array(strtoupper($companyCode ?? ''), ['LTI', 'LTX', 'LTS'])) {
                     return false;
                 }
             }
@@ -239,11 +211,18 @@ trait EvaluatesWorkflowSteps
 
         // Condition: Direct Supervisor Review (only if initiator is Staff)
         if (str_contains($condition, 'initiator_is_staff')) {
-            $roleName = $contract->initiator->getAttribute('role') ?: ($contract->initiator->role()->first()->name ?? '');
+            $roleName = $contract->initiator->getAttribute('role') ?: ($contract->initiator->roleRelation()->first()->name ?? '');
 
             // Bypass logic: Skip Step 1 if submitted by Legal/Admin for others (Helper Mode)
             $creator = Auth::user();
-            $isLegal = $creator && ($creator->department?->code === Department::CODE_LEGAL || $creator->role === Role::ADMIN);
+            $creatorDeptCode = null;
+            if ($creator) {
+                if (! $creator->relationLoaded('department')) {
+                    $creator->load('department');
+                }
+                $creatorDeptCode = $creator->department?->code;
+            }
+            $isLegal = $creator && ($creatorDeptCode === Department::CODE_LEGAL || $creator->role === Role::ADMIN);
             $isHelper = $contract->initiated_by_id && $contract->initiated_by_id !== $contract->created_by;
 
             if ($isLegal && $isHelper) {
@@ -255,18 +234,21 @@ trait EvaluatesWorkflowSteps
 
         // Condition: Skip if initiator is Legal (used for Manager step)
         if (str_contains($condition, 'initiator_not_legal')) {
-            return $contract->initiator->department?->code !== Department::CODE_LEGAL;
+            $initiator = $contract->initiator;
+            if (! $initiator->relationLoaded('department')) {
+                $initiator->load('department');
+            }
+
+            return $initiator->department?->code !== Department::CODE_LEGAL;
         }
 
         // Condition: Skip Management if Initiator is already Management/Direksi
         if (str_contains($condition, 'initiator_not_manager')) {
-            $initiatorRoleName = $contract->initiator->getAttribute('role') ?: ($contract->initiator->role()->first()->name ?? '');
+            $initiatorRoleName = $contract->initiator->getAttribute('role') ?: ($contract->initiator->roleRelation()->first()->name ?? '');
             $roleName = strtolower($initiatorRoleName);
             $exemptRoles = [
                 strtolower(Role::MANAGER),
                 strtolower(Role::DIRECTOR),
-                'direktur',
-                'direksi',
                 strtolower(Role::ADMIN),
             ];
 

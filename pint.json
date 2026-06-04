@@ -3,6 +3,10 @@
     "rules": {
         "no_empty_comment": true,
         "no_empty_phpdoc": true,
-        "phpdoc_to_comment": true
+        "phpdoc_to_comment": true,
+        "no_superfluous_phpdoc_tags": {
+            "allow_mixed": false,
+            "remove_inheritdoc": true
+        }
     }
 }

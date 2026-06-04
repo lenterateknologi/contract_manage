@@ -1,4 +1,4 @@
-import { ContractMembersTab } from '@/components/contracts/ContractMembersTab';
+import { ContractMembersTab } from '@/components/contracts/tabs/ContractMembersTab';
 import { Contract } from '@/types/contracts';
 
 interface MembersTabProps {

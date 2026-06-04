@@ -1,4 +1,4 @@
-import { useToast } from '@/components/contracts/Toast';
+import { useToast } from '@/components/ui/feedback/Toast';
 import { Button } from '@/components/ui/base/Button';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { Modal } from '@/components/ui/overlays/Modal';

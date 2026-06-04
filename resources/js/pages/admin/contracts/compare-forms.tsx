@@ -1,4 +1,4 @@
-import { InteractiveForm } from '@/components/form-renderer/InteractiveForm';
+import { InteractiveForm } from '@/components/form/renderer/InteractiveForm';
 import { cn } from '@/lib/utils';
 import { Head } from '@inertiajs/react';
 import { ArrowLeftRight, CalendarDays, User } from 'lucide-react';

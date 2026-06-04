@@ -63,6 +63,7 @@ class Workflow extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
+        'id',
         'contract_type_id',
         'department_id',
         'name',
@@ -88,6 +89,7 @@ class Workflow extends Model
         'created_by',
         'updated_by',
         'meta',
+        'is_active',
     ];
 
     protected $casts = [

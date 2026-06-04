@@ -1,4 +1,4 @@
-import ContractAuditTrail from '@/components/contracts/ContractAuditTrail';
+import ContractAuditTrail from '@/components/contracts/tabs/ContractAuditTrail';
 import { Contract } from '@/types/contracts';
 
 interface AuditTrailTabProps {

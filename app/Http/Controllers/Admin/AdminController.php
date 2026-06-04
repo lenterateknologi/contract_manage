@@ -336,7 +336,6 @@ class AdminController extends Controller
         $data = $request->validated();
 
         $data['password'] = bcrypt($data['password']);
-        $data['initials'] = collect(explode(' ', $data['name']))->map(fn ($n) => strtoupper(substr($n, 0, 1)))->take(2)->join('');
 
         $user = User::create($data);
 

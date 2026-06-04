@@ -3,7 +3,6 @@
 namespace App\Policies;
 
 use App\Models\Contract;
-use App\Models\Role;
 use App\Models\User;
 
 class ContractPolicy
@@ -18,35 +17,29 @@ class ContractPolicy
 
     /**
      * Determine whether the user can view the model.
+     * Logic: Fully workflow-driven + ownership + admin override.
      */
     public function view(User $user, Contract $contract): bool
     {
-        // Admin can view everything
-        if ($user->role === Role::ADMIN || $user->role === Role::SUPER_ADMIN) {
+        // 1. Admin/Super Admin can always view for monitoring/management
+        if ($user->isAdmin()) {
             return true;
         }
 
-        // Creator can view their own contracts
+        // 2. Creator can always view their own creation
         if ($contract->created_by === $user->id) {
             return true;
         }
 
-        // Approvers can view
+        // 3. Anyone who is/was involved in the approval process can view
         if ($contract->approvals()->where('user_id', $user->id)->exists()) {
             return true;
         }
 
-        // Only allow viewing drafts if you are the creator or admin
-        if ($contract->status === 'draft') {
-            return false;
-        }
-
-        // Pic or Manager can view
+        // 4. Specifically assigned persons (PIC/Manager)
         if ($contract->assigned_pic_id === $user->id || $contract->manager_id === $user->id) {
             return true;
         }
-
-        // Role/Dept based visibility (implement based on business rules if needed)
 
         return false;
     }
@@ -60,158 +53,109 @@ class ContractPolicy
     }
 
     /**
-     * Determine whether the user can update the model's main info.
+     * Main update permission (Generic)
      */
     public function update(User $user, Contract $contract): bool
     {
-        // If no workflow step is active, default to allowing creator
-        if (! $contract->workflow_step_id) {
-            return $contract->created_by === $user->id;
-        }
-
-        $canEdit = (bool) data_get($contract->workflowStep?->meta, 'allow_info_edit', true);
-
-        return $canEdit && $this->isActor($user, $contract);
+        return $this->canPerformEdit($user, $contract, 'allow_info_edit');
     }
 
-    /**
-     * Determine whether the user can update F1 form.
-     */
     public function updateF1(User $user, Contract $contract): bool
     {
-        if (! $contract->workflow_step_id) {
-            return $contract->created_by === $user->id;
-        }
-
-        $canEdit = (bool) data_get($contract->workflowStep?->meta, 'allow_f1_edit', true);
-
-        return $canEdit && $this->isActor($user, $contract);
+        return $this->canPerformEdit($user, $contract, 'allow_f1_edit');
     }
 
-    /**
-     * Determine whether the user can update F2 form.
-     */
     public function updateF2(User $user, Contract $contract): bool
     {
-        if (! $contract->workflow_step_id) {
-            return $contract->created_by === $user->id;
-        }
-
-        $canEdit = (bool) data_get($contract->workflowStep?->meta, 'allow_f2_edit', true);
-
-        return $canEdit && $this->isActor($user, $contract);
+        return $this->canPerformEdit($user, $contract, 'allow_f2_edit');
     }
 
-    /**
-     * Determine whether the user can update agreement/contract document.
-     */
     public function updateAgreement(User $user, Contract $contract): bool
     {
-        if (! $contract->workflow_step_id) {
-            return $contract->created_by === $user->id;
-        }
-
-        $canEdit = (bool) data_get($contract->workflowStep?->meta, 'allow_agreement_edit', true);
-
-        return $canEdit && $this->isActor($user, $contract);
+        return $this->canPerformEdit($user, $contract, 'allow_agreement_edit');
     }
 
-    /**
-     * Determine whether the user can update attachments.
-     */
     public function updateAttachment(User $user, Contract $contract): bool
     {
-        if (! $contract->workflow_step_id) {
-            return $contract->created_by === $user->id;
-        }
-
-        $canEdit = (bool) data_get($contract->workflowStep?->meta, 'allow_attachment_edit', true);
-
-        return $canEdit && $this->isActor($user, $contract);
+        return $this->canPerformEdit($user, $contract, 'allow_attachment_edit');
     }
 
-    /**
-     * Determine whether the user can update contract references.
-     */
     public function updateReference(User $user, Contract $contract): bool
     {
-        if (! $contract->workflow_step_id) {
-            return $contract->created_by === $user->id;
-        }
-
-        $canEdit = (bool) data_get($contract->workflowStep?->meta, 'allow_reference', true);
-
-        return $canEdit && $this->isActor($user, $contract);
+        return $this->canPerformEdit($user, $contract, 'allow_reference');
     }
 
     /**
-     * Check if user is the creator or an active approver for the current step.
+     * Centralized workflow-driven authorization.
+     * No hardcoded status checks here. Everything depends on:
+     * 1. Is the action allowed in the current workflow step?
+     * 2. Is the user an authorized actor for this step?
+     */
+    private function canPerformEdit(User $user, Contract $contract, string $metaKey): bool
+    {
+        // If contract is still in initial state (no step), allow creator
+        if (! $contract->workflow_step_id) {
+            return $contract->created_by === $user->id || $user->isAdmin();
+        }
+
+        // Check permission from workflow configuration (JSON meta)
+        $isAllowedInStep = (bool) data_get($contract->workflowStep?->meta, $metaKey, true);
+
+        return $isAllowedInStep && $this->isActor($user, $contract);
+    }
+
+    /**
+     * Check if user is an authorized actor in the CURRENT workflow step.
      */
     private function isActor(User $user, Contract $contract): bool
     {
-        // 1. Creator can always act on their own contract (unless locked/archived)
-        if ($contract->created_by === $user->id) {
+        // Admins are universal actors
+        if ($user->isAdmin()) {
             return true;
         }
 
-        // 2. Active approver check (specific record exists)
-        $hasActiveApproval = $contract->approvals()
+        // Active pending approval for this specific user
+        $hasPendingApproval = $contract->approvals()
             ->where('user_id', $user->id)
             ->where('workflow_step_id', $contract->workflow_step_id)
             ->where('status', 'pending')
             ->exists();
 
-        if ($hasActiveApproval) {
+        if ($hasPendingApproval) {
             return true;
         }
 
-        // 3. Role/Department matching (Fallback for placeholders or PIC assignment)
+        // Fallback: Check if user matches the role/department defined in the step
+        // (Useful for "Open" steps where anyone in a department can act)
         $currentStep = $contract->workflowStep;
-        if (! $currentStep) {
-            return false;
-        }
+        if ($currentStep) {
+            $stepRoles = (array) $currentStep->role;
+            $roleMatches = empty($stepRoles) || in_array($user->role, $stepRoles);
 
-        // Admin can always act as a fallback actor
-        if ($user->role === Role::ADMIN || $user->role === Role::SUPER_ADMIN) {
-            return true;
-        }
+            $stepDeptIds = (array) ($currentStep->department_ids ?? []);
+            $userDeptId = $user->department_id;
+            $deptMatches = empty($stepDeptIds) || in_array($userDeptId, $stepDeptIds);
 
-        // Check if user's role matches any of the required roles for this step
-        $stepRoles = (array) $currentStep->role;
-        $userRoleMatches = in_array($user->role, $stepRoles);
-
-        // Check if department matches if applicable
-        $stepDeptIds = $currentStep->department_ids;
-        $deptMatches = empty($stepDeptIds) || in_array($user->department_id, $stepDeptIds);
-
-        if ($userRoleMatches && $deptMatches) {
-            return true;
+            if ($roleMatches && $deptMatches) {
+                return true;
+            }
         }
 
         return false;
     }
 
-    /**
-     * Determine whether the user can delete the model.
-     */
     public function delete(User $user, Contract $contract): bool
     {
-        return $user->role === Role::ADMIN || $user->role === Role::SUPER_ADMIN;
+        return $user->isAdmin();
     }
 
-    /**
-     * Determine whether the user can restore the model.
-     */
     public function restore(User $user, Contract $contract): bool
     {
-        return $user->role === Role::ADMIN || $user->role === Role::SUPER_ADMIN;
+        return $user->isAdmin();
     }
 
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
     public function forceDelete(User $user, Contract $contract): bool
     {
-        return $user->role === Role::ADMIN || $user->role === Role::SUPER_ADMIN;
+        return $user->isSuperAdmin();
     }
 }

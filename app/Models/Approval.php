@@ -42,6 +42,11 @@ class Approval extends Model
         'is_active' => 'boolean',
     ];
 
+    public function getTargetApproversAttribute(): ?string
+    {
+        return $this->approver_name;
+    }
+
     public function contract(): BelongsTo
     {
         return $this->belongsTo(Contract::class);

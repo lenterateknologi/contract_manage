@@ -569,23 +569,7 @@ class ContractExportController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Browsershot Export Failed: '.$e->getMessage());
-
-            // Fallback to DomPDF if Browsershot fails
-            $fields = $template->fields->sortBy('order');
-            $pdf = Pdf::loadView('pdf.form-template', [
-                'template' => $template,
-                'formData' => $formData,
-                'fields' => $fields,
-                'contract' => $contract,
-            ]);
-
-            $safeNo = Str::slug($contract->contract_no ?: 'contract');
-            $fileName = $safeNo.'_'.strtoupper($type).'.pdf';
-            if ($disposition === 'inline') {
-                return $pdf->stream($fileName);
-            }
-
-            return $pdf->download($fileName);
+            abort(500, 'Gagal menghasilkan PDF: '.$e->getMessage());
         }
     }
 

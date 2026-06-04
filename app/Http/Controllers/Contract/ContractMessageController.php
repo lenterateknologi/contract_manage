@@ -31,8 +31,6 @@ class ContractMessageController extends Controller
                 'name' => $m->user->name,
                 'initials' => $m->user->initials,
                 'role' => $m->user->role,
-                'bg_color' => $m->user->bg_color,
-                'text_color' => $m->user->text_color,
             ] : null,
         ]));
     }
@@ -84,8 +82,6 @@ class ContractMessageController extends Controller
                 'name' => $msg->user->name,
                 'initials' => $msg->user->initials,
                 'role' => $msg->user->role,
-                'bg_color' => $msg->user->bg_color,
-                'text_color' => $msg->user->text_color,
             ] : null,
         ], 201);
     }

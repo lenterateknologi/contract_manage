@@ -1,4 +1,4 @@
-import ContractChat from '@/components/contracts/ContractChat';
+import ContractChat from '@/components/contracts/tabs/ContractChat';
 import { Contract } from '@/types/contracts';
 
 interface ChatTabProps {
