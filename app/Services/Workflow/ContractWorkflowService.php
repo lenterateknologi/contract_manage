@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Workflow;
 
 use App\Enums\WorkflowAction;
 use App\Models\Approval;
@@ -11,7 +11,7 @@ use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
 use App\Models\WorkflowStepAction;
-use App\Services\Traits\EvaluatesWorkflowSteps;
+use App\Services\Workflow\Concerns\EvaluatesWorkflowSteps;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
@@ -19,15 +19,10 @@ class ContractWorkflowService
 {
     use EvaluatesWorkflowSteps;
 
-    protected SLAService $slaService;
-
-    protected ContractWorkflowQueryService $queryService;
-
-    public function __construct(SLAService $slaService, ContractWorkflowQueryService $queryService)
-    {
-        $this->slaService = $slaService;
-        $this->queryService = $queryService;
-    }
+    public function __construct(
+        protected SLAService $slaService,
+        protected WorkflowQueryService $queryService
+    ) {}
 
     /**
      * Send a contract for approval by initiating its workflow.
@@ -467,13 +462,19 @@ class ContractWorkflowService
      */
     private function activateNextApprovers(Contract $contract, Approval $approval): void
     {
-        if (in_array($approval->role, ['Persetujuan Tambahan', 'Penandatangan'])) {
-            $nextApproval = Approval::where('contract_id', $contract->id)
+        if (in_array($approval->role, ['Persetujuan Tambahan', 'Penandatangan', 'Pihak 1', 'Pihak 2'])) {
+            $nextApprovalQuery = Approval::where('contract_id', $contract->id)
                 ->where('workflow_step_id', $approval->workflow_step_id)
-                ->where('role', $approval->role)
                 ->where('is_active', true)
-                ->where('status', 'waiting')
-                ->orderBy('sort_order')
+                ->where('status', 'waiting');
+
+            if ($approval->role === 'Persetujuan Tambahan') {
+                $nextApprovalQuery->where('role', 'Persetujuan Tambahan');
+            } else {
+                $nextApprovalQuery->whereIn('role', ['Penandatangan', 'Pihak 1', 'Pihak 2']);
+            }
+
+            $nextApproval = $nextApprovalQuery->orderBy('sort_order')
                 ->orderBy('sub_step')
                 ->first();
 

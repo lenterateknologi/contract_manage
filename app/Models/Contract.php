@@ -86,7 +86,11 @@ class Contract extends Model
     public function initiator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'initiated_by_id')->withDefault(function ($user, $contract) {
-            return $contract->creator;
+            if ($contract->relationLoaded('creator')) {
+                return $contract->creator;
+            }
+
+            return User::find($contract->created_by);
         });
     }
 

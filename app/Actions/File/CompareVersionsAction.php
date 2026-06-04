@@ -33,7 +33,7 @@ class CompareVersionsAction
             ],
         ]);
 
-        return Inertia::render('admin/contracts/compare-agreements', [
+        return Inertia::render('contracts/compare-agreements', [
             'contract' => $this->formatter->formatContract($contract),
             'versions' => $versions,
             'initialV1' => (int) $request->v1,

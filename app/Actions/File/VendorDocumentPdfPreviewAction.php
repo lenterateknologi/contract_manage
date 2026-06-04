@@ -4,7 +4,7 @@ namespace App\Actions\File;
 
 use App\Models\Contract;
 use App\Models\VendorDocument;
-use App\Services\PdfService;
+use App\Services\Utils\PdfService;
 use Illuminate\Support\Facades\Storage;
 
 class VendorDocumentPdfPreviewAction

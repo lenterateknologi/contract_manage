@@ -18,7 +18,7 @@ use App\Queries\Contract\ContractDashboardQuery;
 use App\Queries\Contract\ContractDetailQuery;
 use App\Queries\Contract\ContractListQuery;
 use App\Queries\Contract\ContractOptionsQuery;
-use App\Services\ContractWorkflowService;
+use App\Services\Workflow\ContractWorkflowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;

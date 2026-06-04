@@ -285,6 +285,8 @@ class ContractFormController extends Controller
 
     private function applyInheritance(array $f1Data, Contract $contract, array $existingData = []): array
     {
+        $contract->loadMissing(['initiator', 'creator', 'vendor', 'contractType']);
+
         $formData = array_merge($f1Data, $existingData);
 
         $inheritanceMap = [

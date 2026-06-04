@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Traits;
+namespace App\Services\Workflow\Concerns;
 
 use App\Formatters\ContractFormatter;
 use App\Models\Approval;

@@ -12,7 +12,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\WorkflowStep;
 use App\Queries\Contract\ContractDetailQuery;
-use App\Services\ContractWorkflowService;
+use App\Services\Workflow\ContractWorkflowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;

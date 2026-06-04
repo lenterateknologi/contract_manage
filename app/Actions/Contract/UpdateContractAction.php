@@ -4,7 +4,7 @@ namespace App\Actions\Contract;
 
 use App\Models\Contract;
 use App\Models\ContractHistory;
-use App\Services\ContractWorkflowService;
+use App\Services\Workflow\ContractWorkflowService;
 use Illuminate\Support\Facades\Auth;
 
 class UpdateContractAction

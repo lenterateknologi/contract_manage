@@ -6,7 +6,7 @@ use App\Models\AccessModule;
 use App\Models\Approval;
 use App\Models\Contract;
 use App\Models\Role;
-use App\Services\ContractWorkflowService;
+use App\Services\Workflow\ContractWorkflowService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @import 'tailwindcss';
 @import './theme.css';
 
@@ -7,8 +7,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-    --font-sans: 'Montserrat', 'Inter', ui-sans-serif, system-ui, sans-serif;
-    --font-primary: 'Montserrat', 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-primary: 'Inter', ui-sans-serif, system-ui, sans-serif;
     --font-serif: 'Lora', 'Times New Roman', Georgia, serif;
     --font-mono: var(--font-mono), 'Courier New', monospace;
 
@@ -109,7 +109,7 @@
     }
 
     html {
-        font-family: 'Montserrat', 'Inter', sans-serif;
+        font-family: 'Inter', sans-serif;
     }
 
     body {
@@ -120,12 +120,12 @@
     button,
     select,
     textarea {
-        font-family: 'Montserrat', 'Inter', sans-serif;
+        font-family: 'Inter', sans-serif;
     }
 }
 
 * {
-    font-family: 'Montserrat', 'Inter', sans-serif;
+    font-family: 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -318,4 +318,14 @@
         border: none !important;
         background: white !important;
     }
+}
+
+/* Typography Simplification Overrides */
+.uppercase {
+    text-transform: none !important;
+}
+.tracking-wider,
+.tracking-widest,
+.tracking-tight {
+    letter-spacing: normal !important;
 }

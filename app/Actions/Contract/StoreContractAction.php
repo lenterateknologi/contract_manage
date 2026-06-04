@@ -10,7 +10,7 @@ use App\Models\ContractHistory;
 use App\Models\ContractType;
 use App\Models\NumberingFormat;
 use App\Models\User;
-use App\Services\ContractWorkflowService;
+use App\Services\Workflow\ContractWorkflowService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 

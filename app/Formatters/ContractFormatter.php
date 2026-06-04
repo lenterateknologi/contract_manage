@@ -7,7 +7,7 @@ use App\Models\Contract;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\WorkflowStep;
-use App\Services\ContractWorkflowService;
+use App\Services\Workflow\ContractWorkflowService;
 use Illuminate\Support\Facades\Auth;
 
 class ContractFormatter
@@ -21,6 +21,7 @@ class ContractFormatter
             'workflowStep.actions', 'histories.actor.department',
             'contractType', 'submissionType', 'vendor.documents', 'parent', 'workflow.steps',
             'versions.uploader', 'messages.user', 'attachments.uploader', 'formSubmissions.submittedBy',
+            'assignedPic.department', 'assignedBy.department',
         ]);
         $nextStep = self::getNextStep($c);
         $requiresPicAssignment = $nextStep && $nextStep->approver_type === 'assigned_pic';

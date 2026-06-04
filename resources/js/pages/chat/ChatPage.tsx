@@ -1,5 +1,5 @@
 import { AppSidebar } from '@/components/layout/AppSidebar';
-import { AppHeader } from '@/components/layout/AppHeader';
+import { AppSidebarHeader } from '@/components/layout/AppSidebarHeader';
 import { SidebarInset, SidebarProvider } from '@/components/ui/navigation/Sidebar';
 import { Head, usePage } from '@inertiajs/react';
 import { useState, useMemo } from 'react';
@@ -44,11 +44,11 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
     return (
         <SidebarProvider>
             <AppSidebar />
-            <SidebarInset className="bg-surface-muted/30">
-                <AppHeader breadcrumbs={breadcrumbs} />
+            <SidebarInset className="bg-surface-muted/30 font-sans">
+                <AppSidebarHeader breadcrumbs={breadcrumbs} />
                 <Head title="Chat Center" />
                 
-                <div className="flex h-[calc(100vh-64px)] overflow-hidden">
+                <div className="flex h-[calc(100vh-64px)] overflow-hidden font-sans">
                     {/* Sidebar: Daftar Kontrak */}
                     <div className="flex w-80 flex-col border-r border-surface-border bg-surface-base">
                         <div className="p-4 border-b border-surface-border">
@@ -88,17 +88,17 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                             <div className="flex flex-col h-full">
                                 <div className="p-4 border-b border-surface-border flex items-center justify-between bg-white dark:bg-zinc-900 shadow-sm z-10">
                                     <div className="flex flex-col">
-                                        <h3 className="text-sm font-black uppercase tracking-tight text-text-main leading-none mb-1">
+                                        <h3 className="text-sm font-semibold text-text-main leading-none mb-1">
                                             {selectedContract.title}
                                         </h3>
-                                        <p className="text-[10px] font-bold text-text-soft uppercase tracking-widest italic">
+                                        <p className="text-xs text-text-soft">
                                             Diskusi Kontrak {selectedContract.contract_no}
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <button 
                                             onClick={() => window.open(`/contracts/${selectedContract.id}`, '_blank')}
-                                            className="px-3 py-1.5 rounded-lg border border-surface-border text-[10px] font-black uppercase tracking-widest hover:bg-surface-muted transition-all"
+                                            className="px-3 py-1.5 rounded-lg border border-surface-border text-xs font-medium text-text-main hover:bg-surface-muted transition-all"
                                         >
                                             Buka Kontrak
                                         </button>
@@ -130,3 +130,5 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
         </SidebarProvider>
     );
 }
+
+ChatPage.layout = (page: React.ReactNode) => <>{page}</>;

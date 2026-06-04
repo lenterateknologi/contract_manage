@@ -19,24 +19,24 @@ export function ContractListItem({ contract, isSelected, onClick }: ContractList
         >
             <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-black tracking-widest text-text-soft uppercase">
+                    <span className="text-[10px] font-semibold text-text-soft">
                         #{contract.contract_no || 'NO-REQ'}
                     </span>
-                    <span className="text-[9px] font-bold text-text-soft/60 tabular-nums">
+                    <span className="text-[9px] text-text-soft/60 tabular-nums">
                         {contract.updated_at_formatted || ''}
                     </span>
                 </div>
                 <h3 className={cn(
-                    "text-xs font-bold uppercase tracking-tight line-clamp-1",
+                    "text-xs font-semibold line-clamp-1",
                     isSelected ? "text-primary" : "text-text-main"
                 )}>
                     {contract.title}
                 </h3>
                 <div className="flex items-center gap-3 mt-1">
-                    <div className="flex items-center gap-1 text-[9px] font-bold text-text-soft uppercase italic">
+                    <div className="flex items-center gap-1 text-[9px] text-text-soft">
                         <Building2 size={10} /> {contract.contract_type || 'General'}
                     </div>
-                    <div className="flex items-center gap-1 text-[9px] font-bold text-text-soft uppercase italic">
+                    <div className="flex items-center gap-1 text-[9px] text-text-soft">
                         <User size={10} /> {contract.creator?.name || 'System'}
                     </div>
                 </div>

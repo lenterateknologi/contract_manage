@@ -31,7 +31,7 @@ export function ExpiryBadge({ endDate }: Readonly<{ endDate: string | null }>) {
     }
 
     return (
-        <div className={cn('inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-semibold tracking-wider uppercase', color)}>
+        <div className={cn('inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-semibold', color)}>
             <Icon size={12} strokeWidth={3} />
             {label}
         </div>
@@ -92,7 +92,7 @@ export const SLACountdown = ({ deadline, status }: Readonly<{ deadline: string |
     return (
         <div
             className={cn(
-                'flex w-fit items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold tracking-tight uppercase ring-1',
+                'flex w-fit items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold ring-1',
                 getUrgencyStyles(),
             )}
         >
@@ -105,23 +105,23 @@ export const SLACountdown = ({ deadline, status }: Readonly<{ deadline: string |
 export const ContractInfoCell = ({ c }: Readonly<{ c: Contract }>) => (
     <div className="flex flex-col gap-1 py-0.5">
         <div className="flex items-center gap-2">
-            <span className="text-text-main text-[13px] leading-tight font-semibold tracking-tight uppercase">{c.title}</span>
+            <span className="text-text-main text-[13px] leading-tight font-semibold">{c.title}</span>
             {!!c.current_version && (
                 <div className="bg-primary flex-shrink-0 rounded px-1.5 py-0.5">
-                    <span className="text-primary-foreground text-[9px] font-semibold uppercase">V{c.current_version}</span>
+                    <span className="text-primary-foreground text-[9px] font-semibold">V{c.current_version}</span>
                 </div>
             )}
         </div>
         <div className="mt-0.5 flex items-center gap-2">
-            <span className="text-text-soft text-[10px] font-medium tracking-wider uppercase">{c.contract_type}</span>
+            <span className="text-text-soft text-[10px] font-medium">{c.contract_type}</span>
             <span className="bg-surface-border h-1 w-1 rounded-full" />
-            <span className="text-text-soft text-[10px] font-medium tracking-wider uppercase">{c.vendor?.name || 'No Vendor'}</span>
+            <span className="text-text-soft text-[10px] font-medium">{c.vendor?.name || 'No Vendor'}</span>
         </div>
     </div>
 );
 
 export const DepartmentCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <span className="text-text-desc text-[10px] font-medium tracking-wider uppercase">{c.initiator?.department_name || 'UMUM'}</span>
+    <span className="text-text-desc text-[10px] font-medium">{c.initiator?.department_name || 'UMUM'}</span>
 );
 
 export const ProgressCell = ({ c }: Readonly<{ c: Contract }>) => (
@@ -131,7 +131,7 @@ export const ProgressCell = ({ c }: Readonly<{ c: Contract }>) => (
 );
 
 export const CreatedAtCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <span className="text-text-soft text-[11px] font-medium uppercase">{c.created_at}</span>
+    <span className="text-text-soft text-[11px] font-medium">{c.created_at}</span>
 );
 
 export const ContractNoCell = ({ c }: Readonly<{ c: Contract }>) => (
@@ -139,7 +139,7 @@ export const ContractNoCell = ({ c }: Readonly<{ c: Contract }>) => (
 );
 
 export const TitleCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <span className="text-text-main line-clamp-1 text-xs font-semibold uppercase">{c.title}</span>
+    <span className="text-text-main line-clamp-1 text-xs font-semibold">{c.title}</span>
 );
 
 export const TypeAndVendorCell = ({ c, types }: Readonly<{ c: Contract; types: ContractType[] }>) => {
@@ -158,13 +158,13 @@ export const TypeAndVendorCell = ({ c, types }: Readonly<{ c: Contract; types: C
         <div className="flex flex-col gap-1.5 py-0.5">
             <span
                 className={cn(
-                    'inline-block w-fit rounded-xl px-2.5 py-0.5 text-[10px] leading-none font-semibold tracking-wide uppercase',
+                    'inline-block w-fit rounded-xl px-2.5 py-0.5 text-[10px] leading-none font-semibold',
                     TYPE_COLORS[colorIdx],
                 )}
             >
                 {(type?.name || 'N/A').replace('Perjanjian ', '').replace('Addendum / ', '')}
             </span>
-            <span className="text-text-soft truncate text-[11px] font-medium uppercase">{vendorName}</span>
+            <span className="text-text-soft truncate text-[11px] font-medium">{vendorName}</span>
         </div>
     );
 };
@@ -172,7 +172,7 @@ export const TypeAndVendorCell = ({ c, types }: Readonly<{ c: Contract; types: C
 export const ContractNoAndTitleCell = ({ c }: Readonly<{ c: Contract }>) => (
     <div className="flex flex-col gap-0.5 py-0.5">
         <span className="text-primary font-mono text-[10px] leading-none font-semibold">{c.contract_no || 'N/A'}</span>
-        <span className="text-text-main mt-1.5 line-clamp-1 text-[13px] leading-tight font-semibold tracking-tight uppercase">{c.title}</span>
+        <span className="text-text-main mt-1.5 line-clamp-1 text-[13px] leading-tight font-semibold">{c.title}</span>
     </div>
 );
 
@@ -183,8 +183,8 @@ export const InitiatorCell = ({ c }: Readonly<{ c: Contract }>) => {
 
     return (
         <div className="flex flex-col gap-0.5 py-0.5">
-            <span className="text-text-soft text-[10px] leading-none font-medium tracking-wider uppercase">{roleDept || 'Staff UMUM'}</span>
-            <span className="text-text-main mt-1.5 truncate text-[13px] leading-tight font-semibold tracking-tight uppercase">
+            <span className="text-text-soft text-[10px] leading-none font-medium">{roleDept || 'Staff UMUM'}</span>
+            <span className="text-text-main mt-1.5 truncate text-[13px] leading-tight font-semibold">
                 {c.initiator?.name || '—'}
             </span>
         </div>
@@ -201,20 +201,20 @@ export const StatusAndStepCell = ({ c }: Readonly<{ c: Contract }>) => {
             <div className="flex items-center">
                 <StatusBadge status={c.status} />
             </div>
-            {!!stepDesc && <span className="text-text-desc truncate text-[10px] leading-tight font-medium tracking-wide uppercase">{stepDesc}</span>}
+            {!!stepDesc && <span className="text-text-desc truncate text-[10px] leading-tight font-medium">{stepDesc}</span>}
         </div>
     );
 };
 
 export const AssignedByCell = ({ c }: Readonly<{ c: Contract }>) => (
     <div className="flex flex-col py-0.5">
-        <span className="text-text-main truncate text-[13px] font-semibold tracking-tight uppercase">{c.assigned_by?.name || '—'}</span>
+        <span className="text-text-main truncate text-[13px] font-semibold">{c.assigned_by?.name || '—'}</span>
     </div>
 );
 
 export const AssignedPicCell = ({ c }: Readonly<{ c: Contract }>) => (
     <div className="flex flex-col py-0.5">
-        <span className="text-text-main truncate text-[13px] font-semibold tracking-tight uppercase">{c.assigned_pic?.name || '—'}</span>
+        <span className="text-text-main truncate text-[13px] font-semibold">{c.assigned_pic?.name || '—'}</span>
     </div>
 );
 

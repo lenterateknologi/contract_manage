@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Workflow;
 
 use App\Models\Approval;
 use App\Models\Contract;
@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
-class ContractWorkflowQueryService
+class WorkflowQueryService
 {
     /**
      * Get pending approvals for a user
