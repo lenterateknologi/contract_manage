@@ -11,29 +11,29 @@ use App\Actions\Export\ExportFormSubmissionPdfAction;
 use App\Actions\Export\ExportFormSubmissionPdfQueueAction;
 use App\Formatters\ContractFormatter;
 use App\Http\Controllers\Controller;
-use App\Models\Contract;
-use App\Services\ContractWorkflowService;
+use App\Queries\Contract\ContractDetailQuery;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ContractExportController extends Controller
 {
     public function __construct(
-        protected ContractWorkflowService $workflowService,
+        protected ContractDetailQuery $contractDetailQuery
     ) {}
 
     public function exportAuditExcel(string $id, Request $request, ExportAuditExcelAction $action): StreamedResponse
     {
-        $contract = Contract::findOrFail($id);
+        $contract = $this->contractDetailQuery->find($id);
 
         return $action->execute($contract, $request);
     }
 
     public function renderApprovalTimeline(string $id, Request $request)
     {
-        $contract = Contract::with(['creator', 'approvals.approver'])->findOrFail($id);
+        $contract = $this->contractDetailQuery->find($id);
 
         $query = $contract->approvals()->orderBy('sequence');
 
@@ -59,28 +59,28 @@ class ContractExportController extends Controller
 
     public function exportApprovalTimelinePdfQueue(string $id, Request $request, ExportApprovalTimelinePdfQueueAction $action)
     {
-        $contract = Contract::findOrFail($id);
+        $contract = $this->contractDetailQuery->find($id);
 
         return $action->execute($contract, $request);
     }
 
     public function exportAuditPdfQueue(string $id, Request $request, ExportAuditPdfQueueAction $action)
     {
-        $contract = Contract::findOrFail($id);
+        $contract = $this->contractDetailQuery->find($id);
 
         return $action->execute($contract, $request);
     }
 
     public function exportAuditPdf(string $id, Request $request, ExportAuditPdfAction $action)
     {
-        $contract = Contract::findOrFail($id);
+        $contract = $this->contractDetailQuery->find($id);
 
         return $action->execute($contract, $request);
     }
 
     public function renderAuditDocument(string $id, Request $request)
     {
-        $contract = Contract::with(['vendor', 'contractType', 'creator', 'initiator'])->findOrFail($id);
+        $contract = $this->contractDetailQuery->find($id);
 
         $query = $contract->histories()->with('actor');
 
@@ -111,21 +111,21 @@ class ContractExportController extends Controller
 
     public function exportFormSubmissionPdfQueue(Request $request, string $id, string $type, ExportFormSubmissionPdfQueueAction $action)
     {
-        $contract = Contract::findOrFail($id);
+        $contract = $this->contractDetailQuery->find($id);
 
         return $action->execute($contract, $type, $request);
     }
 
     public function exportFormSubmissionPdf(string $id, string $type, Request $request, ExportFormSubmissionPdfAction $action): mixed
     {
-        $contract = Contract::findOrFail($id);
+        $contract = $this->contractDetailQuery->find($id);
 
         return $action->execute($contract, $type, $request->query('disposition', 'attachment'));
     }
 
     public function getAuditTrail(string $id, Request $request, GetAuditTrailAction $action): JsonResponse
     {
-        $contract = Contract::findOrFail($id);
+        $contract = $this->contractDetailQuery->find($id);
 
         return $action->execute($contract, $request);
     }

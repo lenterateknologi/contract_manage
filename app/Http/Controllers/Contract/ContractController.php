@@ -14,6 +14,7 @@ use App\Models\AccessModule;
 use App\Models\Contract;
 use App\Models\Role;
 use App\Models\User;
+use App\Queries\Contract\ContractDashboardQuery;
 use App\Queries\Contract\ContractDetailQuery;
 use App\Queries\Contract\ContractListQuery;
 use App\Queries\Contract\ContractOptionsQuery;
@@ -313,7 +314,7 @@ class ContractController extends Controller
 
     public function update(UpdateContractRequest $request, string $id): JsonResponse
     {
-        $contract = Contract::findOrFail($id);
+        $contract = $this->contractDetailQuery->find($id);
 
         // Granular permission check
         $payload = $request->validated();
@@ -356,27 +357,12 @@ class ContractController extends Controller
 
         $contract = $this->updateAction->execute($contract, $validated);
 
-        return response()->json(ContractFormatter::formatContract($contract->fresh([
-            'contractType',
-            'submissionType',
-            'vendor',
-            'creator',
-            'initiator',
-            'parent',
-            'workflow.steps',
-            'workflowStep.actions',
-            'versions.uploader',
-            'approvals.approver',
-            'approvals.workflowStep',
-            'histories.actor',
-            'messages.user',
-            'formSubmissions',
-        ])));
+        return response()->json(ContractFormatter::formatContract($contract->fresh()));
     }
 
     public function destroy(string $id): JsonResponse
     {
-        $contract = Contract::findOrFail($id);
+        $contract = $this->contractDetailQuery->find($id);
 
         if ($contract->status !== 'draft') {
             return response()->json(['message' => 'Hanya kontrak berstatus draft yang dapat dihapus.'], 422);
@@ -430,20 +416,6 @@ class ContractController extends Controller
         );
     }
 
-    public function compareAgreementVersions(string $id, Request $request): Response
-    {
-        $contract = Contract::findOrFail($id);
-
-        return $this->fileAction->compareVersions($contract, 'agreement', $request);
-    }
-
-    public function compareFormVersions(string $id, string $type, Request $request): Response
-    {
-        $contract = Contract::findOrFail($id);
-
-        return $this->fileAction->compareVersions($contract, $type, $request);
-    }
-
     public function import(Request $request)
     {
         $request->validate([
@@ -453,7 +425,7 @@ class ContractController extends Controller
         try {
             Excel::import(new ContractImport, $request->file('file'));
 
-            return back()->with('success', 'Data kontrak berhasil diimpor.');
+            return back()->with('success', 'Data kontrak berhasil iimpor.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Gagal mengimpor data: '.$e->getMessage()]);
         }

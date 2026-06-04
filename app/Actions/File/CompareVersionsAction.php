@@ -18,6 +18,7 @@ class CompareVersionsAction
     {
         /** @var Collection<int, ContractVersion> $versionsCollection */
         $versionsCollection = $contract->versions()
+            ->with('uploader')
             ->where('document_type', $type)
             ->orderByDesc('version_no')
             ->get();

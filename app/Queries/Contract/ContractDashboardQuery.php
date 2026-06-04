@@ -469,7 +469,7 @@ class ContractDashboardQuery
     private function getRecentContracts(Builder $baseQuery): array
     {
         return (clone $baseQuery)
-            ->with(['creator', 'contractType'])
+            ->with(['creator', 'contractType', 'meta'])
             ->orderByDesc('created_at')
             ->limit(5)
             ->get()

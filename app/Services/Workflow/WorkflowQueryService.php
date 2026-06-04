@@ -8,6 +8,7 @@ use App\Models\ContractType;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -104,7 +105,6 @@ class ContractWorkflowQueryService
             $level = (int) $stepOrLevel;
         }
 
-        $currentDeptId = $initiator->department_id;
         $initiatorRoleName = $initiator->getAttribute('role') ?: ($initiator->roleRelation()->first()->name ?? '');
         $initiatorRole = strtolower($initiatorRoleName);
 
@@ -123,63 +123,26 @@ class ContractWorkflowQueryService
             $targetIndex = count($hierarchy) - 1;
         }
 
-        $targetRole = ucfirst($hierarchy[$targetIndex]);
-        $targetRoleLower = strtolower($targetRole);
+        $targetRoleLower = strtolower($hierarchy[$targetIndex]);
 
         $query = User::where(DB::raw('LOWER(role)'), $targetRoleLower)
             ->where('is_active', true);
 
         if ($step) {
-            // Apply Organizational Filters from Step
-            if ($step->filter_department) {
-                $query->where('department_id', $initiator->department_id ?? '00000000-0000-0000-0000-000000000000');
-            }
+            $this->applyStepFilters($query, $step, $initiator);
 
-            if ($step->filter_company) {
-                $query->where('company_id', $initiator->company_id ?? '00000000-0000-0000-0000-000000000000');
-            }
-
-            if ($step->filter_company_group || $step->filter_region) {
-                if (! $initiator->relationLoaded('company')) {
-                    $initiator->load('company');
-                }
-                $initiatorCompany = $initiator->company;
-
-                $query->whereHas('company', function ($q) use ($step, $initiatorCompany) {
-                    if ($step->filter_company_group) {
-                        $groupId = $initiatorCompany?->company_group_id ?? '00000000-0000-0000-0000-000000000000';
-                        $q->where('company_group_id', $groupId);
-                    }
-                    if ($step->filter_region) {
-                        $regionId = $initiatorCompany?->region_id ?? '00000000-0000-0000-0000-000000000000';
-                        $q->where('region_id', $regionId);
-                    }
-                });
-            }
-
-            // If specific roles are defined for this step, ensure the target role is within that set
-            $allowedRoles = $step->role;
-            if (! empty($allowedRoles)) {
-                $query->whereIn(DB::raw('LOWER(role)'), array_map('strtolower', $allowedRoles));
-            }
-
-            // "alur workflow yang tersedia" - restrict pool to users allowed by the workflow's global configuration
+            // restrict pool to users allowed by the workflow's global configuration
             $step->loadMissing('workflow');
             $workflow = $step->workflow;
             if ($workflow) {
-                // 1. Global Approver Roles
                 if (! empty($workflow->approver_roles)) {
-                    $query->whereIn(DB::raw('LOWER(role)'), array_map('strtolower', $workflow->approver_roles));
+                    $query->whereIn(DB::raw('LOWER(role)'), array_map('strtolower', (array) $workflow->approver_roles));
                 }
-
-                // 2. Global Approver Departments
                 if (! empty($workflow->approver_departments)) {
-                    $query->whereIn('department_id', $workflow->approver_departments);
+                    $query->whereIn('department_id', (array) $workflow->approver_departments);
                 }
-
-                // 3. Global Approver Users
                 if (! empty($workflow->approver_users)) {
-                    $query->whereIn('id', $workflow->approver_users);
+                    $query->whereIn('id', (array) $workflow->approver_users);
                 }
             }
         }
@@ -191,7 +154,6 @@ class ContractWorkflowQueryService
             $fallbackQuery = User::where(DB::raw('LOWER(role)'), $targetRoleLower)
                 ->where('is_active', true);
 
-            // Keep company-level filters if possible for fallback
             if ($step && $step->filter_company && $initiator->company_id) {
                 $fallbackQuery->where('company_id', $initiator->company_id);
             }
@@ -203,6 +165,43 @@ class ContractWorkflowQueryService
     }
 
     /**
+     * Apply organizational filters from a workflow step to a user query
+     */
+    private function applyStepFilters(Builder $query, WorkflowStep $step, User $initiator): void
+    {
+        if ($step->filter_department) {
+            $query->where('department_id', $initiator->department_id ?? '00000000-0000-0000-0000-000000000000');
+        }
+
+        if ($step->filter_company) {
+            $query->where('company_id', $initiator->company_id ?? '00000000-0000-0000-0000-000000000000');
+        }
+
+        if ($step->filter_company_group || $step->filter_region) {
+            if (! $initiator->relationLoaded('company')) {
+                $initiator->load('company');
+            }
+            $initiatorCompany = $initiator->company;
+
+            $query->whereHas('company', function ($q) use ($step, $initiatorCompany) {
+                if ($step->filter_company_group) {
+                    $groupId = $initiatorCompany?->company_group_id ?? '00000000-0000-0000-0000-000000000000';
+                    $q->where('company_group_id', $groupId);
+                }
+                if ($step->filter_region) {
+                    $regionId = $initiatorCompany?->region_id ?? '00000000-0000-0000-0000-000000000000';
+                    $q->where('region_id', $regionId);
+                }
+            });
+        }
+
+        $allowedRoles = $step->role;
+        if (! empty($allowedRoles)) {
+            $query->whereIn(DB::raw('LOWER(role)'), array_map('strtolower', (array) $allowedRoles));
+        }
+    }
+
+    /**
      * Helper to identify if a step is related to Tax/Pajak
      */
     public function isTaxStep(WorkflowStep $step): bool
@@ -210,7 +209,7 @@ class ContractWorkflowQueryService
         $condition = $step->condition_expression ?? '';
         $name = strtolower($step->name ?? $step->description ?? '');
         $roles = array_map('strtolower', (array) $step->role);
-        $depts = array_map('strtolower', (array) $step->department_names);
+        $depts = array_map('strtolower', (array) ($step->department_names ?? []));
 
         return str_contains($condition, 'has_tax') ||
                str_contains($condition, 'pajak') ||
@@ -230,7 +229,6 @@ class ContractWorkflowQueryService
         $roles = array_map('strtolower', (array) $step->role);
         $name = strtolower($step->name ?? $step->description ?? '');
 
-        // Check roles
         foreach ($roles as $role) {
             foreach ($managementRoles as $mRole) {
                 if (str_contains($role, $mRole)) {
@@ -239,7 +237,6 @@ class ContractWorkflowQueryService
             }
         }
 
-        // Check step name/description
         foreach ($managementRoles as $mRole) {
             if (str_contains($name, $mRole)) {
                 return true;
@@ -250,7 +247,7 @@ class ContractWorkflowQueryService
     }
 
     /**
-     * Log action to contract messages (unified audit trail)
+     * Log action to contract histories
      */
     public function logHistory(Contract $contract, string $action, string $description, ?string $actorId = null): void
     {

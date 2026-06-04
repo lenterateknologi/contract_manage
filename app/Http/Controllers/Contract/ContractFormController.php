@@ -10,6 +10,7 @@ use App\Models\ContractFormSubmissionVersion;
 use App\Models\ContractHistory;
 use App\Models\FormTemplate;
 use App\Models\Vendor;
+use App\Queries\Contract\ContractDetailQuery;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,9 +22,13 @@ use Inertia\Inertia;
 
 class ContractFormController extends Controller
 {
+    public function __construct(
+        protected ContractDetailQuery $contractDetailQuery
+    ) {}
+
     public function saveFormSubmission(Request $request, string $id): JsonResponse
     {
-        $contract = Contract::findOrFail($id);
+        $contract = $this->contractDetailQuery->find($id);
 
         $request->validate([
             'form_template_id' => 'required|uuid|exists:m_form_templates,id',
@@ -224,15 +229,12 @@ class ContractFormController extends Controller
             'actor_id' => Auth::id(),
         ]);
 
-        // Return updated contract
-        $contract->load(['versions.uploader', 'approvals.approver', 'approvals.workflowStep', 'creator', 'histories.actor', 'messages.user', 'attachments.uploader', 'contractType', 'workflow.steps', 'workflowStep', 'formSubmissions']);
-
-        return response()->json(ContractFormatter::formatContract($contract));
+        return response()->json(ContractFormatter::formatContract($contract->fresh()));
     }
 
     public function getFormSubmission(string $id, string $type): JsonResponse
     {
-        $contract = Contract::with(['contractType', 'vendor', 'initiator', 'creator'])->findOrFail($id);
+        $contract = $this->contractDetailQuery->find($id);
 
         $submission = ContractFormSubmission::where('contract_id', $contract->id)
             ->where('document_type', $type)
@@ -252,12 +254,9 @@ class ContractFormController extends Controller
                 'created_by' => ContractFormatter::formatUser($v->createdBy),
                 'created_at' => $v->created_at->format('Y-m-d H:i'),
             ]);
-        } else {
-            // No submission yet — prefill_data will be generated below
         }
 
-        // For F2: ALWAYS generate prefill_data (used for static_text placeholder resolution
-        // and initial form fill). Frontend merges this under saved form_data.
+        // For F2: ALWAYS generate prefill_data
         if ($type === 'f2') {
             $f1Submission = ContractFormSubmission::where('contract_id', $contract->id)
                 ->where('document_type', 'f1')
@@ -280,7 +279,7 @@ class ContractFormController extends Controller
                 'submitted_by' => $submission->submitted_by,
             ] : null,
             'versions' => $versions,
-            'prefill_data' => $prefillData, // Frontend can use this to initialize new forms
+            'prefill_data' => $prefillData,
         ]);
     }
 
@@ -288,7 +287,6 @@ class ContractFormController extends Controller
     {
         $formData = array_merge($f1Data, $existingData);
 
-        // ── F2 labeled_value fields ← F1 field names ────────────────
         $inheritanceMap = [
             'meta_perjanjian_tentang' => 'meta_judul_kontrak',
             'meta_f2_scope' => 'meta_ringkasan_klausul',
@@ -296,7 +294,6 @@ class ContractFormController extends Controller
             'meta_f2_payment' => 'meta_mekanisme_pembayaran',
             'meta_f2_tenure' => 'meta_masa_berlaku',
             'meta_f2_location' => 'meta_lokasi',
-            // Legacy Mappings
             'perjanjian_tentang' => 'meta_judul_kontrak',
             'f2_scope' => 'meta_ringkasan_klausul',
         ];
@@ -307,14 +304,11 @@ class ContractFormController extends Controller
             }
         }
 
-        // ── Passthrough: Copy F1 identity fields directly so static_text
-        // placeholders like {{meta_p2_entity}} resolve in the F2 renderer ──
         $f1PassthroughFields = [
             'meta_p1_entity', 'meta_p1_signer', 'meta_p1_signer_position', 'meta_p1_alamat',
             'meta_p2_entity', 'meta_p2_signer', 'meta_p2_signer_position', 'meta_p2_alamat',
             'meta_judul_kontrak', 'meta_tgl_dibuat', 'meta_tipe_perjanjian', 'meta_nomor',
             'meta_topik', 'meta_sub_topik', 'meta_ringkasan_klausul',
-            // Legacy passthrough
             'v_p1_entity', 'v_p2_entity',
         ];
         foreach ($f1PassthroughFields as $key) {
@@ -323,7 +317,6 @@ class ContractFormController extends Controller
             }
         }
 
-        // ── Pihak Pertama defaults ─────────────────────────────────────────
         if (empty($formData['meta_p1_entity'])) {
             $formData['meta_p1_entity'] = 'PT. Lentera Teknologi';
         }
@@ -337,7 +330,6 @@ class ContractFormController extends Controller
             $formData['meta_p1_alamat'] = 'The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan';
         }
 
-        // ── Pihak Kedua from Vendor master data ────────────────────────────
         if ($contract->vendor_id && $contract->vendor) {
             /** @var Vendor $v */
             $v = $contract->vendor;
@@ -355,7 +347,6 @@ class ContractFormController extends Controller
             }
         }
 
-        // ── Meta context ───────────────────────────────────────────────────
         if (empty($formData['meta_nomor'])) {
             $formData['meta_nomor'] = $contract->contract_no;
         }
@@ -374,9 +365,8 @@ class ContractFormController extends Controller
 
     public function compareFormVersions(string $id, string $type)
     {
-        $contract = Contract::findOrFail($id);
+        $contract = $this->contractDetailQuery->find($id);
 
-        // Find matching template (same logic as GenericFormTab)
         $matchingTemplate = FormTemplate::where('document_type', $type)
             ->where(function ($q) use ($contract) {
                 $q->where('contract_type_id', $contract->contract_type_id)

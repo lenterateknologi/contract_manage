@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\Contract\ContractController;
+use App\Http\Controllers\Contract\ContractExportController;
+use App\Http\Controllers\Contract\ContractFileController;
 use Illuminate\Support\Facades\Route;
 
 // ── Public Signed Routes for PDF Rendering (Browsershot) ──
-Route::controller(ContractController::class)->group(function () {
+Route::controller(ContractExportController::class)->group(function () {
     Route::get('/api/contracts/{id}/approval/document/print', 'renderApprovalTimeline')->name('contracts.approval.document.print')->middleware('signed');
     Route::get('/api/contracts/{id}/audit-trail/document/print', 'renderAuditDocument')->name('contracts.audit.document.print')->middleware('signed');
 });
@@ -30,8 +32,10 @@ Route::controller(ContractController::class)->group(function () {
     });
 
     Route::get('my-contracts', 'contractsView')->defaults('view', 'mine'); // Backward compat
+});
 
-    // Version Comparison
+// Version Comparison
+Route::controller(ContractFileController::class)->group(function () {
     Route::get('/admin/contracts/{id}/form-submissions/{type}/compare', 'compareFormVersions')->name('contracts.form-submissions.compare');
     Route::get('/admin/contracts/{id}/agreement/compare', 'compareAgreementVersions')->name('contracts.agreement.compare');
 });
@@ -44,6 +48,6 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
         Route::get('/contracts/export', 'export')->name('admin.contracts.export');
         Route::post('/contracts/import', 'import')->name('admin.contracts.import');
         Route::post('/contracts', 'store')->name('contracts.store');
-        Route::post('/contracts/{id}/form-submissions/{type}/export-queue', 'exportFormSubmissionPdfQueue')->name('admin.contracts.export-queue');
     });
+    Route::post('/admin/contracts/{id}/form-submissions/{type}/export-queue', [ContractExportController::class, 'exportFormSubmissionPdfQueue'])->name('admin.contracts.export-queue');
 });

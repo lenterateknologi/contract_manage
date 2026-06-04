@@ -11,6 +11,7 @@ use App\Models\Contract;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\WorkflowStep;
+use App\Queries\Contract\ContractDetailQuery;
 use App\Services\ContractWorkflowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -22,12 +23,13 @@ class ContractApprovalController extends Controller
         protected ContractWorkflowService $workflowService,
         protected ApproveContractAction $approveAction,
         protected RejectContractAction $rejectAction,
+        protected ContractDetailQuery $contractDetailQuery,
     ) {}
 
     public function send(Request $request, string $id): JsonResponse
     {
         try {
-            $contract = Contract::findOrFail($id);
+            $contract = $this->contractDetailQuery->find($id);
 
             if ($contract->status !== 'draft') {
                 return response()->json(['message' => 'Hanya kontrak berstatus draft yang dapat dikirim.'], 422);
@@ -39,9 +41,7 @@ class ContractApprovalController extends Controller
             // Use workflow service to send for approval
             $contract = $this->workflowService->sendForApproval($contract, $workflowId, $customSteps, true);
 
-            $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'approvals.workflowStep', 'workflow.steps', 'histories.actor', 'messages.user', 'workflow', 'workflowStep.actions']);
-
-            return response()->json(ContractFormatter::formatContract($contract), 200);
+            return response()->json(ContractFormatter::formatContract($contract->fresh()), 200);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }
@@ -62,7 +62,7 @@ class ContractApprovalController extends Controller
             'target_step_id' => 'nullable|uuid|exists:m_workflow_steps,id',
         ]);
 
-        $contract = Contract::findOrFail($id);
+        $contract = $this->contractDetailQuery->find($id);
 
         // Find the pending approval for the current user
         $approval = Approval::where('contract_id', $id)
@@ -114,7 +114,7 @@ class ContractApprovalController extends Controller
             ! empty($signerUserIds) ? $signerUserIds : null,
         );
 
-        return response()->json(ContractFormatter::formatContract($contract));
+        return response()->json(ContractFormatter::formatContract($contract->fresh()));
     }
 
     public function reject(Request $request, string $id): JsonResponse
@@ -124,7 +124,7 @@ class ContractApprovalController extends Controller
             'attachment' => 'nullable|file|max:10240', // 10MB limit
         ]);
 
-        $contract = Contract::findOrFail($id);
+        $contract = $this->contractDetailQuery->find($id);
 
         // Find the pending approval for the current user
         $approval = Approval::where('contract_id', $id)
@@ -144,7 +144,7 @@ class ContractApprovalController extends Controller
 
         $contract = $this->rejectAction->execute($contract, $approval, $request->reason, $attachmentPath);
 
-        return response()->json(ContractFormatter::formatContract($contract));
+        return response()->json(ContractFormatter::formatContract($contract->fresh()));
     }
 
     public function bulkApprove(Request $request): JsonResponse
@@ -195,7 +195,7 @@ class ContractApprovalController extends Controller
         ]);
 
         try {
-            $contract = Contract::findOrFail($id);
+            $contract = $this->contractDetailQuery->find($id);
 
             if (! in_array($contract->status, ['draft', 'in_review', 'revision'])) {
                 return response()->json(['message' => 'Persetujuan tambahan hanya dapat ditambahkan pada kontrak yang sedang berjalan.'], 422);
@@ -364,9 +364,7 @@ class ContractApprovalController extends Controller
                 ]);
             }
 
-            $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'approvals.workflowStep', 'workflow.steps', 'histories.actor', 'messages.user', 'workflow', 'workflowStep']);
-
-            return response()->json(ContractFormatter::formatContract($contract), 200);
+            return response()->json(ContractFormatter::formatContract($contract->fresh()), 200);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }
@@ -375,7 +373,7 @@ class ContractApprovalController extends Controller
     public function submitAdhocApprovers(string $id): JsonResponse
     {
         try {
-            $contract = Contract::findOrFail($id);
+            $contract = $this->contractDetailQuery->find($id);
 
             // Activate any inactive (draft/staged) ad-hoc approvals for the current step
             Approval::where('contract_id', $contract->id)
@@ -384,9 +382,7 @@ class ContractApprovalController extends Controller
                 ->where('is_active', false)
                 ->update(['is_active' => true, 'status' => 'pending']);
 
-            $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'approvals.workflowStep', 'workflow.steps', 'histories.actor', 'messages.user', 'workflow', 'workflowStep']);
-
-            return response()->json(ContractFormatter::formatContract($contract), 200);
+            return response()->json(ContractFormatter::formatContract($contract->fresh()), 200);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }
@@ -395,14 +391,12 @@ class ContractApprovalController extends Controller
     public function removeAdhocApprover(string $id, string $approvalId): JsonResponse
     {
         try {
-            $contract = Contract::findOrFail($id);
+            $contract = $this->contractDetailQuery->find($id);
             $approval = Approval::find($approvalId);
 
             if (! $approval) {
                 // If it's already gone, consider it a success to avoid 404 errors in UI
-                $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'approvals.workflowStep', 'workflow.steps', 'histories.actor', 'messages.user', 'workflow', 'workflowStep']);
-
-                return response()->json(ContractFormatter::formatContract($contract), 200);
+                return response()->json(ContractFormatter::formatContract($contract->fresh()), 200);
             }
 
             if ((string) $approval->contract_id !== (string) $id) {
@@ -419,9 +413,7 @@ class ContractApprovalController extends Controller
 
             $approval->forceDelete();
 
-            $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'approvals.workflowStep', 'workflow.steps', 'histories.actor', 'messages.user', 'workflow', 'workflowStep']);
-
-            return response()->json(ContractFormatter::formatContract($contract), 200);
+            return response()->json(ContractFormatter::formatContract($contract->fresh()), 200);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
         }
