@@ -77,7 +77,7 @@ class ContractController extends Controller
         $view = $request->query('view', 'contracts');
         $contracts = $this->getFilteredContractsQuery($request, $view)
             ->paginate($request->integer('per_page', 10))
-            ->through(fn ($c) => ContractFormatter::formatContract($c));
+            ->through(fn ($c) => ContractFormatter::formatContract($c, false));
 
         return response()->json($contracts);
     }
@@ -119,7 +119,7 @@ class ContractController extends Controller
         $contracts = $this->getFilteredContractsQuery($request, $view)
             ->paginate($request->integer('per_page', 10))
             ->withQueryString()
-            ->through(fn ($c) => ContractFormatter::formatContract($c));
+            ->through(fn ($c) => ContractFormatter::formatContract($c, false));
 
         $data = [
             'currentView' => $view,
@@ -274,7 +274,7 @@ class ContractController extends Controller
         $contracts = $this->getFilteredContractsQuery($request, 'contracts')
             ->paginate($request->integer('per_page', 10))
             ->withQueryString()
-            ->through(fn ($c) => ContractFormatter::formatContract($c));
+            ->through(fn ($c) => ContractFormatter::formatContract($c, false));
 
         $data = [
             'currentView' => 'contracts',
@@ -342,6 +342,7 @@ class ContractController extends Controller
             'approvals.workflowStep:id,step,description,step_category,workflow_id',
             'approvals.workflowStep.workflow:id,name',
             'workflow.steps:id,workflow_id,step,description,approver_type,step_category,meta,filter_department,filter_company_group,filter_region,filter_company',
+            'workflow.steps.users:id,name,email',
             'workflowStep',
             'workflowStep.actions',
             'versions.uploader:id,name,role,role_id,department_id,company_id,email',

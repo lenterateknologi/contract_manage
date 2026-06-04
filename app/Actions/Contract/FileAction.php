@@ -436,7 +436,7 @@ class FileAction
         Gate::authorize('updateAgreement', $contract);
 
         $request->validate([
-            'file' => 'required|file|mimes:docx|max:10240',
+            'file' => 'required|file|extensions:docx|max:10240',
             'change_log' => 'nullable|string',
         ]);
 
@@ -458,6 +458,8 @@ class FileAction
             'change_log' => $request->change_log,
             'uploaded_by' => Auth::id(),
         ]);
+
+        $contract->update(['current_version' => $versionNo]);
 
         ContractHistory::create([
             'contract_id' => $contract->id,

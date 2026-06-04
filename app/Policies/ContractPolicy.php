@@ -36,8 +36,8 @@ class ContractPolicy
             return true;
         }
 
-        // 4. Specifically assigned persons (PIC/Manager)
-        if ($contract->assigned_pic_id === $user->id || $contract->manager_id === $user->id) {
+        // 4. Specifically assigned persons (PIC / Person who assigned it)
+        if ($contract->assigned_pic_id === $user->id || $contract->assigned_by_id === $user->id) {
             return true;
         }
 
@@ -117,7 +117,6 @@ class ContractPolicy
         // Active pending approval for this specific user
         $hasPendingApproval = $contract->approvals()
             ->where('user_id', $user->id)
-            ->where('workflow_step_id', $contract->workflow_step_id)
             ->where('status', 'pending')
             ->exists();
 

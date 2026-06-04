@@ -83,7 +83,7 @@ class TemplateController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'template_folder_id' => 'nullable|exists:m_template_folders,id',
-            'file' => 'required|file|mimes:docx,doc,pdf,xls,xlsx|max:10240', // 10MB max
+            'file' => 'required|file|extensions:docx,DOCX,doc,DOC,pdf,PDF,xls,XLS,xlsx,XLSX|max:10240', // 10MB max
         ]);
 
         $file = $request->file('file');

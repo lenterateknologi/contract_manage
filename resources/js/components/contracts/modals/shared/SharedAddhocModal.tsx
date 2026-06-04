@@ -4,6 +4,7 @@ import { FormTextarea } from '@/components/ui/forms/FormTextarea';
 import { SearchableMultiSelect } from '@/components/ui/forms/SearchableMultiSelect';
 import { SearchableSelect } from '@/components/ui/forms/SearchableSelect';
 import { Modal } from '@/components/ui/overlays/Modal';
+import { StatusBadge } from '@/components/ui/data/StatusBadge';
 import { contractApi } from '@/lib/contract-api';
 import { CheckCircle2, Loader2, UserPlus, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -27,6 +28,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
     const [fetchingUsers, setFetchingUsers] = useState(false);
     const [selectedTargetStepId, setSelectedTargetStepId] = useState<string | null>(null);
 
+    // Initial setup when modal opens
     useEffect(() => {
         if (open) {
             const currentStep = contract?.workflow_step;
@@ -41,77 +43,70 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
             setSelectedTargetStepId(initialTargetStepId);
             setNote('');
             setIsSequential(false);
-            fetchUsers(initialTargetStepId);
+        } else {
+            // Reset state when closed
+            setSelectedUserIds([]);
         }
     }, [open, contract?.id]);
+
+    // Re-fetch users and pre-select existing ones when target step changes
+    useEffect(() => {
+        if (open) {
+            fetchUsers(selectedTargetStepId);
+        }
+    }, [open, selectedTargetStepId]);
 
     const fetchUsers = async (targetStepIdVal: string | null) => {
         setFetchingUsers(true);
         try {
-            // Get all active users
             const allUsers = await contractApi.getUsers({ all: true });
 
-            // Scoped Selection: Filter based on current workflow step or specific action configuration
             const currentStep = contract?.workflow_step;
             const activeAction = (currentStep?.actions || []).find((a: any) => {
                 if (actionCode) return (a.action_code === actionCode) || (a.master_action_code === actionCode) || (a.master_action?.code === actionCode);
                 return (a.master_action_code?.toLowerCase() === 'forward') || (a.action_code?.toLowerCase() === 'forward') || (a.master_action?.code?.toLowerCase() === 'forward');
             });
-            
-            const config = activeAction?.assignee_config || {};
-            const defaultTargetStepId = activeAction?.next_step_id || config.default_target_step || contract?.workflow_step_id;
-            const finalTargetStepId = targetStepIdVal || defaultTargetStepId;
 
-            // Existing main approvers should be filtered out
+            const config = activeAction?.assignee_config || {};
+            const finalTargetStepId = targetStepIdVal || contract?.workflow_step_id;
+
+            // Existing ad-hoc approvers should be pre-selected
+            const existingAdhocUserIds = (contract?.approvals || [])
+                .filter((a: any) => String(a.workflow_step_id) === String(finalTargetStepId) && a.role === 'Persetujuan Tambahan' && a.status !== 'rejected')
+                .map((a: any) => String(a.user_id));
+
+            // Main approvers should not be available for selection
             const existingMainUserIds = new Set(
                 (contract?.approvals || [])
                     .filter((a: any) => String(a.workflow_step_id) === String(finalTargetStepId) && a.role !== 'Persetujuan Tambahan')
                     .map((a: any) => String(a.user_id)),
             );
 
-            // Existing ad-hoc approvers should be pre-selected
-            const existingAdhocUserIds = (contract?.approvals || [])
-                .filter((a: any) => String(a.workflow_step_id) === String(finalTargetStepId) && a.role === 'Persetujuan Tambahan')
-                .map((a: any) => String(a.user_id));
-
             const availableUsers = allUsers.filter((u: any) => {
                 if (existingMainUserIds.has(String(u.id))) return false;
-
-                // If no specific config type is set, or if it's set to 'all', allow any user
-                if (!config.type || config.type === 'all') {
-                    return true;
-                }
-
-                // 1. Direct User Pool (specific user IDs)
+                if (!config.type || config.type === 'all') return true;
                 if (config.type === 'user') {
-                    if (!config.user_ids || config.user_ids.length === 0) return false;
-                    const allowedUserIds = config.user_ids.map(String);
+                    const allowedUserIds = (config.user_ids || []).map(String);
                     return allowedUserIds.includes(String(u.id));
                 }
-
-                // 2. Role/Dept filter
                 if (config.type === 'role') {
                     const targetRoles = config.roles || [];
                     const matchesRole = targetRoles.length === 0 || targetRoles.some((r: string) => r.toLowerCase() === u.role?.toLowerCase());
-
-                    const targetDeptIds = config.department_ids || [];
-                    const currentUDeptId = String(u.department_id);
-                    const matchesDept = targetDeptIds.length === 0 || targetDeptIds.map(String).includes(currentUDeptId);
-
-                    return matchesDept && matchesRole;
+                    const targetDeptIds = (config.department_ids || []).map(String);
+                    return (targetDeptIds.length === 0 || targetDeptIds.includes(String(u.department_id))) && matchesRole;
                 }
-
-                // Fallback for any other type
                 return false;
             });
 
-            // Ensure uniqueness by ID to prevent duplicate key errors in UI
             const uniqueUsers = Array.from(new Map(availableUsers.map((u: any) => [u.id, u])).values());
-
             setUsers(uniqueUsers);
-            
-            // Set initial selected users based on existing ad-hoc approvers
-            setSelectedUserIds(existingAdhocUserIds);
+
+            // Set initial selected users based on existing ones
+            // Use unique array to prevent double entries from state + db
+            setSelectedUserIds((prev) => {
+                const combined = [...prev, ...existingAdhocUserIds];
+                return Array.from(new Set(combined));
+            });
         } catch (error) {
             console.error('Failed to fetch users:', error);
         } finally {
@@ -119,11 +114,20 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
         }
     };
 
+    const handleUpdateSelectedUsers = (val: string[]) => {
+        // Force unique values just in case
+        setSelectedUserIds(Array.from(new Set(val)));
+    };
+
     const handleRemoveUser = (id: string) => {
         setSelectedUserIds((prev) => prev.filter((uid) => uid !== id));
     };
 
     const handleSubmit = async () => {
+        if (selectedUserIds.length === 0) {
+            showToast('Silakan pilih minimal satu user.', 'warning');
+            return;
+        }
 
         setLoading(true);
         try {
@@ -149,6 +153,14 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
         }
     };
 
+    const isSigningAction = ['assign', 'sign', 'signature', 'assign_pic'].includes(actionCode?.toLowerCase() || '');
+
+    const currentStepDelegates = (contract?.approvals || []).filter((a: any) =>
+        String(a.workflow_step_id) === String(selectedTargetStepId || contract?.workflow_step_id) &&
+        ['Persetujuan Tambahan', 'Penandatangan'].includes(a.role) &&
+        a.status !== 'rejected'
+    );
+
     return (
         <Modal
             isOpen={open}
@@ -157,9 +169,11 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
             title={
                 <div className="flex items-center gap-2.5">
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-500 dark:bg-indigo-500/20">
-                        <UserPlus size={16} />
+                        {isSigningAction ? <Users size={16} /> : <UserPlus size={16} />}
                     </div>
-                    <span className="text-text-main text-sm font-bold tracking-tight uppercase">Persetujuan Tambahan</span>
+                    <span className="text-text-main text-sm font-bold tracking-tight uppercase">
+                        {isSigningAction ? 'Delegasi Penandatanganan' : 'Persetujuan Tambahan'}
+                    </span>
                 </div>
             }
             footer={
@@ -169,11 +183,11 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                     </Button>
                     <Button
                         onClick={handleSubmit}
-                        disabled={loading}
-                        className="flex-1 bg-indigo-600 text-[10px] tracking-wider text-white uppercase transition-all duration-200 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+                        disabled={loading || selectedUserIds.length === 0}
+                        className="flex-1 bg-indigo-600 text-[10px] tracking-wider text-white uppercase transition-all duration-200 hover:bg-indigo-700 dark:bg-indigo-50 dark:text-black dark:hover:bg-indigo-100"
                     >
                         {loading ? <Loader2 size={14} className="mr-2 animate-spin" /> : <CheckCircle2 size={14} className="mr-2" />}
-                        Simpan Approver ({selectedUserIds.length})
+                        Simpan Perubahan
                     </Button>
                 </div>
             }
@@ -181,14 +195,48 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
             <div className="space-y-6">
                 <div className="rounded-xl border border-indigo-100 bg-indigo-50/20 p-4 dark:border-indigo-950/40 dark:bg-indigo-950/10">
                     <p className="text-[11px] leading-relaxed font-medium text-indigo-700/80 dark:text-indigo-300/80">
-                        Anda dapat meminta persetujuan tambahan di luar alur kerja template saat ini. User yang dipilih akan ditambahkan ke tahapan
-                        persetujuan aktif saat ini dan **wajib** menyetujui dokumen sebelum alur kerja dapat berlanjut ke tahap berikutnya.
+                        {isSigningAction
+                            ? 'Pilih user yang akan menandatangani dokumen ini. User yang dipilih akan ditambahkan ke daftar penandatangan wajib.'
+                            : 'Anda dapat meminta persetujuan tambahan di luar alur kerja template saat ini. User yang dipilih wajib menyetujui dokumen sebelum lanjut.'}
                     </p>
                 </div>
 
+                {/* --- EXISTING DELEGATES LIST --- */}
+                {currentStepDelegates.length > 0 && (
+                    <div className="space-y-2.5">
+                        <div className="text-text-soft flex items-center justify-between text-[10px] font-bold tracking-wider uppercase">
+                            <div className="flex items-center gap-1.5">
+                                <Users size={12} className="text-indigo-500" />
+                                {isSigningAction ? 'Penandatangan Terdaftar' : 'Approver Terdaftar'}
+                            </div>
+                            <span className="text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 px-1.5 py-0.5 rounded">
+                                {currentStepDelegates.length} Orang
+                            </span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {currentStepDelegates.map((a: any) => (
+                                <div key={a.id} className="flex items-center gap-3 p-2 rounded-xl border border-surface-border bg-surface-muted/20">
+                                    <div className="h-7 w-7 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
+                                        {a.approver_name?.substring(0, 2).toUpperCase()}
+                                    </div>
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="text-xs font-bold truncate text-text-main leading-tight">{a.approver_name}</span>
+                                        <span className="text-[9px] text-text-soft uppercase tracking-tighter">{a.job_title || a.role}</span>
+                                    </div>
+                                    <div className="ml-auto">
+                                        <StatusBadge status={a.status} />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="h-px bg-surface-border/50 my-2" />
+                    </div>
+                )}
+                {/* ------------------------------ */}
+
                 <div className="space-y-2">
                     <label className="text-text-soft text-[10px] font-bold tracking-wider uppercase">
-                        Pilih Approver Tambahan <span className="text-danger">*</span>
+                        {isSigningAction ? 'Tambah Penandatangan Baru' : 'Tambah Approver Baru'} <span className="text-danger">*</span>
                     </label>
                     {fetchingUsers ? (
                         <div className="text-text-soft flex animate-pulse items-center gap-2 py-1 text-[10px]">
@@ -199,7 +247,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                     ) : (
                         <SearchableMultiSelect
                             values={selectedUserIds}
-                            onValuesChange={setSelectedUserIds}
+                            onValuesChange={handleUpdateSelectedUsers}
                             showOrder={true}
                             options={users.map((u) => ({
                                 value: u.id,
@@ -223,7 +271,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                             });
                             const config = activeAction?.assignee_config || {};
                             const targetStepId = activeAction?.next_step_id || config.default_target_step || contract?.workflow_step_id;
-                            
+
                             if (String(targetStepId) === String(contract?.workflow_step_id)) {
                                 return `(Step Saat Ini) Tahap ${contract?.workflow_step?.step} - ${contract?.workflow_step?.description || contract?.workflow_step?.label || ''}`;
                             }

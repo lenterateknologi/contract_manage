@@ -3,8 +3,9 @@ import { SearchableMultiSelect } from '@/components/ui/forms/SearchableMultiSele
 import { SearchableSelect } from '@/components/ui/forms/SearchableSelect';
 import { Modal } from '@/components/ui/overlays/Modal';
 import { FormTextarea } from '@/components/ui/forms/FormTextarea';
+import { StatusBadge } from '@/components/ui/data/StatusBadge';
 import { contractApi } from '@/lib/contract-api';
-import { Paperclip, Send, UserCheck, X, CheckCircle2, PenTool, Gavel, UserPen, Loader2, AlertCircle, Info, FileText } from 'lucide-react';
+import { Paperclip, Send, UserCheck, X, CheckCircle2, PenTool, Gavel, UserPen, Loader2, AlertCircle, Info, FileText, Users } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -23,12 +24,13 @@ interface Props {
     ) => Promise<void>;
     isAssign?: boolean;
     contract: any;
+    onUpdate: (c: any) => void;
     actionCode?: string;
     actionAlias?: string;
     users?: any[];
 }
 
-export function SharedApproveModal({ open, onClose, onSubmit, isAssign, contract, actionCode, actionAlias, users: initialUsers }: Props) {
+export function SharedApproveModal({ open, onClose, onSubmit, isAssign, contract, onUpdate, actionCode, actionAlias, users: initialUsers }: Props) {
     const [note, setNote] = useState('');
     const [attachment, setAttachment] = useState<File | null>(null);
     const [assignedPicId, setAssignedPicId] = useState<string>('');
@@ -64,16 +66,29 @@ export function SharedApproveModal({ open, onClose, onSubmit, isAssign, contract
             const defaultTargetStepId = activeAction?.assignee_config?.signature_target_step || contract?.workflow_step_id;
             setSelectedTargetStepId(defaultTargetStepId ? String(defaultTargetStepId) : '');
 
+            // Identify users already in the "Terdaftar" list
+            const existingUserIds = new Set(
+                (contract?.approvals || [])
+                    .filter((a: any) => String(a.workflow_step_id) === String(defaultTargetStepId || contract?.workflow_step_id) && a.status !== 'rejected')
+                    .map((a: any) => String(a.user_id))
+            );
+
             // Auto-resolve based on signing_parties configuration from the workflow action
             if (signerUserIds.length === 0 && signingParties.length > 0) {
                 const ids: string[] = [];
 
                 if (signingParties.includes('initiator') && contract.initiator?.id) {
-                    ids.push(contract.initiator.id);
+                    // Only add if NOT already registered
+                    if (!existingUserIds.has(String(contract.initiator.id))) {
+                        ids.push(contract.initiator.id);
+                    }
                 }
 
                 if (signingParties.includes('assigned_pic') && contract.assigned_pic?.id) {
-                    ids.push(contract.assigned_pic.id);
+                    // Only add if NOT already registered
+                    if (!existingUserIds.has(String(contract.assigned_pic.id))) {
+                        ids.push(contract.assigned_pic.id);
+                    }
                 }
 
                 const validIds = Array.from(new Set(ids.filter(Boolean)));
@@ -246,49 +261,115 @@ export function SharedApproveModal({ open, onClose, onSubmit, isAssign, contract
                         Pilih satu atau beberapa personil yang memiliki otoritas untuk menarik dokumen dari sistem dan memproses penandatanganan (Basah/Digital).
                     </p>
 
+                    {/* --- EXISTING DELEGATES LIST --- */}
+                    {(() => {
+                        const targetId = activeAction?.assignee_config?.signature_target_step || contract?.workflow_step_id;
+                        const currentStepDelegates = (contract?.approvals || []).filter((a: any) => 
+                            String(a.workflow_step_id) === String(targetId) && 
+                            ['Persetujuan Tambahan', 'Penandatangan'].includes(a.role) &&
+                            a.status !== 'rejected'
+                        );
+
+                        if (currentStepDelegates.length === 0) return null;
+
+                        return (
+                            <div className="space-y-2.5">
+                                <div className="text-text-soft flex items-center justify-between text-[10px] font-bold tracking-wider uppercase">
+                                    <div className="flex items-center gap-1.5">
+                                        <Users size={12} className="text-blue-500" />
+                                        Penandatangan Terdaftar
+                                    </div>
+                                    <span className="text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-1.5 py-0.5 rounded">
+                                        {currentStepDelegates.length} Orang
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    {currentStepDelegates.map((a: any) => (
+                                        <div key={a.id} className="group relative flex items-center gap-3 p-2 rounded-xl border border-surface-border bg-surface-muted/20 transition-all hover:border-blue-200">
+                                            <div className="h-7 w-7 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-[10px] font-bold text-blue-600 dark:text-blue-400">
+                                                {a.approver_name?.substring(0, 2).toUpperCase()}
+                                            </div>
+                                            <div className="flex flex-col min-w-0">
+                                                <span className="text-xs font-bold truncate text-text-main leading-tight">{a.approver_name}</span>
+                                                <span className="text-[9px] text-text-soft uppercase tracking-tighter">{a.job_title || a.role}</span>
+                                            </div>
+                                            <div className="ml-auto flex items-center gap-1.5">
+                                                <StatusBadge status={a.status} />
+                                                
+                                                <button
+                                                    type="button"
+                                                    disabled={loading}
+                                                    onClick={async () => {
+                                                        if (confirm(`Hapus delegasi penandatangan untuk ${a.approver_name}?`)) {
+                                                            try {
+                                                                const updated = await contractApi.removeAdhocApprover(contract.id, a.id);
+                                                                onUpdate(updated);
+                                                            } catch (err) {
+                                                                console.error(err);
+                                                                alert('Gagal menghapus penandatangan.');
+                                                            }
+                                                        }
+                                                    }}
+                                                    className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-text-soft hover:text-danger hover:bg-danger/10 transition-all"
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="h-px bg-surface-border/50 my-2" />
+                            </div>
+                        );
+                    })()}
+                    {/* ------------------------------ */}
+
                     <div className="space-y-1.5">
                         <label className="text-[11px] font-bold uppercase tracking-wider text-text-desc">
-                            Pihak Penandatangan <span className="text-danger">*</span>
+                            Tambah Penandatangan Baru <span className="text-danger">*</span>
                         </label>
                         <SearchableMultiSelect
                             values={signerUserIds}
                             onValuesChange={setSignerUserIds}
                             showOrder={true}
                             options={(() => {
-                                let filteredUsers = [...users];
+                                // 1. Identify users already in the "Terdaftar" list (Wajib difilter keluar)
+                                const targetId = activeAction?.assignee_config?.signature_target_step || contract?.workflow_step_id;
+                                const existingUserIds = new Set(
+                                    (contract?.approvals || [])
+                                        .filter((a: any) => String(a.workflow_step_id) === String(targetId) && a.status !== 'rejected')
+                                        .map((a: any) => String(a.user_id))
+                                );
 
+                                // 2. Kumpulkan semua kandidat (Users, Initiator, PIC)
+                                const candidates = new Map();
+                                
+                                users.forEach(u => candidates.set(String(u.id), { id: String(u.id), name: u.name, role: u.role || 'User' }));
+                                if (contract?.initiator?.id) candidates.set(String(contract.initiator.id), { id: String(contract.initiator.id), name: contract.initiator.name, role: contract.initiator.role || 'Initiator' });
+                                if (contract?.assigned_pic?.id) candidates.set(String(contract.assigned_pic.id), { id: String(contract.assigned_pic.id), name: contract.assigned_pic.name, role: contract.assigned_pic.role || 'PIC' });
+
+                                // 3. Filter: Hanya tampilkan yang BELUM ada di database (Penandatangan Terdaftar)
+                                // KECUALI jika ID tersebut sedang dipilih di UI (signerUserIds), 
+                                // maka kita wajib mengembalikannya agar komponen bisa merender LABEL nya (bukan UUID).
+                                const baseOptions = Array.from(candidates.values())
+                                    .filter(u => !existingUserIds.has(u.id) || signerUserIds.includes(u.id))
+                                    .map(u => ({
+                                        value: u.id,
+                                        label: `${u.name} (${u.role})`
+                                    }));
+
+                                // 4. Tambahan: Filter berdasarkan signing_parties jika ada konfigurasi
                                 if (signingParties.length > 0) {
-                                    filteredUsers = users.filter((u) => {
-                                        const roleLower = (u.role || '').toLowerCase();
+                                    return baseOptions.filter((opt) => {
+                                        // WAJIB: Selalu tampilkan yang sedang dipilih di UI agar label tidak hilang/uuid
+                                        if (signerUserIds.includes(opt.value)) return true;
 
+                                        const roleLower = opt.label.toLowerCase();
                                         return signingParties.some((party: string) => {
-                                            if (party === 'initiator') {
-                                                return u.id === contract?.initiator?.id;
-                                            }
-                                            if (party === 'assigned_pic') {
-                                                return u.id === contract?.assigned_pic?.id;
-                                            }
-                                            return roleLower === party.toLowerCase();
+                                            if (party === 'initiator') return opt.value === String(contract?.initiator?.id);
+                                            if (party === 'assigned_pic') return opt.value === String(contract?.assigned_pic?.id);
+                                            return roleLower.includes(party.toLowerCase());
                                         });
-                                    });
-                                }
-
-                                const baseOptions = filteredUsers.map((u) => ({
-                                    value: u.id,
-                                    label: `${u.name} (${u.role || 'User'})`,
-                                }));
-
-                                if (signingParties.includes('initiator') && contract?.initiator?.id && !baseOptions.some(o => o.value === contract.initiator.id)) {
-                                    baseOptions.push({
-                                        value: contract.initiator.id,
-                                        label: `${contract.initiator.name || 'Initiator'} (${contract.initiator.role || 'Initiator'})`
-                                    });
-                                }
-
-                                if (signingParties.includes('assigned_pic') && contract?.assigned_pic?.id && !baseOptions.some(o => o.value === contract.assigned_pic.id)) {
-                                    baseOptions.push({
-                                        value: contract.assigned_pic.id,
-                                        label: `${contract.assigned_pic.name || 'PIC'} (${contract.assigned_pic.role || 'PIC'})`
                                     });
                                 }
 

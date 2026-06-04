@@ -59,9 +59,11 @@ export default function AgreementView({
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [showVersions, showMoreActions]);
 
+    const [lastUpdated, setLastUpdated] = useState(Date.now());
+
     const loadVersions = useCallback(
-        async (forceLatest = false) => {
-            setLoading(true);
+        async (forceLatest = false, silent = false) => {
+            if (!silent) setLoading(true);
             try {
                 const url = isRevision 
                     ? `/api/contracts/${contract.id}/revision/versions?type=${effectiveDocType}`
@@ -72,10 +74,11 @@ export default function AgreementView({
                 if (res.data.length > 0 && (forceLatest || !selectedVno)) {
                     setSelectedVno(res.data[0].version_no);
                 }
+                setLastUpdated(Date.now()); // Update timestamp on refresh
             } catch (err) {
                 console.error('Failed to load agreement versions', err);
             } finally {
-                setLoading(false);
+                if (!silent) setLoading(false);
             }
         },
         [contract.id, selectedVno, isRevision, effectiveDocType],
@@ -85,8 +88,61 @@ export default function AgreementView({
         loadVersions();
     }, [loadVersions]);
 
+    // Refresh version list if the contract prop's versions have changed (e.g. upload from sidebar)
+    const contractVersionsCount = contract.versions?.length || 0;
+    useEffect(() => {
+        if (contractVersionsCount > 0) {
+            loadVersions(true, true); // Silent refresh
+        }
+    }, [contractVersionsCount]);
+
     const isCreator = contract.created_by === meId;
     const isApprover = (contract as any).can_approve;
+
+    // --- SIGNING LOGIC ---
+    const activeSignerApproval = React.useMemo(() => {
+        return (contract.approvals || []).find(
+            (a: any) => a.status === 'pending' && a.user_id === meId && (a.role === 'Pihak 1' || a.role === 'Pihak 2' || a.role === 'Penandatangan')
+        );
+    }, [contract.approvals, meId]);
+
+    const isSigner = !!activeSignerApproval;
+    const stepDownloaded = activeSignerApproval ? contract.metadata?.[`downloaded_step_${activeSignerApproval.id}`] : null;
+
+    const handleDownload = async (vId?: string) => {
+        const versionsList = versions.length > 0 ? versions : contract.versions?.filter(v => v.document_type === 'agreement') || [];
+        if (versionsList.length === 0) {
+            showToast('Tidak ada dokumen agreement yang ditemukan.', 'danger');
+            return;
+        }
+
+        const versionToDownload = vId 
+            ? versionsList.find(v => v.id === vId) 
+            : versionsList.sort((a, b) => b.version_no - a.version_no)[0];
+
+        if (!versionToDownload) return;
+
+        window.open(`/api/contracts/${contract.id}/file/${versionToDownload.version_no}?type=${effectiveDocType}`, '_blank');
+
+        if (isSigner && activeSignerApproval) {
+            const newMeta = { ...contract.metadata };
+            
+            // Track globally for legacy P1/P2
+            if (activeSignerApproval?.role === 'Pihak 1') newMeta['p1_downloaded_at'] = new Date().toISOString();
+            if (activeSignerApproval?.role === 'Pihak 2') newMeta['p2_downloaded_at'] = new Date().toISOString();
+            
+            // Track specifically for this approval step
+            newMeta[`downloaded_step_${activeSignerApproval.id}`] = new Date().toISOString();
+
+            try {
+                const res = await axios.patch(`/api/contracts/${contract.id}`, { metadata: newMeta });
+                if (onUpdate) onUpdate(res.data);
+            } catch (e) {
+                console.error('Failed to update download metadata', e);
+            }
+        }
+    };
+    // ---------------------
 
     const allowFlag =
         effectiveDocType === 'f1'
@@ -97,18 +153,39 @@ export default function AgreementView({
 
     // We allow edit if user is Creator or Approver, AND the flag is not explicitly false.
     // (Admins who are neither will be read-only on frontend unless we pass their role)
-    const canEdit = (isCreator || isApprover) && allowFlag !== false;
+    const canEdit = (isCreator || isApprover || isSigner) && allowFlag !== false;
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (!isRevision && !file.name.endsWith('.docx')) {
+        if (!isRevision && !file.name.toLowerCase().endsWith('.docx')) {
             showToast('Hanya file .docx yang diijinkan untuk Draft Perjanjian.', 'danger');
             return;
         }
 
         setUploading(true);
+
+        // If it's a signer, use the approval/signing API
+        if (isSigner) {
+            const formData = new FormData();
+            formData.append('attachment', file);
+            formData.append('note', 'Pembaruan Dokumen TTD');
+            formData.append('action_code', 'approve');
+
+            try {
+                const res = await axios.post(`/api/contracts/${contract.id}/approve`, formData);
+                if (onUpdate && res.data) onUpdate(res.data);
+                showToast('Persetujuan Tanda Tangan berhasil diunggah.', 'success');
+                await loadVersions(true, true);
+            } catch (err: any) {
+                showToast(err.response?.data?.message || 'Gagal mengunggah persetujuan.', 'danger');
+            } finally {
+                setUploading(false);
+            }
+            return;
+        }
+
         const formData = new FormData();
         formData.append('file', file);
         if (isRevision) {
@@ -125,7 +202,7 @@ export default function AgreementView({
             const res = await axios.post(url, formData);
             setUploadNote('');
             if (onUpdate && res.data) onUpdate(res.data);
-            await loadVersions(true);
+            await loadVersions(true, true);
         } catch (err) {
             console.error('Upload failed', err);
             showToast('Gagal mengupload agreement.', 'danger');
@@ -136,6 +213,7 @@ export default function AgreementView({
 
     const handlePreview = (versionNo: number) => {
         setSelectedVno(versionNo);
+        setLastUpdated(Date.now()); // Force refresh for this specific version
         setShowVersions(false);
     };
 
@@ -167,7 +245,8 @@ export default function AgreementView({
     }, [versions, selectedVno]);
 
     // PDF Preview URL targeting the backend conversion endpoint
-    const pdfUrl = selectedVno ? `/api/contracts/${contract.id}/pdf/${selectedVno}?type=${effectiveDocType}#view=FitH` : null;
+    // Using lastUpdated state for cache-busting instead of inline Date.now()
+    const pdfUrl = selectedVno ? `/api/contracts/${contract.id}/pdf/${selectedVno}?type=${effectiveDocType}&t=${lastUpdated}#view=FitH` : null;
 
     const labelMapping: Record<string, string> = {
         f1: 'Dokumen F1',
@@ -310,36 +389,49 @@ export default function AgreementView({
                                 )}
 
                                 {selectedVersion && (
-                                    <a
-                                        href={isRevision 
-                                            ? `/api/contracts/versions/${selectedVersion.id}/download`
-                                            : `/api/contracts/agreement-versions/${selectedVersion.id}/download`
-                                        }
-                                        download
+                                    <Button
+                                        variant="ghost"
+                                        onClick={() => {
+                                            handleDownload(selectedVersion.id);
+                                            setShowMoreActions(false);
+                                        }}
                                         className="flex w-full h-auto items-center justify-start gap-3 px-4 py-3 text-left text-xs text-text-main transition-all hover:bg-surface-muted"
                                     >
                                         <Download size={16} className="opacity-40" />
-                                        Download Dokumen
-                                    </a>
+                                        Download
+                                    </Button>
                                 )}
                             </div>
                         )}
                     </div>
 
                     {canEdit && (
-                        <Button
-                            asChild
-                            className={cn(
-                                'h-10 px-6',
-                                uploading && 'pointer-events-none opacity-50',
+                        <div className="flex flex-col items-end gap-1">
+                            <Button
+                                asChild
+                                className={cn(
+                                    'h-10 px-6',
+                                    (uploading || (isSigner && !stepDownloaded)) && 'pointer-events-none opacity-50',
+                                )}
+                            >
+                                <label className="cursor-pointer">
+                                    <input 
+                                        type="file" 
+                                        className="hidden" 
+                                        accept={isRevision ? ".pdf,.doc,.docx,.DOC,.DOCX,.PDF" : ".docx,.DOCX"} 
+                                        onChange={handleFileChange} 
+                                        disabled={uploading || (isSigner && !stepDownloaded)} 
+                                    />
+                                    {uploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                                    Upload
+                                </label>
+                            </Button>
+                            {isSigner && !stepDownloaded && (
+                                <span className="text-[9px] font-medium text-danger italic">
+                                    Unduh dokumen sebelum upload
+                                </span>
                             )}
-                        >
-                            <label className="cursor-pointer">
-                                <input type="file" className="hidden" accept={isRevision ? ".pdf,.doc,.docx" : ".docx"} onChange={handleFileChange} disabled={uploading} />
-                                {uploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-                                Upload Versi Baru
-                            </label>
-                        </Button>
+                        </div>
                     )}
                 </div>
             </div>

@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Auth;
 
 class ContractFormatter
 {
-    public static function formatContract(Contract $c): array
+    public static function formatContract(Contract $c, bool $isDetail = true): array
     {
         $c->loadMissing([
             'initiator.department', 'initiator.company',
@@ -162,7 +162,7 @@ class ContractFormatter
                 'created_at' => $v->created_at->toDateString(),
                 'uploader' => self::formatUser($v->uploader),
             ])->sortByDesc('version_no')->values(),
-            'approvals' => self::mapApprovalTimeline($c),
+            'approvals' => self::mapApprovalTimeline($c, $isDetail),
             'histories' => $c->histories->map(fn ($h) => [
                 'action' => $h->action,
                 'description' => $h->description,
@@ -197,7 +197,7 @@ class ContractFormatter
                 'submitted_by' => $fs->submitted_by,
                 'updated_at' => $fs->updated_at->format('Y-m-d H:i'),
             ]),
-            'can_approve' => $c->approvals->where('status', 'pending')->where('user_id', Auth::id())->filter(function ($a) use ($c) {
+            'can_approve' => Auth::user()?->isAdmin() || $c->approvals->where('status', 'pending')->where('user_id', Auth::id())->filter(function ($a) use ($c) {
                 if ($a->sub_step !== null) {
                     return true;
                 }
@@ -270,7 +270,7 @@ class ContractFormatter
         return $default;
     }
 
-    public static function mapApprovalTimeline($c): array
+    public static function mapApprovalTimeline($c, bool $isDetail = true): array
     {
         if (! $c->workflow) {
             return [];
@@ -297,56 +297,68 @@ class ContractFormatter
             $targetEmails = null;
 
             // Resolve potential approvers for placeholders
-            if ($step->approver_type === 'user') {
-                $targetApprovers = $step->users()->pluck('name')->implode(', ');
-                $targetEmails = $step->users()->pluck('email')->implode(', ');
-            } elseif ($step->approver_type === 'atasan') {
-                $approvers = $workflowService->resolveHierarchyApprover($c, $step);
-                $targetApprovers = $approvers->pluck('name')->implode(', ');
-                $targetEmails = $approvers->pluck('email')->implode(', ');
-            } elseif ($step->approver_type === 'initiator') {
-                $targetApprovers = $c->initiator?->name;
-                $targetEmails = $c->initiator?->email;
-            } elseif ($step->approver_type === 'assigned_pic') {
-                if ($c->assigned_pic_id) {
+            // Skip this heavy logic in list mode
+            if ($isDetail) {
+                if ($step->approver_type === 'user') {
+                    $targetApprovers = $step->users->pluck('name')->implode(', ');
+                    $targetEmails = $step->users->pluck('email')->implode(', ');
+                } elseif ($step->approver_type === 'atasan') {
+                    $approvers = $workflowService->resolveHierarchyApprover($c, $step);
+                    $targetApprovers = $approvers->pluck('name')->implode(', ');
+                    $targetEmails = $approvers->pluck('email')->implode(', ');
+                } elseif ($step->approver_type === 'initiator') {
+                    $targetApprovers = $c->initiator?->name;
+                    $targetEmails = $c->initiator?->email;
+                } elseif ($step->approver_type === 'assigned_pic') {
+                    if ($c->assigned_pic_id) {
+                        $targetApprovers = $c->assignedPic?->name;
+                        $targetEmails = $c->assignedPic?->email;
+                    } else {
+                        $targetApprovers = 'PIC (Belum Ditugaskan)';
+                    }
+                } elseif ($step->approver_type === 'role') {
+                    $roles = (array) $step->role;
+                    $targetDeptIds = (array) ($step->department_ids ?? []);
+                    $query = User::whereIn('role', $roles);
+
+                    if ($step->filter_department) {
+                        $query->where('department_id', $c->initiator->department_id ?? '00000000-0000-0000-0000-000000000000');
+                    } elseif (! empty($targetDeptIds)) {
+                        $query->whereIn('department_id', $targetDeptIds);
+                    }
+
+                    $initiatorCompany = $c->initiator?->company;
+                    if ($step->filter_company_group || $step->filter_region) {
+                        $query->whereHas('company', function ($q) use ($step, $initiatorCompany) {
+                            if ($step->filter_company_group) {
+                                $groupId = $initiatorCompany?->company_group_id ?? '00000000-0000-0000-0000-000000000000';
+                                $q->where('company_group_id', $groupId);
+                            }
+                            if ($step->filter_region) {
+                                $regionId = $initiatorCompany?->region_id ?? '00000000-0000-0000-0000-000000000000';
+                                $q->where('region_id', $regionId);
+                            }
+                        });
+                    }
+
+                    if ($step->filter_company) {
+                        $companyId = $c->initiator->company_id ?? '00000000-0000-0000-0000-000000000000';
+                        $query->where('company_id', $companyId);
+                    }
+
+                    $approvers = $query->get();
+                    $targetApprovers = $approvers->pluck('name')->implode(', ');
+                    $targetEmails = $approvers->pluck('email')->implode(', ');
+                }
+            } else {
+                // List mode minimal resolution
+                if ($step->approver_type === 'initiator') {
+                    $targetApprovers = $c->initiator?->name;
+                } elseif ($step->approver_type === 'assigned_pic' && $c->assigned_pic_id) {
                     $targetApprovers = $c->assignedPic?->name;
-                    $targetEmails = $c->assignedPic?->email;
                 } else {
-                    $targetApprovers = 'PIC (Belum Ditugaskan)';
+                    $targetApprovers = is_array($step->role) ? implode(', ', $step->role) : $step->role;
                 }
-            } elseif ($step->approver_type === 'role') {
-                $roles = (array) $step->role;
-                $targetDeptIds = (array) ($step->department_ids ?? []);
-                $query = User::whereIn('role', $roles);
-
-                if ($step->filter_department) {
-                    $query->where('department_id', $c->initiator->department_id ?? '00000000-0000-0000-0000-000000000000');
-                } elseif (! empty($targetDeptIds)) {
-                    $query->whereIn('department_id', $targetDeptIds);
-                }
-
-                $initiatorCompany = $c->initiator?->company;
-                if ($step->filter_company_group || $step->filter_region) {
-                    $query->whereHas('company', function ($q) use ($step, $initiatorCompany) {
-                        if ($step->filter_company_group) {
-                            $groupId = $initiatorCompany?->company_group_id ?? '00000000-0000-0000-0000-000000000000';
-                            $q->where('company_group_id', $groupId);
-                        }
-                        if ($step->filter_region) {
-                            $regionId = $initiatorCompany?->region_id ?? '00000000-0000-0000-0000-000000000000';
-                            $q->where('region_id', $regionId);
-                        }
-                    });
-                }
-
-                if ($step->filter_company) {
-                    $companyId = $c->initiator->company_id ?? '00000000-0000-0000-0000-000000000000';
-                    $query->where('company_id', $companyId);
-                }
-
-                $approvers = $query->get();
-                $targetApprovers = $approvers->pluck('name')->implode(', ');
-                $targetEmails = $approvers->pluck('email')->implode(', ');
             }
 
             // 1. ADD AD-HOC (SUB-STEPS) FIRST - they always happen before the main step action

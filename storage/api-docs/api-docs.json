@@ -21,7 +21,7 @@
                     "Admin"
                 ],
                 "summary": "Get list of users",
-                "operationId": "6df5675e4162a2cb784fd7bd54a30be7",
+                "operationId": "e258e232782b3efe49d42be32d863998",
                 "responses": {
                     "200": {
                         "description": "List of users"
@@ -40,7 +40,7 @@
                     "Admin"
                 ],
                 "summary": "Get list of roles",
-                "operationId": "4629ed7cc2d19ea058adb951e04145d9",
+                "operationId": "85acb2b0b508671618687a593c5173af",
                 "responses": {
                     "200": {
                         "description": "List of roles"
@@ -59,7 +59,7 @@
                     "Contracts"
                 ],
                 "summary": "Get list of contracts",
-                "operationId": "1ab3a5b4a5e2aafb0f49ce993ee8a56a",
+                "operationId": "a5fcddf0d00e4f45ab41c9c8dd4571ab",
                 "parameters": [
                     {
                         "name": "view",
@@ -103,7 +103,7 @@
                     "Contracts"
                 ],
                 "summary": "Create a new contract",
-                "operationId": "ec9937d8f85a0ef70236302888ea421e",
+                "operationId": "feb70ebd6a30370be297440633eace20",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -149,7 +149,7 @@
                     "Contracts"
                 ],
                 "summary": "Get contract details",
-                "operationId": "0551b349162da83031f7c5f1eac63c41",
+                "operationId": "5aa9b658dd26203ab859d96326e2681b",
                 "parameters": [
                     {
                         "name": "id",
@@ -182,7 +182,7 @@
                     "Admin - Departments"
                 ],
                 "summary": "Get list of departments",
-                "operationId": "a23e643f58d973481d608ed888955436",
+                "operationId": "db6d4a676b96cfca9e2ba3f64130b1f7",
                 "parameters": [
                     {
                         "name": "search",
@@ -239,7 +239,7 @@
                     "Admin - Departments"
                 ],
                 "summary": "Create a new department",
-                "operationId": "9c0389f522638652bddf847161af30eb",
+                "operationId": "d20a2e5445f2a031a4d141d1b855106e",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -301,7 +301,7 @@
                     "Admin - Departments"
                 ],
                 "summary": "Update an existing department",
-                "operationId": "010fa93f3c03b3ee163ca68d498368b3",
+                "operationId": "c42606bef9db97c257c66655f8b7d4b3",
                 "parameters": [
                     {
                         "name": "department",
@@ -372,7 +372,7 @@
                     "Admin - Departments"
                 ],
                 "summary": "Soft delete a department",
-                "operationId": "544cfcc41834af251dff2ec566eda95f",
+                "operationId": "a48bf3730d889bd72e969463f0300048",
                 "parameters": [
                     {
                         "name": "department",
@@ -405,7 +405,7 @@
                     "Admin - Departments"
                 ],
                 "summary": "Bulk delete departments",
-                "operationId": "93dadfd971bd2471c165b8410c5ef5ca",
+                "operationId": "a19e50b3cc15b3e2ab2e51eafa8ebf77",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -446,7 +446,7 @@
                     "Admin - Vendors"
                 ],
                 "summary": "Get list of vendors",
-                "operationId": "df06de9b1d6708de24877010cd76e60b",
+                "operationId": "72f1de759cbb3425c6b20760269d700c",
                 "parameters": [
                     {
                         "name": "search",
@@ -513,7 +513,7 @@
                     "Admin - Vendors"
                 ],
                 "summary": "Create a new vendor",
-                "operationId": "d7e315305295865e9b34484a660c2bce",
+                "operationId": "d0e07d2bad392003517896dcb51b03bf",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -600,7 +600,7 @@
                     "Admin - Vendors"
                 ],
                 "summary": "Update an existing vendor",
-                "operationId": "ae313333f9cc5291a037267c8e5b6f72",
+                "operationId": "2536bb53c265dded4abc8285c8b5f69b",
                 "parameters": [
                     {
                         "name": "vendor",
@@ -668,7 +668,7 @@
                     "Admin - Vendors"
                 ],
                 "summary": "Soft delete a vendor",
-                "operationId": "b564fed82b761b85df5d358515797dbd",
+                "operationId": "a6b4aec8a3dae78bb8ebe5c5e0d92ec6",
                 "parameters": [
                     {
                         "name": "vendor",
@@ -698,7 +698,7 @@
                     "Admin - Vendors"
                 ],
                 "summary": "Bulk delete vendors",
-                "operationId": "dccf3dfda58c3424585f867318a04ae4",
+                "operationId": "e746276f4bf5294fb65db0ddfa13f4d6",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -736,7 +736,7 @@
                     "Admin - Workflows"
                 ],
                 "summary": "Get list of workflows",
-                "operationId": "bf0956d8b777433cfe64182fd6173bd1",
+                "operationId": "94364b6dc0d1a14a7d9abfb92da63161",
                 "parameters": [
                     {
                         "name": "search",
@@ -787,7 +787,7 @@
                     "Admin - Workflows"
                 ],
                 "summary": "Create a new workflow",
-                "operationId": "20fa1fcb9c9c01c940b4e10e3f20385e",
+                "operationId": "71e49e02574cf70ff25e7c3d719b196a",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -859,7 +859,7 @@
                     "Admin - Workflows"
                 ],
                 "summary": "Update an existing workflow",
-                "operationId": "81265abad2cbfaa0a0762a050152e2dc",
+                "operationId": "4b74ab1b1e227328df93ba7ff8d83421",
                 "parameters": [
                     {
                         "name": "workflow",
@@ -914,7 +914,7 @@
                     "Admin - Workflows"
                 ],
                 "summary": "Soft delete a workflow",
-                "operationId": "0139d4f5da25715337e8f563ad99fd21",
+                "operationId": "a99236caaf105796feb68cfcc17874f5",
                 "parameters": [
                     {
                         "name": "workflow",
@@ -944,7 +944,7 @@
                     "Admin - Workflows"
                 ],
                 "summary": "Bulk delete workflows",
-                "operationId": "87fe59adab3b5bdc084b1390ff5eddb3",
+                "operationId": "548f4737c2ec9e98a2d9e9c9baec1b8b",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -982,7 +982,7 @@
                     "Admin - Contract Types"
                 ],
                 "summary": "Get list of contract types",
-                "operationId": "3957877a6b2dddb8079bf10130d9bb4c",
+                "operationId": "8188d685a8e4b1d80ca0cd6e692fb429",
                 "parameters": [
                     {
                         "name": "search",
@@ -1019,7 +1019,7 @@
                     "Admin - Contract Types"
                 ],
                 "summary": "Create a new contract type",
-                "operationId": "c31b8ca21a11e5371db2d8d3be3f8e58",
+                "operationId": "f168a58addc8785f5e06025983d67d92",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1069,7 +1069,7 @@
                     "Admin - Contract Types"
                 ],
                 "summary": "Update an existing contract type",
-                "operationId": "323ed7396cb6bfebaf1ad6bb242da825",
+                "operationId": "ca7e3aa70db5b580b0c9beb460c203ce",
                 "parameters": [
                     {
                         "name": "type",
@@ -1128,7 +1128,7 @@
                     "Admin - Contract Types"
                 ],
                 "summary": "Soft delete a contract type",
-                "operationId": "a71e69aab97b93d367143c02030de0a7",
+                "operationId": "13102e63ad528cef6174e10d949f4d00",
                 "parameters": [
                     {
                         "name": "type",
@@ -1158,7 +1158,7 @@
                     "Admin - Contract Types"
                 ],
                 "summary": "Bulk delete contract types",
-                "operationId": "40ad4612f03ce4daef8728edcd9058a1",
+                "operationId": "ee9d72417a44ed2fc0befb63550161bf",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1196,7 +1196,7 @@
                     "Admin - Companies"
                 ],
                 "summary": "Get list of companies",
-                "operationId": "c0f8162b7b27e397d9df01045b27e881",
+                "operationId": "8a6c24bd852c56be3a3b6f33623e32bd",
                 "parameters": [
                     {
                         "name": "search",
@@ -1233,7 +1233,7 @@
                     "Admin - Companies"
                 ],
                 "summary": "Create a new company",
-                "operationId": "c5ebf15f312c86ec25e060c69ad8e7ae",
+                "operationId": "e61dbab3030f5d8d961aaed24dce107e",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1301,7 +1301,7 @@
                     "Admin - Companies"
                 ],
                 "summary": "Update an existing company",
-                "operationId": "a220ed532835f93d15b8e64a0c21a291",
+                "operationId": "53cbf9db32d4af3a8e8993f4497704f6",
                 "parameters": [
                     {
                         "name": "company",
@@ -1364,7 +1364,7 @@
                     "Admin - Companies"
                 ],
                 "summary": "Soft delete a company",
-                "operationId": "3448a8952812816baf1fdb73164c428b",
+                "operationId": "05aec6b176054da93891a6194e467a21",
                 "parameters": [
                     {
                         "name": "company",
@@ -1394,7 +1394,7 @@
                     "Admin - Companies"
                 ],
                 "summary": "Bulk delete companies",
-                "operationId": "25e48b6650c21c489471ae31b6594ff5",
+                "operationId": "393f8cd6a6dbb32eaefb9a4d6e41d237",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1432,7 +1432,7 @@
                     "Admin - Regions"
                 ],
                 "summary": "Get list of regions",
-                "operationId": "d81197662038d69edffa8b23fe95ccd7",
+                "operationId": "fa89be4efa2a5b946e921aa41bda5d32",
                 "parameters": [
                     {
                         "name": "search",
@@ -1469,7 +1469,7 @@
                     "Admin - Regions"
                 ],
                 "summary": "Create a new region",
-                "operationId": "026042bd8c5147a101137e4b17aed990",
+                "operationId": "03a2c3da306c65a284b10e137485a689",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1519,7 +1519,7 @@
                     "Admin - Regions"
                 ],
                 "summary": "Update an existing region",
-                "operationId": "b02ecbf9b61b50322cea2b3977fdd178",
+                "operationId": "65b4e193f4b644273accd548928eabd8",
                 "parameters": [
                     {
                         "name": "region",
@@ -1578,7 +1578,7 @@
                     "Admin - Regions"
                 ],
                 "summary": "Soft delete a region",
-                "operationId": "0d3b4aaa83640b383eddaa18926ecfde",
+                "operationId": "0206580cb1c1bad2e1383427aaf1e22a",
                 "parameters": [
                     {
                         "name": "region",
@@ -1608,7 +1608,7 @@
                     "Admin - Regions"
                 ],
                 "summary": "Bulk delete regions",
-                "operationId": "934b5f9810f3cd53d5569d8ce57c7cc8",
+                "operationId": "88667b34f83a5a2789784ca782ec49e4",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1646,7 +1646,7 @@
                     "Admin - Company Groups"
                 ],
                 "summary": "Get list of company groups",
-                "operationId": "c75944b7fb47981bcdac1d45ebf9ef28",
+                "operationId": "fafacca490583c9f6c5038befb1f92bd",
                 "parameters": [
                     {
                         "name": "search",
@@ -1683,7 +1683,7 @@
                     "Admin - Company Groups"
                 ],
                 "summary": "Create a new company group",
-                "operationId": "77bdf6f7618644ac0ccc2aa471325ad2",
+                "operationId": "0520b3c0d9c6c2d9d14ef3af5945df65",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1733,7 +1733,7 @@
                     "Admin - Company Groups"
                 ],
                 "summary": "Update an existing company group",
-                "operationId": "7f06cf3ed04dc470f6332de89663da46",
+                "operationId": "3cb29a189c5c13f963da14204725b426",
                 "parameters": [
                     {
                         "name": "group",
@@ -1792,7 +1792,7 @@
                     "Admin - Company Groups"
                 ],
                 "summary": "Soft delete a company group",
-                "operationId": "d7796c1132aeaa77f6c2ea48708c433b",
+                "operationId": "10496ee218f67fe88915ec2b8de9f04c",
                 "parameters": [
                     {
                         "name": "group",
@@ -1822,7 +1822,7 @@
                     "Admin - Company Groups"
                 ],
                 "summary": "Bulk delete company groups",
-                "operationId": "94a26cf44724a9ec769ecde9cfbcee4f",
+                "operationId": "872b06a4fc7f4ee4feb8fa552db8356c",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1860,7 +1860,7 @@
                     "Admin - Contract Statuses"
                 ],
                 "summary": "Get list of contract statuses",
-                "operationId": "f61e93d21256f3bf6b0f688df2c1ea79",
+                "operationId": "299e95ad1abc1e4eda311e1c4ddf6e1d",
                 "parameters": [
                     {
                         "name": "search",
@@ -1897,7 +1897,7 @@
                     "Admin - Contract Statuses"
                 ],
                 "summary": "Create a new contract status",
-                "operationId": "04b4a1ee6cff5a02febe67f980917905",
+                "operationId": "4b578ba78deab91dfbab1a03a8071acf",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1951,7 +1951,7 @@
                     "Admin - Contract Statuses"
                 ],
                 "summary": "Update an existing contract status",
-                "operationId": "9157294a67a16dcbad3d16c8737d13c9",
+                "operationId": "59318ab9855af2ce657d0bb80197753b",
                 "parameters": [
                     {
                         "name": "status",
@@ -2014,7 +2014,7 @@
                     "Admin - Contract Statuses"
                 ],
                 "summary": "Soft delete a contract status",
-                "operationId": "709e70134ac301e491015fd315db6492",
+                "operationId": "ffb57491eddb2358c9884715b768d35b",
                 "parameters": [
                     {
                         "name": "status",
@@ -2044,7 +2044,7 @@
                     "Admin - Contract Statuses"
                 ],
                 "summary": "Bulk delete contract statuses",
-                "operationId": "1d06008675a2fb68a894cb54e0fe6a34",
+                "operationId": "b410a6bd190965b3213abd2ab3b85461",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -2082,7 +2082,7 @@
                     "Admin - Users"
                 ],
                 "summary": "Bulk delete users",
-                "operationId": "89f2fd1757b6921955ca12a450048167",
+                "operationId": "12c0db1b6a26c0112160d3422758060e",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -2120,7 +2120,7 @@
                     "Admin - Roles"
                 ],
                 "summary": "Bulk delete roles",
-                "operationId": "83eb853f0b67edfcd2856019045c4bbb",
+                "operationId": "4f0bcb112591f6c6030a8851f987a315",
                 "requestBody": {
                     "required": true,
                     "content": {

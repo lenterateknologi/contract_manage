@@ -122,9 +122,9 @@ class ContractWorkflowService
         $this->createApprovalForStep($contract, $firstStep);
 
         // Handle auto-approval if submitter is also the approver for the first step
-        if ($submit) {
-            $this->handleAutoApproval($contract, Auth::user());
-        }
+        // if ($submit) {
+        //     $this->handleAutoApproval($contract, Auth::user());
+        // }
 
         if ($contract->initiated_by_id && $contract->initiated_by_id !== $contract->created_by) {
 
@@ -512,12 +512,17 @@ class ContractWorkflowService
             ->where('is_active', true)
             ->get();
 
-        $regularApprovals = $currentStepApprovals->filter(fn (Approval $a) => $a->role !== 'Persetujuan Tambahan');
+        $regularApprovals = $currentStepApprovals->filter(fn (Approval $a) => ! in_array($a->role, ['Persetujuan Tambahan', 'Penandatangan']));
         $adhocApprovals = $currentStepApprovals->filter(fn (Approval $a) => $a->role === 'Persetujuan Tambahan');
+        $signerApprovals = $currentStepApprovals->filter(fn (Approval $a) => $a->role === 'Penandatangan');
 
         $isRoleBased = $approval->workflowStep->approver_type === 'role';
 
-        $adhocApproved = $adhocApprovals->every(fn (Approval $a) => $a->status === 'approved');
+        // Check if all ad-hoc approvers for this step have approved
+        $adhocApproved = $adhocApprovals->isEmpty() || $adhocApprovals->every(fn (Approval $a) => $a->status === 'approved');
+
+        // Check if all signers for this step have approved
+        $signersApproved = $signerApprovals->isEmpty() || $signerApprovals->every(fn (Approval $a) => $a->status === 'approved');
 
         if ($regularApprovals->isEmpty()) {
             $regularApproved = true;
@@ -527,7 +532,7 @@ class ContractWorkflowService
                 : $regularApprovals->every(fn (Approval $a) => $a->status === 'approved');
         }
 
-        $allApproved = $adhocApproved && $regularApproved;
+        $allApproved = $adhocApproved && $signersApproved && $regularApproved;
 
         if ($approval->workflowStep->step_category === 'joint_upload') {
             $metadata = $contract->metadata ?? [];
@@ -571,36 +576,43 @@ class ContractWorkflowService
             $allApproved = true;
         }
 
-        if ($approval->workflowStep->step_category === 'signing') {
-            if ($approval->role === 'Penandatangan') {
-                $metadata = $contract->metadata ?? [];
-                $metadata["signer_{$approval->id}_downloaded_at"] = now()->toIso8601String();
-                $contract->update(['metadata' => $metadata]);
+        $isSignerRole = in_array($approval->role, ['Penandatangan', 'Pihak 1', 'Pihak 2']);
+        $isSigningCategory = $approval->workflowStep->step_category === 'signing';
+        $isSigningAction = in_array(strtolower($actionCode), ['sign', 'signature']);
 
-                if ($attachmentPath) {
-                    $lastVersion = $contract->versions()
-                        ->where('document_type', 'agreement')
-                        ->max('version_no') ?? 0;
-                    $versionNo = $lastVersion + 1;
-                    $ext = pathinfo($attachmentPath, PATHINFO_EXTENSION) ?: 'docx';
-                    $newPath = 'contracts/'.$contract->id.'/agreements/'."agreement_v{$versionNo}.{$ext}";
+        if ($isSigningCategory || $isSignerRole || $isSigningAction) {
+            $metadata = $contract->metadata ?? [];
+            $metadata["signer_{$approval->id}_downloaded_at"] = now()->toIso8601String();
+            $contract->update(['metadata' => $metadata]);
 
-                    Storage::disk('local')->makeDirectory('contracts/'.$contract->id.'/agreements');
-                    Storage::disk('local')->copy($attachmentPath, $newPath);
+            if ($attachmentPath) {
+                // Force a database query to get the absolute latest version number
+                $lastVersion = \App\Models\ContractVersion::where('contract_id', $contract->id)
+                    ->where('document_type', 'agreement')
+                    ->max('version_no') ?? 0;
 
-                    ContractVersion::create([
-                        'contract_id' => $contract->id,
-                        'document_type' => 'agreement',
-                        'version_no' => $versionNo,
-                        'file_name' => "agreement_v{$versionNo}.{$ext}",
-                        'file_path' => $newPath,
-                        'change_log' => "Dokumen ditandatangani oleh {$approval->approver_name}",
-                        'uploaded_by' => Auth::id(),
-                    ]);
-                }
+                $versionNo = $lastVersion + 1;
+                $ext = pathinfo($attachmentPath, PATHINFO_EXTENSION) ?: 'docx';
+                $newPath = 'contracts/'.$contract->id.'/agreements/'."agreement_v{$versionNo}.{$ext}";
 
-                $this->queryService->logHistory($contract, 'SIGNING_STEP_COMPLETE', "Penandatanganan selesai oleh {$approval->approver_name}", Auth::id());
+                Storage::disk('local')->makeDirectory('contracts/'.$contract->id.'/agreements');
+                Storage::disk('local')->copy($attachmentPath, $newPath);
+
+                ContractVersion::create([
+                    'contract_id' => $contract->id,
+                    'document_type' => 'agreement',
+                    'version_no' => $versionNo,
+                    'file_name' => "agreement_v{$versionNo}.{$ext}",
+                    'file_path' => $newPath,
+                    'change_log' => "Dokumen ditandatangani oleh {$approval->approver_name}",
+                    'uploaded_by' => Auth::id(),
+                ]);
+
+                // Update the contract's current_version field
+                $contract->update(['current_version' => $versionNo]);
             }
+
+            $this->queryService->logHistory($contract, 'SIGNING_STEP_COMPLETE', "Penandatanganan selesai oleh {$approval->approver_name}", Auth::id());
         }
 
         if ($allApproved) {
@@ -674,7 +686,7 @@ class ContractWorkflowService
                 $this->createApprovalForStep($contract, $nextStep);
 
                 // Handle auto-approval if the person who just approved is also the approver for the next step
-                $this->handleAutoApproval($contract, Auth::user());
+                // $this->handleAutoApproval($contract, Auth::user());
 
                 $this->queryService->logHistory($contract, 'WORKFLOW_ADVANCED', "Alur kerja berlanjut ke tahap {$nextStep->step}: {$nextStep->description}", Auth::id());
             } else {

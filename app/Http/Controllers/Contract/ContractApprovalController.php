@@ -410,10 +410,21 @@ class ContractApprovalController extends Controller
     {
         try {
             $contract = Contract::findOrFail($id);
-            $approval = Approval::where('contract_id', $id)->findOrFail($approvalId);
+            $approval = Approval::find($approvalId);
 
-            if ($approval->role !== Role::ADHOC_APPROVER) {
-                return response()->json(['message' => 'Hanya persetujuan tambahan yang dapat dihapus.'], 403);
+            if (! $approval) {
+                // If it's already gone, consider it a success to avoid 404 errors in UI
+                $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'approvals.workflowStep', 'workflow.steps', 'histories.actor', 'messages.user', 'workflow', 'workflowStep']);
+
+                return response()->json(ContractFormatter::formatContract($contract), 200);
+            }
+
+            if ((string) $approval->contract_id !== (string) $id) {
+                return response()->json(['message' => 'Persetujuan tidak ditemukan pada kontrak ini.'], 404);
+            }
+
+            if ($approval->role !== Role::ADHOC_APPROVER && $approval->role !== 'Penandatangan') {
+                return response()->json(['message' => 'Hanya persetujuan tambahan atau penandatangan yang dapat dihapus.'], 403);
             }
 
             if (! in_array($approval->status, ['pending', 'waiting'])) {

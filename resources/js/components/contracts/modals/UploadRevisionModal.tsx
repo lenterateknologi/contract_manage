@@ -94,7 +94,7 @@ export default function UploadRevisionModal({ open, onClose, onSubmit, initialTy
                 <div className="group relative">
                     <input
                         type="file"
-                        accept=".docx,.doc,.pdf"
+                        accept=".docx,.DOCX,.doc,.DOC,.pdf,.PDF"
                         onChange={handleFile}
                         className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
                     />

@@ -233,20 +233,22 @@ function GenericFormTab({
                 setOriginalData(finalInitial);
                 setVersions([]);
 
-                // Auto-create V1 if it's a fresh form
-                try {
-                    const firstVersion = await contractApi.formSubmissions.save(selected.id, {
-                        form_template_id: matchingTemplate.id,
-                        document_type: docType,
-                        form_data: finalInitial,
-                        is_new_version: true,
-                        change_summary: 'Initial version (Auto-created)',
-                    });
-                    if (firstVersion.versions) {
-                        setVersions(firstVersion.versions as any);
+                // Auto-create V1 if it's a fresh form AND user has edit permission
+                if (canEdit) {
+                    try {
+                        const firstVersion = await contractApi.formSubmissions.save(selected.id, {
+                            form_template_id: matchingTemplate.id,
+                            document_type: docType,
+                            form_data: finalInitial,
+                            is_new_version: true,
+                            change_summary: 'Initial version (Auto-created)',
+                        });
+                        if (firstVersion.versions) {
+                            setVersions(firstVersion.versions as any);
+                        }
+                    } catch (saveErr) {
+                        console.error('Failed to auto-create V1', saveErr);
                     }
-                } catch (saveErr) {
-                    console.error('Failed to auto-create V1', saveErr);
                 }
             }
         } catch (e) {
@@ -273,7 +275,8 @@ function GenericFormTab({
                 : selected.allow_info_edit;
 
     // Strict enforcement: permissions follow workflow flags and participant status ONLY.
-    const canEdit = allowFlag !== false && (isCreator || isApprover);
+    // User must be the current active actor (isApprover) AND the step must allow editing.
+    const canEdit = allowFlag !== false && isApprover;
 
     // DEBUG LOG
     console.log(`[FormSubmissionTab] Debug for ${docType}:`, {

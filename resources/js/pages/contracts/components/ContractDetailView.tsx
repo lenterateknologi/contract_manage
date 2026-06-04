@@ -157,7 +157,7 @@ const ContractDetailView = ({
 
     const activeSignerApproval = useMemo(() => {
         return (contract.approvals || []).find(
-            (a: any) => a.status === 'pending' && a.user_id === meId && (a.role === 'Pihak 1' || a.role === 'Pihak 2')
+            (a: any) => a.status === 'pending' && a.user_id === meId && (a.role === 'Pihak 1' || a.role === 'Pihak 2' || a.role === 'Penandatangan')
         );
     }, [contract.approvals, meId]);
 
@@ -166,6 +166,8 @@ const ContractDetailView = ({
     const isP1 = useMemo(() => (contract.approvals || []).some(a => a.role === 'Pihak 1' && a.user_id === meId), [contract.approvals, meId]);
     const p1Downloaded = contract.metadata?.p1_downloaded_at;
     const p2Downloaded = contract.metadata?.p2_downloaded_at;
+    const stepDownloaded = activeSignerApproval ? contract.metadata?.[`downloaded_step_${activeSignerApproval.id}`] : null;
+
     const [signingUploading, setSigningUploading] = useState(false);
 
     const handleSigningAction = async (action: 'download' | 'upload', file?: File) => {
@@ -176,11 +178,18 @@ const ContractDetailView = ({
                 return;
             }
             const latest = versions.sort((a, b) => b.version_no - a.version_no)[0];
-            window.open(`/api/contracts/versions/${latest.id}/download`, '_blank');
+            window.open(`/api/contracts/${contract.id}/file/${latest.version_no}?type=agreement`, '_blank');
 
             const newMeta = { ...contract.metadata };
-            const key = isP1 ? 'p1_downloaded_at' : 'p2_downloaded_at';
-            newMeta[key] = new Date().toISOString();
+            
+            // Track globally for legacy P1/P2
+            if (activeSignerApproval?.role === 'Pihak 1') newMeta['p1_downloaded_at'] = new Date().toISOString();
+            if (activeSignerApproval?.role === 'Pihak 2') newMeta['p2_downloaded_at'] = new Date().toISOString();
+            
+            // Track specifically for this approval step (Used by the UI check)
+            if (activeSignerApproval?.id) {
+                newMeta[`downloaded_step_${activeSignerApproval.id}`] = new Date().toISOString();
+            }
 
             try {
                 const res = await contractApi.update(contract.id, { metadata: newMeta });
@@ -473,7 +482,7 @@ const ContractDetailView = ({
                                             onClick={() => handleSigningAction('download')}
                                             className="w-full text-xs tracking-wider uppercase shadow-sm border-blue-200 text-blue-700 hover:bg-blue-100/50 dark:border-blue-900/30 dark:text-blue-400 gap-1.5"
                                         >
-                                            <Download size={16} /> Download Draft
+                                            <Download size={16} /> Download
                                         </Button>
 
                                         <div>
@@ -481,12 +490,13 @@ const ContractDetailView = ({
                                                 type="file"
                                                 id="sidebar-upload-draft"
                                                 className="hidden"
+                                                accept=".docx,.DOCX"
                                                 onChange={(e) => {
                                                     const f = e.target.files?.[0];
                                                     if (f) handleSigningAction('upload', f);
                                                 }}
                                                 disabled={
-                                                    !(activeSignerApproval?.role === 'Pihak 1' ? p1Downloaded : p2Downloaded) ||
+                                                    !stepDownloaded ||
                                                     signingUploading
                                                 }
                                             />
@@ -494,7 +504,7 @@ const ContractDetailView = ({
                                                 variant="primary"
                                                 onClick={() => document.getElementById('sidebar-upload-draft')?.click()}
                                                 disabled={
-                                                    !(activeSignerApproval?.role === 'Pihak 1' ? p1Downloaded : p2Downloaded) ||
+                                                    !stepDownloaded ||
                                                     signingUploading
                                                 }
                                                 className="w-full text-xs tracking-wider uppercase shadow-primary/20 shadow-lg gap-1.5 bg-blue-600 hover:bg-blue-700 text-white hover:text-white"
@@ -504,11 +514,11 @@ const ContractDetailView = ({
                                                 ) : (
                                                     <Upload size={16} />
                                                 )}
-                                                Upload Draft
+                                                Upload
                                             </Button>
                                         </div>
 
-                                        {!(contract.metadata?.[`downloaded_step_${activeSignerApproval?.id}`]) && (
+                                        {!stepDownloaded && (
                                             <div className="flex items-start gap-1.5 px-3 py-2 rounded-lg bg-rose-50 border border-rose-100 dark:bg-rose-950/20 dark:border-rose-900/30 mt-1">
                                                 <AlertCircle size={14} className="text-rose-500 shrink-0 mt-0.5" />
                                                 <p className="text-rose-600 dark:text-rose-400 text-[9px] font-medium leading-relaxed italic">
@@ -723,6 +733,7 @@ const ContractDetailView = ({
                 onSubmit={handleApprove}
                 isAssign={!!contract.requires_pic_assignment || ['assign', 'assign_pic'].includes(activeActionCode?.toLowerCase() || '')}
                 contract={contract}
+                onUpdate={onUpdate}
                 actionCode={activeActionCode}
                 actionAlias={contract.workflow_step?.actions?.find((a: any) => a.action_code === activeActionCode)?.alias ?? undefined}
             />
